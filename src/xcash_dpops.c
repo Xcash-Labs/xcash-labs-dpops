@@ -39,7 +39,7 @@ int set_parameters(int parameters_count, char *parameters[]) {
   }
 
   if (!found_secret_key) {
-      HANDLE_ERROR("Missing or invalid --block-verifiers-secret-key parameter.");
+      HANDLE_ERROR("Iinvalid --block-verifiers-secret-key parameter.");
   }
 
   return 1;

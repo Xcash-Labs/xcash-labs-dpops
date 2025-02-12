@@ -5,15 +5,15 @@
  */
 void log_message(const char *function, const char *format, ...) {
     if (!debug_settings) {
-        return;  // Skip logging if debug mode is off
+        return;
     }
 
     va_list args;
     va_start(args, format);
 
-    char message[512];
-    vsnprintf(message, sizeof(message), format, args);
-    syslog(LOG_INFO, "%s: %s", function, message);
+    fprintf(stderr, "%s: ", function);
+    vfprintf(stderr, format, args);
+    fprintf(stderr, "\n");
 
     va_end(args);
 }
