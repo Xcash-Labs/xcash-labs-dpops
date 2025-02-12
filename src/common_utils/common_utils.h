@@ -6,11 +6,7 @@
 #include <syslog.h>
 #include "define_macros.h"
 
-
 extern bool debug_settings;
-
-// Log levels
-typedef enum { LOG_INFO, LOG_ERROR } LogLevel;
 
 void log_message(const char *function, const char *format, ...);
 
