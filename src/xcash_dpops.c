@@ -5,6 +5,9 @@
 #include "define_macros.h"
 #include "common_utils.h"
 
+// set global variables defined in define_macros.h
+bool debug_settings = false;
+
 /*
 -----------------------------------------------------------------------------------------------------------
 Name: set_parameters
@@ -53,9 +56,6 @@ Return: 0 if an error has occured, 1 if successfull
 */
 int main(int argc, char *argv[]) {
   
-// set global variables defined in define_macros.h
-  debug_settings = false;
-
   int result = set_parameters(argc, argv);
 
   return result;
