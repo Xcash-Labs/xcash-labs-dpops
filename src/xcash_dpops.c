@@ -31,7 +31,7 @@ int set_parameters(int parameters_count, char *parameters[]) {
       } 
       else if (strcmp(parameters[i], "--debug") == 0) {
           debug_settings = true;
-          log_message(LOG_INFO, __func__, "Debug mode enabled.");
+          log_message(__func__, "Debug mode enabled.");
       }
   }
 
@@ -54,7 +54,7 @@ Return: 0 if an error has occured, 1 if successfull
 int main(int argc, char *argv[]) {
   
 // set global variables defined in define_macros.h
-  bool debug_settings = false;
+  debug_settings = false;
 
   int result = set_parameters(argc, argv);
 

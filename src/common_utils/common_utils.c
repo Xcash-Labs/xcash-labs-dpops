@@ -1,4 +1,4 @@
-#include "utils.h"
+#include "common_utils.h"
 
 /**
  * Logs messages to syslog only if debug_settings is enabled.
