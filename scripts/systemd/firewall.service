@@ -1,0 +1,13 @@
+[Unit]
+Description=firewall
+Before=network-pre.target
+Wants=network-pre.target
+ 
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+User=root
+ExecStart=${HOME}/firewall_script.sh
+ 
+[Install]
+WantedBy=network.target

@@ -1,0 +1,16 @@
+[Unit]
+Description=X-Cash DPOPS Program background process
+After=network.target xcash-daemon.service xcash-rpc-wallet.service mongodb.service
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+LimitNOFILE=infinity
+User=${USER}
+WorkingDirectory=${XCASH_DPOPS_DIR}build
+ExecStart=${XCASH_DPOPS_DIR}build/xcash-dpops --block-verifiers-secret-key ${BLOCK_VERIFIER_SECRET_KEY}
+Restart=always
+RestartSec=5
+ 
+[Install]
+WantedBy=multi-user.target
