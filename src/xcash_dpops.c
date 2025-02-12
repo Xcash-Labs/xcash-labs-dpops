@@ -6,7 +6,7 @@
 #include "common_utils.h"
 
 // set global variables defined in define_macros.h
-bool debug_settings = false;
+bool debug_enabled = false;
 
 /*
 -----------------------------------------------------------------------------------------------------------
@@ -33,8 +33,8 @@ int set_parameters(int parameters_count, char *parameters[]) {
           found_secret_key = true;
       } 
       else if (strcmp(parameters[i], "--debug") == 0) {
-          debug_settings = true;
-          log_message(__func__, "Debug mode enabled.");
+          debug_enabled = true;
+          HANDLE_DEBUG("Debug mode enabled.");
       }
   }
 

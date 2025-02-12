@@ -8,6 +8,6 @@
 
 extern bool debug_settings;
 
-void log_message(const char *function, const char *format, ...);
+void log_message(int level, const char *function, const char *format, ...);
 
 #endif

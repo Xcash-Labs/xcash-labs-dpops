@@ -1,19 +1,17 @@
 #include "common_utils.h"
 
 /**
- * Logs messages to syslog only if debug_settings is enabled.
+ * Logs messages
  */
-void log_message(const char *function, const char *format, ...) {
-    if (!debug_settings) {
-        return;
-    }
-
+void log_message(int level, const char *function, const char *format, ...)
+{
     va_list args;
     va_start(args, format);
-
-    fprintf(stderr, "%s: ", function);
-    vfprintf(stderr, format, args);
-    fprintf(stderr, "\n");
-
+    if (level == LOG_ERR || level == LOG_DEBUG)
+    {
+        fprintf(stderr, "%s: ", function);
+        vfprintf(stderr, format, args);
+        fprintf(stderr, "\n");
+    }
     va_end(args);
 }
