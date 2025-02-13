@@ -1,5 +1,6 @@
 #include <string.h>
 #include <stdbool.h>
+#include <stdlib.h>
 
 #include "xcash_dpops.h"
 #include "define_macros.h"
@@ -118,7 +119,7 @@ int main(int argc, char *argv[])
 {
 
   int result = set_parameters(argc, argv);
-  print_settings;
+  print_settings();
 
   return result;
 }
