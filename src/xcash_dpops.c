@@ -11,11 +11,7 @@
 bool debug_enabled = false;
 bool is_seed_node = false;
 memset(XCASH_DPOPS_delegates_IP_address,0,sizeof(XCASH_DPOPS_delegates_IP_address));
-memcpy(XCASH_DPOPS_delegates_IP_address,"127.0.0.1",9);
-memset(XCASH_daemon_IP_address,0,sizeof(XCASH_DPOPS_delegates_IP_address));
-memcpy(XCASH_daemon_IP_address,"127.0.0.1",9);
-memset(XCASH_wallet_IP_address,0,sizeof(XCASH_DPOPS_delegates_IP_address));
-memcpy(XCASH_wallet_IP_address,"127.0.0.1",9);
+memcpy(XCASH_DPOPS_delegates_IP_address,"127.0.0.1",9)
 
 char MongoDB_uri[256] = "xxxxxxxx";
 
