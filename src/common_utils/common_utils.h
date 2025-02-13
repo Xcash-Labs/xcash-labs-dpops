@@ -5,6 +5,7 @@
 #include <stdarg.h>
 #include <syslog.h>
 #include "define_macros.h"
+#include "variables.h"
 
 extern bool debug_settings;
 

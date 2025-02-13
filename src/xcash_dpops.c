@@ -22,10 +22,6 @@ Return: 0 if an error has occured, 1 if successfull, 2 to disable the timers
 */
 int set_parameters(int parameters_count, char *parameters[])
 {
-
-  // write the message
-  color_print(XCASH_DPOPS_CURRENT_VERSION, "green");
-
   // check if they want to display the parameters
   if (parameters_count == 2 &&
       (strncmp(parameters[1], "--help", BUFFER_SIZE) == 0 ||
@@ -61,7 +57,7 @@ int set_parameters(int parameters_count, char *parameters[])
 
   if (!found_secret_key)
   {
-    HANDLE_ERROR("Iinvalid --block-verifiers-secret-key parameter.");
+    HANDLE_ERROR("Invalid --block-verifiers-secret-key parameter.");
   }
 
   return 1;
@@ -87,27 +83,26 @@ void print_settings(void)
       "|__/  |__/\\_______/\\_______|_______/|__/  |__|__|________/\\_______/\\________/\\______/ \n"
       "\n";
 
-  #define xcash_tech_status_fmt "%s (%s)\n\n"\
-  "Address:\t%s\n"\
-  "\n"\
-  "Node Type:\t%s\n"\
-  "\n"\
-  "Services:\n"\
-  "Daemon:\t\t%s:%d\n"\
-  "DPoPS:\t\t%s:%d\n"\
-  "Wallet:\t\t%s:%d\n"\
-  "MongoDB:\t%s\n"
+#define xcash_tech_status_fmt "%s (%s)\n\n"        \
+                              "Address:\t%s\n"     \
+                              "\n"                 \
+                              "Node Type:\t%s\n"   \
+                              "\n"                 \
+                              "Services:\n"        \
+                              "Daemon:\t\t%s:%d\n" \
+                              "DPoPS:\t\t%s:%d\n"  \
+                              "Wallet:\t\t%s:%d\n" \
+                              "MongoDB:\t%s\n"
 
   fputs(xcash_tech_header, stderr);
   fprintf(stderr, xcash_tech_status_fmt,
-      XCASH_DPOPS_CURRENT_VERSION,"~Lazarus",
-      xcash_wallet_public_address,
-      is_seed_node? "SEED NODE": "DELEGATE NODE",
-      XCASH_daemon_IP_address, XCASH_DAEMON_PORT,
-      XCASH_DPOPS_delegates_IP_address, XCASH_DPOPS_PORT,
-      XCASH_wallet_IP_address, XCASH_WALLET_PORT,
-      MongoDB_uri);
-      
+          XCASH_DPOPS_CURRENT_VERSION, "~Lazarus",
+          xcash_wallet_public_address,
+          is_seed_node ? "SEED NODE" : "DELEGATE NODE",
+          XCASH_daemon_IP_address, XCASH_DAEMON_PORT,
+          XCASH_DPOPS_delegates_IP_address, XCASH_DPOPS_PORT,
+          XCASH_wallet_IP_address, XCASH_WALLET_PORT,
+          MongoDB_uri);
 }
 /*
 -----------------------------------------------------------------------------------------------------------
