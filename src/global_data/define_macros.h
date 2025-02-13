@@ -1,23 +1,21 @@
 #ifndef DEFINE_MACROS_H_   /* Include guard */
 #define DEFINE_MACROS_H_
 
-
 #include <stdbool.h>
 
-// define global variables
-extern bool debug_enabled;
+#define XCASH_DAEMON_PORT 18281 // The X-CASH Daemon RPC port
+#define XCASH_WALLET_PORT 18285 // The X-CASH Wallet RPC port
+#define XCASH_DPOPS_PORT 18283 // The X-CASH Dpops service
+#define XCASH_WALLET_LENGTH 98 // The length of a XCA addres
+#define BLOCK_VERIFIERS_IP_ADDRESS_TOTAL_LENGTH 100 // The maximum length of the block verifiers IP address
 
-// Macro to handle errors and log them
-#define XCASH_DPOPS_CURRENT_VERSION "xcash-dpops - Version 2.0.0\n"
+#define XCASH_DPOPS_CURRENT_VERSION "xcash-labs-dpops - Version 2.0.0\n"
 
 #define LOG_ERR      3   /* error conditions */
 #define LOG_DEBUG    7   /* debug-level messages */
+// Macros to handle errors and log them
 #define HANDLE_ERROR(msg) do { log_message(LOG_ERR, __func__, "%s", msg); return 0; } while (0)
 #define HANDLE_DEBUG(msg) do { if (debug_enabled) log_message(LOG_DEBUG, __func__, "%s", msg); } while (0)
-
-#define SMALL_BUFFER_SIZE 256
-#define BUFFER_SIZE 1024
-#define VRF_SECRET_KEY_LENGTH 64
 
 #define INVALID_PARAMETERS_ERROR_MESSAGE \
 "Parameters\n" \

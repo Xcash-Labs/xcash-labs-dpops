@@ -4,9 +4,11 @@
 #include "xcash_dpops.h"
 #include "define_macros.h"
 #include "common_utils.h"
+#include "variables.h"
 
 // set global variables defined in define_macros.h
 bool debug_enabled = false;
+bool is_seed_node = false;
 
 /*
 -----------------------------------------------------------------------------------------------------------
@@ -84,7 +86,28 @@ void print_settings(void)
       "| $$  \\ $|  $$$$$$|  $$$$$$$/$$$$$$$| $$  | $$/ | $$$$$$$| $$$$$$$| $$$$$$$ |$$$$$$$      \n"
       "|__/  |__/\\_______/\\_______|_______/|__/  |__|__|________/\\_______/\\________/\\______/ \n"
       "\n";
+
+  #define xcash_tech_status_fmt "%s (%s)\n\n"\
+  "Address:\t%s\n"\
+  "\n"\
+  "Node Type:\t%s\n"\
+  "\n"\
+  "Services:\n"\
+  "Daemon:\t\t%s:%d\n"\
+  "DPoPS:\t\t%s:%d\n"\
+  "Wallet:\t\t%s:%d\n"\
+  "MongoDB:\t%s\n"
+
   fputs(xcash_tech_header, stderr);
+  fprintf(stderr, xcash_tech_status_fmt,
+      XCASH_DPOPS_CURRENT_VERSION,"~Lazarus",
+      xcash_wallet_public_address,
+      is_seed_node? "SEED NODE": "DELEGATE NODE",
+      XCASH_daemon_IP_address, XCASH_DAEMON_PORT,
+      XCASH_DPOPS_delegates_IP_address, XCASH_DPOPS_PORT,
+      XCASH_wallet_IP_address, XCASH_WALLET_PORT,
+      MongoDB_uri);
+      
 }
 /*
 -----------------------------------------------------------------------------------------------------------
