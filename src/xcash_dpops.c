@@ -17,15 +17,27 @@ char XCASH_wallet_IP_address[IP_LENGTH + 1];
 
 /*
 -----------------------------------------------------------------------------------------------------------
-Name: init_settings
-Description: Prints the delegates settings
+Name: init_parameters
+Description: Initialize globals and print program start header.
 -----------------------------------------------------------------------------------------------------------
 */
-void init_settings(void)
+void init_parameters(void)
 {
   strcpy(XCASH_daemon_IP_address, "127.0.0.1");
   strcpy(XCASH_DPOPS_delegates_IP_address, "127.0.0.1");
   strcpy(XCASH_wallet_IP_address, "127.0.0.1");
+  static const char xcash_tech_header[] =
+      "\n"
+      " /$$   /$$                           /$$        / $$              / $$                    \n"
+      "| $$  / $$                          | $$        | $$              | $$                    \n"
+      "|  $$/ $$/ /$$$$$$$ /$$$$$$  /$$$$$$| $$$$$$$   | $$      /$$$$$$ | $$       /$$$$$$      \n"
+      " \\  $$$$/ /$$_____/|____  $$/$$_____| $$__  $$  | $$     |____  $$| $$      /$$_____     \n"
+      "  /$$  $$| $$       /$$$$$$|  $$$$$$| $$  \\ $$  | $$      /$$$$$$ | $$$$$$$ | $$$$$$     \n"
+      " /$$/\\  $| $$      /$$__  $$\\____  $| $$  | $$  | $$     /$$__  $$| $$   $$ \\____  $$  \n"
+      "| $$  \\ $|  $$$$$$|  $$$$$$$/$$$$$$$| $$  | $$/ | $$$$$$$| $$$$$$$| $$$$$$$ |$$$$$$$     \n"
+      "|__/  |__/\\_______/\\_______|_______/|__/  |__|__|________/\\_______/\\________/\\______/\n"
+      "\n";
+  fputs(xcash_tech_header, stderr);
 }
 
 /*
@@ -89,18 +101,6 @@ Description: Prints the delegates settings
 */
 void print_settings(void)
 {
-  static const char xcash_tech_header[] =
-      "\n"
-      " /$$   /$$                           /$$        / $$              / $$                   \n"
-      "| $$  / $$                          | $$        | $$              | $$                    \n"
-      "|  $$/ $$/ /$$$$$$$ /$$$$$$  /$$$$$$| $$$$$$$   | $$      /$$$$$$ | $$       /$$$$$$      \n"
-      " \\  $$$$/ /$$_____/|____  $$/$$_____| $$__  $$  | $$     |____  $$| $$      /$$_____     \n"
-      "  /$$  $$| $$       /$$$$$$|  $$$$$$| $$  \\ $$  | $$      /$$$$$$ | $$$$$$$ | $$$$$$     \n"
-      " /$$/\\  $| $$      /$$__  $$\\____  $| $$  | $$  | $$     /$$__  $$| $$   $$ \\____  $$   \n"
-      "| $$  \\ $|  $$$$$$|  $$$$$$$/$$$$$$$| $$  | $$/ | $$$$$$$| $$$$$$$| $$$$$$$ |$$$$$$$      \n"
-      "|__/  |__/\\_______/\\_______|_______/|__/  |__|__|________/\\_______/\\________/\\______/ \n"
-      "\n";
-
 #define xcash_tech_status_fmt "%s (%s)\n\n"        \
                               "Address:\t%s\n"     \
                               "\n"                 \
@@ -112,7 +112,6 @@ void print_settings(void)
                               "Wallet:\t\t%s:%d\n" \
                               "MongoDB:\t%s\n"
 
-  fputs(xcash_tech_header, stderr);
   fprintf(stderr, xcash_tech_status_fmt,
           XCASH_DPOPS_CURRENT_VERSION, "~Lazarus",
           xcash_wallet_public_address,
@@ -134,7 +133,7 @@ Return: 0 if an error has occured, 1 if successfull
 */
 int main(int argc, char *argv[])
 {
-  init_settings();
+  init_parameters();
   int result = set_parameters(argc, argv);
   print_settings();
   return result;

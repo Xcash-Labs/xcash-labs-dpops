@@ -17,7 +17,12 @@
 #define LOG_ERR      3   /* error conditions */
 #define LOG_DEBUG    7   /* debug-level messages */
 // Macros to handle errors and log them
-#define HANDLE_ERROR(msg) do { log_message(LOG_ERR, __func__, "%s", msg); return 0; } while (0)
+#define HANDLE_ERROR(msg) do { \
+    fprintf(stderr, "\033[1;31m"); /* Set text color to bold red */ \
+    log_message(LOG_ERR, __func__, "%s", msg); \
+    fprintf(stderr, "\033[0m"); /* Reset text color */ \
+    exit(EXIT_FAILURE); \
+} while (0)
 #define HANDLE_DEBUG(msg) do { if (debug_enabled) log_message(LOG_DEBUG, __func__, "%s", msg); } while (0)
 
 #define INVALID_PARAMETERS_ERROR_MESSAGE \
