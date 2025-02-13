@@ -11,6 +11,14 @@
 bool debug_enabled = false;
 bool is_seed_node = false;
 
+
+strcpy(XCASH_DPOPS_delegates_IP_address, "127.0.0.1");
+strcpy(XCASH_daemon_IP_address, "127.0.0.1");
+strcpy(XCASH_wallet_IP_address, "127.0.0.1");
+
+
+char MongoDB_uri[256] = "xxxxxxxx";
+
 /*
 -----------------------------------------------------------------------------------------------------------
 Name: set_parameters
