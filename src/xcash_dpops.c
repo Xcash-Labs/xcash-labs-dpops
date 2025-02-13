@@ -3,16 +3,30 @@
 #include <stdlib.h>
 
 #include "xcash_dpops.h"
-#include "define_macros.h"
+#include "dpops_config.h"
 #include "common_utils.h"
-#include "variables.h"
 
 // set global variables defined in define_macros.h
 bool debug_enabled = false;
 bool is_seed_node = false;
-memset(XCASH_DPOPS_delegates_IP_address, 0, sizeof(XCASH_DPOPS_delegates_IP_address));
-memcpy(XCASH_DPOPS_delegates_IP_address, "127.0.0.1", 10);
 
+char xcash_wallet_public_address[XCASH_WALLET_LENGTH + 1];
+char XCASH_daemon_IP_address[IP_LENGTH + 1];
+char XCASH_DPOPS_delegates_IP_address[IP_LENGTH + 1];
+char XCASH_wallet_IP_address[IP_LENGTH + 1];
+
+/*
+-----------------------------------------------------------------------------------------------------------
+Name: init_settings
+Description: Prints the delegates settings
+-----------------------------------------------------------------------------------------------------------
+*/
+void init_settings(void)
+{
+  strcpy(XCASH_daemon_IP_address, "127.0.0.1");
+  strcpy(XCASH_DPOPS_delegates_IP_address, "127.0.0.1");
+  strcpy(XCASH_wallet_IP_address, "127.0.0.1");
+}
 
 /*
 -----------------------------------------------------------------------------------------------------------
@@ -28,8 +42,8 @@ int set_parameters(int parameters_count, char *parameters[])
 {
   // check if they want to display the parameters
   if (parameters_count == 2 &&
-      (strncmp(parameters[1], "--help", BUFFER_SIZE) == 0 ||
-       strncmp(parameters[1], "--h", BUFFER_SIZE) == 0))
+      (strncmp(parameters[1], "--help", strlen("--help")) == 0 ||
+       strncmp(parameters[1], "--h", strlen("--h")) == 0))
   {
     printf(INVALID_PARAMETERS_ERROR_MESSAGE);
     exit(0);
@@ -120,7 +134,7 @@ Return: 0 if an error has occured, 1 if successfull
 */
 int main(int argc, char *argv[])
 {
-
+  init_variables();
   int result = set_parameters(argc, argv);
   print_settings();
 
