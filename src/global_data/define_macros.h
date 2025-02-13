@@ -8,6 +8,7 @@
 #define XCASH_DPOPS_PORT 18283 // The X-CASH Dpops service
 #define XCASH_WALLET_LENGTH 98 // The length of a XCA addres
 #define BLOCK_VERIFIERS_IP_ADDRESS_TOTAL_LENGTH 100 // The maximum length of the block verifiers IP address
+#define VRF_SECRET_KEY_LENGTH 128 // Length of VRF Secret Key
 #define BUFFER_SIZE 1024
 
 #define XCASH_DPOPS_CURRENT_VERSION "xcash-labs-dpops - Version 2.0.0\n"
