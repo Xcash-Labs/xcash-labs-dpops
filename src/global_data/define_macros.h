@@ -8,6 +8,8 @@
 extern bool debug_enabled;
 
 // Macro to handle errors and log them
+#define XCASH_DPOPS_CURRENT_VERSION "xcash-dpops - Version 2.0.0\n"
+
 #define LOG_ERR      3   /* error conditions */
 #define LOG_DEBUG    7   /* debug-level messages */
 #define HANDLE_ERROR(msg) do { log_message(LOG_ERR, __func__, "%s", msg); return 0; } while (0)
@@ -20,8 +22,8 @@ extern bool debug_enabled;
 #define INVALID_PARAMETERS_ERROR_MESSAGE \
 "Parameters\n" \
 "All parameters are optional, except for --block-verifiers-secret-key\n\n" \
-"--parameters - List of all valid parameters\n" \
+"--help or --h - List of all valid parameters\n" \
 "--block-verifiers-secret-key <block_verifiers_secret_key> - The block verifiers secret key. Must be the first parameter.\n" \
-"--debug - Show all incoming and outgoing messages from the server.\n"
+"--debug - Show information and debug messages.\n"
 
 #endif
