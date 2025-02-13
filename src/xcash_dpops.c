@@ -120,7 +120,7 @@ void print_settings(void)
           XCASH_daemon_IP_address, XCASH_DAEMON_PORT,
           XCASH_DPOPS_delegates_IP_address, XCASH_DPOPS_PORT,
           XCASH_wallet_IP_address, XCASH_WALLET_PORT,
-          MongoDB_uri);
+          DATABASE_CONNECTION);
 }
 /*
 -----------------------------------------------------------------------------------------------------------
@@ -134,9 +134,8 @@ Return: 0 if an error has occured, 1 if successfull
 */
 int main(int argc, char *argv[])
 {
-  init_variables();
+  init_settings();
   int result = set_parameters(argc, argv);
   print_settings();
-
   return result;
 }
