@@ -14,26 +14,26 @@
 #define VRF_SECRET_KEY_LENGTH 128 // Length of VRF Secret Key
 #define IP_LENGTH 39 // Length of ip address for IPv4 and IPv6
 
+#define RED_TEXT(text) "\033[31m"text"\033[0m"
+#define YELLOW_TEXT(text) "\033[1;33m"text"\033[0m"
+#define GREEN_TEXT(text) "\x1b[32m"text"\x1b[0m"
+#define BRIGHT_WHITE_TEXT(text) "\033[1;97m"text"\033[0m"
+
 #define LOG_ERR      3   /* error conditions */
 #define LOG_DEBUG    7   /* debug-level messages */
 // Macros to handle errors and log them
 #define HANDLE_ERROR(msg) do { \
-    fprintf(stderr, "\033[1;31m"); /* Set text color to bold red */ \
+    fprintf(stderr, "%s", RED_TEXT("")); /* Set text color to red */ \
     log_message(LOG_ERR, __func__, "%s", msg); \
-    fprintf(stderr, "\033[0m"); /* Reset text color */ \
+    fprintf(stderr, "%s", RED_TEXT("")); /* Reset text color */ \
     exit(EXIT_FAILURE); \
 } while (0)
-#define HANDLE_DEBUG(msg) do { if (debug_enabled) log_message(LOG_DEBUG, __func__, "%s", msg); } while (0)
-
+#define HANDLE_DEBUG(msg) do { \
+    if (debug_enabled) log_message(LOG_DEBUG, __func__, "%s", YELLOW_TEXT(msg)); \
+} while (0)
 #define INVALID_PARAMETERS_ERROR_MESSAGE \
-"Parameters\n" \
-"All parameters are optional, except for --block-verifiers-secret-key\n\n" \
-"--help or --h - List of all valid parameters\n" \
-"--block-verifiers-secret-key <block_verifiers_secret_key> - The block verifiers secret key. Must be the first parameter.\n" \
-"--debug - Show information and debug messages.\n"
 
-/*
------------------------------------------------------------------------------------------------------------
+/*---------------------------------------------------------------------------------------------------------
 Global Variables
 -----------------------------------------------------------------------------------------------------------
 */

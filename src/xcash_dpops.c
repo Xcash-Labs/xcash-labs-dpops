@@ -1,10 +1,55 @@
+#include <argp.h>
 #include <string.h>
 #include <stdbool.h>
 #include <stdlib.h>
 
+#include "arg_config.h"
 #include "xcash_dpops.h"
 #include "dpops_config.h"
 #include "common_utils.h"
+
+const char *argp_program_version = "Xcash Labs DPoPS v. 2.0.0";
+const char *argp_program_bug_address = "https://github.com/Xcash-Labs/xcash-labs-dpops/issues";
+
+static char doc[] = "Usage: xcash-dpops [OPTIONS]\n"
+"\n"
+BRIGHT_WHITE_TEXT("General Options:\n")
+"  -h, --help                              List all valid parameters.\n"
+"  -k, --block-verifiers-secret-key <KEY>  Set the block verifier's secret key\n"
+"\n"
+BRIGHT_WHITE_TEXT("Debug Options:\n")
+"  -d, --debug                             Display all server messages.\n"
+// "  -e, --debug-delegates-error             Show delegates not sending messages for parts of the round.\n"
+"  --log-file FILE                         Log all output without colors to FILE.\n"
+"  --log-file-color FILE                   Log all output with colors to FILE.\n"
+"\n"
+"For more details on each option, refer to the documentation or use the --help option."
+;
+
+static struct argp_option options[] = {
+  {"help", 'h', 0, 0, "List all valid parameters.", 0},
+  {"block-verifiers-secret-key", 'k', "SECRET_KEY", 0, "Set the block verifier's secret key", 0},
+  {"debug", OPTION_DEBUG, 0, 0, "Display all server messages.", 0},
+  {0}};
+
+static error_t parse_opt(int key, char *arg, struct argp_state *state)
+{
+arg_config_t *arguments = state->input;
+switch (key)
+{
+case 'k':
+  arguments->block_verifiers_secret_key = arg;
+  break;
+case OPTION_DEBUG:
+  arguments->debug_mode = true;
+  break;
+default:
+  return ARGP_ERR_UNKNOWN;
+}
+return 0;
+}
+
+
 
 // set global variables defined in define_macros.h
 bool debug_enabled = false;
@@ -15,8 +60,11 @@ char XCASH_daemon_IP_address[IP_LENGTH + 1];
 char XCASH_DPOPS_delegates_IP_address[IP_LENGTH + 1];
 char XCASH_wallet_IP_address[IP_LENGTH + 1];
 
-/*
------------------------------------------------------------------------------------------------------------
+
+
+static struct argp argp = {options, parse_opt, 0, doc, NULL, NULL, NULL};
+
+/*---------------------------------------------------------------------------------------------------------
 Name: init_parameters
 Description: Initialize globals and print program start header.
 -----------------------------------------------------------------------------------------------------------
@@ -70,7 +118,7 @@ int set_parameters(int parameters_count, char *parameters[])
 
   for (int i = 0; i < parameters_count; i++)
   {
-    if (strcmp(parameters[i], "--block-verifiers-secret-key") == 0)
+    if (strcmp(parameters[i], "--block-verifiers-secret-key"), strlen("--block-verifiers-secret-key") == 0)
     {
       if (i + 1 >= parameters_count || strlen(parameters[i + 1]) != VRF_SECRET_KEY_LENGTH)
       {
@@ -78,7 +126,7 @@ int set_parameters(int parameters_count, char *parameters[])
       }
       found_secret_key = true;
     }
-    else if (strcmp(parameters[i], "--debug") == 0)
+    else if (strcmp(parameters[i], "--debug", strlen("--debug")) == 0)
     {
       debug_enabled = true;
       HANDLE_DEBUG("Debug mode enabled.");
@@ -133,8 +181,22 @@ Return: 0 if an error has occured, 1 if successfull
 */
 int main(int argc, char *argv[])
 {
-  init_parameters();
-  int result = set_parameters(argc, argv);
-  print_settings();
-  return result;
+  arg_config_t arg_config = {0};
+   
+  setenv("ARGP_HELP_FMT", "rmargin=120", 1);
+
+  if (argc == 1) {
+      argp_help(&argp, stdout, ARGP_HELP_STD_HELP, argv[0]);
+      return 0;
+  }
+
+  if (argp_parse(&argp, argc, argv, 0, 0, &arg_config) != 0) {
+      argp_help(&argp, stdout, ARGP_HELP_STD_HELP, argv[0]);
+      return 1;
+  }
+
+//  init_parameters();
+//  int result = set_parameters(argc, argv);
+//  print_settings();
+  return 1;
 }
