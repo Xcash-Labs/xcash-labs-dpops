@@ -41,8 +41,6 @@ static struct argp_option options[] = {
   {0}
 };
 
-static struct argp argp = {options, parse_opt, 0, doc, NULL, NULL, NULL};
-
 // set global variables defined in define_macros.h
 bool debug_enabled = false;
 bool is_seed_node = false;
@@ -77,6 +75,8 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
   }
   return 0;
 }
+
+static struct argp argp = {options, parse_opt, 0, doc, NULL, NULL, NULL};
 
 /*---------------------------------------------------------------------------------------------------------
 Name: init_processing
