@@ -8,6 +8,10 @@
 #include "dpops_config.h"
 #include "common_utils.h"
 
+
+
+
+
 const char *argp_program_version = "Xcash Labs DPoPS v. 2.0.0";
 const char *argp_program_bug_address = "https://github.com/Xcash-Labs/xcash-labs-dpops/issues";
 
@@ -27,26 +31,27 @@ static struct argp_option options[] = {
   {"help", 'h', 0, 0, "List all valid parameters.", 0},
   {"block-verifiers-secret-key", 'k', "SECRET_KEY", 0, "Set the block verifier's secret key", 0},
   {"debug", OPTION_DEBUG, 0, 0, "Display debug and informational messages.", 0},
-  {0}};
+  {0}
+};
 
 static error_t parse_opt(int key, char *arg, struct argp_state *state)
 {
-arg_config_t *arguments = state->input;
-switch (key)
-{
-case 'k':
-  arguments->block_verifiers_secret_key = arg;
-  break;
-case OPTION_DEBUG:
-  arguments->debug_mode = true;
-  break;
-default:
-  return ARGP_ERR_UNKNOWN;
-}
-return 0;
+  arg_config_t *arguments = state->input;
+  switch (key)
+  {
+  case 'k':
+    arguments->block_verifiers_secret_key = arg;
+    break;
+  case OPTION_DEBUG:
+    arguments->debug_mode = true;
+    break;
+  default:
+    return ARGP_ERR_UNKNOWN;
+  }
+  return 0;
 }
 
-
+static struct argp argp = {options, parse_opt, 0, doc, NULL, NULL, NULL};
 
 // set global variables defined in define_macros.h
 bool debug_enabled = false;
@@ -59,7 +64,7 @@ char XCASH_wallet_IP_address[IP_LENGTH + 1];
 
 
 
-static struct argp argp = {options, parse_opt, 0, doc, NULL, NULL, NULL};
+
 
 /*---------------------------------------------------------------------------------------------------------
 Name: init_parameters

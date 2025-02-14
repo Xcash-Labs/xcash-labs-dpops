@@ -6,6 +6,7 @@
 
 typedef struct {
     char *block_verifiers_secret_key;
+    bool debug_mode;
 } arg_config_t;
 
 // Define an enum for option IDs
