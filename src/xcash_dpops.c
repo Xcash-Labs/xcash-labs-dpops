@@ -104,16 +104,16 @@ void init_processing(void)
       "|__/  |__/\\_______/\\_______|_______/|__/  |__|__|________/\\_______/\\________/\\______/\n"
       "\n";
   fputs(xcash_tech_header, stderr);
-  #define xcash_tech_status_fmt
-  "%s (%s)\n\n"
-  "Address:\t%s\n"
-  "\n"
-  "Node Type:\t%s\n"
-  "\n"
-  "Services:\n"
-  "Daemon:\t\t%s:%d\n"
-  "DPoPS:\t\t%s:%d\n"
-  "Wallet:\t\t%s:%d\n"
+  #define xcash_tech_status_fmt \
+  "%s (%s)\n\n"\
+  "Address:\t%s\n"\
+  "\n"\
+  "Node Type:\t%s\n"\
+  "\n"\
+  "Services:\n"\
+  "Daemon:\t\t%s:%d\n"\
+  "DPoPS:\t\t%s:%d\n"\
+  "Wallet:\t\t%s:%d\n"\
   "MongoDB:\t%s\n"
   
   fprintf(stderr, xcash_tech_status_fmt,
