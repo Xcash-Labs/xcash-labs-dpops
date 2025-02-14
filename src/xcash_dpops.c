@@ -84,8 +84,8 @@ Description: Initialize globals and print program start header.
 ---------------------------------------------------------------------------------------------------------*/
 void init_processing(void)
 {
-  debug_enabled = arg_config.debug_mode? True: False;
-  snprintf(xcash_wallet_public_address, sizeof(xcash_wallet_public_address), "%s", arg_config.block_verifiers_secret_key);
+  debug_enabled = config->debug_mode? true: false;
+  snprintf(xcash_wallet_public_address, sizeof(xcash_wallet_public_address), "%s", config->block_verifiers_secret_key);
   snprintf(XCASH_daemon_IP_address, sizeof(XCASH_daemon_IP_address), "%s", "127.0.0.1");
   snprintf(XCASH_DPOPS_delegates_IP_address, sizeof(XCASH_DPOPS_delegates_IP_address), "%s", "127.0.0.1");
   snprintf(XCASH_wallet_IP_address, sizeof(XCASH_wallet_IP_address), "%s", "127.0.0.1");
