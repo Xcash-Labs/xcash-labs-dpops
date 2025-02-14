@@ -4,10 +4,10 @@
 #include <stdbool.h>
 
 typedef struct {
-    char *block_verifiers_secret_key;
-    bool generate_key;
-    bool debug_mode;
-    int total_threads;
+    .block_verifiers_secret_key = NULL,
+    .generate_key = false,
+    .debug_mode = false,
+    .total_threads = 0
 } arg_config_t;
 
 // Define an enum for option IDs

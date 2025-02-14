@@ -85,12 +85,19 @@ Description: Initialize globals and print program start header.
 ---------------------------------------------------------------------------------------------------------*/
 void init_processing(void)
 {
-  debug_enabled = config->debug_mode? true: false;
+  debug_enabled = config->debug_mode;
   snprintf(xcash_wallet_public_address, sizeof(xcash_wallet_public_address), "%s", config->block_verifiers_secret_key);
   snprintf(XCASH_daemon_IP_address, sizeof(XCASH_daemon_IP_address), "%s", "127.0.0.1");
   snprintf(XCASH_DPOPS_delegates_IP_address, sizeof(XCASH_DPOPS_delegates_IP_address), "%s", "127.0.0.1");
   snprintf(XCASH_wallet_IP_address, sizeof(XCASH_wallet_IP_address), "%s", "127.0.0.1");
-  total_threads = config->total_threads? config->total_threads: get_nprocs();
+  if (config->total_threads == 0)
+  {
+    total_threads = get_nprocs();
+  }
+  else
+  {
+    total_threads = config->total_threads;
+  }
 
   static const char xcash_tech_header[] =
       "\n"
@@ -151,7 +158,7 @@ int main(int argc, char *argv[])
       return 0;
   }
   if (!arg_config.block_verifiers_secret_key || strlen(arg_config.block_verifiers_secret_key) == 0) {
-      ERROR_PRINT("--block-verifiers-secret-key is mandatory!");
+    HANDLE_ERROR("--block-verifiers-secret-key is mandatory!");
       return 1;
   }
 
