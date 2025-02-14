@@ -90,61 +90,8 @@ void init_parameters(void)
   fputs(xcash_tech_header, stderr);
 }
 
-/*
------------------------------------------------------------------------------------------------------------
-Name: set_parameters
-Description: Sets the parameters
-Parameters:
-  parameters_count - The parameter count
-  parameters - The parameters
-Return: 0 if an error has occured, 1 if successfull, 2 to disable the timers
------------------------------------------------------------------------------------------------------------
-*/
-int set_parameters(int parameters_count, char *parameters[])
-{
-  // check if they want to display the parameters
-  if (parameters_count == 2 &&
-      (strncmp(parameters[1], "--help", strlen("--help")) == 0 ||
-       strncmp(parameters[1], "--h", strlen("--h")) == 0))
-  {
-    printf(INVALID_PARAMETERS_ERROR_MESSAGE);
-    exit(0);
-  }
 
-  if (parameters_count < 3)
-  {
-    HANDLE_ERROR("Missing block verifier secret key. Please include the --block-verifiers-secret-key parameter.");
-  }
-
-  bool found_secret_key = false;
-
-  for (int i = 0; i < parameters_count; i++)
-  {
-    if (strcmp(parameters[i], "--block-verifiers-secret-key"), strlen("--block-verifiers-secret-key") == 0)
-    {
-      if (i + 1 >= parameters_count || strlen(parameters[i + 1]) != VRF_SECRET_KEY_LENGTH)
-      {
-        HANDLE_ERROR("Invalid block verifier secret key length.");
-      }
-      found_secret_key = true;
-    }
-    else if (strcmp(parameters[i], "--debug", strlen("--debug")) == 0)
-    {
-      debug_enabled = true;
-      HANDLE_DEBUG("Debug mode enabled.");
-    }
-  }
-
-  if (!found_secret_key)
-  {
-    HANDLE_ERROR("Invalid --block-verifiers-secret-key parameter.");
-  }
-
-  return 1;
-}
-
-/*
------------------------------------------------------------------------------------------------------------
+/*---------------------------------------------------------------------------------------------------------
 Name: print_settings
 Description: Prints the delegates settings
 -----------------------------------------------------------------------------------------------------------
