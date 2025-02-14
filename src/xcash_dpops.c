@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <sys/sysinfo.h>
 
 #include "arg_config.h"
 #include "xcash_dpops.h"
