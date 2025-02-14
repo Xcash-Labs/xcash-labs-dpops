@@ -19,9 +19,6 @@ BRIGHT_WHITE_TEXT("General Options:\n")
 "\n"
 BRIGHT_WHITE_TEXT("Debug Options:\n")
 "  -d, --debug                             Display all server messages.\n"
-// "  -e, --debug-delegates-error             Show delegates not sending messages for parts of the round.\n"
-"  --log-file FILE                         Log all output without colors to FILE.\n"
-"  --log-file-color FILE                   Log all output with colors to FILE.\n"
 "\n"
 "For more details on each option, refer to the documentation or use the --help option."
 ;
@@ -29,7 +26,7 @@ BRIGHT_WHITE_TEXT("Debug Options:\n")
 static struct argp_option options[] = {
   {"help", 'h', 0, 0, "List all valid parameters.", 0},
   {"block-verifiers-secret-key", 'k', "SECRET_KEY", 0, "Set the block verifier's secret key", 0},
-  {"debug", OPTION_DEBUG, 0, 0, "Display all server messages.", 0},
+  {"debug", OPTION_DEBUG, 0, 0, "Display debug and informational messages.", 0},
   {0}};
 
 static error_t parse_opt(int key, char *arg, struct argp_state *state)
