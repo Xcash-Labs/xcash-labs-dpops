@@ -14,7 +14,7 @@ typedef struct {
 typedef enum {
     OPTION_GENERATE_KEY,
     OPTION_DEBUG,
-    OPTION_TOTAL_THREADS
+    OPTION_TOTAL_THREADS,
 } option_ids;
 
 #endif // ARG_CONFIG_H

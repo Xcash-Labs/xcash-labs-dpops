@@ -149,7 +149,7 @@ int main(int argc, char *argv[])
 //      generate_key();                    add later
       return 0;
   }
-  if (!arg_config.block_verifiers_secret_key) {
+  if (!arg_config.block_verifiers_secret_key || strlen(arg_config.block_verifiers_secret_key) == 0) {
       ERROR_PRINT("--block-verifiers-secret-key is mandatory!");
       return 1;
   }
