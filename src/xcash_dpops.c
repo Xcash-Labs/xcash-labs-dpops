@@ -83,21 +83,14 @@ static struct argp argp = {options, parse_opt, 0, doc, NULL, NULL, NULL};
 Name: init_processing
 Description: Initialize globals and print program start header.
 ---------------------------------------------------------------------------------------------------------*/
-void init_processing(const arg_config_t *arg_config)
+boolean init_processing(const arg_config_t *arg_config)
 {
-  debug_enabled = config->debug_mode;
+  debug_enabled = arg_config->debug_mode;
   snprintf(xcash_wallet_public_address, sizeof(xcash_wallet_public_address), "%s", arg_config->block_verifiers_secret_key);
-//  snprintf(XCASH_daemon_IP_address, sizeof(XCASH_daemon_IP_address), "%s", "127.0.0.1");
-//  snprintf(XCASH_DPOPS_delegates_IP_address, sizeof(XCASH_DPOPS_delegates_IP_address), "%s", "127.0.0.1");
-//  snprintf(XCASH_wallet_IP_address, sizeof(XCASH_wallet_IP_address), "%s", "127.0.0.1");
-  if (arg_config->total_threads == 0)
-  {
-    total_threads = get_nprocs();
-  }
-  else
-  {
-    total_threads = config->total_threads;
-  }
+  snprintf(XCASH_daemon_IP_address, sizeof(XCASH_daemon_IP_address), "%s", "127.0.0.1");
+  snprintf(XCASH_DPOPS_delegates_IP_address, sizeof(XCASH_DPOPS_delegates_IP_address), "%s", "127.0.0.1");
+  snprintf(XCASH_wallet_IP_address, sizeof(XCASH_wallet_IP_address), "%s", "127.0.0.1");
+  total_threads = (arg_config->total_threads == 0) ? get_nprocs() : arg_config->total_threads;
 
   static const char xcash_tech_header[] =
       "\n"
