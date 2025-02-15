@@ -83,7 +83,7 @@ static struct argp argp = {options, parse_opt, 0, doc, NULL, NULL, NULL};
 Name: init_processing
 Description: Initialize globals and print program start header.
 ---------------------------------------------------------------------------------------------------------*/
-boolean init_processing(const arg_config_t *arg_config)
+bool init_processing(const arg_config_t *arg_config)
 {
   debug_enabled = arg_config->debug_mode;
   snprintf(xcash_wallet_public_address, sizeof(xcash_wallet_public_address), "%s", arg_config->block_verifiers_secret_key);
