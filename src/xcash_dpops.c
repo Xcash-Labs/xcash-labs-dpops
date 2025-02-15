@@ -140,9 +140,8 @@ int main(int argc, char *argv[])
   arg_config_t arg_config = {0};
   setenv("ARGP_HELP_FMT", "rmargin=120", 1);
   if (argc == 1) {
-      HANDLE_ERROR("Please enter the correct arguments.");
       argp_help(&argp, stdout, ARGP_HELP_STD_HELP, argv[0]);
-      return 0;
+      HANDLE_ERROR("/nNo options entered. Please try again...\n");
   }
   if (argp_parse(&argp, argc, argv, 0, 0, &arg_config) != 0) {
       argp_help(&argp, stdout, ARGP_HELP_STD_HELP, argv[0]);
