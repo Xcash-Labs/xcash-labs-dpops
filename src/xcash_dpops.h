@@ -1,7 +1,6 @@
 #ifndef XCASH_DPOPS_TEST_H_   /* Include guard */
 #define XCASH_DPOPS_TEST_H_
 
-int set_parameters(int parameters_count, char *parameters[]);
-void init_processing(void);
+void init_processing(const arg_config_t* arg_config);
 
 #endif

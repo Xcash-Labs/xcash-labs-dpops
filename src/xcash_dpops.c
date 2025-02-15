@@ -83,14 +83,14 @@ static struct argp argp = {options, parse_opt, 0, doc, NULL, NULL, NULL};
 Name: init_processing
 Description: Initialize globals and print program start header.
 ---------------------------------------------------------------------------------------------------------*/
-void init_processing(void)
+void init_processing(const arg_config_t *arg_config)
 {
   debug_enabled = config->debug_mode;
-  snprintf(xcash_wallet_public_address, sizeof(xcash_wallet_public_address), "%s", config->block_verifiers_secret_key);
-  snprintf(XCASH_daemon_IP_address, sizeof(XCASH_daemon_IP_address), "%s", "127.0.0.1");
-  snprintf(XCASH_DPOPS_delegates_IP_address, sizeof(XCASH_DPOPS_delegates_IP_address), "%s", "127.0.0.1");
-  snprintf(XCASH_wallet_IP_address, sizeof(XCASH_wallet_IP_address), "%s", "127.0.0.1");
-  if (config->total_threads == 0)
+  snprintf(xcash_wallet_public_address, sizeof(xcash_wallet_public_address), "%s", arg_config->block_verifiers_secret_key);
+//  snprintf(XCASH_daemon_IP_address, sizeof(XCASH_daemon_IP_address), "%s", "127.0.0.1");
+//  snprintf(XCASH_DPOPS_delegates_IP_address, sizeof(XCASH_DPOPS_delegates_IP_address), "%s", "127.0.0.1");
+//  snprintf(XCASH_wallet_IP_address, sizeof(XCASH_wallet_IP_address), "%s", "127.0.0.1");
+  if (arg_config->total_threads == 0)
   {
     total_threads = get_nprocs();
   }
@@ -131,6 +131,7 @@ void init_processing(void)
           XCASH_DPOPS_delegates_IP_address, XCASH_DPOPS_PORT,
           XCASH_wallet_IP_address, XCASH_WALLET_PORT,
           DATABASE_CONNECTION);
+  return 0;
 }
 
 /*---------------------------------------------------------------------------------------------------------
@@ -153,14 +154,22 @@ int main(int argc, char *argv[])
       argp_help(&argp, stdout, ARGP_HELP_STD_HELP, argv[0]);
       return 1;
   }
-  if (arg_config.generate_key) {
+//  if (arg_config.generate_key) {
 //      generate_key();                    add later
-      return 0;
-  }
-  if (!arg_config.block_verifiers_secret_key || strlen(arg_config.block_verifiers_secret_key) == 0) {
+//      return 0;
+//  }
+  if (!arg_config.block_verifiers_secret_key || strlen(arg_config.block_verifiers_secret_key) == 0)
+  {
     HANDLE_ERROR("--block-verifiers-secret-key is mandatory!");
-      return 1;
+    return 1;
   }
+
+  if (init_processing(&arg_config))
+  {
+//    start_block_production();
+  }
+
+
 
 // uvlib can cause assertion errors if some of STD PIPES closed
 //  fix_std_pipes();
