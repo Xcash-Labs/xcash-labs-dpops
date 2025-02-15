@@ -23,9 +23,7 @@
 #define LOG_DEBUG    7   /* debug-level messages */
 // Macros to handle errors and log them
 #define HANDLE_ERROR(msg) do { \
-    fprintf(stderr, "%s", RED_TEXT("")); /* Set text color to red */ \
-    log_message(LOG_ERR, __func__, "%s", msg); \
-    fprintf(stderr, "%s", RED_TEXT("")); /* Reset text color */ \
+    log_message(LOG_ERR, __func__, "%s", RED_TEXT(msg)); \
     exit(EXIT_FAILURE); \
 } while (0)
 #define HANDLE_DEBUG(msg) do { \
