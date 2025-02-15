@@ -141,7 +141,8 @@ int main(int argc, char *argv[])
   setenv("ARGP_HELP_FMT", "rmargin=120", 1);
   if (argc == 1) {
       argp_help(&argp, stdout, ARGP_HELP_STD_HELP, argv[0]);
-      HANDLE_ERROR("/nNo options entered. Please try again...\n");
+      HANDLE_ERROR("\nNo options entered. Please try again...\n");
+      return 1;
   }
   if (argp_parse(&argp, argc, argv, 0, 0, &arg_config) != 0) {
       argp_help(&argp, stdout, ARGP_HELP_STD_HELP, argv[0]);
