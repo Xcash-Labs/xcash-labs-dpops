@@ -30,8 +30,7 @@ BRIGHT_WHITE_TEXT("Advanced Options:\n")
 "  --total-threads THREADS                 Set total threads (Default: CPU total threads).\n"
 "  --generate-key                       Generate public/private key for block verifiers.\n"
 "\n"
-"For more details on each option, refer to the documentation or use the --help option."
-;
+"For more details on each option, refer to the documentation or use the --help option.";
 
 static struct argp_option options[] = {
   {"help", 'h', 0, 0, "List all valid parameters.", 0},
@@ -52,7 +51,7 @@ char XCASH_wallet_IP_address[IP_LENGTH + 1];
 
 /*---------------------------------------------------------------------------------------------------------
 Name: error_t parse_opt
-Description: Load program options.
+Description: Load program options.  Using the argp system calls.
 ---------------------------------------------------------------------------------------------------------*/
 static error_t parse_opt(int key, char *arg, struct argp_state *state)
 {
@@ -142,11 +141,10 @@ int main(int argc, char *argv[])
   if (argc == 1) {
       argp_help(&argp, stdout, ARGP_HELP_STD_HELP, argv[0]);
       HANDLE_ERROR("\nNo options entered. Please try again...\n");
-      return 1;
   }
   if (argp_parse(&argp, argc, argv, 0, 0, &arg_config) != 0) {
       argp_help(&argp, stdout, ARGP_HELP_STD_HELP, argv[0]);
-      return 1;
+      HANDLE_ERROR("\nBad option entered...\n");
   }
 //  if (arg_config.generate_key) {
 //      generate_key();                    add later
@@ -155,7 +153,6 @@ int main(int argc, char *argv[])
   if (!arg_config.block_verifiers_secret_key || strlen(arg_config.block_verifiers_secret_key) == 0)
   {
     HANDLE_ERROR("--block-verifiers-secret-key is mandatory!");
-    return 1;
   }
 
   if (init_processing(&arg_config))
