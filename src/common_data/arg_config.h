@@ -5,6 +5,7 @@
 
 typedef struct {
     char *block_verifiers_secret_key; // Holds your wallets public address
+    bool is_seed_node;
 } arg_config_t;
 
 // Define an enum for option IDs

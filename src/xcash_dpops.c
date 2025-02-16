@@ -8,6 +8,7 @@
 #include "xcash_dpops.h"
 #include "dpops_config.h"
 #include "common_utils.h"
+#include "network_nodes.h"
 
 const char *argp_program_bug_address = "https://github.com/Xcash-Labs/xcash-labs-dpops/issues";
 static char doc[] =
@@ -88,6 +89,16 @@ Description: Initialize globals and print program start header.
 ---------------------------------------------------------------------------------------------------------*/
 bool init_processing(const arg_config_t *arg_config)
 {
+  const NetworkNode network_nodes[] = {
+      {"XCA1dd7JaWhiuBavUM2ZTJG3GdgPkT1Yd5Q6VvNvnxbEfb6JhUhziTF6w5mMPVeoSv3aa1zGyhedpaa2QQtGEjBo7N6av9nhaU",
+       "xcashseeds.us",
+       "f681a933620c8e9e029d9ac0977d3a2f1d6a64cc49304e079458e3b5d2d4a66f"},
+      {"XCA1b6Sg5QVBX4jrctQ9SVUcHFqpaGST6bqtFpyoQadTX8SaDs92xR8iec3VfaXKzhYijFiMfwoM4TuYRgy6NXzn5titJnWbra",
+       "xcashseeds.uk",
+       "63232aa1b020a772945bf50ce96db9a04242583118b5a43952f0aaf9ecf7cfbb"},
+      // Sentinel value (empty entry to mark the end)
+      {NULL, NULL, NULL}};
+  
   snprintf(XCASH_daemon_IP_address, sizeof(XCASH_daemon_IP_address), "%s", "127.0.0.1");
   snprintf(XCASH_DPOPS_delegates_IP_address, sizeof(XCASH_DPOPS_delegates_IP_address), "%s", "127.0.0.1");
   snprintf(XCASH_wallet_IP_address, sizeof(XCASH_wallet_IP_address), "%s", "127.0.0.1");
@@ -125,6 +136,10 @@ bool init_processing(const arg_config_t *arg_config)
           XCASH_DPOPS_delegates_IP_address, XCASH_DPOPS_PORT,
           XCASH_wallet_IP_address, XCASH_WALLET_PORT,
           DATABASE_CONNECTION);
+  if (debug_enabled)
+  {
+    HANDLE_DEBUG("Debug messages are enabled.");
+  }
   return 0;
 }
 
@@ -153,10 +168,6 @@ int main(int argc, char *argv[])
     argp_help(&argp, stdout, ARGP_NO_HELP, argv[0]);
     return 0;
   }
-  if (debug_enabled)
-  {
-    HANDLE_DEBUG("Debug is enabled.");
-  }
   //  if (generate_key) {
   //      generate_key();                    add later
   //      return 0;
@@ -166,18 +177,14 @@ int main(int argc, char *argv[])
     HANDLE_ERROR("The --block-verifiers-secret-key option is mandatory!");
   }
 
-  if (init_processing(&arg_config))
-  {
-    //    start_block_production();
-  }
-
   // uvlib can cause assertion errors if some of STD PIPES closed
   //  fix_std_pipes();
 
-  //  if (!initialize_database(arg_config.mongodb_uri)){
-  //      ERROR_PRINT("Can't initialize mongo database");
-  //      return 1;
-  //  }
+  if (!initialize_database(DATABASE_CONNECTION))
+  {
+    ERROR_PRINT("Can't initialize mongo database");
+    return 1;
+  }
 
   //  signal(SIGINT, sigint_handler);
 
