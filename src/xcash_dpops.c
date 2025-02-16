@@ -143,19 +143,22 @@ int main(int argc, char *argv[])
 {
   arg_config_t arg_config = {0};
   setenv("ARGP_HELP_FMT", "rmargin=120", 1);
-  printf("argc = %d\n", argc);
-  if (argc == 1) {
-//      argp_help(&argp, stdout, ARGP_NO_HELP, argv[0]);
-      HANDLE_ERROR("No arguments entered (--block-verifiers-secret-key is mandatory)");
+  if (argc == 1)
+  {
+    HANDLE_ERROR("No arguments entered (--block-verifiers-secret-key is mandatory)");
   }
-  if (argp_parse(&argp, argc, argv, 0, 0, &arg_config) != 0) {
-      argp_help(&argp, stdout, ARGP_HELP_STD_HELP, argv[0]);
-      HANDLE_ERROR("Invalid option entered...");
+  if (argp_parse(&argp, argc, argv, 0, 0, &arg_config) != 0)
+  {
+    HANDLE_ERROR("Invalid option entered. Please try agaon...");
   }
-//  if (arg_config.generate_key) {
-//      generate_key();                    add later
-//      return 0;
-//  }
+  if (show_help)
+  {
+    argp_help(&argp, stdout, ARGP_NO_HELP, argv[0])
+  }
+  //  if (arg_config.generate_key) {
+  //      generate_key();                    add later
+  //      return 0;
+  //  }
   if (!arg_config.block_verifiers_secret_key || strlen(arg_config.block_verifiers_secret_key) == 0)
   {
     HANDLE_ERROR("--block-verifiers-secret-key is mandatory!");
@@ -163,28 +166,26 @@ int main(int argc, char *argv[])
 
   if (init_processing(&arg_config))
   {
-//    start_block_production();
+    //    start_block_production();
   }
 
+  // uvlib can cause assertion errors if some of STD PIPES closed
+  //  fix_std_pipes();
 
+  //  if (!initialize_database(arg_config.mongodb_uri)){
+  //      ERROR_PRINT("Can't initialize mongo database");
+  //      return 1;
+  //  }
 
-// uvlib can cause assertion errors if some of STD PIPES closed
-//  fix_std_pipes();
+  //  signal(SIGINT, sigint_handler);
 
-//  if (!initialize_database(arg_config.mongodb_uri)){
-//      ERROR_PRINT("Can't initialize mongo database");
-//      return 1;
-//  }
+  //  if (processing(&arg_config)) {
+  //      start_block_production();
+  //  }
 
-//  signal(SIGINT, sigint_handler);
-
-//  if (processing(&arg_config)) {
-//      start_block_production();
-//  }
-
-//  shutdown_database();
-//  if (server_log_fp)
-//      fclose(server_log_fp);
+  //  shutdown_database();
+  //  if (server_log_fp)
+  //      fclose(server_log_fp);
 
   return 0;
 }
