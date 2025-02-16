@@ -36,10 +36,10 @@ static struct argp_option options[] = {
 
 static bool show_help = false;
 static bool generate_key = false;
-
+static total_threads = 0;
 
 //char *block_verifiers_secret_key;
-//int total_threads;
+
 
 // set global variables defined in define_macros.h
 bool debug_enabled = false;
@@ -72,7 +72,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
     generate_key = true;
     break;
   case OPTION_TOTAL_THREADS:
-    arguments->total_threads = atoi(arg);
+    total_threads = atoi(arg);
     break;
   default:
     return ARGP_ERR_UNKNOWN;
@@ -88,7 +88,6 @@ Description: Initialize globals and print program start header.
 ---------------------------------------------------------------------------------------------------------*/
 bool init_processing(const arg_config_t *arg_config)
 {
-  snprintf(xcash_wallet_public_address, sizeof(xcash_wallet_public_address), "%s", arg_config->block_verifiers_secret_key);
   snprintf(XCASH_daemon_IP_address, sizeof(XCASH_daemon_IP_address), "%s", "127.0.0.1");
   snprintf(XCASH_DPOPS_delegates_IP_address, sizeof(XCASH_DPOPS_delegates_IP_address), "%s", "127.0.0.1");
   snprintf(XCASH_wallet_IP_address, sizeof(XCASH_wallet_IP_address), "%s", "127.0.0.1");
@@ -120,7 +119,7 @@ bool init_processing(const arg_config_t *arg_config)
   
   fprintf(stderr, xcash_tech_status_fmt,
           XCASH_DPOPS_CURRENT_VERSION, "~Lazarus",
-          xcash_wallet_public_address,
+          arg_config->block_verifiers_secret_key,
           is_seed_node ? "SEED NODE" : "DELEGATE NODE",
           XCASH_daemon_IP_address, XCASH_DAEMON_PORT,
           XCASH_DPOPS_delegates_IP_address, XCASH_DPOPS_PORT,
