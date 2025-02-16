@@ -145,15 +145,16 @@ int main(int argc, char *argv[])
   setenv("ARGP_HELP_FMT", "rmargin=120", 1);
   if (argc == 1)
   {
-    HANDLE_ERROR("No arguments entered (--block-verifiers-secret-key is mandatory)");
+    HANDLE_ERROR("No arguments entered. Try `xcash-dpops --help'");
   }
-  if (argp_parse(&argp, argc, argv, 0, 0, &arg_config) != 0)
+  if (argp_parse(&argp, argc, argv, ARGP_NO_EXIT, 0, &arg_config) != 0)
   {
-    HANDLE_ERROR("Invalid option entered. Please try agaon...");
+    HANDLE_ERROR("Invalid option entered. Try `xcash-dpops --help'");
   }
   if (show_help)
   {
     argp_help(&argp, stdout, ARGP_NO_HELP, argv[0]);
+    return 0;
   }
   //  if (arg_config.generate_key) {
   //      generate_key();                    add later
