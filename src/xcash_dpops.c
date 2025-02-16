@@ -41,6 +41,8 @@ static struct argp_option options[] = {
   {0}
 };
 
+bool show_help = false;
+
 // set global variables defined in define_macros.h
 bool debug_enabled = false;
 bool is_seed_node = false;
@@ -58,6 +60,9 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
   arg_config_t *arguments = state->input;
   switch (key)
   {
+  case 'h':
+    show_help = true;
+    break;
   case 'k':
     arguments->block_verifiers_secret_key = arg;
     break;
@@ -140,13 +145,12 @@ int main(int argc, char *argv[])
   setenv("ARGP_HELP_FMT", "rmargin=120", 1);
   printf("argc = %d\n", argc);
   if (argc == 1) {
-    printf("Here...\n");
-      argp_help(&argp, stdout, ARGP_NO_HELP, argv[0]);
+//      argp_help(&argp, stdout, ARGP_NO_HELP, argv[0]);
       HANDLE_ERROR("No arguments entered (--block-verifiers-secret-key is mandatory)");
   }
   if (argp_parse(&argp, argc, argv, 0, 0, &arg_config) != 0) {
       argp_help(&argp, stdout, ARGP_HELP_STD_HELP, argv[0]);
-      HANDLE_ERROR("Bad option entered...");
+      HANDLE_ERROR("Invalid option entered...");
   }
 //  if (arg_config.generate_key) {
 //      generate_key();                    add later
