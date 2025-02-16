@@ -142,7 +142,7 @@ int main(int argc, char *argv[])
   if (argc == 1) {
     printf("Here...\n");
       argp_help(&argp, stdout, ARGP_HELP_STD_HELP, argv[0]);
-      HANDLE_ERROR("No options entered. Please try again...");
+      HANDLE_ERROR("No arguments entered (--block-verifiers-secret-key is mandatory)");
   }
   if (argp_parse(&argp, argc, argv, 0, 0, &arg_config) != 0) {
       argp_help(&argp, stdout, ARGP_HELP_STD_HELP, argv[0]);
