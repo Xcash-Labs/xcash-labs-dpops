@@ -10,13 +10,6 @@
 #include "common_utils.h"
 
 const char *argp_program_bug_address = "https://github.com/Xcash-Labs/xcash-labs-dpops/issues";
-
-char *block_verifiers_secret_key;
-bool generate_key;
-bool debug_mode;
-int total_threads;
-
-
 static char doc[] =
 "\n"
 BRIGHT_WHITE_TEXT("General Options:\n")
@@ -43,6 +36,10 @@ static struct argp_option options[] = {
 
 static bool show_help = false;
 static bool generate_key = false;
+
+
+//char *block_verifiers_secret_key;
+//int total_threads;
 
 // set global variables defined in define_macros.h
 bool debug_enabled = false;
