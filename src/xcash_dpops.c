@@ -153,7 +153,7 @@ int main(int argc, char *argv[])
   }
   if (show_help)
   {
-    argp_help(&argp, stdout, ARGP_NO_HELP, argv[0])
+    argp_help(&argp, stdout, ARGP_NO_HELP, argv[0]);
   }
   //  if (arg_config.generate_key) {
   //      generate_key();                    add later
