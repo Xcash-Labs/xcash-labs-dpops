@@ -182,8 +182,7 @@ int main(int argc, char *argv[])
 
   if (!initialize_database(DATABASE_CONNECTION))
   {
-    ERROR_PRINT("Can't initialize mongo database");
-    return 1;
+    HANDLE_ERROR("Can't initialize mongo database");
   }
 
   //  signal(SIGINT, sigint_handler);
