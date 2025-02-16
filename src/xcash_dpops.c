@@ -144,7 +144,7 @@ int main(int argc, char *argv[])
       argp_help(&argp, stdout, ARGP_HELP_STD_HELP, argv[0]);
       HANDLE_ERROR("No arguments entered (--block-verifiers-secret-key is mandatory)");
   }
-  if (argp_parse(&argp, argc, argv, ARGP_NO_EXIT, 0, &arg_config) != 0) {
+  if (argp_parse(&argp, argc, argv, ARGP_NO_HELP, 0, &arg_config) != 0) {
       argp_help(&argp, stdout, ARGP_HELP_STD_HELP, argv[0]);
       HANDLE_ERROR("Bad option entered...");
   }
