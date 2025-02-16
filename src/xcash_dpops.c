@@ -91,7 +91,7 @@ bool init_processing(const arg_config_t *arg_config)
   snprintf(XCASH_daemon_IP_address, sizeof(XCASH_daemon_IP_address), "%s", "127.0.0.1");
   snprintf(XCASH_DPOPS_delegates_IP_address, sizeof(XCASH_DPOPS_delegates_IP_address), "%s", "127.0.0.1");
   snprintf(XCASH_wallet_IP_address, sizeof(XCASH_wallet_IP_address), "%s", "127.0.0.1");
-  total_threads = (arg_config->total_threads == 0) ? get_nprocs() : arg_config->total_threads;
+  total_threads = (total_threads == 0) ? get_nprocs() : total_threads;
 
   static const char xcash_tech_header[] =
       "\n"
