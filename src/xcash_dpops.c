@@ -30,7 +30,7 @@ BRIGHT_WHITE_TEXT("Advanced Options:\n")
 "  --total-threads THREADS                 Set total threads (Default: CPU total threads).\n"
 "  --generate-key                       Generate public/private key for block verifiers.\n"
 "\n"
-"For more details on each option, refer to the documentation or use the --help option.";
+"For more details on each option, refer to the documentation or use the --help option.\n";
 
 static struct argp_option options[] = {
   {"help", 'h', 0, 0, "List all valid parameters.", 0},
@@ -147,7 +147,7 @@ int main(int argc, char *argv[])
   {
     HANDLE_ERROR("No arguments entered. Try `xcash-dpops --help'");
   }
-  if (argp_parse(&argp, argc, argv, ARGP_NO_EXIT, 0, &arg_config) != 0)
+  if (argp_parse(&argp, argc, argv, ARGP_NO_EXIT | ARGP_NO_ERRS, 0, &arg_config) != 0)
   {
     HANDLE_ERROR("Invalid option entered. Try `xcash-dpops --help'");
   }
@@ -162,7 +162,7 @@ int main(int argc, char *argv[])
   //  }
   if (!arg_config.block_verifiers_secret_key || strlen(arg_config.block_verifiers_secret_key) == 0)
   {
-    HANDLE_ERROR("--block-verifiers-secret-key is mandatory!");
+    HANDLE_ERROR("The --block-verifiers-secret-key option is mandatory!");
   }
 
   if (init_processing(&arg_config))
