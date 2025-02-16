@@ -138,6 +138,7 @@ int main(int argc, char *argv[])
 {
   arg_config_t arg_config = {0};
   setenv("ARGP_HELP_FMT", "rmargin=120", 1);
+  printf("argc = %d\n", argc);
   if (argc == 1) {
     printf("Here...\n");
       argp_help(&argp, stdout, ARGP_HELP_STD_HELP, argv[0]);
@@ -145,7 +146,7 @@ int main(int argc, char *argv[])
   }
   if (argp_parse(&argp, argc, argv, 0, 0, &arg_config) != 0) {
       argp_help(&argp, stdout, ARGP_HELP_STD_HELP, argv[0]);
-      HANDLE_ERROR("\nBad option entered...\n");
+      HANDLE_ERROR("Bad option entered...");
   }
 //  if (arg_config.generate_key) {
 //      generate_key();                    add later
