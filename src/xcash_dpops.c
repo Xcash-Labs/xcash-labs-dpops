@@ -155,7 +155,7 @@ int main(int argc, char *argv[])
   }
   if (debug_enabled)
   {
-    HANDLE_DEBUG("Debug is enables.");
+    HANDLE_DEBUG("Debug is enabled.");
   }
   //  if (generate_key) {
   //      generate_key();                    add later
