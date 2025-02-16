@@ -28,7 +28,7 @@ BRIGHT_WHITE_TEXT("Debug Options:\n")
 "\n"
 BRIGHT_WHITE_TEXT("Advanced Options:\n")
 "  --total-threads THREADS                 Set total threads (Default: CPU total threads).\n"
-"  --generate-key                       Generate public/private key for block verifiers.\n"
+"  --generate-key                          Generate public/private key for block verifiers.\n"
 "\n"
 "For more details on each option, refer to the documentation or use the --help option.\n";
 
@@ -41,7 +41,7 @@ static struct argp_option options[] = {
   {0}
 };
 
-bool show_help = false;
+static bool show_help = false;
 
 // set global variables defined in define_macros.h
 bool debug_enabled = false;
