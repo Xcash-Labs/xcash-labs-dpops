@@ -42,7 +42,7 @@ static struct argp_option options[] = {
 };
 
 static bool show_help = false;
-statis bool generate_key = false;
+static bool generate_key = false;
 
 // set global variables defined in define_macros.h
 bool debug_enabled = false;
