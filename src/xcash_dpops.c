@@ -36,7 +36,7 @@ static struct argp_option options[] = {
 
 static bool show_help = false;
 static bool generate_key = false;
-static total_threads = 0;
+static int total_threads = 0;
 
 //char *block_verifiers_secret_key;
 
