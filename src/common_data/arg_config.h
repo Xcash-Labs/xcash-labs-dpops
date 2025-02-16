@@ -5,9 +5,7 @@
 
 typedef struct {
     char *block_verifiers_secret_key;
-    bool generate_key;
-    bool debug_mode;
-    int total_threads;
+    int total_threads;   // ?
 } arg_config_t;
 
 // Define an enum for option IDs

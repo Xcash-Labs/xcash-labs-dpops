@@ -42,9 +42,11 @@ static struct argp_option options[] = {
 };
 
 static bool show_help = false;
+statis bool generate_key = false;
 
 // set global variables defined in define_macros.h
 bool debug_enabled = false;
+
 bool is_seed_node = false;
 char xcash_wallet_public_address[XCASH_WALLET_LENGTH + 1];
 char XCASH_daemon_IP_address[IP_LENGTH + 1];
@@ -67,10 +69,10 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
     arguments->block_verifiers_secret_key = arg;
     break;
   case OPTION_DEBUG:
-    arguments->debug_mode = true;
+    debug_enabled = true;
     break;
   case OPTION_GENERATE_KEY:
-    arguments->generate_key = true;
+    generate_key = true;
     break;
   case OPTION_TOTAL_THREADS:
     arguments->total_threads = atoi(arg);
@@ -89,7 +91,6 @@ Description: Initialize globals and print program start header.
 ---------------------------------------------------------------------------------------------------------*/
 bool init_processing(const arg_config_t *arg_config)
 {
-  debug_enabled = arg_config->debug_mode;
   snprintf(xcash_wallet_public_address, sizeof(xcash_wallet_public_address), "%s", arg_config->block_verifiers_secret_key);
   snprintf(XCASH_daemon_IP_address, sizeof(XCASH_daemon_IP_address), "%s", "127.0.0.1");
   snprintf(XCASH_DPOPS_delegates_IP_address, sizeof(XCASH_DPOPS_delegates_IP_address), "%s", "127.0.0.1");
@@ -156,7 +157,11 @@ int main(int argc, char *argv[])
     argp_help(&argp, stdout, ARGP_NO_HELP, argv[0]);
     return 0;
   }
-  //  if (arg_config.generate_key) {
+  if (debug_enabled)
+  {
+    HANDLE_DEBUG("Debug is enables.");
+  }
+  //  if (generate_key) {
   //      generate_key();                    add later
   //      return 0;
   //  }
