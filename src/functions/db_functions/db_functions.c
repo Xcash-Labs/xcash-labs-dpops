@@ -26,7 +26,7 @@ bool initialize_mongo_database(const char *mongo_uri, mongoc_client_pool_t **db_
     return true;
 }
 
-void shutdown_mongo_database(mongoc_client_pool_t) {
+void shutdown_mongo_database(mongoc_client_pool_t **db_client_thread_pool)
     if (*db_client_thread_pool) {
         mongoc_client_pool_destroy(*db_client_thread_pool);
         *db_client_thread_pool = NULL;
