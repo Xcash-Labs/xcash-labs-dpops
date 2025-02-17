@@ -1,5 +1,6 @@
 {
     "files.associations": {
-        "dpops_config.h": "c"
+        "dpops_config.h": "c",
+        "config.h": "c"
     }
 }
