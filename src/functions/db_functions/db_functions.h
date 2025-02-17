@@ -1,5 +1,5 @@
-#ifndef XCASH_DB_H
-#define XCASH_DB_H
+#ifndef DB_FUNCTIONS_H
+#define DB_FUNCTIONS_H
 
 #include <mongoc/mongoc.h>
 #include <bson/bson.h>
