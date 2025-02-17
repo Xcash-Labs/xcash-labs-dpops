@@ -13,7 +13,7 @@
 #include "logger.h"
 #include "db_functions.h"
 
-#include <mongoc/mongoc.h>
+// #include <mongoc/mongoc.h>
 
 const char *argp_program_bug_address = "https://github.com/Xcash-Labs/xcash-labs-dpops/issues";
 static char doc[] =
