@@ -19,27 +19,4 @@
 #define GREEN_TEXT(text) "\x1b[32m"text"\x1b[0m"
 #define BRIGHT_WHITE_TEXT(text) "\033[1;97m"text"\033[0m"
 
-#define LOG_ERR      3   /* error conditions */
-#define LOG_DEBUG    7   /* debug-level messages */
-// Macros to handle errors and log them
-#define HANDLE_ERROR(msg) do { \
-    log_message(LOG_ERR, __func__, "%s", RED_TEXT(msg)); \
-    exit(EXIT_FAILURE); \
-} while (0)
-#define HANDLE_DEBUG(msg) do { \
-    if (debug_enabled) log_message(LOG_DEBUG, __func__, "%s", YELLOW_TEXT(msg)); \
-} while (0)
-#define INVALID_PARAMETERS_ERROR_MESSAGE \
-
-/*---------------------------------------------------------------------------------------------------------
-Global Variables
------------------------------------------------------------------------------------------------------------
-*/
-extern bool debug_enabled;  // True if debug enabled
-
-extern bool is_seed_node;   // True if node is a seed node
-extern char XCASH_DPOPS_delegates_IP_address[IP_LENGTH+1]; // The  block verifiers IP address to run the server on
-extern char XCASH_daemon_IP_address[IP_LENGTH+1]; // The XCASH daemon IP
-extern char XCASH_wallet_IP_address[IP_LENGTH+1]; // The  wallet IP address
-
 #endif

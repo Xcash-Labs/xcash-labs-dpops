@@ -1,8 +1,8 @@
 #include "logger.h"
 
-/**
- * Logs messages
- */
+/******************************************************************************
+* Logs messages
+******************************************************************************/
 void log_message(int level, const char *function, const char *format, ...)
 {
     va_list args;
