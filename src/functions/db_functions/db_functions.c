@@ -1,4 +1,5 @@
 #include "db_functions.h"
+#include "variables.h"
 
 bool initialize_mongo_database(const char *mongo_uri, mongoc_client_pool_t **db_client_thread_pool) {
     mongoc_uri_t *uri_thread_pool;
