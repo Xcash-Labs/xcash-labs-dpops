@@ -3,6 +3,7 @@
 
 #include <mongoc/mongoc.h>
 #include <bson/bson.h>
+#include "variables.h"
 
 bool initialize_database(const char* mongo_uri);
 
