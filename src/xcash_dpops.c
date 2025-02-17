@@ -4,10 +4,10 @@
 #include <stdlib.h>
 #include <sys/sysinfo.h>
 
-#include "arg_config.h"
 #include "xcash_dpops.h"
+
+#include "arg_config.h"
 #include "dpops_config.h"
-#include "common_utils.h"
 #include "network_nodes.h"
 #include "variables.h"
 
