@@ -182,7 +182,7 @@ int main(int argc, char *argv[])
   //  fix_std_pipes();
 
 
-  if !(initialize_mongo_database(mongo_connection_url, &database_client_thread_pool))
+  if !(initialize_mongo_database(DATABASE_CONNECTION, &database_client_thread_pool))
   {
     HANDLE_ERROR("Can't initialize mongo database");
   }
