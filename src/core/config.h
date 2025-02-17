@@ -14,9 +14,6 @@
 #define VRF_SECRET_KEY_LENGTH 128 // Length of VRF Secret Key
 #define IP_LENGTH 39 // Length of ip address for IPv4 and IPv6
 
-#define RED_TEXT(text) "\033[31m"text"\033[0m"
-#define YELLOW_TEXT(text) "\033[1;33m"text"\033[0m"
-#define GREEN_TEXT(text) "\x1b[32m"text"\x1b[0m"
-#define BRIGHT_WHITE_TEXT(text) "\033[1;97m"text"\033[0m"
+
 
 #endif
