@@ -195,7 +195,7 @@ int main(int argc, char *argv[])
   //      start_block_production();
   //  }
 
-  shutdown_mongo_database(mongoc_client_pool_t **database_client_thread_pool);
+  shutdown_mongo_database(&database_client_thread_pool);
 
   //  if (server_log_fp)
   //      fclose(server_log_fp);
