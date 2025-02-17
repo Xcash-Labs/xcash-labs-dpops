@@ -6,7 +6,6 @@
 
 #include "xcash_dpops.h"
 #include "config.h"
-#include "network_nodes.h"
 #include "globals.h"
 #include "logger.h"
 #include "db_init.h"
