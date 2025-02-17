@@ -22,7 +22,7 @@ bool initialize_mongo_database(const char *mongo_uri, mongoc_client_pool_t **db_
     // Create a new URI object from the provided URI string
     uri_thread_pool = mongoc_uri_new_with_error(mongo_uri, &error);
     if (!uri_thread_pool) {
-        snprintf(buffer, sizeof(wsbuf), "Failed to parse URI: %s\nError message: %s", mongo_uri, error.message", mongo_uri, error.message);
+        snprintf(ws_buf, sizeof(wsbuf), "Failed to parse URI: %s\nError message: %s", mongo_uri, error.message", mongo_uri, error.message);
         HANDLE_DEBUG(wsbuff);
         return false;
     }

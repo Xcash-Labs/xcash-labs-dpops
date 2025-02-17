@@ -183,7 +183,7 @@ int main(int argc, char *argv[])
   
   if (arg_config.block_verifiers_secret_key || strlen(arg_config.block_verifiers_secret_key) != VRF_SECRET_KEY_LENGTH)
   {
-    snprintf(buffer, sizeof(wsbuf), "The --block-verifiers-secret-key option is mandatory and should be %s long!", VRF_SECRET_KEY_LENGTH);
+    snprintf(wsbuf, sizeof(wsbuf), "The --block-verifiers-secret-key option is mandatory and should be %s long!", VRF_SECRET_KEY_LENGTH);
     HANDLE_ERROR(wsbuf);
   }
   
