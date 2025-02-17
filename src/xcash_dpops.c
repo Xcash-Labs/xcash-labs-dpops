@@ -192,9 +192,9 @@ int main(int argc, char *argv[])
 
   //  signal(SIGINT, sigint_handler);
 
-  //  if (processing(&arg_config)) {
-  //      start_block_production();
-  //  }
+  if (init_processing(&arg_config)) {
+  //      start_block_production(); 
+  }
 
   shutdown_database();
 
