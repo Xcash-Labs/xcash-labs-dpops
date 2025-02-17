@@ -154,7 +154,7 @@ Parameters:
   parameters - The parameters
 Return: 0 if an error has occured, 1 if successfull
 ---------------------------------------------------------------------------------------------------------*/
-int main(int argc, char **argv[])
+int main(int argc, char *argv[])
 {
   arg_config_t arg_config = {0};
   setenv("ARGP_HELP_FMT", "rmargin=120", 1);
