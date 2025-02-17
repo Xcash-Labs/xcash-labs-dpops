@@ -19,7 +19,7 @@ BRIGHT_WHITE_TEXT("General Options:\n")
 "  -k, --block-verifiers-secret-key <KEY>  Set the block verifier's secret key\n"
 "\n"
 BRIGHT_WHITE_TEXT("Debug Options:\n")
-"  -d, --debug                             Display all server messages.\n"
+"  -d, --debug                             Display all messages.\n"
 "\n"
 BRIGHT_WHITE_TEXT("Advanced Options:\n")
 "  --total-threads THREADS                 Set total threads (Default: CPU total threads).\n"
@@ -190,11 +190,13 @@ int main(int argc, char *argv[])
     HANDLE_ERROR("Can't initialize mongo database");
   }
 
+  init_processing(&arg_config);
+
   //  signal(SIGINT, sigint_handler);
 
-  if (init_processing(&arg_config)) {
-  //      start_block_production(); 
-  }
+
+  //  start_block_production(); 
+
 
   shutdown_database();
 
