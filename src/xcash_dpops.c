@@ -41,10 +41,13 @@ static bool show_help = false;
 static bool generate_key = false;
 static int total_threads = 0;
 
-//char *block_verifiers_secret_key;
+
 
 
 // set global variables defined in globals.h
+
+//char *block_verifiers_secret_key;
+
 const NetworkNode network_nodes[] = {
   {"XCA1dd7JaWhiuBavUM2ZTJG3GdgPkT1Yd5Q6VvNvnxbEfb6JhUhziTF6w5mMPVeoSv3aa1zGyhedpaa2QQtGEjBo7N6av9nhaU",
    "xcashseeds.us",
@@ -157,6 +160,7 @@ Return: 0 if an error has occured, 1 if successfull
 ---------------------------------------------------------------------------------------------------------*/
 int main(int argc, char *argv[])
 {
+  char wsbuf[512];
   arg_config_t arg_config = {0};
   setenv("ARGP_HELP_FMT", "rmargin=120", 1);
   if (argc == 1)
@@ -179,7 +183,8 @@ int main(int argc, char *argv[])
   
   if (arg_config.block_verifiers_secret_key || strlen(arg_config.block_verifiers_secret_key) != VRF_SECRET_KEY_LENGTH)
   {
-    HANDLE_ERROR("The --block-verifiers-secret-key option is mandatory and should be %s long!", VRF_SECRET_KEY_LENGTH);
+    snprintf(buffer, sizeof(wsbuf), "The --block-verifiers-secret-key option is mandatory and should be %s long!", VRF_SECRET_KEY_LENGTH);
+    HANDLE_ERROR(wsbuf);
   }
   
   init_processing(&arg_config);
