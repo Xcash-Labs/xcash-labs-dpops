@@ -190,6 +190,9 @@ int main(int argc, char *argv[])
     HANDLE_DEBUG("Database opened successfully");
   }
 
+  !(initialize_database()) ? HANDLE_ERROR("Can't initialize mongo database") : HANDLE_DEBUG("Database opened successfully");
+
+
   //  signal(SIGINT, sigint_handler);
 
   //  if (processing(&arg_config)) {
