@@ -176,11 +176,15 @@ int main(int argc, char *argv[])
   //      generate_key();                    add later
   //      return 0;
   //  }
-  init_processing(&arg_config);
-  if (!arg_config.block_verifiers_secret_key || strlen(arg_config.block_verifiers_secret_key) != VRF_SECRET_KEY_LENGTH)
+  
+  if (arg_config.block_verifiers_secret_key || strlen(arg_config.block_verifiers_secret_key) != VRF_SECRET_KEY_LENGTH)
   {
-    HANDLE_ERROR("The --block-verifiers-secret-key option is mandatory and shhould be %s long!", VRF_SECRET_KEY_LENGTH);
+    HANDLE_ERROR("The --block-verifiers-secret-key option is mandatory and should be %s long!", VRF_SECRET_KEY_LENGTH);
   }
+  
+  init_processing(&arg_config);
+
+
 
 
 
