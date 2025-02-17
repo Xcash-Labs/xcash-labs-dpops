@@ -1,6 +1,4 @@
 #include "xcash_db.h"
-#include "variables.h"
-
 
 bool initialize_database(const char* mongo_uri) {
     const char* mongo_connection_url = mongo_uri? mongo_uri: "mongodb://127.0.0.1:27017";
