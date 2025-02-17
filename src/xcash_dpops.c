@@ -9,6 +9,7 @@
 #include "dpops_config.h"
 #include "common_utils.h"
 #include "network_nodes.h"
+#include "varargs.h"
 
 const char *argp_program_bug_address = "https://github.com/Xcash-Labs/xcash-labs-dpops/issues";
 static char doc[] =
@@ -192,7 +193,7 @@ int main(int argc, char *argv[])
   //  }
 
   shutdown_database();
-  
+
   //  if (server_log_fp)
   //      fclose(server_log_fp);
 
