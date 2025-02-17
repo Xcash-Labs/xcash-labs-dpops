@@ -92,6 +92,8 @@ Description: Initialize globals and print program start header.
 ---------------------------------------------------------------------------------------------------------*/
 bool init_processing(const arg_config_t *arg_config)
 {
+  mongoc_client_pool_t* database_client_thread_pool = NULL;
+
   const NetworkNode network_nodes[] = {
       {"XCA1dd7JaWhiuBavUM2ZTJG3GdgPkT1Yd5Q6VvNvnxbEfb6JhUhziTF6w5mMPVeoSv3aa1zGyhedpaa2QQtGEjBo7N6av9nhaU",
        "xcashseeds.us",
