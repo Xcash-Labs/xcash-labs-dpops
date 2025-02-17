@@ -193,7 +193,7 @@ int main(int argc, char *argv[])
   //      start_block_production();
   //  }
 
-  shutdown_database();
+  shutdown_database(&database_client_thread_pool);
 
   //  if (server_log_fp)
   //      fclose(server_log_fp);
