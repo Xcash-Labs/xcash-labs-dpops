@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <sys/sysinfo.h>
 
+#include "xcash_dpops.h"
 #include "config.h"
 #include "network_nodes.h"
 #include "globals.h"
