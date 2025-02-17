@@ -183,7 +183,12 @@ int main(int argc, char *argv[])
   // uvlib can cause assertion errors if some of STD PIPES closed
   //  fix_std_pipes();
 
-  initialize_database() ? (HANDLE_DEBUG("Database opened successfully")) : (HANDLE_ERROR("Can't initialize mongo database"));
+  if (!initialize_database())
+  {
+    HANDLE_ERROR("Can't initialize mongo database");
+  } else {
+    HANDLE_LOG("Database opened successfully")
+  }
 
   //  signal(SIGINT, sigint_handler);
 
