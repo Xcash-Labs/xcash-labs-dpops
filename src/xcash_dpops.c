@@ -7,7 +7,7 @@
 #include "xcash_dpops.h"
 
 
-#include "dpops_config.h"
+#include "config.h"
 #include "network_nodes.h"
 #include "variables.h"
 #include "common_functions.h"

@@ -1,5 +1,5 @@
-#ifndef DEFINE_DPOPS_CONFIG_H_   /* Include guard */
-#define DPOPS_CONFIG_H_
+#ifndef DEFINE_CONFIG_H_   /* Include guard */
+#define CONFIG_H_
 
 #include <stdbool.h>
 
