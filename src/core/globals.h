@@ -3,7 +3,7 @@
 
 #include "config.h"
 #include "structures.h"
-// #include <mongoc/mongoc.h>
+#include <mongoc/mongoc.h>
 
 /*--------------------------------------------------------------------------------------------------
 Global Variables
