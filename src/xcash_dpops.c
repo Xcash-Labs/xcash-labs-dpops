@@ -10,6 +10,8 @@
 #include "dpops_config.h"
 #include "network_nodes.h"
 #include "variables.h"
+#include "common_functions.h"
+#include "db_functions.h"
 
 const char *argp_program_bug_address = "https://github.com/Xcash-Labs/xcash-labs-dpops/issues";
 static char doc[] =
