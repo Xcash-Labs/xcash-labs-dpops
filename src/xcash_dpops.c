@@ -184,7 +184,7 @@ int main(int argc, char *argv[])
   //  fix_std_pipes();
 
 
-  if (!initialize_database()){
+  if (!initialize_database())
   {
     HANDLE_ERROR("Can't initialize mongo database");
   }
