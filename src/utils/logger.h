@@ -1,5 +1,5 @@
-#ifndef COMMON_FUNCTIONS_H
-#define COMMON_FUNCTIONS_H
+#ifndef logger_H
+#define logger_H
 
 #include <stdio.h>
 #include <stdarg.h>
