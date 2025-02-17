@@ -1,7 +1,7 @@
 #include "db_init.h"
 #include "globals.h"
 #include "logger.h"
-//#include <mongoc/mongoc.h>
+#include <mongoc/mongoc.h>
 #include "config.h"
 
 
