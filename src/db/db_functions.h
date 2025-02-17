@@ -3,10 +3,10 @@
 
 #include <mongoc/mongoc.h>
 #include <bson/bson.h>
-#include "variables.h"
+#include "globals.h"
 
 bool initialize_mongo_database(const char* mongo_uri, mongoc_client_pool_t** database_client_thread_pool);
 
 void shutdown_mongo_database(mongoc_client_pool_t** database_client_thread_pool);
 
-#endif // XCASH_DB_H
+#endif

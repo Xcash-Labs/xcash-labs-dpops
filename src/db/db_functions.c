@@ -1,5 +1,4 @@
 #include "db_functions.h"
-#include "variables.h"
 #include "config.h"
 #include "common_functions.h"
 
