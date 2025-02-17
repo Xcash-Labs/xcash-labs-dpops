@@ -11,15 +11,16 @@
 #include "db_init.h"
 #include "structures.h"
 
-const char *argp_program_bug_address = "https://github.com/Xcash-Labs/xcash-labs-dpops/issues";
 static char doc[] =
 "\n"
 BRIGHT_WHITE_TEXT("General Options:\n")
-"  -h, --help                              List all valid parameters.\n"
+"Program Bug Address: https://github.com/Xcash-Labs/xcash-labs-dpops/issues\n"
+"\n"
+"  --help                                  List all valid parameters.\n"
 "  -k, --block-verifiers-secret-key <KEY>  Set the block verifier's secret key\n"
 "\n"
 BRIGHT_WHITE_TEXT("Debug Options:\n")
-"  -d, --debug                             Display all messages.\n"
+"  -d, --debug                             Display verbose log messages.\n"
 "\n"
 BRIGHT_WHITE_TEXT("Advanced Options:\n")
 "  --total-threads THREADS                 Set total threads (Default: CPU total threads).\n"
@@ -141,7 +142,7 @@ bool init_processing(const arg_config_t *arg_config)
           DATABASE_CONNECTION);
   if (debug_enabled)
   {
-    HANDLE_DEBUG("Debug messages are enabled.");
+    HANDLE_DEBUG("Debug is enabled.");
   }
   return 0;
 }
@@ -176,7 +177,7 @@ int main(int argc, char *argv[])
   //      return 0;
   //  }
   init_processing(&arg_config);
-  if (!arg_config.block_verifiers_secret_key || strlen(arg_config.block_verifiers_secret_key) == 0)
+  if (!arg_config.block_verifiers_secret_key || strlen(arg_config.block_verifiers_secret_key) != VRF_SECRET_KEY_LENGTH)
   {
     HANDLE_ERROR("The --block-verifiers-secret-key option is mandatory!");
   }

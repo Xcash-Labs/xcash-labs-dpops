@@ -12,8 +12,7 @@
 #define BLOCK_VERIFIERS_IP_ADDRESS_TOTAL_LENGTH 100 // The maximum length of the block verifiers IP address
 #define XCASH_WALLET_LENGTH 98 // The length of a XCA address
 #define VRF_SECRET_KEY_LENGTH 128 // Length of VRF Secret Key
+
 #define IP_LENGTH 39 // Length of ip address for IPv4 and IPv6
-
-
 
 #endif
