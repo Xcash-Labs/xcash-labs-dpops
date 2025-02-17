@@ -175,10 +175,13 @@ int main(int argc, char *argv[])
   //      generate_key();                    add later
   //      return 0;
   //  }
+  init_processing(&arg_config);
   if (!arg_config.block_verifiers_secret_key || strlen(arg_config.block_verifiers_secret_key) == 0)
   {
     HANDLE_ERROR("The --block-verifiers-secret-key option is mandatory!");
   }
+
+
 
   // uvlib can cause assertion errors if some of STD PIPES closed
   //  fix_std_pipes();
@@ -190,7 +193,6 @@ int main(int argc, char *argv[])
     HANDLE_ERROR("Can't initialize mongo database");
   }
 
-  init_processing(&arg_config);
 
   //  signal(SIGINT, sigint_handler);
 
