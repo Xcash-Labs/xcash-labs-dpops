@@ -3,7 +3,16 @@
 #include "logger.h"
 #include <mongoc/mongoc.h>
 #include "config.h"
- 
+
+
+bool initialize_database(void){
+    return initialize_mongo_database(DATABASE_CONNECTION, &database_client_thread_pool);
+}
+
+void shutdown_database(void){
+    shutdown_mongo_database(&database_client_thread_pool);
+}
+
 bool initialize_mongo_database(const char *mongo_uri, mongoc_client_pool_t **db_client_thread_pool) {
     mongoc_uri_t *uri_thread_pool;
     bson_error_t error;

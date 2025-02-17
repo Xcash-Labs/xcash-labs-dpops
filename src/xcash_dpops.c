@@ -184,7 +184,7 @@ int main(int argc, char *argv[])
   //  fix_std_pipes();
 
 
-  if (!(initialize_mongo_database(DATABASE_CONNECTION, database_client_thread_pool)))
+  if (!initialize_database(void)){
   {
     HANDLE_ERROR("Can't initialize mongo database");
   }
@@ -195,7 +195,7 @@ int main(int argc, char *argv[])
   //      start_block_production();
   //  }
 
-  // shutdown_mongo_database(&database_client_thread_pool);
+  shutdown_database();
 
   //  if (server_log_fp)
   //      fclose(server_log_fp);
