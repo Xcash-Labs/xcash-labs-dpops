@@ -1,4 +1,4 @@
-#include "common_utils.h"
+#include "common_functions.h"
 
 /**
  * Logs messages
