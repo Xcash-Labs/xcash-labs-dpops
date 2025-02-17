@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <syslog.h>
-#include "dpops_config.h"
+#include "config.h"
 
 extern bool debug_settings;
 
