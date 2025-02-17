@@ -16,4 +16,6 @@ extern char XCASH_DPOPS_delegates_IP_address[IP_LENGTH+1]; // The  block verifie
 extern char XCASH_daemon_IP_address[IP_LENGTH+1]; // The XCASH daemon IP
 extern char XCASH_wallet_IP_address[IP_LENGTH+1]; // The  wallet IP address
 
+extern const NetworkNode network_nodes[]; // Network nodes array (variable size, terminated with NULL)
+
 #endif
