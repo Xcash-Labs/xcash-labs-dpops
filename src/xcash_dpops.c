@@ -4,16 +4,11 @@
 #include <stdlib.h>
 #include <sys/sysinfo.h>
 
-#include "xcash_dpops.h"
-
-
 #include "config.h"
 #include "network_nodes.h"
 #include "globals.h"
 #include "logger.h"
-#include "db_functions.h"
-
-// #include <mongoc/mongoc.h>
+#include "db_init.h"
 
 const char *argp_program_bug_address = "https://github.com/Xcash-Labs/xcash-labs-dpops/issues";
 static char doc[] =

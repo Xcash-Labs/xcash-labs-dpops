@@ -1,4 +1,4 @@
-#include "db_functions.h"
+#include "db_init.h"
 #include "globals.h"
 #include "logger.h"
 #include <mongoc/mongoc.h>

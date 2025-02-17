@@ -1,5 +1,5 @@
-#ifndef DB_FUNCTIONS_H
-#define DB_FUNCTIONS_H
+#ifndef DB_INIT_H
+#define DB_INIT_H
 
 #include <mongoc/mongoc.h>
 #include <bson/bson.h>
