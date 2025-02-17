@@ -9,7 +9,7 @@
 
 #include "config.h"
 #include "network_nodes.h"
-#include "variables.h"
+#include "globals.h"
 #include "logger.h"
 #include "db_functions.h"
 
