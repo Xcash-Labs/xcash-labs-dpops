@@ -13,6 +13,8 @@
 #include "logger.h"
 #include "db_functions.h"
 
+#include <mongoc/mongoc.h>
+
 const char *argp_program_bug_address = "https://github.com/Xcash-Labs/xcash-labs-dpops/issues";
 static char doc[] =
 "\n"
@@ -45,8 +47,9 @@ static int total_threads = 0;
 //char *block_verifiers_secret_key;
 
 
-// set global variables defined in define_macros.h
+// set global variables defined in globals.h
 bool debug_enabled = false;
+mongoc_client_pool_t* database_client_thread_pool = NULL;
 
 bool is_seed_node = false;
 char xcash_wallet_public_address[XCASH_WALLET_LENGTH + 1];
@@ -92,8 +95,6 @@ Description: Initialize globals and print program start header.
 ---------------------------------------------------------------------------------------------------------*/
 bool init_processing(const arg_config_t *arg_config)
 {
-  mongoc_client_pool_t* database_client_thread_pool = NULL;
-
   const NetworkNode network_nodes[] = {
       {"XCA1dd7JaWhiuBavUM2ZTJG3GdgPkT1Yd5Q6VvNvnxbEfb6JhUhziTF6w5mMPVeoSv3aa1zGyhedpaa2QQtGEjBo7N6av9nhaU",
        "xcashseeds.us",
