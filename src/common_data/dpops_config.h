@@ -42,15 +42,4 @@ extern char XCASH_DPOPS_delegates_IP_address[IP_LENGTH+1]; // The  block verifie
 extern char XCASH_daemon_IP_address[IP_LENGTH+1]; // The XCASH daemon IP
 extern char XCASH_wallet_IP_address[IP_LENGTH+1]; // The  wallet IP address
 
-typedef enum XCASH_DBS {
-    XCASH_DB_DELEGATES = 0,
-    XCASH_DB_STATISTICS = 1,
-    XCASH_DB_RESERVE_PROOFS = 2,
-    XCASH_DB_RESERVE_BYTES = 3,
-    XCASH_DB_COUNT
-} xcash_dbs_t;
-
-
-
-
 #endif
