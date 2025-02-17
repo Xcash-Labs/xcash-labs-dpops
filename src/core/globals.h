@@ -1,7 +1,7 @@
 #ifndef GLOBALS_H_   /* Include guard */
 #define GLOBALS_H_
 
-#include <mongoc/mongoc.h>
+#include "config.h"
 
 /*--------------------------------------------------------------------------------------------------
 Constants 
