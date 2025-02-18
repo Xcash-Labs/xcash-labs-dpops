@@ -29,12 +29,14 @@ void log_message(int level, const char *function, const char *format, ...) {
     va_start(args, format);
     vsnprintf(buffer, sizeof(buffer), format, args);
     va_end(args);
-
     // Apply color based on log level
     if (level == LOG_DEBUG) {
         fprintf(stderr, "\n%s: %s\n", function, TEXT_YELLOW(buffer));
-    } else
+    } else {
         fprintf(stderr, "\n%s: %s\n", function, TEXT_RED(buffer));
+    }
+    if (level == LOG_ERR) {
+        exit(EXIT_FAILURE);
     }
 }
 
@@ -51,9 +53,7 @@ void logger(int level, const char *function, const char *format, ...) {
     snprintf(buffer, sizeof(buffer), "\033[1;33m%s\033[0m", buffer + 7);
     log_message(LOG_ERROR, function, "%s", buffer);
     
-    if (level == LOG_ERR) {
-        exit(EXIT_FAILURE);
-    }
+
 }
 
 void log_message(int level, const char *function, const char *format, ...)
