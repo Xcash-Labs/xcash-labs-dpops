@@ -12,7 +12,7 @@ void log_message(int level, const char *function, const char *format, ...)
         fprintf(stderr, "\n");
         fprintf(stderr, "%s: ", function);
         vfprintf(stderr, format, args);
-        fprintf(stderr, "\n\n");
+        fprintf(stderr, "\n");
     }
     va_end(args);
 }
