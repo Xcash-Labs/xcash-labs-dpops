@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <syslog.h>
-// #include "config.h"
 #include "globals.h" 
 
 void logger(int level, const char *function, const char *format, ...);
