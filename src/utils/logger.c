@@ -23,5 +23,5 @@ void log_debug_buffer(const char *format, ...) {
     va_start(args, format);
     vsnprintf(wsbuf, sizeof(wsbuf), format, args);
     va_end(args);
-    HANDLE_DEBUG(wsbuf);
+    HANDLE_DEBUG_BUFFER(wsbuf);
 }
