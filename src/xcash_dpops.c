@@ -16,11 +16,11 @@ static char doc[] =
 BRIGHT_WHITE_TEXT("General Options:\n")
 "Program Bug Address: https://github.com/Xcash-Labs/xcash-labs-dpops/issues\n"
 "\n"
-"  --help                                  List all valid parameters.\n"
+"  -h, --help                              List all valid parameters.\n"
 "  -k, --block-verifiers-secret-key <KEY>  Set the block verifier's secret key\n"
 "\n"
 BRIGHT_WHITE_TEXT("Debug Options:\n")
-"  -d, --debug                             Display verbose log messages.\n"
+"  --debug                                 Display verbose log messages.\n"
 "\n"
 BRIGHT_WHITE_TEXT("Advanced Options:\n")
 "  --total-threads THREADS                 Set total threads (Default: CPU total threads).\n"
@@ -181,7 +181,7 @@ int main(int argc, char *argv[])
   //      return 0;
   //  }
 
-  if (arg_config.block_verifiers_secret_key || strlen(arg_config.block_verifiers_secret_key) != VRF_SECRET_KEY_LENGTH)
+  if (arg_config.block_verifiers_secret_key || (strlen(arg_config.block_verifiers_secret_key != VRF_SECRET_KEY_LENGTH))
   {
     logger(LOG_ERR, __func__, "The --block-verifiers-secret-key is mandatory and should be %d characters long!", VRF_SECRET_KEY_LENGTH);
   }
