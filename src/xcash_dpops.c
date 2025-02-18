@@ -146,6 +146,7 @@ bool init_processing(const arg_config_t *arg_config)
           DATABASE_CONNECTION);
   if (debug_enabled)
   {
+    fprintf(stderr, "\n");
     INFO_PRINT("Debug is enabled.");
   }
   return 0;
