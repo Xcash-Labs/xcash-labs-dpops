@@ -207,8 +207,6 @@ int main(int argc, char *argv[])
 
   if (!arg_config.block_verifiers_secret_key || (strlen(arg_config.block_verifiers_secret_key) != VRF_SECRET_KEY_LENGTH))
   {
-    INFO_PRINT("Shutting down. Threads remains %d", 2);
-
     FATAL_ERROR_EXIT("The --block-verifiers-secret-key is mandatory and should be %d characters long!", VRF_SECRET_KEY_LENGTH);
 
 
