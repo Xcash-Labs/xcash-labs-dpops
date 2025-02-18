@@ -16,13 +16,12 @@ void shutdown_database(void){
 bool initialize_mongo_database(const char *mongo_uri, mongoc_client_pool_t **db_client_thread_pool) {
     mongoc_uri_t *uri_thread_pool;
     bson_error_t error;
-    char wsbuf[1024];
     // Initialize the MongoDB client library
     mongoc_init();
     // Create a new URI object from the provided URI string
     uri_thread_pool = mongoc_uri_new_with_error(mongo_uri, &error);
     if (!uri_thread_pool) {
-        log_debug_buff(wsbuf, sizeof(wsbuf), "Failed to parse URI: %s\nError message: %s", mongo_uri, error.message);
+        log_debug_buffer(wsbuf, sizeof(wsbuf), "Failed to parse URI: %s\nError message: %s", mongo_uri, error.message);
         return false;
     }
     // Create a new client pool with the parsed URI object
