@@ -37,7 +37,7 @@ void logger(int level, const char *function, const char *format, ...)
     vsnprintf(buffer, sizeof(buffer), format, args);
     va_end(args);
     // Apply color formatting before logging
-    if (level == LOG_ERR)
+    if (level == LOG_DEBUG)
     {
         snprintf(color_buffer, sizeof(color_buffer), "\033[1;33m%s\033[0m", buffer); // Yellow
     }
@@ -45,7 +45,7 @@ void logger(int level, const char *function, const char *format, ...)
     {
         snprintf(color_buffer, sizeof(color_buffer), "\033[1;31m%s\033[0m", buffer); // Red
     }
-    if (level == LOG_ERR || level == LOG_DEBUG)
+    if (level == LOG_ERR && debug_enabled)
     {
         fprintf(stderr, "\n%s: %s\n", function, color_buffer);
     }
