@@ -20,7 +20,7 @@ void log_debug_buffer(const char *function, const char *format, ...) {
     vsnprintf(wsbuf, sizeof(wsbuf), format, args);
     va_end(args);
     snprintf(color_wsbuf, sizeof(color_wsbuf), "\033[1;33m%s\033[0m", wsbuf);
-    log_message(LOG_DEBUG, function, "%s", wsbuf);
+    log_message(LOG_DEBUG, function, "%s", color_wsbuf);
 }
 
 void log_message(int level, const char *function, const char *format, ...)
