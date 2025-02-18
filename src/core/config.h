@@ -21,6 +21,9 @@
 #define GREEN_TEXT(text) "\x1b[32m"text"\x1b[0m"
 #define BRIGHT_WHITE_TEXT(text) "\033[1;97m"text"\033[0m"
 
+
+#define __DEBUG_PRINT_FUNC_CALLER if (debug_settings)fprintf(stderr, "  --> TRACE: %s:%d, %s()\n", __FILE__, __LINE__, __func__);
+#define INFO_STAGE_PRINT(fmt, ...) fprintf(stderr, BRIGHT_WHITE_TEXT("\n\nINFO: ")LIGHT_BLUE_TEXT(fmt)"\n\n", ##__VA_ARGS__); __DEBUG_PRINT_FUNC_CALLER
 #define INFO_PRINT(fmt, ...) fprintf(stderr, BRIGHT_WHITE_TEXT("INFO: ")fmt"\n", ##__VA_ARGS__); __DEBUG_PRINT_FUNC_CALLER
 #define WARNING_PRINT(fmt, ...) fprintf(stderr, ORANGE_TEXT("WARNING: ")fmt"\n", ##__VA_ARGS__); __DEBUG_PRINT_FUNC_CALLER
 #define ERROR_PRINT(fmt, ...) fprintf(stderr, RED_TEXT("ERROR: ")fmt"\n", ##__VA_ARGS__); __DEBUG_PRINT_FUNC_CALLER
@@ -28,5 +31,4 @@
 #define FATAL_ERROR_EXIT(fmt, ...) fprintf(stderr, RED_TEXT("FATAL: ")fmt"\n", ##__VA_ARGS__); __DEBUG_PRINT_FUNC_CALLER; exit(1)
 #define INFO_PRINT_STATUS_OK(fmt, ...) fprintf(stderr, BRIGHT_WHITE_TEXT("INFO: ")fmt INFO_STATUS_OK"\n", ##__VA_ARGS__); __DEBUG_PRINT_FUNC_CALLER
 #define INFO_PRINT_STATUS_FAIL(fmt, ...) fprintf(stderr, BRIGHT_WHITE_TEXT("INFO: ")fmt INFO_STATUS_FAIL"\n", ##__VA_ARGS__); __DEBUG_PRINT_FUNC_CALLER
-
 #endif
