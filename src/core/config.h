@@ -18,4 +18,11 @@
 #define IP_LENGTH 39 // Length of ip address for IPv4 and IPv6
 #define LOG_BUFFER_LEN 1024 //Length of log buffer
 
+#define RED_TEXT(text) "\033[31m"text"\033[0m"
+#define YELLOW_TEXT(text) "\033[1;33m"text"\033[0m"
+#define GREEN_TEXT(text) "\x1b[32m"text"\x1b[0m"
+#define BRIGHT_WHITE_TEXT(text) "\033[1;97m"text"\033[0m"
+#define LOG_ERR      3   /* error conditions */
+#define LOG_DEBUG    7   /* debug-level messages */;
+
 #endif

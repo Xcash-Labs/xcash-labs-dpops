@@ -145,7 +145,7 @@ bool init_processing(const arg_config_t *arg_config)
           DATABASE_CONNECTION);
   if (debug_enabled)
   {
-    HANDLE_DEBUG("Debug is enabled.");
+    logger(LOG_DEBUG, __func__, ("Debug is enabled.");
   }
   return 0;
 }
@@ -164,11 +164,11 @@ int main(int argc, char *argv[])
   setenv("ARGP_HELP_FMT", "rmargin=120", 1);
   if (argc == 1)
   {
-    HANDLE_ERROR("No arguments entered. Try `xcash-dpops --help'");
+    logger(LOG_ERR, __func__,"No arguments entered. Try `xcash-dpops --help'");
   }
   if (argp_parse(&argp, argc, argv, ARGP_NO_EXIT | ARGP_NO_ERRS, 0, &arg_config) != 0)
   {
-    HANDLE_ERROR("Invalid option entered. Try `xcash-dpops --help'");
+    logger(LOG_ERR, __func__,"Invalid option entered. Try `xcash-dpops --help'");
   }
   if (show_help)
   {
@@ -183,24 +183,18 @@ int main(int argc, char *argv[])
 
   if (arg_config.block_verifiers_secret_key || strlen(arg_config.block_verifiers_secret_key) != VRF_SECRET_KEY_LENGTH)
   {
-
-    logger(LOG_DEBUG, __func__, "Test message", "Test 2");
     logger(LOG_ERR, __func__, "The --block-verifiers-secret-key is mandatory and should be %d characters long!", VRF_SECRET_KEY_LENGTH);
   }
   init_processing(&arg_config);
-
-
-
-
 
   // uvlib can cause assertion errors if some of STD PIPES closed
   //  fix_std_pipes();
 
   if (initialize_database())
   {
-    HANDLE_DEBUG("Database opened successfully");
+    logger(LOG_DEBUG, __func__, "Database opened successfully");
   } else {
-    HANDLE_ERROR("Can't initialize mongo database");
+    logger(LOG_ERR, __func__, "Can't initialize mongo database");
   }
 
 
