@@ -16,5 +16,6 @@
 #define VRF_SECRET_KEY_LENGTH 128 // Length of VRF Secret Key
 
 #define IP_LENGTH 39 // Length of ip address for IPv4 and IPv6
+#define LOG_BUFFER_LEN 1024 //Length of log buffer
 
 #endif

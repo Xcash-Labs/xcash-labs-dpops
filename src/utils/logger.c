@@ -13,15 +13,15 @@
 //}
 
 void log_debug_buffer(const char *function, const char *format, ...) {
-    char wsbuf[1024];
-    char color_wsbuf[1100];
+    char buffer[LOG_BUFFER_LEN + 11];  // Single buffer with extra space for color codes
     va_list args;
     va_start(args, format);
-    vsnprintf(wsbuf, sizeof(wsbuf), format, args);
+    int message_length = vsnprintf(buffer + 7, sizeof(buffer) - 11, format, args);  // Leave space for "\033[1;33m"
     va_end(args);
-    snprintf(color_wsbuf, sizeof(color_wsbuf), "\033[1;33m%s\033[0m", wsbuf);
-    log_message(LOG_DEBUG, function, "%s", color_wsbuf);
+    snprintf(buffer, sizeof(buffer), "\033[1;33m%s\033[0m", buffer + 7);
+    log_message(LOG_DEBUG, function, "%s", buffer);
 }
+
 
 void log_message(int level, const char *function, const char *format, ...)
 {
