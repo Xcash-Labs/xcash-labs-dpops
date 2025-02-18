@@ -16,6 +16,7 @@ void shutdown_database(void){
 bool initialize_mongo_database(const char *mongo_uri, mongoc_client_pool_t **db_client_thread_pool) {
     mongoc_uri_t *uri_thread_pool;
     bson_error_t error;
+    char wsbuf[1024];
     // Initialize the MongoDB client library
     mongoc_init();
     // Create a new URI object from the provided URI string
@@ -23,7 +24,7 @@ bool initialize_mongo_database(const char *mongo_uri, mongoc_client_pool_t **db_
     if (!uri_thread_pool) {
 //        snprintf(wsbuf, sizeof(wsbuf), "Failed to parse URI: %s\nError message: %s", mongo_uri, error.message);
         HANDLE_DEBUG("Failed to parse the mongo db URI");
-        HANDLE_DEBUG_BUFFER("Failed to parse URI: %s\nError message: %s", mongo_uri, error.message);
+        HANDLE_DEBUG_BUFFER(wsbuf);
         return false;
     }
     // Create a new client pool with the parsed URI object
