@@ -146,7 +146,7 @@ bool init_processing(const arg_config_t *arg_config)
           DATABASE_CONNECTION);
   if (debug_enabled)
   {
-    INFO_PRINT(LOG_DEBUG, __func__, "Debug is enabled.");
+    INFO_PRINT("Debug is enabled.");
   }
   return 0;
 }
@@ -216,7 +216,7 @@ int main(int argc, char *argv[])
 
   if (initialize_database())
   {
-    INFO_PRINT(LOG_DEBUG, __func__, "Database opened successfully");
+    INFO_PRINT("Database opened successfully");
   } else {
     FATAL_ERROR_EXIT("Can't initialize mongo database");
   }
@@ -225,6 +225,6 @@ int main(int argc, char *argv[])
   //  start_block_production(); 
 
   shutdown_database();
-  INFO_PRINT(LOG_DEBUG, __func__, "Database closed...");
+  INFO_PRINT("Database closed...");
   return 0;
 }
