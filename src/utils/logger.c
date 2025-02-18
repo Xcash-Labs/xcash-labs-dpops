@@ -3,14 +3,14 @@
 /******************************************************************************
 * Logs messages
 ******************************************************************************/
-void log_debug_buffer(const char *format, ...) {
-    char wsbuf[1024];
-    va_list args;
-    va_start(args, format);
-    vsnprintf(wsbuf, sizeof(wsbuf), format, args);
-    va_end(args);
-    HANDLE_DEBUG_BUFFER(wsbuf);
-}
+//void log_debug_buffer(const char *format, ...) {
+//    char wsbuf[1024];
+//    va_list args;
+//    va_start(args, format);
+//    vsnprintf(wsbuf, sizeof(wsbuf), format, args);
+//    va_end(args);
+//    HANDLE_DEBUG_BUFFER(wsbuf);
+//}
 
 void log_debug_buffer(const char *function, const char *format, ...) {
     char wsbuf[1024];
