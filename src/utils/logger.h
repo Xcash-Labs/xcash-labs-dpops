@@ -29,4 +29,6 @@
 
 void log_message(int level, const char *function, const char *format, ...);
 
+void log_debug_buffer(const char *format, ...);
+
 #endif
