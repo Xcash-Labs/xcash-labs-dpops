@@ -9,7 +9,6 @@
 #include "xcash_dpops.h"
 #include "config.h"
 #include "globals.h"
-#include "logger.h"
 #include "db_init.h"
 #include "structures.h"
 
@@ -147,7 +146,7 @@ bool init_processing(const arg_config_t *arg_config)
           DATABASE_CONNECTION);
   if (debug_enabled)
   {
-    logger(LOG_DEBUG, __func__, "Debug is enabled.");
+    INFO_PRINT(LOG_DEBUG, __func__, "Debug is enabled.");
   }
   return 0;
 }
@@ -188,11 +187,11 @@ int main(int argc, char *argv[])
   setenv("ARGP_HELP_FMT", "rmargin=120", 1);
   if (argc == 1)
   {
-    logger(LOG_ERR, __func__,"No arguments entered. Try `xcash-dpops --help'");
+    FATAL_ERROR_EXIT("No arguments entered. Try `xcash-dpops --help'");
   }
   if (argp_parse(&argp, argc, argv, ARGP_NO_EXIT | ARGP_NO_ERRS, 0, &arg_config) != 0)
   {
-    logger(LOG_ERR, __func__,"Invalid option entered. Try `xcash-dpops --help'");
+    FATAL_ERROR_EXIT("Invalid option entered. Try `xcash-dpops --help'");
   }
   if (show_help)
   {
@@ -208,10 +207,6 @@ int main(int argc, char *argv[])
   if (!arg_config.block_verifiers_secret_key || (strlen(arg_config.block_verifiers_secret_key) != VRF_SECRET_KEY_LENGTH))
   {
     FATAL_ERROR_EXIT("The --block-verifiers-secret-key is mandatory and should be %d characters long!", VRF_SECRET_KEY_LENGTH);
-
-
-
-    logger(LOG_ERR, __func__, "The --block-verifiers-secret-key is mandatory and should be %d characters long!", VRF_SECRET_KEY_LENGTH);
   }
   
   init_processing(&arg_config);
@@ -221,15 +216,15 @@ int main(int argc, char *argv[])
 
   if (initialize_database())
   {
-    logger(LOG_DEBUG, __func__, "Database opened successfully");
+    INFO_PRINT(LOG_DEBUG, __func__, "Database opened successfully");
   } else {
-    logger(LOG_ERR, __func__, "Can't initialize mongo database");
+    FATAL_ERROR_EXIT("Can't initialize mongo database");
   }
   // signal(SIGINT, sigint_handler);
 
   //  start_block_production(); 
 
   shutdown_database();
-  logger(LOG_DEBUG, __func__, "Database closed...");
+  INFO_PRINT(LOG_DEBUG, __func__, "Database closed...");
   return 0;
 }
