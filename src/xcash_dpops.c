@@ -1,7 +1,9 @@
 #include <argp.h>
 #include <string.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <signal.h>
 #include <sys/sysinfo.h>
 
 #include "xcash_dpops.h"
@@ -10,6 +12,9 @@
 #include "logger.h"
 #include "db_init.h"
 #include "structures.h"
+
+// set global variables defined in globals.h
+int sig_requests = 0;
 
 static char doc[] =
 "\n"
@@ -40,9 +45,6 @@ static struct argp_option options[] = {
 static bool show_help = false;
 static bool generate_key = false;
 static int total_threads = 0;
-
-
-
 
 // set global variables defined in globals.h
 
