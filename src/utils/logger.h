@@ -22,7 +22,7 @@
     if (debug_enabled) log_message(LOG_DEBUG, __func__, "%s", YELLOW_TEXT(msg)); \
 } while (0)
 #define HANDLE_DEBUG_BUFFER(buffer) do { \
-    char color_msg[1024]; \
+    char color_msg[sizeof(buffer) + 12]; \
     snprintf(color_msg, sizeof(color_msg), "\033[1;33m%s\033[0m", buffer); \
     if (debug_enabled) log_message(LOG_DEBUG, __func__, "%s", color_msg); \
 } while (0)
