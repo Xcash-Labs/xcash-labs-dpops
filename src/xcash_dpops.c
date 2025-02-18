@@ -160,7 +160,6 @@ Return: 0 if an error has occured, 1 if successfull
 ---------------------------------------------------------------------------------------------------------*/
 int main(int argc, char *argv[])
 {
-  char wsbuf[512];
   arg_config_t arg_config = {0};
   setenv("ARGP_HELP_FMT", "rmargin=120", 1);
   if (argc == 1)
@@ -176,6 +175,7 @@ int main(int argc, char *argv[])
     argp_help(&argp, stdout, ARGP_NO_HELP, argv[0]);
     return 0;
   }
+
   //  if (generate_key) {
   //      generate_key();                    add later
   //      return 0;
