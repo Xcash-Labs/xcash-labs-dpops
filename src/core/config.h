@@ -24,6 +24,14 @@
 #define __DEBUG_PRINT_FUNC_CALLER if (debug_enabled)fprintf(stderr, "  --> TRACE: %s:%d, %s()\n", __FILE__, __LINE__, __func__);
 //#define FATAL_ERROR_EXIT(fmt, ...) fprintf(stderr, RED_TEXT("FATAL: ")fmt"\n", ##__VA_ARGS__); __DEBUG_PRINT_FUNC_CALLER; exit(1)
 
+#define FATAL_ERROR_EXIT(fmt, ...) \
+    do { \
+        fprintf(stderr, "\033[1;31mFATAL: " fmt "\033[0m\n", ##__VA_ARGS__); \
+        __DEBUG_PRINT_FUNC_CALLER; \
+        exit(1); \
+    } while (0)
+
+
 #define INFO_STAGE_PRINT(fmt, ...) fprintf(stderr, BRIGHT_WHITE_TEXT("\n\nINFO: ")LIGHT_BLUE_TEXT(fmt)"\n\n", ##__VA_ARGS__); __DEBUG_PRINT_FUNC_CALLER
 #define INFO_PRINT(fmt, ...) fprintf(stderr, BRIGHT_WHITE_TEXT("INFO: ")fmt"\n", ##__VA_ARGS__); __DEBUG_PRINT_FUNC_CALLER
 #define WARNING_PRINT(fmt, ...) fprintf(stderr, ORANGE_TEXT("WARNING: ")fmt"\n", ##__VA_ARGS__); __DEBUG_PRINT_FUNC_CALLER
