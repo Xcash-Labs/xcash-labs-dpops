@@ -181,7 +181,7 @@ int main(int argc, char *argv[])
   //      return 0;
   //  }
 
-  if (arg_config.block_verifiers_secret_key || (strlen(arg_config.block_verifiers_secret_key != VRF_SECRET_KEY_LENGTH))
+  if (arg_config.block_verifiers_secret_key || (strlen(arg_config.block_verifiers_secret_key) != VRF_SECRET_KEY_LENGTH))
   {
     logger(LOG_ERR, __func__, "The --block-verifiers-secret-key is mandatory and should be %d characters long!", VRF_SECRET_KEY_LENGTH);
   }
