@@ -26,7 +26,7 @@ void logger(int level, const char *function, const char *format, ...)
     }
     if (level == LOG_ERR)
     {
-        snprintf("\n");
+        fprintf("\n");
         exit(EXIT_FAILURE);
     }
 }
