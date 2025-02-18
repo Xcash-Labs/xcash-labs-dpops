@@ -31,9 +31,9 @@ void logger(int level, const char *function, const char *format, ...) {
     va_end(args);
     // Apply color based on log level
     if (level == LOG_DEBUG) {
-        fprintf(stderr, "\n%s: %s\n", function, TEXT_YELLOW(buffer));
+        fprintf(stderr, "\n%s: %s\n", function, YELLOW_TEXT(buffer));
     } else {
-        fprintf(stderr, "\n%s: %s\n", function, TEXT_RED(buffer));
+        fprintf(stderr, "\n%s: %s\n", function, RED_TEXT(buffer));
     }
     if (level == LOG_ERR) {
         exit(EXIT_FAILURE);
