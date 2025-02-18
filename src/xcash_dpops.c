@@ -145,7 +145,7 @@ bool init_processing(const arg_config_t *arg_config)
           DATABASE_CONNECTION);
   if (debug_enabled)
   {
-    logger(LOG_DEBUG, __func__, ("Debug is enabled.");
+    logger(LOG_DEBUG, __func__, "Debug is enabled.");
   }
   return 0;
 }
