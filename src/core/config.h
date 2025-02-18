@@ -7,9 +7,7 @@
 #define XCASH_DAEMON_PORT 18281 // The X-CASH Daemon RPC port
 #define XCASH_WALLET_PORT 18285 // The X-CASH Wallet RPC port
 #define XCASH_DPOPS_PORT 18283 // The X-CASH Dpops service
-// #define DATABASE_CONNECTION "mongodb://127.0.0.1:27017" // The database connection string
-
-#define DATABASE_CONNECTION "ongodb://127.0.0.1:27017"
+#define DATABASE_CONNECTION "mongodb://127.0.0.1:27017" // The database connection string
 
 #define BLOCK_VERIFIERS_IP_ADDRESS_TOTAL_LENGTH 100 // The maximum length of the block verifiers IP address
 #define XCASH_WALLET_LENGTH 98 // The length of a XCA address
