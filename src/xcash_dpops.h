@@ -1,8 +1,6 @@
 #ifndef XCASH_DPOPS_TEST_H_   /* Include guard */
 #define XCASH_DPOPS_TEST_H_
 
-//#include "arg_config.h"
-
 #include <stdbool.h>
 
 typedef struct {
