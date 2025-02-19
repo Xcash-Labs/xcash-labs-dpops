@@ -12,6 +12,7 @@
 #include "globals.h"
 #include "db_init.h"
 #include "structures.h"
+#include "VRF_functions.h"
 
 // set global variables defined in globals.h
 int sig_requests = 0;
