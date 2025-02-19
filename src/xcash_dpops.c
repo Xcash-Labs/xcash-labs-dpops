@@ -238,7 +238,7 @@ int main(int argc, char *argv[])
   
   init_processing(&arg_config);
 
-  uvlib can cause assertion errors if some of STD PIPES closed
+  // uvlib can cause assertion errors if some of STD PIPES closed
   fix_std_pipes();
 
   if (initialize_database())
