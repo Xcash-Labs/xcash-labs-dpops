@@ -138,14 +138,6 @@ bool init_processing(const arg_config_t *arg_config)
   "Wallet:\t\t%s:%d\n"\
   "MongoDB:\t%s\n"
   
-  fprintf(stderr, xcash_tech_status_fmt,
-          XCASH_DPOPS_CURRENT_VERSION, "~Lazarus",
-          arg_config->block_verifiers_secret_key,
-          is_seed_node ? "SEED NODE" : "DELEGATE NODE",
-          XCASH_daemon_IP_address, XCASH_DAEMON_PORT,
-          XCASH_DPOPS_delegates_IP_address, XCASH_DPOPS_PORT,
-          XCASH_wallet_IP_address, XCASH_WALLET_PORT,
-          DATABASE_CONNECTION);
   INFO_PRINT(xcash_tech_status_fmt,
     XCASH_DPOPS_CURRENT_VERSION, "~Lazarus",
     arg_config->block_verifiers_secret_key,
