@@ -149,7 +149,7 @@ bool init_processing(const arg_config_t *arg_config)
   if (debug_enabled)
   {
     fprintf(stderr, "\n");
-    INFO_PRINT("Debug is enabled.");
+    DEBUG_PRINT("Debug is enabled.");
   }
   return 0;
 }
@@ -161,15 +161,15 @@ Description: Shuts program down on signal
 void sigint_handler(int sig_num) {
   /* Signal handler function */
   sig_requests++;
-  INFO_PRINT("Termination signal %d received [%d] times. Shutting down...", sig_num, sig_requests);
+  DEBUG_PRINT("Termination signal %d received [%d] times. Shutting down...", sig_num, sig_requests);
 //  is_shutdown_state = true;  not sure what this is used for yet
 //  while(sig_requests < 3 && threads_running> 0) {
-//      INFO_PRINT("Shutting down. Threads still running %d...", threads_running);
+//      DEBUG_PRINT("Shutting down. Threads still running %d...", threads_running);
 //      poke_dpops_port();
 //      sleep(1);
 //  }
-//  INFO_PRINT("Shutting down. Threads remains %d", threads_running);
-  INFO_PRINT("Shutting down database engine");
+//  DEBUG_PRINT("Shutting down. Threads remains %d", threads_running);
+  DEBUG_PRINT("Shutting down database engine");
 //  cleanup_data_structures();
   shutdown_database();
   exit(0);
@@ -243,7 +243,7 @@ int main(int argc, char *argv[])
 
   if (initialize_database())
   {
-    INFO_PRINT("Database opened successfully");
+    DEBUG_PRINT("Database opened successfully");
   } else {
     FATAL_ERROR_EXIT("Can't initialize mongo database");
   }
@@ -252,6 +252,6 @@ int main(int argc, char *argv[])
   //  start_block_production(); 
 
   shutdown_database();
-  INFO_PRINT("Database closed...");
+  DEBUG_PRINT("Database closed...");
   return 0;
 }
