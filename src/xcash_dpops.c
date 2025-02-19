@@ -168,7 +168,7 @@ void sigint_handler(int sig_num) {
 //  }
 //  INFO_PRINT("Shutting down. Threads remains %d", threads_running);
   INFO_PRINT("Shutting down database engine");
-  cleanup_data_structures();
+//  cleanup_data_structures();
   shutdown_database();
   exit(0);
 }
