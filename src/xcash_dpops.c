@@ -44,7 +44,7 @@ static struct argp_option options[] = {
 };
 
 static bool show_help = false;
-static bool generate_key = false;
+static bool create_key = false;
 static int total_threads = 0;
 
 // set global variables defined in globals.h
@@ -88,7 +88,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
     debug_enabled = true;
     break;
   case OPTION_GENERATE_KEY:
-    generate_key = true;
+    create_key = true;
     break;
   case OPTION_TOTAL_THREADS:
     total_threads = atoi(arg);
@@ -201,7 +201,7 @@ int main(int argc, char *argv[])
     return 0;
   }
 
-  if (generate_key) {
+  if (create_key) {
     generate_key();
     return 0;
   }
