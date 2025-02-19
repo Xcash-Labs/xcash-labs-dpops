@@ -3,9 +3,9 @@
 #include <string.h>
 #include <sys/random.h>
 
-#include "define_macro_functions.h"
-#include "define_macros.h"
-#include "structures.h"
+#include "macro_functions.h"
+#include "config.h"
+//#include "structures.h"
 
 #include "convert.h"
 #include "vrf.h"
