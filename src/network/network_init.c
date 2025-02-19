@@ -71,7 +71,7 @@ bool create_server(void)
         DEBUG_PRINT("Can't start listening");
         return false;
     }
-    DEBUG_PRINT("Started service on port " BLUE_TEXT("%d"), XCASH_DPOPS_PORT);
+    DEBUG_PRINT("Started service on port %d", XCASH_DPOPS_PORT);
     // Create epoll for efficient event handling
     if ((epoll_fd = epoll_create1(0)) == -1)
     {
