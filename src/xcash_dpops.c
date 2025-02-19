@@ -6,7 +6,7 @@
 #include <signal.h>
 #include <sys/sysinfo.h>
 
-//#include "xcash_dpops.h"
+#include "xcash_dpops.h"
 #include "config.h"
 #include "macro_functions.h"
 #include "globals.h"
