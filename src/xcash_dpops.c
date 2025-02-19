@@ -176,6 +176,31 @@ void sigint_handler(int sig_num) {
 }
 
 /*---------------------------------------------------------------------------------------------------------
+Name: fix_std_pipes
+Description: Prevents issues in detached daemons where stdin, stdout, or stderr might be closed.
+---------------------------------------------------------------------------------------------------------*/
+void fix_std_pipes(void) {
+  int fd;
+  int f = -1;  // File descriptor for /dev/null (opened once)
+
+  for (fd = STDIN_FILENO; fd <= STDERR_FILENO; fd++) {
+      if (fcntl(fd, F_GETFD) == -1 && errno == EBADF) { // Properly check if fd is closed
+          if (f == -1) {  // Open /dev/null only once
+              f = open("/dev/null", O_RDWR);
+              if (f == -1) {
+                  FATAL_ERROR_EXIT("failed to open /dev/null for missing stdio pipe");
+              }
+          }
+          dup2(f, fd);  // Redirect missing fd to /dev/null
+      }
+  }
+
+  if (f > STDERR_FILENO) {
+      close(f);  // Close the extra /dev/null fd if not used for STDIN/OUT/ERR
+  }
+}
+
+/*---------------------------------------------------------------------------------------------------------
 Name: main
 Description: The start point of the program
 Parameters:
@@ -213,8 +238,8 @@ int main(int argc, char *argv[])
   
   init_processing(&arg_config);
 
-  // uvlib can cause assertion errors if some of STD PIPES closed
-  //  fix_std_pipes();
+  uvlib can cause assertion errors if some of STD PIPES closed
+  fix_std_pipes();
 
   if (initialize_database())
   {
