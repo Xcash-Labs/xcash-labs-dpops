@@ -160,12 +160,12 @@ void sigint_handler(int sig_num) {
   /* Signal handler function */
   sig_requests++;
   INFO_PRINT("Termination signal %d received [%d] times. Shutting down...", sig_num, sig_requests);
-  is_shutdown_state = true;
-  while(sig_requests < 3 && threads_running> 0) {
-      INFO_PRINT("Shutting down. Threads still running %d...", threads_running);
-      poke_dpops_port();
-      sleep(1);
-  }
+//  is_shutdown_state = true;  not sure what this is used for yet
+//  while(sig_requests < 3 && threads_running> 0) {
+//      INFO_PRINT("Shutting down. Threads still running %d...", threads_running);
+//      poke_dpops_port();
+//      sleep(1);
+//  }
   INFO_PRINT("Shutting down. Threads remains %d", threads_running);
   INFO_PRINT("Shutting down database engine");
   cleanup_data_structures();
