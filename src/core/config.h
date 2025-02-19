@@ -22,5 +22,4 @@
 #define VRF_SECRET_KEY_LENGTH 128
 #define VRF_PROOF_LENGTH 160
 
-
 #endif
