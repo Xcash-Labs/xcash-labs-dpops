@@ -170,7 +170,6 @@ void sigint_handler(int sig_num) {
   INFO_PRINT("Shutting down database engine");
   cleanup_data_structures();
   shutdown_database();
-  fclose(server_log_fp);
   exit(0);
 }
 
