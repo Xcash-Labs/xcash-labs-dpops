@@ -11,7 +11,7 @@ Global Variables
 extern mongoc_client_pool_t* database_client_thread_pool;  // database
 
 extern bool debug_enabled;  // True if debug enabled
-extern int sig_requests; // for shutdown for signal requests
+extern int sig_requests; // for shutdown signal requests
 
 
 extern bool is_seed_node;   // True if node is a seed node

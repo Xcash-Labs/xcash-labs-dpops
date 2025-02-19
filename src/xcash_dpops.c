@@ -8,6 +8,7 @@
 
 #include "xcash_dpops.h"
 #include "config.h"
+#include "macro_functions.h"
 #include "globals.h"
 #include "db_init.h"
 #include "structures.h"
@@ -199,10 +200,10 @@ int main(int argc, char *argv[])
     return 0;
   }
 
-  //  if (generate_key) {
-  //      generate_key();                    add later
-  //      return 0;
-  //  }
+  if (generate_key) {
+    generate_key();
+    return 0;
+  }
 
   if (!arg_config.block_verifiers_secret_key || (strlen(arg_config.block_verifiers_secret_key) != VRF_SECRET_KEY_LENGTH))
   {
