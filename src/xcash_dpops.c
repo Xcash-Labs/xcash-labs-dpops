@@ -220,7 +220,7 @@ int main(int argc, char *argv[])
 
   signal(SIGINT, sigint_handler);
 
-  bool x = network_init();
+  bool x = create_server();
 
   if (x) {
   //  start_block_production(); 
