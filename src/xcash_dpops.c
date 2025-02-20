@@ -217,12 +217,9 @@ int main(int argc, char *argv[])
     FATAL_ERROR_EXIT("Can't initialize mongo database");
   }
 
-
   signal(SIGINT, sigint_handler);
 
-  bool x = create_server();
-
-  if (x) {
+  if (create_server()) {
   //  start_block_production(); 
   }
 
