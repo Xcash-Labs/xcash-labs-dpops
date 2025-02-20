@@ -8,7 +8,6 @@
 #include "globals.h"
 #include "macro_functions.h"
 
-
 void on_close(uv_handle_t* handle) {
     client_t* client = (client_t*)handle->data;
     if (client) {
@@ -180,7 +179,7 @@ response_t** send_multi_request(const char **hosts, int port, const char* messag
     if (total_hosts == 0) return NULL;
 
     char port_str[6];
-    DEBUG_PRINT(port_str, "%d", port);
+    sprintf(port_str, "%d", port);
 
     uv_loop_t* loop = uv_default_loop();
     response_t** responses = calloc(total_hosts + 1, sizeof(response_t*));
