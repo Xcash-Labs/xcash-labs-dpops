@@ -13,7 +13,6 @@
 #include "db_init.h"
 #include "structures.h"
 #include "VRF_functions.h"
-#include "network_init.h"
 
 // set globals defined in globals.h
 int sig_requests = 0;
