@@ -8,9 +8,8 @@
 #define XCASH_DAEMON_PORT 18281  // The X-CASH Daemon RPC port
 #define XCASH_WALLET_PORT 18285  // The X-CASH Wallet RPC port
 #define XCASH_DPOPS_PORT 18283  // The X-CASH Dpops service
-#define MAXIMUM_CONNECTIONS 1024  // P2P best practice: handle high concurrency
+#define MAXIMUM_CONNECTIONS 1024  // P2P best practice: handle high concurrency                look at this later
 #define BACKLOG_SIZE 128  // Fine-tuned backlog queue for P2P
-#define KEEPALIVE_INTERVAL 60  // TCP keepalive to prevent stale connections
 
 #define DATABASE_CONNECTION "mongodb://127.0.0.1:27017" // The database connection string
 

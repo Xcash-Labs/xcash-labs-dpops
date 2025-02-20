@@ -9,9 +9,6 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#define BACKLOG_SIZE 128
-#define DEFAULT_PORT 18281
-
 int server_socket = -1;
 int epoll_fd = -1;
 

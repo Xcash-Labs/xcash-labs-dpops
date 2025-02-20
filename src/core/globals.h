@@ -20,7 +20,6 @@ extern int epoll_fd;
 
 
 
-
 extern bool is_seed_node;   // True if node is a seed node
 extern bool is_shutdown_state; // True if shutdown requested
 
