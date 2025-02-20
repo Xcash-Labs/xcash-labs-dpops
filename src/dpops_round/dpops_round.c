@@ -37,7 +37,7 @@ void start_block_production(void)
             // Refresh DB in case of last round error (only if syncing is complete)
             if (round_result != ROUND_OK && current_block_healthy && seconds_within_block > 280)
             {
-                init_db_from_top();
+//                init_db_from_top();
                 round_result = ROUND_OK;
             }
             else
