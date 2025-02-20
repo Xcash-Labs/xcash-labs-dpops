@@ -2,6 +2,7 @@
     "files.associations": {
         "dpops_config.h": "c",
         "config.h": "c",
-        "network_init.h": "c"
+        "network_init.h": "c",
+        "daemon_functions.h": "c"
     }
 }

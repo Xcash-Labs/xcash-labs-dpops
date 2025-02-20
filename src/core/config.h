@@ -24,10 +24,17 @@
 // Lengths
 #define IP_LENGTH 39
 #define SMALL_BUFFER_SIZE 2000
+#define BUFFER_SIZE_NETWORK_BLOCK_DATA 500
 
 // VRF
 #define VRF_PUBLIC_KEY_LENGTH 64
 #define VRF_SECRET_KEY_LENGTH 128
 #define VRF_PROOF_LENGTH 160
+
+#define XCASH_OK 1
+#define XCASH_ERROR 0
+
+#define BLOCK_TIME 5 // The block time in minutes
+#define BLOCK_TIME_SEC (BLOCK_TIME*60) // The block time in seconds
 
 #endif
