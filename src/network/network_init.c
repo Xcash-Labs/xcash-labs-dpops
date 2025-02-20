@@ -1,135 +1,227 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdbool.h>
-#include <arpa/inet.h>
-#include <sys/epoll.h>
-#include <sys/socket.h>
+#include "uv_net.h"
 #include <netinet/in.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include "globals.h"
-#include "macro_functions.h"
-#include "config.h"
+#include <arpa/inet.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 
-int server_socket = -1;
-int epoll_fd = -1;
+void on_close(uv_handle_t* handle) {
+    client_t* client = (client_t*)handle->data;
+    if (client) {
+        client->is_closing = 1;
+        client->response->req_time_end = time(NULL);
+        free(client);
+    }
+}
 
-bool create_server(void)
-{
-    struct sockaddr_in6 addr;
-    struct epoll_event event;
-    int optval = 0;  // Set to 0 to allow both IPv4 and IPv6
+void safe_close(client_t* client) {
+    if (!uv_is_closing((uv_handle_t*)&client->handle)) {
+        uv_close((uv_handle_t*)&client->timer, NULL);  // Close the timer handle
+        uv_close((uv_handle_t*)&client->handle, on_close); // Close the client handle
+    }
+}
 
-    DEBUG_PRINT("Creating the server");
+void on_timeout(uv_timer_t* timer) {
+    client_t* client = (client_t*)timer->data;
+    if (client) {
+        client->response->status = STATUS_TIMEOUT;
+        safe_close(client);
+    }
+}
 
-    // Create a non-blocking IPv6+IPv4 socket
-    if ((server_socket = socket(AF_INET6, SOCK_STREAM, 0)) == -1)
-    {
-        DEBUG_PRINT("Can't create the socket");
-        return false;
+void alloc_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
+    (void)handle;
+    buf->base = (char*)malloc(TRANSFER_BUFFER_SIZE);
+    buf->len = TRANSFER_BUFFER_SIZE;
+}
+
+void on_write(uv_write_t* req, int status) {
+    client_t* client = (client_t*)req->data;
+    if (status < 0) {
+        printf("Write error: %s\n", uv_strerror(status));
+        safe_close(client);  
+        return;
     }
 
-    // Enable IPv6-only mode if required (0 allows both IPv4 & IPv6)
-    if (setsockopt(server_socket, IPPROTO_IPV6, IPV6_V6ONLY, &optval, sizeof(optval)) < 0)
-    {
-        DEBUG_PRINT("Can't set IPv6 dual-stack mode");
-        close(server_socket);
-        return false;
+    // Stop write timeout timer
+    uv_timer_stop(&client->timer);
+
+    // Restart the read response timeout timer after successful write
+    uv_timer_start(&client->timer, on_timeout, RESPONSE_TIMEOUT, 0);
+
+    // Start reading from the server
+    uv_read_start((uv_stream_t*)req->handle, alloc_buffer, on_read);
+}
+
+void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
+    client_t* client = (client_t*)stream->data;
+
+    if (nread > 0) {
+        client->response->data = realloc(client->response->data, client->response->size + nread);
+        memcpy(client->response->data + client->response->size, buf->base, nread);
+        client->response->size += nread;
+
+        // Extend timeout if data received
+        uv_timer_stop(&client->timer);
+        uv_timer_start(&client->timer, on_timeout, RESPONSE_TIMEOUT, 0);
+    } else if (nread < 0) {
+        client->response->status = (nread == UV_EOF) ? STATUS_OK : STATUS_ERROR;
+        uv_timer_stop(&client->timer);
+        safe_close(client);
     }
 
-    // Allow address/port reuse for quick restart
-    optval = 1;
-    if (setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &optval, sizeof(optval)) != 0)
-    {
-        DEBUG_PRINT("Can't set the socket options");
-        close(server_socket);
-        return false;
+    free(buf->base);
+}
+
+void retry_connection(uv_timer_t* timer) {
+    client_t* client = (client_t*)timer->data;
+
+    if (client->retry_count >= MAX_RETRIES) {
+        printf("Max retries reached for %s, marking as failed.\n", client->response->host);
+        client->response->status = STATUS_ERROR;
+        safe_close(client);
+        return;
     }
 
-    // Enable TCP keepalive for stable P2P connections
-    if (setsockopt(server_socket, SOL_SOCKET, SO_KEEPALIVE, &optval, sizeof(optval)) != 0)
-    {
-        DEBUG_PRINT("Can't enable TCP keepalive");
-        close(server_socket);
-        return false;
+    printf("Retrying connection to %s (%d/%d)...\n", client->response->host, client->retry_count + 1, MAX_RETRIES);
+
+    // Close the previous connection
+    safe_close(client);
+
+    // Increment retry count
+    client->retry_count++;
+
+    // Reinitialize the TCP handle
+    uv_tcp_init(uv_default_loop(), &client->handle);
+    client->handle.data = client;
+
+    struct sockaddr_in dest;
+    uv_ip4_addr(client->response->host, 18281, &dest);
+    start_connection(client, (const struct sockaddr*)&dest);
+}
+
+void on_connect(uv_connect_t* req, int status) {
+    client_t* client = (client_t*)req->data;
+
+    if (!client || client->is_closing) {
+        return;
     }
 
-    memset(&addr, 0, sizeof(addr));
+    if (status < 0) {
+        printf("Connection failed: %s (Attempt %d/%d)\n", uv_strerror(status), client->retry_count, MAX_RETRIES);
 
-    // Setup the P2P connection
-    addr.sin6_family = AF_INET6;
-    addr.sin6_port = htons(XCASH_DPOPS_PORT);
-
-    // Ensure `XCASH_DPOPS_delegates_IP_address` is not null
-    if (XCASH_DPOPS_delegates_IP_address == NULL || strlen(XCASH_DPOPS_delegates_IP_address) == 0)
-    {
-        DEBUG_PRINT("Invalid delegate IP address");
-        close(server_socket);
-        return false;
-    }
-
-    // Correct string comparison
-    if (strcmp(XCASH_DPOPS_delegates_IP_address, "127.0.0.1") == 0)
-    {
-        addr.sin6_addr = in6addr_any;
-    }
-    else
-    {
-        if (inet_pton(AF_INET6, XCASH_DPOPS_delegates_IP_address, &addr.sin6_addr) != 1)
-        {
-            DEBUG_PRINT("Invalid IPv6 address format: %s", XCASH_DPOPS_delegates_IP_address);
-            close(server_socket);
-            return false;
+        if (client->retry_count < MAX_RETRIES) {
+            uv_timer_init(uv_default_loop(), &client->timer);
+            client->timer.data = client;
+            uv_timer_start(&client->timer, retry_connection, RETRY_DELAY_MS, 0);
+            return;  // ✅ Don't close yet, retry is scheduled
         }
+
+        // Max retries reached, mark as failed
+        client->response->status = STATUS_ERROR;
+        safe_close(client);
+        return;
     }
 
-    // Bind the socket
-    if (bind(server_socket, (struct sockaddr *)&addr, sizeof(addr)) != 0)
-    {
-        DEBUG_PRINT("Can't bind to server socket on port %d", XCASH_DPOPS_PORT);
-        close(server_socket);
-        return false;
+    // Connection successful, stop retry attempts
+    client->retry_count = 0;
+
+    // Stop connection timeout timer
+    uv_timer_stop(&client->timer);
+
+    // Start the timer to wait for write operation
+    uv_timer_start(&client->timer, on_timeout, RESPONSE_TIMEOUT, 0);
+
+    // Write the message to the server
+    if (client->message) {
+        uv_buf_t buf = uv_buf_init((char*)client->message, strlen(client->message));
+        uv_write(&client->write_req, (uv_stream_t*)&client->handle, &buf, 1, on_write);
+    } else {
+        printf("Error: client message is NULL\n");
+        safe_close(client);
+    }
+}
+
+void start_connection(client_t* client, const struct sockaddr* addr) {
+    if (!client) return;
+
+    printf("Starting connection to %s\n", client->response->host);
+    uv_tcp_connect(&client->connect_req, &client->handle, addr, on_connect);
+}
+
+void on_resolved(uv_getaddrinfo_t *resolver, int status, struct addrinfo *res) {
+    client_t* client = (client_t*)resolver->data;
+
+    if (status == 0 && res != NULL) {
+        printf("Resolved hostname: %s -> %s\n", client->response->host, inet_ntoa(((struct sockaddr_in*)res->ai_addr)->sin_addr));
+        start_connection(client, res->ai_addr);
+    } else {
+        printf("DNS resolution failed for %s: %s\n", client->response->host, uv_strerror(status));
+        client->response->status = STATUS_ERROR;
+        safe_close(client);
     }
 
-    // Listen with an optimized backlog queue
-    if (listen(server_socket, BACKLOG_SIZE) != 0)
-    {
-        DEBUG_PRINT("Can't start listening");
-        close(server_socket);
-        return false;
+    uv_freeaddrinfo(res);
+    free(resolver);
+}
+
+response_t** send_multi_request(const char **hosts, int port, const char* message) {
+    if (!hosts || !message) return NULL;
+
+    int total_hosts = 0;
+    while (hosts[total_hosts] != NULL) total_hosts++;
+    if (total_hosts == 0) return NULL;
+
+    char port_str[6];
+    sprintf(port_str, "%d", port);
+
+    uv_loop_t* loop = uv_default_loop();
+    response_t** responses = calloc(total_hosts + 1, sizeof(response_t*));
+
+    for (int i = 0; i < total_hosts; i++) {
+        if (!hosts[i]) continue;
+
+        client_t* client = calloc(1, sizeof(client_t));
+        client->message = message;
+        client->retry_count = 0;
+        client->response = (response_t*)calloc(1, sizeof(response_t));
+        client->response->host = strdup(hosts[i]);
+        client->response->status = STATUS_PENDING;
+        client->response->client = client;
+        client->response->req_time_start = time(NULL);
+        responses[i] = client->response;
+
+        uv_timer_init(loop, &client->timer);
+        client->timer.data = client;
+        uv_timer_start(&client->timer, on_timeout, CONNECTION_TIMEOUT, 0);
+
+        uv_tcp_init(loop, &client->handle);
+        client->handle.data = client;
+        client->connect_req.data = client;
+        client->write_req.data = client;
+
+        struct sockaddr_in dest;
+        uv_ip4_addr(hosts[i], port, &dest);
+        start_connection(client, (const struct sockaddr*)&dest);
     }
 
-    DEBUG_PRINT("Started service on port %d", XCASH_DPOPS_PORT);
+    uv_run(loop, UV_RUN_DEFAULT);
+    return responses;
+}
 
-    // Set the server socket to non-blocking mode (Check fcntl return value)
-    int flags = fcntl(server_socket, F_GETFL, 0);
-    if (flags == -1 || fcntl(server_socket, F_SETFL, flags | O_NONBLOCK) == -1)
-    {
-        DEBUG_PRINT("Failed to set non-blocking mode");
-        close(server_socket);
-        return false;
+void cleanup_responses(response_t** responses) {
+    if (!responses) return;
+
+    int i = 0;
+    while (responses[i] != NULL) {
+        free(responses[i]->host);
+        free(responses[i]->data);
+        free(responses[i]->client);  // Free the client structure
+
+        free(responses[i]);  // Free the response structure
+        responses[i] = NULL;
+        i++;
     }
 
-    // Create epoll for efficient event handling
-    if ((epoll_fd = epoll_create1(0)) == -1)
-    {
-        DEBUG_PRINT("Can't start epoll");
-        close(server_socket);
-        return false;
-    }
-
-    // Add the server socket to epoll for monitoring incoming connections
-    event.events = EPOLLIN | EPOLLET;  // Use edge-triggered mode for better performance
-    event.data.fd = server_socket;
-    if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, server_socket, &event) == -1)
-    {
-        DEBUG_PRINT("Can't add server socket to epoll");
-        close(server_socket);
-        close(epoll_fd);
-        epoll_fd = -1;  // Prevents double-close errors
-        return false;
-    }
-
-    return true;
+    free(responses);  // Free the array of response pointers
 }
