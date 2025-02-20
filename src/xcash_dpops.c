@@ -13,9 +13,18 @@
 #include "db_init.h"
 #include "structures.h"
 #include "VRF_functions.h"
+#include "network_init.h"
 
-// set global variables defined in globals.h
+// set globals defined in globals.h
 int sig_requests = 0;
+bool is_shutdown_state = false;
+bool is_seed_node = false;
+char xcash_wallet_public_address[XCASH_WALLET_LENGTH + 1];
+char XCASH_daemon_IP_address[IP_LENGTH + 1];
+char XCASH_DPOPS_delegates_IP_address[IP_LENGTH + 1];
+char XCASH_wallet_IP_address[IP_LENGTH + 1];
+bool debug_enabled = false;
+mongoc_client_pool_t* database_client_thread_pool = NULL;
 
 static char doc[] =
 "\n"
@@ -47,10 +56,6 @@ static bool show_help = false;
 static bool create_key = false;
 static int total_threads = 0;
 
-// set global variables defined in globals.h
-
-//char *block_verifiers_secret_key;
-
 const NetworkNode network_nodes[] = {
   {"XCA1dd7JaWhiuBavUM2ZTJG3GdgPkT1Yd5Q6VvNvnxbEfb6JhUhziTF6w5mMPVeoSv3aa1zGyhedpaa2QQtGEjBo7N6av9nhaU",
    "xcashseeds.us",
@@ -60,14 +65,6 @@ const NetworkNode network_nodes[] = {
    "63232aa1b020a772945bf50ce96db9a04242583118b5a43952f0aaf9ecf7cfbb"},
   // Sentinel value (empty entry to mark the end)
   {NULL, NULL, NULL}};
-bool debug_enabled = false;
-mongoc_client_pool_t* database_client_thread_pool = NULL;
-
-bool is_seed_node = false;
-char xcash_wallet_public_address[XCASH_WALLET_LENGTH + 1];
-char XCASH_daemon_IP_address[IP_LENGTH + 1];
-char XCASH_DPOPS_delegates_IP_address[IP_LENGTH + 1];
-char XCASH_wallet_IP_address[IP_LENGTH + 1];
 
 /*---------------------------------------------------------------------------------------------------------
 Name: error_t parse_opt
@@ -162,42 +159,17 @@ void sigint_handler(int sig_num) {
   /* Signal handler function */
   sig_requests++;
   DEBUG_PRINT("Termination signal %d received [%d] times. Shutting down...", sig_num, sig_requests);
-//  is_shutdown_state = true;  not sure what this is used for yet
+  is_shutdown_state = true;
 //  while(sig_requests < 3 && threads_running> 0) {
 //      DEBUG_PRINT("Shutting down. Threads still running %d...", threads_running);
 //      poke_dpops_port();
 //      sleep(1);
 //  }
-//  DEBUG_PRINT("Shutting down. Threads remains %d", threads_running);
+  DEBUG_PRINT("Shutting down. Threads remains %d", threads_running);
   DEBUG_PRINT("Shutting down database engine");
 //  cleanup_data_structures();
   shutdown_database();
   exit(0);
-}
-
-/*---------------------------------------------------------------------------------------------------------
-Name: fix_std_pipes
-Description: Prevents issues in detached daemons where stdin, stdout, or stderr might be closed.
----------------------------------------------------------------------------------------------------------*/
-void fix_std_pipes(void) {
-  int fd;
-  int f = -1;  // File descriptor for /dev/null (opened once)
-
-  for (fd = STDIN_FILENO; fd <= STDERR_FILENO; fd++) {
-      if (fcntl(fd, F_GETFD) == -1 && errno == EBADF) { // Properly check if fd is closed
-          if (f == -1) {  // Open /dev/null only once
-              f = open("/dev/null", O_RDWR);
-              if (f == -1) {
-                  FATAL_ERROR_EXIT("failed to open /dev/null for missing stdio pipe");
-              }
-          }
-          dup2(f, fd);  // Redirect missing fd to /dev/null
-      }
-  }
-
-  if (f > STDERR_FILENO) {
-      close(f);  // Close the extra /dev/null fd if not used for STDIN/OUT/ERR
-  }
 }
 
 /*---------------------------------------------------------------------------------------------------------
@@ -238,18 +210,23 @@ int main(int argc, char *argv[])
   
   init_processing(&arg_config);
 
-  // uvlib can cause assertion errors if some of STD PIPES closed
-  fix_std_pipes();
-
   if (initialize_database())
   {
     DEBUG_PRINT("Database opened successfully");
   } else {
     FATAL_ERROR_EXIT("Can't initialize mongo database");
   }
-  // signal(SIGINT, sigint_handler);
 
-  //  start_block_production(); 
+
+  signal(SIGINT, sigint_handler);
+
+  bool x = network_init();
+
+  if (x) {
+    start_block_production(); 
+  }
+
+  shutdown_server();
 
   shutdown_database();
   DEBUG_PRINT("Database closed...");
