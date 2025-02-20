@@ -3,6 +3,8 @@
 #include <string.h>
 
 #include "config.h"
+#include "globals.h"
+#include "macro_functions.h"
 #include "daemon_functions.h"
 
 /*---------------------------------------------------------------------------------------------------------
@@ -31,7 +33,7 @@ int get_current_block_height(char *result)
 
     if (send_http_request(data,XCASH_daemon_IP_address,"/json_rpc",XCASH_DAEMON_PORT,"POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH,"{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"get_block_count\"}",SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) <= 0 || parse_json_data(data,"count",result, BUFFER_SIZE) == 0)
     {
-      ERROR_PRINT("Could not get the current block height");
+      DEBUG_PRINT("Could not get the current block height");
       return XCASH_ERROR;
     }
   }
