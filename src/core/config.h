@@ -38,4 +38,6 @@
 #define BLOCK_TIME 5 // The block time in minutes
 #define BLOCK_TIME_SEC (BLOCK_TIME*60) // The block time in seconds
 
+#define SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS 3 // The time to wait for sending or receving socket data
+
 #endif
