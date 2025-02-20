@@ -4,21 +4,28 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include "macro_functions.h"
 
 void on_close(uv_handle_t* handle) {
     client_t* client = (client_t*)handle->data;
     if (client) {
         client->is_closing = 1;
         client->response->req_time_end = time(NULL);
+
+        // Ensure any active timers are stopped before freeing memory
+        uv_timer_stop(&client->timer);
+
         free(client);
     }
 }
 
 void safe_close(client_t* client) {
-    if (!uv_is_closing((uv_handle_t*)&client->handle)) {
-        uv_close((uv_handle_t*)&client->timer, NULL);  // Close the timer handle
-        uv_close((uv_handle_t*)&client->handle, on_close); // Close the client handle
+    if (!client || uv_is_closing((uv_handle_t*)&client->handle)) {
+        return;
     }
+
+    uv_close((uv_handle_t*)&client->timer, NULL);  // Close the timer handle
+    uv_close((uv_handle_t*)&client->handle, on_close); // Close the client handle
 }
 
 void on_timeout(uv_timer_t* timer) {
@@ -30,26 +37,29 @@ void on_timeout(uv_timer_t* timer) {
 }
 
 void alloc_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
+    (void)suggested_size;
     (void)handle;
+
     buf->base = (char*)malloc(TRANSFER_BUFFER_SIZE);
+    if (!buf->base) {
+        DEBUG_PRINT("Memory allocation failed in alloc_buffer()\n");
+        buf->len = 0; // Avoid using an invalid pointer
+        return;
+    }
+
     buf->len = TRANSFER_BUFFER_SIZE;
 }
 
 void on_write(uv_write_t* req, int status) {
     client_t* client = (client_t*)req->data;
     if (status < 0) {
-        printf("Write error: %s\n", uv_strerror(status));
+        DEBUG_PRINT("Write error: %s\n", uv_strerror(status));
         safe_close(client);  
         return;
     }
 
-    // Stop write timeout timer
     uv_timer_stop(&client->timer);
-
-    // Restart the read response timeout timer after successful write
     uv_timer_start(&client->timer, on_timeout, RESPONSE_TIMEOUT, 0);
-
-    // Start reading from the server
     uv_read_start((uv_stream_t*)req->handle, alloc_buffer, on_read);
 }
 
@@ -61,7 +71,6 @@ void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
         memcpy(client->response->data + client->response->size, buf->base, nread);
         client->response->size += nread;
 
-        // Extend timeout if data received
         uv_timer_stop(&client->timer);
         uv_timer_start(&client->timer, on_timeout, RESPONSE_TIMEOUT, 0);
     } else if (nread < 0) {
@@ -70,28 +79,26 @@ void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
         safe_close(client);
     }
 
-    free(buf->base);
+    if (buf->base) {  
+        free(buf->base);
+    }
 }
 
 void retry_connection(uv_timer_t* timer) {
     client_t* client = (client_t*)timer->data;
 
     if (client->retry_count >= MAX_RETRIES) {
-        printf("Max retries reached for %s, marking as failed.\n", client->response->host);
+        DEBUG_PRINT("Max retries reached for %s, marking as failed.\n", client->response->host);
         client->response->status = STATUS_ERROR;
         safe_close(client);
         return;
     }
 
-    printf("Retrying connection to %s (%d/%d)...\n", client->response->host, client->retry_count + 1, MAX_RETRIES);
+    DEBUG_PRINT("Retrying connection to %s (%d/%d)...\n", client->response->host, client->retry_count + 1, MAX_RETRIES);
 
-    // Close the previous connection
     safe_close(client);
-
-    // Increment retry count
     client->retry_count++;
 
-    // Reinitialize the TCP handle
     uv_tcp_init(uv_default_loop(), &client->handle);
     client->handle.data = client;
 
@@ -108,55 +115,52 @@ void on_connect(uv_connect_t* req, int status) {
     }
 
     if (status < 0) {
-        printf("Connection failed: %s (Attempt %d/%d)\n", uv_strerror(status), client->retry_count, MAX_RETRIES);
+        DEBUG_PRINT("Connection failed: %s (Attempt %d/%d)\n", uv_strerror(status), client->retry_count, MAX_RETRIES);
 
         if (client->retry_count < MAX_RETRIES) {
             uv_timer_init(uv_default_loop(), &client->timer);
             client->timer.data = client;
             uv_timer_start(&client->timer, retry_connection, RETRY_DELAY_MS, 0);
-            return;  // ✅ Don't close yet, retry is scheduled
+            return;
         }
 
-        // Max retries reached, mark as failed
         client->response->status = STATUS_ERROR;
         safe_close(client);
         return;
     }
 
-    // Connection successful, stop retry attempts
     client->retry_count = 0;
-
-    // Stop connection timeout timer
     uv_timer_stop(&client->timer);
-
-    // Start the timer to wait for write operation
     uv_timer_start(&client->timer, on_timeout, RESPONSE_TIMEOUT, 0);
 
-    // Write the message to the server
-    if (client->message) {
-        uv_buf_t buf = uv_buf_init((char*)client->message, strlen(client->message));
-        uv_write(&client->write_req, (uv_stream_t*)&client->handle, &buf, 1, on_write);
-    } else {
-        printf("Error: client message is NULL\n");
+    char* msg_copy = strdup(client->message);
+    if (!msg_copy) {
+        DEBUG_PRINT("Error: Memory allocation failed for message copy\n");
         safe_close(client);
+        return;
     }
+
+    uv_buf_t buf = uv_buf_init(msg_copy, strlen(msg_copy));
+    uv_write(&client->write_req, (uv_stream_t*)&client->handle, &buf, 1, on_write);
+
+    free(msg_copy);
 }
 
 void start_connection(client_t* client, const struct sockaddr* addr) {
     if (!client) return;
 
-    printf("Starting connection to %s\n", client->response->host);
+    DEBUG_PRINT("Starting connection to %s\n", client->response->host);
     uv_tcp_connect(&client->connect_req, &client->handle, addr, on_connect);
 }
 
 void on_resolved(uv_getaddrinfo_t *resolver, int status, struct addrinfo *res) {
-    client_t* client = (client_t*)resolver->data;
+    client_t* client = resolver->data;
 
     if (status == 0 && res != NULL) {
-        printf("Resolved hostname: %s -> %s\n", client->response->host, inet_ntoa(((struct sockaddr_in*)res->ai_addr)->sin_addr));
+        DEBUG_PRINT("Resolved hostname: %s -> %s\n", client->response->host, inet_ntoa(((struct sockaddr_in*)res->ai_addr)->sin_addr));
         start_connection(client, res->ai_addr);
     } else {
-        printf("DNS resolution failed for %s: %s\n", client->response->host, uv_strerror(status));
+        DEBUG_PRINT("DNS resolution failed for %s: %s\n", client->response->host, uv_strerror(status));
         client->response->status = STATUS_ERROR;
         safe_close(client);
     }
@@ -173,7 +177,7 @@ response_t** send_multi_request(const char **hosts, int port, const char* messag
     if (total_hosts == 0) return NULL;
 
     char port_str[6];
-    sprintf(port_str, "%d", port);
+    DEBUG_PRINT(port_str, "%d", port);
 
     uv_loop_t* loop = uv_default_loop();
     response_t** responses = calloc(total_hosts + 1, sizeof(response_t*));
@@ -207,21 +211,4 @@ response_t** send_multi_request(const char **hosts, int port, const char* messag
 
     uv_run(loop, UV_RUN_DEFAULT);
     return responses;
-}
-
-void cleanup_responses(response_t** responses) {
-    if (!responses) return;
-
-    int i = 0;
-    while (responses[i] != NULL) {
-        free(responses[i]->host);
-        free(responses[i]->data);
-        free(responses[i]->client);  // Free the client structure
-
-        free(responses[i]);  // Free the response structure
-        responses[i] = NULL;
-        i++;
-    }
-
-    free(responses);  // Free the array of response pointers
 }

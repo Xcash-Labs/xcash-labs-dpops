@@ -8,7 +8,6 @@
 
 #define __DEBUG_PRINT_FUNC_CALLER if (debug_enabled)fprintf(stderr, "  --> TRACE: %s:%d, %s()\n\n", __FILE__, __LINE__, __func__);
 #define FATAL_ERROR_EXIT(fmt, ...) do { fprintf(stderr, "\033[1;31mFATAL: " fmt "\033[0m\n", ##__VA_ARGS__); __DEBUG_PRINT_FUNC_CALLER; exit(1); } while (0)
-//#define DEBUG_PRINT(fmt, ...) do { if (debug_enabled)fprintf(stderr, PURPLE_TEXT("DEBUG: ")fmt"\n", ##__VA_ARGS__); __DEBUG_PRINT_FUNC_CALLER; } while (0)
 #define DEBUG_PRINT(fmt, ...) do { if (debug_enabled) fprintf(stderr, "\033[1;35mDEBUG: " fmt "\033[0m\n", ##__VA_ARGS__); __DEBUG_PRINT_FUNC_CALLER; } while (0)
 
 
