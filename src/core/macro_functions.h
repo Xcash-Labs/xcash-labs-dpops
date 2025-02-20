@@ -2,8 +2,14 @@
 #define DEFINE_MACRO_FUNCTIONS_H_
 
 #define RED_TEXT(text) "\033[31m"text"\033[0m"
+#define ORANGE_TEXT(text) "\033[38;5;208m"text"\033[0m"
 #define YELLOW_TEXT(text) "\033[1;33m"text"\033[0m"
 #define GREEN_TEXT(text) "\x1b[32m"text"\x1b[0m"
+#define BLUE_TEXT(text) "\033[34m"text"\033[0m"
+#define LIGHT_BLUE_TEXT(text) "\033[94m"text"\033[0m"
+#define PURPLE_TEXT(text) "\033[35m"text"\033[0m"
+#define LIGHT_PURPLE_TEXT(text) "\033[95m"text"\033[0m"
+#define WHITE_TEXT(text)  "\033[97m"text"\033[0m"
 #define BRIGHT_WHITE_TEXT(text) "\033[1;97m"text"\033[0m"
 
 #define __DEBUG_PRINT_FUNC_CALLER if (debug_enabled)fprintf(stderr, "  --> TRACE: %s:%d, %s()\n\n", __FILE__, __LINE__, __func__);
