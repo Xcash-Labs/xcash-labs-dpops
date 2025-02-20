@@ -8,8 +8,12 @@
 #define XCASH_DAEMON_PORT 18281  // The X-CASH Daemon RPC port
 #define XCASH_WALLET_PORT 18285  // The X-CASH Wallet RPC port
 #define XCASH_DPOPS_PORT 18283  // The X-CASH Dpops service
-#define MAXIMUM_CONNECTIONS 1024  // P2P best practice: handle high concurrency                look at this later
-#define BACKLOG_SIZE 128  // Fine-tuned backlog queue for P2P
+#define TRANSFER_BUFFER_SIZE 4096  // Size of the buffer used for data transfer in bytes (4 KB)
+#define RESPONSE_TIMEOUT 5000  // Maximum time (in milliseconds) to wait for a response before closing the connection (5 seconds)
+#define CONNECTION_TIMEOUT 3000  // Maximum time (in milliseconds) to wait for a connection to be established before retrying or failing (3 seconds)
+#define MAX_RETRIES 3  // Number of times a failed connection attempt will be retried before marking it as failed
+#define RETRY_DELAY_MS 500  // Delay (in milliseconds) before retrying a failed connection attempt (0.5 seconds)
+
 
 #define DATABASE_CONNECTION "mongodb://127.0.0.1:27017" // The database connection string
 

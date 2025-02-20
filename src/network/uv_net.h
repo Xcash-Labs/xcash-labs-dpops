@@ -4,12 +4,6 @@
 #include <uv.h>
 #include <time.h>
 
-#define TRANSFER_BUFFER_SIZE 4096
-#define RESPONSE_TIMEOUT 5000  // 5 seconds
-#define CONNECTION_TIMEOUT 3000  // 3 seconds
-#define MAX_RETRIES 3
-#define RETRY_DELAY_MS 500  // Retry after 500ms
-
 typedef enum {
     STATUS_PENDING,
     STATUS_OK,
