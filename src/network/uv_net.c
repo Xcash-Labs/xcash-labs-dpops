@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "macro_functions.h"
+#include "config.h"
 
 void on_close(uv_handle_t* handle) {
     client_t* client = (client_t*)handle->data;
