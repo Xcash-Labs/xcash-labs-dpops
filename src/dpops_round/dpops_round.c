@@ -4,6 +4,8 @@
 #include <unistd.h>
 #include <sys/time.h>
 
+#include "macro_functions.h"
+
 void start_block_production(void)
 {
     struct timeval current_time, round_start_time, block_start_time;
@@ -78,7 +80,7 @@ void start_block_production(void)
                 {
                     INFO_PRINT_STATUS_FAIL("Block %s not created within %lu rounds", current_block_height, round_number);
                 }
-                
+
                 break;
             }
         }
