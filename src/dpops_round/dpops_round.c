@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <sys/time.h>
 
-#include "config.h"
+#include "globals.h"
 #include "macro_functions.h"
 
 void start_block_production(void)
