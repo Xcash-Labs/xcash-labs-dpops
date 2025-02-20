@@ -39,6 +39,6 @@
 #define BLOCK_TIME_SEC (BLOCK_TIME*60) // The block time in seconds
 
 #define SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS 3 // The time to wait for sending or receving socket data
-
+#define INVALID_RESERVE_PROOFS_SETTINGS 3 // The time in seconds to wait between checking for invalid reserve proofs
 
 #endif
