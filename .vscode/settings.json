@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "dpops_config.h": "c",
-        "config.h": "c"
+        "config.h": "c",
+        "network_init.h": "c"
     }
 }
