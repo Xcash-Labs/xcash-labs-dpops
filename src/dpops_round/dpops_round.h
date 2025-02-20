@@ -14,3 +14,5 @@ typedef enum {
 } xcash_round_result_t;
 
 void start_block_production(void);
+
+#endif
