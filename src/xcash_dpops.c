@@ -223,7 +223,7 @@ int main(int argc, char *argv[])
   bool x = network_init();
 
   if (x) {
-    start_block_production(); 
+  //  start_block_production(); 
   }
 
   shutdown_database();
