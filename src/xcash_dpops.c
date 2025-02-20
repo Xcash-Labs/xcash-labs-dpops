@@ -165,7 +165,7 @@ void sigint_handler(int sig_num) {
 //      poke_dpops_port();
 //      sleep(1);
 //  }
-  DEBUG_PRINT("Shutting down. Threads remains %d", threads_running);
+//  DEBUG_PRINT("Shutting down. Threads remains %d", threads_running);
   DEBUG_PRINT("Shutting down database engine");
 //  cleanup_data_structures();
   shutdown_database();
