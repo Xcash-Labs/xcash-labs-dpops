@@ -13,7 +13,8 @@ void start_block_production(void)
     xcash_round_result_t round_result = ROUND_OK;
     size_t retries = 0;
     bool current_block_healthy = false;
-    char current_block_height[BUFFER_SIZE] = {0};
+    memset(current_block_height,0,sizeof(current_block_height));
+
 
     while (true)
     {
