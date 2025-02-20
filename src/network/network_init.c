@@ -80,21 +80,3 @@ bool create_server(void)
     }
     return true;
 }
-
-void shutdown_server() {
-    DEBUG_PRINT("Shutting down network connections...\n");
-    // Close all active client connections
-    for (int i = 0; i < MAXIMUM_CONNECTIONS; i++) {
-        if (client_sockets[i] != -1) {
-            close(client_sockets[i]);
-            client_sockets[i] = -1;
-        }
-    }
-    // Remove server socket from epoll and close epoll
-    epoll_ctl(epoll_fd, EPOLL_CTL_DEL, server_socket, NULL);
-    close(epoll_fd);
-    epoll_fd = -1;
-    // Close the main server socket
-    close(server_socket);
-    server_socket = -1;
-}

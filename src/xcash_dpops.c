@@ -226,8 +226,6 @@ int main(int argc, char *argv[])
     start_block_production(); 
   }
 
-  shutdown_server();
-
   shutdown_database();
   DEBUG_PRINT("Database closed...");
   return 0;
