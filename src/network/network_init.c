@@ -8,6 +8,9 @@
 #include <netinet/in.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include "globals.h"
+#include "macro_functions.h"
+#include "config.h"
 
 int server_socket = -1;
 int epoll_fd = -1;
