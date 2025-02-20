@@ -1,4 +1,5 @@
 #include "dpops_round.h"
+#include "daemon_functions"
 
 void start_block_production(void)
 {
