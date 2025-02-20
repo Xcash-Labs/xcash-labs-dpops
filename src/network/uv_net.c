@@ -4,8 +4,10 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "macro_functions.h"
 #include "config.h"
+#include "globals.h"
+#include "macro_functions.h"
+
 
 void on_close(uv_handle_t* handle) {
     client_t* client = (client_t*)handle->data;
