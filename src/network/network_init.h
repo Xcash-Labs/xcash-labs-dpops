@@ -10,6 +10,7 @@ extern int epoll_fd;
 
 // Function Prototypes
 bool create_server(void);
+bool shutdown_server(void);
 
 //void start_epoll_event_loop(void);
 //void accept_new_connection(void);
