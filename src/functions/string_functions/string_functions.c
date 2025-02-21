@@ -18,6 +18,8 @@ int parse_json_data(const char *data, const char *field_name, char *result, size
         return XCASH_ERROR; // Invalid parameters
     }
 
+    DEBUG_PRINT("JSON parsing failed: %s", data);
+
     cJSON *json = cJSON_Parse(data);
     if (!json) {
         DEBUG_PRINT("JSON parsing failed: %s", data);
