@@ -35,7 +35,7 @@ void start_block_production(void)
             }
             else
             {
-                INFO_STAGE_PRINT("Waiting for a [%d], block production. Starting in ... [%lu:%02lu]",
+                INFO_STAGE_PRINT("Waiting for production of block [%d]. Starting in ... [%lu:%02lu]",
                     (int) atof(current_block_height), BLOCK_TIME - 1 - minute_within_block, 59 - (current_time.tv_sec % 60));
                 sleep(5);
             }
