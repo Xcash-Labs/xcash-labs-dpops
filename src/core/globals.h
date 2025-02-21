@@ -2,7 +2,7 @@
 #define GLOBALS_H_
 
 #include "config.h"
-//#include "structures.h"
+#include "structures.h"
 #include <mongoc/mongoc.h>
 
 /*--------------------------------------------------------------------------------------------------
