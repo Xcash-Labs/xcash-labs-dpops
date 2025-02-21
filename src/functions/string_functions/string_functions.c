@@ -2,10 +2,10 @@
 
 /*---------------------------------------------------------------------------------------------------------
 Name: parse_json_data
-Description: Parses JSON data safely using cJSON, extracting a field inside "result".
+Description: Parses JSON data safely using cJSON, supporting both root-level and "result" fields.
 Parameters:
   - data: The JSON-formatted string.
-  - field_name: The field to extract from "result".
+  - field_name: The field to extract (can be at root level or inside "result").
   - result: Output buffer to store extracted value.
   - result_size: The size of the output buffer.
 Return:
@@ -28,18 +28,23 @@ int parse_json_data(const char *data, const char *field_name, char *result, size
         return XCASH_ERROR;
     }
 
-    // Look for "result" object
-    cJSON *result_obj = cJSON_GetObjectItemCaseSensitive(json, "result");
-    if (!result_obj || !cJSON_IsObject(result_obj)) {
-        DEBUG_PRINT("Field 'result' not found in JSON or is not an object");
-        cJSON_Delete(json);
-        return XCASH_ERROR;
+    cJSON *field = cJSON_GetObjectItemCaseSensitive(json, field_name);
+
+    // If field is not found at root level, search inside "result"
+    if (!field) {
+        cJSON *result_obj = cJSON_GetObjectItemCaseSensitive(json, "result");
+        if (!result_obj || !cJSON_IsObject(result_obj)) {
+            DEBUG_PRINT("Field 'result' not found in JSON or is not an object");
+            cJSON_Delete(json);
+            return XCASH_ERROR;
+        }
+
+        field = cJSON_GetObjectItemCaseSensitive(result_obj, field_name);
     }
 
-    // Now look for the requested field inside "result"
-    cJSON *field = cJSON_GetObjectItemCaseSensitive(result_obj, field_name);
     if (!field) {
-        DEBUG_PRINT("Field '%s' not found in 'result' JSON object", field_name);
+        DEBUG_PRINT("Field '%s' not found in JSON", field_name);
+        DEBUG_PRINT("Parsed JSON structure: %s", cJSON_PrintUnformatted(json)); // Debug parsed JSON
         cJSON_Delete(json);
         return XCASH_ERROR;
     }
