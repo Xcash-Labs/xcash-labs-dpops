@@ -53,7 +53,8 @@ void start_block_production(void)
 //                round_result = process_round(round_number);
 
                 round_result = ROUND_SKIP;
-                round_number ++;
+                round_number = 1;
+                retries = 2;
 
                 if (round_result == ROUND_RETRY)
                 {
