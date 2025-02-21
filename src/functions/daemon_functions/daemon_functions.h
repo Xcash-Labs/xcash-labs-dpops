@@ -8,6 +8,7 @@
 #include "globals.h"
 #include "macro_functions.h"
 #include "network_functions.h"
+#include "string_functions.h"
 
 //int check_if_blockchain_is_fully_synced(void);
 //int get_current_block_height_network_data_nodes(void);
