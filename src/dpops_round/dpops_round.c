@@ -52,6 +52,8 @@ void start_block_production(void)
                 gettimeofday(&round_start_time, NULL);
 //                round_result = process_round(round_number);
 
+                round_result = ROUND_SKIP;
+
                 if (round_result == ROUND_RETRY)
                 {
                     retries++;

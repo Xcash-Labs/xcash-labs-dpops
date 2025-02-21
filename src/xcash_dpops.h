@@ -14,6 +14,7 @@
 #include "db_init.h"
 #include "structures.h"
 #include "VRF_functions.h"
+#include "dpops_round.h"
 
 typedef struct {
     char *block_verifiers_secret_key; // Holds your wallets public address
