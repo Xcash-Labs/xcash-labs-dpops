@@ -1,6 +1,14 @@
 #ifndef DAEMON_FUNCTIONS_H_   /* Include guard */
 #define DAEMON_FUNCTIONS_H_
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "config.h"
+#include "globals.h"
+#include "macro_functions.h"
+
 //int check_if_blockchain_is_fully_synced(void);
 //int get_current_block_height_network_data_nodes(void);
 //int get_block_template(char *result);
