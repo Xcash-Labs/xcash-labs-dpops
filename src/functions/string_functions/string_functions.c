@@ -18,8 +18,6 @@ int parse_json_data(const char *data, const char *field_name, char *result, size
         return XCASH_ERROR;
     }
 
-    DEBUG_PRINT("Raw JSON: %s", data);
-
     // Attempt to parse JSON
     cJSON *json = cJSON_Parse(data);
     if (!json) {
@@ -35,6 +33,7 @@ int parse_json_data(const char *data, const char *field_name, char *result, size
         cJSON *result_obj = cJSON_GetObjectItemCaseSensitive(json, "result");
         if (!result_obj || !cJSON_IsObject(result_obj)) {
             DEBUG_PRINT("Field 'result' not found in JSON or is not an object");
+            DEBUG_PRINT("Raw JSON: %s", data);
             cJSON_Delete(json);
             return XCASH_ERROR;
         }
