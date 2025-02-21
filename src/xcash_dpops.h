@@ -1,7 +1,19 @@
 #ifndef XCASH_DPOPS_TEST_H_   /* Include guard */
 #define XCASH_DPOPS_TEST_H_
 
+#include <argp.h>
+#include <string.h>
 #include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <signal.h>
+#include <sys/sysinfo.h>
+#include "config.h"
+#include "macro_functions.h"
+#include "globals.h"
+#include "db_init.h"
+#include "structures.h"
+#include "VRF_functions.h"
 
 typedef struct {
     char *block_verifiers_secret_key; // Holds your wallets public address

@@ -1,18 +1,4 @@
-#include <argp.h>
-#include <string.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <signal.h>
-#include <sys/sysinfo.h>
-
 #include "xcash_dpops.h"
-#include "config.h"
-#include "macro_functions.h"
-#include "globals.h"
-#include "db_init.h"
-#include "structures.h"
-#include "VRF_functions.h"
 
 // set globals defined in globals.h
 int sig_requests = 0;
