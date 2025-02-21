@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "http_utils.h"
+#include "json_parser.h"
 
 #include "config.h"
 #include "globals.h"
