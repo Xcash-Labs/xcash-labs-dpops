@@ -43,7 +43,7 @@ MongoDB_INC_DIRS := -I/usr/local/include/libbson-1.0 -I/usr/local/include/libmon
 CFLAGS ?= $(INC_FLAGS) $(MongoDB_INC_DIRS) -MMD -MP -Wall -Wextra -Wstrict-prototypes -Wcast-qual -Wfloat-equal -Wundef -Wshadow -Wcast-align -Wstrict-overflow -Wdouble-promotion -fexceptions -pie -fPIE -Wl,dynamicbase -Wl,nxcompat
 
 # Linker flags
-LDFLAGS ?= -lmongoc-1.0 -lbson-1.0 -lresolv -lpthread -lcrypto -luv -lcurl
+LDFLAGS ?= -lmongoc-1.0 -lbson-1.0 -lresolv -lpthread -lcrypto -luv
 
 # Build configurations
 debug: CFLAGS += -g -fno-stack-protector
