@@ -22,6 +22,8 @@ bool debug_enabled = false;
 char XCASH_DPOPS_delegates_IP_address[IP_LENGTH+1] = {0};
 char XCASH_daemon_IP_address[IP_LENGTH + 1] = {0};
 char XCASH_wallet_IP_address[IP_LENGTH+1] = {0};
+extern char current_block_height[BUFFER_SIZE_NETWORK_BLOCK_DATA] = {0};
+
 mongoc_client_pool_t* database_client_thread_pool = NULL;
 
 
