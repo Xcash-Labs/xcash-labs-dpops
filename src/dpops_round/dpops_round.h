@@ -2,8 +2,15 @@
 #define DPOPS_ROUND_H
 
 #include <stdbool.h>
-#include <time.h>
+#include <time.h> 
 #include "config.h"
+#include <stdio.h>
+#include <unistd.h>
+#include <sys/time.h>
+#include "config.h"
+#include "globals.h"
+#include "macro_functions.h"
+#include "daemon_functions.h"
 
 typedef enum {
     ROUND_ERROR, // some system fault occurred. mostly communication errors or other non-fatal error. In that case better wait till next round
