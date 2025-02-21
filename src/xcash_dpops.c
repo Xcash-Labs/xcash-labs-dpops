@@ -93,8 +93,6 @@ Description: Initialize globals and print program start header.
 ---------------------------------------------------------------------------------------------------------*/
 bool init_processing(const arg_config_t *arg_config)
 {
-
-  
   snprintf(XCASH_daemon_IP_address, sizeof(XCASH_daemon_IP_address), "%s", "127.0.0.1");
   snprintf(XCASH_DPOPS_delegates_IP_address, sizeof(XCASH_DPOPS_delegates_IP_address), "%s", "127.0.0.1");
   snprintf(XCASH_wallet_IP_address, sizeof(XCASH_wallet_IP_address), "%s", "127.0.0.1");
@@ -203,6 +201,11 @@ int main(int argc, char *argv[])
   {
     DEBUG_PRINT("Database opened successfully");
   } else {
+    FATAL_ERROR_EXIT("Can't open mongo database");
+  }
+
+  if(!(initialize_network_nodes()))
+  {
     FATAL_ERROR_EXIT("Can't initialize mongo database");
   }
 
