@@ -1,14 +1,5 @@
 #include "network_functions.h"
 
-// Structure to capture response data
-typedef struct {
-    char *data;
-    size_t size;
-} ResponseBuffer;
-
-#define IS_IP 1
-#define IS_HOSTNAME 2
-
 /*---------------------------------------------------------------------------------------------------------
 Name: check_if_IP_address_or_hostname
 Description: Checks if the data is an IP address or a hostname
