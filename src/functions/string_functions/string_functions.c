@@ -1,10 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <cjson/cJSON.h>
-
-#include "define_macros.h"
-#include "define_macro_functions.h"
+#include "string_functions.h"
 
 /*---------------------------------------------------------------------------------------------------------
 Name: parse_json_data
