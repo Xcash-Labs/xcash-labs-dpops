@@ -1,6 +1,4 @@
 #include "dpops_round.h"
-#include "http_utils.h"    // Ensure send_http_request is declared
-#include "json_parser.h"   // Ensure parse_json_data is declared
 
 void start_block_production(void)
 {
