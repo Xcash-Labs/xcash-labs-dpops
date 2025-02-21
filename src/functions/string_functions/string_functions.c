@@ -2,10 +2,10 @@
 
 /*---------------------------------------------------------------------------------------------------------
 Name: parse_json_data
-Description: Parses JSON data safely using cJSON, supporting nested field extraction.
+Description: Parses JSON data safely using cJSON, extracting a field inside "result".
 Parameters:
   - data: The JSON-formatted string.
-  - field_name: The field to extract.
+  - field_name: The field to extract from "result".
   - result: Output buffer to store extracted value.
   - result_size: The size of the output buffer.
 Return:
@@ -28,7 +28,7 @@ int parse_json_data(const char *data, const char *field_name, char *result, size
         return XCASH_ERROR;
     }
 
-    // First, look for "result" object
+    // Look for "result" object
     cJSON *result_obj = cJSON_GetObjectItemCaseSensitive(json, "result");
     if (!result_obj || !cJSON_IsObject(result_obj)) {
         DEBUG_PRINT("Field 'result' not found in JSON or is not an object");
@@ -36,7 +36,7 @@ int parse_json_data(const char *data, const char *field_name, char *result, size
         return XCASH_ERROR;
     }
 
-    // Now search inside "result" for the requested field
+    // Now look for the requested field inside "result"
     cJSON *field = cJSON_GetObjectItemCaseSensitive(result_obj, field_name);
     if (!field) {
         DEBUG_PRINT("Field '%s' not found in 'result' JSON object", field_name);
@@ -49,7 +49,7 @@ int parse_json_data(const char *data, const char *field_name, char *result, size
         strncpy(result, field->valuestring, result_size - 1);
         result[result_size - 1] = '\0';  // Ensure null termination
     } else if (cJSON_IsNumber(field)) {
-        snprintf(result, result_size, "%d", field->valueint);
+        snprintf(result, result_size, "%.6f", field->valuedouble);  // Supports both ints & floats
     } else {
         DEBUG_PRINT("Field '%s' has unsupported data type", field_name);
         cJSON_Delete(json);
