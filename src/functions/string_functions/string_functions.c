@@ -2,10 +2,10 @@
 
 /*---------------------------------------------------------------------------------------------------------
 Name: parse_json_data
-Description: Parses JSON data safely using cJSON, supporting nested fields.
+Description: Parses JSON data safely using cJSON, supporting nested field extraction.
 Parameters:
   - data: The JSON-formatted string.
-  - field_name: The field to extract (supports "parent.child" for nested fields).
+  - field_name: The field to extract.
   - result: Output buffer to store extracted value.
   - result_size: The size of the output buffer.
 Return:
@@ -18,7 +18,6 @@ int parse_json_data(const char *data, const char *field_name, char *result, size
         return XCASH_ERROR;
     }
 
-    // Debug raw JSON
     DEBUG_PRINT("Raw JSON: %s", data);
 
     // Attempt to parse JSON
@@ -29,25 +28,20 @@ int parse_json_data(const char *data, const char *field_name, char *result, size
         return XCASH_ERROR;
     }
 
-    cJSON *field = NULL;
+    // First, look for "result" object
+    cJSON *result_obj = cJSON_GetObjectItemCaseSensitive(json, "result");
+    if (!result_obj || !cJSON_IsObject(result_obj)) {
+        DEBUG_PRINT("Field 'result' not found in JSON or is not an object");
+        cJSON_Delete(json);
+        return XCASH_ERROR;
+    }
 
-    // Handle nested fields like "result.count"
-    char field_copy[256];
-    strncpy(field_copy, field_name, sizeof(field_copy) - 1);
-    field_copy[sizeof(field_copy) - 1] = '\0';  // Ensure null termination
-
-    char *token = strtok(field_copy, ".");
-    cJSON *current = json;
-
-    while (token) {
-        field = cJSON_GetObjectItemCaseSensitive(current, token);
-        if (!field) {
-            DEBUG_PRINT("Field '%s' not found in JSON", token);
-            cJSON_Delete(json);
-            return XCASH_ERROR;
-        }
-        current = field;
-        token = strtok(NULL, ".");
+    // Now search inside "result" for the requested field
+    cJSON *field = cJSON_GetObjectItemCaseSensitive(result_obj, field_name);
+    if (!field) {
+        DEBUG_PRINT("Field '%s' not found in 'result' JSON object", field_name);
+        cJSON_Delete(json);
+        return XCASH_ERROR;
     }
 
     // Extract and store the field value
