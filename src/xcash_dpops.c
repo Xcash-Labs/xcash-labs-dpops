@@ -29,9 +29,6 @@ mongoc_client_pool_t* database_client_thread_pool = NULL;
 
 // local 
 char xcash_wallet_public_address[XCASH_WALLET_LENGTH + 1];
-char XCASH_daemon_IP_address[IP_LENGTH + 1];
-char XCASH_DPOPS_delegates_IP_address[IP_LENGTH + 1];
-char XCASH_wallet_IP_address[IP_LENGTH + 1];
 
 static char doc[] =
 "\n"
