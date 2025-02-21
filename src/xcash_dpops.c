@@ -208,9 +208,9 @@ int main(int argc, char *argv[])
 
   signal(SIGINT, sigint_handler);
 
-  //if (create_server()) {
-  //  start_block_production(); 
-  //}
+  if (create_server()) {
+    start_block_production(); 
+  }
 
   shutdown_database();
   DEBUG_PRINT("Database closed...");
