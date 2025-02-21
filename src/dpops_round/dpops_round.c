@@ -34,7 +34,7 @@ void start_block_production(void)
                 round_result = ROUND_OK;
             }
             else
-            {   DEBUG_PRINT ("%s");
+            {   DEBUG_PRINT ("%s", current_block_height);
                 INFO_STAGE_PRINT("Waiting for a [%s] block production. Starting in ... [%lu:%02lu]",
                                  current_block_height, BLOCK_TIME - 1 - minute_within_block, 59 - (current_time.tv_sec % 60));
    INFO_STAGE_PRINT("Waiting for a [%s] block production. Starting in ... [%ld:%02ld]", current_block_height, BLOCK_TIME-1-minute_within_block, 59-(current_time.tv_sec % 60));
