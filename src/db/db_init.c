@@ -1,8 +1,4 @@
 #include "db_init.h"
-#include "globals.h"
-#include <mongoc/mongoc.h>
-#include "config.h"
-#include "macro_functions.h"
 
 bool initialize_database(void){
     return initialize_mongo_database(DATABASE_CONNECTION, &database_client_thread_pool);

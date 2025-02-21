@@ -1,8 +1,16 @@
 #ifndef UV_NET_H
 #define UV_NET_H
 
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include <uv.h>
 #include <time.h>
+#include "config.h"
+#include "globals.h"
+#include "macro_functions.h"
 
 typedef enum {
     STATUS_PENDING,

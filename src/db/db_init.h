@@ -1,11 +1,13 @@
 #ifndef DB_INIT_H
 #define DB_INIT_H
 
+#include "globals.h"
 #include <mongoc/mongoc.h>
 #include <bson/bson.h>
 #include <stdbool.h>
-
+#include "config.h"
 #include "globals.h"
+#include "macro_functions.h"
 
 bool initialize_database(void);
 void shutdown_database(void);
