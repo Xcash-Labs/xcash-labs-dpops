@@ -132,17 +132,11 @@ int insert_document_into_collection_json(const char* DATABASE, const char* COLLE
     bson_error_t error;
     bson_t* document = NULL;
     strncpy(data_buffer, DATA, sizeof(data_buffer) - 1);
-    DEBUG_PRINT("Starting 1");
     string_replace(data_buffer, sizeof(data_buffer), "\r\n", "");
-    DEBUG_PRINT("Starting 2");
     string_replace(data_buffer, sizeof(data_buffer), "\n", "");
-    DEBUG_PRINT("Starting 3");
     string_replace(data_buffer, sizeof(data_buffer), "\" : \"", "\":\"");
-    DEBUG_PRINT("Starting 4");
     string_replace(data_buffer, sizeof(data_buffer), "\", \"", "\",\"");
-    DEBUG_PRINT("Starting 5");
     string_replace(data_buffer, sizeof(data_buffer), "\" }", "\"}");
-    DEBUG_PRINT("Starting 6");
 
     const char* message = NULL;
     if (strstr(COLLECTION, "reserve_proofs") && (message = strstr(data_buffer, "\"public_address_created_reserve_proof\":\""))) {

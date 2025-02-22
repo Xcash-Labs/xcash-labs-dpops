@@ -89,8 +89,6 @@ void string_replace(char *data, const size_t DATA_TOTAL_LENGTH, const char* STR1
     }
 
     size_t data_len = strlen(data);
-
-    // ✅ Count occurrences of STR1
     size_t occurrence_count = 0;
     char* temp = data;
     while ((temp = strstr(temp, STR1)) != NULL) {
@@ -98,14 +96,12 @@ void string_replace(char *data, const size_t DATA_TOTAL_LENGTH, const char* STR1
         temp += slen;
     }
 
-    // ✅ Ensure buffer is large enough
     size_t max_possible_size = data_len + occurrence_count * (rlen > slen ? (rlen - slen) : 0);
     if (max_possible_size >= DATA_TOTAL_LENGTH) {
         ERROR_PRINT("Buffer too small for replacements");
         return;
     }
 
-    // ✅ Allocate buffer safely
     char *buf = calloc(max_possible_size + 1, sizeof(char)); // +1 for null-terminator
     if (!buf) {
         ERROR_PRINT("Memory allocation failed in string_replace()");
@@ -115,7 +111,6 @@ void string_replace(char *data, const size_t DATA_TOTAL_LENGTH, const char* STR1
     char *b = data;
     char *find;
     size_t buf_len = 0;
-
     while ((find = strstr(b, STR1)) != NULL) {   
         size_t segment_len = find - b;
         memcpy(buf + buf_len, b, segment_len);
@@ -128,10 +123,8 @@ void string_replace(char *data, const size_t DATA_TOTAL_LENGTH, const char* STR1
     }
 
     strcpy(buf + buf_len, b);
-
     snprintf(data, DATA_TOTAL_LENGTH - 1, "%s", buf);
     data[DATA_TOTAL_LENGTH - 1] = '\0';
-
     free(buf);
     buf = NULL;
 }
