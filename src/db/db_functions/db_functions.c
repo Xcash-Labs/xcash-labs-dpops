@@ -175,14 +175,15 @@ int insert_document_into_collection_json(const char* DATABASE, const char* COLLE
 
     del_hash(database_client_thread, COLLECTION);
 
-    DEBUG_PRINT("Starting");
-
     collection = mongoc_client_get_collection(database_client_thread, DATABASE, COLLECTION);
     if (!collection) {
         ERROR_PRINT("Failed to get collection: %s", COLLECTION);
         mongoc_client_pool_push(database_client_thread_pool, database_client_thread);
         return XCASH_ERROR;
     }
+
+    DEBUG_PRINT("Formatted JSON: %s", formatted_json);
+
 
     document = bson_new_from_json((const uint8_t*)formatted_json, -1, &error);
     if (!document) {
