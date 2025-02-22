@@ -1,5 +1,5 @@
-#ifndef UV_NET_H
-#define UV_NET_H
+#ifndef UV_NET_MULTI_H
+#define UV_NET_MULTI_H
 
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -55,4 +55,4 @@ void on_resolved(uv_getaddrinfo_t *resolver, int status, struct addrinfo *res);
 response_t** send_multi_request(const char **hosts, int port, const char* message);
 void cleanup_responses(response_t** responses);
 
-#endif // UV_NET_H
+#endif
