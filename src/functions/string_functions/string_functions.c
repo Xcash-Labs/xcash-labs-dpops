@@ -82,18 +82,33 @@ void string_replace(char *data, const size_t DATA_TOTAL_LENGTH, const char* STR1
 
     size_t slen = strlen(STR1);
     size_t rlen = strlen(STR2);
-    if (slen == 0) return; // Prevent infinite loops
+
+    if (slen == 0) {
+        ERROR_PRINT("Empty search string in string_replace()");
+        return;
+    }
 
     size_t data_len = strlen(data);
-    size_t max_possible_size = data_len + (rlen - slen) * 10; // Assume max 10 replacements
-    if (max_possible_size > DATA_TOTAL_LENGTH) {
+
+    // ✅ Count occurrences of STR1
+    size_t occurrence_count = 0;
+    char* temp = data;
+    while ((temp = strstr(temp, STR1)) != NULL) {
+        occurrence_count++;
+        temp += slen;
+    }
+
+    // ✅ Ensure buffer is large enough
+    size_t max_possible_size = data_len + occurrence_count * (rlen > slen ? (rlen - slen) : 0);
+    if (max_possible_size >= DATA_TOTAL_LENGTH) {
         ERROR_PRINT("Buffer too small for replacements");
         return;
     }
 
+    // ✅ Allocate buffer safely
     char *buf = calloc(max_possible_size + 1, sizeof(char)); // +1 for null-terminator
     if (!buf) {
-        ERROR_PRINT("Memory allocation failed in string_replace");
+        ERROR_PRINT("Memory allocation failed in string_replace()");
         return;
     }
 
@@ -102,24 +117,24 @@ void string_replace(char *data, const size_t DATA_TOTAL_LENGTH, const char* STR1
     size_t buf_len = 0;
 
     while ((find = strstr(b, STR1)) != NULL) {   
-        // Copy everything up to occurrence
         size_t segment_len = find - b;
         memcpy(buf + buf_len, b, segment_len);
         buf_len += segment_len;
 
-        // Copy the replacement string
         memcpy(buf + buf_len, STR2, rlen);
         buf_len += rlen;
 
-        // Move past the found substring
         b = find + slen;
     }
 
     strcpy(buf + buf_len, b);
-    snprintf(data, DATA_TOTAL_LENGTH, "%s", buf);
-    free(buf);
-}
 
+    snprintf(data, DATA_TOTAL_LENGTH - 1, "%s", buf);
+    data[DATA_TOTAL_LENGTH - 1] = '\0';
+
+    free(buf);
+    buf = NULL;
+}
 
 /*---------------------------------------------------------------------------------------------------------
 Name: random_string
