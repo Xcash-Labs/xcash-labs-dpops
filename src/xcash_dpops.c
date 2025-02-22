@@ -199,7 +199,7 @@ int main(int argc, char *argv[])
 
   if (initialize_database())
   {
-    DEBUG_PRINT("Database opened successfully");
+    INFO_PRINT("Database opened successfully");
   } else {
     FATAL_ERROR_EXIT("Can't open mongo database");
   }
@@ -214,6 +214,6 @@ int main(int argc, char *argv[])
   start_block_production(); 
 
   shutdown_database();
-  DEBUG_PRINT("Database closed...");
+  INFO_PRINT("Database closed...");
   return 0;
 }

@@ -18,6 +18,7 @@
 #define DATABASE_CONNECTION "mongodb://127.0.0.1:27017" // The database connection string
 #define DATABASE_NAME "XCASH_PROOF_OF_STAKE" // The name of the database
 #define DATABASE_NAME_DELEGATES "XCASH_PROOF_OF_STAKE_DELEGATES" // The name of the database for the delegates
+#define MAXIMUM_DATABASE_WRITE_SIZE 48000000 // The maximum database write size
 
 #define BLOCK_VERIFIERS_IP_ADDRESS_TOTAL_LENGTH 100 // The maximum length of the block verifiers IP address  ????
 #define XCASH_WALLET_LENGTH 98 // The length of a XCA address

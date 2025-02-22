@@ -31,7 +31,7 @@ size_t write_callback(void *contents, size_t size, size_t nmemb, void *userp) {
 
     char *ptr = realloc(buffer->data, buffer->size + total_size + 1);
     if (ptr == NULL) {
-        DEBUG_PRINT("Memory allocation failed in write_callback()");
+        ERROR_PRINT("Memory allocation failed in write_callback()");
         return XCASH_ERROR;  // Stop writing
     }
 
@@ -69,13 +69,13 @@ int send_http_request(char *result, const char *host, const char *url, int port,
     // Initialize the response buffer
     ResponseBuffer response = {malloc(1), 0};
     if (!response.data) {
-        DEBUG_PRINT("Memory allocation failed");
+        ERROR_PRINT("Memory allocation failed");
         return XCASH_ERROR;
     }
 
     curl = curl_easy_init();
     if (!curl) {
-        DEBUG_PRINT("Failed to initialize libcurl");
+        ERROR_PRINT("Failed to initialize libcurl");
         free(response.data);
         return XCASH_ERROR;
     }
@@ -103,7 +103,7 @@ int send_http_request(char *result, const char *host, const char *url, int port,
     // Perform the request
     res = curl_easy_perform(curl);
     if (res != CURLE_OK) {
-        DEBUG_PRINT("HTTP request failed: %s", curl_easy_strerror(res));
+        ERROR_PRINT("HTTP request failed: %s", curl_easy_strerror(res));
         free(response.data);
         curl_easy_cleanup(curl);
         if (header_list) curl_slist_free_all(header_list);

@@ -36,7 +36,7 @@ void alloc_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
 
     buf->base = (char*)malloc(TRANSFER_BUFFER_SIZE);
     if (!buf->base) {
-        DEBUG_PRINT("Memory allocation failed in alloc_buffer()\n");
+        ERROR_PRINT("Memory allocation failed in alloc_buffer()\n");
         buf->len = 0; // Avoid using an invalid pointer
         return;
     }
@@ -47,7 +47,7 @@ void alloc_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
 void on_write(uv_write_t* req, int status) {
     client_t* client = (client_t*)req->data;
     if (status < 0) {
-        DEBUG_PRINT("Write error: %s\n", uv_strerror(status));
+        ERROR_PRINT("Write error: %s\n", uv_strerror(status));
         safe_close(client);  
         return;
     }
@@ -82,7 +82,7 @@ void retry_connection(uv_timer_t* timer) {
     client_t* client = (client_t*)timer->data;
 
     if (client->retry_count >= MAX_RETRIES) {
-        DEBUG_PRINT("Max retries reached for %s, marking as failed.\n", client->response->host);
+        ERROR_PRINT("Max retries reached for %s, marking as failed.\n", client->response->host);
         client->response->status = STATUS_ERROR;
         safe_close(client);
         return;
@@ -109,7 +109,7 @@ void on_connect(uv_connect_t* req, int status) {
     }
 
     if (status < 0) {
-        DEBUG_PRINT("Connection failed: %s (Attempt %d/%d)\n", uv_strerror(status), client->retry_count, MAX_RETRIES);
+        ERROR_PRINT("Connection failed: %s (Attempt %d/%d)\n", uv_strerror(status), client->retry_count, MAX_RETRIES);
 
         if (client->retry_count < MAX_RETRIES) {
             uv_timer_init(uv_default_loop(), &client->timer);
@@ -129,7 +129,7 @@ void on_connect(uv_connect_t* req, int status) {
 
     char* msg_copy = strdup(client->message);
     if (!msg_copy) {
-        DEBUG_PRINT("Error: Memory allocation failed for message copy\n");
+        ERROR_PRINT("Error: Memory allocation failed for message copy\n");
         safe_close(client);
         return;
     }
@@ -154,7 +154,7 @@ void on_resolved(uv_getaddrinfo_t *resolver, int status, struct addrinfo *res) {
         DEBUG_PRINT("Resolved hostname: %s -> %s\n", client->response->host, inet_ntoa(((struct sockaddr_in*)res->ai_addr)->sin_addr));
         start_connection(client, res->ai_addr);
     } else {
-        DEBUG_PRINT("DNS resolution failed for %s: %s\n", client->response->host, uv_strerror(status));
+        ERROR_PRINT("DNS resolution failed for %s: %s\n", client->response->host, uv_strerror(status));
         client->response->status = STATUS_ERROR;
         safe_close(client);
     }
