@@ -48,7 +48,8 @@ bool initialize_network_nodes(void) {
     }
 
     // Insert all network nodes from the array
-    for (size_t i = 0; i < sizeof(network_nodes) / sizeof(network_nodes[0]); i++) {
+    size_t i = 0;
+    while (network_nodes[i].public_address != NULL && strlen(network_nodes[i].public_address) > 0) {
         if (strlen(network_nodes[i].public_address) == 0) break;  // Stop at sentinel
 
         char json_data[SMALL_BUFFER_SIZE];
