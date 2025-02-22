@@ -9,6 +9,7 @@
 #include "config.h"
 #include "globals.h"
 #include "macro_functions.h"
+#include "db_functions.h"
 
 bool initialize_database(void);
 void shutdown_database(void);
