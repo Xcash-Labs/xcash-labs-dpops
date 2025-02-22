@@ -136,10 +136,13 @@ int insert_document_into_collection_json(const char* DATABASE, const char* COLLE
     string_replace(data_buffer, sizeof(data_buffer), "\r\n", "");
     DEBUG_PRINT("Starting 2");
     string_replace(data_buffer, sizeof(data_buffer), "\n", "");
-    string_replace(data_buffer, sizeof(data_buffer), "\" : \"", "\":\"");
-    string_replace(data_buffer, sizeof(data_buffer), "\", \"", "\",\"");
-    string_replace(data_buffer, sizeof(data_buffer), "\" }", "\"}");
     DEBUG_PRINT("Starting 3");
+    string_replace(data_buffer, sizeof(data_buffer), "\" : \"", "\":\"");
+    DEBUG_PRINT("Starting 4");
+    string_replace(data_buffer, sizeof(data_buffer), "\", \"", "\",\"");
+    DEBUG_PRINT("Starting 5");
+    string_replace(data_buffer, sizeof(data_buffer), "\" }", "\"}");
+    DEBUG_PRINT("Starting 6");
 
     const char* message = NULL;
     if (strstr(COLLECTION, "reserve_proofs") && (message = strstr(data_buffer, "\"public_address_created_reserve_proof\":\""))) {
