@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include "md5.h"
 #include "config.h"
+#include "globals.h"
 #include "macro_functions.h"
 #include <time.h>
 
