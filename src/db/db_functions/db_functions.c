@@ -124,8 +124,6 @@ int insert_document_into_collection_json(const char* DATABASE, const char* COLLE
         return XCASH_ERROR;
     }
 
-    DEBUG_PRINT("Starting 1");
-
     char data_hash[DATA_HASH_LENGTH + 1] = {0};
     char data_buffer[BUFFER_SIZE] = {0};
     char formatted_json[BUFFER_SIZE] = {0};
@@ -133,9 +131,10 @@ int insert_document_into_collection_json(const char* DATABASE, const char* COLLE
     mongoc_collection_t* collection = NULL;
     bson_error_t error;
     bson_t* document = NULL;
-    DEBUG_PRINT("Starting 2");
     strncpy(data_buffer, DATA, sizeof(data_buffer) - 1);
+    DEBUG_PRINT("Starting 1");
     string_replace(data_buffer, sizeof(data_buffer), "\r\n", "");
+    DEBUG_PRINT("Starting 2");
     string_replace(data_buffer, sizeof(data_buffer), "\n", "");
     string_replace(data_buffer, sizeof(data_buffer), "\" : \"", "\":\"");
     string_replace(data_buffer, sizeof(data_buffer), "\", \"", "\",\"");
