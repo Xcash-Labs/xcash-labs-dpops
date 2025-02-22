@@ -38,18 +38,21 @@ void shutdown_mongo_database(mongoc_client_pool_t **db_client_thread_pool) {
     mongoc_cleanup();
 }
 
-bool initialize_network_nodes(void) {
+bool initialize_network_nodes(void)
+{
     // Check if the collection is empty
     int document_count = count_all_documents_in_collection(DATABASE_NAME, "delegates");
 
-    if (document_count > 0) {
+    if (document_count > 0)
+    {
         DEBUG_PRINT("Network nodes collection already populated, skipping initialization.");
         return XCASH_OK;
     }
 
     // Insert all network nodes from the array
     size_t i = 0;
-    while (network_nodes[i].public_address != NULL && strlen(network_nodes[i].public_address) > 0) {
+    while (network_nodes[i].public_address != NULL && strlen(network_nodes[i].public_address) > 0)
+    {
 
         char json_data[SMALL_BUFFER_SIZE];
         snprintf(json_data, sizeof(json_data),
@@ -76,13 +79,21 @@ bool initialize_network_nodes(void) {
                  network_nodes[i].delegate_name,
                  network_nodes[i].public_key);
 
+        if (strlen(json_data) >= SMALL_BUFFER_SIZE - 1)
+        {
+            ERROR_PRINT("JSON data too large for buffer, skipping node: %s", network_nodes[i].public_address);
+            i++; // Move to next node
+            continue;
+        }
+
         // Insert into database
-        if (insert_document_into_collection_json(DATABASE_NAME, "delegates", json_data) != 1) {
+        if (insert_document_into_collection_json(DATABASE_NAME, "delegates", json_data) != 1)
+        {
             ERROR_PRINT("Failed to add network node: %s", network_nodes[i].public_address);
-            return XCASH_ERROR;  // Stop immediately if any insertion fails
+            return XCASH_ERROR; // Stop immediately if any insertion fails
         }
         DEBUG_PRINT("Added network node: %s", network_nodes[i].ip_address);
-        i++; 
+        i++;
     }
 
     return XCASH_OK;
