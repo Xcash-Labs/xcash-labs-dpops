@@ -206,7 +206,7 @@ int main(int argc, char *argv[])
 
   if(!(initialize_network_nodes()))
   {
-    FATAL_ERROR_EXIT("Can't initialize mongo database");
+    FATAL_ERROR_EXIT("Can't add seed nodes to mongo database");
   }
 
   signal(SIGINT, sigint_handler);

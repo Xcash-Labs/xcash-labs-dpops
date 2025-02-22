@@ -16,13 +16,13 @@ bool initialize_mongo_database(const char *mongo_uri, mongoc_client_pool_t **db_
     // Create a new URI object from the provided URI string
     uri_thread_pool = mongoc_uri_new_with_error(mongo_uri, &error);
     if (!uri_thread_pool) {
-        DEBUG_PRINT("Failed to parse URI: %s\nError message: %s", mongo_uri, error.message);
+        ERROR_PRINT("Failed to parse URI: %s\nError message: %s", mongo_uri, error.message);
         return XCASH_ERROR;
     }
     // Create a new client pool with the parsed URI object
     *db_client_thread_pool = mongoc_client_pool_new(uri_thread_pool);
     if (!*db_client_thread_pool) {
-        DEBUG_PRINT("Failed to create a new client pool.");
+        ERROR_PRINT("Failed to create a new client pool.");
         mongoc_uri_destroy(uri_thread_pool);
         return XCASH_ERROR;
     }
@@ -79,7 +79,7 @@ bool initialize_network_nodes(void) {
 
         // Insert into database
         if (insert_document_into_collection_json(DATABASE_NAME, "delegates", json_data) != 1) {
-            DEBUG_PRINT("Failed to add network node: %s", network_nodes[i].public_address);
+            ERROR_PRINT("Failed to add network node: %s", network_nodes[i].public_address);
             return XCASH_ERROR;  // Stop immediately if any insertion fails
         }
 

@@ -33,7 +33,7 @@ int get_current_block_height(char *result)
                               SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) != XCASH_OK ||
             parse_json_data(response_data, "count", result, BUFFER_SIZE) == 0)
         {
-            DEBUG_PRINT("Could not get the current block height");
+            ERROR_PRINT("Could not get the current block height");
             return XCASH_ERROR;
         }
     }
