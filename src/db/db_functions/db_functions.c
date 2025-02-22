@@ -119,7 +119,6 @@ Return: 0 if an error has occured, 1 if successfull
 int insert_document_into_collection_json(const char* DATABASE, const char* COLLECTION, const char* DATA) {
     if (strlen(DATA) > MAXIMUM_DATABASE_WRITE_SIZE) {
         ERROR_PRINT("Data exceeds maximum write size.");
-        return 0;
         return XCASH_ERROR;
     }
 
@@ -130,10 +129,7 @@ int insert_document_into_collection_json(const char* DATABASE, const char* COLLE
     mongoc_collection_t* collection = NULL;
     bson_error_t error;
     bson_t* document = NULL;
-
     strncpy(data_buffer, DATA, sizeof(data_buffer) - 1);
-    
-    // Remove unnecessary whitespace and extra spaces
     string_replace(data_buffer, sizeof(data_buffer), "\r\n", "");
     string_replace(data_buffer, sizeof(data_buffer), "\n", "");
     string_replace(data_buffer, sizeof(data_buffer), "\" : \"", "\":\"");
@@ -143,13 +139,14 @@ int insert_document_into_collection_json(const char* DATABASE, const char* COLLE
     const char* message = NULL;
     if (strstr(COLLECTION, "reserve_proofs") && (message = strstr(data_buffer, "\"public_address_created_reserve_proof\":\""))) {
         message += 40;
-        snprintf(data_hash, sizeof(data_hash), "000000000000000000000000000000%s", message);
+        snprintf(data_hash, sizeof(data_hash), "000000000000000000000000000000%.*s", DATA_HASH_LENGTH - 32, message);
     } else if (strstr(COLLECTION, "reserve_bytes") && (message = strstr(data_buffer, "\"reserve_bytes_data_hash\":\""))) {
         message += 27;
         strncpy(data_hash, message, DATA_HASH_LENGTH);
+        data_hash[DATA_HASH_LENGTH] = '\0';
     } else if (strstr(COLLECTION, "delegates") && (message = strstr(data_buffer, "\"public_key\":\""))) {
         message += 14;
-        snprintf(data_hash, sizeof(data_hash), "0000000000000000000000000000000000000000000000000000000000000000%s", message);
+        snprintf(data_hash, sizeof(data_hash), "0000000000000000000000000000000000000000000000000000000000000000%.*s", DATA_HASH_LENGTH - 64, message);
     } else if (strstr(COLLECTION, "statistics")) {
         memset(data_hash, '0', DATA_HASH_LENGTH);
     } else {
@@ -161,9 +158,15 @@ int insert_document_into_collection_json(const char* DATABASE, const char* COLLE
         return XCASH_ERROR;
     }
 
-    snprintf(formatted_json, sizeof(formatted_json), "{\"_id\":\"%s\",%s}", data_hash, data_buffer);
+    // Ensure formatted JSON does not exceed buffer size
+    int json_size = snprintf(formatted_json, sizeof(formatted_json), "{\"_id\":\"%s\",%s}", data_hash, data_buffer);
+    if (json_size < 0 || json_size >= (int)sizeof(formatted_json)) {
+        ERROR_PRINT("Formatted JSON size exceeds buffer limit.");
+        return XCASH_ERROR;
+    }
 
-    if (!(database_client_thread = mongoc_client_pool_pop(database_client_thread_pool))) {
+    database_client_thread = mongoc_client_pool_pop(database_client_thread_pool);
+    if (!database_client_thread) {
         ERROR_PRINT("Failed to get a database connection from the pool.");
         return XCASH_ERROR;
     }
