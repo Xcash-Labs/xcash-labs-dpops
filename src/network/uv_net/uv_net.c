@@ -6,8 +6,13 @@ void on_close(uv_handle_t* handle) {
         client->is_closing = 1;
         client->response->req_time_end = time(NULL);
 
-        // Ensure any active timers are stopped before freeing memory
         uv_timer_stop(&client->timer);
+
+        if (client->response) {
+            free(client->response->host);
+            free(client->response->data);
+            free(client->response);
+        }
 
         free(client);
     }
@@ -18,8 +23,8 @@ void safe_close(client_t* client) {
         return;
     }
 
-    uv_close((uv_handle_t*)&client->timer, NULL);  // Close the timer handle
-    uv_close((uv_handle_t*)&client->handle, on_close); // Close the client handle
+    uv_close((uv_handle_t*)&client->timer, NULL);
+    uv_close((uv_handle_t*)&client->handle, on_close);
 }
 
 void on_timeout(uv_timer_t* timer) {
@@ -36,8 +41,9 @@ void alloc_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
 
     buf->base = (char*)malloc(TRANSFER_BUFFER_SIZE);
     if (!buf->base) {
-        ERROR_PRINT("Memory allocation failed in alloc_buffer()\n");
-        buf->len = 0; // Avoid using an invalid pointer
+        ERROR_PRINT("Memory allocation failed in alloc_buffer()");
+        buf->len = 0;
+        buf->base = NULL;
         return;
     }
 
@@ -46,10 +52,15 @@ void alloc_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
 
 void on_write(uv_write_t* req, int status) {
     client_t* client = (client_t*)req->data;
+    char* msg_copy = (char*)req->data;
+
     if (status < 0) {
-        ERROR_PRINT("Write error: %s\n", uv_strerror(status));
-        safe_close(client);  
-        return;
+        ERROR_PRINT("Write error: %s", uv_strerror(status));
+        safe_close(client);
+    }
+
+    if (msg_copy) {
+        free(msg_copy);
     }
 
     uv_timer_stop(&client->timer);
@@ -61,7 +72,13 @@ void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
     client_t* client = (client_t*)stream->data;
 
     if (nread > 0) {
-        client->response->data = realloc(client->response->data, client->response->size + nread);
+        char* new_data = realloc(client->response->data, client->response->size + nread);
+        if (!new_data) {
+            ERROR_PRINT("Memory allocation failed in on_read()");
+            safe_close(client);
+            return;
+        }
+        client->response->data = new_data;
         memcpy(client->response->data + client->response->size, buf->base, nread);
         client->response->size += nread;
 
@@ -73,7 +90,7 @@ void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
         safe_close(client);
     }
 
-    if (buf->base) {  
+    if (buf->base) {
         free(buf->base);
     }
 }
@@ -82,13 +99,13 @@ void retry_connection(uv_timer_t* timer) {
     client_t* client = (client_t*)timer->data;
 
     if (client->retry_count >= MAX_RETRIES) {
-        ERROR_PRINT("Max retries reached for %s, marking as failed.\n", client->response->host);
+        ERROR_PRINT("Max retries reached for %s, marking as failed.", client->response->host);
         client->response->status = STATUS_ERROR;
         safe_close(client);
         return;
     }
 
-    DEBUG_PRINT("Retrying connection to %s (%d/%d)...\n", client->response->host, client->retry_count + 1, MAX_RETRIES);
+    DEBUG_PRINT("Retrying connection to %s (%d/%d)...", client->response->host, client->retry_count + 1, MAX_RETRIES);
 
     safe_close(client);
     client->retry_count++;
@@ -129,15 +146,14 @@ void on_connect(uv_connect_t* req, int status) {
 
     char* msg_copy = strdup(client->message);
     if (!msg_copy) {
-        ERROR_PRINT("Error: Memory allocation failed for message copy\n");
+        ERROR_PRINT("Memory allocation failed for message copy");
         safe_close(client);
         return;
     }
 
     uv_buf_t buf = uv_buf_init(msg_copy, strlen(msg_copy));
+    client->write_req.data = msg_copy;
     uv_write(&client->write_req, (uv_stream_t*)&client->handle, &buf, 1, on_write);
-
-    free(msg_copy);
 }
 
 void start_connection(client_t* client, const struct sockaddr* addr) {
@@ -155,7 +171,13 @@ void on_resolved(uv_getaddrinfo_t *resolver, int status, struct addrinfo *res) {
         start_connection(client, res->ai_addr);
     } else {
         ERROR_PRINT("DNS resolution failed for %s: %s\n", client->response->host, uv_strerror(status));
-        client->response->status = STATUS_ERROR;
+
+        if (client->response) {
+            free(client->response->host);
+            free(client->response->data);
+            free(client->response);
+        }
+
         safe_close(client);
     }
 
@@ -180,23 +202,15 @@ response_t** send_multi_request(const char **hosts, int port, const char* messag
         if (!hosts[i]) continue;
 
         client_t* client = calloc(1, sizeof(client_t));
-        client->message = message;
-        client->retry_count = 0;
-        client->response = (response_t*)calloc(1, sizeof(response_t));
+        client->message = strdup(message);
+        client->response = calloc(1, sizeof(response_t));
         client->response->host = strdup(hosts[i]);
-        client->response->status = STATUS_PENDING;
-        client->response->client = client;
-        client->response->req_time_start = time(NULL);
         responses[i] = client->response;
-
-        uv_timer_init(loop, &client->timer);
-        client->timer.data = client;
-        uv_timer_start(&client->timer, on_timeout, CONNECTION_TIMEOUT, 0);
 
         uv_tcp_init(loop, &client->handle);
         client->handle.data = client;
-        client->connect_req.data = client;
-        client->write_req.data = client;
+        uv_timer_init(loop, &client->timer);
+        client->timer.data = client;
 
         struct sockaddr_in dest;
         uv_ip4_addr(hosts[i], port, &dest);
@@ -204,5 +218,15 @@ response_t** send_multi_request(const char **hosts, int port, const char* messag
     }
 
     uv_run(loop, UV_RUN_DEFAULT);
+
+    for (int i = 0; i < total_hosts; i++) {
+        if (responses[i]) {
+            free(responses[i]->host);
+            free(responses[i]->data);
+            free(responses[i]);
+        }
+    }
+    free(responses);
+
     return responses;
 }
