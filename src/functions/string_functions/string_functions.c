@@ -119,3 +119,47 @@ void string_replace(char *data, const size_t DATA_TOTAL_LENGTH, const char* STR1
     snprintf(data, DATA_TOTAL_LENGTH, "%s", buf);
     free(buf);
 }
+
+
+/*---------------------------------------------------------------------------------------------------------
+Name: random_string
+Description: Creates a random string of specified length
+Parameters:
+  result - The string where you want the random string to be saved to
+  LENGTH - The length of the random string
+Return: 0 if an error has occured, 1 if successfull
+---------------------------------------------------------------------------------------------------------*/
+int random_string(char *result, const size_t LENGTH) {
+
+    #define STRING "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+    #define STRING_LEN 62  // Length of STRING
+    #define MAXIMUM_COUNT 1000
+
+    if (!result)
+    {
+        ERROR_PRINT(stderr, "ERROR: random_string() received NULL pointer for 'result'\n");
+        return XCASH_ERROR;
+    }
+    if (LENGTH == 0)
+    {
+        ERROR_PRINT(stderr, "ERROR: random_string() received LENGTH = 0\n");
+        return XCASH_ERROR;
+    }
+
+    memset(result, 0, LENGTH + 1);
+    unsigned char random_bytes[LENGTH];
+    size_t generated = 0;
+    ssize_t bytes_read = getrandom(random_bytes, LENGTH, 0);
+    if (bytes_read < 0) {
+        ERROR_PRINT("getrandom() failed");
+        return XCASH_ERROR;
+    }
+
+    // Convert random bytes into allowed characters from `STRING`
+    for (generated = 0; generated < LENGTH; generated++) {
+        result[generated] = STRING[random_bytes[generated] % STRING_LEN];
+    }
+
+    result[LENGTH] = '\0'; 
+    return (generated == LENGTH) ? XCASH_OK : XCASH_ERROR;
+}
