@@ -199,3 +199,50 @@ int insert_document_into_collection_json(const char* DATABASE, const char* COLLE
 
     return XCASH_OK;
 }
+
+/*---------------------------------------------------------------------------------------------------------
+Name: check_if_database_collection_exist
+Description: Checks if a database collection exist
+Parameters:
+  DATABASE - The database name
+  COLLECTION - The collection name
+Return: 0 if an error has occured, 1 if successfull
+---------------------------------------------------------------------------------------------------------*/
+int check_if_database_collection_exist(const char* DATABASE, const char* COLLECTION) {
+    if (!database_client_thread_pool) {
+        ERROR_PRINT("Database client pool is not initialized! Cannot check collections.");
+        return XCASH_ERROR;
+    }
+
+    mongoc_client_t* database_client_thread = mongoc_client_pool_pop(database_client_thread_pool);
+    if (!database_client_thread) {
+        ERROR_PRINT("Failed to get a database connection from the pool.");
+        return XCASH_ERROR;
+    }
+
+    mongoc_database_t* database = mongoc_client_get_database(database_client_thread, DATABASE);
+    if (!database) {
+        ERROR_PRINT("Failed to get database: %s", DATABASE);
+        mongoc_client_pool_push(database_client_thread_pool, database_client_thread);
+        return XCASH_ERROR;
+    }
+
+    bson_error_t error;
+    bool collection_exists = mongoc_database_has_collection(database, COLLECTION, &error);
+    
+    if (!collection_exists) {
+        if (error.message[0] != '\0') {
+            ERROR_PRINT("MongoDB error while checking for collection '%s' in database '%s': %s", COLLECTION, DATABASE, error.message);
+        } else {
+            DEBUG_PRINT("Collection does not exist: %s", COLLECTION);
+        }
+        mongoc_database_destroy(database);
+        mongoc_client_pool_push(database_client_thread_pool, database_client_thread);
+        return XCASH_ERROR;
+    }
+
+    mongoc_database_destroy(database);
+    mongoc_client_pool_push(database_client_thread_pool, database_client_thread);
+
+    return XCASH_OK;
+}
