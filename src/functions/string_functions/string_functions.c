@@ -137,12 +137,12 @@ int random_string(char *result, const size_t LENGTH) {
 
     if (!result)
     {
-        ERROR_PRINT(stderr, "ERROR: random_string() received NULL pointer for 'result'\n");
+        ERROR_PRINT("ERROR: random_string() received NULL pointer for 'result'\n");
         return XCASH_ERROR;
     }
     if (LENGTH == 0)
     {
-        ERROR_PRINT(stderr, "ERROR: random_string() received LENGTH = 0\n");
+        ERROR_PRINT("ERROR: random_string() received LENGTH = 0\n");
         return XCASH_ERROR;
     }
 
