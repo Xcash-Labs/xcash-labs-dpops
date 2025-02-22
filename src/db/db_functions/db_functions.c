@@ -33,7 +33,7 @@ int count_documents_in_collection(const char* DATABASE, const char* COLLECTION, 
       DEBUG_PRINT("Collection does not exist: %s", COLLECTION);
       mongoc_collection_destroy(collection);
       mongoc_client_pool_push(database_client_thread_pool, database_client_thread);
-      return 0;  // Return 0 instead of an error when the collection does not exist
+      return 0;
   }
 
   bson_error_t error;
@@ -91,7 +91,7 @@ int count_all_documents_in_collection(const char* DATABASE, const char* COLLECTI
       DEBUG_PRINT("Collection does not exist: %s", COLLECTION);
       mongoc_collection_destroy(collection);
       mongoc_client_pool_push(database_client_thread_pool, database_client_thread);
-      return 0; // Collection does not exist → Return 0 instead of an error
+      return 0;
   }
 
   // Count the documents
@@ -124,6 +124,8 @@ int insert_document_into_collection_json(const char* DATABASE, const char* COLLE
         return XCASH_ERROR;
     }
 
+    DEBUG_PRINT('Starting');
+
     char data_hash[DATA_HASH_LENGTH + 1] = {0};
     char data_buffer[BUFFER_SIZE] = {0};
     char formatted_json[BUFFER_SIZE] = {0};
@@ -137,6 +139,8 @@ int insert_document_into_collection_json(const char* DATABASE, const char* COLLE
     string_replace(data_buffer, sizeof(data_buffer), "\" : \"", "\":\"");
     string_replace(data_buffer, sizeof(data_buffer), "\", \"", "\",\"");
     string_replace(data_buffer, sizeof(data_buffer), "\" }", "\"}");
+
+    DEBUG_PRINT('Starting');
 
     const char* message = NULL;
     if (strstr(COLLECTION, "reserve_proofs") && (message = strstr(data_buffer, "\"public_address_created_reserve_proof\":\""))) {
@@ -166,6 +170,9 @@ int insert_document_into_collection_json(const char* DATABASE, const char* COLLE
         ERROR_PRINT("Formatted JSON size exceeds buffer limit.");
         return XCASH_ERROR;
     }
+
+    DEBUG_PRINT('Starting');
+
 
     database_client_thread = mongoc_client_pool_pop(database_client_thread_pool);
     if (!database_client_thread) {
