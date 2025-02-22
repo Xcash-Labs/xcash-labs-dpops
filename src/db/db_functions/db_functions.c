@@ -183,9 +183,6 @@ int insert_document_into_collection_json(const char* DATABASE, const char* COLLE
         return XCASH_ERROR;
     }
 
-    DEBUG_PRINT("Formatted JSON: %s", formatted_json);
-
-
     document = bson_new_from_json((const uint8_t*)formatted_json, -1, &error);
     if (!document) {
         ERROR_PRINT("Could not convert JSON to BSON: %s", error.message);

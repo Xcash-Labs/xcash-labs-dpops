@@ -48,9 +48,11 @@ static int total_threads = 0;
 const NetworkNode network_nodes[] = {
   {"XCA1dd7JaWhiuBavUM2ZTJG3GdgPkT1Yd5Q6VvNvnxbEfb6JhUhziTF6w5mMPVeoSv3aa1zGyhedpaa2QQtGEjBo7N6av9nhaU",
    "xcashseeds.us",
+   "xcashseeds_us".
    "f681a933620c8e9e029d9ac0977d3a2f1d6a64cc49304e079458e3b5d2d4a66f"},
   {"XCA1b6Sg5QVBX4jrctQ9SVUcHFqpaGST6bqtFpyoQadTX8SaDs92xR8iec3VfaXKzhYijFiMfwoM4TuYRgy6NXzn5titJnWbra",
    "xcashseeds.uk",
+   "xcashseeds_uk",
    "63232aa1b020a772945bf50ce96db9a04242583118b5a43952f0aaf9ecf7cfbb"},
   // Sentinel value (empty entry to mark the end)
   {NULL, NULL, NULL}};

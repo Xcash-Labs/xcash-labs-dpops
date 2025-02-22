@@ -44,13 +44,12 @@ bool initialize_network_nodes(void) {
 
     if (document_count > 0) {
         DEBUG_PRINT("Network nodes collection already populated, skipping initialization.");
-        return XCASH_OK;  // Collection is not empty, no need to insert nodes
+        return XCASH_OK;
     }
 
     // Insert all network nodes from the array
     size_t i = 0;
     while (network_nodes[i].public_address != NULL && strlen(network_nodes[i].public_address) > 0) {
-        if (strlen(network_nodes[i].public_address) == 0) break;  // Stop at sentinel
 
         char json_data[SMALL_BUFFER_SIZE];
         snprintf(json_data, sizeof(json_data),
@@ -74,7 +73,7 @@ bool initialize_network_nodes(void) {
                  " \"public_key\": \"%s\" }",
                  network_nodes[i].public_address,
                  network_nodes[i].ip_address,
-                 network_nodes[i].ip_address,  // Delegate name same as IP for now
+                 network_nodes[i].delegate_name,
                  network_nodes[i].public_key);
 
         // Insert into database
@@ -82,8 +81,8 @@ bool initialize_network_nodes(void) {
             ERROR_PRINT("Failed to add network node: %s", network_nodes[i].public_address);
             return XCASH_ERROR;  // Stop immediately if any insertion fails
         }
-
         DEBUG_PRINT("Added network node: %s", network_nodes[i].ip_address);
+        i++; 
     }
 
     return XCASH_OK;

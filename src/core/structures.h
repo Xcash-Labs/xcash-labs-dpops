@@ -5,6 +5,7 @@
 typedef struct {
     const char *public_address;
     const char *ip_address;
+    const char *delegate_name;
     const char *public_key;
 } NetworkNode;
 
