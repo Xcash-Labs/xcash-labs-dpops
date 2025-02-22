@@ -6,11 +6,11 @@
 #include <mongoc/mongoc.h>
 #include <bson/bson.h>
 
-
 #include "config.h"
 #include "globals.h"
 #include "macro_functions.h"
 #include "string_functions.h"
+#include "cashed_hashes.h"
 
 //#include "database_functions.h"
 //#include "network_functions.h"
