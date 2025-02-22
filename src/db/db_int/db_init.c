@@ -78,10 +78,10 @@ bool initialize_network_nodes(void) {
                  network_nodes[i].public_key);
 
         // Insert into database
-        if (insert_document_into_collection_json(DATABASE_NAME, "delegates", json_data) != 1) {
-            ERROR_PRINT("Failed to add network node: %s", network_nodes[i].public_address);
-            return XCASH_ERROR;  // Stop immediately if any insertion fails
-        }
+//        if (insert_document_into_collection_json(DATABASE_NAME, "delegates", json_data) != 1) {
+//            DEBUG_PRINT("Failed to add network node: %s", network_nodes[i].public_address);
+//            return XCASH_ERROR;  // Stop immediately if any insertion fails
+//        }
 
         DEBUG_PRINT("Added network node: %s", network_nodes[i].ip_address);
     }
