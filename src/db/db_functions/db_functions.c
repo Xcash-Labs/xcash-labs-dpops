@@ -124,7 +124,7 @@ int insert_document_into_collection_json(const char* DATABASE, const char* COLLE
         return XCASH_ERROR;
     }
 
-    DEBUG_PRINT('Starting');
+    DEBUG_PRINT("Starting");
 
     char data_hash[DATA_HASH_LENGTH + 1] = {0};
     char data_buffer[BUFFER_SIZE] = {0};
@@ -140,7 +140,7 @@ int insert_document_into_collection_json(const char* DATABASE, const char* COLLE
     string_replace(data_buffer, sizeof(data_buffer), "\", \"", "\",\"");
     string_replace(data_buffer, sizeof(data_buffer), "\" }", "\"}");
 
-    DEBUG_PRINT('Starting');
+    DEBUG_PRINT("Starting");
 
     const char* message = NULL;
     if (strstr(COLLECTION, "reserve_proofs") && (message = strstr(data_buffer, "\"public_address_created_reserve_proof\":\""))) {
@@ -171,7 +171,7 @@ int insert_document_into_collection_json(const char* DATABASE, const char* COLLE
         return XCASH_ERROR;
     }
 
-    DEBUG_PRINT('Starting');
+    DEBUG_PRINT("Starting");
 
 
     database_client_thread = mongoc_client_pool_pop(database_client_thread_pool);
