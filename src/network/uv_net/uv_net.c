@@ -39,6 +39,8 @@ void alloc_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
     (void)suggested_size;
     (void)handle;
 
+    DEBUG_PRINT("Here");
+    
     buf->base = (char*)malloc(TRANSFER_BUFFER_SIZE);
     if (!buf->base) {
         ERROR_PRINT("Memory allocation failed in alloc_buffer()");

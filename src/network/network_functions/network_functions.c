@@ -66,6 +66,7 @@ int send_http_request(char *result, const char *host, const char *url, int port,
     CURLcode res;
     struct curl_slist *header_list = NULL;
 
+    DEBUG_PRINT("Here");
     // Initialize the response buffer
     ResponseBuffer response = {malloc(1), 0};
     if (!response.data) {
