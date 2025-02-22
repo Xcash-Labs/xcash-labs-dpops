@@ -20,6 +20,6 @@
 //#include "VRF_functions.h"
 //#include "sha512EL.h"
 
-// int count_documents_in_collection(const char* DATABASE, const char* COLLECTION, const char* DATA);
+int count_documents_in_collection(const char* DATABASE, const char* COLLECTION, const char* DATA);
 int count_all_documents_in_collection(const char* DATABASE, const char* COLLECTION);
 #endif
