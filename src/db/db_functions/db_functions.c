@@ -95,6 +95,7 @@ int count_all_documents_in_collection(const char* DATABASE, const char* COLLECTI
   }
 
   // Count the documents
+  bson_t *filter = bson_new();
   bson_error_t error;
   int count = (int)mongoc_collection_count_documents(collection, NULL, NULL, NULL, NULL, &error);
   if (count < 0) {

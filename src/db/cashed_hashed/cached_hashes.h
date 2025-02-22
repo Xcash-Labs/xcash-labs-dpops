@@ -3,7 +3,6 @@
 
 #include <bson/bson.h>
 #include <mongoc/mongoc.h>
-//#include <stdio.h>
 #include "config.h"
 #include "globals.h"
 #include "macro_functions.h"
