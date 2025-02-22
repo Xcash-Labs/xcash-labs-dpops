@@ -10,7 +10,7 @@
 #include "globals.h"
 #include "macro_functions.h"
 #include "string_functions.h"
-#include "cashed_hashes.h"
+#include "cached_hashes.h"
 
 //#include "database_functions.h"
 //#include "network_functions.h"
