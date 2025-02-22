@@ -171,9 +171,6 @@ int insert_document_into_collection_json(const char* DATABASE, const char* COLLE
         return XCASH_ERROR;
     }
 
-    DEBUG_PRINT("Starting");
-
-
     database_client_thread = mongoc_client_pool_pop(database_client_thread_pool);
     if (!database_client_thread) {
         ERROR_PRINT("Failed to get a database connection from the pool.");
@@ -181,6 +178,8 @@ int insert_document_into_collection_json(const char* DATABASE, const char* COLLE
     }
 
     del_hash(database_client_thread, COLLECTION);
+
+    DEBUG_PRINT("Starting");
 
     collection = mongoc_client_get_collection(database_client_thread, DATABASE, COLLECTION);
     if (!collection) {
