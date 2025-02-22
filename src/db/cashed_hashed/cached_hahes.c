@@ -1,10 +1,4 @@
-#include <bson/bson.h>
-#include <mongoc/mongoc.h>
-#include <stdio.h>
-#include "md5.h"
-#include "define_macro_functions.h"
-#include <time.h>
-
+# include "cached_hashes.h"
 
 #define PRINT_ERROR(fmt, args...) fprintf(stderr, "\033[1;31m" fmt "\033[0m", ##args)
 #define PRINT_DEBUG(fmt, args...) if (debug_settings == 1) fprintf(stderr, "\033[1;33m" fmt "\033[0m", ##args)
