@@ -63,3 +63,59 @@ int parse_json_data(const char *data, const char *field_name, char *result, size
     cJSON_Delete(json);
     return XCASH_OK;
 }
+
+/*---------------------------------------------------------------------------------------------------------
+Name: string_replace
+Description: String replace
+Parameters:
+  data - The string to replace the data
+  DATA_TOTAL_LENGTH - The maximum size of data
+  STR1 - The string to be replaced
+  STR2 - The string to replace the other string
+Return: The result string
+---------------------------------------------------------------------------------------------------------*/
+void string_replace(char *data, const size_t DATA_TOTAL_LENGTH, const char* STR1, const char* STR2) { 
+    if (!data || !STR1 || !STR2) {
+        ERROR_PRINT("Invalid input to string_replace");
+        return;
+    }
+
+    size_t slen = strlen(STR1);
+    size_t rlen = strlen(STR2);
+    if (slen == 0) return; // Prevent infinite loops
+
+    size_t data_len = strlen(data);
+    size_t max_possible_size = data_len + (rlen - slen) * 10; // Assume max 10 replacements
+    if (max_possible_size > DATA_TOTAL_LENGTH) {
+        ERROR_PRINT("Buffer too small for replacements");
+        return;
+    }
+
+    char *buf = calloc(max_possible_size + 1, sizeof(char)); // +1 for null-terminator
+    if (!buf) {
+        ERROR_PRINT("Memory allocation failed in string_replace");
+        return;
+    }
+
+    char *b = data;
+    char *find;
+    size_t buf_len = 0;
+
+    while ((find = strstr(b, STR1)) != NULL) {   
+        // Copy everything up to occurrence
+        size_t segment_len = find - b;
+        memcpy(buf + buf_len, b, segment_len);
+        buf_len += segment_len;
+
+        // Copy the replacement string
+        memcpy(buf + buf_len, STR2, rlen);
+        buf_len += rlen;
+
+        // Move past the found substring
+        b = find + slen;
+    }
+
+    strcpy(buf + buf_len, b);
+    snprintf(data, DATA_TOTAL_LENGTH, "%s", buf);
+    free(buf);
+}
