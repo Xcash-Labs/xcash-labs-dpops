@@ -133,14 +133,13 @@ int insert_document_into_collection_json(const char* DATABASE, const char* COLLE
     mongoc_collection_t* collection = NULL;
     bson_error_t error;
     bson_t* document = NULL;
+    DEBUG_PRINT("Starting 2");
     strncpy(data_buffer, DATA, sizeof(data_buffer) - 1);
     string_replace(data_buffer, sizeof(data_buffer), "\r\n", "");
     string_replace(data_buffer, sizeof(data_buffer), "\n", "");
     string_replace(data_buffer, sizeof(data_buffer), "\" : \"", "\":\"");
     string_replace(data_buffer, sizeof(data_buffer), "\", \"", "\",\"");
     string_replace(data_buffer, sizeof(data_buffer), "\" }", "\"}");
-
-    DEBUG_PRINT("Starting 2");
 
     const char* message = NULL;
     if (strstr(COLLECTION, "reserve_proofs") && (message = strstr(data_buffer, "\"public_address_created_reserve_proof\":\""))) {
