@@ -55,7 +55,7 @@ const NetworkNode network_nodes[] = {
    "xcashseeds_uk",
    "63232aa1b020a772945bf50ce96db9a04242583118b5a43952f0aaf9ecf7cfbb"},
   // Sentinel value (empty entry to mark the end)
-  {NULL, NULL, NULL}};
+  {NULL, NULL, NULL, NULL}};
 
 /*---------------------------------------------------------------------------------------------------------
 Name: error_t parse_opt
