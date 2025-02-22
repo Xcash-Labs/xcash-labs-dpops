@@ -97,11 +97,12 @@ int count_all_documents_in_collection(const char* DATABASE, const char* COLLECTI
   // Count the documents
   bson_t *filter = bson_new();
   bson_error_t error;
-  int count = (int)mongoc_collection_count_documents(collection, NULL, NULL, NULL, NULL, &error);
+  int count = (int)mongoc_collection_count_documents(collection, filter, NULL, NULL, NULL, &error);
   if (count < 0) {
       ERROR_PRINT("Error counting documents in %s: %s", COLLECTION, error.message);
   }
 
+  bson_destroy(filter);
   mongoc_collection_destroy(collection);
   mongoc_client_pool_push(database_client_thread_pool, database_client_thread);
   
