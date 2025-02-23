@@ -241,20 +241,32 @@ int main(int argc, char *argv[])
   }
 
   // not sure about this - relook at
-  if(!(initialize_network_nodes()))
+  if (!(initialize_network_nodes()))
   {
     shutdown_database();
     FATAL_ERROR_EXIT("Can't add seed nodes to mongo database");
   }
 
-  signal(SIGINT, sigint_handler);
+  // Register signal handler
+  struct sigaction sa;
+  sa.sa_handler = sigint_handler;
+  sigemptyset(&sa.sa_mask);
+  sa.sa_flags = 0;
+  sigaction(SIGINT, &sa, NULL);
 
-  if (!(start_tcp_server(XCASH_DPOPS_PORT)))
+  // Start TCP server
+  if (start_tcp_server(XCASH_DPOPS_PORT))
+  {
+    // Run block production after a short delay
+    uv_timer_t block_production_timer;
+    uv_timer_init(uv_default_loop(), &block_production_timer);
+    uv_timer_start(&block_production_timer, on_start_block_production, 100, 0);
+    uv_run(uv_default_loop(), UV_RUN_DEFAULT);
+  }
+  else
   {
     FATAL_ERROR_EXIT("Failed to start TCP server.");
   }
-
-  start_block_production();
 
   stop_tcp_server();
   shutdown_database();
