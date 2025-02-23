@@ -180,30 +180,21 @@ bool init_processing(const arg_config_t *arg_config)
 Name: sigint_handler
 Description: Shuts program down on signal
 ---------------------------------------------------------------------------------------------------------*/
-//void sigint_handler(int sig_num) {
-//  sig_requests++;
-//  DEBUG_PRINT("Termination signal %d received [%d] times. Shutting down...", sig_num, sig_requests);
-//  stop_tcp_server();
-//  DEBUG_PRINT("Shutting down database engine");
-  // cleanup_data_structures();                     add this later......
-//shutdown_database();
-//  exit(0);
-//}
-
-
 void sigint_handler_uv(uv_signal_t* req, int signum) {
-  (void)signum;  // ✅ Suppress warning if unused
+  (void)signum;  // Avoid unused parameter warning
+  DEBUG_PRINT("SIGINT received, shutting down gracefully...");
 
-  INFO_PRINT("SIGINT received. Stopping TCP server...");
-  
-  stop_tcp_server();
-  shutdown_database();
+  stop_tcp_server();  // Stop the TCP server
+  uv_signal_stop(req); // Stop signal watcher
+  uv_stop(uv_default_loop()); // Stop the event loop
 
-  uv_signal_stop(req);  // ✅ Stop listening for signals
-  uv_close((uv_handle_t *)req, NULL);  // ✅ Close the signal handler
+  DEBUG_PRINT("Stopping database...");
+  shutdown_database();  // Clean up database
 
+  DEBUG_PRINT("Exiting program.");
   exit(0);
 }
+
 
 
 
@@ -276,18 +267,16 @@ int main(int argc, char *argv[])
   // Start TCP server
   if (start_tcp_server(XCASH_DPOPS_PORT))
   {
-    // Setup SIGINT handler for UV loop
-    uv_signal_t sigint_watcher;
     uv_signal_init(uv_default_loop(), &sigint_watcher);
     uv_signal_start(&sigint_watcher, sigint_handler_uv, SIGINT);
 
-    // Run block production after a short delay
-    uv_timer_t block_production_timer;
-    uv_timer_init(uv_default_loop(), &block_production_timer);
-    uv_timer_start(&block_production_timer, on_start_block_production, 100, 0);
-    
-    uv_run(uv_default_loop(), UV_RUN_DEFAULT);  // ✅ SIGINT now works within event loop
-  }
+    INFO_PRINT("Signal handler registered.");
+
+    if (start_tcp_server(XCASH_DPOPS_PORT)) {
+        uv_run(uv_default_loop(), UV_RUN_DEFAULT);
+    } else {
+        FATAL_ERROR_EXIT("Failed to start TCP server.");
+    }
   else
   {
     FATAL_ERROR_EXIT("Failed to start TCP server.");
