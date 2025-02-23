@@ -2,7 +2,6 @@
 
 // set globals defined in globals.h
 int sig_requests = 0;
-bool is_shutdown_state = false;
 bool is_seed_node = false;
 bool debug_enabled = false;
 
@@ -15,6 +14,9 @@ mongoc_client_pool_t* database_client_thread_pool = NULL;
 
 // local
 char XCASH_DPOPS_delegates_IP_address[IP_LENGTH+1] = {0};
+static bool show_help = false;
+static bool create_key = false;
+static int total_threads = 0;
 
 static char doc[] =
 "\n"
@@ -28,7 +30,9 @@ BRIGHT_WHITE_TEXT("Debug Options:\n")
 "  --debug                                 Display verbose log messages.\n"
 "\n"
 BRIGHT_WHITE_TEXT("Advanced Options:\n")
-"  --total-threads THREADS                 Set total threads (Default: CPU total threads).\n"
+"  --total-threads THREADS                 Sets the UV_THREADPOOL_SIZE environment variable that controls the.\n"
+"                                          number of worker threads in the libuv thread pool (default is 4).\n"
+"\n"
 "  --generate-key                          Generate public/private key for block verifiers.\n"
 "\n"
 "For more details on each option, refer to the documentation or use the --help option.\n";
@@ -37,14 +41,10 @@ static struct argp_option options[] = {
   {"help", 'h', 0, 0, "List all valid parameters.", 0},
   {"block-verifiers-secret-key", 'k', "SECRET_KEY", 0, "Set the block verifier's secret key", 0},
   {"debug", OPTION_DEBUG, 0, 0, "Display debug and informational messages.", 0},
-  {"total-threads", OPTION_TOTAL_THREADS, "THREADS", 0, "Set total threads (Default: CPU total threads).", 0},
+  {"total-threads", OPTION_TOTAL_THREADS, "THREADS", 0, "Set total threads (Default: 4).", 0},
   {"generate-key", OPTION_GENERATE_KEY, 0, 0, "Generate public/private key for block verifiers.", 0},
   {0}
 };
-
-static bool show_help = false;
-static bool create_key = false;
-static int total_threads = 0;
 
 const NetworkNode network_nodes[] = {
   {"XCA1dd7JaWhiuBavUM2ZTJG3GdgPkT1Yd5Q6VvNvnxbEfb6JhUhziTF6w5mMPVeoSv3aa1zGyhedpaa2QQtGEjBo7N6av9nhaU",
@@ -91,6 +91,41 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 static struct argp argp = {options, parse_opt, 0, doc, NULL, NULL, NULL};
 
 /*---------------------------------------------------------------------------------------------------------
+Name: configure_uv_threadpool
+Description: Sets the UV_THREADPOOL_SIZE environment variable. Default is the system default of 4 and can
+not be greater that the number of cpus for the server.
+---------------------------------------------------------------------------------------------------------*/
+bool configure_uv_threadpool(void)
+{
+  if (total_threads != 0)
+  {
+    int wsthreads = get_nprocs();
+    if (wsthreads < 1)
+    {
+      ERROR_PRINT("Failed to get CPU core count. Defaulting to 4 threads.");
+      return XCASH_OK
+    }
+    if (total_threads > wsthreads)
+    {
+      total_threads = wsthreads;
+    }
+
+    char threadpool_size[10];
+    snprintf(threadpool_size, sizeof(threadpool_size), "%d", total_threads);
+    if (setenv("UV_THREADPOOL_SIZE", threadpool_size, 1) != 0)
+    {
+      ERROR_PRINT("Failed to set UV_THREADPOOL_SIZE");
+      return XCASH_ERROR;
+    }
+    else
+    {
+      DEBUG_PRINT("UV_THREADPOOL_SIZE set to %s", threadpool_size);
+    }
+  }
+  return XCASH_OK;
+}
+
+/*---------------------------------------------------------------------------------------------------------
 Name: init_processing
 Description: Initialize globals and print program start header.
 ---------------------------------------------------------------------------------------------------------*/
@@ -99,7 +134,6 @@ bool init_processing(const arg_config_t *arg_config)
   snprintf(XCASH_daemon_IP_address, sizeof(XCASH_daemon_IP_address), "%s", "127.0.0.1");
   snprintf(XCASH_DPOPS_delegates_IP_address, sizeof(XCASH_DPOPS_delegates_IP_address), "%s", "127.0.0.1");
   snprintf(XCASH_wallet_IP_address, sizeof(XCASH_wallet_IP_address), "%s", "127.0.0.1");
-  total_threads = (total_threads == 0) ? get_nprocs() : total_threads;
 
   static const char xcash_tech_header[] =
       "\n"
@@ -123,7 +157,8 @@ bool init_processing(const arg_config_t *arg_config)
   "Daemon:\t\t%s:%d\n"\
   "DPoPS:\t\t%s:%d\n"\
   "Wallet:\t\t%s:%d\n"\
-  "MongoDB:\t%s\n"
+  "MongoDB:\t%s\n"\
+  "Total threads:\t\%d\n"
   
   INFO_PRINT(xcash_tech_status_fmt,
     XCASH_DPOPS_CURRENT_VERSION, "~Lazarus",
@@ -132,7 +167,7 @@ bool init_processing(const arg_config_t *arg_config)
     XCASH_daemon_IP_address, XCASH_DAEMON_PORT,
     XCASH_DPOPS_delegates_IP_address, XCASH_DPOPS_PORT,
     XCASH_wallet_IP_address, XCASH_WALLET_PORT,
-    DATABASE_CONNECTION);
+    DATABASE_CONNECTION, total_threads);
   if (debug_enabled)
   {
     fprintf(stderr, "\n");
@@ -146,18 +181,11 @@ Name: sigint_handler
 Description: Shuts program down on signal
 ---------------------------------------------------------------------------------------------------------*/
 void sigint_handler(int sig_num) {
-  /* Signal handler function */
   sig_requests++;
   DEBUG_PRINT("Termination signal %d received [%d] times. Shutting down...", sig_num, sig_requests);
-  is_shutdown_state = true;
-//  while(sig_requests < 3 && threads_running> 0) {
-//      DEBUG_PRINT("Shutting down. Threads still running %d...", threads_running);
-//      poke_dpops_port();
-//      sleep(1);
-//  }
-//  DEBUG_PRINT("Shutting down. Threads remains %d", threads_running);
+  uv_stop(uv_default_loop());
   DEBUG_PRINT("Shutting down database engine");
-//  cleanup_data_structures();
+  cleanup_data_structures();
   shutdown_database();
   exit(0);
 }
@@ -198,6 +226,8 @@ int main(int argc, char *argv[])
     FATAL_ERROR_EXIT("The --block-verifiers-secret-key is mandatory and should be %d characters long!", VRF_SECRET_KEY_LENGTH);
   }
   
+  if(!(configure_uv_threadpool(total_threads)
+
   init_processing(&arg_config);
 
   if (initialize_database())

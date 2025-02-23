@@ -13,7 +13,6 @@ extern mongoc_client_pool_t* database_client_thread_pool;  // database
 extern char XCASH_daemon_IP_address[IP_LENGTH + 1];
 
 extern bool is_seed_node;   // True if node is a seed node
-extern bool is_shutdown_state; // True if shutdown requested
 extern bool debug_enabled;  // True if debug enabled
 extern int sig_requests; // for shutdown signal requests
 
