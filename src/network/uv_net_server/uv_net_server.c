@@ -116,21 +116,32 @@ bool start_tcp_server(int port) {
     return XCASH_OK;
 }
 
-// ✅ Graceful shutdown function
 void stop_tcp_server() {
     INFO_PRINT("Stopping TCP server...");
 
-    // ✅ Stop accepting new connections
+    // Stop accepting new connections
     uv_close((uv_handle_t *)&server, NULL);
 
-    // ✅ Stop the event loop (forces `uv_run()` to exit)
+    // Stop the event loop
     uv_stop(&loop);
 
-    // ✅ Wait for the `uv_thread` to exit
-    if (pthread_join(uv_thread, NULL) != 0) {
-        ERROR_PRINT("Failed to join UV event loop thread.");
-    }
+    // Close all active handles
+    uv_walk(&loop, close_callback, NULL);
 
-    // ✅ Close the event loop properly
-    uv_loop_close(&loop);
+    // Give libuv some time to clean up
+    uv_run(&loop, UV_RUN_NOWAIT);
+
+    // Close the loop only if it’s empty
+    if (uv_loop_close(&loop) != 0) {
+        ERROR_PRINT("Failed to close the event loop. Some handles are still open.");
+    } else {
+        INFO_PRINT("TCP server stopped successfully.");
+    }
+}
+
+// ✅ Helper function to close all handles
+void close_callback(uv_handle_t *handle, void *arg) {
+    if (!uv_is_closing(handle)) {
+        uv_close(handle, NULL);
+    }
 }
