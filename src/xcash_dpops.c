@@ -17,6 +17,7 @@ char XCASH_DPOPS_delegates_IP_address[IP_LENGTH+1] = {0};
 static bool show_help = false;
 static bool create_key = false;
 static int total_threads = 4;
+static uv_signal_t sigint_watcher;
 
 static char doc[] =
 "\n"
@@ -180,15 +181,26 @@ bool init_processing(const arg_config_t *arg_config)
 Name: sigint_handler
 Description: Shuts program down on signal
 ---------------------------------------------------------------------------------------------------------*/
-void sigint_handler(int sig_num) {
-  sig_requests++;
-  DEBUG_PRINT("Termination signal %d received [%d] times. Shutting down...", sig_num, sig_requests);
-  stop_tcp_server();
-  DEBUG_PRINT("Shutting down database engine");
+//void sigint_handler(int sig_num) {
+//  sig_requests++;
+//  DEBUG_PRINT("Termination signal %d received [%d] times. Shutting down...", sig_num, sig_requests);
+//  stop_tcp_server();
+//  DEBUG_PRINT("Shutting down database engine");
   // cleanup_data_structures();                     add this later......
+//shutdown_database();
+//  exit(0);
+//}
+
+void sigint_handler_uv(uv_signal_t* req, int signum) {
+  INFO_PRINT("SIGINT received. Stopping TCP server...");
+  stop_tcp_server();
   shutdown_database();
+  uv_signal_stop(req);
+  uv_close((uv_handle_t *)req, NULL);
   exit(0);
 }
+
+
 
 /*---------------------------------------------------------------------------------------------------------
 Name: on_start_block_production
@@ -256,19 +268,13 @@ int main(int argc, char *argv[])
     FATAL_ERROR_EXIT("Can't add seed nodes to mongo database");
   }
 
-  // Register signal handler
-  struct sigaction sa;
-  sa.sa_handler = sigint_handler;
-  sigemptyset(&sa.sa_mask);
-  sa.sa_flags = 0;
-  sigaction(SIGINT, &sa, NULL);
-
-  signal(SIGINT, sigint_handler);
+  // Use libuv's signal handler
+  uv_signal_init(uv_default_loop(), &sigint_watcher);
+  uv_signal_start(&sigint_watcher, sigint_handler_uv, SIGINT);
 
   // Start TCP server
   if (start_tcp_server(XCASH_DPOPS_PORT))
   {
-    // Run block production after a short delay
     uv_timer_t block_production_timer;
     uv_timer_init(uv_default_loop(), &block_production_timer);
     uv_timer_start(&block_production_timer, on_start_block_production, 100, 0);
