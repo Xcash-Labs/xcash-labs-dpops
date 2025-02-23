@@ -270,16 +270,23 @@ int main(int argc, char *argv[])
   }
 
   // Use libuv's signal handler
-  uv_signal_init(uv_default_loop(), &sigint_watcher);
-  uv_signal_start(&sigint_watcher, sigint_handler_uv, SIGINT);
+  //uv_signal_init(uv_default_loop(), &sigint_watcher);
+  //uv_signal_start(&sigint_watcher, sigint_handler_uv, SIGINT);
 
   // Start TCP server
   if (start_tcp_server(XCASH_DPOPS_PORT))
   {
+    // Setup SIGINT handler for UV loop
+    uv_signal_t sigint_watcher;
+    uv_signal_init(uv_default_loop(), &sigint_watcher);
+    uv_signal_start(&sigint_watcher, sigint_handler_uv, SIGINT);
+
+    // Run block production after a short delay
     uv_timer_t block_production_timer;
     uv_timer_init(uv_default_loop(), &block_production_timer);
     uv_timer_start(&block_production_timer, on_start_block_production, 100, 0);
-    uv_run(uv_default_loop(), UV_RUN_DEFAULT);
+    
+    uv_run(uv_default_loop(), UV_RUN_DEFAULT);  // ✅ SIGINT now works within event loop
   }
   else
   {
