@@ -75,7 +75,7 @@ int start_tcp_server(int port) {
         return XCASH_ERROR;
     }
 
-    DEBUG_PRINT("Server listening on port " BLUE_TEXT("%d"), port);
+    DEBUG_PRINT("Server listening on port %d"), port);
 
     // ✅ Run the event loop
     uv_run(&loop, UV_RUN_DEFAULT);
