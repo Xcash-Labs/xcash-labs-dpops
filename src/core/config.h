@@ -8,6 +8,7 @@
 #define XCASH_DAEMON_PORT 18281 // The X-CASH Daemon RPC IP
 #define XCASH_WALLET_PORT 18281  // The X-CASH Wallet RPC IP
 #define XCASH_DPOPS_PORT 18281   // The X-CASH Dpops IP
+#define DATABASE_CONNECTION "mongodb://127.0.0.1:27017" // The database connection string
 
 #define TRANSFER_BUFFER_SIZE 4096  // Size of the buffer used for data transfer in bytes (4 KB)
 #define RESPONSE_TIMEOUT 5000  // Maximum time (in milliseconds) to wait for a response before closing the connection (5 seconds)
@@ -15,22 +16,22 @@
 #define MAX_RETRIES 3  // Number of times a failed connection attempt will be retried before marking it as failed
 #define RETRY_DELAY_MS 500  // Delay (in milliseconds) before retrying a failed connection attempt (0.5 seconds)
 
-
-#define DATABASE_CONNECTION "mongodb://127.0.0.1:27017" // The database connection string
 #define DATABASE_NAME "XCASH_PROOF_OF_STAKE" // The name of the database
 #define DATABASE_NAME_DELEGATES "XCASH_PROOF_OF_STAKE_DELEGATES" // The name of the database for the delegates
 #define MAXIMUM_DATABASE_WRITE_SIZE 48000000 // The maximum database write size
 
-#define BLOCK_VERIFIERS_IP_ADDRESS_TOTAL_LENGTH 100 // The maximum length of the block verifiers IP address  ????
-#define XCASH_WALLET_LENGTH 98 // The length of a XCA address
-#define VRF_SECRET_KEY_LENGTH 128 // Length of VRF Secret Key
-
 // Lengths
-#define IP_LENGTH 39
+#define IP_LENGTH 253
 #define BUFFER_SIZE_NETWORK_BLOCK_DATA 500
 #define BUFFER_SIZE 300000
 #define SMALL_BUFFER_SIZE 2000
 #define DATA_HASH_LENGTH 128 // The length of the SHA2-512 hash
+#define XCASH_PUBLIC_ADDR_LENGTH 98 // The length of a XCA address
+#define VRF_SECRET_KEY_LENGTH 128 // Length of VRF Secret Key
+
+#define BLOCK_VERIFIERS_IP_ADDRESS_TOTAL_LENGTH 100 // The maximum length of the block verifiers IP address  ????
+#define VRF_SECRET_KEY_LENGTH 128 // Length of VRF Secret Key
+
 
 // VRF
 #define VRF_PUBLIC_KEY_LENGTH 64
