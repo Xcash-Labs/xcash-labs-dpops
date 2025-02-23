@@ -130,11 +130,15 @@ void stop_tcp_server() {
     // Walk through all handles and close them
     uv_walk(&loop, close_callback, NULL);
 
-    // Ensure all handles are closed before stopping the loop
-    uv_stop(&loop);
+    // Wait for handles to close
+    int attempts = 10;  // Max attempts to wait for cleanup
+    while (uv_loop_alive(&loop) && attempts-- > 0) {
+        INFO_PRINT("Waiting for handles to close... (%d attempts left)", attempts);
+        uv_run(&loop, UV_RUN_NOWAIT);
+        usleep(500000);  // Sleep 500ms to give time for handles to close
+    }
 
-    // Allow handles to close properly before exiting
-    uv_run(&loop, UV_RUN_NOWAIT);
+    uv_stop(&loop);
 
     if (uv_loop_close(&loop) != 0) {
         ERROR_PRINT("Failed to close the event loop. Some handles are still open.");
