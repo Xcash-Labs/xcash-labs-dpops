@@ -3,8 +3,9 @@
 static uv_loop_t loop;
 static uv_tcp_t server;
 
+
 // ✅ Handle client connections
-void on_new_connection(uv_stream_t *server, int status) {
+void on_new_connection(uv_stream_t *server_handle, int status) {
     if (status < 0) {
         ERROR_PRINT("Error on new connection: %s", uv_strerror(status));
         return;
@@ -18,7 +19,7 @@ void on_new_connection(uv_stream_t *server, int status) {
 
     uv_tcp_init(&loop, client);
 
-    if (uv_accept(server, (uv_stream_t *) client) == 0) {
+    if (uv_accept(server_handle, (uv_stream_t *) client) == 0) {
         DEBUG_PRINT("New connection accepted.");
         uv_read_start((uv_stream_t *) client, alloc_buffer, on_client_read);
     } else {
@@ -29,6 +30,8 @@ void on_new_connection(uv_stream_t *server, int status) {
 
 // ✅ Allocate buffer for reading
 void alloc_buffer(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf) {
+    (void)handle;  // Suppress unused parameter warning
+
     buf->base = (char *) malloc(suggested_size);
     if (!buf->base) {
         ERROR_PRINT("Memory allocation failed in alloc_buffer()");
@@ -75,7 +78,7 @@ int start_tcp_server(int port) {
         return XCASH_ERROR;
     }
 
-    DEBUG_PRINT("Server listening on port %d"), port);
+    DEBUG_PRINT("Server listening on port %d", port);
 
     // ✅ Run the event loop
     uv_run(&loop, UV_RUN_DEFAULT);
