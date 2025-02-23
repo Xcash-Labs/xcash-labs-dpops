@@ -15,6 +15,7 @@
 #define CONNECTION_TIMEOUT 3000  // Maximum time (in milliseconds) to wait for a connection to be established before retrying or failing (3 seconds)
 #define MAX_RETRIES 3  // Number of times a failed connection attempt will be retried before marking it as failed
 #define RETRY_DELAY_MS 500  // Delay (in milliseconds) before retrying a failed connection attempt (0.5 seconds)
+#define MAX_CONNECTIONS 1024 // Max connection for incomming transactions
 
 #define DATABASE_NAME "XCASH_PROOF_OF_STAKE" // The name of the database
 #define DATABASE_NAME_DELEGATES "XCASH_PROOF_OF_STAKE_DELEGATES" // The name of the database for the delegates

@@ -6,14 +6,14 @@ bool is_shutdown_state = false;
 bool is_seed_node = false;
 bool debug_enabled = false;
 
+// Globals
 char XCASH_daemon_IP_address[IP_LENGTH + 1] = {0};
 char XCASH_wallet_IP_address[IP_LENGTH+1] = {0};
 char xcash_wallet_public_address[XCASH_PUBLIC_ADDR_LENGTH + 1] = {0};
 char current_block_height[BUFFER_SIZE_NETWORK_BLOCK_DATA] = {0};
 mongoc_client_pool_t* database_client_thread_pool = NULL;
 
-// local 
-
+// local
 char XCASH_DPOPS_delegates_IP_address[IP_LENGTH+1] = {0};
 
 static char doc[] =

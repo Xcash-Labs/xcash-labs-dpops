@@ -1,11 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <uv.h>
-
-#define MAX_CONNECTIONS 1024
-#define XCASH_OK 1
-#define XCASH_ERROR 0
+#include "uv_net_server.h"
 
 static uv_loop_t loop;
 static uv_tcp_t server;
