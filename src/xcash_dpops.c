@@ -183,7 +183,7 @@ Description: Shuts program down on signal
 void sigint_handler(int sig_num) {
   sig_requests++;
   DEBUG_PRINT("Termination signal %d received [%d] times. Shutting down...", sig_num, sig_requests);
-  uv_stop(uv_default_loop());
+  stop_tcp_server();
   DEBUG_PRINT("Shutting down database engine");
   // cleanup_data_structures();                     add this later......
   shutdown_database();
@@ -257,7 +257,7 @@ int main(int argc, char *argv[])
     FATAL_ERROR_EXIT("Failed to start TCP server.");
   }
 
-   uv_stop(uv_default_loop());
+  stop_tcp_server();
   shutdown_database();
   INFO_PRINT("Database closed...");
   return 0;

@@ -2,8 +2,15 @@
 
 static uv_loop_t loop;
 static uv_tcp_t server;
+static pthread_t uv_thread;
+static uv_async_t async_shutdown; // ✅ Async handle for clean shutdown
 
-// Handle client connections
+// ✅ Cleanup function after client disconnects
+void on_client_close(uv_handle_t *handle) {
+    free(handle);
+}
+
+// ✅ Handle client connections
 void on_new_connection(uv_stream_t *server_handle, int status) {
     if (status < 0) {
         ERROR_PRINT("Error on new connection: %s", uv_strerror(status));
@@ -22,14 +29,14 @@ void on_new_connection(uv_stream_t *server_handle, int status) {
         DEBUG_PRINT("New connection accepted.");
         uv_read_start((uv_stream_t *) client, alloc_buffer, on_client_read);
     } else {
-        uv_close((uv_handle_t *) client, NULL);
-        free(client);
+        uv_close((uv_handle_t *) client, on_client_close);
+        free(client); // ✅ Fix: Ensure memory is freed if accept fails
     }
 }
 
-// Allocate buffer for reading
+// ✅ Allocate buffer for reading
 void alloc_buffer(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf) {
-    (void)handle;  // Suppress unused parameter warning
+    (void)handle;
 
     buf->base = (char *) malloc(suggested_size);
     if (!buf->base) {
@@ -40,7 +47,7 @@ void alloc_buffer(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf) {
     buf->len = suggested_size;
 }
 
-// Read data from client
+// ✅ Read data from client
 void on_client_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
     if (nread > 0) {
         DEBUG_PRINT("Received data: %.*s", (int)nread, buf->base);
@@ -50,37 +57,72 @@ void on_client_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
         } else {
             ERROR_PRINT("Read error: %s", uv_strerror(nread));
         }
-        uv_close((uv_handle_t *) client, NULL);
-        free(client);
+        uv_close((uv_handle_t *) client, on_client_close);
     }
     free(buf->base);
 }
 
-// Start TCP server (Callable from xcash_dpops)
+// ✅ Thread-safe shutdown callback
+void on_shutdown_signal(uv_async_t *async) {
+    INFO_PRINT("Shutting down UV event loop...");
+
+    uv_close((uv_handle_t *)&server, NULL);
+    uv_close((uv_handle_t *)async, NULL); // ✅ Close async handle
+    uv_stop(&loop);
+}
+
+// ✅ Function to run the libuv loop in a separate thread
+void *uv_run_thread(void *arg) {
+    uv_run(&loop, UV_RUN_DEFAULT);
+    
+    // ✅ Cleanup event loop before exit
+    uv_loop_close(&loop);
+    return NULL;
+}
+
+// ✅ Start TCP server (Runs in a separate thread)
 bool start_tcp_server(int port) {
     struct sockaddr_in addr;
 
     // Initialize the loop
     uv_loop_init(&loop);
     uv_tcp_init(&loop, &server);
+    uv_async_init(&loop, &async_shutdown, on_shutdown_signal); // ✅ Initialize async handle
 
     // Bind to given port
     uv_ip4_addr("0.0.0.0", port, &addr);
     if (uv_tcp_bind(&server, (const struct sockaddr *)&addr, 0) < 0) {
         ERROR_PRINT("Failed to bind to port %d", port);
+        uv_loop_close(&loop);
         return XCASH_ERROR;
     }
 
     // Start listening for connections
     if (uv_listen((uv_stream_t *)&server, MAX_CONNECTIONS, on_new_connection) < 0) {
         ERROR_PRINT("Failed to listen on port %d", port);
+        uv_loop_close(&loop);
         return XCASH_ERROR;
     }
 
     INFO_PRINT("Server listening on port %d", port);
 
-    // Run the event loop
-    uv_run(&loop, UV_RUN_DEFAULT);
+    // ✅ Run `uv_run()` in a new thread
+    if (pthread_create(&uv_thread, NULL, uv_run_thread, NULL) != 0) {
+        ERROR_PRINT("Failed to create UV event loop thread.");
+        uv_loop_close(&loop);
+        return XCASH_ERROR;
+    }
 
     return XCASH_OK;
+}
+
+// ✅ Graceful shutdown function
+void stop_tcp_server() {
+    INFO_PRINT("Stopping TCP server...");
+
+    // ✅ Send shutdown signal to event loop
+    uv_async_send(&async_shutdown);
+
+    // ✅ Wait for the event loop to exit
+    pthread_join(uv_thread, NULL);
 }
