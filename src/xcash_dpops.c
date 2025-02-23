@@ -247,9 +247,10 @@ int main(int argc, char *argv[])
     FATAL_ERROR_EXIT("Can't add seed nodes to mongo database");
   }
 
+  signal(SIGINT, sigint_handler);
+
   if (start_tcp_server(XCASH_DPOPS_PORT))
   {
-    signal(SIGINT, sigint_handler);
     start_block_production();
   }
   else
