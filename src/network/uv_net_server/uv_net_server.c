@@ -58,7 +58,7 @@ void on_client_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
 }
 
 // ✅ Start TCP server (Callable from xcash_dpops)
-int start_tcp_server(int port) {
+bool start_tcp_server(int port) {
     struct sockaddr_in addr;
 
     // ✅ Initialize the loop

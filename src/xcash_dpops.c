@@ -254,7 +254,7 @@ int main(int argc, char *argv[])
   }
   else
   {
-    FATAL_ERROR_EXIT(stderr, "Failed to start TCP server.");
+    FATAL_ERROR_EXIT("Failed to start TCP server.");
   }
 
    uv_stop(uv_default_loop());
