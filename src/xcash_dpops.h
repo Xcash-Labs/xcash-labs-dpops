@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <sys/sysinfo.h>
+#include <uv.h>
 #include "config.h"
 #include "macro_functions.h"
 #include "globals.h"
