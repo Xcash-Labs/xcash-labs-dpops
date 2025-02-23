@@ -35,13 +35,13 @@ void on_timeout(uv_timer_t* timer) {
     }
 }
 
-void alloc_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
+void alloc_buffer_multi(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
     (void)suggested_size;
     (void)handle;
 
     buf->base = (char*)malloc(TRANSFER_BUFFER_SIZE);
     if (!buf->base) {
-        ERROR_PRINT("Memory allocation failed in alloc_buffer()");
+        ERROR_PRINT("Memory allocation failed in alloc_buffer_multi()");
         buf->len = 0;
         buf->base = NULL;
         return;
@@ -65,7 +65,7 @@ void on_write(uv_write_t* req, int status) {
 
     uv_timer_stop(&client->timer);
     uv_timer_start(&client->timer, on_timeout, RESPONSE_TIMEOUT, 0);
-    uv_read_start((uv_stream_t*)req->handle, alloc_buffer, on_read);
+    uv_read_start((uv_stream_t*)req->handle, alloc_buffer_multi, on_read);
 }
 
 void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
