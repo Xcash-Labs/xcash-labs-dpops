@@ -5,13 +5,12 @@
 
 #define XCASH_DPOPS_CURRENT_VERSION "xCash Labs DPoPs V. 2.0.0"
 
-
-#define XCASH_DAEMON_IP "127.0.0.1"  // The X-CASH Daemon RPC IP
-#define XCASH_WALLET_IP "127.0.0.1"  // The X-CASH Wallet RPC IP
-#define XCASH_DPOPS_IP "127.0.0.1"  // The X-CASH Dpops IP
-#define XCASH_DAEMON_PORT 18281  // The X-CASH Daemon RPC port
-#define XCASH_DPOPS_DELEGATE_PORT 18281  // The X-CASH Daemon RPC port
-#define XCASH_WALLET_PORT 18281  // The X-CASH Daemon RPC port
+#define XCASH_DAEMON_PORT 18281 // The X-CASH Daemon RPC IP
+#define XCASH_WALLET_PORT 18281  // The X-CASH Wallet RPC IP
+#define XCASH_DPOPS_PORT 18281   // The X-CASH Dpops IP
+#define XCASH_DAEMON_IP "127.0.0.1"// The X-CASH Daemon RPC port
+#define XCASH_DPOPS_DELEGATE_IP "127.0.0.1" // The X-CASH Daemon RPC port
+#define XCASH_WALLET_IP "127.0.0.1"// The X-CASH Daemon RPC port
 
 #define TRANSFER_BUFFER_SIZE 4096  // Size of the buffer used for data transfer in bytes (4 KB)
 #define RESPONSE_TIMEOUT 5000  // Maximum time (in milliseconds) to wait for a response before closing the connection (5 seconds)
