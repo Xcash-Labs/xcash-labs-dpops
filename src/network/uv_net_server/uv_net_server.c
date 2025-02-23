@@ -127,22 +127,18 @@ void close_callback(uv_handle_t *handle, void *arg) {
 void stop_tcp_server() {
     INFO_PRINT("Stopping TCP server...");
 
-    // Stop accepting new connections
-    uv_close((uv_handle_t *)&server, NULL);
-
-    // Stop the event loop
-    uv_stop(&loop);
-
-    // Close all active handles
+    // Walk through all handles and close them
     uv_walk(&loop, close_callback, NULL);
 
-    // Give libuv some time to clean up
+    // Ensure all handles are closed before stopping the loop
+    uv_stop(&loop);
+
+    // Allow handles to close properly before exiting
     uv_run(&loop, UV_RUN_NOWAIT);
 
-    // Close the loop only if it’s empty
     if (uv_loop_close(&loop) != 0) {
         ERROR_PRINT("Failed to close the event loop. Some handles are still open.");
     } else {
-        INFO_PRINT("TCP server stopped successfully.");
+        INFO_PRINT("Event loop closed successfully.");
     }
 }
