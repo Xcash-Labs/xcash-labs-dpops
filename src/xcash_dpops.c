@@ -226,7 +226,10 @@ int main(int argc, char *argv[])
     FATAL_ERROR_EXIT("The --block-verifiers-secret-key is mandatory and should be %d characters long!", VRF_SECRET_KEY_LENGTH);
   }
   
-  if(!(configure_uv_threadpool(total_threads)
+  if(!(configure_uv_threadpool()))
+  {
+    FATAL_ERROR_EXIT("Can't configure uv_threadpool");
+  }
 
   init_processing(&arg_config);
 
