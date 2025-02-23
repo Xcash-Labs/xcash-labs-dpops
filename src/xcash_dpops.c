@@ -191,6 +191,14 @@ void sigint_handler(int sig_num) {
 }
 
 /*---------------------------------------------------------------------------------------------------------
+Name: on_start_block_production
+Description: Schedule block production in a non-blocking way
+---------------------------------------------------------------------------------------------------------*/
+void on_start_block_production(uv_timer_t *handle) {
+  start_block_production();
+}
+
+/*---------------------------------------------------------------------------------------------------------
 Name: main
 Description: The start point of the program
 Parameters:
