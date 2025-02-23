@@ -21,6 +21,6 @@ extern int sig_requests; // for shutdown signal requests
 extern const NetworkNode network_nodes[]; // Network nodes array (variable size, terminated with NULL)
 
 extern char current_block_height[BUFFER_SIZE_NETWORK_BLOCK_DATA]; // The current block height
-char xcash_wallet_public_address[XCASH_PUBLIC_ADDR_LENGTH + 1]; // xCash wallet public address
+extern char xcash_wallet_public_address[XCASH_PUBLIC_ADDR_LENGTH + 1]; // xCash wallet public address
 
 #endif
