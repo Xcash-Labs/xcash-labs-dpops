@@ -16,7 +16,7 @@ mongoc_client_pool_t* database_client_thread_pool = NULL;
 char XCASH_DPOPS_delegates_IP_address[IP_LENGTH+1] = {0};
 static bool show_help = false;
 static bool create_key = false;
-static int total_threads = 0;
+static int total_threads = 4;
 
 static char doc[] =
 "\n"
@@ -97,7 +97,7 @@ not be greater that the number of cpus for the server.
 ---------------------------------------------------------------------------------------------------------*/
 bool configure_uv_threadpool(void)
 {
-  if (total_threads != 0)
+  if (total_threads != 4)
   {
     int wsthreads = get_nprocs();
     if (wsthreads < 1)
