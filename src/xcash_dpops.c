@@ -192,6 +192,7 @@ Description: Shuts program down on signal
 //}
 
 void sigint_handler_uv(uv_signal_t* req, int signum) {
+  (void)signum;
   INFO_PRINT("SIGINT received. Stopping TCP server...");
   stop_tcp_server();
   shutdown_database();
