@@ -17,7 +17,6 @@ char XCASH_DPOPS_delegates_IP_address[IP_LENGTH+1] = {0};
 static bool show_help = false;
 static bool create_key = false;
 static int total_threads = 4;
-static uv_signal_t sigint_watcher;
 
 static char doc[] =
 "\n"
@@ -273,10 +272,6 @@ int main(int argc, char *argv[])
     shutdown_database();
     FATAL_ERROR_EXIT("Can't add seed nodes to mongo database");
   }
-
-  // Use libuv's signal handler
-  //uv_signal_init(uv_default_loop(), &sigint_watcher);
-  //uv_signal_start(&sigint_watcher, sigint_handler_uv, SIGINT);
 
   // Start TCP server
   if (start_tcp_server(XCASH_DPOPS_PORT))
