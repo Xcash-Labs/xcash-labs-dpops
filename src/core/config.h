@@ -6,8 +6,8 @@
 #define XCASH_DPOPS_CURRENT_VERSION "xCash Labs DPoPs V. 2.0.0"
 
 #define XCASH_DAEMON_PORT 18281 // The X-CASH Daemon RPC IP
-#define XCASH_WALLET_PORT 18281  // The X-CASH Wallet RPC IP
-#define XCASH_DPOPS_PORT 18281   // The X-CASH Dpops IP
+#define XCASH_WALLET_PORT 18285 // The X-CASH Wallet RPC IP
+#define XCASH_DPOPS_PORT 18283 // The X-CASH Dpops IP
 #define DATABASE_CONNECTION "mongodb://127.0.0.1:27017" // The database connection string
 
 #define TRANSFER_BUFFER_SIZE 4096  // Size of the buffer used for data transfer in bytes (4 KB)
