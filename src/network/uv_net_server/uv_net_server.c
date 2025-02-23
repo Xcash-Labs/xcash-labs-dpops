@@ -116,6 +116,13 @@ bool start_tcp_server(int port) {
     return XCASH_OK;
 }
 
+// ✅ Helper function to close all handles
+void close_callback(uv_handle_t *handle, void *arg) {
+    if (!uv_is_closing(handle)) {
+        uv_close(handle, NULL);
+    }
+}
+
 void stop_tcp_server() {
     INFO_PRINT("Stopping TCP server...");
 
@@ -136,12 +143,5 @@ void stop_tcp_server() {
         ERROR_PRINT("Failed to close the event loop. Some handles are still open.");
     } else {
         INFO_PRINT("TCP server stopped successfully.");
-    }
-}
-
-// ✅ Helper function to close all handles
-void close_callback(uv_handle_t *handle, void *arg) {
-    if (!uv_is_closing(handle)) {
-        uv_close(handle, NULL);
     }
 }
