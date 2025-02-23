@@ -195,6 +195,7 @@ Name: on_start_block_production
 Description: Schedule block production in a non-blocking way
 ---------------------------------------------------------------------------------------------------------*/
 void on_start_block_production(uv_timer_t *handle) {
+  (void)handle; 
   start_block_production();
 }
 
