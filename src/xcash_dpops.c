@@ -263,6 +263,8 @@ int main(int argc, char *argv[])
   sa.sa_flags = 0;
   sigaction(SIGINT, &sa, NULL);
 
+  signal(SIGINT, sigint_handler);
+
   // Start TCP server
   if (start_tcp_server(XCASH_DPOPS_PORT))
   {
