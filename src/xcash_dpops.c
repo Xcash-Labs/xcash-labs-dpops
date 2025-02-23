@@ -103,7 +103,7 @@ bool configure_uv_threadpool(void)
     if (wsthreads < 1)
     {
       ERROR_PRINT("Failed to get CPU core count. Defaulting to 4 threads.");
-      return XCASH_OK
+      return XCASH_OK;
     }
     if (total_threads > wsthreads)
     {
