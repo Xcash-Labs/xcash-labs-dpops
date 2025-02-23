@@ -6,6 +6,7 @@
 #include <string.h>
 #include <uv.h>
 #include "config.h"
+#include "globals.h"
 #include "macro_functions.h"
 
 void alloc_buffer(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf);
