@@ -249,14 +249,12 @@ int main(int argc, char *argv[])
 
   signal(SIGINT, sigint_handler);
 
-  if (start_tcp_server(XCASH_DPOPS_PORT))
-  {
-    start_block_production();
-  }
-  else
+  if (!(start_tcp_server(XCASH_DPOPS_PORT)))
   {
     FATAL_ERROR_EXIT("Failed to start TCP server.");
   }
+
+  start_block_production();
 
   stop_tcp_server();
   shutdown_database();
