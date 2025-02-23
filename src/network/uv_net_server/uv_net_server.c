@@ -73,8 +73,8 @@ void on_shutdown_signal(uv_async_t *async) {
 
 // ✅ Function to run the libuv loop in a separate thread
 void *uv_run_thread(void *arg) {
+    (void)arg;
     uv_run(&loop, UV_RUN_DEFAULT);
-    
     // ✅ Cleanup event loop before exit
     uv_loop_close(&loop);
     return NULL;
@@ -118,6 +118,7 @@ bool start_tcp_server(int port) {
 
 // ✅ Helper function to close all handles
 void close_callback(uv_handle_t *handle, void *arg) {
+    (void)arg;
     if (!uv_is_closing(handle)) {
         uv_close(handle, NULL);
     }
