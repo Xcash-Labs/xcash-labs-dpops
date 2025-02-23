@@ -185,7 +185,7 @@ void sigint_handler(int sig_num) {
   DEBUG_PRINT("Termination signal %d received [%d] times. Shutting down...", sig_num, sig_requests);
   uv_stop(uv_default_loop());
   DEBUG_PRINT("Shutting down database engine");
-  cleanup_data_structures();
+  // cleanup_data_structures();                     add this later......
   shutdown_database();
   exit(0);
 }
@@ -240,15 +240,24 @@ int main(int argc, char *argv[])
     FATAL_ERROR_EXIT("Can't open mongo database");
   }
 
+  // not sure about this - relook at
   if(!(initialize_network_nodes()))
   {
+    shutdown_database();
     FATAL_ERROR_EXIT("Can't add seed nodes to mongo database");
   }
 
-  signal(SIGINT, sigint_handler);
+  if (start_tcp_server(XCASH_DPOPS_PORT))
+  {
+    signal(SIGINT, sigint_handler);
+    start_block_production();
+  }
+  else
+  {
+    FATAL_ERROR_EXIT(stderr, "Failed to start TCP server.");
+  }
 
-  start_block_production(); 
-
+   uv_stop(uv_default_loop());
   shutdown_database();
   INFO_PRINT("Database closed...");
   return 0;
