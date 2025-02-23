@@ -267,6 +267,7 @@ int main(int argc, char *argv[])
   // Start TCP server
   if (start_tcp_server(XCASH_DPOPS_PORT))
   {
+    static uv_signal_t sigint_watcher;
     uv_signal_init(uv_default_loop(), &sigint_watcher);
     uv_signal_start(&sigint_watcher, sigint_handler_uv, SIGINT);
 
