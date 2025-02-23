@@ -120,9 +120,17 @@ bool start_tcp_server(int port) {
 void stop_tcp_server() {
     INFO_PRINT("Stopping TCP server...");
 
-    // ✅ Send shutdown signal to event loop
-    uv_async_send(&async_shutdown);
+    // ✅ Stop accepting new connections
+    uv_close((uv_handle_t *)&server, NULL);
 
-    // ✅ Wait for the event loop to exit
-    pthread_join(uv_thread, NULL);
+    // ✅ Stop the event loop (forces `uv_run()` to exit)
+    uv_stop(&loop);
+
+    // ✅ Wait for the `uv_thread` to exit
+    if (pthread_join(uv_thread, NULL) != 0) {
+        ERROR_PRINT("Failed to join UV event loop thread.");
+    }
+
+    // ✅ Close the event loop properly
+    uv_loop_close(&loop);
 }
