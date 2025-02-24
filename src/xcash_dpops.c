@@ -258,6 +258,7 @@ int main(int argc, char *argv[])
     FATAL_ERROR_EXIT("Failed to start TCP server.");
   }
 
+  INFO_PRINT("Stopping tcp server........");
   stop_tcp_server();
   shutdown_database();
   INFO_PRINT("Database closed...");
