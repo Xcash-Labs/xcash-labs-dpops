@@ -7,49 +7,56 @@ bool debug_enabled = false;
 
 // Globals
 char XCASH_daemon_IP_address[IP_LENGTH + 1] = {0};
-char XCASH_wallet_IP_address[IP_LENGTH + 1] = {0};
+char XCASH_wallet_IP_address[IP_LENGTH+1] = {0};
 char xcash_wallet_public_address[XCASH_PUBLIC_ADDR_LENGTH + 1] = {0};
 char current_block_height[BUFFER_SIZE_NETWORK_BLOCK_DATA] = {0};
-mongoc_client_pool_t *database_client_thread_pool = NULL;
+mongoc_client_pool_t* database_client_thread_pool = NULL;
 
 // local
-char XCASH_DPOPS_delegates_IP_address[IP_LENGTH + 1] = {0};
+char XCASH_DPOPS_delegates_IP_address[IP_LENGTH+1] = {0};
 static bool show_help = false;
 static bool create_key = false;
 static int total_threads = 4;
 
 static char doc[] =
-    "\n" BRIGHT_WHITE_TEXT("General Options:\n") "Program Bug Address: https://github.com/Xcash-Labs/xcash-labs-dpops/issues\n"
-                                                 "\n"
-                                                 "  -h, --help                              List all valid parameters.\n"
-                                                 "  -k, --block-verifiers-secret-key <KEY>  Set the block verifier's secret key\n"
-                                                 "\n" BRIGHT_WHITE_TEXT("Debug Options:\n") "  --debug                                 Display verbose log messages.\n"
-                                                                                            "\n" BRIGHT_WHITE_TEXT("Advanced Options:\n") "  --total-threads THREADS                 Sets the UV_THREADPOOL_SIZE environment variable that controls the.\n"
-                                                                                                                                          "                                          number of worker threads in the libuv thread pool (default is 4).\n"
-                                                                                                                                          "\n"
-                                                                                                                                          "  --generate-key                          Generate public/private key for block verifiers.\n"
-                                                                                                                                          "\n"
-                                                                                                                                          "For more details on each option, refer to the documentation or use the --help option.\n";
+"\n"
+BRIGHT_WHITE_TEXT("General Options:\n")
+"Program Bug Address: https://github.com/Xcash-Labs/xcash-labs-dpops/issues\n"
+"\n"
+"  -h, --help                              List all valid parameters.\n"
+"  -k, --block-verifiers-secret-key <KEY>  Set the block verifier's secret key\n"
+"\n"
+BRIGHT_WHITE_TEXT("Debug Options:\n")
+"  --debug                                 Display verbose log messages.\n"
+"\n"
+BRIGHT_WHITE_TEXT("Advanced Options:\n")
+"  --total-threads THREADS                 Sets the UV_THREADPOOL_SIZE environment variable that controls the.\n"
+"                                          number of worker threads in the libuv thread pool (default is 4).\n"
+"\n"
+"  --generate-key                          Generate public/private key for block verifiers.\n"
+"\n"
+"For more details on each option, refer to the documentation or use the --help option.\n";
 
 static struct argp_option options[] = {
-    {"help", 'h', 0, 0, "List all valid parameters.", 0},
-    {"block-verifiers-secret-key", 'k', "SECRET_KEY", 0, "Set the block verifier's secret key", 0},
-    {"debug", OPTION_DEBUG, 0, 0, "Display debug and informational messages.", 0},
-    {"total-threads", OPTION_TOTAL_THREADS, "THREADS", 0, "Set total threads (Default: 4).", 0},
-    {"generate-key", OPTION_GENERATE_KEY, 0, 0, "Generate public/private key for block verifiers.", 0},
-    {0}};
+  {"help", 'h', 0, 0, "List all valid parameters.", 0},
+  {"block-verifiers-secret-key", 'k', "SECRET_KEY", 0, "Set the block verifier's secret key", 0},
+  {"debug", OPTION_DEBUG, 0, 0, "Display debug and informational messages.", 0},
+  {"total-threads", OPTION_TOTAL_THREADS, "THREADS", 0, "Set total threads (Default: 4).", 0},
+  {"generate-key", OPTION_GENERATE_KEY, 0, 0, "Generate public/private key for block verifiers.", 0},
+  {0}
+};
 
 const NetworkNode network_nodes[] = {
-    {"XCA1dd7JaWhiuBavUM2ZTJG3GdgPkT1Yd5Q6VvNvnxbEfb6JhUhziTF6w5mMPVeoSv3aa1zGyhedpaa2QQtGEjBo7N6av9nhaU",
-     "xcashseeds.us",
-     "xcashseeds_us",
-     "f681a933620c8e9e029d9ac0977d3a2f1d6a64cc49304e079458e3b5d2d4a66f"},
-    {"XCA1b6Sg5QVBX4jrctQ9SVUcHFqpaGST6bqtFpyoQadTX8SaDs92xR8iec3VfaXKzhYijFiMfwoM4TuYRgy6NXzn5titJnWbra",
-     "xcashseeds.uk",
-     "xcashseeds_uk",
-     "63232aa1b020a772945bf50ce96db9a04242583118b5a43952f0aaf9ecf7cfbb"},
-    // Sentinel value (empty entry to mark the end)
-    {NULL, NULL, NULL, NULL}};
+  {"XCA1dd7JaWhiuBavUM2ZTJG3GdgPkT1Yd5Q6VvNvnxbEfb6JhUhziTF6w5mMPVeoSv3aa1zGyhedpaa2QQtGEjBo7N6av9nhaU",
+   "xcashseeds.us",
+   "xcashseeds_us",
+   "f681a933620c8e9e029d9ac0977d3a2f1d6a64cc49304e079458e3b5d2d4a66f"},
+  {"XCA1b6Sg5QVBX4jrctQ9SVUcHFqpaGST6bqtFpyoQadTX8SaDs92xR8iec3VfaXKzhYijFiMfwoM4TuYRgy6NXzn5titJnWbra",
+   "xcashseeds.uk",
+   "xcashseeds_uk",
+   "63232aa1b020a772945bf50ce96db9a04242583118b5a43952f0aaf9ecf7cfbb"},
+  // Sentinel value (empty entry to mark the end)
+  {NULL, NULL, NULL, NULL}};
 
 /*---------------------------------------------------------------------------------------------------------
 Name: error_t parse_opt
@@ -140,27 +147,27 @@ bool init_processing(const arg_config_t *arg_config)
       "|__/  |__/\\_______/\\_______|_______/|__/  |__|__|________/\\_______/\\________/\\______/\n"
       "\n";
   fputs(xcash_tech_header, stderr);
-#define xcash_tech_status_fmt \
-  "%s (%s)\n\n"               \
-  "Address:\t%s\n"            \
-  "\n"                        \
-  "Node Type:\t%s\n"          \
-  "\n"                        \
-  "Services:\n"               \
-  "Daemon:\t\t%s:%d\n"        \
-  "DPoPS:\t\t%s:%d\n"         \
-  "Wallet:\t\t%s:%d\n"        \
-  "MongoDB:\t%s\n"            \
+  #define xcash_tech_status_fmt \
+  "%s (%s)\n\n"\
+  "Address:\t%s\n"\
+  "\n"\
+  "Node Type:\t%s\n"\
+  "\n"\
+  "Services:\n"\
+  "Daemon:\t\t%s:%d\n"\
+  "DPoPS:\t\t%s:%d\n"\
+  "Wallet:\t\t%s:%d\n"\
+  "MongoDB:\t%s\n"\
   "Total threads:\t\%d\n"
-
+  
   INFO_PRINT(xcash_tech_status_fmt,
-             XCASH_DPOPS_CURRENT_VERSION, "~Lazarus",
-             arg_config->block_verifiers_secret_key,
-             is_seed_node ? "SEED NODE" : "DELEGATE NODE",
-             XCASH_daemon_IP_address, XCASH_DAEMON_PORT,
-             XCASH_DPOPS_delegates_IP_address, XCASH_DPOPS_PORT,
-             XCASH_wallet_IP_address, XCASH_WALLET_PORT,
-             DATABASE_CONNECTION, total_threads);
+    XCASH_DPOPS_CURRENT_VERSION, "~Lazarus",
+    arg_config->block_verifiers_secret_key,
+    is_seed_node ? "SEED NODE" : "DELEGATE NODE",
+    XCASH_daemon_IP_address, XCASH_DAEMON_PORT,
+    XCASH_DPOPS_delegates_IP_address, XCASH_DPOPS_PORT,
+    XCASH_wallet_IP_address, XCASH_WALLET_PORT,
+    DATABASE_CONNECTION, total_threads);
   if (debug_enabled)
   {
     fprintf(stderr, "\n");
@@ -173,30 +180,14 @@ bool init_processing(const arg_config_t *arg_config)
 Name: sigint_handler
 Description: Shuts program down on signal
 ---------------------------------------------------------------------------------------------------------*/
-void sigint_handler_uv(uv_signal_t *req, int signum)
-{
-  (void)signum; // Avoid unused parameter warning
-  DEBUG_PRINT("SIGINT received, shutting down gracefully...");
-
-  stop_tcp_server();          // Stop the TCP server
-  uv_signal_stop(req);        // Stop signal watcher
-  uv_stop(uv_default_loop()); // Stop the event loop
-
-  DEBUG_PRINT("Stopping database...");
-  shutdown_database(); // Clean up database
-
-  DEBUG_PRINT("Exiting program.");
+void sigint_handler(int sig_num) {
+  sig_requests++;
+  DEBUG_PRINT("Termination signal %d received [%d] times. Shutting down...", sig_num, sig_requests);
+  stop_tcp_server();
+  DEBUG_PRINT("Shutting down database engine");
+  // cleanup_data_structures();                     add this later......
+  shutdown_database();
   exit(0);
-}
-
-/*---------------------------------------------------------------------------------------------------------
-Name: on_start_block_production
-Description: Schedule block production in a non-blocking way
----------------------------------------------------------------------------------------------------------*/
-void on_start_block_production(uv_timer_t *handle)
-{
-  (void)handle;
-  start_block_production();
 }
 
 /*---------------------------------------------------------------------------------------------------------
@@ -225,8 +216,7 @@ int main(int argc, char *argv[])
     return 0;
   }
 
-  if (create_key)
-  {
+  if (create_key) {
     generate_key();
     return 0;
   }
@@ -235,8 +225,8 @@ int main(int argc, char *argv[])
   {
     FATAL_ERROR_EXIT("The --block-verifiers-secret-key is mandatory and should be %d characters long!", VRF_SECRET_KEY_LENGTH);
   }
-
-  if (!(configure_uv_threadpool()))
+  
+  if(!(configure_uv_threadpool()))
   {
     FATAL_ERROR_EXIT("Can't configure uv_threadpool");
   }
@@ -246,31 +236,22 @@ int main(int argc, char *argv[])
   if (initialize_database())
   {
     INFO_PRINT("Database opened successfully");
-  }
-  else
-  {
+  } else {
     FATAL_ERROR_EXIT("Can't open mongo database");
   }
 
   // not sure about this - relook at
-  if (!(initialize_network_nodes()))
+  if(!(initialize_network_nodes()))
   {
     shutdown_database();
     FATAL_ERROR_EXIT("Can't add seed nodes to mongo database");
   }
 
-  // Start TCP server
-  static uv_signal_t sigint_watcher; // Declare once globally or inside main
-
-  // Register the libuv signal handler
-  uv_signal_init(uv_default_loop(), &sigint_watcher);
-  uv_signal_start(&sigint_watcher, sigint_handler_uv, SIGINT);
-
-  INFO_PRINT("Signal handler registered.");
+  signal(SIGINT, sigint_handler);
 
   if (start_tcp_server(XCASH_DPOPS_PORT))
   {
-    uv_run(uv_default_loop(), UV_RUN_DEFAULT);
+    start_block_production();
   }
   else
   {
