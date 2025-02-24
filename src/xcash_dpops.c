@@ -184,7 +184,7 @@ void sigint_handler(int sig_num) {
   sig_requests++;
   DEBUG_PRINT("Termination signal %d received [%d] times. Shutting down...", sig_num, sig_requests);
   stop_tcp_server();
-  DEBUG_PRINT("Shutting down database engine");
+  INFO_PRINT("Shutting down database engine");
   // cleanup_data_structures();                     add this later......
   shutdown_database();
   exit(0);
@@ -258,9 +258,8 @@ int main(int argc, char *argv[])
     FATAL_ERROR_EXIT("Failed to start TCP server.");
   }
 
-  INFO_PRINT("Stopping tcp server........");
   stop_tcp_server();
   shutdown_database();
-  INFO_PRINT("Database closed...");
+  INFO_PRINT("Database closed");
   return 0;
 }
