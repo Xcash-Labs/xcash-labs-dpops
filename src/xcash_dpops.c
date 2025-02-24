@@ -97,7 +97,7 @@ not be greater that the number of cpus for the server.
 ---------------------------------------------------------------------------------------------------------*/
 bool configure_uv_threadpool(void)
 {
-  DEBUG_PRINT("UV_THREADPOOL_SIZE set to %s", threadpool_size);
+  DEBUG_PRINT("UV_THREADPOOL_SIZE set to %d", total_threads);
   if (total_threads != 4)
   {
     int wsthreads = get_nprocs();
