@@ -14,4 +14,11 @@ typedef struct {
     char db_hashes[DATABASE_TOTAL][DATA_HASH_LENGTH+1];
 } xcash_node_sync_info_t;
 
+typedef struct 
+{
+    xcash_node_sync_info_t* sync_info;
+    char overall_md5_hash[MD5_HASH_SIZE+1];
+
+}xcash_db_sync_prehash_t;
+
 #endif
