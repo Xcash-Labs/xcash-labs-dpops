@@ -32,6 +32,7 @@
 #define XCASH_PUBLIC_ADDR_LENGTH 98 // The length of a XCA address
 #define VRF_SECRET_KEY_LENGTH 128 // Length of VRF Secret Key
 #define XCASH_WALLET_LENGTH 98 // The length of a XCA addres
+#define BLOCK_HASH_LENGTH 64 // The length of the block hash
 
 #define BLOCK_VERIFIERS_IP_ADDRESS_TOTAL_LENGTH 100 // The maximum length of the block verifiers IP address  ????
 #define VRF_SECRET_KEY_LENGTH 128 // Length of VRF Secret Key
