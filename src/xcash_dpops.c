@@ -1,11 +1,8 @@
 #include "xcash_dpops.h"
 
 // set globals defined in globals.h
-int sig_requests = 0;
-bool is_seed_node = false;
 bool debug_enabled = false;
-
-// Globals
+bool is_seed_node = false;  
 char XCASH_daemon_IP_address[IP_LENGTH + 1] = {0};
 char XCASH_wallet_IP_address[IP_LENGTH+1] = {0};
 char xcash_wallet_public_address[XCASH_PUBLIC_ADDR_LENGTH + 1] = {0};
@@ -17,6 +14,7 @@ char XCASH_DPOPS_delegates_IP_address[IP_LENGTH+1] = {0};
 static bool show_help = false;
 static bool create_key = false;
 static int total_threads = 4;
+static int sig_requests = 0;
 
 static char doc[] =
 "\n"
@@ -46,7 +44,7 @@ static struct argp_option options[] = {
   {0}
 };
 
-const NetworkNode network_nodes[] = {
+static const NetworkNode network_nodes[] = {
   {"XCA1dd7JaWhiuBavUM2ZTJG3GdgPkT1Yd5Q6VvNvnxbEfb6JhUhziTF6w5mMPVeoSv3aa1zGyhedpaa2QQtGEjBo7N6av9nhaU",
    "xcashseeds.us",
    "xcashseeds_us",
@@ -135,6 +133,13 @@ bool init_processing(const arg_config_t *arg_config)
   snprintf(XCASH_DPOPS_delegates_IP_address, sizeof(XCASH_DPOPS_delegates_IP_address), "%s", "127.0.0.1");
   snprintf(XCASH_wallet_IP_address, sizeof(XCASH_wallet_IP_address), "%s", "127.0.0.1");
 
+  for (size_t i = 0; network_nodes[i].public_address != NULL; i++) {
+      if (strcmp(network_nodes[i].public_address, arg_config->block_verifiers_secret_key) == 0) {
+          is_seed_node = true;
+          break;
+      }
+  }
+
   static const char xcash_tech_header[] =
       "\n"
       " /$$   /$$                           /$$        / $$              / $$                    \n"
@@ -167,7 +172,8 @@ bool init_processing(const arg_config_t *arg_config)
     XCASH_daemon_IP_address, XCASH_DAEMON_PORT,
     XCASH_DPOPS_delegates_IP_address, XCASH_DPOPS_PORT,
     XCASH_wallet_IP_address, XCASH_WALLET_PORT,
-    DATABASE_CONNECTION, total_threads);
+    DATABASE_CONNECTION,
+  );
   if (debug_enabled)
   {
     fprintf(stderr, "\n");
