@@ -44,7 +44,7 @@ static struct argp_option options[] = {
   {0}
 };
 
-static const NetworkNode network_nodes[] = {
+const NetworkNode network_nodes[] = {
   {"XCA1dd7JaWhiuBavUM2ZTJG3GdgPkT1Yd5Q6VvNvnxbEfb6JhUhziTF6w5mMPVeoSv3aa1zGyhedpaa2QQtGEjBo7N6av9nhaU",
    "xcashseeds.us",
    "xcashseeds_us",
