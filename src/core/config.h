@@ -17,9 +17,11 @@
 #define RETRY_DELAY_MS 500  // Delay (in milliseconds) before retrying a failed connection attempt (0.5 seconds)
 #define MAX_CONNECTIONS 1024 // Max connection for incomming transactions
 
+//database
 #define DATABASE_NAME "XCASH_PROOF_OF_STAKE" // The name of the database
 #define DATABASE_NAME_DELEGATES "XCASH_PROOF_OF_STAKE_DELEGATES" // The name of the database for the delegates
 #define MAXIMUM_DATABASE_WRITE_SIZE 48000000 // The maximum database write size
+#define DATABASE_TOTAL 4 // The amount of databases
 
 // Lengths
 #define IP_LENGTH 253
@@ -29,10 +31,12 @@
 #define DATA_HASH_LENGTH 128 // The length of the SHA2-512 hash
 #define XCASH_PUBLIC_ADDR_LENGTH 98 // The length of a XCA address
 #define VRF_SECRET_KEY_LENGTH 128 // Length of VRF Secret Key
+#define XCASH_WALLET_LENGTH 98 // The length of a XCA addres
 
 #define BLOCK_VERIFIERS_IP_ADDRESS_TOTAL_LENGTH 100 // The maximum length of the block verifiers IP address  ????
 #define VRF_SECRET_KEY_LENGTH 128 // Length of VRF Secret Key
-
+#define MD5_HASH_SIZE 32
+#define BLOCK_VERIFIERS_VALID_AMOUNT 3 // The amount of block verifiers that need to vote true for the part of the round to be valid
 
 // VRF
 #define VRF_PUBLIC_KEY_LENGTH 64
