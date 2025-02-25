@@ -174,7 +174,7 @@ bool init_processing(const arg_config_t *arg_config)
     XCASH_daemon_IP_address, XCASH_DAEMON_PORT,
     XCASH_DPOPS_delegates_IP_address, XCASH_DPOPS_PORT,
     XCASH_wallet_IP_address, XCASH_WALLET_PORT,
-    DATABASE_CONNECTION
+    DATABASE_CONNECTION, total_threads
   );
   if (debug_enabled)
   {
