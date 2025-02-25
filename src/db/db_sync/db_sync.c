@@ -53,8 +53,8 @@ bool initial_db_sync_check(size_t* majority_count, xcash_node_sync_info_t** majo
         INFO_PRINT_STATUS_OK("Data majority reached. Nodes: [%ld/%d]", nodes_majority_count, BLOCK_VERIFIERS_VALID_AMOUNT);
         
         // Pick a random sync source and attempt initial sync
-        int sync_source_index = get_random_majority(nodes_majority_list, nodes_majority_count);
-        result = initial_sync_node(&nodes_majority_list[sync_source_index]);
+//        int sync_source_index = get_random_majority(nodes_majority_list, nodes_majority_count);
+//        result = initial_sync_node(&nodes_majority_list[sync_source_index]);
 
         *majority_count = nodes_majority_count;
     }
