@@ -48,7 +48,7 @@ xcash_round_result_t process_round(size_t round_number) {
 //        }
 //    }
 
-    free(nodes_majority_list);  // Clean up the majority list after use
+//    free(nodes_majority_list);  // Clean up the majority list after use
 
 //    // Check if we have enough nodes for block production
 //    if (network_majority_count < BLOCK_VERIFIERS_VALID_AMOUNT) {
