@@ -7,10 +7,10 @@ void show_majority_statistics(const xcash_node_sync_info_t* majority_list, size_
     }
     INFO_STAGE_PRINT("Nodes majority status (%ld nodes found):", items_count);
 
-    for (size_t i = 0; i < items_count; i++) {
-        const char* node_name = address_to_node_name(majority_list[i].public_address);
-        INFO_PRINT_STATUS_OK("Node: %-40s", node_name ? node_name : "Unknown");
-    }
+//    for (size_t i = 0; i < items_count; i++) {
+//        const char* node_name = address_to_node_name(majority_list[i].public_address);
+//        INFO_PRINT_STATUS_OK("Node: %-40s", node_name ? node_name : "Unknown");
+//    }
 }
 
 /*---------------------------------------------------------------------------------------------------------
