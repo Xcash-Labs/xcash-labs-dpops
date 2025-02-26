@@ -8,6 +8,8 @@ char XCASH_wallet_IP_address[IP_LENGTH+1] = {0};
 char xcash_wallet_public_address[XCASH_PUBLIC_ADDR_LENGTH + 1] = {0};
 char current_block_height[BUFFER_SIZE_NETWORK_BLOCK_DATA] = {0};
 char previous_block_hash[BLOCK_HASH_LENGTH+1] = {0};
+char secret_key_data[crypto_vrf_SECRETKEYBYTES+1] = {0};
+char secret_key[VRF_SECRET_KEY_LENGTH+1] = {0};
 
 mongoc_client_pool_t* database_client_thread_pool = NULL;
 
@@ -48,6 +50,7 @@ static struct argp_option options[] = {
 
 const NetworkNode network_nodes[] = {
   {"XCA1dd7JaWhiuBavUM2ZTJG3GdgPkT1Yd5Q6VvNvnxbEfb6JhUhziTF6w5mMPVeoSv3aa1zGyhedpaa2QQtGEjBo7N6av9nhaU",
+    XCA1dd7JaWhiuBavUM2ZTJG3GdgPkT1Yd5Q6VvNvnxbEfb6JhUhziTF6w5mMPVeoSv3aa1zGyhedpaa2QQtGEjBo7N6av9nhaU
    "xcashseeds.us",
    "xcashseeds_us",
    "f681a933620c8e9e029d9ac0977d3a2f1d6a64cc49304e079458e3b5d2d4a66f"},
@@ -229,7 +232,17 @@ int main(int argc, char *argv[])
     return 0;
   }
 
-  if (!arg_config.block_verifiers_secret_key || (strlen(arg_config.block_verifiers_secret_key) != VRF_SECRET_KEY_LENGTH))
+  if (arg_config.block_verifiers_secret_key && (strlen(arg_config.block_verifiers_secret_key) == VRF_SECRET_KEY_LENGTH))
+  {
+    strncpy(secret_key, config->block_verifiers_secret_key, sizeof(secret_key) - 1);
+    secret_key[sizeof(secret_key) - 1] = '\0';  // Ensure null termination
+    hex_to_byte_array(secret_key, secret_key_data, sizeof(secret_key_data));
+    
+    // add error handeling
+
+
+  }
+  else
   {
     FATAL_ERROR_EXIT("The --block-verifiers-secret-key is mandatory and should be %d characters long!", VRF_SECRET_KEY_LENGTH);
   }
