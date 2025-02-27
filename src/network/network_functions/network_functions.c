@@ -136,6 +136,8 @@ DEBUG_PRINT("Here I am.....");
 strncpy(result, response.data, BUFFER_SIZE - 1);
 result[BUFFER_SIZE - 1] = '\0';  // Ensure null termination
 
+DEBUG_PRINT("Here I am 2.....");
+
     // Cleanup
 free(response.data);
 curl_easy_cleanup(curl);
