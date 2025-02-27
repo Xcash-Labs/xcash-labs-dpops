@@ -1,5 +1,5 @@
-#ifndef XCASH_DPOPS_TEST_H_   /* Include guard */
-#define XCASH_DPOPS_TEST_H_
+#ifndef XCASH_DPOPS_H_   /* Include guard */
+#define XCASH_DPOPS_H_
 
 #include <argp.h>
 #include <string.h>
@@ -17,6 +17,7 @@
 #include "VRF_functions.h"
 #include "dpops_round.h"
 #include "uv_net_server.h"
+#include "network_wallet_functions.h"
 
 typedef struct {
     char *block_verifiers_secret_key; // Holds your wallets public address

@@ -6,9 +6,9 @@
 #include "globals.h"
 #include "macro_functions.h"
 
-//bool get_node_data(void);
+bool get_node_data(void);
 //bool get_daemon_data(void);
-bool is_seed_address(const char* public_address);
+int is_seed_address(const char* public_address);
 //const char* address_to_node_name(const char* public_address);
 //const char* address_to_node_host(const char* public_address);
 

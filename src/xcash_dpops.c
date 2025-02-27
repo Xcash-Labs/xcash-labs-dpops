@@ -227,7 +227,7 @@ int main(int argc, char *argv[])
 
   if (!(get_node_data()))
   {
-    FATAL_ERROR_EXIT("Faile to get the nodes public wallet address");
+    FATAL_ERROR_EXIT("Failed to get the nodes public wallet address");
   }
 
   if (arg_config.block_verifiers_secret_key && (strlen(arg_config.block_verifiers_secret_key) == VRF_SECRET_KEY_LENGTH))
@@ -240,6 +240,11 @@ int main(int argc, char *argv[])
   if (!(hex_to_byte_array(secret_key, secret_key_data, sizeof(secret_key_data))))
   {
     FATAL_ERROR_EXIT("Failed to convert the block-verifiers-secret-key to a byte array: %s", arg_config.block_verifiers_secret_key);
+  }
+
+  if (!(get_public_address()))
+  {
+    FATAL_ERROR_EXIT("Failed to get the Public Address for the wallet", VRF_SECRET_KEY_LENGTH);
   }
 
   if (!(configure_uv_threadpool()))
