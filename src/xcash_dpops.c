@@ -149,7 +149,8 @@ bool init_processing(const arg_config_t *arg_config)
   "DPoPS:\t\t%s:%d\n"\
   "Wallet:\t\t%s:%d\n"\
   "MongoDB:\t%s\n"\
-  "Total threads:\t\%d\n"
+  "Total threads:\t\%d\n"\
+  "Log level:\t\%d\n"
   
   INFO_PRINT(xcash_tech_status_fmt,
     XCASH_DPOPS_CURRENT_VERSION, "~Lazarus",
@@ -158,13 +159,8 @@ bool init_processing(const arg_config_t *arg_config)
     XCASH_DAEMON_IP, XCASH_DAEMON_PORT,
     XCASH_DPOPS_IP, XCASH_DPOPS_PORT,
     XCASH_WALLET_IP, XCASH_WALLET_PORT,
-    DATABASE_CONNECTION, total_threads
+    DATABASE_CONNECTION, total_threads, log_level
   );
-  if (debug_enabled)
-  {
-    fprintf(stderr, "\n");
-    DEBUG_PRINT("Debug is enabled.");
-  }
   return 0;
 }
 
