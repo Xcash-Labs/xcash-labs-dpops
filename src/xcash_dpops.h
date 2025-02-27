@@ -21,7 +21,7 @@
 
 typedef struct {
     char *block_verifiers_secret_key; // Holds your wallets public address
-    int log_level;
+//    int log_level;
 } arg_config_t;
 
 // Define an enum for option IDs

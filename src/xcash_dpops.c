@@ -66,9 +66,9 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
     arguments->block_verifiers_secret_key = arg;
     break;
   case 'l':
-    if (arg >= 0 || arg <= 4)
+    if (atio(arg) >= 0 && atio(arg) <= 4)
     {
-      log_level = arg;
+      log_level = atio(arg);
     }
     break;
   case OPTION_GENERATE_KEY:
