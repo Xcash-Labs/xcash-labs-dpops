@@ -99,7 +99,7 @@ int send_http_request(char *result, const char *host, const char *url, int port,
         curl_easy_setopt(curl, CURLOPT_POST, 1L);
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
     }
-    DEBUG_PRINT("result 1");
+
     // Perform the request
     res = curl_easy_perform(curl);
     if (res != CURLE_OK) {
@@ -114,7 +114,7 @@ int send_http_request(char *result, const char *host, const char *url, int port,
     strncpy(result, response.data, BUFFER_SIZE - 1);
     result[BUFFER_SIZE - 1] = '\0';  // Ensure null termination
 
-    DEBUG_PRINT("result %s", result);
+    DEBUG_PRINT("result 1");
 
     // Cleanup
     free(response.data);
