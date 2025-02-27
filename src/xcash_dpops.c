@@ -130,13 +130,6 @@ bool init_processing(const arg_config_t *arg_config)
   snprintf(XCASH_DPOPS_delegates_IP_address, sizeof(XCASH_DPOPS_delegates_IP_address), "%s", "127.0.0.1");
   snprintf(XCASH_wallet_IP_address, sizeof(XCASH_wallet_IP_address), "%s", "127.0.0.1");
 
-  for (size_t i = 0; network_nodes[i].public_address != NULL; i++) {
-      if (strcmp(network_nodes[i].public_address, arg_config->block_verifiers_secret_key) == 0) {
-          is_seed_node = true;
-          break;
-      }
-  }
-
   static const char xcash_tech_header[] =
       "\n"
       " /$$   /$$                           /$$        / $$              / $$                    \n"
