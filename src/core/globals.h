@@ -4,7 +4,7 @@
 #include "config.h"
 #include "structures.h"
 #include <mongoc/mongoc.h>
-#include "vrf.h"
+#include "crypto_vrf.h"
 
 /*--------------------------------------------------------------------------------------------------
 Global Variables
