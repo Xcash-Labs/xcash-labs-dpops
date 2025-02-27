@@ -4,7 +4,6 @@
 bool debug_enabled = false;
 bool is_seed_node = false;  
 char XCASH_daemon_IP_address[IP_LENGTH + 1] = {0};
-char XCASH_wallet_IP_address[IP_LENGTH+1] = {0};
 char xcash_wallet_public_address[XCASH_PUBLIC_ADDR_LENGTH + 1] = {0};
 char current_block_height[BUFFER_SIZE_NETWORK_BLOCK_DATA] = {0};
 char previous_block_hash[BLOCK_HASH_LENGTH+1] = {0};
@@ -15,10 +14,6 @@ const NetworkNode network_nodes[] = {
   {"XCA1b6Sg5QVBX4jrctQ9SVUcHFqpaGST6bqtFpyoQadTX8SaDs92xR8iec3VfaXKzhYijFiMfwoM4TuYRgy6NXzn5titJnWbra"},
   // Sentinel value (empty entry to mark the end)
   {NULL}};
-snprintf(XCASH_daemon_IP_address, sizeof(XCASH_daemon_IP_address), "%s", "127.0.0.1");
-snprintf(XCASH_DPOPS_delegates_IP_address, sizeof(XCASH_DPOPS_delegates_IP_address), "%s", "127.0.0.1");
-snprintf(XCASH_wallet_IP_address, sizeof(XCASH_wallet_IP_address), "%s", "127.0.0.1");
-
 mongoc_client_pool_t* database_client_thread_pool = NULL;
 
 // local
@@ -131,7 +126,6 @@ bool init_processing(const arg_config_t *arg_config)
 {
   snprintf(XCASH_daemon_IP_address, sizeof(XCASH_daemon_IP_address), "%s", "127.0.0.1");
   snprintf(XCASH_DPOPS_delegates_IP_address, sizeof(XCASH_DPOPS_delegates_IP_address), "%s", "127.0.0.1");
-  snprintf(XCASH_wallet_IP_address, sizeof(XCASH_wallet_IP_address), "%s", "127.0.0.1");
 
   static const char xcash_tech_header[] =
       "\n"
@@ -164,7 +158,7 @@ bool init_processing(const arg_config_t *arg_config)
     is_seed_node ? "SEED NODE" : "DELEGATE NODE",
     XCASH_daemon_IP_address, XCASH_DAEMON_PORT,
     XCASH_DPOPS_delegates_IP_address, XCASH_DPOPS_PORT,
-    XCASH_wallet_IP_address, XCASH_WALLET_PORT,
+    XCASH_WALLET_IP, XCASH_WALLET_PORT,
     DATABASE_CONNECTION, total_threads
   );
   if (debug_enabled)

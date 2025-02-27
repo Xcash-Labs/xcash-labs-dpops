@@ -16,7 +16,7 @@ int get_public_address(void)
     char data[SMALL_BUFFER_SIZE] = {0};
 
     // Send HTTP request to get the public address
-    if (send_http_request(data, XCASH_wallet_IP_address, "/json_rpc", XCASH_WALLET_PORT, "POST", 
+    if (send_http_request(data, XCASH_WALLET_IP, "/json_rpc", XCASH_WALLET_PORT, "POST", 
                           HTTP_HEADERS, HTTP_HEADERS_LENGTH, GET_PUBLIC_ADDRESS_DATA, 
                           SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) <= 0) 
     {  
