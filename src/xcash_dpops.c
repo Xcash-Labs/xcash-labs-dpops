@@ -235,11 +235,6 @@ int main(int argc, char *argv[])
     FATAL_ERROR_EXIT("Failed to convert the block-verifiers-secret-key to a byte array: %s", arg_config.block_verifiers_secret_key);
   }
 
-  if (!(get_public_address()))
-  {
-    FATAL_ERROR_EXIT("Failed to get the Public Address for the wallet");
-  }
-
   if (!(configure_uv_threadpool()))
   {
     FATAL_ERROR_EXIT("Can't configure uv_threadpool");
