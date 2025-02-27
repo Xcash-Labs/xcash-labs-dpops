@@ -21,17 +21,62 @@
 #define LOG_LEVEL_ERROR    1
 #define LOG_LEVER_CRITIAL  0
 
-#define __DEBUG_PRINT_FUNC_CALLER if (log_level >=LOG_LEVEL_DEBUG)fprintf(stderr, "  --> TRACE: %s:%d, %s()\n\n", __FILE__, __LINE__, __func__);
+//#define __DEBUG_PRINT_FUNC_CALLER if (log_level >=LOG_LEVEL_DEBUG)fprintf(stderr, "  --> TRACE: %s:%d, %s()\n\n", __FILE__, __LINE__, __func__);
 
-#define DEBUG_PRINT(fmt, ...) do { if (log_level >=LOG_LEVEL_DEBUG) fprintf(stderr, "\033[1;35mDEBUG: " fmt "\033[0m\n", ##__VA_ARGS__); __DEBUG_PRINT_FUNC_CALLER; } while (0)
-#define INFO_PRINT(fmt, ...) do { fprintf(stderr, BRIGHT_WHITE_TEXT("INFO: ") fmt "\n", ##__VA_ARGS__); __DEBUG_PRINT_FUNC_CALLER; } while (0)
-#define WARNING_PRINT(fmt, ...) do { fprintf(stderr, ORANGE_TEXT("WARNING: ") fmt "\n", ##__VA_ARGS__); __DEBUG_PRINT_FUNC_CALLER; } while (0)
-#define ERROR_PRINT(fmt, ...) do { fprintf(stderr, RED_TEXT("ERROR: ") fmt "\n", ##__VA_ARGS__); __DEBUG_PRINT_FUNC_CALLER; } while (0)
-#define FATAL_ERROR_EXIT(fmt, ...) do { fprintf(stderr, "\033[1;31mFATAL: " fmt "\033[0m\n", ##__VA_ARGS__); __DEBUG_PRINT_FUNC_CALLER; exit(1); } while (0)
+//#define DEBUG_PRINT(fmt, ...) do { if (log_level >=LOG_LEVEL_DEBUG) fprintf(stderr, "\033[1;35mDEBUG: " fmt "\033[0m\n", ##__VA_ARGS__); __DEBUG_PRINT_FUNC_CALLER; } while (0)
+//#define INFO_PRINT(fmt, ...) do { fprintf(stderr, BRIGHT_WHITE_TEXT("INFO: ") fmt "\n", ##__VA_ARGS__); __DEBUG_PRINT_FUNC_CALLER; } while (0)
+//#define WARNING_PRINT(fmt, ...) do { fprintf(stderr, ORANGE_TEXT("WARNING: ") fmt "\n", ##__VA_ARGS__); __DEBUG_PRINT_FUNC_CALLER; } while (0)
+//#define ERROR_PRINT(fmt, ...) do { fprintf(stderr, RED_TEXT("ERROR: ") fmt "\n", ##__VA_ARGS__); __DEBUG_PRINT_FUNC_CALLER; } while (0)
+//#define FATAL_ERROR_EXIT(fmt, ...) do { fprintf(stderr, "\033[1;31mFATAL: " fmt "\033[0m\n", ##__VA_ARGS__); __DEBUG_PRINT_FUNC_CALLER; exit(1); } while (0)
 
-#define INFO_PRINT_STATUS_OK(fmt, ...) do { fprintf(stderr, BRIGHT_WHITE_TEXT("INFO: ") fmt INFO_STATUS_OK "\n", ##__VA_ARGS__); __DEBUG_PRINT_FUNC_CALLER; } while (0)
-#define INFO_STAGE_PRINT(fmt, ...) do { fprintf(stderr, BRIGHT_WHITE_TEXT("\n\nINFO: ") LIGHT_BLUE_TEXT(fmt) "\n", ##__VA_ARGS__); __DEBUG_PRINT_FUNC_CALLER; } while (0)
-#define INFO_PRINT_STATUS_FAIL(fmt, ...) do { fprintf(stderr, BRIGHT_WHITE_TEXT("INFO: ") fmt INFO_STATUS_FAIL "\n", ##__VA_ARGS__); __DEBUG_PRINT_FUNC_CALLER; } while (0)
+//#define INFO_PRINT_STATUS_OK(fmt, ...) do { fprintf(stderr, BRIGHT_WHITE_TEXT("INFO: ") fmt INFO_STATUS_OK "\n", ##__VA_ARGS__); __DEBUG_PRINT_FUNC_CALLER; } while (0)
+//#define INFO_STAGE_PRINT(fmt, ...) do { fprintf(stderr, BRIGHT_WHITE_TEXT("\n\nINFO: ") LIGHT_BLUE_TEXT(fmt) "\n", ##__VA_ARGS__); __DEBUG_PRINT_FUNC_CALLER; } while (0)
+//#define INFO_PRINT_STATUS_FAIL(fmt, ...) do { fprintf(stderr, BRIGHT_WHITE_TEXT("INFO: ") fmt INFO_STATUS_FAIL "\n", ##__VA_ARGS__); __DEBUG_PRINT_FUNC_CALLER; } while (0)
+
+#define DEBUG_PRINT(fmt, ...) \
+    do { \
+        if (log_level >= LOG_LEVEL_DEBUG) { \
+            fprintf(stderr, "\033[1;35mDEBUG: " fmt "\033[0m\n", ##__VA_ARGS__); \
+            fprintf(stderr, "  --> TRACE: %s:%d, %s()\n\n", __FILE__, __LINE__, __func__); \
+        } \
+    } while (0)
+
+#define INFO_PRINT(fmt, ...) \
+    do { \
+        fprintf(stderr, BRIGHT_WHITE_TEXT("INFO: ") fmt "\n", ##__VA_ARGS__); \
+    } while (0)
+
+#define WARNING_PRINT(fmt, ...) \
+    do { \
+        fprintf(stderr, ORANGE_TEXT("WARNING: ") fmt "\n", ##__VA_ARGS__); \
+    } while (0)
+
+#define ERROR_PRINT(fmt, ...) \
+    do { \
+        fprintf(stderr, RED_TEXT("ERROR: ") fmt "\n", ##__VA_ARGS__); \
+    } while (0)
+
+#define FATAL_ERROR_EXIT(fmt, ...) \
+    do { \
+        fprintf(stderr, "\033[1;31mFATAL: " fmt "\033[0m\n", ##__VA_ARGS__); \
+        exit(1); \
+    } while (0)
+    #define INFO_PRINT_STATUS_OK(fmt, ...) \
+    do { \
+        fprintf(stderr, BRIGHT_WHITE_TEXT("INFO: ") fmt INFO_STATUS_OK "\n", ##__VA_ARGS__); \
+    } while (0)
+
+#define INFO_STAGE_PRINT(fmt, ...) \
+    do { \
+        fprintf(stderr, BRIGHT_WHITE_TEXT("\n\nINFO: ") LIGHT_BLUE_TEXT(fmt) "\n", ##__VA_ARGS__); \
+    } while (0)
+
+#define INFO_PRINT_STATUS_FAIL(fmt, ...) \
+    do { \
+        fprintf(stderr, BRIGHT_WHITE_TEXT("INFO: ") fmt INFO_STATUS_FAIL "\n", ##__VA_ARGS__); \
+    } while (0)
+
+
 
 #define COLOR_PRINT(string, color) do { \
     const char *color_code = ""; \
