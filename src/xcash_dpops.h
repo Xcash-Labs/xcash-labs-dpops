@@ -29,7 +29,7 @@ typedef enum {
     OPTION_TOTAL_THREADS,
 } option_ids;
 
-bool init_processing(const arg_config_t* arg_config);
+void init_processing(const arg_config_t* arg_config);
 bool configure_uv_threadpool(void);
 
 #endif
