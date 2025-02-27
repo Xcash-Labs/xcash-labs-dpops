@@ -105,7 +105,7 @@ void retry_connection(uv_timer_t* timer) {
         return;
     }
 
-    DEBUG_PRINT("Retrying connection to %s (%d/%d)...", client->response->host, client->retry_count + 1, MAX_RETRIES);
+    INFO_PRINT("Retrying connection to %s (%d/%d)...", client->response->host, client->retry_count + 1, MAX_RETRIES);
 
     safe_close(client);
     client->retry_count++;
@@ -159,7 +159,7 @@ void on_connect(uv_connect_t* req, int status) {
 void start_connection(client_t* client, const struct sockaddr* addr) {
     if (!client) return;
 
-    DEBUG_PRINT("Starting connection to %s\n", client->response->host);
+    INFO_PRINT("Starting connection to %s\n", client->response->host);
     uv_tcp_connect(&client->connect_req, &client->handle, addr, on_connect);
 }
 

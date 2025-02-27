@@ -53,7 +53,7 @@ void on_client_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
         DEBUG_PRINT("Received data: %.*s", (int)nread, buf->base);
     } else {
         if (nread == UV_EOF) {
-            DEBUG_PRINT("Client disconnected.");
+            ERROR_PRINT("Client disconnected.");
         } else {
             ERROR_PRINT("Read error: %s", uv_strerror(nread));
         }
@@ -64,7 +64,7 @@ void on_client_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
 
 // Thread-safe shutdown callback
 void on_shutdown_signal(uv_async_t *async) {
-    INFO_PRINT("Shutting down UV event loop...");
+    DEBUG_PRINT("Shutting down UV event loop...");
 
     uv_close((uv_handle_t *)&server, NULL);
     uv_close((uv_handle_t *)async, NULL);

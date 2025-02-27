@@ -36,7 +36,7 @@ size_t write_callback(void *contents, size_t size, size_t nmemb, void *userp)
     char *ptr = realloc(buffer->data, buffer->size + total_size + 1);
     if (ptr == NULL)
     {
-        DEBUG_PRINT("Memory allocation failed in write_callback()");
+        ERROR_PRINT("Memory allocation failed in write_callback()");
         return XCASH_ERROR; // Stop writing
     }
 
@@ -75,14 +75,14 @@ int send_http_request(char *result, const char *host, const char *url, int port,
     ResponseBuffer response = {malloc(1), 0};
     if (!response.data)
     {
-        DEBUG_PRINT("Memory allocation failed");
+        ERROR_PRINT("Memory allocation failed");
         return XCASH_ERROR;
     }
 
     curl = curl_easy_init();
     if (!curl)
     {
-        DEBUG_PRINT("Failed to initialize libcurl");
+        ERROR_PRINT("Failed to initialize libcurl");
         free(response.data);
         return XCASH_ERROR;
     }
@@ -114,7 +114,7 @@ int send_http_request(char *result, const char *host, const char *url, int port,
     res = curl_easy_perform(curl);
     if (res != CURLE_OK)
     {
-        DEBUG_PRINT("HTTP request failed: %s", curl_easy_strerror(res));
+        ERROR_PRINT("HTTP request failed: %s", curl_easy_strerror(res));
         free(response.data);
         curl_easy_cleanup(curl);
         if (header_list)
@@ -122,7 +122,7 @@ int send_http_request(char *result, const char *host, const char *url, int port,
         return XCASH_ERROR;
     }
 
-    DEBUG_PRINT("result %s", response.data);
+    ERROR_PRINT("result %s", response.data);
 
     // Validate response before copying
     if (!response.data)
@@ -149,7 +149,7 @@ int send_http_request(char *result, const char *host, const char *url, int port,
     DEBUG_PRINT("Response length: %zu", response_len);
     if (response_len >= SMALL_BUFFER_SIZE)
     {
-        DEBUG_PRINT("Response data too large (%zu bytes)", response_len);
+        ERROR_PRINT("Response data too large (%zu bytes)", response_len);
         free(response.data);
         curl_easy_cleanup(curl);
         if (header_list)

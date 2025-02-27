@@ -3,12 +3,12 @@
 bool get_node_data(void) {
     // Get the wallet's public address
     if (!get_public_address()) {
-        DEBUG_PRINT("Could not get the wallet's public address");
+        ERROR_PRINT("Could not get the wallet's public address");
         return XCASH_ERROR;
     }
 
     if (xcash_wallet_public_address[0] == '\0') {
-        DEBUG_PRINT("Wallet public address is empty");
+        ERROR_PRINT("Wallet public address is empty");
         return XCASH_ERROR;
     }
 
