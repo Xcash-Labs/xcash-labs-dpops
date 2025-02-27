@@ -124,7 +124,7 @@ bool configure_uv_threadpool(void)
 Name: init_processing
 Description: Initialize globals and print program start header.
 ---------------------------------------------------------------------------------------------------------*/
-bool init_processing(const arg_config_t *arg_config)
+void init_processing(const arg_config_t *arg_config)
 {
    static const char xcash_tech_header[] =
       "\n"
@@ -161,7 +161,6 @@ bool init_processing(const arg_config_t *arg_config)
     XCASH_WALLET_IP, XCASH_WALLET_PORT,
     DATABASE_CONNECTION, total_threads, log_level
   );
-  return 0;
 }
 
 /*---------------------------------------------------------------------------------------------------------
