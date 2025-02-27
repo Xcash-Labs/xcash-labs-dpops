@@ -5,7 +5,6 @@
 
 #define XCASH_DPOPS_CURRENT_VERSION "xCash Labs DPoPs V. 2.0.0"
 
-#define 
 #define XCASH_DAEMON_PORT 18281 // The X-CASH Daemon RPC Port
 #define XCASH_WALLET_PORT 18285 // The X-CASH Wallet RPC Port
 #define XCASH_DPOPS_PORT 18283 // The X-CASH Dpops Port
