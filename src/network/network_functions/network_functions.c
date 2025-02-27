@@ -130,6 +130,8 @@ if (!result) {
     return XCASH_ERROR;
 }
 
+DEBUG_PRINT("Here I am.....");
+
 // Copy the response to result buffer
 strncpy(result, response.data, BUFFER_SIZE - 1);
 result[BUFFER_SIZE - 1] = '\0';  // Ensure null termination
