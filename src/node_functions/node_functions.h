@@ -9,7 +9,7 @@
 
 bool get_node_data(void);
 //bool get_daemon_data(void);
-int is_seed_address(const char* public_address);
+bool is_seed_address(const char* public_address);
 //const char* address_to_node_name(const char* public_address);
 //const char* address_to_node_host(const char* public_address);
 
