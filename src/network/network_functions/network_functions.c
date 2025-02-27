@@ -58,16 +58,9 @@ Parameters:
   DATA_TIMEOUT_SETTINGS - The timeout settings for reading the data
 Return: 0 if an error has occured, 1 if successfull
 ---------------------------------------------------------------------------------------------------------*/
-
-if (send_http_request(data, XCASH_wallet_IP_address, "/json_rpc", XCASH_WALLET_PORT, "POST", 
-    HTTP_HEADERS, HTTP_HEADERS_LENGTH, GET_PUBLIC_ADDRESS_DATA, 
-    SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) <= 0) 
-
-
 int send_http_request(char *result, const char *host, const char *url, int port, 
                       const char *method, const char **headers, size_t headers_length, 
                       const char *data, int timeout) {
-    
     CURL *curl;
     CURLcode res;
     struct curl_slist *header_list = NULL;
@@ -107,8 +100,6 @@ int send_http_request(char *result, const char *host, const char *url, int port,
     }
 
     // Perform the request
-    DEBUG_PRINT("Making HTTP request to URL: %s", full_url);
-
     res = curl_easy_perform(curl);
     if (res != CURLE_OK) {
         ERROR_PRINT("HTTP request failed: %s", curl_easy_strerror(res));
