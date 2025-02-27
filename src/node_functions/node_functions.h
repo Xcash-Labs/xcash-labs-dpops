@@ -5,7 +5,7 @@
 #include "config.h"
 #include "globals.h"
 #include "macro_functions.h"
-#include "network_wallet_functions.h"
+#include "wallet_functions.h"
 
 bool get_node_data(void);
 //bool get_daemon_data(void);
