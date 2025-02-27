@@ -10,6 +10,11 @@ char current_block_height[BUFFER_SIZE_NETWORK_BLOCK_DATA] = {0};
 char previous_block_hash[BLOCK_HASH_LENGTH+1] = {0};
 char secret_key_data[crypto_vrf_SECRETKEYBYTES+1] = {0};
 char secret_key[VRF_SECRET_KEY_LENGTH+1] = {0};
+const NetworkNode network_nodes[] = {
+  {"XCA1dd7JaWhiuBavUM2ZTJG3GdgPkT1Yd5Q6VvNvnxbEfb6JhUhziTF6w5mMPVeoSv3aa1zGyhedpaa2QQtGEjBo7N6av9nhaU"},
+  {"XCA1b6Sg5QVBX4jrctQ9SVUcHFqpaGST6bqtFpyoQadTX8SaDs92xR8iec3VfaXKzhYijFiMfwoM4TuYRgy6NXzn5titJnWbra"},
+  // Sentinel value (empty entry to mark the end)
+  {NULL}};
 
 mongoc_client_pool_t* database_client_thread_pool = NULL;
 
@@ -47,19 +52,6 @@ static struct argp_option options[] = {
   {"generate-key", OPTION_GENERATE_KEY, 0, 0, "Generate public/private key for block verifiers.", 0},
   {0}
 };
-
-const NetworkNode network_nodes[] = {
-  {"XCA1dd7JaWhiuBavUM2ZTJG3GdgPkT1Yd5Q6VvNvnxbEfb6JhUhziTF6w5mMPVeoSv3aa1zGyhedpaa2QQtGEjBo7N6av9nhaU",
-    XCA1dd7JaWhiuBavUM2ZTJG3GdgPkT1Yd5Q6VvNvnxbEfb6JhUhziTF6w5mMPVeoSv3aa1zGyhedpaa2QQtGEjBo7N6av9nhaU
-   "xcashseeds.us",
-   "xcashseeds_us",
-   "f681a933620c8e9e029d9ac0977d3a2f1d6a64cc49304e079458e3b5d2d4a66f"},
-  {"XCA1b6Sg5QVBX4jrctQ9SVUcHFqpaGST6bqtFpyoQadTX8SaDs92xR8iec3VfaXKzhYijFiMfwoM4TuYRgy6NXzn5titJnWbra",
-   "xcashseeds.uk",
-   "xcashseeds_uk",
-   "63232aa1b020a772945bf50ce96db9a04242583118b5a43952f0aaf9ecf7cfbb"},
-  // Sentinel value (empty entry to mark the end)
-  {NULL, NULL, NULL, NULL}};
 
 /*---------------------------------------------------------------------------------------------------------
 Name: error_t parse_opt
@@ -227,27 +219,30 @@ int main(int argc, char *argv[])
     return 0;
   }
 
-  if (create_key) {
+  if (create_key)
+  {
     generate_key();
     return 0;
   }
 
-  if (arg_config.block_verifiers_secret_key && (strlen(arg_config.block_verifiers_secret_key) == VRF_SECRET_KEY_LENGTH))
+  if (!(get_node_data()))
   {
-    strncpy(secret_key, config->block_verifiers_secret_key, sizeof(secret_key) - 1);
-    secret_key[sizeof(secret_key) - 1] = '\0';  // Ensure null termination
-    hex_to_byte_array(secret_key, secret_key_data, sizeof(secret_key_data));
-    
-    // add error handeling
-
-
+    FATAL_ERROR_EXIT("Faile to get the nodes public wallet address");
   }
-  else
+
+  if (arg_config.block_verifiers_secret_key && (strlen(arg_config.block_verifiers_secret_key) == VRF_SECRET_KEY_LENGTH))
   {
     FATAL_ERROR_EXIT("The --block-verifiers-secret-key is mandatory and should be %d characters long!", VRF_SECRET_KEY_LENGTH);
   }
-  
-  if(!(configure_uv_threadpool()))
+
+  strncpy(secret_key, config->block_verifiers_secret_key, sizeof(secret_key) - 1);
+  secret_key[sizeof(secret_key) - 1] = '\0';
+  if (!(hex_to_byte_array(secret_key, secret_key_data, sizeof(secret_key_data))))
+  {
+    FATAL_ERROR_EXIT("Failed to convert the block-verifiers-secret-key to a byte array: %s", arg_config.block_verifiers_secret_key);
+  }
+
+  if (!(configure_uv_threadpool()))
   {
     FATAL_ERROR_EXIT("Can't configure uv_threadpool");
   }
@@ -259,13 +254,6 @@ int main(int argc, char *argv[])
     INFO_PRINT("Database opened successfully");
   } else {
     FATAL_ERROR_EXIT("Can't open mongo database");
-  }
-
-  // not sure about this - relook at
-  if(!(initialize_network_nodes()))
-  {
-    shutdown_database();
-    FATAL_ERROR_EXIT("Can't add seed nodes to mongo database");
   }
 
   signal(SIGINT, sigint_handler);

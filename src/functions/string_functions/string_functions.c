@@ -7,33 +7,37 @@
 /// @param byte_array_size The size of the output array.
 /// @return 1 if successful, 0 if an error occurred.
 ---------------------------------------------------------------------------------------------------------*/
-int hex_to_byte_array(const char *hex_string, unsigned char *byte_array, size_t byte_array_size) {
+bool hex_to_byte_array(const char *hex_string, unsigned char *byte_array, size_t byte_array_size) {
     if (!hex_string || !byte_array) {
-        return 0; // NULL check
+        ERROR_PRINT("Hex string can not be null.");
+        return XCASH_ERROR;
     }
 
     size_t hex_length = strlen(hex_string);
     
     if (hex_length % 2 != 0) {
-        return 0; // Hex string must be even length
+        ERROR_PRINT("Hex string must be even length.");
+        return XCASH_ERROR;
     }
 
     size_t expected_bytes = hex_length / 2;
     if (expected_bytes > byte_array_size) {
-        return 0; // Buffer too small
+        ERROR_PRINT("Buffer is too small for new string.")
+        return XCASH_ERROR;
     }
 
     for (size_t i = 0; i < expected_bytes; i++) {
         char byte_chars[3] = {hex_string[i * 2], hex_string[i * 2 + 1], '\0'};
         
         if (!isxdigit(byte_chars[0]) || !isxdigit(byte_chars[1])) {
-            return 0; // Invalid hex character
+            ERROR_PRINT("Invalid hex character.")
+            return XCASH_ERROR; // Invalid hex character
         }
 
         byte_array[i] = (unsigned char)strtol(byte_chars, NULL, 16);
     }
 
-    return 1; // Success
+    return XCASH_OK; // Success
 }
 
 /*---------------------------------------------------------------------------------------------------------
