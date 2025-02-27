@@ -10,7 +10,7 @@
 #include "config.h"
 #include "globals.h"
 #include "macro_functions.h"
-#include "daemon_functions.h"
+#include "network_daemon_functions.h"
 
 typedef enum {
     ROUND_ERROR, // some system fault occurred. mostly communication errors or other non-fatal error. In that case better wait till next round
