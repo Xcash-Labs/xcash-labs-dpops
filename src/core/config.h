@@ -10,6 +10,8 @@
 #define XCASH_DPOPS_PORT 18283 // The X-CASH Dpops IP
 #define DATABASE_CONNECTION "mongodb://127.0.0.1:27017" // The database connection string
 
+#define XCASH_WALLET_PREFIX "XCA" // The prefix of a XCA address
+
 #define TRANSFER_BUFFER_SIZE 4096  // Size of the buffer used for data transfer in bytes (4 KB)
 #define RESPONSE_TIMEOUT 5000  // Maximum time (in milliseconds) to wait for a response before closing the connection (5 seconds)
 #define CONNECTION_TIMEOUT 3000  // Maximum time (in milliseconds) to wait for a connection to be established before retrying or failing (3 seconds)
