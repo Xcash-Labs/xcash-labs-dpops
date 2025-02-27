@@ -5,12 +5,7 @@ void show_majority_statistics(const xcash_node_sync_info_t* majority_list, size_
         WARNING_PRINT("No valid nodes in majority list. The network might be offline.");
         return;
     }
-    INFO_STAGE_PRINT("Nodes majority status (%ld nodes found):", items_count);
-
-//    for (size_t i = 0; i < items_count; i++) {
-//        const char* node_name = address_to_node_name(majority_list[i].public_address);
-//        INFO_PRINT_STATUS_OK("Node: %-40s", node_name ? node_name : "Unknown");
-//    }
+    INFO_PRINT("Nodes majority status (%ld nodes found):", items_count);
 }
 
 /*---------------------------------------------------------------------------------------------------------
@@ -38,19 +33,12 @@ bool initial_db_sync_check(size_t* majority_count, xcash_node_sync_info_t** majo
     size_t nodes_majority_count = 0;
     bool result = false;
 
-    INFO_STAGE_PRINT("Checking the network data majority...");
-
-    // Retrieve the majority list of synced nodes
-//    if (!get_sync_nodes_majority_list_top(&nodes_majority_list, &nodes_majority_count)) {
-//        WARNING_PRINT("Could not retrieve data majority nodes sync list.");
-//    }
-
+    INFO_PRINT("Checking the network data majority...");
     show_majority_statistics(nodes_majority_list, nodes_majority_count);
-
     if (nodes_majority_count < BLOCK_VERIFIERS_VALID_AMOUNT) {
-        INFO_PRINT_STATUS_FAIL("Not enough data majority. Nodes: [%ld/%d]", nodes_majority_count, BLOCK_VERIFIERS_VALID_AMOUNT);
+        INFO_PRINT("Not enough data majority. Nodes: [%ld/%d]", nodes_majority_count, BLOCK_VERIFIERS_VALID_AMOUNT);
     } else {
-        INFO_PRINT_STATUS_OK("Data majority reached. Nodes: [%ld/%d]", nodes_majority_count, BLOCK_VERIFIERS_VALID_AMOUNT);
+        INFO_PRINT("Data majority reached. Nodes: [%ld/%d]", nodes_majority_count, BLOCK_VERIFIERS_VALID_AMOUNT);
         
         // Pick a random sync source and attempt initial sync
 //        int sync_source_index = get_random_majority(nodes_majority_list, nodes_majority_count);
