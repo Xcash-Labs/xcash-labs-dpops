@@ -13,8 +13,6 @@ bool get_node_data(void) {
     }
 
     is_seed_node = is_seed_address(xcash_wallet_public_address);
-    network_data_node_settings = is_seed_node ? 1 : 0;
-
     return true;
 }
 

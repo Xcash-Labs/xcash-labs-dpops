@@ -12,6 +12,7 @@ Global Variables
 extern const NetworkNode network_nodes[];
 extern bool debug_enabled;  // True if debug enabled
 extern bool is_seed_node;   // True if node is a seed node
+// network_data_node_settings is same as seed node, removed
 extern char XCASH_daemon_IP_address[IP_LENGTH + 1];
 extern char XCASH_wallet_IP_address[IP_LENGTH+1];
 extern char xcash_wallet_public_address[XCASH_PUBLIC_ADDR_LENGTH + 1]; // xCash wallet public address
