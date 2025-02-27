@@ -17,7 +17,6 @@
 #include "VRF_functions.h"
 #include "dpops_round.h"
 #include "uv_net_server.h"
-#include "network_wallet_functions.h"
 #include "node_functions.h"
 
 typedef struct {
