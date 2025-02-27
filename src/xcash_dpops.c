@@ -228,7 +228,7 @@ int main(int argc, char *argv[])
     FATAL_ERROR_EXIT("The --block-verifiers-secret-key is mandatory and should be %d characters long!", VRF_SECRET_KEY_LENGTH);
   }
 
-  strncpy(secret_key, arg_config->block_verifiers_secret_key, sizeof(secret_key) - 1);
+  strncpy(secret_key, arg_config.block_verifiers_secret_key, sizeof(secret_key) - 1);
   secret_key[sizeof(secret_key) - 1] = '\0';
   if (!(hex_to_byte_array(secret_key, secret_key_data, sizeof(secret_key_data))))
   {
