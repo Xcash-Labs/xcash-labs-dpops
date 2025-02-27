@@ -110,6 +110,8 @@ int send_http_request(char *result, const char *host, const char *url, int port,
         return XCASH_ERROR;
     }
 
+    DEBUG_PRINT("here ................");
+
     // Copy the response to result buffer
     strncpy(result, response.data, BUFFER_SIZE - 1);
     result[BUFFER_SIZE - 1] = '\0';  // Ensure null termination
