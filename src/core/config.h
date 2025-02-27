@@ -8,7 +8,9 @@
 #define XCASH_DAEMON_PORT 18281 // The X-CASH Daemon RPC Port
 #define XCASH_WALLET_PORT 18285 // The X-CASH Wallet RPC Port
 #define XCASH_DPOPS_PORT 18283 // The X-CASH Dpops Port
+#define XCASH_DAEMON_IP "127.0.0.1" // The X-CASH Wallet IP
 #define XCASH_WALLET_IP "127.0.0.1" // The X-CASH Wallet IP
+#define XCASH_DPOPS_IP "127.0.0.1" // The X-CASH Wallet IP
 
 #define DATABASE_CONNECTION "mongodb://127.0.0.1:27017" // The database connection string
 

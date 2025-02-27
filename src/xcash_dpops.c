@@ -3,8 +3,6 @@
 // set globals defined in globals.h
 bool debug_enabled = false;
 bool is_seed_node = false;  
-char XCASH_daemon_IP_address[IP_LENGTH + 1] = {0};
-char xcash_wallet_public_address[XCASH_PUBLIC_ADDR_LENGTH + 1] = {0};
 char current_block_height[BUFFER_SIZE_NETWORK_BLOCK_DATA] = {0};
 char previous_block_hash[BLOCK_HASH_LENGTH+1] = {0};
 unsigned char secret_key_data[crypto_vrf_SECRETKEYBYTES+1] = {0};
@@ -17,7 +15,6 @@ const NetworkNode network_nodes[] = {
 mongoc_client_pool_t* database_client_thread_pool = NULL;
 
 // local
-char XCASH_DPOPS_delegates_IP_address[IP_LENGTH+1] = {0};
 static bool show_help = false;
 static bool create_key = false;
 static int total_threads = 4;
@@ -124,10 +121,7 @@ Description: Initialize globals and print program start header.
 ---------------------------------------------------------------------------------------------------------*/
 bool init_processing(const arg_config_t *arg_config)
 {
-  snprintf(XCASH_daemon_IP_address, sizeof(XCASH_daemon_IP_address), "%s", "127.0.0.1");
-  snprintf(XCASH_DPOPS_delegates_IP_address, sizeof(XCASH_DPOPS_delegates_IP_address), "%s", "127.0.0.1");
-
-  static const char xcash_tech_header[] =
+   static const char xcash_tech_header[] =
       "\n"
       " /$$   /$$                           /$$        / $$              / $$                    \n"
       "| $$  / $$                          | $$        | $$              | $$                    \n"
@@ -156,8 +150,8 @@ bool init_processing(const arg_config_t *arg_config)
     XCASH_DPOPS_CURRENT_VERSION, "~Lazarus",
     arg_config->block_verifiers_secret_key,
     is_seed_node ? "SEED NODE" : "DELEGATE NODE",
-    XCASH_daemon_IP_address, XCASH_DAEMON_PORT,
-    XCASH_DPOPS_delegates_IP_address, XCASH_DPOPS_PORT,
+    XCASH_DAEMON_IP, XCASH_DAEMON_PORT,
+    XCASH_DPOPS_IP, XCASH_DPOPS_PORT,
     XCASH_WALLET_IP, XCASH_WALLET_PORT,
     DATABASE_CONNECTION, total_threads
   );
