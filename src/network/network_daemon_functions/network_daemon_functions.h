@@ -1,5 +1,5 @@
-#ifndef DAEMON_FUNCTIONS_H_   /* Include guard */
-#define DAEMON_FUNCTIONS_H_
+#ifndef NETWORK_DAEMON_FUNCTIONS_H_   /* Include guard */
+#define NETWORK_DAEMON_FUNCTIONS_H_
 
 #include <stdio.h>
 #include <stdlib.h>

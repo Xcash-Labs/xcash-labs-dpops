@@ -1,4 +1,4 @@
-#include "daemon_functions.h"
+#include "network_daemon_functions.h"
 
 /*---------------------------------------------------------------------------------------------------------
 Name: get_current_block_height
