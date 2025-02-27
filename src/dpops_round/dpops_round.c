@@ -28,7 +28,7 @@ xcash_round_result_t process_round(size_t round_number) {
 
     // Update with fresh delegates list
 //    if (!fill_delegates_from_db()) {
-//        ERROR_PRINT("Can't read delegates list from DB");
+//        DEBUG_PRINT("Can't read delegates list from DB");
 //        free(nodes_majority_list);
 //        return ROUND_ERROR;
 //    }
@@ -62,7 +62,7 @@ xcash_round_result_t process_round(size_t round_number) {
     // STEP 2: Update block verifiers list
 
 //    if (update_block_verifiers_list() == 0) {
-//        ERROR_PRINT("Could not update the previous, current, and next block verifiers list from database");
+//        DEBUG_PRINT("Could not update the previous, current, and next block verifiers list from database");
 //        return ROUND_ERROR;
 //    }
 
