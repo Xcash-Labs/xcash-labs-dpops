@@ -99,6 +99,10 @@ int send_http_request(char *result, const char *host, const char *url, int port,
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
     }
 
+
+    DEBUG_PRINT("Making HTTP request to URL: %s", full_url);
+
+
     // Perform the request
     res = curl_easy_perform(curl);
     if (res != CURLE_OK) {
