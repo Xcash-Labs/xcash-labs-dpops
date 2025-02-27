@@ -43,7 +43,9 @@
 
 #define INFO_PRINT(fmt, ...) \
     do { \
+        if (log_level >= LOG_LEVEL_INFO) { \
         fprintf(stderr, BRIGHT_WHITE_TEXT("INFO: ") fmt "\n", ##__VA_ARGS__); \
+    } \
     } while (0)
 
 #define WARNING_PRINT(fmt, ...) \
