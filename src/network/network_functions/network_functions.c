@@ -130,6 +130,16 @@ if (!result) {
     return XCASH_ERROR;
 }
 
+size_t response_len = strlen(response.data);
+DEBUG_PRINT("Response length: %zu", response_len);
+if (response_len >= BUFFER_SIZE) {
+    DEBUG_PRINT("Response data too large (%zu bytes), truncating!", response_len);
+    free(response.data);
+    curl_easy_cleanup(curl);
+    if (header_list) curl_slist_free_all(header_list);
+    return XCASH_ERROR;
+}
+
 DEBUG_PRINT("Here I am.....");
 
 // Copy the response to result buffer
