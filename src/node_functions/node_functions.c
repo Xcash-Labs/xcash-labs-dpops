@@ -20,8 +20,8 @@ int is_seed_address(const char* public_address) {
     if (!public_address) {
         return false;
     }
-    for (size_t i = 0; network_nodes.seed_public_address[i] != NULL; i++) {
-        if (strcmp(network_nodes.seed_public_address[i], public_address) == 0) {
+    for (size_t i = 0; network_nodes->seed_public_address[i] != NULL; i++) {
+        if (strcmp(network_nodes->seed_public_address[i], public_address) == 0) {
             return true;
         }
     }
