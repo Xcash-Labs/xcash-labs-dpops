@@ -114,7 +114,7 @@ int send_http_request(char *result, const char *host, const char *url, int port,
     strncpy(result, response.data, BUFFER_SIZE - 1);
     result[BUFFER_SIZE - 1] = '\0';  // Ensure null termination
 
-    DEBUG_PRINT(result);
+    DEBUG_PRINT("result %s", result);
 
     // Cleanup
     free(response.data);
