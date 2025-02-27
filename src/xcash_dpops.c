@@ -44,7 +44,7 @@ BRIGHT_WHITE_TEXT("Advanced Options:\n")
 static struct argp_option options[] = {
   {"help", 'h', 0, 0, "List all valid parameters.", 0},
   {"block-verifiers-secret-key", 'k', "SECRET_KEY", 0, "Set the block verifier's secret key", 0},
-  {"log-level", 'l', 'LOG_LEVEL', 0, "Displays log messages based on the log-level.", 0},
+  {"log-level", 'l', "LOG_LEVEL", 0, "Displays log messages based on the level passed.", 0},
   {"total-threads", OPTION_TOTAL_THREADS, "THREADS", 0, "Set total threads (Default: 4).", 0},
   {"generate-key", OPTION_GENERATE_KEY, 0, 0, "Generate public/private key for block verifiers.", 0},
   {0}
