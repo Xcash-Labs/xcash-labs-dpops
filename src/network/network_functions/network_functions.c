@@ -122,7 +122,7 @@ int send_http_request(char *result, const char *host, const char *url, int port,
         return XCASH_ERROR;
     }
 
-    ERROR_PRINT("xxresult %s", response.data);
+    DEBUG_PRINT("Curl result %s", response.data);
 
     // Validate response before copying
     if (!response.data)
