@@ -1,5 +1,5 @@
-#ifndef NETWORK_WALLET_FUNCTIONS_H_   /* Include guard */
-#define NETWORK_WALLET_FUNCTIONS_H_
+#ifndef WALLET_FUNCTIONS_H_   /* Include guard */
+#define WALLET_FUNCTIONS_H_
 
 #include <stdio.h>
 #include <stdlib.h>

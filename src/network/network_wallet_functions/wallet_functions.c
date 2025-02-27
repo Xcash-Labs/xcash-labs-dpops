@@ -1,4 +1,4 @@
-#include "network_wallet_functions.h"
+#include "wallet_functions.h"
 
 /*---------------------------------------------------------------------------------------------------------
 Name: get_public_address
