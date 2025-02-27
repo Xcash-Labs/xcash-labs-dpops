@@ -82,6 +82,7 @@ int send_http_request(char *result, const char *host, const char *url, int port,
     // Construct full URL
     char full_url[256];
     snprintf(full_url, sizeof(full_url), "http://%s:%d%s", host, port, url);
+    DEBUG_PRINT("Making HTTP request to URL: %s", full_url);
     curl_easy_setopt(curl, CURLOPT_URL, full_url);
     curl_easy_setopt(curl, CURLOPT_TIMEOUT, timeout);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
@@ -98,10 +99,6 @@ int send_http_request(char *result, const char *host, const char *url, int port,
         curl_easy_setopt(curl, CURLOPT_POST, 1L);
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
     }
-
-
-    DEBUG_PRINT("Making HTTP request to URL: %s", full_url);
-
 
     // Perform the request
     res = curl_easy_perform(curl);
