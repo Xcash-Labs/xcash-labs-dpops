@@ -22,7 +22,7 @@ bool hex_to_byte_array(const char *hex_string, unsigned char *byte_array, size_t
 
     size_t expected_bytes = hex_length / 2;
     if (expected_bytes > byte_array_size) {
-        ERROR_PRINT("Buffer is too small for new string.")
+        ERROR_PRINT("Buffer is too small for new string.");
         return XCASH_ERROR;
     }
 
@@ -30,7 +30,7 @@ bool hex_to_byte_array(const char *hex_string, unsigned char *byte_array, size_t
         char byte_chars[3] = {hex_string[i * 2], hex_string[i * 2 + 1], '\0'};
         
         if (!isxdigit(byte_chars[0]) || !isxdigit(byte_chars[1])) {
-            ERROR_PRINT("Invalid hex character.")
+            ERROR_PRINT("Invalid hex character.");
             return XCASH_ERROR; // Invalid hex character
         }
 

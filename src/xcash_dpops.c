@@ -237,7 +237,7 @@ int main(int argc, char *argv[])
 
   if (!(get_public_address()))
   {
-    FATAL_ERROR_EXIT("Failed to get the Public Address for the wallet", VRF_SECRET_KEY_LENGTH);
+    FATAL_ERROR_EXIT("Failed to get the Public Address for the wallet");
   }
 
   if (!(configure_uv_threadpool()))
