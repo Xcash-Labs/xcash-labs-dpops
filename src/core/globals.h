@@ -10,7 +10,7 @@
 Global Variables
 --------------------------------------------------------------------------------------------------*/
 extern const NetworkNode network_nodes[];
-extern bool debug_enabled;  // True if debug enabled
+extern int log_level;  // Log level for display log messages
 extern bool is_seed_node;   // True if node is a seed node - network_data_node_settings is same as seed node, removed
 extern char xcash_wallet_public_address[XCASH_PUBLIC_ADDR_LENGTH + 1]; // xCash wallet public address
 extern char current_block_height[BUFFER_SIZE_NETWORK_BLOCK_DATA]; // The current block height
