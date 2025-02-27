@@ -8,7 +8,7 @@ char XCASH_wallet_IP_address[IP_LENGTH+1] = {0};
 char xcash_wallet_public_address[XCASH_PUBLIC_ADDR_LENGTH + 1] = {0};
 char current_block_height[BUFFER_SIZE_NETWORK_BLOCK_DATA] = {0};
 char previous_block_hash[BLOCK_HASH_LENGTH+1] = {0};
-char secret_key_data[crypto_vrf_SECRETKEYBYTES+1] = {0};
+unsigned char secret_key_data[crypto_vrf_SECRETKEYBYTES+1] = {0};
 char secret_key[VRF_SECRET_KEY_LENGTH+1] = {0};
 const NetworkNode network_nodes[] = {
   {"XCA1dd7JaWhiuBavUM2ZTJG3GdgPkT1Yd5Q6VvNvnxbEfb6JhUhziTF6w5mMPVeoSv3aa1zGyhedpaa2QQtGEjBo7N6av9nhaU"},
