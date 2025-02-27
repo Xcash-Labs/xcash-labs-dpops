@@ -8,6 +8,7 @@
 #include "globals.h"
 #include "macro_functions.h"
 #include "network_functions.h"
+#include "string_functions.h"
 
 /*
 -----------------------------------------------------------------------------------------------------------
