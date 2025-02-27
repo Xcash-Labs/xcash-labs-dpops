@@ -4,6 +4,7 @@
 #include "config.h"
 #include "structures.h"
 #include <mongoc/mongoc.h>
+#include "vrf.h"
 
 /*--------------------------------------------------------------------------------------------------
 Global Variables
