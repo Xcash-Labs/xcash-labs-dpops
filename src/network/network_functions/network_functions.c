@@ -100,26 +100,43 @@ int send_http_request(char *result, const char *host, const char *url, int port,
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
     }
 
-    // Perform the request
-    res = curl_easy_perform(curl);
-    if (res != CURLE_OK) {
-        DEBUG_PRINT("HTTP request failed: %s", curl_easy_strerror(res));
-        free(response.data);
-        curl_easy_cleanup(curl);
-        if (header_list) curl_slist_free_all(header_list);
-        return XCASH_ERROR;
-    }
-    DEBUG_PRINT("result %s", response.data);
-    // Copy the response to result buffer
-    strncpy(result, response.data, BUFFER_SIZE - 1);
-    result[BUFFER_SIZE - 1] = '\0';  // Ensure null termination
 
-    DEBUG_PRINT("result 1");
-
-    // Cleanup
+// Perform the request
+res = curl_easy_perform(curl);
+if (res != CURLE_OK) {
+    DEBUG_PRINT("HTTP request failed: %s", curl_easy_strerror(res));
     free(response.data);
     curl_easy_cleanup(curl);
     if (header_list) curl_slist_free_all(header_list);
+    return XCASH_ERROR;
+}
 
-    return XCASH_OK;
+DEBUG_PRINT("result %s", response.data);
+
+// Validate response before copying
+if (!response.data) {
+    ERROR_PRINT("response.data is NULL");
+    curl_easy_cleanup(curl);
+    if (header_list) curl_slist_free_all(header_list);
+    return XCASH_ERROR;
+}
+
+// Validate result buffer before copying
+if (!result) {
+    ERROR_PRINT("result buffer is NULL");
+    free(response.data);
+    curl_easy_cleanup(curl);
+    if (header_list) curl_slist_free_all(header_list);
+    return XCASH_ERROR;
+}
+
+// Copy the response to result buffer
+strncpy(result, response.data, BUFFER_SIZE - 1);
+result[BUFFER_SIZE - 1] = '\0';  // Ensure null termination
+
+    // Cleanup
+free(response.data);
+curl_easy_cleanup(curl);
+if (header_list) curl_slist_free_all(header_list);
+return XCASH_OK;
 }
