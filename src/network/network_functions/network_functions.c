@@ -132,8 +132,8 @@ if (!result) {
 
 size_t response_len = strlen(response.data);
 DEBUG_PRINT("Response length: %zu", response_len);
-if (response_len >= BUFFER_SIZE) {
-    DEBUG_PRINT("Response data too large (%zu bytes), truncating!", response_len);
+if (response_len >= SMALL_BUFFER_SIZE) {
+    DEBUG_PRINT("Response data too large (%zu bytes)", response_len);
     free(response.data);
     curl_easy_cleanup(curl);
     if (header_list) curl_slist_free_all(header_list);
@@ -143,8 +143,8 @@ if (response_len >= BUFFER_SIZE) {
 DEBUG_PRINT("Here I am.....");
 
 // Copy the response to result buffer
-strncpy(result, response.data, BUFFER_SIZE - 1);
-result[BUFFER_SIZE - 1] = '\0';  // Ensure null termination
+strncpy(result, response.data, SMALL_BUFFER_SIZE - 1);
+result[SMALL_BUFFER_SIZE - 1] = '\0';  // Ensure null termination
 
 DEBUG_PRINT("Here I am 2.....");
 
