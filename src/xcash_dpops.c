@@ -138,6 +138,8 @@ void init_processing(const arg_config_t *arg_config)
       "|__/  |__/\\_______/\\_______|_______/|__/  |__|__|________/\\_______/\\________/\\______/\n"
       "\n";
   fputs(xcash_tech_header, stderr);
+  fprintf(stderr, "Daemon startup successful...\n");
+
   #define xcash_tech_status_fmt \
   "%s (%s)\n\n"\
   "Address:\t%s\n"\
