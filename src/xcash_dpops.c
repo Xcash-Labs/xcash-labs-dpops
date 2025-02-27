@@ -217,7 +217,7 @@ int main(int argc, char *argv[])
     generate_key();
     return 0;
   }
-
+ 
   if (!(get_node_data()))
   {
     FATAL_ERROR_EXIT("Failed to get the nodes public wallet address");
