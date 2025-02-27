@@ -11,7 +11,7 @@ bool get_node_data(void) {
         DEBUG_PRINT("Wallet public address is empty");
         return XCASH_ERROR;
     }
-
+ 
     is_seed_node = is_seed_address(xcash_wallet_public_address);
     return true;
 }
