@@ -15,6 +15,9 @@ const NetworkNode network_nodes[] = {
   {"XCA1b6Sg5QVBX4jrctQ9SVUcHFqpaGST6bqtFpyoQadTX8SaDs92xR8iec3VfaXKzhYijFiMfwoM4TuYRgy6NXzn5titJnWbra"},
   // Sentinel value (empty entry to mark the end)
   {NULL}};
+snprintf(XCASH_daemon_IP_address, sizeof(XCASH_daemon_IP_address), "%s", "127.0.0.1");
+snprintf(XCASH_DPOPS_delegates_IP_address, sizeof(XCASH_DPOPS_delegates_IP_address), "%s", "127.0.0.1");
+snprintf(XCASH_wallet_IP_address, sizeof(XCASH_wallet_IP_address), "%s", "127.0.0.1");
 
 mongoc_client_pool_t* database_client_thread_pool = NULL;
 
