@@ -11,6 +11,13 @@
 #include "globals.h"
 #include "macro_functions.h"
 #include "network_daemon_functions.h"
+#include "db_sync.h"
+
+typedef struct {
+    char public_address[XCASH_WALLET_LENGTH+1];
+    char IP_address[BLOCK_VERIFIERS_IP_ADDRESS_TOTAL_LENGTH+1];
+    bool is_online;
+} producer_node_t;
 
 typedef enum {
     ROUND_ERROR, // some system fault occurred. mostly communication errors or other non-fatal error. In that case better wait till next round

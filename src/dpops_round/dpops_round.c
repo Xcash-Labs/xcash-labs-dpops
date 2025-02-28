@@ -15,16 +15,17 @@ xcash_round_result_t process_round(size_t round_number) {
         return ROUND_ERROR;
     }
 
-    return ROUND_ERROR;
 
-//    size_t network_majority_count = 0;
-//    xcash_node_sync_info_t* nodes_majority_list = NULL;
+    size_t network_majority_count = 0;
+    xcash_node_sync_info_t* nodes_majority_list = NULL;
 
 //    if (!initial_db_sync_check(&network_majority_count, &nodes_majority_list) || !nodes_majority_list) {
 //        WARNING_PRINT("Can't sync databases with network majority");
 //        free(nodes_majority_list);
 //        return ROUND_ERROR;
 //    }
+
+    return ROUND_ERROR;
 
     // Update with fresh delegates list
 //    if (!fill_delegates_from_db()) {
