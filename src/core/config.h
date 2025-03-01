@@ -61,4 +61,8 @@
 #define SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS 3 // The time to wait for sending or receving socket data
 #define INVALID_RESERVE_PROOFS_SETTINGS 3 // The time in seconds to wait between checking for invalid reserve proofs
 
+// XCASH DPOPS
+#define BLOCK_VERIFIERS_TOTAL_AMOUNT 100 // The total amount of block verifiers
+#define BLOCK_VERIFIERS_AMOUNT 50 // The amount of block verifiers in a round
+
 #endif
