@@ -3,6 +3,7 @@
 // set globals defined in globals.h
 int log_level = 0;
 bool is_seed_node = false;  
+int network_data_nodes_amount = 0;
 char xcash_wallet_public_address[XCASH_PUBLIC_ADDR_LENGTH+1] = {0};
 char current_block_height[BUFFER_SIZE_NETWORK_BLOCK_DATA] = {0};
 char previous_block_hash[BLOCK_HASH_LENGTH+1] = {0};
@@ -126,7 +127,9 @@ Description: Initialize globals and print program start header.
 ---------------------------------------------------------------------------------------------------------*/
 void init_processing(const arg_config_t *arg_config)
 {
-   static const char xcash_tech_header[] =
+
+  network_data_nodes_amount = get_seed_node_count();
+  static const char xcash_tech_header[] =
       "\n"
       " /$$   /$$                           /$$        / $$              / $$                    \n"
       "| $$  / $$                          | $$        | $$              | $$                    \n"

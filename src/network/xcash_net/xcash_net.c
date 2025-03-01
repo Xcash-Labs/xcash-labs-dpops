@@ -68,9 +68,9 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char* message, response_t ***
 
     switch (dest) {
         case XNET_SEEDS_ALL: {
-            const char *all_hosts[NETWORK_DATA_NODES_AMOUNT + 1];
+            const char *all_hosts[network_data_nodes_amount + 1];
             int i = 0;
-            while (i < NETWORK_DATA_NODES_AMOUNT) {
+            while (i < network_data_nodes_amount) {
                 all_hosts[i] = network_data_nodes_list.network_data_nodes_IP_address[i];
                 i++;
             }
@@ -79,9 +79,9 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char* message, response_t ***
         } break;
 
         case XNET_SEEDS_ALL_ONLINE: {
-            const char *online_hosts[NETWORK_DATA_NODES_AMOUNT + 1];
+            const char *online_hosts[network_data_nodes_amount + 1];
             int si = 0, di = 0;
-            while (si < NETWORK_DATA_NODES_AMOUNT) {
+            while (si < network_data_nodes_amount) {
                 if (network_data_nodes_list.online_status[si] == 1) {
                     online_hosts[di++] = network_data_nodes_list.network_data_nodes_IP_address[si];
                 }

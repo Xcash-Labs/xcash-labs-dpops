@@ -5,12 +5,14 @@
 
 #define XCASH_DPOPS_CURRENT_VERSION "xCash Labs DPoPs V. 2.0.0"
 
+// Network
 #define XCASH_DAEMON_PORT 18281 // The X-CASH Daemon RPC Port
 #define XCASH_WALLET_PORT 18285 // The X-CASH Wallet RPC Port
 #define XCASH_DPOPS_PORT 18283 // The X-CASH Dpops Port
 #define XCASH_DAEMON_IP "127.0.0.1" // The X-CASH Wallet IP
 #define XCASH_WALLET_IP "127.0.0.1" // The X-CASH Wallet IP
 #define XCASH_DPOPS_IP "127.0.0.1" // The X-CASH Wallet IP
+define SOCKET_END_STRING "|END|" // End string when sending data between nodes, to signal the end of sending data
 
 #define DATABASE_CONNECTION "mongodb://127.0.0.1:27017" // The database connection string
 
@@ -23,7 +25,7 @@
 #define RETRY_DELAY_MS 500  // Delay (in milliseconds) before retrying a failed connection attempt (0.5 seconds)
 #define MAX_CONNECTIONS 1024 // Max connection for incomming transactions
 
-//database
+// Database
 #define DATABASE_NAME "XCASH_PROOF_OF_STAKE" // The name of the database
 #define DATABASE_NAME_DELEGATES "XCASH_PROOF_OF_STAKE_DELEGATES" // The name of the database for the delegates
 #define MAXIMUM_DATABASE_WRITE_SIZE 48000000 // The maximum database write size

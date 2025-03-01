@@ -24,3 +24,11 @@ bool is_seed_address(const char* public_address) {
     }
     return false;
 }
+
+int get_seed_node_count() {
+    int count = 0;
+    for (int i = 0; network_nodes[i].seed_public_address != NULL; i++) {
+        count++;
+    }
+    return count;
+}
