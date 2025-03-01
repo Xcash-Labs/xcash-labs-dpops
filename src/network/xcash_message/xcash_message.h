@@ -9,6 +9,7 @@
 
 #include "network_security_functions.h"
 #include "globals.h"
+#include "macro_functions.h"
 
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 
