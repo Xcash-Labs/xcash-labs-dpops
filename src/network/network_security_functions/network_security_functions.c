@@ -7,7 +7,7 @@
 #include "config.h"
 #include "macro_functions.h"
 #include "globals.h"
-#include "count_database_functions.h"
+#include "db_functions.h"
 #include "read_database_functions.h"
 #include "network_daemon_functions.h"
 #include "network_functions.h"
