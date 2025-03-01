@@ -4,6 +4,7 @@
 int log_level = 0;
 bool is_seed_node = false;  
 int network_data_nodes_amount = 0;
+delegates_t delegates_all[BLOCK_VERIFIERS_TOTAL_AMOUNT] = {0};
 char xcash_wallet_public_address[XCASH_PUBLIC_ADDR_LENGTH+1] = {0};
 char current_block_height[BUFFER_SIZE_NETWORK_BLOCK_DATA] = {0};
 char previous_block_hash[BLOCK_HASH_LENGTH+1] = {0};
