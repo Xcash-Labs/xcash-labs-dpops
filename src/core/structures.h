@@ -1,10 +1,11 @@
 #ifndef STRUCTURES_H
 #define STRUCTURES_H
 
-// Define a struct to store network node data (this struct may be used in future)
+// Define a struct to store network node data
 typedef struct {
     const char *seed_public_address;
     const char *ip_address;
+    int online_status; 
 } NetworkNode;
 
 // xcash-next

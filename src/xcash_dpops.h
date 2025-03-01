@@ -19,6 +19,7 @@
 #include "uv_net_server.h"
 #include "node_functions.h"
 
+// this may be used more in future
 typedef struct {
     char *block_verifiers_secret_key; // Holds your wallets public address
 } arg_config_t;
