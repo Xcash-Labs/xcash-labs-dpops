@@ -4,11 +4,11 @@
 #include <mongoc/mongoc.h>
 #include <bson/bson.h>
 
-#include "define_macro_functions.h"
-#include "define_macros.h"
-#include "variables.h"
-#include "define_macros_test.h"
+#include "config.h"
+#include "macro_functions.h"
+#include "globals"
 
+#include "define_macros_test.h"
 #include "count_database_functions.h"
 #include "read_database_functions.h"
 #include "network_daemon_functions.h"
