@@ -12,7 +12,7 @@
 #define XCASH_DAEMON_IP "127.0.0.1" // The X-CASH Wallet IP
 #define XCASH_WALLET_IP "127.0.0.1" // The X-CASH Wallet IP
 #define XCASH_DPOPS_IP "127.0.0.1" // The X-CASH Wallet IP
-define SOCKET_END_STRING "|END|" // End string when sending data between nodes, to signal the end of sending data
+#define SOCKET_END_STRING "|END|" // End string when sending data between nodes, to signal the end of sending data
 
 #define DATABASE_CONNECTION "mongodb://127.0.0.1:27017" // The database connection string
 
