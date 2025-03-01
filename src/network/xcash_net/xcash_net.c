@@ -71,7 +71,8 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char* message, response_t ***
             const char *all_hosts[network_data_nodes_amount + 1];
             int i = 0;
             while (i < network_data_nodes_amount) {
-                all_hosts[i] = network_data_nodes_list.network_data_nodes_IP_address[i];
+//                all_hosts[i] = network_data_nodes_list.network_data_nodes_IP_address[i];
+                all_hosts[i] = network_nodes[i].ip_address;
                 i++;
             }
             all_hosts[i] = NULL;
