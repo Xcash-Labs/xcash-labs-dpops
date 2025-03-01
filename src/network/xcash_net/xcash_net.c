@@ -107,7 +107,7 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
         {
             if (network_nodes[si].online_status == 1)
             {
-                online_hosts[di++] = network_data_nodes_list.network_data_nodes_IP_address[si];
+                online_hosts[di++] = network_nodes[si].ip_address;
             }
             si++;
         }
