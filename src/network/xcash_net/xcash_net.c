@@ -1,10 +1,12 @@
 #include "xcash_net.h"
 
 // Helper function to append SOCKET_END_STRING to a message
-static char* _build_message_ender(const char* message) {
+static char *_build_message_ender(const char *message)
+{
     int message_buf_size = strlen(message) + strlen(SOCKET_END_STRING) + 1;
     char *message_ender = calloc(message_buf_size, 1);
-    if (!message_ender) {
+    if (!message_ender)
+    {
         ERROR_PRINT("Memory allocation failed in _build_message_ender()");
         return NULL;
     }
@@ -13,38 +15,51 @@ static char* _build_message_ender(const char* message) {
 }
 
 // Removes trailing |END| from each valid response
-void remove_enders(response_t **responses) {
-    if (!responses) return;
+void remove_enders(response_t **responses)
+{
+    if (!responses)
+        return;
 
-    for (int i = 0; responses[i]; i++) {
+    for (int i = 0; responses[i]; i++)
+    {
         // Only process OK status
-        if (responses[i]->status == STATUS_OK) {
-            if (responses[i]->size == 0) {
+        if (responses[i]->status == STATUS_OK)
+        {
+            if (responses[i]->size == 0)
+            {
                 responses[i]->status = STATUS_INCOMPLETE;
                 DEBUG_PRINT("Returned data from host '%s' is empty; marked STATUS_INCOMPLETE",
                             responses[i]->host);
-            } else {
+            }
+            else
+            {
                 bool ender_found = false;
                 char *tmp = calloc(responses[i]->size + 1, 1);
-                if (tmp) {
+                if (tmp)
+                {
                     memcpy(tmp, responses[i]->data, responses[i]->size);
                     tmp[responses[i]->size] = '\0';
 
-                    if (responses[i]->size >= (sizeof(SOCKET_END_STRING) - 1)) {
+                    if (responses[i]->size >= (sizeof(SOCKET_END_STRING) - 1))
+                    {
                         char *ender_position = strstr(tmp, SOCKET_END_STRING);
-                        if (ender_position) {
+                        if (ender_position)
+                        {
                             ender_found = true;
                             int ender_pos = (int)(ender_position - tmp);
                             responses[i]->data[ender_pos] = '\0';
                             responses[i]->size = strlen(responses[i]->data);
                         }
                     }
-                    if (!ender_found) {
+                    if (!ender_found)
+                    {
                         WARNING_PRINT("Returned data has no |END|; size %ld, message: %s",
                                       responses[i]->size, tmp);
                     }
                     free(tmp);
-                } else {
+                }
+                else
+                {
                     ERROR_PRINT("Memory allocation failed in remove_enders()");
                 }
             }
@@ -53,9 +68,11 @@ void remove_enders(response_t **responses) {
 }
 
 // Sends a message (with appended |END|) to a group of hosts via send_multi_request()
-bool xnet_send_data_multi(xcash_dest_t dest, const char* message, response_t ***reply) {
+bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***reply)
+{
     bool result = false;
-    if (!reply) {
+    if (!reply)
+    {
         DEBUG_PRINT("reply parameter can't be NULL");
         return false;
     }
@@ -66,82 +83,101 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char* message, response_t ***
     response_t **responses = NULL;
     char *message_ender = NULL;
 
-    switch (dest) {
-        case XNET_SEEDS_ALL: {
-            const char *all_hosts[network_data_nodes_amount + 1];
-            int i = 0;
-            while (i < network_data_nodes_amount) {
-//                all_hosts[i] = network_data_nodes_list.network_data_nodes_IP_address[i];
-                all_hosts[i] = network_nodes[i].ip_address;
-                i++;
-            }
-            all_hosts[i] = NULL;
-            hosts = all_hosts;
-        } break;
-
-        case XNET_SEEDS_ALL_ONLINE: {
-            const char *online_hosts[network_data_nodes_amount + 1];
-            int si = 0, di = 0;
-            while (si < network_data_nodes_amount) {
-                if (network_data_nodes_list.online_status[si] == 1) {
-                    online_hosts[di++] = network_data_nodes_list.network_data_nodes_IP_address[si];
-                }
-                si++;
-            }
-            online_hosts[di] = NULL;
-            hosts = online_hosts;
-        } break;
-
-        case XNET_DELEGATES_ALL: {
-            const char *delegates_hosts[BLOCK_VERIFIERS_TOTAL_AMOUNT + 1];
-            size_t host_index = 0;
-            for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
-                if (strlen(delegates_all[i].IP_address) != 0) {
-                    DEBUG_PRINT("REQ to %s : %s", delegates_all[i].delegate_name, delegates_all[i].IP_address);
-                    delegates_hosts[host_index++] = delegates_all[i].IP_address;
-                }
-            }
-            delegates_hosts[host_index] = NULL;
-            hosts = delegates_hosts;
-        } break;
-
-        case XNET_DELEGATES_ALL_ONLINE: {
-            const char *delegates_online_hosts[BLOCK_VERIFIERS_TOTAL_AMOUNT + 1];
-            size_t host_index = 0;
-            for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
-                bool is_online = (strcmp(delegates_all[i].online_status, "true") == 0);
-                bool has_ip    = (strlen(delegates_all[i].IP_address) != 0);
-                bool not_self  = (strcmp(delegates_all[i].public_address, xcash_wallet_public_address) != 0);
-
-                if (is_online && has_ip && not_self) {
-                    delegates_online_hosts[host_index++] = delegates_all[i].IP_address;
-                }
-            }
-            delegates_online_hosts[host_index] = NULL;
-            hosts = delegates_online_hosts;
-        } break;
-
-        default: {
-            ERROR_PRINT("Invalid xcash_dest_t: %d", dest);
-            return false;
+    switch (dest)
+    {
+    case XNET_SEEDS_ALL:
+    {
+        const char *all_hosts[network_data_nodes_amount + 1];
+        int i = 0;
+        while (i < network_data_nodes_amount)
+        {
+            all_hosts[i] = network_nodes[i].ip_address;
+            i++;
         }
+        all_hosts[i] = NULL;
+        hosts = all_hosts;
+    }
+    break;
+
+    case XNET_SEEDS_ALL_ONLINE:
+    {
+        const char *online_hosts[network_data_nodes_amount + 1];
+        int si = 0, di = 0;
+        while (si < network_data_nodes_amount)
+        {
+            if (network_nodes[si].online_status == 1)
+            {
+                online_hosts[di++] = network_data_nodes_list.network_data_nodes_IP_address[si];
+            }
+            si++;
+        }
+        online_hosts[di] = NULL;
+        hosts = online_hosts;
+    }
+    break;
+
+    case XNET_DELEGATES_ALL:
+    {
+        const char *delegates_hosts[BLOCK_VERIFIERS_TOTAL_AMOUNT + 1];
+        size_t host_index = 0;
+        for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++)
+        {
+            if (strlen(delegates_all[i].IP_address) != 0)
+            {
+                DEBUG_PRINT("REQ to %s : %s", delegates_all[i].delegate_name, delegates_all[i].IP_address);
+                delegates_hosts[host_index++] = delegates_all[i].IP_address;
+            }
+        }
+        delegates_hosts[host_index] = NULL;
+        hosts = delegates_hosts;
+    }
+    break;
+
+    case XNET_DELEGATES_ALL_ONLINE:
+    {
+        const char *delegates_online_hosts[BLOCK_VERIFIERS_TOTAL_AMOUNT + 1];
+        size_t host_index = 0;
+        for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++)
+        {
+            bool is_online = (strcmp(delegates_all[i].online_status, "true") == 0);
+            bool has_ip = (strlen(delegates_all[i].IP_address) != 0);
+            bool not_self = (strcmp(delegates_all[i].public_address, xcash_wallet_public_address) != 0);
+
+            if (is_online && has_ip && not_self)
+            {
+                delegates_online_hosts[host_index++] = delegates_all[i].IP_address;
+            }
+        }
+        delegates_online_hosts[host_index] = NULL;
+        hosts = delegates_online_hosts;
+    }
+    break;
+
+    default:
+    {
+        ERROR_PRINT("Invalid xcash_dest_t: %d", dest);
+        return false;
+    }
     }
 
-    if (!hosts) {
+    if (!hosts)
+    {
         ERROR_PRINT("Host array is NULL or not initialized properly.");
         return false;
     }
 
     // Build message_ender
     message_ender = _build_message_ender(message);
-    if (!message_ender) {
-        return false;  // Already logged error
+    if (!message_ender)
+    {
+        return false; // Already logged error
     }
 
     responses = send_multi_request(hosts, XCASH_DPOPS_PORT, message_ender);
     free(message_ender);
 
-    if (responses) {
+    if (responses)
+    {
         remove_enders(responses);
         result = true;
     }
@@ -150,12 +186,14 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char* message, response_t ***
 }
 
 // Wrappers for sending messages with parameter lists or variadic arguments
-bool send_message_param_list(xcash_dest_t dest, xcash_msg_t msg, response_t ***reply, const char** pair_params) {
+bool send_message_param_list(xcash_dest_t dest, xcash_msg_t msg, response_t ***reply, const char **pair_params)
+{
     bool result = false;
     *reply = NULL;
 
     char *message_data = create_message_param_list(msg, pair_params);
-    if (!message_data) {
+    if (!message_data)
+    {
         return false;
     }
 
@@ -165,7 +203,8 @@ bool send_message_param_list(xcash_dest_t dest, xcash_msg_t msg, response_t ***r
     return result;
 }
 
-bool send_message_param(xcash_dest_t dest, xcash_msg_t msg, response_t ***reply, ...) {
+bool send_message_param(xcash_dest_t dest, xcash_msg_t msg, response_t ***reply, ...)
+{
     bool result = false;
     char *message_data = NULL;
     *reply = NULL;
@@ -175,7 +214,8 @@ bool send_message_param(xcash_dest_t dest, xcash_msg_t msg, response_t ***reply,
     message_data = create_message_args(msg, args);
     va_end(args);
 
-    if (!message_data) {
+    if (!message_data)
+    {
         return false;
     }
 
@@ -185,12 +225,14 @@ bool send_message_param(xcash_dest_t dest, xcash_msg_t msg, response_t ***reply,
     return result;
 }
 
-bool send_message(xcash_dest_t dest, xcash_msg_t msg, response_t ***reply) {
+bool send_message(xcash_dest_t dest, xcash_msg_t msg, response_t ***reply)
+{
     bool result = false;
     *reply = NULL;
 
-    char* message_data = create_message(msg);
-    if (!message_data) {
+    char *message_data = create_message(msg);
+    if (!message_data)
+    {
         return false;
     }
 
@@ -201,27 +243,31 @@ bool send_message(xcash_dest_t dest, xcash_msg_t msg, response_t ***reply) {
 }
 
 // Direct message sends
-bool send_direct_message_param_list(const char* host, xcash_msg_t msg, response_t ***reply, const char** pair_params) {
+bool send_direct_message_param_list(const char *host, xcash_msg_t msg, response_t ***reply, const char **pair_params)
+{
     bool result = false;
     *reply = NULL;
 
     const char *hosts[] = {host, NULL};
     char *message_data = create_message_param_list(msg, pair_params);
-    if (!message_data) {
+    if (!message_data)
+    {
         return false;
     }
 
     char *message_ender = _build_message_ender(message_data);
     free(message_data);
 
-    if (!message_ender) {
+    if (!message_ender)
+    {
         return false;
     }
 
     response_t **responses = send_multi_request(hosts, XCASH_DPOPS_PORT, message_ender);
     free(message_ender);
 
-    if (responses) {
+    if (responses)
+    {
         remove_enders(responses);
         result = true;
     }
@@ -230,9 +276,10 @@ bool send_direct_message_param_list(const char* host, xcash_msg_t msg, response_
     return result;
 }
 
-bool send_direct_message_param(const char* host, xcash_msg_t msg, response_t ***reply, ...) {
+bool send_direct_message_param(const char *host, xcash_msg_t msg, response_t ***reply, ...)
+{
     bool result = false;
-    char* message_data = NULL;
+    char *message_data = NULL;
     *reply = NULL;
 
     const char *hosts[] = {host, NULL};
@@ -242,21 +289,24 @@ bool send_direct_message_param(const char* host, xcash_msg_t msg, response_t ***
     message_data = create_message_args(msg, args);
     va_end(args);
 
-    if (!message_data) {
+    if (!message_data)
+    {
         return false;
     }
 
     char *message_ender = _build_message_ender(message_data);
     free(message_data);
 
-    if (!message_ender) {
+    if (!message_ender)
+    {
         return false;
     }
 
     response_t **responses = send_multi_request(hosts, XCASH_DPOPS_PORT, message_ender);
     free(message_ender);
 
-    if (responses) {
+    if (responses)
+    {
         remove_enders(responses);
         result = true;
     }
@@ -265,7 +315,8 @@ bool send_direct_message_param(const char* host, xcash_msg_t msg, response_t ***
     return result;
 }
 
-bool send_direct_message(const char* host, xcash_msg_t msg, response_t ***reply) {
+bool send_direct_message(const char *host, xcash_msg_t msg, response_t ***reply)
+{
     *reply = NULL;
     return send_direct_message_param(host, msg, reply, NULL);
 }
