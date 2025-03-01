@@ -240,7 +240,7 @@ int split(const char* str, char delimiter, char*** result_elements) {
     char** result = calloc(elemCount + 1, sizeof(char*)); // +1 for sentinel
     if (!result) return -1;
 
-    int startIdx = 0, endIdx = 0, rIndex = 0;
+    int startIdx = 0, rIndex = 0;
     for (int i = 0; ; i++) {
         if (str[i] == delimiter || str[i] == '\0') {
             int length = i - startIdx;
