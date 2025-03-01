@@ -6,7 +6,7 @@
 
 #include "config.h"
 #include "macro_functions.h"
-#include "globals"
+#include "globals.h"
 
 #include "define_macros_test.h"
 #include "count_database_functions.h"
