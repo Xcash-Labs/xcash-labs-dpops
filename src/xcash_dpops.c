@@ -10,10 +10,10 @@ char previous_block_hash[BLOCK_HASH_LENGTH+1] = {0};
 unsigned char secret_key_data[crypto_vrf_SECRETKEYBYTES+1] = {0};
 char secret_key[VRF_SECRET_KEY_LENGTH+1] = {0};
 const NetworkNode network_nodes[] = {
-  {"XCA1dd7JaWhiuBavUM2ZTJG3GdgPkT1Yd5Q6VvNvnxbEfb6JhUhziTF6w5mMPVeoSv3aa1zGyhedpaa2QQtGEjBo7N6av9nhaU"},
-  {"XCA1b6Sg5QVBX4jrctQ9SVUcHFqpaGST6bqtFpyoQadTX8SaDs92xR8iec3VfaXKzhYijFiMfwoM4TuYRgy6NXzn5titJnWbra"},
+  {"XCA1dd7JaWhiuBavUM2ZTJG3GdgPkT1Yd5Q6VvNvnxbEfb6JhUhziTF6w5mMPVeoSv3aa1zGyhedpaa2QQtGEjBo7N6av9nhaU", "xcashseeds.us"},
+  {"XCA1b6Sg5QVBX4jrctQ9SVUcHFqpaGST6bqtFpyoQadTX8SaDs92xR8iec3VfaXKzhYijFiMfwoM4TuYRgy6NXzn5titJnWbra", "xcashseeds.uk"},
   // Sentinel value (empty entry to mark the end)
-  {NULL}};
+  {NULL, NULL}};
 mongoc_client_pool_t* database_client_thread_pool = NULL;
 
 // local
