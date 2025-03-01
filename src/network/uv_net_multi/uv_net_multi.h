@@ -13,10 +13,11 @@
 #include "macro_functions.h"
 
 typedef enum {
-    STATUS_PENDING,
-    STATUS_OK,
     STATUS_ERROR,
-    STATUS_TIMEOUT
+    STATUS_OK,
+    STATUS_PENDING,
+    STATUS_TIMEOUT,
+    STATUS_INCOMPLETE,
 } response_status_t;
 
 // Client structure for handling network requests
