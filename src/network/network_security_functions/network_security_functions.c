@@ -1,5 +1,22 @@
 #include "network_security_functions.h"
 
+// Helper function for safe memory deallocation
+void free_memory(char *result, char *string) {
+    if (result) {
+        free(result);
+    }
+    if (string) {
+        free(string);
+    }
+}
+
+// Helper function for error handling
+int handle_error(const char *message, char *result, char *string) {
+    ERROR_PRINT("sign_data: %s", message);
+    free_memory(result, string);
+    return XCASH_ERROR;
+}
+
 /*---------------------------------------------------------------------------------------------------------
 Name: sign_data
 Description: Signs data with your XCA address, for sending data securely
@@ -7,159 +24,131 @@ Parameters:
   message - The sign_data
 Return: 0 if an error has occured, 1 if successfull
 ---------------------------------------------------------------------------------------------------------*/
-int sign_data(char *message)
-{
-  // Constants
-  const char* HTTP_HEADERS[] = {"Content-Type: application/json","Accept: application/json"}; 
-  const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS)/sizeof(HTTP_HEADERS[0]);
-  const size_t MAXIMUM_AMOUNT = strlen(message) >= MAXIMUM_BUFFER_SIZE ? MAXIMUM_BUFFER_SIZE : strlen(message)+BUFFER_SIZE;
+int sign_data(char *message) {
+    const char *HTTP_HEADERS[] = {"Content-Type: application/json", "Accept: application/json"};
+    const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0]);
+    const size_t MAXIMUM_AMOUNT = strlen(message) >= MAXIMUM_BUFFER_SIZE ? MAXIMUM_BUFFER_SIZE : strlen(message) + BUFFER_SIZE;
 
-  // Variables
-  char random_data[RANDOM_STRING_LENGTH+1];
-  char data[BUFFER_SIZE];
-  char proof[VRF_PROOF_LENGTH+1];
-  char beta_string[VRF_BETA_LENGTH+1];
-  char* result = (char*)calloc(MAXIMUM_AMOUNT,sizeof(char));
-  char* string = (char*)calloc(MAXIMUM_AMOUNT,sizeof(char));
-  // define macros
-  #define pointer_reset_all \
-  free(result); \
-  result = NULL; \
-  free(string); \
-  string = NULL;
+    // Memory allocation
+    char *result = (char *)calloc(MAXIMUM_AMOUNT, sizeof(char));
+    char *string = (char *)calloc(MAXIMUM_AMOUNT, sizeof(char));
+    if (!result || !string) {
+        return handle_error("Memory allocation failed.", result, string);
+    }
 
-  #define SIGN_DATA_ERROR(settings) \
-  memcpy(error_message.function[error_message.total],"sign_data",9); \
-  memcpy(error_message.data[error_message.total],settings,sizeof(settings)-1); \
-  error_message.total++; \
-  pointer_reset_all; \
-  return 0;
+    // Variables initialization
+    char random_data[RANDOM_STRING_LENGTH + 1] = {0};
+    char proof[VRF_PROOF_LENGTH + 1] = {0};
+    char beta_string[VRF_BETA_LENGTH + 1] = {0};
+    char data[BUFFER_SIZE] = {0};
 
-  if (result == NULL || string == NULL) {
-      SIGN_DATA_ERROR("Could not allocate the memory needed on the heap");
-  };
+    // Generate random data
+    if (!random_string(random_data, RANDOM_STRING_LENGTH)) {
+        return handle_error("Failed to generate random data.", result, string);
+    }
 
-  memset(proof, 0, sizeof(proof));
-  memset(beta_string, 0, sizeof(beta_string));
-  memset(random_data, 0, sizeof(random_data));
-  memset(data, 0, sizeof(data));
+    // Read lock for previous block hash
+    if (pthread_rwlock_tryrdlock(&rwlock) != 0) {
+        return handle_error("Failed to acquire read lock.", result, string);
+    }
 
-  // create the random data
-  if (random_string(random_data, RANDOM_STRING_LENGTH) == 0) {
-      SIGN_DATA_ERROR("Could not create the random data");
-  }
+    // Ensure previous block hash is set
+    if (strlen(previous_block_hash) == 0) {
+        char local_previous_block_hash[BLOCK_HASH_LENGTH + 1] = {0};
+        if (!get_previous_block_hash(local_previous_block_hash)) {
+            pthread_rwlock_unlock(&rwlock);
+            return handle_error("Previous block hash is empty. Cannot sign the message.", result, string);
+        }
+        strncpy(previous_block_hash, local_previous_block_hash, BLOCK_HASH_LENGTH);
+    }
 
-  pthread_rwlock_rdlock(&rwlock);
+    // Build the initial message
+    snprintf(result, MAXIMUM_AMOUNT,
+             "%.*s\"public_address\": \"%s\",\r\n"
+             "\"previous_block_hash\": \"%s\",\r\n"
+             "\"current_round_part\": \"%c\",\r\n"
+             "\"current_round_part_backup_node\": \"%c\",\r\n"
+             "\"data\": \"%s\",\r\n}",
+             (int)(strlen(message) - 1), message,
+             xcash_wallet_public_address,
+             previous_block_hash,
+             *current_round_part,
+             *current_round_part_backup_node,
+             random_data);
 
-  // I bet it's concurency bug
-  // So, dirty hack, until I rewrite this shit completely
-  if (strlen(previous_block_hash) == 0) {
-      char local_previous_block_hash[BLOCK_HASH_LENGTH+1];
-      if (get_previous_block_hash(local_previous_block_hash) == 0) {
-          strcpy(previous_block_hash,local_previous_block_hash);
-      }else{
-        // sorry, I give up. Maybe it's some problem with daemon
-        // ! wtf? pthread_rwlock_rdlock will remain locked. fuuuuuck, how many of then during the session?
-        // fix it manually. again
-        pthread_rwlock_unlock(&rwlock);
-        SIGN_DATA_ERROR("previous_block_hash is empty. can't sign the message");
-      }
+    pthread_rwlock_unlock(&rwlock);
 
-  };
+    // Escape quotes in the message
+    string_replace(result, MAXIMUM_AMOUNT, "\"", "\\\"");
 
-  // create the message
-  memcpy(result, message, strlen(message) - 1);
-  memcpy(result + strlen(result), "\"public_address\": \"", 19);
-  memcpy(result + strlen(result), xcash_wallet_public_address, XCASH_WALLET_LENGTH);
-  memcpy(result + strlen(result), "\",\r\n \"previous_block_hash\": \"", 29);
-  memcpy(result + strlen(result), previous_block_hash, strnlen(previous_block_hash, sizeof(previous_block_hash)));
-  memcpy(result + strlen(result), "\",\r\n \"current_round_part\": \"", 28);
-  memcpy(result + strlen(result), current_round_part, sizeof(char));
-  memcpy(result + strlen(result), "\",\r\n \"current_round_part_backup_node\": \"", 40);
-  memcpy(result + strlen(result), current_round_part_backup_node, sizeof(char));
-  memcpy(result + strlen(result), "\",\r\n \"data\": \"", 14);
-  memcpy(result + strlen(result), random_data, RANDOM_STRING_LENGTH);
-  memcpy(result + strlen(result), "\",\r\n}", 5);
-  pthread_rwlock_unlock(&rwlock);
+    // Determine signature method
+    int use_vrf_signing = strstr(message, "XCASH_PROOF_OF_STAKE_TEST_DATA_2") != NULL ||
+                          (strstr(message, "NODE_TO_NETWORK_DATA_NODES_GET_PREVIOUS_CURRENT_NEXT_BLOCK_VERIFIERS_LIST") == NULL &&
+                           strstr(message, "XCASH_PROOF_OF_STAKE_TEST_DATA") == NULL &&
+                           strstr(message, "NODE_TO_BLOCK_VERIFIERS_ADD_RESERVE_PROOF") == NULL &&
+                           strstr(message, "NODES_TO_BLOCK_VERIFIERS_REGISTER_DELEGATE") == NULL &&
+                           strstr(message, "NODES_TO_BLOCK_VERIFIERS_UPDATE_DELEGATE") == NULL);
 
-  // format the message
-  string_replace(result, MAXIMUM_AMOUNT, "\"", "\\\"");
+    if (use_vrf_signing) {
+        if (!VRF_sign_data(beta_string, proof, result)) {
+            return handle_error("Failed to sign the message with VRF.", result, string);
+        }
 
-  if (strstr(message, "XCASH_PROOF_OF_STAKE_TEST_DATA_2") != NULL ||
-      (strstr(message, "NODE_TO_NETWORK_DATA_NODES_GET_PREVIOUS_CURRENT_NEXT_BLOCK_VERIFIERS_LIST") == NULL &&
-        strstr(message, "XCASH_PROOF_OF_STAKE_TEST_DATA") == NULL &&
-        strstr(message, "NODE_TO_BLOCK_VERIFIERS_ADD_RESERVE_PROOF") == NULL &&
-        strstr(message, "NODES_TO_BLOCK_VERIFIERS_REGISTER_DELEGATE") == NULL &&
-        strstr(message, "NODES_TO_BLOCK_VERIFIERS_UPDATE_DELEGATE") == NULL)) {
-      // sign data
-      if (VRF_sign_data(beta_string, proof, result) == 0) {
-          SIGN_DATA_ERROR("Could not sign the message");
-      }
+        snprintf(message + strlen(message) - 1, MAXIMUM_AMOUNT,
+                 "\"public_address\": \"%s\",\r\n"
+                 "\"previous_block_hash\": \"%s\",\r\n"
+                 "\"current_round_part\": \"%c\",\r\n"
+                 "\"current_round_part_backup_node\": \"%c\",\r\n"
+                 "\"data\": \"%s\",\r\n"
+                 "\"XCASH_DPOPS_signature\": \"%s%s\",\r\n}",
+                 xcash_wallet_public_address,
+                 previous_block_hash,
+                 *current_round_part,
+                 *current_round_part_backup_node,
+                 random_data,
+                 proof,
+                 beta_string);
 
-      pthread_rwlock_rdlock(&rwlock);
-      // create the message
-      memcpy(message + strlen(message) - 1, "\"public_address\": \"", 19);
-      memcpy(message + strlen(message), xcash_wallet_public_address, XCASH_WALLET_LENGTH);
-      memcpy(message + strlen(message), "\",\r\n \"previous_block_hash\": \"", 29);
-      memcpy(message + strlen(message), previous_block_hash,
-              strnlen(previous_block_hash, sizeof(previous_block_hash)));
-      memcpy(message + strlen(message), "\",\r\n \"current_round_part\": \"", 28);
-      memcpy(message + strlen(message), current_round_part, sizeof(char));
-      memcpy(message + strlen(message), "\",\r\n \"current_round_part_backup_node\": \"", 40);
-      memcpy(message + strlen(message), current_round_part_backup_node, sizeof(char));
-      memcpy(message + strlen(message), "\",\r\n \"data\": \"", 14);
-      memcpy(message + strlen(message), random_data, RANDOM_STRING_LENGTH);
-      memcpy(message + strlen(message), "\",\r\n \"XCASH_DPOPS_signature\": \"", 31);
-      memcpy(message + strlen(message), proof, VRF_PROOF_LENGTH);
-      memcpy(message + strlen(message), beta_string, VRF_BETA_LENGTH);
-      memcpy(message + strlen(message), "\",\r\n}", 5);
-      pthread_rwlock_unlock(&rwlock);
-  } else {
-      // sign_data
-      memcpy(string, "{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"sign\",\"params\":{\"data\":\"", 60);
-      memcpy(string + 60, result, strnlen(result, MAXIMUM_AMOUNT));
-      memcpy(string + strlen(string), "\"}}", 3);
-      memset(result, 0, strlen(result));
+    } else {
+        snprintf(string, MAXIMUM_AMOUNT,
+                 "{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"sign\",\"params\":{\"data\":\"%s\"}}",
+                 result);
 
-      if (send_http_request(data, XCASH_wallet_IP_address, "/json_rpc", xcash_wallet_port, "POST", HTTP_HEADERS,
-                            HTTP_HEADERS_LENGTH, string, SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) <= 0) {
-          SIGN_DATA_ERROR("Could not create the message");
-      }
+        if (send_http_request(data, XCASH_wallet_IP_address, "/json_rpc", xcash_wallet_port, "POST", HTTP_HEADERS,
+                              HTTP_HEADERS_LENGTH, string, SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) <= 0) {
+            return handle_error("Failed to send HTTP request for signing.", result, string);
+        }
 
-      if (parse_json_data(data, "signature", result, MAXIMUM_AMOUNT) == 0) {
-          SIGN_DATA_ERROR("Could not create the message");
-      }
+        if (!parse_json_data(data, "signature", result, MAXIMUM_AMOUNT)) {
+            return handle_error("Failed to parse the signature from the response.", result, string);
+        }
 
-      // check if the returned data is valid
-      if (strnlen(result, BUFFER_SIZE) != XCASH_SIGN_DATA_LENGTH &&
-          strncmp(result, XCASH_SIGN_DATA_PREFIX, sizeof(XCASH_SIGN_DATA_PREFIX) - 1) != 0) {
-          SIGN_DATA_ERROR("Could not create the message");
-      }
+        if (strlen(result) != XCASH_SIGN_DATA_LENGTH ||
+            strncmp(result, XCASH_SIGN_DATA_PREFIX, sizeof(XCASH_SIGN_DATA_PREFIX) - 1) != 0) {
+            return handle_error("Invalid signature format.", result, string);
+        }
 
-      pthread_rwlock_rdlock(&rwlock);
-      // create the message
-      memcpy(message + strlen(message) - 1, "\"public_address\": \"", 19);
-      memcpy(message + strlen(message), xcash_wallet_public_address, XCASH_WALLET_LENGTH);
-      memcpy(message + strlen(message), "\",\r\n \"previous_block_hash\": \"", 29);
-      memcpy(message + strlen(message), previous_block_hash,
-              strnlen(previous_block_hash, sizeof(previous_block_hash)));
-      memcpy(message + strlen(message), "\",\r\n \"current_round_part\": \"", 28);
-      memcpy(message + strlen(message), current_round_part, sizeof(char));
-      memcpy(message + strlen(message), "\",\r\n \"current_round_part_backup_node\": \"", 40);
-      memcpy(message + strlen(message), current_round_part_backup_node, sizeof(char));
-      memcpy(message + strlen(message), "\",\r\n \"data\": \"", 14);
-      memcpy(message + strlen(message), random_data, RANDOM_STRING_LENGTH);
-      memcpy(message + strlen(message), "\",\r\n \"XCASH_DPOPS_signature\": \"", 31);
-      memcpy(message + strlen(message), result, XCASH_SIGN_DATA_LENGTH);
-      memcpy(message + strlen(message), "\",\r\n}", 5);
-      pthread_rwlock_unlock(&rwlock);
-  }
-  pointer_reset_all;
-  return 1;
+        snprintf(message + strlen(message) - 1, MAXIMUM_AMOUNT,
+                 "\"public_address\": \"%s\",\r\n"
+                 "\"previous_block_hash\": \"%s\",\r\n"
+                 "\"current_round_part\": \"%c\",\r\n"
+                 "\"current_round_part_backup_node\": \"%c\",\r\n"
+                 "\"data\": \"%s\",\r\n"
+                 "\"XCASH_DPOPS_signature\": \"%s\",\r\n}",
+                 xcash_wallet_public_address,
+                 previous_block_hash,
+                 *current_round_part,
+                 *current_round_part_backup_node,
+                 random_data,
+                 result);
+    }
 
-#undef pointer_reset_all  
-  #undef SIGN_DATA_ERROR
+    free_memory(result, string);
+    return XCASH_OK;
 }
+
+
+
 
 /*
 -----------------------------------------------------------------------------------------------------------

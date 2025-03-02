@@ -44,4 +44,10 @@ struct database_multiple_documents_fields {
     char* value[MAXIMUM_DATABASE_COLLECTION_DOCUMENTS][TOTAL_DELEGATES_DATABASE_FIELDS+1]; // The value
 };
 
+struct error_message {
+    char* function[TOTAL_ERROR_MESSAGES]; // The error function
+    char* data[TOTAL_ERROR_MESSAGES]; // The error message
+    int total; // the amount of error messages
+};
+
 #endif
