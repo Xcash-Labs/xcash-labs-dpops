@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
 #include <mongoc/mongoc.h>
 #include <bson/bson.h>
 #include "config.h"
