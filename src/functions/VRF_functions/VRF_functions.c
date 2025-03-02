@@ -35,7 +35,6 @@ int create_random_VRF_keys(unsigned char *VRF_public_key, unsigned char *VRF_sec
 Name: generate_key
 Description: Generates a random public and private key, to be used for the signing and verifying of messages between the block verifiers
 ---------------------------------------------------------------------------------------------------------*/
-
 void generate_key()
 {
   // Variables
@@ -68,4 +67,48 @@ void generate_key()
   COLOR_PRINT("\nSecret Key:", "green");
   COLOR_PRINT(vrf_secret_key, "green");
   return;
+}
+
+/*---------------------------------------------------------------------------------------------------------
+Name: VRF_sign_data
+Description: Sign data using the block verifiers ECDSA key
+Parameters:
+  beta - The beta string
+  proof - The proof
+  data - The data
+Return: 0 if an error has occurred, 1 if successful
+---------------------------------------------------------------------------------------------------------*/
+int VRF_sign_data(char *beta_string, char *proof, const char *data)
+{
+    // Validate input parameters
+    if (!beta_string || !proof || !data) {
+        ERROR_PRINT("Invalid input to VRF_sign_data.");
+        return XCASH_ERROR;
+    }
+
+    // Variables
+    unsigned char proof_data[crypto_vrf_PROOFBYTES] = {0};
+    unsigned char beta_string_data[crypto_vrf_OUTPUTBYTES] = {0};
+
+    // Clear output buffers explicitly
+    memset(beta_string, 0, VRF_BETA_LENGTH + 1);
+    memset(proof, 0, VRF_PROOF_LENGTH + 1);
+
+    // Sign data
+    if (crypto_vrf_prove(proof_data, (const unsigned char *)secret_key_data, (const unsigned char *)data, (unsigned long long)strlen(data)) != 0 ||
+        crypto_vrf_proof_to_hash(beta_string_data, proof_data) != 0) {
+        ERROR_PRINT("Failed to generate VRF proof or beta string.");
+        return XCASH_ERROR;
+    }
+
+    // Convert proof and beta_string to hexadecimal format
+    for (int i = 0; i < crypto_vrf_PROOFBYTES; i++) {
+        snprintf(proof + (i * 2), 3, "%02x", proof_data[i]);
+    }
+
+    for (int i = 0; i < crypto_vrf_OUTPUTBYTES; i++) {
+        snprintf(beta_string + (i * 2), 3, "%02x", beta_string_data[i]);
+    }
+
+    return XCASH_OK;
 }
