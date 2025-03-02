@@ -10,13 +10,15 @@ char current_block_height[BUFFER_SIZE_NETWORK_BLOCK_DATA] = {0};
 char previous_block_hash[BLOCK_HASH_LENGTH+1] = {0};
 unsigned char secret_key_data[crypto_vrf_SECRETKEYBYTES+1] = {0};
 char secret_key[VRF_SECRET_KEY_LENGTH+1] = {0};
+char current_round_part[2];
+char current_round_part_backup_node[2];
+mongoc_client_pool_t* database_client_thread_pool = NULL;
+pthread_rwlock_t rwlock = PTHREAD_MUTEX_INITIALIZER;
 const NetworkNode network_nodes[] = {
   {"XCA1dd7JaWhiuBavUM2ZTJG3GdgPkT1Yd5Q6VvNvnxbEfb6JhUhziTF6w5mMPVeoSv3aa1zGyhedpaa2QQtGEjBo7N6av9nhaU", "xcashseeds.us", 1},
   {"XCA1b6Sg5QVBX4jrctQ9SVUcHFqpaGST6bqtFpyoQadTX8SaDs92xR8iec3VfaXKzhYijFiMfwoM4TuYRgy6NXzn5titJnWbra", "xcashseeds.uk", 1},
   // Sentinel value (empty entry to mark the end)
   {NULL, NULL, NULL}};
-mongoc_client_pool_t* database_client_thread_pool = NULL;
-pthread_rwlock_t rwlock = PTHREAD_MUTEX_INITIALIZER;
 
 // local
 static bool show_help = false;
@@ -131,6 +133,10 @@ void init_processing(const arg_config_t *arg_config)
 {
   network_data_nodes_amount = get_seed_node_count();
   
+  current_round_part[0] = '1';
+  current_round_part[1] = '\0';
+  current_round_part_backup_node[0] = '0';
+  current_round_part_backup_node[1] = '\0';
 
   static const char xcash_tech_header[] =
       "\n"
