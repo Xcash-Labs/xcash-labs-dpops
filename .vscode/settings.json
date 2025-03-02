@@ -4,6 +4,8 @@
         "config.h": "c",
         "network_init.h": "c",
         "daemon_functions.h": "c",
-        "network_daemon_functions.h": "c"
+        "network_daemon_functions.h": "c",
+        "xmemory0": "c",
+        "xlocale": "c"
     }
 }

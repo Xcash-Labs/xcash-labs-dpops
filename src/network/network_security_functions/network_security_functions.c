@@ -1,30 +1,12 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <mongoc/mongoc.h>
-#include <bson/bson.h>
-
-#include "config.h"
-#include "macro_functions.h"
-#include "globals.h"
-#include "db_functions.h"
-#include "read_database_functions.h"
-#include "network_daemon_functions.h"
-#include "network_functions.h"
 #include "network_security_functions.h"
-#include "string_functions.h"
-#include "VRF_functions.h"
 
-/*
------------------------------------------------------------------------------------------------------------
+/*---------------------------------------------------------------------------------------------------------
 Name: sign_data
 Description: Signs data with your XCA address, for sending data securely
 Parameters:
   message - The sign_data
 Return: 0 if an error has occured, 1 if successfull
------------------------------------------------------------------------------------------------------------
-*/
-
+---------------------------------------------------------------------------------------------------------*/
 int sign_data(char *message)
 {
   // Constants
