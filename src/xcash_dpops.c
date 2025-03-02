@@ -16,6 +16,7 @@ const NetworkNode network_nodes[] = {
   // Sentinel value (empty entry to mark the end)
   {NULL, NULL, NULL}};
 mongoc_client_pool_t* database_client_thread_pool = NULL;
+pthread_rwlock_t rwlock = PTHREAD_MUTEX_INITIALIZER;
 
 // local
 static bool show_help = false;
@@ -128,8 +129,9 @@ Description: Initialize globals and print program start header.
 ---------------------------------------------------------------------------------------------------------*/
 void init_processing(const arg_config_t *arg_config)
 {
-
   network_data_nodes_amount = get_seed_node_count();
+  
+
   static const char xcash_tech_header[] =
       "\n"
       " /$$   /$$                           /$$        / $$              / $$                    \n"
@@ -170,6 +172,19 @@ void init_processing(const arg_config_t *arg_config)
 }
 
 /*---------------------------------------------------------------------------------------------------------
+Name: cleanup_data_structure
+Description: Clean up before ending
+---------------------------------------------------------------------------------------------------------*/
+void cleanup_data_structures(void) {
+  size_t count;
+  pthread_mutex_destroy(&lock);
+;
+  // add more later......
+
+
+}
+
+/*---------------------------------------------------------------------------------------------------------
 Name: sigint_handler
 Description: Shuts program down on signal
 ---------------------------------------------------------------------------------------------------------*/
@@ -178,7 +193,7 @@ void sigint_handler(int sig_num) {
   DEBUG_PRINT("Termination signal %d received [%d] times. Shutting down...", sig_num, sig_requests);
   stop_tcp_server();
   INFO_PRINT("Shutting down database engine");
-  // cleanup_data_structures();                     add this later......
+  cleanup_data_structures();
   shutdown_database();
   exit(0);
 }
@@ -260,5 +275,6 @@ int main(int argc, char *argv[])
   stop_tcp_server();
   shutdown_database();
   INFO_PRINT("Database closed");
+  cleanup_data_structures();
   return 0;
 }

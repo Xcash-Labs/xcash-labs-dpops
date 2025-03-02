@@ -22,4 +22,7 @@ extern char secret_key[VRF_SECRET_KEY_LENGTH+1]; // Holds the secret key text fo
 
 extern mongoc_client_pool_t* database_client_thread_pool;  // database
 
+extern pthread_rwlock_t rwlock;
+
+
 #endif
