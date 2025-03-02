@@ -31,6 +31,7 @@
 #define MAXIMUM_DATABASE_WRITE_SIZE 48000000 // The maximum database write size
 #define DATABASE_TOTAL 4 // The amount of databases
 #define TOTAL_DELEGATES_DATABASE_FIELDS 18 // The total delegates database fields
+#define MAXIMUM_DATABASE_COLLECTION_DOCUMENTS 5000 // The maximum amount of documents in a database collection
 
 // Lengths
 #define IP_LENGTH 253
