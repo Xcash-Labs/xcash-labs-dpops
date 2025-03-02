@@ -30,4 +30,11 @@ typedef struct  {
     char public_key[VRF_PUBLIC_KEY_LENGTH+1];
 } delegates_t; 
 
+// database struct
+struct database_document_fields {
+    size_t count; // The amount of items in the database_document_fields struct
+    char* item[TOTAL_DELEGATES_DATABASE_FIELDS+1]; // The item
+    char* value[TOTAL_DELEGATES_DATABASE_FIELDS+1]; // The value
+};
+
 #endif

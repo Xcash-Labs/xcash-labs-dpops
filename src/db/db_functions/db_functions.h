@@ -8,6 +8,7 @@
 
 #include "config.h"
 #include "globals.h"
+#include "structures.h"
 #include "macro_functions.h"
 #include "string_functions.h"
 #include "cached_hashes.h"
