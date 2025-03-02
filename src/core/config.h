@@ -30,6 +30,7 @@
 #define DATABASE_NAME_DELEGATES "XCASH_PROOF_OF_STAKE_DELEGATES" // The name of the database for the delegates
 #define MAXIMUM_DATABASE_WRITE_SIZE 48000000 // The maximum database write size
 #define DATABASE_TOTAL 4 // The amount of databases
+#define TOTAL_DELEGATES_DATABASE_FIELDS 18 // The total delegates database fields
 
 // Lengths
 #define IP_LENGTH 253
