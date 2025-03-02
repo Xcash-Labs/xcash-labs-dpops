@@ -17,6 +17,7 @@
 #define DATABASE_CONNECTION "mongodb://127.0.0.1:27017" // The database connection string
 
 #define XCASH_WALLET_PREFIX "XCA" // The prefix of a XCA address
+#define XCASH_SIGN_DATA_PREFIX "SigV1" // The prefix of a XCASH_DPOPS_signature for the signed data
 
 #define TRANSFER_BUFFER_SIZE 4096  // Size of the buffer used for data transfer in bytes (4 KB)
 #define RESPONSE_TIMEOUT 5000  // Maximum time (in milliseconds) to wait for a response before closing the connection (5 seconds)

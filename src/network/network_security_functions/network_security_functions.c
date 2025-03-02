@@ -114,7 +114,7 @@ int sign_data(char *message) {
                  "{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"sign\",\"params\":{\"data\":\"%s\"}}",
                  result);
 
-        if (send_http_request(data, XCASH_wallet_IP_address, "/json_rpc", xcash_wallet_port, "POST", HTTP_HEADERS,
+        if (send_http_request(data, XCASH_WALLET_IP, "/json_rpc", XCASH_WALLET_PORT, "POST", HTTP_HEADERS,
                               HTTP_HEADERS_LENGTH, string, SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) <= 0) {
             return handle_error("Failed to send HTTP request for signing.", result, string);
         }
@@ -612,7 +612,7 @@ int verify_data(const char* MESSAGE, const int VERIFY_CURRENT_ROUND_PART_AND_CUR
 
     memset(result,0,strnlen(result,BUFFER_SIZE));
 
-    if (send_http_request(result,XCASH_wallet_IP_address,"/json_rpc",xcash_wallet_port,"POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH,string,SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) <= 0)
+    if (send_http_request(result,XCASH_WALLET_IP,"/json_rpc",XCASH_WALLET_PORT,"POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH,string,SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) <= 0)
     {
       VERIFY_DATA_ERROR("Could not verify the data");
     }
