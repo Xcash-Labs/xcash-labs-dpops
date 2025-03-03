@@ -5,7 +5,7 @@
 typedef struct {
     const char *seed_public_address;
     const char *ip_address;
-    const char *seed_public_key
+    const char *seed_public_key;
     int online_status; 
 } NetworkNode;
 
