@@ -165,7 +165,8 @@ int sign_data(char *message)
              result);
   }
 
-  free_memory(result, string);
+  free(result);
+  free(string);
   return XCASH_OK;
 }
 
