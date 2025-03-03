@@ -8,6 +8,7 @@
 #include "macro_functions.h"
 #include "uv_net_multi.h"
 
+
 typedef struct {
     size_t block_height; // the block height
     bool db_reserve_bytes_synced;
