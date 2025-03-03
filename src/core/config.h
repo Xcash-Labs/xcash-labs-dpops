@@ -75,5 +75,9 @@
 #define BLOCK_VERIFIERS_AMOUNT 50 // The amount of block verifiers in a round
 #define MAXIMUM_BUFFER_SIZE_DELEGATES_NAME 100 // The maximum length of the block verifiers name
 #define BUFFER_SIZE_BLOCK_HEIGHTS_DATA 150000
+#define VOTE_PARAMETER_AMOUNT 5 // The vote parameter amount
+#define REGISTER_PARAMETER_AMOUNT 6 // The register parameter amount
+#define UPDATE_PARAMETER_AMOUNT 5 // The update parameter amount
+#define GET_RESERVE_BYTES_DATABASE_HASH_PARAMETER_AMOUNT 5 // The GET_RESERVE_BYTES_DATABASE_HASH parameter amount
 
 #endif
