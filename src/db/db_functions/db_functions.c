@@ -142,7 +142,15 @@ int insert_document_into_collection_json(const char* DATABASE, const char* COLLE
     return XCASH_OK;
 }
 
-// Function to check if a database collection exists
+
+/*-----------------------------------------------------------------------------------------------------------
+Name: check_if_database_collection_exist
+Description: Checks if a database collection exists.
+Parameters:
+  DATABASE - The database name.
+  COLLECTION - The collection name.
+Return: 0 if an error has occurred or collection does not exist, 1 if successful.
+-----------------------------------------------------------------------------------------------------------*/
 int check_if_database_collection_exist(const char* DATABASE, const char* COLLECTION) {
     mongoc_client_t* database_client_thread = get_temporary_connection();
     if (!database_client_thread) return XCASH_ERROR;
@@ -164,7 +172,6 @@ int check_if_database_collection_exist(const char* DATABASE, const char* COLLECT
         }
         return XCASH_ERROR;
     }
-
     return XCASH_OK;
 }
 
@@ -569,31 +576,6 @@ int delete_database(const char* DATABASE) {
     drop_all_hashes(database_client_thread);
 
     free_resources_delete(NULL, NULL, database, database_client_thread);
-    return XCASH_OK;
-}
-
-// Function to check if a collection exists in a database
-int check_if_database_collection_exist(const char* DATABASE, const char* COLLECTION) {
-    mongoc_client_t* database_client_thread = get_temporary_connection();
-    if (!database_client_thread) return XCASH_ERROR;
-
-    mongoc_database_t* database = mongoc_client_get_database(database_client_thread, DATABASE);
-    if (!database) return handle_error_delete("Failed to get database", NULL, NULL, database, database_client_thread);
-
-    bson_error_t error;
-    bool collection_exists = mongoc_database_has_collection(database, COLLECTION, &error);
-
-    free_resources_delete(NULL, NULL, database, database_client_thread);
-
-    if (!collection_exists) {
-        if (error.message[0] != '\0') {
-            ERROR_PRINT("MongoDB error: %s", error.message);
-        } else {
-            DEBUG_PRINT("Collection does not exist: %s", COLLECTION);
-        }
-        return XCASH_ERROR;
-    }
-
     return XCASH_OK;
 }
 

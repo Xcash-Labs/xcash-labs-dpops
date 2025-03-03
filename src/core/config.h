@@ -49,8 +49,6 @@
 #define RANDOM_STRING_LENGTH 100 // The length of the random string
 #define XCASH_SIGN_DATA_LENGTH 93 // The length of a XCASH_DPOPS_signature for the signed data
 
-//#define TOTAL_ERROR_MESSAGES 1000 // The total amount of error messages              ????????????????????????????
-
 #define BLOCK_VERIFIERS_IP_ADDRESS_TOTAL_LENGTH 100 // The maximum length of the block verifiers IP address  ????
 #define VRF_SECRET_KEY_LENGTH 128 // Length of VRF Secret Key
 #define MD5_HASH_SIZE 32
