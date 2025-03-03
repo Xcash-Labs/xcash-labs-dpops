@@ -583,7 +583,7 @@ if (strstr(MESSAGE, "\"XCASH_DPOPS_signature\": \"SigV1") == NULL && strstr(MESS
   memset(result, 0, strnlen(result, BUFFER_SIZE));
 
   // Send HTTP request
-  if (send_http_request(result, XCASH_WALLET_IP, "/json_rpc", xcash_wallet_port, "POST",
+  if (send_http_request(result, XCASH_WALLET_IP, "/json_rpc", XCASH_WALLET_PORT, "POST",
                         HTTP_HEADERS, HTTP_HEADERS_LENGTH, string, SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) <= 0) {
       return handle_error("verify_data", "Could not verify the data", result, string);
   }
