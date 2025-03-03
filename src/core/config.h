@@ -35,7 +35,6 @@
 #define MAXIMUM_DATABASE_COLLECTION_DOCUMENTS 5000 // The maximum amount of documents in a database collection
 #define DATABASE_EMPTY_STRING "empty_database_collection" // The database data to give when the database collection is empty
 
-
 // Lengths
 #define IP_LENGTH 253
 #define BUFFER_SIZE_NETWORK_BLOCK_DATA 500
