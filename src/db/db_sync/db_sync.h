@@ -6,6 +6,7 @@
 #include "config.h"
 #include "globals.h"
 #include "macro_functions.h"
+#include "uv_net_multi.h"
 
 typedef struct {
     size_t block_height; // the block height
