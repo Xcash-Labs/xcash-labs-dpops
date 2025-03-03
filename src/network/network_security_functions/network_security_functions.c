@@ -431,7 +431,7 @@ int verify_data(const char *MESSAGE, const int VERIFY_CURRENT_ROUND_PART_AND_CUR
     else
     {
       // Check if the public address is in the current_block_verifiers_list struct
-      for (size_t count = 0; count < BLOCK_VERIFIERS_AMOUNT; count++)
+      for (count = 0; count < BLOCK_VERIFIERS_AMOUNT; count++)
       {
         if (strncmp(public_address, delegates_all[count].public_address, XCASH_WALLET_LENGTH) == 0)
         {
