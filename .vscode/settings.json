@@ -6,6 +6,10 @@
         "daemon_functions.h": "c",
         "network_daemon_functions.h": "c",
         "xmemory0": "c",
-        "xlocale": "c"
+        "xlocale": "c",
+        "xstring": "c",
+        "xutility": "c",
+        "ios": "c",
+        "xiosbase": "c"
     }
 }

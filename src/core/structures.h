@@ -5,6 +5,7 @@
 typedef struct {
     const char *seed_public_address;
     const char *ip_address;
+    const char *seed_public_key
     int online_status; 
 } NetworkNode;
 
@@ -42,12 +43,6 @@ struct database_multiple_documents_fields {
     size_t database_fields_count; // The amount of items in each document
     char* item[MAXIMUM_DATABASE_COLLECTION_DOCUMENTS][TOTAL_DELEGATES_DATABASE_FIELDS+1]; // The item
     char* value[MAXIMUM_DATABASE_COLLECTION_DOCUMENTS][TOTAL_DELEGATES_DATABASE_FIELDS+1]; // The value
-};
-
-struct error_message {
-    char* function[TOTAL_ERROR_MESSAGES]; // The error function
-    char* data[TOTAL_ERROR_MESSAGES]; // The error message
-    int total; // the amount of error messages
 };
 
 #endif

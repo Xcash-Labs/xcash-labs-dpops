@@ -46,6 +46,7 @@
 #define XCASH_WALLET_LENGTH 98 // The length of a XCA addres
 #define BLOCK_HASH_LENGTH 64 // The length of the block hash
 #define RANDOM_STRING_LENGTH 100 // The length of the random string
+#define XCASH_SIGN_DATA_LENGTH 93 // The length of a XCASH_DPOPS_signature for the signed data
 
 #define TOTAL_ERROR_MESSAGES 1000 // The total amount of error messages              ????????????????????????????
 
