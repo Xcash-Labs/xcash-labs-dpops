@@ -227,8 +227,6 @@ int verify_data(const char *MESSAGE, const int VERIFY_CURRENT_ROUND_PART_AND_CUR
   struct tm current_UTC_date_and_time;
   size_t message_length;
   size_t count;
-  size_t count2;
-  size_t data_size;
   long long int number = 0;
 
   // check if the memory needed was allocated on the heap successfully
@@ -610,7 +608,6 @@ int validate_data(const char *MESSAGE)
     // Variables
     char data[BUFFER_SIZE];
     time_t current_date_and_time;
-    struct tm current_UTC_date_and_time;
     int count;
 
     memset(data, 0, sizeof(data));
