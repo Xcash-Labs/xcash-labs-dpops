@@ -623,11 +623,7 @@ int validate_data(const char *MESSAGE)
         strstr(MESSAGE, "NODES_TO_BLOCK_VERIFIERS_UPDATE_DELEGATE") != NULL ||
         strstr(MESSAGE, "NODES_TO_BLOCK_VERIFIERS_RECOVER_DELEGATE") != NULL ||
         strstr(MESSAGE, "NODE_TO_BLOCK_VERIFIERS_GET_RESERVE_BYTES_DATABASE_HASH") != NULL ||
-        strstr(MESSAGE, "BLOCK_VERIFIERS_TO_NODES_RESERVE_BYTES_DATABASE_SYNC_CHECK_ALL_DOWNLOAD") != NULL ||
-        strstr(MESSAGE, "GET /delegateswebsitegetstatistics HTTP/") != NULL ||
-        strstr(MESSAGE, "GET /getdelegates HTTP/") != NULL ||
-        strncmp(MESSAGE, "GET /getdelegatesstatistics?parameter1=", 39) == 0 ||
-        strncmp(MESSAGE, "GET /getdelegatesinformation?parameter1=", 40) == 0)
+        strstr(MESSAGE, "BLOCK_VERIFIERS_TO_NODES_RESERVE_BYTES_DATABASE_SYNC_CHECK_ALL_DOWNLOAD") != NULL
     {
         return XCASH_OK;
     }
@@ -1398,85 +1394,6 @@ int validate_data(const char *MESSAGE)
         {
           ERROR_PRINT("Invalid message");;
           return XCASH_ERROR;
-        }
-    }
-    else if (delegates_website == 1)
-    {
-        if (strncmp(MESSAGE, "GET /getdelegatesstatistics?parameter1=", 39) == 0)
-        {
-            if (strlen(&MESSAGE[39]) < XCASH_WALLET_LENGTH || strstr(&MESSAGE[39], " HTTP/") == NULL)
-            {
-              ERROR_PRINT("Invalid message");;
-              return XCASH_ERROR;
-            }
-        }
-        else if (strncmp(MESSAGE, "GET /getdelegatesinformation?parameter1=", 40) == 0)
-        {
-            if (strlen(&MESSAGE[40]) < XCASH_WALLET_LENGTH || strstr(&MESSAGE[40], " HTTP/") == NULL)
-            {
-              ERROR_PRINT("Invalid message");;
-              return XCASH_ERROR;
-            }
-        }
-        else if (strncmp(MESSAGE, "GET /checkvotestatus?parameter1=", 32) == 0)
-        {
-            if (strlen(&MESSAGE[32]) < XCASH_WALLET_LENGTH || strstr(&MESSAGE[32], " HTTP/") == NULL)
-            {
-              ERROR_PRINT("Invalid message");;
-              return XCASH_ERROR;
-            }
-        }
-        else if (strncmp(MESSAGE, "GET /getdelegatesvoterslist?parameter1=", 39) == 0)
-        {
-            if (strlen(&MESSAGE[39]) < XCASH_WALLET_LENGTH || strstr(&MESSAGE[39], " HTTP/") == NULL)
-            {
-              ERROR_PRINT("Invalid message");;
-              return XCASH_ERROR;
-            }
-        }
-        else if (strncmp(MESSAGE, "GET /getroundstatistics?parameter1=", 35) == 0)
-        {
-            memcpy(data, &MESSAGE[35],
-                   (strnlen(MESSAGE, sizeof(data)) - strnlen(strstr(MESSAGE, " HTTP/"), sizeof(data))) - 35);
-            for (count = 35; count < (int)strlen(data); count++)
-            {
-                if (strncmp(&data[count], "0", 1) != 0 && strncmp(&data[count], "1", 1) != 0 &&
-                    strncmp(&data[count], "2", 1) != 0 && strncmp(&data[count], "3", 1) != 0 &&
-                    strncmp(&data[count], "4", 1) != 0 && strncmp(&data[count], "5", 1) != 0 &&
-                    strncmp(&data[count], "6", 1) != 0 && strncmp(&data[count], "7", 1) != 0 &&
-                    strncmp(&data[count], "8", 1) != 0 && strncmp(&data[count], "9", 1) != 0)
-                {
-                  ERROR_PRINT("Invalid message");;
-                  return XCASH_ERROR;
-                }
-            }
-        }
-    }
-    else if (shared_delegates_website == 1)
-    {
-        if (strncmp(MESSAGE, "GET /getpublicaddressinformation?public_address=", 48) == 0)
-        {
-            if (strlen(&MESSAGE[40]) < XCASH_WALLET_LENGTH || strstr(&MESSAGE[40], " HTTP/") == NULL)
-            {
-              ERROR_PRINT("Invalid message");;
-              return XCASH_ERROR;
-            }
-        }
-        else if (strncmp(MESSAGE, "GET /getpublicaddresspaymentinformation?public_address=", 55) == 0)
-        {
-            if (strlen(&MESSAGE[55]) < XCASH_WALLET_LENGTH || strstr(&MESSAGE[55], " HTTP/") == NULL)
-            {
-              ERROR_PRINT("Invalid message");;
-              return XCASH_ERROR;
-            }
-        }
-        else if (strncmp(MESSAGE, "GET /getdelegatesvoterslist?parameter1=", 39) == 0)
-        {
-            if (strlen(&MESSAGE[39]) < XCASH_WALLET_LENGTH || strstr(&MESSAGE[39], " HTTP/") == NULL)
-            {
-              ERROR_PRINT("Invalid message");;
-              return XCASH_ERROR;
-            }
         }
     }
     else
