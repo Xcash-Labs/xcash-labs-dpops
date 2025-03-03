@@ -28,6 +28,28 @@ void safe_memcpy(char *dest, const char *src, size_t length)
   }
 }
 
+int extract_data_between_delimiters(const char *message, int delimiter_index, char *output, size_t output_size) {
+  int count = 0;
+  const char *start = message;
+  const char *end;
+
+  while (count < delimiter_index && (start = strstr(start, "|")) != NULL) {
+      start++;
+      count++;
+  }
+
+  if (start != NULL && (end = strstr(start, "|")) != NULL) {
+      size_t length = end - start;
+      if (length >= output_size) {
+          return XCASH_ERROR;
+      }
+      memcpy(output, start, length);
+      output[length] = '\0';
+      return XCASH_OK;
+  }
+  return XCASH_ERROR;
+}
+
 /*---------------------------------------------------------------------------------------------------------
 Name: sign_data
 Description: Signs data with your XCA address, for sending data securely
@@ -44,9 +66,9 @@ int sign_data(char *message)
   // Memory allocation
   char *result = (char *)calloc(MAXIMUM_AMOUNT, sizeof(char));
   char *string = (char *)calloc(MAXIMUM_AMOUNT, sizeof(char));
-  if (!result || !string)
+  if (result == NULL || string == NULL)
   {
-    return handle_error("sign_data", "Memory allocation failed.", result, string);
+    FATAL_ERROR_EXIT("sign_data: Memory allocation failed.");
   }
 
   // Variables initialization
@@ -212,7 +234,7 @@ int verify_data(const char *MESSAGE, const int VERIFY_CURRENT_ROUND_PART_AND_CUR
   // check if the memory needed was allocated on the heap successfully
   if (result == NULL || string == NULL)
   {
-    return handle_error("verify_data", "Memory allocation failed.", result, string);
+    FATAL_ERROR_EXIT("verify_data: Memory allocation failed.");
   }
   memset(message_settings, 0, sizeof(message_settings));
   memset(public_address, 0, sizeof(public_address));
