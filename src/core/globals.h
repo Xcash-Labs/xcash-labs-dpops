@@ -22,6 +22,9 @@ extern char secret_key[VRF_SECRET_KEY_LENGTH+1]; // Holds the secret key text fo
 extern char current_round_part[2]; // The current round part (1-4)
 extern char current_round_part_backup_node[2]; // The current main node in the current round part (0-5)
 extern struct main_nodes_list main_nodes_list; // The list of main nodes public address and IP address
+extern block_verifiers_list_t previous_block_verifiers_list; // The list of block verifiers name, public address and IP address for the previous round
+extern block_verifiers_list_t current_block_verifiers_list; // The list of block verifiers name, public address and IP address for the current round
+extern block_verifiers_list_t next_block_verifiers_list; // The list of block verifiers name, public address and IP address for the next round
 
 
 

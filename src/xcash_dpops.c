@@ -15,6 +15,11 @@ char current_round_part_backup_node[2];
 mongoc_client_pool_t* database_client_thread_pool = NULL;
 pthread_rwlock_t rwlock = PTHREAD_MUTEX_INITIALIZER;
 struct main_nodes_list main_nodes_list = {0};
+block_verifiers_list_t previous_block_verifiers_list;
+block_verifiers_list_t current_block_verifiers_list;
+block_verifiers_list_t next_block_verifiers_list;
+
+
 const NetworkNode network_nodes[] = {
   {"XCA1dd7JaWhiuBavUM2ZTJG3GdgPkT1Yd5Q6VvNvnxbEfb6JhUhziTF6w5mMPVeoSv3aa1zGyhedpaa2QQtGEjBo7N6av9nhaU", "xcashseeds.us", 
     "f681a933620c8e9e029d9ac0977d3a2f1d6a64cc49304e079458e3b5d2d4a66f" , 1},
@@ -140,6 +145,9 @@ void init_processing(const arg_config_t *arg_config)
   current_round_part[1] = '\0';
   current_round_part_backup_node[0] = '0';
   current_round_part_backup_node[1] = '\0';
+  memset(&previous_block_verifiers_list, 0, sizeof(previous_block_verifiers_list));
+  memset(&current_block_verifiers_list, 0, sizeof(current_block_verifiers_list));
+  memset(&next_block_verifiers_list, 0, sizeof(next_block_verifiers_list));
 
   static const char xcash_tech_header[] =
       "\n"
