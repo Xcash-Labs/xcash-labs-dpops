@@ -223,7 +223,6 @@ int verify_data(const char *MESSAGE, const int VERIFY_CURRENT_ROUND_PART_AND_CUR
   char *result = (char *)calloc(MAXIMUM_AMOUNT, sizeof(char));
   char data[BUFFER_SIZE] = {0};
   char *string = (char *)calloc(MAXIMUM_AMOUNT, sizeof(char));
-  time_t current_date_and_time;
   size_t message_length;
   size_t count;
   long long int number = 0;
@@ -606,7 +605,6 @@ int validate_data(const char *MESSAGE)
 {
     // Variables
     char data[BUFFER_SIZE];
-    time_t current_date_and_time;
 
     memset(data, 0, sizeof(data));
 
