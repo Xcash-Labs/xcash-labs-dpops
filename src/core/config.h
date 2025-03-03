@@ -4,6 +4,7 @@
 #include <stdbool.h>
 
 #define XCASH_DPOPS_CURRENT_VERSION "xCash Labs DPoPs V. 2.0.0"
+#define XCASH_PROOF_OF_STAKE_BLOCK_HEIGHT 2 // The start block height for X-CASH proof of stake
 
 // Network
 #define XCASH_DAEMON_PORT 18281 // The X-CASH Daemon RPC Port

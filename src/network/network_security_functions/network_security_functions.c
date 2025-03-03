@@ -226,7 +226,6 @@ int verify_data(const char *MESSAGE, const int VERIFY_CURRENT_ROUND_PART_AND_CUR
   time_t current_date_and_time;
   struct tm current_UTC_date_and_time;
   size_t message_length;
-  size_t count;
   size_t count2;
   size_t data_size;
   long long int number = 0;
@@ -500,7 +499,7 @@ if (number >= XCASH_PROOF_OF_STAKE_BLOCK_HEIGHT) {
 }
 
 // Check if the message type requires special handling
-bool special_type = is_valid_message_type(message_settings, special_message_types, 
+special_type = is_valid_message_type(message_settings, special_message_types, 
   sizeof(special_message_types) / sizeof(special_message_types[0]));
 
 if (special_type && strstr(MESSAGE, "previous_block_hash") == NULL) {
