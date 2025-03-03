@@ -168,8 +168,6 @@ int check_if_database_collection_exist(const char* DATABASE, const char* COLLECT
     return XCASH_OK;
 }
 
-// *************************************************************************
-
 // Function to read a document from collection
 int read_document_from_collection(const char* DATABASE, const char* COLLECTION, const char* DATA, char *result) {
     const bson_t* current_document;
@@ -282,45 +280,6 @@ int database_document_parse_json_data(const char* DATA, struct database_document
         }
     }
     return XCASH_OK;
-}
-
-*************************************************************
-
-#include <bson/bson.h>
-#include <mongoc/mongoc.h>
-#include <string.h>
-#include "db_functions.h"
-
-// Define success and error codes for consistency
-#define XCASH_OK 1
-#define XCASH_ERROR 0
-
-// Unified resource cleanup function
-static inline void free_resources(bson_t *document, mongoc_collection_t *collection, mongoc_client_t *database_client_thread) {
-    if (document) bson_destroy(document);
-    if (collection) mongoc_collection_destroy(collection);
-    if (database_client_thread) mongoc_client_pool_push(database_client_thread_pool, database_client_thread);
-}
-
-// Unified error handling function
-static inline int handle_error(const char *message, bson_t *document, mongoc_collection_t *collection, mongoc_client_t *database_client_thread) {
-    ERROR_PRINT("%s: %s", __func__, message);
-    free_resources(document, collection, database_client_thread);
-    return XCASH_ERROR;
-}
-
-// Helper function to get a temporary connection
-static inline mongoc_client_t* get_temporary_connection() {
-    if (!database_client_thread_pool) {
-        ERROR_PRINT("Database client pool is not initialized!");
-        return NULL;
-    }
-    return mongoc_client_pool_pop(database_client_thread_pool);
-}
-
-// Helper function to create a BSON document from JSON
-static inline bson_t* create_bson_document(const char *DATA, bson_error_t *error) {
-    return bson_new_from_json((const uint8_t *)DATA, -1, error);
 }
 
 // Function to parse multiple documents from JSON
