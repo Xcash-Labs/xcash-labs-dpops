@@ -209,30 +209,6 @@ int verify_data(const char *MESSAGE, const int VERIFY_CURRENT_ROUND_PART_AND_CUR
   size_t data_size;
   long long int number = 0;
 
-  // Constants
-  const char *HTTP_HEADERS[] = {"Content-Type: application/json", "Accept: application/json"};
-  const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0]);
-  const size_t MAXIMUM_AMOUNT = strlen(MESSAGE) >= MAXIMUM_BUFFER_SIZE ? MAXIMUM_BUFFER_SIZE : strlen(MESSAGE) + BUFFER_SIZE;
-
-  // Variables
-  char message_settings[BUFFER_SIZE] = {0};
-  char public_address[BUFFER_SIZE] = {0};
-  char message_previous_block_hash[BUFFER_SIZE] = {0};
-  char message_current_round_part[BUFFER_SIZE] = {0};
-  char message_current_round_part_backup_node[BUFFER_SIZE] = {0};
-  char XCASH_DPOPS_signature[BUFFER_SIZE] = {0};
-  char public_key[VRF_PUBLIC_KEY_LENGTH + 1] = {0};
-  char proof[VRF_PROOF_LENGTH + 1] = {0};
-  char beta_string[VRF_BETA_LENGTH + 1] = {0};
-  unsigned char public_key_data[crypto_vrf_PUBLICKEYBYTES + 1] = {0};
-  unsigned char proof_data[crypto_vrf_PROOFBYTES + 1] = {0};
-  unsigned char beta_string_data[crypto_vrf_OUTPUTBYTES + 1] = {0};
-  char *result = calloc(MAXIMUM_AMOUNT, sizeof(char));
-  char data[BUFFER_SIZE] = {0};
-  char *string = calloc(MAXIMUM_AMOUNT, sizeof(char));
-  long long int number = 0;
-  size_t message_length = 0;
-
   // check if the memory needed was allocated on the heap successfully
   if (result == NULL || string == NULL)
   {
