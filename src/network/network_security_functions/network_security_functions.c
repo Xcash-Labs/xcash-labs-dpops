@@ -553,8 +553,8 @@ if (strstr(MESSAGE, "\"XCASH_DPOPS_signature\": \"SigV1") == NULL && strstr(MESS
           char query[BUFFER_SIZE] = {0};
           snprintf(query, sizeof(query), "{\"public_address\":\"%s\"}", public_address);
 
-          if (count_documents_in_collection(database_name, "delegates", query) == 1) {
-              if (read_document_field_from_collection(database_name, "delegates", query, "public_key", public_key) == 0) {
+          if (count_documents_in_collection(DATABASE_NAME, "delegates", query) == 1) {
+              if (read_document_field_from_collection(DATABASE_NAME, "delegates", query, "public_key", public_key) == 0) {
                   return handle_error("verify_data", "Could not find the public key to verify the message", result, string);
               }
           } else {
