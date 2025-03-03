@@ -1,6 +1,8 @@
 #ifndef STRUCTURES_H
 #define STRUCTURES_H
 
+#include <stddef.h> 
+
 // Define a struct to store network node data
 typedef struct {
     const char *seed_public_address;
