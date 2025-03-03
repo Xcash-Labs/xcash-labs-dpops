@@ -20,7 +20,6 @@
 int handle_error(const char *function_name, const char *message, char *result, char *string);
 bool is_valid_message_type(const char *message_settings, const char *valid_types[], size_t valid_types_count);
 void safe_memcpy(char *dest, const char *src, size_t length);
-void hex_to_bin(const char *hex, unsigned char *bin, size_t bin_size);
 int sign_data(char *message);
 int validate_data(const char* MESSAGE);
 int verify_data(const char* MESSAGE, const int VERIFY_CURRENT_ROUND_PART_BACKUP_NODE_SETTINGS);
