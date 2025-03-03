@@ -211,3 +211,31 @@ int random_string(char *result, const size_t LENGTH) {
     result[LENGTH] = '\0'; 
     return (generated == LENGTH) ? XCASH_OK : XCASH_ERROR;
 }
+
+/*---------------------------------------------------------------------------------------------------------
+Name: string_count
+Description: Counts the occurrences of a substring in a string.
+Parameters:
+  DATA - The string to count the occurrence in.
+  STRING - The substring to count the occurrences of.
+Return: The number of occurrences of the substring in the string, otherwise 0 if an error has occurred.
+---------------------------------------------------------------------------------------------------------*/
+size_t string_count(const char* DATA, const char* STRING)
+{
+    // Validate inputs
+    if (DATA == NULL || STRING == NULL || *STRING == '\0') {
+        return 0;  // Return 0 if either string is NULL or STRING is empty
+    }
+    const size_t DATA_LENGTH = strlen(DATA);
+    const size_t STRING_LENGTH = strlen(STRING);
+    if (STRING_LENGTH > DATA_LENGTH) {
+        return 0;
+    }
+    size_t count = 0;
+    const char* pos = DATA;
+    while ((pos = strstr(pos, STRING)) != NULL) {
+        count++;
+        pos += STRING_LENGTH;  // Move past the last found substring
+    }
+    return count;
+}
