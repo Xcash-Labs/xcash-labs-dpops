@@ -209,7 +209,7 @@ int verify_data(const char *MESSAGE, const int VERIFY_CURRENT_ROUND_PART_AND_CUR
 
   // Variables
   char message_settings[BUFFER_SIZE] = {0};
-  char public_address[BUFFER_SIZE] = {0};
+  char public_address[XCASH_PUBLIC_ADDR_LENGTH+1] = {0};
   char message_previous_block_hash[BUFFER_SIZE] = {0};
   char message_current_round_part[BUFFER_SIZE] = {0};
   char message_current_round_part_backup_node[BUFFER_SIZE] = {0};
@@ -232,21 +232,7 @@ int verify_data(const char *MESSAGE, const int VERIFY_CURRENT_ROUND_PART_AND_CUR
   {
     FATAL_ERROR_EXIT("verify_data: Memory allocation failed.");
   }
-  memset(message_settings, 0, sizeof(message_settings));
-  memset(public_address, 0, sizeof(public_address));
-  memset(message_previous_block_hash, 0, sizeof(message_previous_block_hash));
-  memset(message_current_round_part, 0, sizeof(message_current_round_part));
-  memset(message_current_round_part_backup_node, 0, sizeof(message_current_round_part_backup_node));
-  memset(XCASH_DPOPS_signature, 0, sizeof(XCASH_DPOPS_signature));
-  memset(public_key, 0, sizeof(public_key));
-  memset(proof, 0, sizeof(proof));
-  memset(beta_string, 0, sizeof(beta_string));
-  memset(public_key_data, 0, sizeof(public_key_data));
-  memset(proof_data, 0, sizeof(proof_data));
-  memset(beta_string_data, 0, sizeof(beta_string_data));
-  memset(data, 0, sizeof(data));
 
-  // Optimized code
   if (strstr(MESSAGE, "}") != NULL)
   {
     if (parse_json_data(MESSAGE, "message_settings", message_settings, sizeof(message_settings)) == 0)
