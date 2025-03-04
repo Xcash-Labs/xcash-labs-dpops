@@ -5,6 +5,7 @@
 #include "structures.h"
 #include <mongoc/mongoc.h>
 #include "crypto_vrf.h"
+#include <pthread.h>
 
 /*--------------------------------------------------------------------------------------------------
 Global Variables
@@ -29,6 +30,7 @@ extern block_verifiers_list_t next_block_verifiers_list; // The list of block ve
 extern mongoc_client_pool_t* database_client_thread_pool;  // database
 
 extern pthread_rwlock_t rwlock;
+
 
 
 #endif

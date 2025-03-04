@@ -14,6 +14,8 @@ char current_round_part[2];
 char current_round_part_backup_node[2];
 mongoc_client_pool_t* database_client_thread_pool = NULL;
 pthread_rwlock_t rwlock = PTHREAD_MUTEX_INITIALIZER;
+
+
 struct main_nodes_list main_nodes_list = {0};
 block_verifiers_list_t previous_block_verifiers_list;
 block_verifiers_list_t current_block_verifiers_list;
@@ -194,7 +196,7 @@ Description: Clean up before ending
 ---------------------------------------------------------------------------------------------------------*/
 void cleanup_data_structures(void) {
   size_t count;
-  pthread_mutex_destroy(&lock);
+  pthread_mutex_destroy(&rwlock);
 ;
   // add more later......
 
