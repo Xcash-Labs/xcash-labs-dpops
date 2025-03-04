@@ -530,15 +530,15 @@ int delete_document_from_collection(const char* DATABASE, const char* COLLECTION
 
     mongoc_collection_t* collection = mongoc_client_get_collection(database_client_thread, DATABASE, COLLECTION);
     if (!check_if_database_collection_exist(DATABASE, COLLECTION)) {
-        return handle_error_delete("Collection does not exist", NULL, NULL, collection, database_client_thread);
+        return handle_error("Collection does not exist", NULL, NULL, collection, database_client_thread);
     }
 
     bson_error_t error;
     bson_t* document = create_bson_document(DATA, &error);
-    if (!document) return handle_error_delete("Invalid JSON format", NULL, NULL, collection, database_client_thread);
+    if (!document) return handle_error("Invalid JSON format", NULL, NULL, collection, database_client_thread);
 
     if (!mongoc_collection_delete_one(collection, document, NULL, NULL, &error)) {
-        return handle_error_delete("Failed to delete document", document, NULL, collection, database_client_thread);
+        return handle_error("Failed to delete document", document, NULL, collection, database_client_thread);
     }
 
     free_resources(document, NULL, collection, database_client_thread);
@@ -554,12 +554,12 @@ int delete_collection_from_database(const char* DATABASE, const char* COLLECTION
 
     mongoc_collection_t* collection = mongoc_client_get_collection(database_client_thread, DATABASE, COLLECTION);
     if (!check_if_database_collection_exist(DATABASE, COLLECTION)) {
-        return handle_error_delete("Collection does not exist", NULL, NULL, collection, database_client_thread);
+        return handle_error("Collection does not exist", NULL, NULL, collection, database_client_thread);
     }
 
     bson_error_t error;
     if (!mongoc_collection_drop(collection, &error)) {
-        return handle_error_delete("Failed to delete collection", NULL, NULL, collection, database_client_thread);
+        return handle_error("Failed to delete collection", NULL, NULL, collection, database_client_thread);
     }
 
     free_resources(NULL, NULL, collection, database_client_thread);
@@ -572,12 +572,12 @@ int delete_database(const char* DATABASE) {
     if (!database_client_thread) return XCASH_ERROR;
 
     mongoc_database_t* database = mongoc_client_get_database(database_client_thread, DATABASE);
-    if (!database) return handle_error_delete("Failed to get database", NULL, NULL, NULL, database_client_thread);
+    if (!database) return handle_error("Failed to get database", NULL, NULL, NULL, database_client_thread);
 
     bson_error_t error;
     if (!mongoc_database_drop(database, &error)) {
         mongoc_database_destroy(database);
-        return handle_error_delete("Failed to delete database", NULL, NULL, NULL, database_client_thread);
+        return handle_error("Failed to delete database", NULL, NULL, NULL, database_client_thread);
     }
 
     drop_all_hashes(database_client_thread);
@@ -600,7 +600,7 @@ size_t get_database_collection_size(const char* DATABASE, const char* COLLECTION
     bson_error_t error;
 
     if (!mongoc_collection_command_simple(collection, command, NULL, &document, &error)) {
-        handle_error_delete("Failed to get collection stats", command, NULL, collection, database_client_thread);
+        handle_error("Failed to get collection stats", command, NULL, collection, database_client_thread);
         return 0;
     }
 
@@ -634,7 +634,7 @@ int get_database_data(char *database_data, const char* DATABASE, const char* COL
 
     mongoc_collection_t* collection = mongoc_client_get_collection(database_client_thread, DATABASE, COLLECTION);
     if (!check_if_database_collection_exist(DATABASE, COLLECTION)) {
-        return handle_error_delete("Collection does not exist", NULL, NULL, collection, database_client_thread);
+        return handle_error("Collection does not exist", NULL, NULL, collection, database_client_thread);
     }
 
     bson_t* document = bson_new();
