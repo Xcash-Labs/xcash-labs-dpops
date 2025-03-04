@@ -1,16 +1,22 @@
 #include "db_functions.h"
 
 // Unified resource cleanup function
-static inline void free_resources(bson_t *document, mongoc_collection_t *collection, mongoc_client_t *database_client_thread) {
+static inline void free_resources(bson_t *document, bson_t *document2, mongoc_collection_t *collection, mongoc_client_t *database_client_thread) {
     if (document) bson_destroy(document);
+    if (document2) bson_destroy(document2);
     if (collection) mongoc_collection_destroy(collection);
     if (database_client_thread) mongoc_client_pool_push(database_client_thread_pool, database_client_thread);
 }
 
 // Unified error handling function
-static inline int handle_error(const char *message, bson_t *document, mongoc_collection_t *collection, mongoc_client_t *database_client_thread) {
-    ERROR_PRINT("%s: %s", __func__, message);
-    free_resources(document, collection, database_client_thread);
+static inline int handle_error(const char *message, bson_t *document, bson_t *document2, mongoc_collection_t *collection, mongoc_client_t *database_client_thread) {
+    if (message != NULL) {
+        ERROR_PRINT(message);
+    }
+    if (document) bson_destroy(document);
+    if (document2) bson_destroy(document2);
+    if (collection) mongoc_collection_destroy(collection);
+    if (database_client_thread) mongoc_client_pool_push(database_client_thread_pool, database_client_thread);
     return XCASH_ERROR;
 }
 
@@ -36,13 +42,13 @@ int count_documents_in_collection(const char* DATABASE, const char* COLLECTION, 
     mongoc_collection_t* collection = mongoc_client_get_collection(database_client_thread, DATABASE, COLLECTION);
     if (!check_if_database_collection_exist(DATABASE, COLLECTION)) {
         DEBUG_PRINT("Collection does not exist: %s", COLLECTION);
-        free_resources(NULL, collection, database_client_thread);
+        free_resources(NULL, NULL, collection, database_client_thread);
         return 0;
     }
 
     bson_error_t error;
     bson_t* document = create_bson_document(DATA, &error);
-    if (!document) return handle_error("Invalid JSON format", NULL, collection, database_client_thread);
+    if (!document) return handle_error("Invalid JSON format", NULL, NULL, collection, database_client_thread);
 
     int count = (int)mongoc_collection_count_documents(collection, document, NULL, NULL, NULL, &error);
     if (count < 0) {
@@ -50,7 +56,7 @@ int count_documents_in_collection(const char* DATABASE, const char* COLLECTION, 
         count = -1;
     }
 
-    free_resources(document, collection, database_client_thread);
+    free_resources(document, NULL, collection, database_client_thread);
     return count;
 }
 
@@ -62,7 +68,7 @@ int count_all_documents_in_collection(const char* DATABASE, const char* COLLECTI
     mongoc_collection_t* collection = mongoc_client_get_collection(database_client_thread, DATABASE, COLLECTION);
     if (!check_if_database_collection_exist(DATABASE, COLLECTION)) {
         DEBUG_PRINT("Collection does not exist: %s", COLLECTION);
-        free_resources(NULL, collection, database_client_thread);
+        free_resources(NULL, NULL, collection, database_client_thread);
         return 0;
     }
 
@@ -72,7 +78,7 @@ int count_all_documents_in_collection(const char* DATABASE, const char* COLLECTI
     if (count < 0) ERROR_PRINT("Error counting documents in %s: %s", COLLECTION, error.message);
 
     bson_destroy(filter);
-    free_resources(NULL, collection, database_client_thread);
+    free_resources(NULL, NULL, collection, database_client_thread);
     return count;
 }
 
@@ -126,19 +132,19 @@ int insert_document_into_collection_json(const char* DATABASE, const char* COLLE
 
     del_hash(database_client_thread, COLLECTION);
     mongoc_collection_t* collection = mongoc_client_get_collection(database_client_thread, DATABASE, COLLECTION);
-    if (!collection) return handle_error("Failed to get collection", NULL, NULL, database_client_thread);
+    if (!collection) return handle_error("Failed to get collection", NULL, NULL, NULL, database_client_thread);
 
     bson_error_t error;
     bson_t* document = create_bson_document(formatted_json, &error);
-    if (!document) return handle_error("Invalid JSON format", NULL, collection, database_client_thread);
+    if (!document) return handle_error("Invalid JSON format", NULL, NULL, collection, database_client_thread);
 
     if (!mongoc_collection_insert_one(collection, document, NULL, NULL, &error)) {
         ERROR_PRINT("Could not insert document: %s", error.message);
-        free_resources(document, collection, database_client_thread);
+        free_resources(document, NULL, collection, database_client_thread);
         return XCASH_ERROR;
     }
 
-    free_resources(document, collection, database_client_thread);
+    free_resources(document, NULL, collection, database_client_thread);
     return XCASH_OK;
 }
 
@@ -156,7 +162,7 @@ int check_if_database_collection_exist(const char* DATABASE, const char* COLLECT
     if (!database_client_thread) return XCASH_ERROR;
 
     mongoc_database_t* database = mongoc_client_get_database(database_client_thread, DATABASE);
-    if (!database) return handle_error("Failed to get database", NULL, NULL, database_client_thread);
+    if (!database) return handle_error("Failed to get database", NULL, NULL, NULL, database_client_thread);
 
     bson_error_t error;
     bool collection_exists = mongoc_database_has_collection(database, COLLECTION, &error);
@@ -183,13 +189,13 @@ int read_document_from_collection(const char* DATABASE, const char* COLLECTION, 
 
     mongoc_collection_t* collection = mongoc_client_get_collection(database_client_thread, DATABASE, COLLECTION);
     if (!check_if_database_collection_exist(DATABASE, COLLECTION)) {
-        free_resources(NULL, collection, database_client_thread);
+        free_resources(NULL, NULL, collection, database_client_thread);
         return XCASH_ERROR;
     }
 
     bson_error_t error;
     bson_t* document = create_bson_document(DATA, &error);
-    if (!document) return handle_error("Invalid JSON format", NULL, collection, database_client_thread);
+    if (!document) return handle_error("Invalid JSON format", NULL, NULL, collection, database_client_thread);
 
     mongoc_cursor_t* document_settings = mongoc_collection_find_with_opts(collection, document, NULL, NULL);
     char* message = NULL;
@@ -203,9 +209,9 @@ int read_document_from_collection(const char* DATABASE, const char* COLLECTION, 
     }
 
     mongoc_cursor_destroy(document_settings);
-    if (count != 1) return handle_error("Document not found", document, collection, database_client_thread);
+    if (count != 1) return handle_error("Document not found", document, NULL, collection, database_client_thread);
 
-    free_resources(document, collection, database_client_thread);
+    free_resources(document, NULL, collection, database_client_thread);
     return XCASH_OK;
 }
 
@@ -217,13 +223,13 @@ int read_document_field_from_collection(const char* DATABASE, const char* COLLEC
 
     mongoc_collection_t* collection = mongoc_client_get_collection(database_client_thread, DATABASE, COLLECTION);
     if (!check_if_database_collection_exist(DATABASE, COLLECTION)) {
-        free_resources(NULL, collection, database_client_thread);
+        free_resources(NULL, NULL, collection, database_client_thread);
         return XCASH_ERROR;
     }
 
     bson_error_t error;
     bson_t* document = create_bson_document(DATA, &error);
-    if (!document) return handle_error("Invalid JSON format", NULL, collection, database_client_thread);
+    if (!document) return handle_error("Invalid JSON format", NULL, NULL, collection, database_client_thread);
 
     mongoc_cursor_t* document_settings = mongoc_collection_find_with_opts(collection, document, NULL, NULL);
     char* message = NULL;
@@ -246,9 +252,9 @@ int read_document_field_from_collection(const char* DATABASE, const char* COLLEC
     }
 
     mongoc_cursor_destroy(document_settings);
-    if (count != 1) return handle_error("Field not found", document, collection, database_client_thread);
+    if (count != 1) return handle_error("Field not found", document, NULL, collection, database_client_thread);
 
-    free_resources(document, collection, database_client_thread);
+    free_resources(document, NULL, collection, database_client_thread);
     return XCASH_OK;
 }
 
@@ -328,13 +334,13 @@ int read_document_all_fields_from_collection(const char* DATABASE, const char* C
 
     mongoc_collection_t* collection = mongoc_client_get_collection(database_client_thread, DATABASE, COLLECTION);
     if (!check_if_database_collection_exist(DATABASE, COLLECTION)) {
-        free_resources(NULL, collection, database_client_thread);
+        free_resources(NULL, NULL, collection, database_client_thread);
         return XCASH_ERROR;
     }
 
     bson_error_t error;
     bson_t* document = create_bson_document(DATA, &error);
-    if (!document) return handle_error("Invalid JSON format", NULL, collection, database_client_thread);
+    if (!document) return handle_error("Invalid JSON format", NULL, NULL, collection, database_client_thread);
 
     mongoc_cursor_t* document_settings = mongoc_collection_find_with_opts(collection, document, NULL, NULL);
     const bson_t* current_document;
@@ -344,20 +350,20 @@ int read_document_all_fields_from_collection(const char* DATABASE, const char* C
     while (mongoc_cursor_next(document_settings, &current_document)) {
         message = bson_as_canonical_extended_json(current_document, NULL);
         if (!message) {
-            handle_error("Failed to convert BSON to JSON", document, collection, database_client_thread);
+            handle_error("Failed to convert BSON to JSON", document, NULL, collection, database_client_thread);
         }
         if (database_document_parse_json_data(message, result) == XCASH_ERROR) {
             bson_free(message);
-            return handle_error("JSON parsing failed", document, collection, database_client_thread);
+            return handle_error("JSON parsing failed", document, NULL, collection, database_client_thread);
         }
         bson_free(message);
         count = 1;
     }
 
     mongoc_cursor_destroy(document_settings);
-    if (count != 1) return handle_error("Document not found", document, collection, database_client_thread);
+    if (count != 1) return handle_error("Document not found", document, NULL, collection, database_client_thread);
 
-    free_resources(document, collection, database_client_thread);
+    free_resources(document, NULL, collection, database_client_thread);
     return XCASH_OK;
 }
 
@@ -368,13 +374,13 @@ int read_multiple_documents_all_fields_from_collection(const char* DATABASE, con
 
     mongoc_collection_t* collection = mongoc_client_get_collection(database_client_thread, DATABASE, COLLECTION);
     if (!check_if_database_collection_exist(DATABASE, COLLECTION)) {
-        free_resources(NULL, collection, database_client_thread);
+        free_resources(NULL, NULL, collection, database_client_thread);
         return XCASH_ERROR;
     }
 
     bson_error_t error;
     bson_t* document = create_bson_document(DATA, &error);
-    if (!document) return handle_error("Invalid JSON format", NULL, collection, database_client_thread);
+    if (!document) return handle_error("Invalid JSON format", NULL, NULL, collection, database_client_thread);
 
     bson_t* document_options = NULL;
     if (DOCUMENT_OPTIONS == 1) {
@@ -392,7 +398,7 @@ int read_multiple_documents_all_fields_from_collection(const char* DATABASE, con
             message = bson_as_canonical_extended_json(current_document, NULL);
             if (database_multiple_documents_parse_json_data(message, result, (int)counter) == XCASH_ERROR) {
                 bson_free(message);
-                return handle_error("JSON parsing failed", document, collection, database_client_thread);
+                return handle_error("JSON parsing failed", document, NULL, collection, database_client_thread);
             }
             bson_free(message);
             counter++;
@@ -404,9 +410,9 @@ int read_multiple_documents_all_fields_from_collection(const char* DATABASE, con
 
     bson_destroy(document_options);
     mongoc_cursor_destroy(document_settings);
-    if (counter == 0) return handle_error("No documents found", document, collection, database_client_thread);
+    if (counter == 0) return handle_error("No documents found", document, NULL, collection, database_client_thread);
 
-    free_resources(document, collection, database_client_thread);
+    free_resources(document, NULL, collection, database_client_thread);
     return XCASH_OK;
 }
 
@@ -524,18 +530,18 @@ int delete_document_from_collection(const char* DATABASE, const char* COLLECTION
 
     mongoc_collection_t* collection = mongoc_client_get_collection(database_client_thread, DATABASE, COLLECTION);
     if (!check_if_database_collection_exist(DATABASE, COLLECTION)) {
-        return handle_error_delete("Collection does not exist", NULL, collection, NULL, database_client_thread);
+        return handle_error_delete("Collection does not exist", NULL, NULL, collection, database_client_thread);
     }
 
     bson_error_t error;
     bson_t* document = create_bson_document(DATA, &error);
-    if (!document) return handle_error_delete("Invalid JSON format", NULL, collection, NULL, database_client_thread);
+    if (!document) return handle_error_delete("Invalid JSON format", NULL, NULL, collection, database_client_thread);
 
     if (!mongoc_collection_delete_one(collection, document, NULL, NULL, &error)) {
-        return handle_error_delete("Failed to delete document", document, collection, NULL, database_client_thread);
+        return handle_error_delete("Failed to delete document", document, NULL, collection, database_client_thread);
     }
 
-    free_resources_delete(document, collection, NULL, database_client_thread);
+    free_resources(document, NULL, collection, database_client_thread);
     return XCASH_OK;
 }
 
@@ -548,15 +554,15 @@ int delete_collection_from_database(const char* DATABASE, const char* COLLECTION
 
     mongoc_collection_t* collection = mongoc_client_get_collection(database_client_thread, DATABASE, COLLECTION);
     if (!check_if_database_collection_exist(DATABASE, COLLECTION)) {
-        return handle_error_delete("Collection does not exist", NULL, collection, NULL, database_client_thread);
+        return handle_error_delete("Collection does not exist", NULL, NULL, collection, database_client_thread);
     }
 
     bson_error_t error;
     if (!mongoc_collection_drop(collection, &error)) {
-        return handle_error_delete("Failed to delete collection", NULL, collection, NULL, database_client_thread);
+        return handle_error_delete("Failed to delete collection", NULL, NULL, collection, database_client_thread);
     }
 
-    free_resources_delete(NULL, collection, NULL, database_client_thread);
+    free_resources(NULL, NULL, collection, database_client_thread);
     return XCASH_OK;
 }
 
@@ -570,12 +576,14 @@ int delete_database(const char* DATABASE) {
 
     bson_error_t error;
     if (!mongoc_database_drop(database, &error)) {
-        return handle_error_delete("Failed to delete database", NULL, NULL, database, database_client_thread);
+        mongoc_database_destroy(database);
+        return handle_error_delete("Failed to delete database", NULL, NULL, NULL, database_client_thread);
     }
 
     drop_all_hashes(database_client_thread);
+    mongoc_database_destroy(database);
+    mongoc_client_pool_push(database_client_thread_pool, database_client_thread);
 
-    free_resources_delete(NULL, NULL, database, database_client_thread);
     return XCASH_OK;
 }
 
@@ -592,7 +600,7 @@ size_t get_database_collection_size(const char* DATABASE, const char* COLLECTION
     bson_error_t error;
 
     if (!mongoc_collection_command_simple(collection, command, NULL, &document, &error)) {
-        handle_error_delete("Failed to get collection stats", command, collection, NULL, database_client_thread);
+        handle_error_delete("Failed to get collection stats", command, NULL, collection, database_client_thread);
         return 0;
     }
 
@@ -604,7 +612,7 @@ size_t get_database_collection_size(const char* DATABASE, const char* COLLECTION
         bson_free(message);
     }
 
-    free_resources_delete(command, collection, NULL, database_client_thread);
+    free_resources(command, NULL, collection, database_client_thread);
     return size;
 }
 
@@ -626,7 +634,7 @@ int get_database_data(char *database_data, const char* DATABASE, const char* COL
 
     mongoc_collection_t* collection = mongoc_client_get_collection(database_client_thread, DATABASE, COLLECTION);
     if (!check_if_database_collection_exist(DATABASE, COLLECTION)) {
-        return handle_error_delete("Collection does not exist", NULL, collection, NULL, database_client_thread);
+        return handle_error_delete("Collection does not exist", NULL, NULL, collection, database_client_thread);
     }
 
     bson_t* document = bson_new();
@@ -647,10 +655,7 @@ int get_database_data(char *database_data, const char* DATABASE, const char* COL
     }
 
     if (count == 0) strcpy(database_data, DATABASE_EMPTY_STRING);
-
-    bson_destroy(document);
-    bson_destroy(document_options);
-    mongoc_cursor_destroy(cursor);
-    free_resources_delete(NULL, collection, NULL, database_client_thread);
+    free_resources(document, document_options, collection, database_client_thread);
+    if (cursor) mongoc_cursor_destroy(cursor);
     return XCASH_OK;
 }
