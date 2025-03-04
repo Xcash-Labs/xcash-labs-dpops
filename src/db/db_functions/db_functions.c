@@ -11,7 +11,7 @@ static inline void free_resources(bson_t *document, bson_t *document2, mongoc_co
 // Unified error handling function
 static inline int handle_error(const char *message, bson_t *document, bson_t *document2, mongoc_collection_t *collection, mongoc_client_t *database_client_thread) {
     if (message != NULL) {
-        ERROR_PRINT(message);
+        ERROR_PRINT("%s", message);
     }
     if (document) bson_destroy(document);
     if (document2) bson_destroy(document2);
