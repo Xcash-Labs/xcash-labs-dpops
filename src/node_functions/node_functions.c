@@ -132,27 +132,39 @@ const char *address_to_node_name(const char *public_address) {
  * 
  * @return int Returns XCASH_OK (1) if successful, XCASH_ERROR (0) if an error occurs.
  */
-bool get_daemon_data(void) {
-    if (!current_block_height || !previous_block_hash) {
+bool get_daemon_data(char *current_block_height, char *previous_block_hash) {
+    // Validate pointers
+    if (current_block_height == NULL || previous_block_hash == NULL) {
         ERROR_PRINT("Invalid buffer for block height or block hash.");
         return XCASH_ERROR;
     }
 
     // Get the current block height
-    if (get_current_block_height(current_block_height) == 0) {
+    if (!get_current_block_height(current_block_height)) {
         ERROR_PRINT("Could not get the current block height.");
         return XCASH_ERROR;
     }
 
+    // Convert block height to long and validate
     long current_height = atol(current_block_height);
+    if (current_height <= 0) {
+        ERROR_PRINT("Invalid block height: %s", current_block_height);
+        return XCASH_ERROR;
+    }
     if (current_height < XCASH_PROOF_OF_STAKE_BLOCK_HEIGHT) {
         ERROR_PRINT("Current Block Height (%ld) is below DPOPS era. Blockchain data may not be fully synchronized yet.", current_height);
         return XCASH_ERROR;
     }
 
     // Get the previous block hash
-    if (get_previous_block_hash(previous_block_hash) == 0) {
+    if (!get_previous_block_hash(previous_block_hash)) {
         ERROR_PRINT("Could not get the previous block hash.");
+        return XCASH_ERROR;
+    }
+
+    // Check if previous block hash is valid
+    if (previous_block_hash[0] == '\0') {
+        ERROR_PRINT("Previous block hash is empty.");
         return XCASH_ERROR;
     }
 
