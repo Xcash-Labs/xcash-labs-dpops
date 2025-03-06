@@ -198,8 +198,9 @@ Name: cleanup_data_structure
 Description: Clean up before ending
 ---------------------------------------------------------------------------------------------------------*/
 void cleanup_data_structures(void) {
-  size_t count;
-  pthread_mutex_destroy(&rwlock);
+
+  pthread_rwlock_destroy(&rwlock);
+
 ;
   // add more later......
 
