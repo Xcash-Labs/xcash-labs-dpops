@@ -55,15 +55,10 @@ int del_hash(mongoc_client_t *client, const char *db_name) {
  * @param b Pointer to the second string (const void* for qsort compatibility).
  * @return int Returns negative if a < b, 0 if a == b, positive if a > b.
 ------------------------------------------------------------------------------------------------------==*/
+// compare strings function
 int cmpfunc(const void *a, const void *b)
 {
-    // Cast to const char** since a and b are pointers to pointers to char
-
-    const char *const *str1 = a;
-    const char *const *str2 = b;
-    
-    // Use strcmp for comparison
-    return strcmp(str1, str2);
+    return strcmp((const char *)a, (const char *)b);
 }
 
 /*---------------------------------------------------------------------------------------------------------
