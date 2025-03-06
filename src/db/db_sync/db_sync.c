@@ -102,7 +102,7 @@ int get_node_sync_info(xcash_node_sync_info_t *sync_info) {
     memset(sync_info, 0, sizeof(xcash_node_sync_info_t));
 
     // Get maximum block height and reserve bytes DB index
-    if (get_db_max_block_height(database_name, &block_height, &reserve_bytes_db_index) < 0) {
+    if (get_db_max_block_height(DATABASE_NAME, &block_height, &reserve_bytes_db_index) < 0) {
         ERROR_PRINT("Can't get DB block height.");
         return XCASH_ERROR;
     }
@@ -136,7 +136,7 @@ int get_node_sync_info(xcash_node_sync_info_t *sync_info) {
 
     sync_info->db_reserve_bytes_synced = XCASH_OK;  // Assume synced initially
 
-    if (!db_count_doc_by(database_name, db_collection_name, filter, &count, &error) || count <= 0) {
+    if (!db_count_doc_by(DATABASE_NAME, db_collection_name, filter, &count, &error) || count <= 0) {
         DEBUG_PRINT("Reserve bytes for previous block %zu not found. DB not fully synced.", block_height);
         sync_info->db_reserve_bytes_synced = XCASH_ERROR;  // Not synced
     }
