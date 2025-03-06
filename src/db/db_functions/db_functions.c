@@ -753,8 +753,28 @@ int get_database_data(char* database_data, const char* DATABASE, const char* COL
   return XCASH_OK;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /**
- * @brief Retrieves a specific field's data from the "hashes2" collection.
+ * @brief Retrieves a specific field's data from the "hashes" collection.
  * 
  * @param client MongoDB client connection.
  * @param db_name Name of the database.
@@ -779,7 +799,7 @@ int get_data(mongoc_client_t *client, const char *db_name, const char *field_nam
     uint32_t len = 0;
 
     // Get collection
-    collection = mongoc_client_get_collection(client, DATABASE_NAME, "hashes");
+    collection = mongoc_client_get_collection(client, database_name, "hashes");
     if (!collection) {
         return handle_error("Failed to get collection: hashes.", NULL, NULL, collection, NULL);
     }
@@ -799,15 +819,14 @@ int get_data(mongoc_client_t *client, const char *db_name, const char *field_nam
         return handle_error("Failed to create options.", query, opts, collection, NULL);
     }
 
-    // Execute query
+    // Execute query and manage the cursor locally
     cursor = mongoc_collection_find_with_opts(collection, query, opts, NULL);
     if (!cursor) {
-        return handle_error("Failed to execute query.", query, opts, collection, cursor);
+        return handle_error("Failed to execute query.", query, opts, collection, NULL);
     }
 
     // Process query results
-    while (mongoc_cursor_next(cursor, &doc))
-    {
+    while (mongoc_cursor_next(cursor, &doc)) {
         if (bson_iter_init(&iter, doc) &&
             bson_iter_find_descendant(&iter, field_name, &field) &&
             BSON_ITER_HOLDS_UTF8(&field))
@@ -825,10 +844,17 @@ int get_data(mongoc_client_t *client, const char *db_name, const char *field_nam
         }
     }
 
+    // Check for cursor errors
     if (mongoc_cursor_error(cursor, NULL)) {
-        return handle_error("Cursor error occurred while fetching data.", query, opts, collection, cursor);
+      mongoc_cursor_destroy(cursor);
+      return handle_error("Cursor error occurred while fetching data.", query, opts, collection, NULL);
     }
 
-    free_resources(query, opts, collection, cursor);
+    // Cleanup cursor explicitly before using free_resources
+    mongoc_cursor_destroy(cursor);
+
+    // Cleanup other resources
+    free_resources(query, opts, collection, NULL);
+
     return result;
 }
