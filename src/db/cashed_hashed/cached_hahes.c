@@ -75,7 +75,7 @@ int calc_db_hashes(mongoc_client_t *client, const char *db_name, char *hash, cha
     int result = 0;
 
     // Get collection
-    collection = mongoc_client_get_collection(client, database_name, db_name);
+    collection = mongoc_client_get_collection(client, DATABASE_NAME, db_name);
     if (!collection) {
         ERROR_PRINT("Failed to get collection: %s", db_name);
         return -2;
