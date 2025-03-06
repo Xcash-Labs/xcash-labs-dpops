@@ -368,7 +368,7 @@ bool update_multi_db_from_node(const char* public_address, xcash_dbs_t db_type) 
  * @param majority_source Pointer to the majority source node's sync info.
  * @return int Returns XCASH_OK (1) if successful, XCASH_ERROR (0) if an error occurs.
  */
-int initial_sync_node(const xcash_node_sync_info_t *majority_source) {
+bool initial_sync_node(const xcash_node_sync_info_t *majority_source) {
     if (!majority_source) {
         ERROR_PRINT("Invalid majority source provided.");
         return XCASH_ERROR;
@@ -896,59 +896,6 @@ bool check_db_has_majority(xcash_dbs_t db_type, xcash_db_sync_obj_t **sync_objs)
         }
     }
     return result;
-}
-
-bool initial_sync_node(xcash_node_sync_info_t* majority_source) {
-    xcash_dbs_t sync_db;
-    xcash_node_sync_info_t sync_info;
-
-    INFO_STAGE_PRINT("Checking the node DB sync status");
-
-    if (!get_node_sync_info(&sync_info)) {
-        ERROR_PRINT("Can't get local sync info");
-        return false;
-    }
-
-
-
-    // FIXME this mean we definitely need to sync the node
-    if (sync_info.block_height != majority_source->block_height) {
-        WARNING_PRINT("The local node has a block height %ld vs majority %ld, which differs from the majority", sync_info.block_height, majority_source->block_height);
-        // return false;
-    }
-
-    for (size_t i = 0; i < DATABASE_TOTAL; i++)
-    {
-        sync_db = (xcash_dbs_t)i;
-        if (strcmp(sync_info.db_hashes[i], majority_source->db_hashes[i]) == 0){
-            INFO_PRINT(HOST_OK_STATUS("%s", "db synced"), collection_names[sync_db]);
-            continue;
-        }
-
-        INFO_STAGE_PRINT("Syncing %s db", collection_names[sync_db]);
-
-        bool sync_result = false;
-        switch (sync_db) {
-        case XCASH_DB_DELEGATES:
-        case XCASH_DB_STATISTICS:
-            sync_result = update_db_from_node(majority_source->public_address, sync_db);
-            break;
-        case XCASH_DB_RESERVE_PROOFS:
-        case XCASH_DB_RESERVE_BYTES:
-            sync_result = update_multi_db_from_node(majority_source->public_address, sync_db);
-            break;
-        default:
-            break;
-        }
-
-        if (sync_result) {
-            INFO_PRINT(HOST_OK_STATUS("%s", "db synced"), collection_names[sync_db]);
-        }else{
-            WARNING_PRINT("Can't sync db %s", collection_names[sync_db]);
-            return false;
-        }
-    }
-    return true;
 }
 
 // get all nodes from local db
