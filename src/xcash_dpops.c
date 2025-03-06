@@ -13,7 +13,7 @@ char secret_key[VRF_SECRET_KEY_LENGTH+1] = {0};
 char current_round_part[2];
 char current_round_part_backup_node[2];
 mongoc_client_pool_t* database_client_thread_pool = NULL;
-pthread_rwlock_t rwlock = PTHREAD_MUTEX_INITIALIZER;
+pthread_rwlock_t rwlock;
 const char *collection_names[XCASH_DB_COUNT] = {"delegates", "statistics", "reserve_proofs", "reserve_bytes"};
 
 
@@ -143,6 +143,8 @@ Description: Initialize globals and print program start header.
 void init_processing(const arg_config_t *arg_config)
 {
   network_data_nodes_amount = get_seed_node_count();
+
+  pthread_rwlock_init(&rwlock,NULL);
   
   current_round_part[0] = '1';
   current_round_part[1] = '\0';
