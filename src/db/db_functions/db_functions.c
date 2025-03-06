@@ -615,47 +615,6 @@ size_t get_database_collection_size(const char* DATABASE, const char* COLLECTION
   return size;
 }
 
-
-
-
-
-#include <string.h>            // For memset, strncpy, strncmp
-#include <stdio.h>             // For snprintf
-#include <bson/bson.h>         // For BSON functions
-#include <mongoc/mongoc.h>     // For MongoDB functions
-#include "config.h"            // For BUFFER_SIZE, SMALL_BUFFER_SIZE, and other macros
-
-// Unified resource cleanup function
-static inline void free_resources(bson_t* document, bson_t* command, mongoc_collection_t* collection, mongoc_client_t* database_client_thread) {
-    if (document) bson_destroy(document);
-    if (command) bson_destroy(command);
-    if (collection) mongoc_collection_destroy(collection);
-    if (database_client_thread) mongoc_client_pool_push(database_client_thread_pool, database_client_thread);
-}
-
-// Unified error handling function
-static inline int handle_error(const char* message, bson_t* document, bson_t* command, mongoc_collection_t* collection, mongoc_client_t* database_client_thread) {
-    if (message != NULL) {
-        ERROR_PRINT("%s", message);
-    }
-    free_resources(document, command, collection, database_client_thread);
-    return XCASH_ERROR;
-}
-
-// Helper function to get a temporary connection
-static inline mongoc_client_t* get_temporary_connection() {
-    if (!database_client_thread_pool) {
-        ERROR_PRINT("Database client pool is not initialized!");
-        return NULL;
-    }
-    return mongoc_client_pool_pop(database_client_thread_pool);
-}
-
-// Helper function to create a BSON document from JSON
-static inline bson_t* create_bson_document(const char* DATA, bson_error_t* error) {
-    return bson_new_from_json((const uint8_t*)DATA, -1, error);
-}
-
 /**
  * @brief Retrieves the MD5 hash of the specified MongoDB collection.
  * 
@@ -709,8 +668,10 @@ int get_database_data_hash(char *data_hash, const char *DATABASE, const char *CO
         for (count = 1; count <= count2; ++count) {
           snprintf(data + strlen(data), sizeof(data) - strlen(data), "reserve_bytes_%zu", count);
           if (count != count2) strncat(data, "\",\"", sizeof(data) - strlen(data) - 1);
-        } 
-      } else {        return XCASH_ERROR; }
+        }
+      } else {
+        return XCASH_ERROR;
+      }
     } else if (strncmp(COLLECTION, "reserve_proofs", BUFFER_SIZE) == 0) {
         for (count = 1; count <= TOTAL_RESERVE_PROOFS_DATABASES; ++count) {
             snprintf(data + strlen(data), sizeof(data) - strlen(data), "reserve_proofs_%zu", count);
