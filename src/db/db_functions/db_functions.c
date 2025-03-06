@@ -705,15 +705,11 @@ int get_database_data_hash(char *data_hash, const char *DATABASE, const char *CO
     strncat(data, "{\"dbHash\":1,\"collections\":[\"", sizeof(data) - strlen(data) - 1);
 
     if (strncmp(COLLECTION, "reserve_bytes", BUFFER_SIZE) == 0) {
-      if (get_reserve_bytes_database(&count2)) {
+        get_reserve_bytes_database(&count2);
         for (count = 1; count <= count2; ++count) {
-          snprintf(data + strlen(data), sizeof(data) - strlen(data), "reserve_bytes_%zu", count);
-          if (count != count2) strncat(data, "\",\"", sizeof(data) - strlen(data) - 1);
-        } else {
-          ERROR_PRINT("Error getting reserve bytes database");
-          return XCASH_ERROR;
+            snprintf(data + strlen(data), sizeof(data) - strlen(data), "reserve_bytes_%zu", count);
+            if (count != count2) strncat(data, "\",\"", sizeof(data) - strlen(data) - 1);
         }
-      }
     } else if (strncmp(COLLECTION, "reserve_proofs", BUFFER_SIZE) == 0) {
         for (count = 1; count <= TOTAL_RESERVE_PROOFS_DATABASES; ++count) {
             snprintf(data + strlen(data), sizeof(data) - strlen(data), "reserve_proofs_%zu", count);
