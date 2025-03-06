@@ -132,7 +132,7 @@ const char *address_to_node_name(const char *public_address) {
  * 
  * @return int Returns XCASH_OK (1) if successful, XCASH_ERROR (0) if an error occurs.
  */
-int get_daemon_data(void) {
+bool get_daemon_data(void) {
     if (!current_block_height || !previous_block_hash) {
         ERROR_PRINT("Invalid buffer for block height or block hash.");
         return XCASH_ERROR;
