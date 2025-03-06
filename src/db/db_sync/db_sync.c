@@ -438,7 +438,7 @@ int initial_sync_node(const xcash_node_sync_info_t *majority_source) {
  * @param majority_list_result Optional. If NULL, the list will be freed internally.
  * @return int Returns XCASH_OK (1) if majority is reached, XCASH_ERROR (0) otherwise.
  */
-int initial_db_sync_check(size_t *majority_count, xcash_node_sync_info_t **majority_list_result) {
+bool initial_db_sync_check(size_t *majority_count, xcash_node_sync_info_t **majority_list_result) {
     if (!majority_count) {
         ERROR_PRINT("Invalid argument: majority_count is NULL.");
         return XCASH_ERROR;
