@@ -753,26 +753,6 @@ int get_database_data(char* database_data, const char* DATABASE, const char* COL
   return XCASH_OK;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /**
  * @brief Retrieves a specific field's data from the "hashes" collection.
  * 
