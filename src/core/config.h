@@ -64,6 +64,7 @@
 #define XCASH_OK 1
 #define XCASH_ERROR 0
 #define DB_COLLECTION_NAME_SIZE 256
+#define NUM_FIELDS 18
 
 #define BLOCK_TIME 5 // The block time in minutes
 #define BLOCK_TIME_SEC (BLOCK_TIME*60) // The block time in seconds

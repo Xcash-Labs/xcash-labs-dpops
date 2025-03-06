@@ -37,19 +37,20 @@ const char* delegate_keys[NUM_FIELDS] = {
     "block_verifier_total_rounds",
     "block_verifier_online_total_rounds",
     "block_verifier_online_percentage",
-    "block_producer_total_rounds",
+    "block_producer_total_rounds", 
     "block_producer_block_heights",
     "public_key",
 };
 
+
 // Helper function to get the position of a delegate in the network_data_nodes_list
 int get_network_data_node_position(const char* public_address) {
     for (int i = 0; i < NETWORK_DATA_NODES_AMOUNT; i++) {
-        if (strcmp(public_address, network_data_nodes_list.network_data_nodes_public_address[i]) == 0) {
+        if (strcmp(public_address, network_nodes[i].public_address) == 0) {
             return i;
         }
     }
-    return NETWORK_DATA_NODES_AMOUNT + 1;  // Return a large value if not found
+    return network_data_nodes_amount + 1;  // Return -1 if not found
 }
 
 // Comparison function for qsort
@@ -105,10 +106,8 @@ int read_organize_delegates(delegates_t* delegates, size_t* delegates_count_resu
     bson_error_t error;
     int delegates_count;
 
-
-
     bson_t* delegates_db_data = bson_new();
-    if (!db_find_all_doc(DPOPS_DB, collection_names[XCASH_DB_DELEGATES], delegates_db_data, &error)) {
+    if (!db_find_all_doc(DATABASE_NAME, collection_names[XCASH_DB_DELEGATES], delegates_db_data, &error)) {
         DEBUG_PRINT("Failed to read delegates from db. %s", error.message);
         bson_destroy(delegates_db_data);
         return XCASH_ERROR;
