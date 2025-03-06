@@ -452,25 +452,6 @@ bool check_sync_nodes_majority_list(response_t** replies, xcash_node_sync_info_t
     return true;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 bool get_node_sync_info(xcash_node_sync_info_t* sync_info) {
     bool result = false;
 
@@ -1560,17 +1541,7 @@ xcash_node_sync_info_t** make_nodes_majority_list(xcash_node_sync_info_t* sync_s
 }
 
 
-void show_majority_statistics(xcash_node_sync_info_t* majority_list, size_t items_count) {
-    if (majority_list && items_count > 0) {
-        INFO_STAGE_PRINT("Nodes majority status");
-        for (size_t i = 0; i< items_count; i++)
-        {
-            INFO_PRINT_STATUS_OK("%-40s", address_to_node_name(majority_list[i].public_address));
-        }
-    } else {
-        WARNING_PRINT("Empty majority list. Probably all other nodes are offline");
-    }
-}
+
 
 
 bool get_sync_seeds_majority_list(xcash_node_sync_info_t** majority_list_result, size_t* majority_count_result) {
@@ -1634,122 +1605,6 @@ bool get_sync_nodes_majority_list(xcash_node_sync_info_t** majority_list_result,
     return result;
 }
 
-
-bool get_sync_nodes_majority_list_top(xcash_node_sync_info_t** majority_list_result, size_t* majority_count_result) {
-    bool result = false;
-    *majority_list_result = NULL;
-    *majority_count_result = 0;
-
-    response_t** replies =  NULL;
-    bool send_result = send_message(XNET_DELEGATES_ALL, XMSG_XCASH_GET_SYNC_INFO, &replies);
-    if (!send_result) {
-        ERROR_PRINT("Can't get sync info from all nodes");
-        cleanup_responses(replies);
-        return false;
-    }
-
-    xcash_node_sync_info_t* majority_list;
-    size_t majority_count = 0;
-    if (check_sync_nodes_majority_list(replies, &majority_list, &majority_count, true)) {
-        result = true;
-    }
-
-    *majority_count_result =  majority_count;
-    *majority_list_result = majority_list;
-
-
-    cleanup_responses(replies);
-    return result;
-}
-
-
-
-bool check_sync_nodes_majority_list(response_t** replies,xcash_node_sync_info_t** majority_list_result, size_t* majority_count_result, bool by_top_block_height) {
-    *majority_list_result = NULL;
-    *majority_count_result = 0;
-    // bool result = false;
-    // count replies
-    size_t num_replies = 0;
-    for (size_t i = 0; replies && replies[i]; i++){
-        if (replies[i]->status==STATUS_OK) 
-            num_replies++;
-    };
-
-    if (num_replies == 0) {
-        WARNING_PRINT("No valid replies received. Can't make majority sync list");
-        // return empty list with 0 count
-        return true;
-    }
-
-    xcash_node_sync_info_t* sync_states_list = calloc(num_replies, sizeof(xcash_node_sync_info_t));
-    char parse_buffer[DATA_HASH_LENGTH+1];
-    char record_name[DB_COLLECTION_NAME_SIZE];
-
-    size_t sync_state_index = 0;
-    for (size_t i = 0; replies[i] && sync_state_index<num_replies; i++){
-        if (replies[i]->status==STATUS_OK) {
-            memset(parse_buffer, 0, sizeof(parse_buffer));
-
-            if (parse_json_data(replies[i]->data, "public_address", sync_states_list[sync_state_index].public_address, sizeof(sync_states_list[sync_state_index].public_address)) == 0) 
-            {
-                ERROR_PRINT("Can't parse 'public_address' reply from %s", replies[i]->host);
-                // clean up the data, so if it will be the last it doesn't contains any garbage
-                memset(&sync_states_list[sync_state_index], 0, sizeof(xcash_node_sync_info_t));
-                continue;
-            }
-
-            if (parse_json_data(replies[i]->data, "block_height", parse_buffer, sizeof(parse_buffer)) == 0 ||
-                sscanf(parse_buffer,"%zu", &(sync_states_list[sync_state_index].block_height)) !=1 ) 
-            {
-                ERROR_PRINT("Can't parse 'block_height' reply from %s", replies[i]->host);
-                // clean up the data, so if it will be the last it doesn't contains any garbage
-                memset(&sync_states_list[sync_state_index], 0, sizeof(xcash_node_sync_info_t));
-                continue;
-            }
-
-            for (size_t db_i = 0; db_i < DATABASE_TOTAL; db_i++)
-            {
-                sprintf(record_name, "data_hash_%s",collection_names[db_i]);
-                if (parse_json_data(replies[i]->data, record_name, sync_states_list[sync_state_index].db_hashes[db_i], sizeof(sync_states_list[sync_state_index].db_hashes[db_i])) == 0) 
-                {
-                    ERROR_PRINT("Can't parse '%s' reply from %s",record_name, replies[i]->host);
-                    // clean up the data, so if it will be the last it doesn't contains any garbage
-                    memset(&sync_states_list[sync_state_index], 0, sizeof(xcash_node_sync_info_t));
-                    break;;
-                }
-            }
-            sync_state_index++;
-        }
-    };
-
-    // sync_state_index now contains the real parsed records count
-    xcash_node_sync_info_t** sync_majority_list = make_nodes_majority_list(sync_states_list, sync_state_index, by_top_block_height);
-
-
-    // calculate majority count
-    int majority_count = 0;
-    for (size_t i = 0; sync_majority_list[i]; i++, majority_count++){};
-
-
-    // now make a fresh list of only majority sync statuses
-
-    xcash_node_sync_info_t* majority_states_list = calloc(majority_count, sizeof(xcash_node_sync_info_t));
-    for (size_t i = 0; sync_majority_list[i]; i++)
-    {
-        memcpy(&majority_states_list[i], sync_majority_list[i], sizeof(xcash_node_sync_info_t));
-    }
-    
-    // set results
-    *majority_count_result =  majority_count;
-    *majority_list_result = majority_states_list;
-
-    // cleanup
-    free(sync_majority_list);
-    free(sync_states_list);
-    return true;
-}
-
-
 int get_random_majority(xcash_node_sync_info_t* majority_list, size_t majority_count) {
     int result =  0;
     int random_index;
@@ -1774,86 +1629,6 @@ size_t count_seeds_in_majority_list(xcash_node_sync_info_t* majority_list, size_
         if (is_seed_address(majority_list[i].public_address)) {
             result ++;
         }
-    }
-    return result;
-}
-
-
-/// @brief Check data integrity and return majority_list and count of majority_list nodes
-/// @param majority_count 
-/// @param majority_list_result optional. if NULL, the list will be freed internally
-/// @return true if some of majority reached  false - majority not reached or empty list
-bool initial_db_sync_check(size_t* majority_count, xcash_node_sync_info_t** majority_list_result) {
-    bool result = false;
-    *majority_count = 0;
-
-    // size_t seeds_majority_count = 0;
-
-    xcash_node_sync_info_t* nodes_majority_list = NULL;
-    size_t nodes_majority_count = 0;
-
-    INFO_STAGE_PRINT("Checking the network data majority");
-
-    if (!get_sync_nodes_majority_list_top(&nodes_majority_list, &nodes_majority_count)) {
-    // if (!get_sync_nodes_majority_list(&nodes_majority_list, &nodes_majority_count)) {
-        WARNING_PRINT("Could not get data majority nodes sync list");
-    }else{
-        // seeds_majority_count = count_seeds_in_majority_list(nodes_majority_list, nodes_majority_count);
-    }
-
-    show_majority_statistics(nodes_majority_list, nodes_majority_count);
-
-
-    if ((nodes_majority_count < BLOCK_VERIFIERS_VALID_AMOUNT)) {
-        INFO_PRINT_STATUS_FAIL("Not enough data majority. All Nodes: [%ld/%d]", nodes_majority_count, BLOCK_VERIFIERS_VALID_AMOUNT);
-        result = false;
-    } else {
-        INFO_PRINT_STATUS_OK("Data majority reached. All Nodes: [%ld/%d]",  nodes_majority_count, BLOCK_VERIFIERS_VALID_AMOUNT);
-        int sync_source_index = get_random_majority(nodes_majority_list, nodes_majority_count);
-        result = initial_sync_node(&nodes_majority_list[sync_source_index]);
-
-        *majority_count = nodes_majority_count;
-    }
-
-
-    // if (is_seed_node) {
-    //     if ((nodes_majority_count < BLOCK_VERIFIERS_VALID_AMOUNT)) {
-    //         INFO_PRINT_STATUS_FAIL("Not enough data majority. Seeds: [%ld/%d] All Nodes: [%ld/%d]", seeds_majority_count, NETWORK_DATA_NODES_VALID_AMOUNT, nodes_majority_count, BLOCK_VERIFIERS_VALID_AMOUNT);
-    //         result = false;
-    //     } else {
-    //         INFO_PRINT_STATUS_OK("Data majority reached. Seeds: [%ld/%d] All Nodes: [%ld/%d]", seeds_majority_count, NETWORK_DATA_NODES_VALID_AMOUNT, nodes_majority_count, BLOCK_VERIFIERS_VALID_AMOUNT);
-
-    //     // if (seeds_majority_count < NETWORK_DATA_NODES_VALID_AMOUNT) {
-    //     //     INFO_PRINT_STATUS_FAIL("Not enough seeds data majority. [%ld/%d]", seeds_majority_count, NETWORK_DATA_NODES_VALID_AMOUNT);
-    //     //     result = false;
-    //     // } else {
-    //     //     INFO_PRINT_STATUS_OK("Seed nodes data majority found. %ld nodes available to sync", seeds_majority_count);
-
-    //         // FIXME Originally we need to sync only from seeds. But why? This is already decentralized behavior
-    //         int sync_source_index = get_random_majority(nodes_majority_list, nodes_majority_count);
-
-    //         result = initial_sync_node(&nodes_majority_list[sync_source_index]);
-    
-    //         *majority_count = nodes_majority_count;
-    //     }
-    // } else {
-    //     // if ((nodes_majority_count < BLOCK_VERIFIERS_VALID_AMOUNT) && (seeds_majority_count < NETWORK_DATA_NODES_VALID_AMOUNT)) {
-    //     if ((nodes_majority_count < BLOCK_VERIFIERS_VALID_AMOUNT)) {
-    //         INFO_PRINT_STATUS_FAIL("Not enough data majority. Seeds: [%ld/%d] All Nodes: [%ld/%d]", seeds_majority_count, NETWORK_DATA_NODES_VALID_AMOUNT, nodes_majority_count, BLOCK_VERIFIERS_VALID_AMOUNT);
-    //         result = false;
-    //     } else {
-    //         INFO_PRINT_STATUS_OK("Data majority reached. Seeds: [%ld/%d] All Nodes: [%ld/%d]", seeds_majority_count, NETWORK_DATA_NODES_VALID_AMOUNT, nodes_majority_count, BLOCK_VERIFIERS_VALID_AMOUNT);
-    //         int sync_source_index = get_random_majority(nodes_majority_list, nodes_majority_count);
-    //         result = initial_sync_node(&nodes_majority_list[sync_source_index]);
-
-    //         *majority_count = nodes_majority_count;
-    //     }
-    // }
-
-    if (!majority_list_result) {
-        free(nodes_majority_list);
-    } else{
-        *majority_list_result = nodes_majority_list;
     }
     return result;
 }
