@@ -169,9 +169,7 @@ void string_replace(char *data, const size_t DATA_TOTAL_LENGTH, const char* STR1
     buf = NULL;
 }
 
-#define STRING "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-#define STRING_LEN (sizeof(STRING) - 1)  // Length of STRING
-#define MAXIMUM_COUNT 1000
+
 
 /*---------------------------------------------------------------------------------------------------------
 Name: random_string
@@ -182,6 +180,10 @@ Parameters:
 Return: 0 if an error has occured, 1 if successfull
 ---------------------------------------------------------------------------------------------------------*/
 int random_string(char *result, const size_t LENGTH) {
+
+    #define STRINGx "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+    #define STRING_LENx (sizeof(STRING) - 1)  // Length of STRING
+    #define MAXIMUM_COUNTx 1000
 
     if (!result)
     {
