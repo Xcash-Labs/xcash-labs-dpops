@@ -431,66 +431,68 @@ int initial_sync_node(const xcash_node_sync_info_t *majority_source) {
     return XCASH_OK;  // Sync successful
 }
 
-/*---------------------------------------------------------------------------------------------------------
-Name: initial_db_sync_check
-Description: Check data integrity and return majority_list and count of majority_list nodes
-Parameters:
-  param majority_count Pointer to store the count of nodes in the majority list.
-  param majority_list_result Optional. If NULL, the list will be freed internally.
-return true if a valid majority is reached, false otherwise.
-Return: 0 if an error has occured, 1 if successfull
----------------------------------------------------------------------------------------------------------*/
-bool initial_db_sync_check(size_t* majority_count, xcash_node_sync_info_t** majority_list_result) {
+/**
+ * @brief Check data integrity and return majority_list and count of majority_list nodes.
+ * 
+ * @param majority_count Pointer to store the count of nodes in the majority list.
+ * @param majority_list_result Optional. If NULL, the list will be freed internally.
+ * @return int Returns XCASH_OK (1) if majority is reached, XCASH_ERROR (0) otherwise.
+ */
+int initial_db_sync_check(size_t *majority_count, xcash_node_sync_info_t **majority_list_result) {
     if (!majority_count) {
-        ERROR_PRINT("Invalid argument: majority_count is NULL");
+        ERROR_PRINT("Invalid argument: majority_count is NULL.");
         return XCASH_ERROR;
     }
 
     *majority_count = 0;
-    xcash_node_sync_info_t* nodes_majority_list = NULL;
+    xcash_node_sync_info_t *nodes_majority_list = NULL;
     size_t nodes_majority_count = 0;
 
     INFO_STAGE_PRINT("Checking the network data majority");
 
     // Attempt to get the majority list
     if (!get_sync_nodes_majority_list_top(&nodes_majority_list, &nodes_majority_count)) {
-        WARNING_PRINT("Could not get data majority nodes sync list");
+        WARNING_PRINT("Could not get data majority nodes sync list.");
+        if (nodes_majority_list) free(nodes_majority_list);
         return XCASH_ERROR;
     }
 
-    // Calculate majority dynamically
-    size_t required_majority = (nodes_majority_count / 2) + 1;
+    show_majority_statistics(nodes_majority_list, nodes_majority_count);
 
-    // Validate if we have enough majority nodes
-    if (nodes_majority_count < required_majority) {
-        INFO_PRINT_STATUS_FAIL("Not enough data majority. Nodes available: [%ld], Required majority: [%ld]", 
-                               nodes_majority_count, required_majority);
-        free(nodes_majority_list);
+    // Check if majority is reached
+    if (nodes_majority_count < BLOCK_VERIFIERS_VALID_AMOUNT) {
+        INFO_PRINT_STATUS_FAIL("Not enough data majority. All Nodes: [%ld/%d]", nodes_majority_count, BLOCK_VERIFIERS_VALID_AMOUNT);
+        if (nodes_majority_list) free(nodes_majority_list);
         return XCASH_ERROR;
     }
 
-    INFO_PRINT_STATUS_OK("Data majority reached. Nodes available: [%ld], Required majority: [%ld]", 
-                         nodes_majority_count, required_majority);
+    INFO_PRINT_STATUS_OK("Data majority reached. All Nodes: [%ld/%d]", nodes_majority_count, BLOCK_VERIFIERS_VALID_AMOUNT);
 
-    // Select a sync source randomly
+    // Choose a sync source
     int sync_source_index = get_random_majority(nodes_majority_list, nodes_majority_count);
     if (sync_source_index < 0) {
-      ERROR_PRINT("Unable to select a random sync node");
-      return XCASH_ERROR;
-    } else {
-      bool sync_result = initial_sync_node(&nodes_majority_list[sync_source_index]);
+        ERROR_PRINT("Failed to select a valid sync source.");
+        if (nodes_majority_list) free(nodes_majority_list);
+        return XCASH_ERROR;
+    }
+
+    // Sync with the selected node
+    if (initial_sync_node(&nodes_majority_list[sync_source_index]) == XCASH_ERROR) {
+        ERROR_PRINT("Failed to sync with the selected node.");
+        if (nodes_majority_list) free(nodes_majority_list);
+        return XCASH_ERROR;
     }
 
     *majority_count = nodes_majority_count;
 
-    // Handle majority list memory
+    // Manage memory for the majority list
     if (majority_list_result) {
         *majority_list_result = nodes_majority_list;
     } else {
         free(nodes_majority_list);
     }
 
-    return sync_result;
+    return XCASH_OK;
 }
 
 bool check_sync_nodes_majority_list(response_t** replies, xcash_node_sync_info_t** majority_list_result, size_t* majority_count_result, bool by_top_block_height) {
@@ -1416,7 +1418,7 @@ bool init_db_from_seeds(void) {
         };
     }
     if (result) {
-        INFO_PRINT_STATUS_OK("Database successfully synced")
+        INFO_PRINT_STATUS_OK("Database successfully synced");
     }
 
     return result;
