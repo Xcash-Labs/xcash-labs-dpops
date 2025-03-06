@@ -230,3 +230,18 @@ response_t** send_multi_request(const char **hosts, int port, const char* messag
 
     return responses;
 }
+
+void cleanup_responses(response_t** responses) {
+    if (!responses) return;  // Check if responses is NULL
+
+    for (int i = 0; responses[i] != NULL; i++) {
+        free(responses[i]->host);
+        free(responses[i]->data);
+        free(responses[i]->client);
+        free(responses[i]);  // Free the response struct itself
+        responses[i] = NULL;
+    }
+
+    free(responses);  // Free the array of pointers
+    responses = NULL;
+}

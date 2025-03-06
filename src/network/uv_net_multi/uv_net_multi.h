@@ -10,7 +10,7 @@
 #include <time.h>
 #include "config.h"
 #include "globals.h"
-#include "macro_functions.h"
+#include "macro_functions.h" 
 
 typedef enum {
     STATUS_ERROR,
@@ -54,5 +54,5 @@ void on_connect(uv_connect_t* req, int status);
 void start_connection(client_t* client, const struct sockaddr* addr);
 void on_resolved(uv_getaddrinfo_t *resolver, int status, struct addrinfo *res);
 response_t** send_multi_request(const char **hosts, int port, const char* message);
-
+void cleanup_responses(response_t** responses);
 #endif
