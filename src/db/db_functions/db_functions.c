@@ -709,8 +709,8 @@ int get_database_data_hash(char *data_hash, const char *DATABASE, const char *CO
         for (count = 1; count <= count2; ++count) {
           snprintf(data + strlen(data), sizeof(data) - strlen(data), "reserve_bytes_%zu", count);
           if (count != count2) strncat(data, "\",\"", sizeof(data) - strlen(data) - 1);
-        }
-      }
+        } 
+      } else {}
     } else if (strncmp(COLLECTION, "reserve_proofs", BUFFER_SIZE) == 0) {
         for (count = 1; count <= TOTAL_RESERVE_PROOFS_DATABASES; ++count) {
             snprintf(data + strlen(data), sizeof(data) - strlen(data), "reserve_proofs_%zu", count);
