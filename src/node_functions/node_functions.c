@@ -132,41 +132,36 @@ const char *address_to_node_name(const char *public_address) {
  * 
  * @return int Returns XCASH_OK (1) if successful, XCASH_ERROR (0) if an error occurs.
  */
-bool get_daemon_data(char *current_block_height, char *previous_block_hash) {
-    // Validate pointers
-    if (current_block_height == NULL || previous_block_hash == NULL) {
-        ERROR_PRINT("Invalid buffer for block height or block hash.");
-        return XCASH_ERROR;
-    }
-
+bool get_daemon_data(void) {
     // Get the current block height
     if (!get_current_block_height(current_block_height)) {
         ERROR_PRINT("Could not get the current block height.");
-        return XCASH_ERROR;
+        return false;
     }
 
-    // Convert block height to long and validate
+    // Validate current block height
     long current_height = atol(current_block_height);
     if (current_height <= 0) {
-        ERROR_PRINT("Invalid block height: %s", current_block_height);
-        return XCASH_ERROR;
+        ERROR_PRINT("Invalid block height retrieved: %s", current_block_height);
+        return false;
     }
+
     if (current_height < XCASH_PROOF_OF_STAKE_BLOCK_HEIGHT) {
-        ERROR_PRINT("Current Block Height (%ld) is below DPOPS era. Blockchain data may not be fully synchronized yet.", current_height);
-        return XCASH_ERROR;
+        ERROR_PRINT("Current Block Height (%ld) is below DPOPS era. The blockchain data may not be fully synchronized yet.", current_height);
+        return false;
     }
 
     // Get the previous block hash
     if (!get_previous_block_hash(previous_block_hash)) {
         ERROR_PRINT("Could not get the previous block hash.");
-        return XCASH_ERROR;
+        return false;
     }
 
-    // Check if previous block hash is valid
+    // Validate previous block hash
     if (previous_block_hash[0] == '\0') {
-        ERROR_PRINT("Previous block hash is empty.");
-        return XCASH_ERROR;
+        ERROR_PRINT("Previous block hash is empty. Consider going offline to avoid errors.");
+        return false;
     }
 
-    return XCASH_OK;
+    return true;
 }
