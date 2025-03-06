@@ -29,6 +29,9 @@
 #define INFO_PRINT_STATUS_OK(fmt, ...) do { if (log_level >= LOG_LEVEL_INFO) { fprintf(stderr, BRIGHT_WHITE_TEXT("INFO: ") fmt INFO_STATUS_OK "\n", ##__VA_ARGS__); } } while (0)
 #define INFO_STAGE_PRINT(fmt, ...) do { if (log_level >= LOG_LEVEL_INFO) { fprintf(stderr, BRIGHT_WHITE_TEXT("\n\nINFO: ") LIGHT_BLUE_TEXT(fmt) "\n", ##__VA_ARGS__); } } while (0)
 #define INFO_PRINT_STATUS_FAIL(fmt, ...) do { if (log_level >= LOG_LEVEL_INFO) { fprintf(stderr, BRIGHT_WHITE_TEXT("INFO: ") fmt INFO_STATUS_FAIL "\n", ##__VA_ARGS__); } } while (0)
+#define HOST_OK_STATUS(host, fmt, ...) BLUE_TEXT(host)" "fmt"\t["GREEN_TEXT("OK")"]"
+#define HOST_FALSE_STATUS(host, fmt, ...) BLUE_TEXT(host)" "fmt"\t["RED_TEXT("X")"]"
+
 
 #define COLOR_PRINT(string, color)                            \
     do                                                        \
