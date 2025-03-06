@@ -184,9 +184,10 @@ int upsert_json_to_db(const char *db_name, const xcash_dbs_t collection_id, int 
 
     if (cleanup_db_before_upsert) {
         INFO_PRINT("Cleaning up %s database", collection_name);
-        db_drop(database_name, collection_name, &error);
+        db_drop(DATABASE_NAME, collection_name, &error);
     }
 
+    
     size_t db_data_size = strlen(db_data_source) + 3;  // '[' +db_data_size +']' + \0
     db_data = malloc(db_data_size);
 
