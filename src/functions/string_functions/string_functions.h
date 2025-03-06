@@ -7,6 +7,7 @@
 #include <ctype.h>
 #include <cjson/cJSON.h>
 #include <sys/random.h>
+#include <openssl/md5.h>
 #include <unistd.h>
 #include "config.h"
 #include "globals.h"
