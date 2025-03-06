@@ -203,6 +203,22 @@ bool update_db_from_node(const char *public_address, xcash_dbs_t db_type) {
     return XCASH_OK;
 }
 
+bool check_multi_db_hashes_from_host(const char* sync_source_host, xcash_dbs_t db_type, xcash_db_sync_obj_t ***sync_objs_result) {
+    bool result = false;
+    *sync_objs_result = NULL;
+    response_t **replies = NULL;
+
+    bool send_result = send_db_sync_request_from_host(sync_source_host, db_type, 0, &replies);
+
+    // now prepare sync statuses
+    if (send_result) {
+        result = parse_nodes_sync_reply(replies, db_type, sync_objs_result);
+    }
+    cleanup_responses(replies);
+    
+    return result;
+}
+
 bool update_multi_db_from_node(const char* public_address, xcash_dbs_t db_type) {
     bool result = false;
     xcash_db_sync_obj_t **sync_objs = NULL;
@@ -599,7 +615,7 @@ size_t get_db_sub_count(xcash_dbs_t db_type) {
             break;
         case XCASH_DB_RESERVE_BYTES:
             // TODO replace to my own function
-            get_reserve_bytes_database(dbs_count, 0);
+            get_reserve_bytes_database(dbs_count);
 
             // some nodes could have leftovers from not finished round and in case it's on the next reserve_bytes we have a trouble
             // so, we need to sync next block just in case
@@ -754,24 +770,6 @@ bool send_db_sync_request_from_host(const char* sync_source_host, xcash_dbs_t db
     free(collection_prefixes);
 
     return send_result;
-}
-
-
-
-bool check_multi_db_hashes_from_host(const char* sync_source_host, xcash_dbs_t db_type, xcash_db_sync_obj_t ***sync_objs_result) {
-    bool result = false;
-    *sync_objs_result = NULL;
-    response_t **replies = NULL;
-
-    bool send_result = send_db_sync_request_from_host(sync_source_host, db_type, 0, &replies);
-
-    // now prepare sync statuses
-    if (send_result) {
-        result = parse_nodes_sync_reply(replies, db_type, sync_objs_result);
-    }
-    cleanup_responses(replies);
-    
-    return result;
 }
 
 size_t get_replies_count(response_t** const replies) {
