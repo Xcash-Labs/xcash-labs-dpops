@@ -42,17 +42,16 @@ const char* delegate_keys[NUM_FIELDS] = {
     "public_key",
 };
 
-
 // Helper function to get the position of a delegate in the network_data_nodes_list
 int get_network_data_node_position(const char* public_address) {
     int i = 0;
-    while (network_nodes[i].public_address != NULL) {
-        if (strcmp(public_address, network_nodes[i].public_address) == 0) {
+    while (network_nodes[i].seed_public_address != NULL) {
+        if (strcmp(public_address, network_nodes[i].seed_public_address) == 0) {
             return i;  // Return the index if a match is found
         }
         i++;
     }
-    return -1;  // Return -1 if not found
+    return network_data_nodes_amount + 1;  // Return -1 if not found
 }
 
 // Comparison function for qsort
