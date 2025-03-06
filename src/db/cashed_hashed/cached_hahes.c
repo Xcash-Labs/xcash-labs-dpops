@@ -48,6 +48,23 @@ int del_hash(mongoc_client_t *client, const char *db_name) {
     return result;
 }
 
+/*--------------------------------------------------------------------------------------------------------
+ * @brief Compares two strings for use with qsort or bsearch.
+ * 
+ * @param a Pointer to the first string (const void* for qsort compatibility).
+ * @param b Pointer to the second string (const void* for qsort compatibility).
+ * @return int Returns negative if a < b, 0 if a == b, positive if a > b.
+------------------------------------------------------------------------------------------------------==*/
+int cmpfunc(const void *a, const void *b)
+{
+    // Cast to const char** since a and b are pointers to pointers to char
+    const char *str1 = *(const char **)a;
+    const char *str2 = *(const char **)b;
+
+    // Use strcmp for comparison
+    return strcmp(str1, str2);
+}
+
 /*---------------------------------------------------------------------------------------------------------
  * @brief Update the hash and db_hash for a given collection in the database.
  * 
