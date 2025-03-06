@@ -477,7 +477,7 @@ int drop_all_hashes(mongoc_client_t *client)
     int result = XCASH_OK;
 
     // Get collection
-    collection = mongoc_client_get_collection(client, database_name, "hashes2");
+    collection = mongoc_client_get_collection(client, DATABASE_NAME, "hashes");
     if (!collection) {
         ERROR_PRINT("Failed to get collection: hashes2");
         return XCASH_ERROR;
