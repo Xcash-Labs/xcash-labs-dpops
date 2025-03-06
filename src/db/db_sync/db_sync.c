@@ -882,10 +882,12 @@ bool check_db_has_majority(xcash_dbs_t db_type, xcash_db_sync_obj_t **sync_objs)
             if (sync_objs[i]->db_synced) {
                 majority_count++;
                 INFO_PRINT(HOST_OK_STATUS("%s", " hash matched"),
-                           network_data_nodes_list.network_data_nodes_IP_address[sync_objs[i]->db_node_index]);
+                           network_nodes[sync_objs[i]->db_node_index].ip_address;
+
             } else {
                 INFO_PRINT(HOST_FALSE_STATUS("%s", "hash NOT matched"),
-                           network_data_nodes_list.network_data_nodes_IP_address[sync_objs[i]->db_node_index]);
+                           network_nodes[sync_objs[i]->db_node_index].ip_address;
+
             }
         }
         if (majority_count >= NETWORK_DATA_NODES_VALID_AMOUNT) {
