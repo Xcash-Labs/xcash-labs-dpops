@@ -28,4 +28,7 @@ void show_majority_statistics(const xcash_node_sync_info_t* majority_list, size_
 bool get_sync_nodes_majority_list_top(xcash_node_sync_info_t** majority_list_result, size_t* majority_count_result);
 bool initial_db_sync_check(size_t* majority_count, xcash_node_sync_info_t** majority_list_result);
 
+bool check_sync_nodes_majority_list(response_t** replies, xcash_node_sync_info_t** majority_list_result,
+    size_t* majority_count_result, bool by_top_block_height);
+
 #endif
