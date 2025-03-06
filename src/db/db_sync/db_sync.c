@@ -1238,25 +1238,7 @@ bool get_sync_nodes_majority_list(xcash_node_sync_info_t** majority_list_result,
     *majority_count_result =  majority_count;
     *majority_list_result = majority_list;
 
-
     cleanup_responses(replies);
-    return result;
-}
-
-int get_random_majority(xcash_node_sync_info_t* majority_list, size_t majority_count) {
-    int result =  0;
-    int random_index;
-
-    while (majority_count>0)
-    {
-        random_index = rand() % majority_count;
-
-        // prevent syncing from myself
-        if (strcmp(xcash_wallet_public_address, majority_list[random_index].public_address ) != 0) {
-            result = random_index;
-            break;
-        }
-    }
     return result;
 }
 
