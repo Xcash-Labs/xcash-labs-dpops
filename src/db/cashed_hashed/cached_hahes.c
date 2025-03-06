@@ -95,9 +95,9 @@ int update_hashes(mongoc_client_t *client, const char *db_name, const char *hash
     int result = 0;
 
     // Get collection
-    collection = mongoc_client_get_collection(client, database_name, "hashes2");
+    collection = mongoc_client_get_collection(client, DATABASE_NAME, "hashes");
     if (!collection) {
-        ERROR_PRINT("Failed to get collection: hashes2");
+        ERROR_PRINT("Failed to get collection: hashes");
         return -2;
     }
 
