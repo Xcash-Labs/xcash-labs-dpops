@@ -51,7 +51,6 @@ bool download_db_from_node(const char* host, xcash_dbs_t db_type, int index, cha
 void cleanup_db_sync_results(xcash_db_sync_obj_t** sync_objs_result);
 size_t get_db_sub_count(xcash_dbs_t db_type);
 bool send_db_sync_request_to_all_seeds(xcash_dbs_t db_type, size_t start_db_index, response_t*** reply);
-bool check_multi_db_hashes_from_seeds(xcash_dbs_t db_type, xcash_db_sync_obj_t*** sync_objs_result);
 bool parse_nodes_sync_reply(response_t** replies, xcash_dbs_t db_type, xcash_db_sync_obj_t*** sync_objs_result);
 bool check_db_hashes_from_seeds(xcash_dbs_t db_type, xcash_db_sync_obj_t*** sync_objs_result);
 bool update_db_from_node(const char* public_address, xcash_dbs_t db_type);
@@ -65,7 +64,5 @@ int get_random_majority(xcash_node_sync_info_t* majority_list, size_t majority_c
 bool check_time_sync_to_seeds(void);
 bool init_db_from_seeds(void);
 bool init_db_from_top(void);
-bool synchronize_database_from_specific_delegate(const char* delegate_ip);
-bool synchronize_database_from_network_data_node(void);
 
 #endif

@@ -162,7 +162,7 @@ bool get_node_sync_info(xcash_node_sync_info_t *sync_info) {
  * @param db_type The type of database to update.
  * @return int Returns XCASH_OK (1) if successful, XCASH_ERROR (0) if an error occurs.
  */
-int update_db_from_node(const char *public_address, xcash_dbs_t db_type) {
+bool update_db_from_node(const char *public_address, xcash_dbs_t db_type) {
     if (!public_address) {
         ERROR_PRINT("Invalid public address.");
         return XCASH_ERROR;
@@ -900,35 +900,6 @@ bool update_multi_db_from_node(const char* public_address, xcash_dbs_t db_type) 
     result = updated_applied;
 
     return result;
-}
-
-
-bool update_db_from_node(const char* public_address, xcash_dbs_t db_type) {
-    const char* update_source_host = address_to_node_host(public_address);
-    if (!update_source_host) {
-        ERROR_PRINT("Something is wrong. The address %s not found in current block verifiers, nor the seeds", public_address);
-        return false;
-    }
-
-    INFO_PRINT("Updating %s database from %s ", collection_names[db_type], update_source_host);
-
-    char* db_data_buf = calloc(MAXIMUM_BUFFER_SIZE, 1);
-
-    if (!download_db_from_node(update_source_host, db_type, 0, db_data_buf, MAXIMUM_BUFFER_SIZE)) {
-        ERROR_PRINT("Can't download %s database", collection_names[db_type]);
-        free(db_data_buf);
-        return false;
-    }
-
-    // TODO remove dependencies of global variables
-    if (upsert_json_to_db(DATABASE_NAME, db_type, 0, db_data_buf, false) == XCASH_ERROR) {
-        ERROR_PRINT("Can't upsert %s database", collection_names[db_type]);
-        free(db_data_buf);
-        return false;
-    }
-
-    free(db_data_buf);
-    return true;
 }
 
 bool initial_sync_node(xcash_node_sync_info_t* majority_source) {
