@@ -21,7 +21,7 @@ static inline int handle_error(const char* message, bson_t* document, bson_t* do
 }
 
 // Helper function to get a temporary connection
-static inline mongoc_client_t* get_temporary_connection() {
+static inline mongoc_client_t* get_temporary_connection(void) {
   if (!database_client_thread_pool) {
     ERROR_PRINT("Database client pool is not initialized!");
     return NULL;
