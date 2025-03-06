@@ -1,5 +1,70 @@
 #include "db_sync.h"
 
+bool send_db_sync_request_from_host(const char* sync_source_host, xcash_dbs_t db_type, size_t start_db_index, response_t*** reply) {
+    size_t dbs_count = get_db_sub_count(db_type);
+
+    // prepare parameters for sync update request
+    // +3 it's +1 for reserve bytes setting param, +1 for overall hash, +1 NULL terminate parameter
+    const char **param_list = calloc(dbs_count + 3, sizeof(char *) * 2);
+    char(*hashes)[DB_HASH_SIZE + 1] = calloc(dbs_count + 1, DB_HASH_SIZE + 1);
+    char(*collection_prefixes)[DB_COLLECTION_NAME_SIZE] = calloc(dbs_count + 1, DB_COLLECTION_NAME_SIZE);
+
+    bool all_set = true;
+    const char **current_parameter = param_list;
+
+    const char *reserve_bytes_settings_str = "reserve_bytes_settings";
+    const char *reserve_bytes_settings_param_str = "0";
+
+    for (size_t i = start_db_index; i <= dbs_count; i++) {
+        // this part is for database names
+        if (i > 0) {
+            snprintf(collection_prefixes[i], DB_COLLECTION_NAME_SIZE, "%s_%ld", collection_names[db_type], i);
+        } else {
+            snprintf(collection_prefixes[i], DB_COLLECTION_NAME_SIZE, "%s", collection_names[db_type]);
+        }
+
+        if (!get_db_data_hash(collection_prefixes[i], hashes[i])) {
+            ERROR_PRINT("Can't get hash for %s db", collection_prefixes[i]);
+            all_set = false;
+            break;
+            ;
+        }
+
+        // TODO fix message format
+        // this part is for field names
+        if (i > 0) {
+            snprintf(collection_prefixes[i], DB_COLLECTION_NAME_SIZE, "%s_data_hash_%ld", collection_names[db_type], i);
+        } else {
+            snprintf(collection_prefixes[i], DB_COLLECTION_NAME_SIZE, "%s_data_hash", collection_names[db_type]);
+        }
+
+        if (i == 0 && db_type == XCASH_DB_RESERVE_BYTES) {
+            *current_parameter++ = reserve_bytes_settings_str;
+            *current_parameter++ = reserve_bytes_settings_param_str;
+        }
+
+        *current_parameter++ = (char *)&collection_prefixes[i];
+        *current_parameter++ = (char *)&hashes[i];
+    }
+
+    if (!all_set) {
+        free(param_list);
+        free(hashes);
+        free(collection_prefixes);
+        return false;
+    }
+
+    bool send_result =
+        send_direct_message_param_list(sync_source_host, xcash_db_sync_messages[db_type], reply, param_list);
+
+    // cleanup
+    free(param_list);
+    free(hashes);
+    free(collection_prefixes);
+
+    return send_result;
+}
+
 void show_majority_statistics(const xcash_node_sync_info_t* majority_list, size_t items_count) {
     if (!majority_list || items_count == 0) {
         WARNING_PRINT("No valid nodes in majority list. The network might be offline.");
@@ -694,75 +759,6 @@ bool send_db_sync_request_to_all_seeds(xcash_dbs_t db_type, size_t start_db_inde
 
     bool send_result =
         send_message_param_list(XNET_SEEDS_ALL_ONLINE, xcash_db_sync_messages[db_type], reply, param_list);
-
-    // cleanup
-    free(param_list);
-    free(hashes);
-    free(collection_prefixes);
-
-    return send_result;
-}
-
-
-
-
-bool send_db_sync_request_from_host(const char* sync_source_host, xcash_dbs_t db_type, size_t start_db_index, response_t*** reply) {
-    size_t dbs_count = get_db_sub_count(db_type);
-
-    // prepare parameters for sync update request
-    // +3 it's +1 for reserve bytes setting param, +1 for overall hash, +1 NULL terminate parameter
-    const char **param_list = calloc(dbs_count + 3, sizeof(char *) * 2);
-    char(*hashes)[DB_HASH_SIZE + 1] = calloc(dbs_count + 1, DB_HASH_SIZE + 1);
-    char(*collection_prefixes)[DB_COLLECTION_NAME_SIZE] = calloc(dbs_count + 1, DB_COLLECTION_NAME_SIZE);
-
-    bool all_set = true;
-    const char **current_parameter = param_list;
-
-    const char *reserve_bytes_settings_str = "reserve_bytes_settings";
-    const char *reserve_bytes_settings_param_str = "0";
-
-    for (size_t i = start_db_index; i <= dbs_count; i++) {
-        // this part is for database names
-        if (i > 0) {
-            snprintf(collection_prefixes[i], DB_COLLECTION_NAME_SIZE, "%s_%ld", collection_names[db_type], i);
-        } else {
-            snprintf(collection_prefixes[i], DB_COLLECTION_NAME_SIZE, "%s", collection_names[db_type]);
-        }
-
-        if (!get_db_data_hash(collection_prefixes[i], hashes[i])) {
-            ERROR_PRINT("Can't get hash for %s db", collection_prefixes[i]);
-            all_set = false;
-            break;
-            ;
-        }
-
-        // TODO fix message format
-        // fuck! stupid format!
-        // this part is for field names
-        if (i > 0) {
-            snprintf(collection_prefixes[i], DB_COLLECTION_NAME_SIZE, "%s_data_hash_%ld", collection_names[db_type], i);
-        } else {
-            snprintf(collection_prefixes[i], DB_COLLECTION_NAME_SIZE, "%s_data_hash", collection_names[db_type]);
-        }
-
-        if (i == 0 && db_type == XCASH_DB_RESERVE_BYTES) {
-            *current_parameter++ = reserve_bytes_settings_str;
-            *current_parameter++ = reserve_bytes_settings_param_str;
-        }
-
-        *current_parameter++ = (char *)&collection_prefixes[i];
-        *current_parameter++ = (char *)&hashes[i];
-    }
-
-    if (!all_set) {
-        free(param_list);
-        free(hashes);
-        free(collection_prefixes);
-        return false;
-    }
-
-    bool send_result =
-        send_direct_message_param_list(sync_source_host, xcash_db_sync_messages[db_type], reply, param_list);
 
     // cleanup
     free(param_list);
@@ -1469,7 +1465,7 @@ bool init_db_from_top(void) {
         };
     }
     if (result) {
-        INFO_PRINT_STATUS_OK("Database successfully synced")
+        INFO_PRINT_STATUS_OK("Database successfully synced");
     }
 
     return result;
