@@ -1336,7 +1336,7 @@ bool check_time_sync_to_seeds(void) {
 
     if (send_result && replies) {
 
-        for (size_t i = 0; replies && i < NETWORK_DATA_NODES_AMOUNT; i++) {
+        for (size_t i = 0; replies && i < network_data_nodes_amount; i++) {
             if (replies[i]->status== STATUS_OK) {
                 // FIXME switch to normal json parsing
                 if (parse_json_data(replies[i]->data, "current_time", node_time_buf, sizeof(node_time_buf)) == 0 ||
