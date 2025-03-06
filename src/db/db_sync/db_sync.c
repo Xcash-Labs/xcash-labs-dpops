@@ -1470,7 +1470,6 @@ bool get_actual_nodes_list(bool is_seeds_offline) {
     return result;
 }
 
-
 int compare_sync_hashed_node_data(const void* a, const void* b) {
     const xcash_db_sync_prehash_t* node1 = (const xcash_db_sync_prehash_t* )a;
     const xcash_db_sync_prehash_t* node2 = (const xcash_db_sync_prehash_t* )b;
@@ -1539,10 +1538,6 @@ xcash_node_sync_info_t** make_nodes_majority_list(xcash_node_sync_info_t* sync_s
 
     return sync_states_sorted_list;
 }
-
-
-
-
 
 bool get_sync_seeds_majority_list(xcash_node_sync_info_t** majority_list_result, size_t* majority_count_result) {
     bool result = false;
