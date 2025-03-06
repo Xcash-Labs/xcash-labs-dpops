@@ -2,9 +2,7 @@
 #define __XCASH_DB_HELPERS_H
 
 #include <bson/bson.h>
-#include "db_operations.h"
 #include "cached_hashes.h"
-
 #include "config.h"
 #include "globals.h"
 #include "macro_functions.h"
