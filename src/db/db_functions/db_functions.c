@@ -752,3 +752,83 @@ int get_database_data(char* database_data, const char* DATABASE, const char* COL
   if (cursor) mongoc_cursor_destroy(cursor);
   return XCASH_OK;
 }
+
+/**
+ * @brief Retrieves a specific field's data from the "hashes2" collection.
+ * 
+ * @param client MongoDB client connection.
+ * @param db_name Name of the database.
+ * @param field_name Name of the field to retrieve.
+ * @param data Buffer to store the retrieved data.
+ * @return int Returns XCASH_OK (1) if successful, XCASH_ERROR (0) if an error occurs.
+ */
+int get_data(mongoc_client_t *client, const char *db_name, const char *field_name, char *data)
+{
+    if (!client || !db_name || !field_name || !data) {
+        return handle_error("Invalid arguments passed to get_data.", NULL, NULL, NULL, NULL);
+    }
+
+    bson_t *query = NULL;
+    bson_t *opts = NULL;
+    mongoc_collection_t *collection = NULL;
+    mongoc_cursor_t *cursor = NULL;
+    const bson_t *doc = NULL;
+    bson_iter_t iter;
+    bson_iter_t field;
+    int result = XCASH_ERROR;
+    uint32_t len = 0;
+
+    // Get collection
+    collection = mongoc_client_get_collection(client, DATABASE_NAME, "hashes");
+    if (!collection) {
+        return handle_error("Failed to get collection: hashes.", NULL, NULL, collection, NULL);
+    }
+
+    // Create query to find documents by db_name
+    query = BCON_NEW("db_name", BCON_UTF8(db_name));
+    if (!query) {
+        return handle_error("Failed to create query.", query, NULL, collection, NULL);
+    }
+
+    // Create options for projection (only the specified field, exclude _id)
+    opts = BCON_NEW("projection", "{",
+                    field_name, BCON_BOOL(true),
+                    "_id", BCON_BOOL(false),
+                    "}");
+    if (!opts) {
+        return handle_error("Failed to create options.", query, opts, collection, NULL);
+    }
+
+    // Execute query
+    cursor = mongoc_collection_find_with_opts(collection, query, opts, NULL);
+    if (!cursor) {
+        return handle_error("Failed to execute query.", query, opts, collection, cursor);
+    }
+
+    // Process query results
+    while (mongoc_cursor_next(cursor, &doc))
+    {
+        if (bson_iter_init(&iter, doc) &&
+            bson_iter_find_descendant(&iter, field_name, &field) &&
+            BSON_ITER_HOLDS_UTF8(&field))
+        {
+            const char *retrieved_data = bson_iter_utf8(&field, &len);
+            if (len < BUFFER_SIZE) {  // Prevent buffer overflow
+                strncpy(data, retrieved_data, len);
+                data[len] = '\0';  // Ensure null termination
+                result = XCASH_OK;
+            } else {
+                ERROR_PRINT("Retrieved data exceeds buffer size.");
+                result = XCASH_ERROR;
+                break;
+            }
+        }
+    }
+
+    if (mongoc_cursor_error(cursor, NULL)) {
+        return handle_error("Cursor error occurred while fetching data.", query, opts, collection, cursor);
+    }
+
+    free_resources(query, opts, collection, cursor);
+    return result;
+}
