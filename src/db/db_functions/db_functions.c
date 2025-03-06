@@ -838,3 +838,39 @@ int get_data(mongoc_client_t *client, const char *db_name, const char *field_nam
 
     return result;
 }
+
+/**
+ * @brief Selects a random valid index from the majority list, avoiding self-selection.
+ * 
+ * @param majority_list Pointer to the array of majority nodes.
+ * @param majority_count The number of items in the majority list.
+ * @return int The index of a randomly selected node, avoiding self-selection. Returns -1 on error.
+ */
+int get_random_majority(const xcash_node_sync_info_t *majority_list, size_t majority_count) {
+    // Validate input
+    if (!majority_list || majority_count == 0) {
+        ERROR_PRINT("Invalid majority list or zero count.");
+        return -1;  // Return -1 to indicate an error
+    }
+
+    // Attempt to find a valid random index that is not self
+    for (size_t attempt = 0; attempt < majority_count * 2; ++attempt) {
+        int random_index = rand() % majority_count;
+
+        // Prevent syncing from self
+        if (strcmp(xcash_wallet_public_address, majority_list[random_index].public_address) != 0) {
+            return random_index;  // Return immediately on valid random index
+        }
+    }
+
+    // If random selection fails, fallback to a linear search
+    for (size_t i = 0; i < majority_count; ++i) {
+        if (strcmp(xcash_wallet_public_address, majority_list[i].public_address) != 0) {
+            return (int)i;  // Return first valid non-self index
+        }
+    }
+
+    // If all nodes are self, return error
+    ERROR_PRINT("No valid majority node found that is not self.");
+    return -1;  // Return -1 if no valid node is found
+}
