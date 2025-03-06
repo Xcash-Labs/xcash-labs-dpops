@@ -14,6 +14,7 @@ char current_round_part[2];
 char current_round_part_backup_node[2];
 mongoc_client_pool_t* database_client_thread_pool = NULL;
 pthread_rwlock_t rwlock;
+pthread_mutex_t hash_mutex = PTHREAD_MUTEX_INITIALIZER;
 const char *collection_names[XCASH_DB_COUNT] = {"delegates", "statistics", "reserve_proofs", "reserve_bytes"};
 
 
@@ -200,8 +201,8 @@ Description: Clean up before ending
 void cleanup_data_structures(void) {
 
   pthread_rwlock_destroy(&rwlock);
+  pthread_mutex_destroy(&hash_mutex);
 
-;
   // add more later......
 
 

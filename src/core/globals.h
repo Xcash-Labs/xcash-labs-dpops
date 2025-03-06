@@ -32,6 +32,7 @@ extern const char* collection_names[XCASH_DB_COUNT];
 extern mongoc_client_pool_t* database_client_thread_pool;  // database
 
 extern pthread_rwlock_t rwlock;
+extern pthread_mutex_t hash_mutex;
 
 
 

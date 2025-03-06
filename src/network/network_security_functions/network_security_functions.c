@@ -84,7 +84,11 @@ int sign_data(char *message)
   }
 
   // Read lock for previous block hash
-  pthread_rwlock_rdlock(&rwlock);
+//  pthread_rwlock_rdlock(&rwlock);
+  if (pthread_rwlock_tryrdlock(&rwlock) != 0)
+  {
+    return handle_error("sign_data", "Failed to acquire read lock.", result, string);
+  }
 
   // Ensure previous block hash is set
   if (strlen(previous_block_hash) == 0)
