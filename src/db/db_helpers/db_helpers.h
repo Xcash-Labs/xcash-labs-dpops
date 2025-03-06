@@ -6,6 +6,7 @@
 #include "config.h"
 #include "globals.h"
 #include "macro_functions.h"
+#include "db_operations.h"
 
 int upsert_json_to_db(const char *db_name, const xcash_dbs_t collection_id, int db_file_index,
                       const char *db_data_source, bool json_array);
