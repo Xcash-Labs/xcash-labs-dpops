@@ -1,7 +1,5 @@
 #include "db_helpers.h"
 
-const char *collection_names[XCASH_DB_COUNT] = {"delegates", "statistics", "reserve_proofs", "reserve_bytes"};
-
 bson_t *assign_ids(bson_t *docs, xcash_dbs_t collection_id) {
     const char *key_name = NULL;
     const char *key_name_fmt = NULL;
@@ -187,7 +185,7 @@ int upsert_json_to_db(const char *db_name, const xcash_dbs_t collection_id, int 
         db_drop(DATABASE_NAME, collection_name, &error);
     }
 
-    
+
     size_t db_data_size = strlen(db_data_source) + 3;  // '[' +db_data_size +']' + \0
     db_data = malloc(db_data_size);
 
