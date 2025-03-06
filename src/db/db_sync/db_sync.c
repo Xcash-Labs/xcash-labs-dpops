@@ -149,6 +149,81 @@ int initial_sync_node(const xcash_node_sync_info_t *majority_source) {
     return XCASH_OK;  // Sync successful
 }
 
+/**
+ * @brief Retrieves the synchronization information of the local node.
+ * 
+ * @param sync_info Pointer to the structure to store the sync information.
+ * @return int Returns XCASH_OK (1) if successful, XCASH_ERROR (0) if an error occurs.
+ */
+int get_node_sync_info(xcash_node_sync_info_t *sync_info) {
+    if (!sync_info) {
+        ERROR_PRINT("Invalid sync_info pointer.");
+        return XCASH_ERROR;
+    }
+
+    size_t reserve_bytes_db_index = 0;
+    size_t prev_reserve_bytes_db_index = 0;
+    size_t block_height = 0;
+
+    char db_collection_name[DB_COLLECTION_NAME_SIZE] = {0};
+    char prev_block_height_str[DB_COLLECTION_NAME_SIZE] = {0};
+
+    memset(sync_info, 0, sizeof(xcash_node_sync_info_t));
+
+    // Get maximum block height and reserve bytes DB index
+    if (get_db_max_block_height(database_name, &block_height, &reserve_bytes_db_index) < 0) {
+        ERROR_PRINT("Can't get DB block height.");
+        return XCASH_ERROR;
+    }
+
+    sync_info->block_height = block_height;
+
+    // Copy public address to sync_info
+    strncpy(sync_info->public_address, xcash_wallet_public_address, XCASH_PUBLIC_ADDR_LENGTH);
+    sync_info->public_address[XCASH_PUBLIC_ADDR_LENGTH] = '\0';  // Ensure null termination
+
+    // Calculate previous reserve bytes DB index
+    if (block_height > XCASH_PROOF_OF_STAKE_BLOCK_HEIGHT) {
+        prev_reserve_bytes_db_index = ((block_height - 1 - XCASH_PROOF_OF_STAKE_BLOCK_HEIGHT) / BLOCKS_PER_DAY_FIVE_MINUTE_BLOCK_TIME) + 1;
+    } else {
+        prev_reserve_bytes_db_index = 1;  // Fallback if block height is too low
+    }
+
+    // Prepare collection name and previous block height string
+    snprintf(db_collection_name, sizeof(db_collection_name), "reserve_bytes_%zu", prev_reserve_bytes_db_index);
+    snprintf(prev_block_height_str, sizeof(prev_block_height_str), "%zu", block_height - 1);
+
+    bson_error_t error;
+    int64_t count = 0;
+
+    // Check if reserve bytes for previous block exist
+    bson_t *filter = BCON_NEW("block_height", BCON_UTF8(prev_block_height_str));
+    if (!filter) {
+        ERROR_PRINT("Failed to create BSON filter.");
+        return XCASH_ERROR;
+    }
+
+    sync_info->db_reserve_bytes_synced = XCASH_OK;  // Assume synced initially
+
+    if (!db_count_doc_by(database_name, db_collection_name, filter, &count, &error) || count <= 0) {
+        DEBUG_PRINT("Reserve bytes for previous block %zu not found. DB not fully synced.", block_height);
+        sync_info->db_reserve_bytes_synced = XCASH_ERROR;  // Not synced
+    }
+
+    bson_destroy(filter);
+
+    // Fill hashes for each DB
+    for (size_t i = 0; i < DATABASE_TOTAL; i++) {
+        if (!get_db_data_hash(collection_names[i], sync_info->db_hashes[i])) {
+            ERROR_PRINT("Can't get hash for DB %s", collection_names[i]);
+            memset(sync_info, 0, sizeof(xcash_node_sync_info_t));  // Clear sync_info on error
+            return XCASH_ERROR;
+        }
+    }
+
+    return XCASH_OK;  // Sync info retrieval successful
+}
+
 /*---------------------------------------------------------------------------------------------------------
 Name: initial_db_sync_check
 Description: Check data integrity and return majority_list and count of majority_list nodes
