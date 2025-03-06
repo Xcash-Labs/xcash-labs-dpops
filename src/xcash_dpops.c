@@ -16,7 +16,7 @@ mongoc_client_pool_t* database_client_thread_pool = NULL;
 pthread_rwlock_t rwlock;
 pthread_mutex_t hash_mutex = PTHREAD_MUTEX_INITIALIZER;
 const char *collection_names[XCASH_DB_COUNT] = {"delegates", "statistics", "reserve_proofs", "reserve_bytes"};
-
+bool cleanup_db_before_upsert = false; // delete db before put content. make sure we have exact copy during initial db syncing
 
 struct main_nodes_list main_nodes_list = {0};
 block_verifiers_list_t previous_block_verifiers_list;

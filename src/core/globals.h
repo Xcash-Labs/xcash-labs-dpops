@@ -27,7 +27,7 @@ extern block_verifiers_list_t previous_block_verifiers_list; // The list of bloc
 extern block_verifiers_list_t current_block_verifiers_list; // The list of block verifiers name, public address and IP address for the current round
 extern block_verifiers_list_t next_block_verifiers_list; // The list of block verifiers name, public address and IP address for the next round
 extern const char* collection_names[XCASH_DB_COUNT];
-
+extern bool cleanup_db_before_upsert;
 
 extern mongoc_client_pool_t* database_client_thread_pool;  // database
 
