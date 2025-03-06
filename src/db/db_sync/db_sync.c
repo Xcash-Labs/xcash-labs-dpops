@@ -156,6 +156,54 @@ int get_node_sync_info(xcash_node_sync_info_t *sync_info) {
 }
 
 /**
+ * @brief Updates a database from a remote node based on the provided public address.
+ * 
+ * @param public_address The public address of the remote node.
+ * @param db_type The type of database to update.
+ * @return int Returns XCASH_OK (1) if successful, XCASH_ERROR (0) if an error occurs.
+ */
+int update_db_from_node(const char *public_address, xcash_dbs_t db_type) {
+    if (!public_address) {
+        ERROR_PRINT("Invalid public address.");
+        return XCASH_ERROR;
+    }
+
+    const char *update_source_host = address_to_node_host(public_address);
+    if (!update_source_host) {
+        ERROR_PRINT("Address %s not found in current block verifiers or seeds.", public_address);
+        return XCASH_ERROR;
+    }
+
+    INFO_PRINT("Updating %s database from %s", collection_names[db_type], update_source_host);
+
+    // Allocate memory for the database buffer
+    char *db_data_buf = calloc(MAXIMUM_BUFFER_SIZE, 1);
+    if (!db_data_buf) {
+        ERROR_PRINT("Memory allocation failed for database buffer.");
+        return XCASH_ERROR;
+    }
+
+    // Download the database from the remote node
+    if (!download_db_from_node(update_source_host, db_type, 0, db_data_buf, MAXIMUM_BUFFER_SIZE)) {
+        ERROR_PRINT("Failed to download %s database from %s.", collection_names[db_type], update_source_host);
+        free(db_data_buf);
+        return XCASH_ERROR;
+    }
+
+    // Upsert the downloaded data into the local database
+    int upsert_result = upsert_json_to_db(database_name, db_type, 0, db_data_buf, false);
+    free(db_data_buf);  // Free memory for the database buffer
+
+    if (upsert_result == XCASH_ERROR) {
+        ERROR_PRINT("Failed to upsert %s database.", collection_names[db_type]);
+        return XCASH_ERROR;
+    }
+
+    INFO_PRINT("Successfully updated %s database.", collection_names[db_type]);
+    return XCASH_OK;
+}
+
+/**
  * @brief Synchronizes the local node with the majority source node.
  * 
  * @param majority_source Pointer to the majority source node's sync info.
