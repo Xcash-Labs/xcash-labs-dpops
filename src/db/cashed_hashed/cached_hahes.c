@@ -48,14 +48,95 @@ int del_hash(mongoc_client_t *client, const char *db_name) {
     return result;
 }
 
-/**
+/*---------------------------------------------------------------------------------------------------------
+ * @brief Update the hash and db_hash for a given collection in the database.
+ * 
+ * @param client MongoDB client connection.
+ * @param db_name Name of the database collection.
+ * @param hash 128-byte zero-padded MD5 hash.
+ * @param db_hash 32-byte short MD5 hash.
+ * @return int Returns 0 if successful, <0 for error codes.
+-------------------------------------------------------------------------------------------------------*/
+int update_hashes(mongoc_client_t *client, const char *db_name, const char *hash, const char *db_hash)
+{
+    if (!client || !db_name || !hash || !db_hash) {
+        ERROR_PRINT("Invalid arguments passed to update_hashes.");
+        return -1;
+    }
+
+    // Check if db_hash is for an empty collection (MD5 of empty string)
+    if (strcmp(db_hash, "d41d8cd98f00b204e9800998ecf8427e") == 0) {
+        INFO_PRINT("Skipping update for empty collection: %s", db_name);
+        return 0;  // Do not store hashes for empty collections
+    }
+
+    mongoc_collection_t *collection = NULL;
+    bson_t *filter = NULL;
+    bson_t *update = NULL;
+    bson_t *opts = NULL;
+    bson_error_t error;
+    int result = 0;
+
+    // Get collection
+    collection = mongoc_client_get_collection(client, database_name, "hashes2");
+    if (!collection) {
+        ERROR_PRINT("Failed to get collection: hashes2");
+        return -2;
+    }
+
+    // Create BSON documents for filter, update, and options
+    filter = BCON_NEW("db_name", BCON_UTF8(db_name));
+    if (!filter) {
+        ERROR_PRINT("Failed to create BSON filter.");
+        result = -3;
+        goto cleanup;
+    }
+
+    update = BCON_NEW("$set",
+                      "{",
+                      "db_hash", BCON_UTF8(db_hash),
+                      "hash", BCON_UTF8(hash),
+                      "}");
+    if (!update) {
+        ERROR_PRINT("Failed to create BSON update.");
+        result = -4;
+        goto cleanup;
+    }
+
+    opts = BCON_NEW("upsert", BCON_BOOL(true));
+    if (!opts) {
+        ERROR_PRINT("Failed to create BSON options.");
+        result = -5;
+        goto cleanup;
+    }
+
+    // Perform the update operation
+    if (!mongoc_collection_update_one(collection, filter, update, opts, NULL, &error)) {
+        ERROR_PRINT("Failed to update hashes for %s: %s", db_name, error.message);
+        result = -6;
+        goto cleanup;
+    }
+
+    INFO_PRINT("Successfully updated hashes for collection: %s", db_name);
+
+cleanup:
+    // Cleanup allocated resources
+    if (filter) bson_destroy(filter);
+    if (update) bson_destroy(update);
+    if (opts) bson_destroy(opts);
+    if (collection) mongoc_collection_destroy(collection);
+
+    return result;
+}
+
+/*---------------------------------------------------------------------------------------------------------
  * @brief Get the MD5 hash of the specified database.
  * 
  * @param client MongoDB client connection.
  * @param db_name Name of the database collection.
  * @param db_hash Pointer to a 32-byte short MD5 hash buffer.
  * @return int Returns 0 if successful, <0 for error codes.
- */
+-------------------------------------------------------------------------------------------------------*/
 int get_dbhash(mongoc_client_t *client, const char *db_name, char *db_hash)
 {
     if (!client || !db_name || !db_hash) {
