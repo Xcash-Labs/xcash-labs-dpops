@@ -92,11 +92,11 @@ int VRF_sign_data(char *beta_string, char *proof, const char *data)
     }
 
     // Convert proof and beta_string to hexadecimal format
-    for (int i = 0; i < crypto_vrf_PROOFBYTES; i++) {
+    for (size_t i = 0; i < crypto_vrf_PROOFBYTES; i++) {
         snprintf(proof + (i * 2), 3, "%02x", proof_data[i]);
     }
 
-    for (int i = 0; i < crypto_vrf_OUTPUTBYTES; i++) {
+    for (size_t i = 0; i < crypto_vrf_OUTPUTBYTES; i++) {
         snprintf(beta_string + (i * 2), 3, "%02x", beta_string_data[i]);
     }
 
