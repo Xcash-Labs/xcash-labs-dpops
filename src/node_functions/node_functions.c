@@ -40,7 +40,7 @@ int get_seed_node_count() {
  * @param settings 0 for current block's reserve bytes, 1 for previous block's.
  * @return int XCASH_OK if successful, XCASH_ERROR if an error occurs.
 -----------------------------------------------------------------------------------------------------------*/
-int get_reserve_bytes_database(size_t* count) {
+bool get_reserve_bytes_database(size_t* count) {
     if (!count) {
       ERROR_PRINT("Invalid argument: count cannot be NULL.");
       return XCASH_ERROR;

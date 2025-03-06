@@ -193,25 +193,28 @@ int get_hash(mongoc_client_t *client, const char *db_name, char *hash)
     return result;
 }
 
-int get_multi_hash(mongoc_client_t *client, const char *db_prefix, char *hash)
-{
-    // Validate input pointers early
-    if (!client || !db_prefix || !hash) {
-        ERROR_PRINT("Invalid arguments passed to get_multi_hash");
-        return -1;  // Return error if any input is NULL
+int get_multi_hash(mongoc_client_t *client, const char *db_prefix, char *hash) {
+  // Validate input pointers early
+  if (!client || !db_prefix || !hash) {
+    ERROR_PRINT("Invalid arguments passed to get_multi_hash");
+    return -1;
+  }
+
+  size_t reserve_bytes_index = 0;  // Initialize to avoid undefined behavior
+
+  if (strcmp(db_prefix, "reserve_bytes") == 0) {
+    if (get_reserve_bytes_database(&reserve_bytes_index)) {
+      return calc_multi_hash(client, db_prefix, reserve_bytes_index, hash);
+    } else {
+        ERROR_PRINT("Failed to get reserver bytes database.");
+        return -1; 
     }
+  }
 
-    size_t reserve_bytes_index = 0;  // Initialize to avoid undefined behavior
+  if (strcmp(db_prefix, "reserve_proofs") == 0) {
+    return calc_multi_hash(client, db_prefix, TOTAL_RESERVE_PROOFS_DATABASES, hash);
+  }
 
-    if (strcmp(db_prefix, "reserve_bytes") == 0) {
-        get_reserve_bytes_database(reserve_bytes_index);
-        return calc_multi_hash(client, db_prefix, reserve_bytes_index, hash);
-    } 
-
-    if (strcmp(db_prefix, "reserve_proofs") == 0) {
-        return calc_multi_hash(client, db_prefix, TOTAL_RESERVE_PROOFS_DATABASES, hash);
-    }
-
-    // Default case for other databases
-    return get_hash(client, db_prefix, hash);
+  // Default case for other databases
+  return get_hash(client, db_prefix, hash);
 }
