@@ -62,7 +62,7 @@ int cmpfunc(const void *a, const void *b)
     const char *str2 = *(const char **)b;
 
     // Use strcmp for comparison
-    return strcmp(str1, str2);
+    return strcmp(const str1, const str2);
 }
 
 /*---------------------------------------------------------------------------------------------------------
