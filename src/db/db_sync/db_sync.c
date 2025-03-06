@@ -86,7 +86,7 @@ int get_random_majority(xcash_node_sync_info_t *majority_list, size_t majority_c
  * @param sync_info Pointer to the structure to store the sync information.
  * @return int Returns XCASH_OK (1) if successful, XCASH_ERROR (0) if an error occurs.
  */
-int get_node_sync_info(xcash_node_sync_info_t *sync_info) {
+bool get_node_sync_info(xcash_node_sync_info_t *sync_info) {
     if (!sync_info) {
         ERROR_PRINT("Invalid sync_info pointer.");
         return XCASH_ERROR;
@@ -451,72 +451,6 @@ bool check_sync_nodes_majority_list(response_t** replies, xcash_node_sync_info_t
     free(sync_states_list);
     return true;
 }
-
-bool get_node_sync_info(xcash_node_sync_info_t* sync_info) {
-    bool result = false;
-
-    size_t reserve_bytes_db_index;
-    size_t prev_reserve_bytes_db_index;
-    size_t block_height;
-
-    char db_collection_name[DB_COLLECTION_NAME_SIZE];
-    char prev_block_height_str[DB_COLLECTION_NAME_SIZE];
-
-    memset(sync_info, 0, sizeof(xcash_node_sync_info_t));
-
-
-    if (get_db_max_block_height(DATABASE_NAME, &block_height, &reserve_bytes_db_index) < 0) {
-        ERROR_PRINT("can't get DB block height");
-        return false;
-    }
-
-    sync_info->block_height = block_height;
-
-    // fill the identifier of node
-    strcpy(sync_info->public_address, xcash_wallet_public_address);
-
-
-    prev_reserve_bytes_db_index = ((block_height-1 - XCASH_PROOF_OF_STAKE_BLOCK_HEIGHT) / BLOCKS_PER_DAY_FIVE_MINUTE_BLOCK_TIME) + 1;
-
-    sprintf(db_collection_name, "reserve_bytes_%zu", prev_reserve_bytes_db_index);
-    sprintf(prev_block_height_str, "%zu", block_height-1);
-
-
-    bson_error_t error;
-    int64_t count = 0;
-    bson_t *filter = BCON_NEW("block_height", BCON_UTF8(prev_block_height_str));
-
-
-    sync_info->db_reserve_bytes_synced = true;
-
-    if (!db_count_doc_by(DATABASE_NAME, db_collection_name, filter, &count, &error) || count <=0) {
-      DEBUG_PRINT("Reserve bytes for previous block %zu not found. DB not fully synced", block_height);
-      sync_info->db_reserve_bytes_synced = false;
-    }
-
-    bson_destroy(filter);
-
-    // fill hashes for each DB
-    bool all_set_valid = true;
-    for (size_t i = 0; i < DATABASE_TOTAL; i++) {
-        if (!get_db_data_hash(collection_names[i], sync_info->db_hashes[i])) {
-            ERROR_PRINT("Can't get hash for DB %s", collection_names[i]);
-            all_set_valid = false;
-            break;
-        }
-    }
-
-    result = all_set_valid;
-
-    if (!result) {
-        // clean up from unfinished data
-        memset(sync_info, 0, sizeof(xcash_node_sync_info_t));
-    }
-    return result;
-
-}
-
-
 
 bool download_db_from_node(const char *host, xcash_dbs_t db_type, int db_file_index, char *result_db_data_buf,
                            size_t result_db_data_buf_size) {
