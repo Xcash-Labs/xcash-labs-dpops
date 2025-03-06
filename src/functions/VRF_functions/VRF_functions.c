@@ -1,13 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/random.h>
-
-#include "macro_functions.h"
-#include "config.h"
-#include "convert.h"
-#include "vrf.h"
-#include "crypto_vrf.h"
 #include "VRF_functions.h"
 
 /*---------------------------------------------------------------------------------------------------------
