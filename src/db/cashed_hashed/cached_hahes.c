@@ -457,3 +457,42 @@ int get_multi_hash(mongoc_client_t *client, const char *db_prefix, char *hash) {
   // Default case for other databases
   return get_hash(client, db_prefix, hash);
 }
+
+
+/*---------------------------------------------------------------------------------------------------------
+ * @brief Drops all documents in the "hashes2" collection of the specified database.
+ * 
+ * @param client MongoDB client connection.
+ * @return int Returns XCASH_OK (1) if successful, XCASH_ERROR (0) if an error occurs.
+---------------------------------------------------------------------------------------------------------*/
+int drop_all_hashes(mongoc_client_t *client)
+{
+    if (!client) {
+        ERROR_PRINT("Invalid MongoDB client.");
+        return XCASH_ERROR;
+    }
+
+    mongoc_collection_t *collection = NULL;
+    bson_error_t error;
+    int result = XCASH_OK;
+
+    // Get collection
+    collection = mongoc_client_get_collection(client, database_name, "hashes2");
+    if (!collection) {
+        ERROR_PRINT("Failed to get collection: hashes2");
+        return XCASH_ERROR;
+    }
+
+    // Drop collection
+    if (!mongoc_collection_drop_with_opts(collection, NULL, &error)) {
+        ERROR_PRINT("Failed to drop collection 'hashes2': %s", error.message);
+        result = XCASH_ERROR;
+    } else {
+        INFO_PRINT("Successfully dropped all documents in collection 'hashes2'.");
+    }
+
+    // Cleanup
+    mongoc_collection_destroy(collection);
+
+    return result;
+}
