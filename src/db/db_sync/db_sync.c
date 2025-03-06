@@ -682,7 +682,7 @@ size_t get_db_sub_count(xcash_dbs_t db_type) {
             break;
         case XCASH_DB_RESERVE_BYTES:
             // TODO replace to my own function
-            get_reserve_bytes_database(dbs_count);
+            get_reserve_bytes_database(&dbs_count);
 
             // some nodes could have leftovers from not finished round and in case it's on the next reserve_bytes we have a trouble
             // so, we need to sync next block just in case
