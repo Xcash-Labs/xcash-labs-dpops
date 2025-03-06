@@ -1,4 +1,4 @@
-#ifndef DEFINE_CONFIG_H_   /* Include guard */
+#ifndef CONFIG_H_   /* Include guard */
 #define CONFIG_H_
 
 #include <stdbool.h>
@@ -43,14 +43,12 @@
 #define MAXIMUM_BUFFER_SIZE 52428800 // 50 MB                                   ???????????????????????????
 #define DATA_HASH_LENGTH 128 // The length of the SHA2-512 hash
 #define XCASH_PUBLIC_ADDR_LENGTH 98 // The length of a XCA address
-#define VRF_SECRET_KEY_LENGTH 128 // Length of VRF Secret Key
 #define XCASH_WALLET_LENGTH 98 // The length of a XCA addres
 #define BLOCK_HASH_LENGTH 64 // The length of the block hash
 #define RANDOM_STRING_LENGTH 100 // The length of the random string
 #define XCASH_SIGN_DATA_LENGTH 93 // The length of a XCASH_DPOPS_signature for the signed data
 
 #define BLOCK_VERIFIERS_IP_ADDRESS_TOTAL_LENGTH 100 // The maximum length of the block verifiers IP address  ????
-#define VRF_SECRET_KEY_LENGTH 128 // Length of VRF Secret Key
 #define MD5_HASH_SIZE 32
 #define BLOCK_VERIFIERS_VALID_AMOUNT 3 // The amount of block verifiers that need to vote true for the part of the round to be valid
 
