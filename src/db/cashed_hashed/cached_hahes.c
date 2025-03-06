@@ -48,6 +48,26 @@ int del_hash(mongoc_client_t *client, const char *db_name) {
     return result;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 int calc_multi_hash(mongoc_client_t *client, const char *db_prefix, int max_index, char *hash)
 {
     // Validate input arguments

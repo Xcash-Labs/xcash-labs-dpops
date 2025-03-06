@@ -12,17 +12,11 @@
 #include "config.h"
 #include "globals.h"
 #include "macro_functions.h"
-
- // For MD5 functions
+#include "string_functions.h"
+#include <openssl/md5.h>
 
 int del_hash(mongoc_client_t *client, const char *db_name);
-
 int get_multi_hash(mongoc_client_t *client, const char *db_prefix, char *hash);
 //int drop_all_hashes(mongoc_client_t *client);
-
-//void bin_to_hex(const unsigned char *bin_data, int data_size, char *buf);
-
-//void md5_hex(const char * src, char * dest);
-
 
 #endif

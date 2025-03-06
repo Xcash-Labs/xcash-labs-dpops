@@ -17,5 +17,7 @@ int parse_json_data(const char* DATA, const char* FIELD_NAME, char *result, cons
 void string_replace(char *data, const size_t DATA_TOTAL_LENGTH, const char* STR1, const char* STR2);
 int random_string(char *result, const size_t LENGTH);
 size_t string_count(const char* DATA, const char* STRING);
+void bin_to_hex(const unsigned char *bin_data, int data_size, char *buf);
+void md5_hex(const char * src, char * dest);
 
 #endif

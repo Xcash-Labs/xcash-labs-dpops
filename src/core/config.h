@@ -34,6 +34,7 @@
 #define TOTAL_DELEGATES_DATABASE_FIELDS 18 // The total delegates database fields
 #define MAXIMUM_DATABASE_COLLECTION_DOCUMENTS 5000 // The maximum amount of documents in a database collection
 #define DATABASE_EMPTY_STRING "empty_database_collection" // The database data to give when the database collection is empty
+#define TOTAL_RESERVE_PROOFS_DATABASES 50 // The total reserve proofs databases
 
 // Lengths
 #define IP_LENGTH 253

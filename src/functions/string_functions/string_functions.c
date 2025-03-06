@@ -169,8 +169,6 @@ void string_replace(char *data, const size_t DATA_TOTAL_LENGTH, const char* STR1
     buf = NULL;
 }
 
-
-
 /*---------------------------------------------------------------------------------------------------------
 Name: random_string
 Description: Creates a random string of specified length
@@ -238,4 +236,35 @@ size_t string_count(const char* DATA, const char* STRING)
         pos += STRING_LENGTH;  // Move past the last found substring
     }
     return count;
+}
+
+
+void bin_to_hex(const unsigned char *bin_data, int data_size, char *buf)
+{
+    static const char hex[] = "0123456789abcdef";  // `static` to avoid reallocation on each call
+
+    if (!bin_data || !buf || data_size <= 0) {  // Validate inputs
+        if (buf) *buf = '\0';  // Ensure buf is null-terminated if it's not NULL
+        return;
+    }
+
+    for (int i = 0; i < data_size; ++i) {
+        buf[i * 2]     = hex[(bin_data[i] >> 4) & 0xF];
+        buf[i * 2 + 1] = hex[bin_data[i] & 0xF];
+    }
+    buf[data_size * 2] = '\0';  // Null-terminate the string
+}
+
+void md5_hex(const char *src, char *dest)
+{
+    if (!src || !dest) {  // Validate inputs
+        if (dest) *dest = '\0';  // Ensure dest is null-terminated if it's not NULL
+        return;
+    }
+
+    unsigned char md5_bin[MD5_DIGEST_LENGTH];  // Use MD5_DIGEST_LENGTH for clarity and safety
+
+    MD5((const unsigned char *)src, strlen(src), md5_bin);  // Combines Init, Update, and Final
+
+    bin_to_hex(md5_bin, MD5_DIGEST_LENGTH, dest);  // Convert binary MD5 to hex string
 }
