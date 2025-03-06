@@ -14,6 +14,7 @@ char current_round_part[2];
 char current_round_part_backup_node[2];
 mongoc_client_pool_t* database_client_thread_pool = NULL;
 pthread_rwlock_t rwlock = PTHREAD_MUTEX_INITIALIZER;
+const char *collection_names[XCASH_DB_COUNT] = {"delegates", "statistics", "reserve_proofs", "reserve_bytes"};
 
 
 struct main_nodes_list main_nodes_list = {0};

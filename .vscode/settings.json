@@ -10,6 +10,7 @@
         "xstring": "c",
         "xutility": "c",
         "ios": "c",
-        "xiosbase": "c"
+        "xiosbase": "c",
+        "stdbool.h": "c"
     }
 }

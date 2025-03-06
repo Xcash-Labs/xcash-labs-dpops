@@ -62,6 +62,7 @@
 
 #define XCASH_OK 1
 #define XCASH_ERROR 0
+#define DB_COLLECTION_NAME_SIZE 256
 
 #define BLOCK_TIME 5 // The block time in minutes
 #define BLOCK_TIME_SEC (BLOCK_TIME*60) // The block time in seconds
@@ -80,5 +81,13 @@
 #define GET_RESERVE_BYTES_DATABASE_HASH_PARAMETER_AMOUNT 5 // The GET_RESERVE_BYTES_DATABASE_HASH parameter amount
 
 #define ALPHANUM_STRING "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+typedef enum XCASH_DBS {
+    XCASH_DB_DELEGATES = 0,
+    XCASH_DB_STATISTICS = 1,
+    XCASH_DB_RESERVE_PROOFS = 2,
+    XCASH_DB_RESERVE_BYTES = 3,
+    XCASH_DB_COUNT
+  } xcash_dbs_t;
 
 #endif
