@@ -43,6 +43,43 @@ bool get_sync_nodes_majority_list_top(xcash_node_sync_info_t** majority_list_res
     return XCASH_OK;
 }
 
+/**
+ * @brief Selects a random valid index from the majority list, avoiding self-selection.
+ * 
+ * @param majority_list Pointer to the array of majority nodes.
+ * @param majority_count The number of items in the majority list.
+ * @return int The index of a randomly selected node, avoiding self-selection. Returns -1 on error.
+ */
+int get_random_majority(const xcash_node_sync_info_t *majority_list, size_t majority_count) {
+    if (!majority_list || majority_count == 0) {
+        ERROR_PRINT("Invalid majority list or zero count.");
+        return -1;
+    }
+
+    int random_index = -1;
+
+    // Randomly select an index, avoiding self-selection
+    for (size_t attempt = 0; attempt < majority_count; ++attempt) {
+        random_index = rand() % (int)majority_count;
+
+        // Prevent syncing from myself
+        if (strcmp(xcash_wallet_public_address, majority_list[random_index].public_address) != 0) {
+            return random_index;
+        }
+    }
+
+    // Fallback to the first valid non-self index if all attempts failed
+    for (size_t i = 0; i < majority_count; ++i) {
+        if (strcmp(xcash_wallet_public_address, majority_list[i].public_address) != 0) {
+            return (int)i;
+        }
+    }
+
+    // If no valid node is found (should not happen), return an error
+    ERROR_PRINT("No valid majority node found that is not self.");
+    return -1;
+}
+
 /*---------------------------------------------------------------------------------------------------------
 Name: initial_db_sync_check
 Description: Check data integrity and return majority_list and count of majority_list nodes
@@ -88,7 +125,7 @@ bool initial_db_sync_check(size_t* majority_count, xcash_node_sync_info_t** majo
     int sync_source_index = get_random_majority(nodes_majority_list, nodes_majority_count);
     if (sync_source_index < 0) {
       ERROR_PRINT("Unable to select a random sync node");
-      retrun XCASH_ERROR;
+      return XCASH_ERROR;
     } else {
       bool sync_result = initial_sync_node(&nodes_majority_list[sync_source_index]);
     }
@@ -221,41 +258,4 @@ bool check_sync_nodes_majority_list(response_t** replies, xcash_node_sync_info_t
     free(sync_majority_list);
     free(sync_states_list);
     return true;
-}
-
-/**
- * @brief Selects a random valid index from the majority list, avoiding self-selection.
- * 
- * @param majority_list Pointer to the array of majority nodes.
- * @param majority_count The number of items in the majority list.
- * @return int The index of a randomly selected node, avoiding self-selection. Returns -1 on error.
- */
-int get_random_majority(const xcash_node_sync_info_t *majority_list, size_t majority_count) {
-    if (!majority_list || majority_count == 0) {
-        ERROR_PRINT("Invalid majority list or zero count.");
-        return -1;
-    }
-
-    int random_index = -1;
-
-    // Randomly select an index, avoiding self-selection
-    for (size_t attempt = 0; attempt < majority_count; ++attempt) {
-        random_index = rand() % (int)majority_count;
-
-        // Prevent syncing from myself
-        if (strcmp(xcash_wallet_public_address, majority_list[random_index].public_address) != 0) {
-            return random_index;
-        }
-    }
-
-    // Fallback to the first valid non-self index if all attempts failed
-    for (size_t i = 0; i < majority_count; ++i) {
-        if (strcmp(xcash_wallet_public_address, majority_list[i].public_address) != 0) {
-            return (int)i;
-        }
-    }
-
-    // If no valid node is found (should not happen), return an error
-    ERROR_PRINT("No valid majority node found that is not self.");
-    return -1;
 }
