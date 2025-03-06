@@ -12,6 +12,10 @@
 #include "globals.h"
 #include "macro_functions.h"
 
+#define STRING "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+#define STRING_LEN (sizeof(STRING) - 1)  // Length of STRING
+#define MAXIMUM_COUNT 1000
+
 bool hex_to_byte_array(const char *hex_string, unsigned char *byte_array, size_t byte_array_size);
 int parse_json_data(const char* DATA, const char* FIELD_NAME, char *result, const size_t RESULT_TOTAL_LENGTH);
 void string_replace(char *data, const size_t DATA_TOTAL_LENGTH, const char* STR1, const char* STR2);
