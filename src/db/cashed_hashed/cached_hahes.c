@@ -58,11 +58,12 @@ int del_hash(mongoc_client_t *client, const char *db_name) {
 int cmpfunc(const void *a, const void *b)
 {
     // Cast to const char** since a and b are pointers to pointers to char
-    const char *str1 = *(const char **)a;
-    const char *str2 = *(const char **)b;
 
+    const char *const *str1 = a;
+    const char *const *str2 = b;
+    
     // Use strcmp for comparison
-    return strcmp(const str1, const str2);
+    return strcmp(str1, str2);
 }
 
 /*---------------------------------------------------------------------------------------------------------
