@@ -714,7 +714,7 @@ int get_database_data_hash(char *data_hash, const char *DATABASE, const char *CO
         for (count = 1; count <= TOTAL_RESERVE_PROOFS_DATABASES; ++count) {
             snprintf(data + strlen(data), sizeof(data) - strlen(data), "reserve_proofs_%zu", count);
             snprintf(data2, sizeof(data2), "reserve_proofs_%zu", count + 1);
-            if (check_if_database_collection_exist(database_name, data2) == 1) {
+            if (check_if_database_collection_exist(DATABASE_NAME, data2) == 1) {
                 strncat(data, "\",\"", sizeof(data) - strlen(data) - 1);
             } else {
                 break;
