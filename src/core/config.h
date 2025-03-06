@@ -79,4 +79,6 @@
 #define UPDATE_PARAMETER_AMOUNT 5 // The update parameter amount
 #define GET_RESERVE_BYTES_DATABASE_HASH_PARAMETER_AMOUNT 5 // The GET_RESERVE_BYTES_DATABASE_HASH parameter amount
 
+#define STRING "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
 #endif

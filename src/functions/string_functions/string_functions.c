@@ -181,9 +181,7 @@ Return: 0 if an error has occured, 1 if successfull
 ---------------------------------------------------------------------------------------------------------*/
 int random_string(char *result, const size_t LENGTH) {
 
-    #define STRINGx "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-    #define STRING_LENx (sizeof(STRING) - 1)  // Length of STRING
-    #define MAXIMUM_COUNTx 1000
+    const size_t string_len = sizeof(STRING) - 1;   // Length of STRING
 
     if (!result)
     {
@@ -207,7 +205,7 @@ int random_string(char *result, const size_t LENGTH) {
 
     // Convert random bytes into allowed characters from `STRING`
     for (generated = 0; generated < LENGTH; generated++) {
-        result[generated] = STRING[random_bytes[generated] % STRING_LEN];
+        result[generated] = STRING[random_bytes[generated] % string_len];
     }
 
     result[LENGTH] = '\0'; 
