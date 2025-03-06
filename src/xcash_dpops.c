@@ -29,7 +29,7 @@ const NetworkNode network_nodes[] = {
   {"XCA1b6Sg5QVBX4jrctQ9SVUcHFqpaGST6bqtFpyoQadTX8SaDs92xR8iec3VfaXKzhYijFiMfwoM4TuYRgy6NXzn5titJnWbra", "xcashseeds.uk",
      "63232aa1b020a772945bf50ce96db9a04242583118b5a43952f0aaf9ecf7cfbb", 1},
   // Sentinel value (empty entry to mark the end)
-  {NULL, NULL, NULL, NULL}};
+  {NULL, NULL, NULL, 0}};
 
 // local
 static bool show_help = false;
