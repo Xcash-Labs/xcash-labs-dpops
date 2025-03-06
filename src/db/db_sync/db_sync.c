@@ -50,7 +50,7 @@ bool get_sync_nodes_majority_list_top(xcash_node_sync_info_t** majority_list_res
  * @param majority_count The number of items in the majority list.
  * @return int The index of a randomly selected node, avoiding self-selection. Returns -1 on error.
  */
-int get_random_majority(const xcash_node_sync_info_t *majority_list, size_t majority_count) {
+int get_random_majority(xcash_node_sync_info_t *majority_list, size_t majority_count) {
     if (!majority_list || majority_count == 0) {
         ERROR_PRINT("Invalid majority list or zero count.");
         return -1;
