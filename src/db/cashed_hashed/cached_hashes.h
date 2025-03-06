@@ -9,11 +9,12 @@
 
 #include <bson/bson.h>
 #include <mongoc/mongoc.h>
+#include <openssl/md5.h>
 #include "config.h"
 #include "globals.h"
 #include "macro_functions.h"
 #include "string_functions.h"
-#include <openssl/md5.h>
+#include "node_functions.h"
 
 int del_hash(mongoc_client_t *client, const char *db_name);
 int get_multi_hash(mongoc_client_t *client, const char *db_prefix, char *hash);

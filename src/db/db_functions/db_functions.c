@@ -660,3 +660,33 @@ int get_database_data(char* database_data, const char* DATABASE, const char* COL
   if (cursor) mongoc_cursor_destroy(cursor);
   return XCASH_OK;
 }
+
+/*-----------------------------------------------------------------------------------------------------------
+ * @brief Gets the current or previous reserve bytes database count.
+ * 
+ * @param count Pointer to store the calculated count.
+ * @param settings 0 for current block's reserve bytes, 1 for previous block's.
+ * @return int XCASH_OK if successful, XCASH_ERROR if an error occurs.
+-----------------------------------------------------------------------------------------------------------*/
+int get_reserve_bytes_database(size_t* count) {
+  if (!count) {
+    ERROR_PRINT("Invalid argument: count cannot be NULL.");
+    return XCASH_ERROR;
+  }
+
+  size_t block_height;
+  if (sscanf(current_block_height, "%zu", &block_height) != 1) {
+    ERROR_PRINT("Failed to parse current block height.");
+    return XCASH_ERROR;
+  }
+
+  *count = block_height;
+
+  if (*count - 1 <= XCASH_PROOF_OF_STAKE_BLOCK_HEIGHT) {
+    *count = 1;
+  } else {
+    *count = ((*count - XCASH_PROOF_OF_STAKE_BLOCK_HEIGHT) / BLOCKS_PER_DAY_FIVE_MINUTE_BLOCK_TIME) + 1;
+  }
+
+  return XCASH_OK;
+}

@@ -78,6 +78,8 @@
 #define REGISTER_PARAMETER_AMOUNT 6 // The register parameter amount
 #define UPDATE_PARAMETER_AMOUNT 5 // The update parameter amount
 #define GET_RESERVE_BYTES_DATABASE_HASH_PARAMETER_AMOUNT 5 // The GET_RESERVE_BYTES_DATABASE_HASH parameter amount
+#define MAXIMUM_NUMBER_SIZE 25 // The maximum amount of bytes a number could take up in X-CASH
+#define BLOCKS_PER_DAY_FIVE_MINUTE_BLOCK_TIME 288 // The blocks per day with a 5 minute block time
 
 #define ALPHANUM_STRING "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 

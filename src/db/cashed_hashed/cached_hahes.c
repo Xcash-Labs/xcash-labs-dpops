@@ -204,7 +204,7 @@ int get_multi_hash(mongoc_client_t *client, const char *db_prefix, char *hash)
     size_t reserve_bytes_index = 0;  // Initialize to avoid undefined behavior
 
     if (strcmp(db_prefix, "reserve_bytes") == 0) {
-        get_reserve_bytes_database(reserve_bytes_index, 0);
+        get_reserve_bytes_database(reserve_bytes_index);
         return calc_multi_hash(client, db_prefix, reserve_bytes_index, hash);
     } 
 
