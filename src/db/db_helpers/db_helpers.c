@@ -247,7 +247,7 @@ int count_db_delegates(void) {
     bool result = false;
     int64_t count;
 
-    result = db_count_doc(DPOPS_DB, collection_names[XCASH_DB_DELEGATES], &count, &error);
+    result = db_count_doc(DATABASE_NAME, collection_names[XCASH_DB_DELEGATES], &count, &error);
     if (!result) {
         count = -1;
     }
@@ -259,7 +259,7 @@ int count_db_statistics(void) {
     bool result = false;
     int64_t count;
 
-    result = db_count_doc(DPOPS_DB, collection_names[XCASH_DB_STATISTICS], &count, &error);
+    result = db_count_doc(DATABASE_NAME, collection_names[XCASH_DB_STATISTICS], &count, &error);
     if (!result) {
         count = -1;
     }
@@ -271,7 +271,7 @@ int count_db_reserve_proofs(void) {
     bool result = false;
     int64_t count;
 
-    result = db_count_doc(DPOPS_DB, collection_names[XCASH_DB_RESERVE_PROOFS], &count, &error);
+    result = db_count_doc(DATABASE_NAME, collection_names[XCASH_DB_RESERVE_PROOFS], &count, &error);
     if (!result) {
         count = -1;
     }
@@ -283,7 +283,7 @@ int count_db_reserve_bytes(void) {
     bool result = false;
     int64_t count;
 
-    result = db_count_doc(DPOPS_DB, collection_names[XCASH_DB_RESERVE_BYTES], &count, &error);
+    result = db_count_doc(DATABASE_NAME, collection_names[XCASH_DB_RESERVE_BYTES], &count, &error);
     if (!result) {
         count = -1;
     }
