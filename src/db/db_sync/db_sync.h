@@ -9,6 +9,7 @@
 #include "uv_net_multi.h"
 #include "xcash_net.h"
 #include "db_helpers.h"
+#include "db_operations.h"
 
 typedef struct {
     size_t block_height; // the block height
