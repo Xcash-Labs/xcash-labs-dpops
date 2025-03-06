@@ -1,6 +1,5 @@
 #include "db_helpers.h"
 
-
 const char *collection_names[XCASH_DB_COUNT] = {"delegates", "statistics", "reserve_proofs", "reserve_bytes"};
 
 bson_t *assign_ids(bson_t *docs, xcash_dbs_t collection_id) {
