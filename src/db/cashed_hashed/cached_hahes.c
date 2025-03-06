@@ -48,6 +48,75 @@ int del_hash(mongoc_client_t *client, const char *db_name) {
     return result;
 }
 
+/**
+ * @brief Get the MD5 hash of the specified database.
+ * 
+ * @param client MongoDB client connection.
+ * @param db_name Name of the database collection.
+ * @param db_hash Pointer to a 32-byte short MD5 hash buffer.
+ * @return int Returns 0 if successful, <0 for error codes.
+ */
+int get_dbhash(mongoc_client_t *client, const char *db_name, char *db_hash)
+{
+    if (!client || !db_name || !db_hash) {
+        ERROR_PRINT("Invalid arguments passed to get_dbhash.");
+        return -1;
+    }
+
+    char l_hash[129] = {0};      // For full hash
+    char l_db_hash[33] = {0};    // For short hash
+    int result = 0;
+    struct timeval start_time, current_time, result_time;
+
+    // Start measuring time
+    gettimeofday(&start_time, NULL);
+
+    // Try to get cached db_hash first
+    result = get_data(client, db_name, "db_hash", db_hash);
+    if (result == 0) {
+        return result;  // Cache hit, return immediately
+    }
+
+    // Lock mutex to handle concurrency
+    pthread_mutex_lock(&hash_mutex);
+
+    // Recheck cache to handle concurrent access
+    result = get_data(client, db_name, "db_hash", db_hash);
+    if (result == 0) {  // Cache hit on recheck
+        pthread_mutex_unlock(&hash_mutex);
+        return result;
+    }
+
+    // Recalculate hashes if cache miss
+    if ((result = calc_db_hashes(client, db_name, l_hash, l_db_hash)) != 0) {
+        ERROR_PRINT("Failed to calculate hashes for %s", db_name);
+        pthread_mutex_unlock(&hash_mutex);
+        return -1;
+    }
+
+    // Update the hash in the database
+    if ((result = update_hashes(client, db_name, l_hash, l_db_hash)) != 0) {
+        ERROR_PRINT("Failed to update hashes for %s", db_name);
+        pthread_mutex_unlock(&hash_mutex);
+        return -2;
+    }
+
+    // Copy the calculated db_hash
+    strncpy(db_hash, l_db_hash, 32);
+    db_hash[32] = '\0';  // Ensure null-termination
+
+    // Log timing information
+    gettimeofday(&current_time, NULL);
+    timersub(&current_time, &start_time, &result_time);
+    INFO_PRINT("Recalculated hash for %s in %ld.%06ld sec", db_name, 
+               (long int)result_time.tv_sec, (long int)result_time.tv_usec);
+
+    // Unlock mutex
+    pthread_mutex_unlock(&hash_mutex);
+
+    return result;
+}
+
 /*---------------------------------------------------------------------------------------------------------
  * @brief Calculate the MD5 hash of the given database.
  * 
