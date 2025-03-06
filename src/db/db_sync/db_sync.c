@@ -203,6 +203,84 @@ bool update_db_from_node(const char *public_address, xcash_dbs_t db_type) {
     return XCASH_OK;
 }
 
+bool update_multi_db_from_node(const char* public_address, xcash_dbs_t db_type) {
+    bool result = false;
+    xcash_db_sync_obj_t **sync_objs = NULL;
+
+    const char* update_source_host = address_to_node_host(public_address);
+    if (!update_source_host) {
+        ERROR_PRINT("Something is wrong. The address %s not found in current block verifiers, nor the seeds", public_address);
+        return false;
+    }
+
+    INFO_PRINT("Looking for not synced parts in %s database ", collection_names[db_type]);
+
+    if (!check_multi_db_hashes_from_host(update_source_host, db_type, &sync_objs)) {
+        WARNING_PRINT("Can't find source for %s db sync", collection_names[db_type]);
+
+        cleanup_db_sync_results(sync_objs);
+        return false;
+    }
+
+    size_t dbs_count = get_db_sub_count(db_type);
+
+    bool *dbs_to_update = (bool *)calloc(dbs_count + 1, sizeof(bool));
+
+    for (size_t i = 0; sync_objs[i] != NULL; i++) {
+        xcash_dbs_check_status_t *sync_records = sync_objs[i]->sync_records;
+        for (size_t rec_index = 0; rec_index < sync_objs[i]->records_count; rec_index++) {
+            if (!sync_records[rec_index].db_rec_synced) {
+                if (sync_records[rec_index].db_rec_index != 0) {
+                    INFO_PRINT(HOST_FALSE_STATUS("%s_%ld", "hash does NOT match"), collection_names[db_type],
+                                sync_records[rec_index].db_rec_index);
+                    dbs_to_update[sync_records[rec_index].db_rec_index] = true;
+                } else {
+                    // anyway the zero index always wrong
+                    // INFO_PRINT(HOST_FALSE_STATUS("%s", "hash NOT matched"), collection_names[db_type]);
+                }
+            }
+        }
+    }
+
+    char *db_data_buf = (char *)calloc(MAXIMUM_BUFFER_SIZE,1);
+    if (db_data_buf == NULL) {
+        FATAL_ERROR_EXIT("Memory allocation failed");
+    }
+
+    bool updated_applied = true;
+    for (size_t db_file_index = 0; db_file_index <= dbs_count; db_file_index++) {
+        // temp fix
+        if (db_type == XCASH_DB_RESERVE_BYTES  && db_file_index == dbs_count) {
+            dbs_to_update[db_file_index] = true;
+        }
+        if (dbs_to_update[db_file_index] == true) {
+            INFO_PRINT("Updating %s_%ld database from %s ", collection_names[db_type], db_file_index, update_source_host);
+
+            if (!download_db_from_node(update_source_host, db_type, db_file_index, db_data_buf, MAXIMUM_BUFFER_SIZE)) {
+                ERROR_PRINT("Can't download %s database", collection_names[db_type]);
+                updated_applied = false;
+                break;
+            }
+            // TODO remove dependencies of global variables
+            if (upsert_json_to_db(DATABASE_NAME, db_type, db_file_index, db_data_buf, false) == XCASH_ERROR) {
+                ERROR_PRINT("Can't upsert %s database", collection_names[db_type]);
+                updated_applied = false;
+                break;
+            }
+        }
+    }
+
+    free(db_data_buf);
+    free(dbs_to_update);
+
+    // update needed databases
+    cleanup_db_sync_results(sync_objs);
+
+    result = updated_applied;
+
+    return result;
+}
+
 /**
  * @brief Synchronizes the local node with the majority source node.
  * 
@@ -820,85 +898,6 @@ bool check_db_has_majority(xcash_dbs_t db_type, xcash_db_sync_obj_t **sync_objs)
             result = true;
         }
     }
-    return result;
-}
-
-
-bool update_multi_db_from_node(const char* public_address, xcash_dbs_t db_type) {
-    bool result = false;
-    xcash_db_sync_obj_t **sync_objs = NULL;
-
-    const char* update_source_host = address_to_node_host(public_address);
-    if (!update_source_host) {
-        ERROR_PRINT("Something is wrong. The address %s not found in current block verifiers, nor the seeds", public_address);
-        return false;
-    }
-
-    INFO_PRINT("Looking for not synced parts in %s database ", collection_names[db_type]);
-
-    if (!check_multi_db_hashes_from_host(update_source_host, db_type, &sync_objs)) {
-        WARNING_PRINT("Can't find source for %s db sync", collection_names[db_type]);
-
-        cleanup_db_sync_results(sync_objs);
-        return false;
-    }
-
-    size_t dbs_count = get_db_sub_count(db_type);
-
-    bool *dbs_to_update = (bool *)calloc(dbs_count + 1, sizeof(bool));
-
-    for (size_t i = 0; sync_objs[i] != NULL; i++) {
-        xcash_dbs_check_status_t *sync_records = sync_objs[i]->sync_records;
-        for (size_t rec_index = 0; rec_index < sync_objs[i]->records_count; rec_index++) {
-            if (!sync_records[rec_index].db_rec_synced) {
-                if (sync_records[rec_index].db_rec_index != 0) {
-                    INFO_PRINT(HOST_FALSE_STATUS("%s_%ld", "hash does NOT match"), collection_names[db_type],
-                                sync_records[rec_index].db_rec_index);
-                    dbs_to_update[sync_records[rec_index].db_rec_index] = true;
-                } else {
-                    // anyway the zero index always wrong
-                    // INFO_PRINT(HOST_FALSE_STATUS("%s", "hash NOT matched"), collection_names[db_type]);
-                }
-            }
-        }
-    }
-
-    char *db_data_buf = (char *)calloc(MAXIMUM_BUFFER_SIZE,1);
-    if (db_data_buf == NULL) {
-        FATAL_ERROR_EXIT("Memory allocation failed");
-    }
-
-    bool updated_applied = true;
-    for (size_t db_file_index = 0; db_file_index <= dbs_count; db_file_index++) {
-        // temp fix
-        if (db_type == XCASH_DB_RESERVE_BYTES  && db_file_index == dbs_count) {
-            dbs_to_update[db_file_index] = true;
-        }
-        if (dbs_to_update[db_file_index] == true) {
-            INFO_PRINT("Updating %s_%ld database from %s ", collection_names[db_type], db_file_index, update_source_host);
-
-            if (!download_db_from_node(update_source_host, db_type, db_file_index, db_data_buf, MAXIMUM_BUFFER_SIZE)) {
-                ERROR_PRINT("Can't download %s database", collection_names[db_type]);
-                updated_applied = false;
-                break;
-            }
-            // TODO remove dependencies of global variables
-            if (upsert_json_to_db(DATABASE_NAME, db_type, db_file_index, db_data_buf, false) == XCASH_ERROR) {
-                ERROR_PRINT("Can't upsert %s database", collection_names[db_type]);
-                updated_applied = false;
-                break;
-            }
-        }
-    }
-
-    free(db_data_buf);
-    free(dbs_to_update);
-
-    // update needed databases
-    cleanup_db_sync_results(sync_objs);
-
-    result = updated_applied;
-
     return result;
 }
 
