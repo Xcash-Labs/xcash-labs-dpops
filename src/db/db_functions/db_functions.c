@@ -779,7 +779,7 @@ int get_data(mongoc_client_t *client, const char *db_name, const char *field_nam
     uint32_t len = 0;
 
     // Get collection
-    collection = mongoc_client_get_collection(client, database_name, "hashes");
+    collection = mongoc_client_get_collection(client, DATABASE_NAME, "hashes");
     if (!collection) {
         return handle_error("Failed to get collection: hashes.", NULL, NULL, collection, NULL);
     }
