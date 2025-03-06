@@ -191,7 +191,7 @@ int update_db_from_node(const char *public_address, xcash_dbs_t db_type) {
     }
 
     // Upsert the downloaded data into the local database
-    int upsert_result = upsert_json_to_db(database_name, db_type, 0, db_data_buf, false);
+    int upsert_result = upsert_json_to_db(DATABASE_NAME, db_type, 0, db_data_buf, false);
     free(db_data_buf);  // Free memory for the database buffer
 
     if (upsert_result == XCASH_ERROR) {

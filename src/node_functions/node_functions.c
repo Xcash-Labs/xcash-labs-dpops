@@ -62,3 +62,99 @@ bool get_reserve_bytes_database(size_t* count) {
   
     return XCASH_OK;
   }
+
+/**
+ * @brief Resolves the host IP address for a given public address using the NetworkNode array.
+ * 
+ * @param public_address The public address to resolve.
+ * @return const char* Returns the IP address as a string if found, NULL otherwise.
+ */
+const char *address_to_node_host(const char *public_address) {
+    if (!public_address) {
+        ERROR_PRINT("Invalid public address (NULL pointer).");
+        return NULL;
+    }
+
+    // Check against network_nodes array
+    for (size_t i = 0; network_nodes[i].seed_public_address != NULL; ++i) {
+        if (strcmp(network_nodes[i].seed_public_address, public_address) == 0) {
+            INFO_PRINT("Found public address in network_nodes array.");
+            return network_nodes[i].ip_address;
+        }
+    }
+
+    // Check against all delegates
+    for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; ++i) {
+        if (strcmp(delegates_all[i].public_address, public_address) == 0) {
+            INFO_PRINT("Found public address in delegates list.");
+            return delegates_all[i].IP_address;
+        }
+    }
+
+    WARNING_PRINT("Public address %s not found in any list.", public_address);
+    return NULL;
+}
+
+/**
+ * @brief Resolves the delegate name or seed name for a given public address.
+ * 
+ * @param public_address The public address to resolve.
+ * @return const char* Returns the delegate name or seed name if found, NULL otherwise.
+ */
+const char *address_to_node_name(const char *public_address) {
+    if (!public_address) {
+        ERROR_PRINT("Invalid public address (NULL pointer).");
+        return NULL;
+    }
+
+    // Check against network_nodes array for seed names
+    for (size_t i = 0; network_nodes[i].seed_public_address != NULL; ++i) {
+        if (strcmp(network_nodes[i].seed_public_address, public_address) == 0) {
+            INFO_PRINT("Found public address in network_nodes array.");
+            return network_nodes[i].ip_address;  // Return seed name as IP address
+        }
+    }
+
+    // Check against all delegates for delegate names
+    for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; ++i) {
+        if (strcmp(delegates_all[i].public_address, public_address) == 0) {
+            INFO_PRINT("Found public address in delegates list.");
+            return delegates_all[i].delegate_name;  // Return delegate name
+        }
+    }
+
+    WARNING_PRINT("Public address %s not found in any list.", public_address);
+    return NULL;
+}
+
+/**
+ * @brief Retrieves daemon data including the current block height and previous block hash.
+ * 
+ * @return int Returns XCASH_OK (1) if successful, XCASH_ERROR (0) if an error occurs.
+ */
+int get_daemon_data(void) {
+    if (!current_block_height || !previous_block_hash) {
+        ERROR_PRINT("Invalid buffer for block height or block hash.");
+        return XCASH_ERROR;
+    }
+
+    // Get the current block height
+    if (get_current_block_height(current_block_height) == 0) {
+        ERROR_PRINT("Could not get the current block height.");
+        return XCASH_ERROR;
+    }
+
+    long current_height = atol(current_block_height);
+    if (current_height < XCASH_PROOF_OF_STAKE_BLOCK_HEIGHT) {
+        ERROR_PRINT("Current Block Height (%ld) is below DPOPS era. Blockchain data may not be fully synchronized yet.", current_height);
+        return XCASH_ERROR;
+    }
+
+    // Get the previous block hash
+    if (get_previous_block_hash(previous_block_hash) == 0) {
+        ERROR_PRINT("Could not get the previous block hash.");
+        return XCASH_ERROR;
+    }
+
+    return XCASH_OK;
+}
