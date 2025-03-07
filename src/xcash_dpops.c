@@ -204,7 +204,7 @@ void cleanup_data_structures(void) {
   pthread_mutex_destroy(&hash_mutex);
 
   // add more later......
-
+  fprintf(stderr, "Daemon shutting down...\n");
 
 }
 
