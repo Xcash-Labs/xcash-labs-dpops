@@ -122,6 +122,7 @@ void start_block_production(void)
             {
                 init_db_from_top();
                 round_result = ROUND_OK;
+                exit(0);
             }
             else
             {
