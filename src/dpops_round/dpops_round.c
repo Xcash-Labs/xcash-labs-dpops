@@ -101,12 +101,14 @@ void start_block_production(void)
     
     while (true)
     {
+        DEBUG_PRINT("Here 1");
         gettimeofday(&current_time, NULL);
         size_t seconds_within_block = current_time.tv_sec % (BLOCK_TIME * 60);
         size_t minute_within_block = (current_time.tv_sec / 60) % BLOCK_TIME;
 
         // Fetch current block height
         current_block_healthy = get_current_block_height(current_block_height) == XCASH_OK;
+
         if (!current_block_healthy)
         {
             WARNING_PRINT("Can't get current block height. Possible node is still syncing blocks. Waiting for recovery...");
@@ -115,6 +117,7 @@ void start_block_production(void)
         // Don't start block production if blockchain is not synced or block time is already past the start point
         if (seconds_within_block > 25 || !current_block_healthy)
         {
+            DEBUG_PRINT("Here 2");
             retries = 0;
 
             // Refresh DB in case of last round error (only if syncing is complete)
@@ -132,6 +135,7 @@ void start_block_production(void)
         }
         else
         {
+            DEBUG_PRINT("Here 3");
             size_t round_number = 0;
             bool round_created = false;
             gettimeofday(&block_start_time, NULL);
