@@ -52,7 +52,7 @@ Return:
   - XCASH_OK (1) if successful.
   - XCASH_ERROR (0) if an error occurred.
 ---------------------------------------------------------------------------------------------------------*/
-int parse_json_data(const char *data, const char *field_name, char *result, size_t result_size) {
+int parse_json_dataxxx(const char *data, const char *field_name, char *result, size_t result_size) {
     if (!data || !field_name || !result) {
         ERROR_PRINT("Invalid parameters");
         return XCASH_ERROR;
@@ -94,6 +94,56 @@ int parse_json_data(const char *data, const char *field_name, char *result, size
         result[result_size - 1] = '\0';  // Ensure null termination
     } else if (cJSON_IsNumber(field)) {
         snprintf(result, result_size, "%.6f", field->valuedouble);  // Supports both ints & floats
+    } else {
+        ERROR_PRINT("Field '%s' has unsupported data type", field_name);
+        cJSON_Delete(json);
+        return XCASH_ERROR;
+    }
+
+    cJSON_Delete(json);
+    return XCASH_OK;
+}
+
+
+
+int parse_json_data(const char *data, const char *field_name, char *result, size_t result_size) {
+    if (!data || !field_name || !result) {
+        ERROR_PRINT("Invalid parameters");
+        return XCASH_ERROR;
+    }
+
+    // Attempt to parse JSON
+    cJSON *json = cJSON_Parse(data);
+    if (!json) {
+        const char *error_ptr = cJSON_GetErrorPtr();
+        ERROR_PRINT("JSON parsing error near: %s", error_ptr ? error_ptr : "unknown location");
+        return XCASH_ERROR;
+    }
+
+    // Handle nested JSON paths like "result.block_header.hash"
+    char path_copy[256];
+    strncpy(path_copy, field_name, sizeof(path_copy) - 1);
+    path_copy[sizeof(path_copy) - 1] = '\0';  // Ensure null termination
+
+    cJSON *current_obj = json;
+    char *token = strtok(path_copy, ".");
+    while (token != NULL) {
+        current_obj = cJSON_GetObjectItemCaseSensitive(current_obj, token);
+        if (!current_obj) {
+            ERROR_PRINT("Field '%s' not found in JSON", field_name);
+            DEBUG_PRINT("Parsed JSON structure: %s", cJSON_PrintUnformatted(json));
+            cJSON_Delete(json);
+            return XCASH_ERROR;
+        }
+        token = strtok(NULL, ".");
+    }
+
+    // Extract and store the field value
+    if (cJSON_IsString(current_obj) && current_obj->valuestring) {
+        strncpy(result, current_obj->valuestring, result_size - 1);
+        result[result_size - 1] = '\0';  // Ensure null termination
+    } else if (cJSON_IsNumber(current_obj)) {
+        snprintf(result, result_size, "%.6f", current_obj->valuedouble);  // Supports both ints & floats
     } else {
         ERROR_PRINT("Field '%s' has unsupported data type", field_name);
         cJSON_Delete(json);
