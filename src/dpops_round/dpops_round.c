@@ -119,12 +119,13 @@ void start_block_production(void) {
                 init_db_from_top();
                 round_result = ROUND_OK;
             } else {
-                INFO_STAGE_PRINT("Waiting for production of block %s. Starting in ... [%ld:%02ld]",
-                                 current_block_height,
-                                 BLOCK_TIME - 1 - minute_within_block,
-                                 59 - (current_time.tv_sec % 60));
+
+                INFO_STAGE_PRINT("Waiting for production of block %d. Starting in ... [%ld:%02ld]", 
+                    (int)atof(current_block_height),  // Convert to float first if it's a string, then cast to int
+                    BLOCK_TIME - 1 - minute_within_block, 
+                    59 - (current_time.tv_sec % 60));
                 sleep(5);
-            }
+                }
             continue;  // Skip to next loop iteration
         }
 
