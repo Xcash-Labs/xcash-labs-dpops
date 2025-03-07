@@ -15,6 +15,7 @@ xcash_round_result_t process_round(size_t round_number) {
         return ROUND_ERROR;
     }
 
+    DEBUG_PRINT("Here................................................");
 
     size_t network_majority_count = 0;
     xcash_node_sync_info_t* nodes_majority_list = NULL;
@@ -120,7 +121,7 @@ void start_block_production(void) {
                 round_result = ROUND_OK;
             } else {
 
-                INFO_STAGE_PRINT("Waiting to start production for block %d. Starting in ... [%ld:%02ld]", 
+                INFO_STAGE_PRINT("Starting production of block %d in ... [%ld:%02ld]", 
                     (int)atof(current_block_height),  // Convert to float first if it's a string, then cast to int
                     BLOCK_TIME - 1 - minute_within_block, 
                     59 - (current_time.tv_sec % 60));
