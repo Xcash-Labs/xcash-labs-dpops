@@ -105,14 +105,13 @@ int parse_json_dataxxx(const char *data, const char *field_name, char *result, s
 }
 
 
-
 int parse_json_data(const char *data, const char *field_name, char *result, size_t result_size) {
     if (!data || !field_name || !result) {
         ERROR_PRINT("Invalid parameters");
         return XCASH_ERROR;
     }
 
-    // Attempt to parse JSON
+    // Parse JSON
     cJSON *json = cJSON_Parse(data);
     if (!json) {
         const char *error_ptr = cJSON_GetErrorPtr();
@@ -120,20 +119,42 @@ int parse_json_data(const char *data, const char *field_name, char *result, size
         return XCASH_ERROR;
     }
 
-    // Handle nested JSON paths like "result.block_header.hash"
+    // Handle nested JSON paths with array support (e.g., "result.addresses[0].address")
     char path_copy[256];
     strncpy(path_copy, field_name, sizeof(path_copy) - 1);
-    path_copy[sizeof(path_copy) - 1] = '\0';  // Ensure null termination
+    path_copy[sizeof(path_copy) - 1] = '\0';
 
     cJSON *current_obj = json;
     char *token = strtok(path_copy, ".");
     while (token != NULL) {
-        current_obj = cJSON_GetObjectItemCaseSensitive(current_obj, token);
-        if (!current_obj) {
-            ERROR_PRINT("Field '%s' not found in JSON", field_name);
-            DEBUG_PRINT("Parsed JSON structure: %s", cJSON_PrintUnformatted(json));
-            cJSON_Delete(json);
-            return XCASH_ERROR;
+        // Check for array access syntax (e.g., addresses[0])
+        char *bracket_pos = strchr(token, '[');
+        if (bracket_pos) {
+            *bracket_pos = '\0';  // Split field name and index part
+
+            current_obj = cJSON_GetObjectItemCaseSensitive(current_obj, token);
+            if (!current_obj || !cJSON_IsArray(current_obj)) {
+                ERROR_PRINT("Field '%s' not found or is not an array", token);
+                cJSON_Delete(json);
+                return XCASH_ERROR;
+            }
+
+            // Extract the index
+            int index = atoi(bracket_pos + 1);
+            current_obj = cJSON_GetArrayItem(current_obj, index);
+            if (!current_obj) {
+                ERROR_PRINT("Index %d out of range for field '%s'", index, token);
+                cJSON_Delete(json);
+                return XCASH_ERROR;
+            }
+        } else {
+            current_obj = cJSON_GetObjectItemCaseSensitive(current_obj, token);
+            if (!current_obj) {
+                ERROR_PRINT("Field '%s' not found in JSON", field_name);
+                DEBUG_PRINT("Parsed JSON structure: %s", cJSON_PrintUnformatted(json));
+                cJSON_Delete(json);
+                return XCASH_ERROR;
+            }
         }
         token = strtok(NULL, ".");
     }
@@ -141,9 +162,9 @@ int parse_json_data(const char *data, const char *field_name, char *result, size
     // Extract and store the field value
     if (cJSON_IsString(current_obj) && current_obj->valuestring) {
         strncpy(result, current_obj->valuestring, result_size - 1);
-        result[result_size - 1] = '\0';  // Ensure null termination
+        result[result_size - 1] = '\0';
     } else if (cJSON_IsNumber(current_obj)) {
-        snprintf(result, result_size, "%.6f", current_obj->valuedouble);  // Supports both ints & floats
+        snprintf(result, result_size, "%.6f", current_obj->valuedouble);
     } else {
         ERROR_PRINT("Field '%s' has unsupported data type", field_name);
         cJSON_Delete(json);
@@ -153,6 +174,9 @@ int parse_json_data(const char *data, const char *field_name, char *result, size
     cJSON_Delete(json);
     return XCASH_OK;
 }
+
+
+
 
 /*---------------------------------------------------------------------------------------------------------
 Name: string_replace
