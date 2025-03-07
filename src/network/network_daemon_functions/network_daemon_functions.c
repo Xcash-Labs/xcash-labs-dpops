@@ -64,7 +64,7 @@ int get_previous_block_hash(char *result)
         if (send_http_request(data, XCASH_DAEMON_IP, "/json_rpc", XCASH_DAEMON_PORT, "POST",
                               HTTP_HEADERS, HTTP_HEADERS_LENGTH, REQUEST_PAYLOAD,
                               SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) > 0 &&
-            parse_json_data(data, "hash", result, BUFFER_SIZE) > 0)
+            parse_json_data(data, "reslut.block_header.hash", result, BUFFER_SIZE) > 0)
         {
             return XCASH_OK;
         }
