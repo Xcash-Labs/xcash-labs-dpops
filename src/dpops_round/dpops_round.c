@@ -91,91 +91,70 @@ xcash_round_result_t process_round(size_t round_number) {
 //    return (xcash_round_result_t)block_creation_result;
 }
 
-void start_block_production(void)
-{
+void start_block_production(void) {
     struct timeval current_time, round_start_time, block_start_time;
     xcash_round_result_t round_result = ROUND_OK;
     size_t retries = 0;
     bool current_block_healthy = false;
-    memset(current_block_height,0,sizeof(current_block_height));
-    
-    while (true)
-    {
-        DEBUG_PRINT("Here 1");
+
+    while (true) {
         gettimeofday(&current_time, NULL);
         size_t seconds_within_block = current_time.tv_sec % (BLOCK_TIME * 60);
         size_t minute_within_block = (current_time.tv_sec / 60) % BLOCK_TIME;
 
-        // Fetch current block height
-        current_block_healthy = get_current_block_height(current_block_height) == XCASH_OK;
-
-        if (!current_block_healthy)
-        {
+        // Check if the current block height is healthy
+        current_block_healthy = (get_current_block_height(current_block_height) == XCASH_OK);
+        if (!current_block_healthy) {
             WARNING_PRINT("Can't get current block height. Possible node is still syncing blocks. Waiting for recovery...");
+            sleep(5);
+            continue;  // Skip to next loop iteration if the block height is not healthy
         }
 
-        // Don't start block production if blockchain is not synced or block time is already past the start point
-        if (seconds_within_block > 25 || !current_block_healthy)
-        {
-            DEBUG_PRINT("Here 2");
+        // Skip block production if the block time is past 25 seconds or if blockchain is not synced
+        if (seconds_within_block > 25) {
             retries = 0;
 
-            // Refresh DB in case of last round error (only if syncing is complete)
-            if (round_result != ROUND_OK && current_block_healthy && seconds_within_block > 280)
-            {
+            // Refresh DB if last round error occurred and enough time has passed
+            if (round_result != ROUND_OK && seconds_within_block > 280) {
                 init_db_from_top();
                 round_result = ROUND_OK;
-            }
-            else
-            {
-                INFO_STAGE_PRINT("Waiting for production of block [%d]. Starting in ... [%lu:%02lu]",
-                    (int) atof(current_block_height), BLOCK_TIME - 1 - minute_within_block, 59 - (current_time.tv_sec % 60));
+            } else {
+                INFO_STAGE_PRINT("Waiting for a [%s] block production. Starting in ... [%ld:%02ld]", 
+                                 current_block_height, 
+                                 BLOCK_TIME - 1 - minute_within_block, 
+                                 59 - (current_time.tv_sec % 60));
                 sleep(5);
             }
+            continue;  // Skip to next loop iteration
         }
-        else
-        {
-            DEBUG_PRINT("Here 3");
-            size_t round_number = 0;
-            bool round_created = false;
-            gettimeofday(&block_start_time, NULL);
 
-            // Retry mechanism for syncing issues
-            while (retries < 2 && round_number < 1)
-            {
-                gettimeofday(&round_start_time, NULL);
-                round_result = (round_number);
+        // Proceed with block production if within the first 25 seconds
+        gettimeofday(&block_start_time, NULL);
+        size_t round_number = 0;
+        bool round_created = false;
 
-//                round_result = ROUND_SKIP;
-                round_number = 1;
-                retries = 2;
+        // Retry loop for round processing with a maximum of 2 retries
+        for (retries = 0; retries < 2 && round_number < 1; retries++) {
+            gettimeofday(&round_start_time, NULL);
+            round_result = process_round(round_number);
 
-                if (round_result == ROUND_RETRY)
-                {
-                    retries++;
-                    sleep(5);
-                    continue;
-                }
-                else if (round_result == ROUND_ERROR || round_result == ROUND_SKIP)
-                {
-                    round_created = false;
-                }
-                else if (round_result == ROUND_OK)
-                {
-                    round_created = true;
-                }
-
-                if (round_created)
-                {
-                    INFO_PRINT_STATUS_OK("Block %s created successfully", current_block_height);
-                }
-                else
-                {
-                    INFO_PRINT_STATUS_FAIL("Block %s not created within %lu rounds", current_block_height, round_number);
-                }
-
-                break;
+            if (round_result == ROUND_RETRY) {
+                sleep(5);  // Wait before retrying
+                continue;   // Retry the same round
             }
+
+            if (round_result == ROUND_ERROR || round_result == ROUND_SKIP) {
+                round_created = false;
+            } else if (round_result == ROUND_OK) {
+                round_created = true;
+            }
+
+            if (round_created) {
+                INFO_PRINT_STATUS_OK("Block %s created successfully", current_block_height);
+            } else {
+                INFO_PRINT_STATUS_FAIL("Block %s not created within %ld rounds", current_block_height, round_number);
+            }
+            break;
         }
     }
 }
