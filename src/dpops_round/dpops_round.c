@@ -122,7 +122,6 @@ void start_block_production(void)
             {
                 init_db_from_top();
                 round_result = ROUND_OK;
-                exit(0);
             }
             else
             {
@@ -141,9 +140,9 @@ void start_block_production(void)
             while (retries < 2 && round_number < 1)
             {
                 gettimeofday(&round_start_time, NULL);
-//                round_result = (round_number);
+                round_result = (round_number);
 
-                round_result = ROUND_SKIP;
+//                round_result = ROUND_SKIP;
                 round_number = 1;
                 retries = 2;
 
