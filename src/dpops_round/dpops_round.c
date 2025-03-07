@@ -120,7 +120,7 @@ void start_block_production(void) {
                 round_result = ROUND_OK;
             } else {
 
-                INFO_STAGE_PRINT("Waiting for production of block %d. Starting in ... [%ld:%02ld]", 
+                INFO_STAGE_PRINT("Waiting to start production for block %d. Starting in ... [%ld:%02ld]", 
                     (int)atof(current_block_height),  // Convert to float first if it's a string, then cast to int
                     BLOCK_TIME - 1 - minute_within_block, 
                     59 - (current_time.tv_sec % 60));
