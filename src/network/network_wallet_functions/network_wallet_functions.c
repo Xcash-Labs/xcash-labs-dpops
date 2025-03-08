@@ -13,7 +13,7 @@ int get_public_address(void)
     const char* GET_PUBLIC_ADDRESS_DATA = "{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"get_address\"}";
 
     // Variables
-    char data[SMALL_BUFFER_SIZE] = {0};
+    char data[BUFFER_SIZE_JSON_VS] = {0};
 
     // Send HTTP request to get the public address
     if (send_http_request(data, XCASH_WALLET_IP, "/json_rpc", XCASH_WALLET_PORT, "POST", 
@@ -28,7 +28,7 @@ int get_public_address(void)
     memset(xcash_wallet_public_address, 0, sizeof(xcash_wallet_public_address));
 
     // Parse the JSON response to extract the address
-    if (parse_json_data(data, "result.addresses[0].addressx", xcash_wallet_public_address, sizeof(xcash_wallet_public_address)) == 0) 
+    if (parse_json_data(data, "result.addresses[0].address", xcash_wallet_public_address, sizeof(xcash_wallet_public_address)) == 0) 
     {
         ERROR_PRINT("Could not parse the public address from the response");
         return XCASH_ERROR;
