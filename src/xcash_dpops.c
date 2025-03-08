@@ -96,6 +96,12 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
   case OPTION_TOTAL_THREADS:
     arguments->total_threads = atoi(arg);
     break;
+  case OPTION_INIT_DB_FROM_SEEDS:
+    arguments->init_db_from_seeds = true;
+    break;
+  case OPTION_INIT_DB_FROM_TOP:
+    arguments->init_db_from_top = true;
+    break;
   default:
     return ARGP_ERR_UNKNOWN;
   }
