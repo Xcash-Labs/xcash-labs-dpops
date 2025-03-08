@@ -7,6 +7,7 @@
 #include "globals.h"
 #include "structures.h"
 #include "node_functions.h"
+#include "xcash_db_sync.h"
 
 bool init_processing(const arg_config_t* arg_config);
 
