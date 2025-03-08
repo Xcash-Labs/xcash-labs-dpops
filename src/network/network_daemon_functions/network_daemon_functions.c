@@ -15,23 +15,23 @@ int get_current_block_height(char *result)
     const char *request_payload = "{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"get_block_count\"}";
 
     // Buffer to store the response
-    char response_data[BUFFER_SIZE_JSON_VS] = {0};
+    char response_data[SMALL_BUFFER_SIZE] = {0};
 
     // First attempt to fetch block height
     if (send_http_request(response_data, XCASH_DAEMON_IP, "/json_rpc", XCASH_DAEMON_PORT,
                           "POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH, request_payload,
                           SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) != XCASH_OK ||
-        parse_json_data(response_data, "result.count", result, BUFFER_SIZE_JSON_VS) == 0)
+        parse_json_data(response_data, "result.count", result, SMALL_BUFFER_SIZE) == 0)
     {
         memset(response_data, 0, sizeof(response_data));
-        memset(result, 0, BUFFER_SIZE_JSON_VS);
+        memset(result, 0, SMALL_BUFFER_SIZE);
         sleep(INVALID_RESERVE_PROOFS_SETTINGS);
 
         // Retry if the first attempt failed
         if (send_http_request(response_data, XCASH_DAEMON_IP, "/json_rpc", XCASH_DAEMON_PORT,
                               "POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH, request_payload,
                               SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) != XCASH_OK ||
-            parse_json_data(response_data, "result.count", result, BUFFER_SIZE_JSON_VS) == 0)
+            parse_json_data(response_data, "result.count", result, SMALL_BUFFER_SIZE) == 0)
         {
             ERROR_PRINT("Could not get the current block height");
             return XCASH_ERROR;
@@ -56,7 +56,7 @@ int get_previous_block_hash(char *result)
     const char *REQUEST_PAYLOAD = "{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"get_last_block_header\"}";
 
     // Variables
-    char data[BUFFER_SIZE_JSON_S] = {0};
+    char data[SMALL_BUFFER_SIZE] = {0};
 
     // Function to send request and parse result
     for (int attempt = 0; attempt < 2; attempt++)
@@ -64,7 +64,7 @@ int get_previous_block_hash(char *result)
         if (send_http_request(data, XCASH_DAEMON_IP, "/json_rpc", XCASH_DAEMON_PORT, "POST",
                               HTTP_HEADERS, HTTP_HEADERS_LENGTH, REQUEST_PAYLOAD,
                               SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) > 0 &&
-            parse_json_data(data, "result.block_header.hashx", result, BUFFER_SIZE_JSON_S
+            parse_json_data(data, "result.block_header.hashx", result, SMALL_BUFFER_SIZE
 //                sizeof(xcash_wallet_public_address)
             ) > 0)
         {
