@@ -1322,7 +1322,6 @@ bool init_db_from_seeds(void) {
             return false;
         }
 
-
         if (!get_sync_seeds_majority_list(&nodes_majority_list, &nodes_majority_count)) {
             WARNING_PRINT("Could not get data majority nodes sync list");
         }else{
@@ -1370,7 +1369,6 @@ bool init_db_from_top(void) {
             WARNING_PRINT("Can't get wallet data. You need to start xcash rpc wallet service before");
             return false;
         }
-
 
         if (!get_sync_nodes_majority_list_top(&nodes_majority_list, &nodes_majority_count)) {
             WARNING_PRINT("Could not get data majority nodes sync list");

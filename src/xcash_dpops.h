@@ -19,18 +19,14 @@
 #include "uv_net_server.h"
 #include "node_functions.h"
 
-// this may be used more in future
-typedef struct {
-    char *block_verifiers_secret_key; // Holds your wallets public address
-} arg_config_t;
-
 // Define an enum for option IDs
 typedef enum {
     OPTION_GENERATE_KEY,
     OPTION_TOTAL_THREADS,
+    OPTION_INIT_DB_FROM_SEEDS,
+    OPTION_INIT_DB_FROM_TOP,
 } option_ids;
 
-void init_processing(const arg_config_t* arg_config);
 bool configure_uv_threadpool(void);
 
 #endif

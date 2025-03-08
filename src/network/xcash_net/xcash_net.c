@@ -268,6 +268,8 @@ bool send_message(xcash_dest_t dest, xcash_msg_t msg, response_t ***reply)
     // Debug: Log the created message data
     DEBUG_PRINT("[DEBUG] Created message data: %s\n", message_data);
 
+// jed
+
     result = xnet_send_data_multi(dest, message_data, reply);
 
     // Debug: Log the result of sending data
