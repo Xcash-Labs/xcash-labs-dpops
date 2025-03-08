@@ -150,51 +150,45 @@ Parameters:
   parameters - The parameters
 Return: 0 if an error has occured, 1 if successfull
 ---------------------------------------------------------------------------------------------------------*/
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
   arg_config_t arg_config = {0};
   setenv("ARGP_HELP_FMT", "rmargin=120", 1);
-  if (argc == 1)
-  {
+  if (argc == 1) {
     FATAL_ERROR_EXIT("No arguments entered. Try `xcash-dpops --help'");
   }
-  if (argp_parse(&argp, argc, argv, ARGP_NO_EXIT | ARGP_NO_ERRS, 0, &arg_config) != 0)
-  {
+  if (argp_parse(&argp, argc, argv, ARGP_NO_EXIT | ARGP_NO_ERRS, 0, &arg_config) != 0) {
     FATAL_ERROR_EXIT("Invalid option entered. Try `xcash-dpops --help'");
   }
-  if (show_help)
-  {
+  if (show_help) {
     argp_help(&argp, stdout, ARGP_NO_HELP, argv[0]);
     return 0;
   }
 
-  if (create_key)
-  {
+  if (create_key) {
     generate_key();
     return 0;
   }
 
-  if (!(get_node_data()))
-  {
+  if (!(get_node_data())) {
     FATAL_ERROR_EXIT("Failed to get the nodes public wallet address");
   }
 
-  if (!arg_config.block_verifiers_secret_key || strlen(arg_config.block_verifiers_secret_key) != VRF_SECRET_KEY_LENGTH)
-  {
+  if (!arg_config.block_verifiers_secret_key || strlen(arg_config.block_verifiers_secret_key) != VRF_SECRET_KEY_LENGTH) {
     FATAL_ERROR_EXIT("The --block-verifiers-secret-key is mandatory and should be %d characters long!", VRF_SECRET_KEY_LENGTH);
   }
 
   strncpy(secret_key, arg_config.block_verifiers_secret_key, sizeof(secret_key) - 1);
   secret_key[sizeof(secret_key) - 1] = '\0';
-  if (!(hex_to_byte_array(secret_key, secret_key_data, sizeof(secret_key_data))))
-  {
+  if (!(hex_to_byte_array(secret_key, secret_key_data, sizeof(secret_key_data)))) {
     FATAL_ERROR_EXIT("Failed to convert the block-verifiers-secret-key to a byte array: %s", arg_config.block_verifiers_secret_key);
   }
 
-  init_processing(&arg_config);
+  if (!init_processing(&arg_config)) {
+    cleanup_data_structures();
+    FATAL_ERROR_EXIT("Failed server Initialization.");
+  }
 
-  if (initialize_database())
-  {
+  if (initialize_database()) {
     INFO_PRINT("Database opened successfully");
   } else {
     FATAL_ERROR_EXIT("Can't open mongo database");
@@ -202,12 +196,9 @@ int main(int argc, char *argv[])
 
   signal(SIGINT, sigint_handler);
 
-  if (start_tcp_server(XCASH_DPOPS_PORT))
-  {
+  if (start_tcp_server(XCASH_DPOPS_PORT)) {
     start_block_production();
-  }
-  else
-  {
+  } else {
     FATAL_ERROR_EXIT("Failed to start TCP server.");
   }
 

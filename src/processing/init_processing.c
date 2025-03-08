@@ -45,46 +45,31 @@ bool init_processing(const arg_config_t *arg_config)
     return XCASH_ERROR;
   }
 
-
-
-
-
   if (arg_config->init_db_from_seeds) {
     INFO_STAGE_PRINT("Initializing database from seeds");
     if (!init_db_from_seeds()) {
         ERROR_PRINT("Can't initialize database from seeds");
     };
-    cleanup_data_structures();
-    return false;
-}
-
-if (arg_config->init_db_from_top) {
-  if (!fill_delegates_from_db()) {
-      ERROR_PRINT("Can't read delegates list from DB");
-      cleanup_data_structures();
-      return false;
+    return XCASH_ERROR;
   }
 
+  if (arg_config->init_db_from_top) {
+    if (!fill_delegates_from_db()) {
+      ERROR_PRINT("Can't read delegates list from DB");
+      return XCASH_ERROR;
+    }
     INFO_STAGE_PRINT("Initializing database from top height nodes")
     if (!init_db_from_top()) {
-        ERROR_PRINT("Can't initialize database from height nodes");
+      ERROR_PRINT("Can't initialize database from height nodes");
     };
-    cleanup_data_structures();
-    return false;
-}
-
-
+    return XCASH_ERROR;
+  }
 
 // brief check if database is empty
 if (count_db_delegates() <= 0 || count_db_statistics() <= 0) {
     ERROR_PRINT("'delegates' or 'statistics' DB not initialized. Do it manually with --init-db-from-seeds");
-    cleanup_data_structures();
-    return false;
+    return XCASH_ERROR;
 }
-
-
-
-
 
 
   // make sure we have exact copy during initial db syncing
