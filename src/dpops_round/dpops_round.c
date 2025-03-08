@@ -97,19 +97,19 @@ void start_block_production(void) {
     xcash_round_result_t round_result = ROUND_OK;
     size_t retries = 0;
     bool current_block_healthy = false;
-
+    while (!current_block_healthy) {
+        if (get_current_block_height(current_block_height) == XCASH_OK) {
+            current_block_healthy = true;
+        } else {
+            WARNING_PRINT("Can't get current block height. Possible node is still syncing blocks. Waiting for recovery...");
+            sleep(5);  // Sleep to prevent high CPU usage
+        }
+    }
+    
     while (true) {
         gettimeofday(&current_time, NULL);
         size_t seconds_within_block = current_time.tv_sec % (BLOCK_TIME * 60);
         size_t minute_within_block = (current_time.tv_sec / 60) % BLOCK_TIME;
-
-        // Check if the current block height is healthy
-        current_block_healthy = (get_current_block_height(current_block_height) == XCASH_OK);
-        if (!current_block_healthy) {
-            WARNING_PRINT("Can't get current block height. Possible node is still syncing blocks. Waiting for recovery...");
-            sleep(5);
-            continue;  // Skip to next loop iteration if the block height is not healthy
-        }
 
         // Skip block production if the block time is past 25 seconds or if blockchain is not synced
         if (seconds_within_block > 25) {
@@ -117,11 +117,6 @@ void start_block_production(void) {
 
             // Refresh DB if last round error occurred and enough time has passed
             if (round_result != ROUND_OK && seconds_within_block > 280) {
-
-
-                DEBUG_PRINT("Here................................................");
-
-
                 init_db_from_top();
                 round_result = ROUND_OK;
             } else {
@@ -133,6 +128,14 @@ void start_block_production(void) {
                 sleep(5);
                 }
             continue;  // Skip to next loop iteration
+        }
+
+        // Check if the current block height is healthy
+        current_block_healthy = (get_current_block_height(current_block_height) == XCASH_OK);
+        if (!current_block_healthy) {
+            WARNING_PRINT("Can't get current block height. Possible node is still syncing blocks. Waiting for recovery...");
+            sleep(5);
+            continue;  // Skip to next loop iteration if the block height is not healthy
         }
 
         // Proceed with block production if within the first 25 seconds
