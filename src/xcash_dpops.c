@@ -132,6 +132,7 @@ bool configure_uv_threadpool(const arg_config_t *arg_config) {
 
   char threadpool_size[10];
   snprintf(threadpool_size, sizeof(threadpool_size), "%d", total_threads);
+  arg_config->total_threads = total_threads;
 
   if (setenv("UV_THREADPOOL_SIZE", threadpool_size, 1) != 0) {
     ERROR_PRINT("Failed to set UV_THREADPOOL_SIZE");
