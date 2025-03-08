@@ -54,6 +54,11 @@ Return: XCASH_OK (1) if successful, XCASH_ERROR (-1) if an error occurs
 ---------------------------------------------------------------------------------------------------------*/
 int get_previous_block_hash(char *result)
 {
+    if (!result) {
+        ERROR_PRINT("Invalid argument: result is NULL.");
+        return XCASH_ERROR;
+    }
+    
     // Constants
     const char *HTTP_HEADERS[] = {"Content-Type: application/json", "Accept: application/json"};
     const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0]);
