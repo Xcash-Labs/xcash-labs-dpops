@@ -3,9 +3,9 @@
 
 #include <stddef.h> 
 
-// this may be used more in future
 typedef struct {
     char *block_verifiers_secret_key;
+    int total_threads;
     bool init_db_from_seeds;
     bool init_db_from_top;
 } arg_config_t;
