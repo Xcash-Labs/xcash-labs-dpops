@@ -28,7 +28,7 @@ int get_public_address(void)
     memset(xcash_wallet_public_address, 0, sizeof(xcash_wallet_public_address));
 
     // Parse the JSON response to extract the address
-    if (parse_json_data(data, "result.addresses[0].address", xcash_wallet_public_address, sizeof(xcash_wallet_public_address)) == 0) 
+    if (parse_json_data(data, "result.address", xcash_wallet_public_address, sizeof(xcash_wallet_public_address)) == 0) 
     {
         ERROR_PRINT("Could not parse the public address from the response");
         return XCASH_ERROR;
