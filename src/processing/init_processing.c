@@ -74,7 +74,7 @@ if (count_db_delegates() <= 0 || count_db_statistics() <= 0) {
 
   // make sure we have exact copy during initial db syncing
   cleanup_db_before_upsert = false;
-  if (arg_config->init_db_from_seeds || config->init_db_from_top) {
+  if (arg_config->init_db_from_seeds || arg_config->init_db_from_top) {
 //      cleanup_db_before_upsert = true;                                               not sure about this global
   }
 
