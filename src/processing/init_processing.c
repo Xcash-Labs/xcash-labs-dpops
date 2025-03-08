@@ -4,22 +4,29 @@ static int total_threads = 0;
 
 /*---------------------------------------------------------------------------------------------------------
 Name: configure_uv_threadpool
-Description: Sets the UV_THREADPOOL_SIZE environment variable. Default is the system default of 4 and can
-not be greater that the number of cpus for the server.
+Description: Sets the UV_THREADPOOL_SIZE environment variable. Default is the system default of 4 and 
+setting it 2–4 times the number of CPU cores can improve performance.
 ---------------------------------------------------------------------------------------------------------*/
 bool configure_uv_threadpool(const arg_config_t *arg_config) {
-  total_threads = arg_config->total_threads;
-
-  if (total_threads == 0) {
-    total_threads = 4;
-  }
-
   int wsthreads = get_nprocs();
   if (wsthreads < 1) {
-    ERROR_PRINT("Failed to get CPU core count. Defaulting to 4 threads.");
+    WARNING_PRINT("Failed to get CPU core count. Defaulting to system default of 4 threads.");
     total_threads = 4;
-  } else if (total_threads > wsthreads) {
-    total_threads = wsthreads;
+    return XCASH_OK;
+  }
+
+  if (arg_config->total_threads == 0) {
+    total_threads = wsthreads * 2;
+  } else if (arg_config->total_threads >= (wsthreads*2)) {
+    total_threads = wsthreads * 2;
+    WARNING_PRINT("Limiting UV_THREADPOOL_SIZE to %d", total_threads);
+  } else {
+    total_threads = arg_config->total_threads;
+  }
+
+  if (total_threads > MAX_THREADS) {
+    total_threads = MAX_THREADS;
+    WARNING_PRINT("Capping UV_THREADPOOL_SIZE to %d", MAX_THREADS);
   }
 
   char threadpool_size[10];
@@ -41,10 +48,6 @@ Description: Initialize globals and print program start header.
 ---------------------------------------------------------------------------------------------------------*/
 bool init_processing(const arg_config_t *arg_config)
 {
-//  if (!configure_uv_threadpool(arg_config)) {
-//    return XCASH_ERROR;
-//  }
-
 
 
   network_data_nodes_amount = get_seed_node_count();

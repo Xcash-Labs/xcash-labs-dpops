@@ -24,6 +24,7 @@
 #define MAX_RETRIES 3  // Number of times a failed connection attempt will be retried before marking it as failed
 #define RETRY_DELAY_MS 500  // Delay (in milliseconds) before retrying a failed connection attempt (0.5 seconds)
 #define MAX_CONNECTIONS 1024 // Max connection for incomming transactions
+#define MAX_THREADS 8 // Max threads to use
 
 // Database
 #define DATABASE_CONNECTION "mongodb://127.0.0.1:27017" // The database connection string

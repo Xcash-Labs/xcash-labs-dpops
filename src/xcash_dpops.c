@@ -183,8 +183,8 @@ int main(int argc, char *argv[]) {
     FATAL_ERROR_EXIT("Failed to convert the block-verifiers-secret-key to a byte array: %s", arg_config.block_verifiers_secret_key);
   }
 
-  if (!configure_uv_threadpool(&arg_config)) {
-    return XCASH_ERROR;
+  if (!configure_uv_threadpool(arg_config)) {
+      FATAL_ERROR_EXIT("Failed to set UV_THREADPOOL_SIZE.");
   }
 
   if (!initialize_database()) {
