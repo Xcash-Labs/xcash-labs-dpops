@@ -198,7 +198,7 @@ int main(int argc, char *argv[]) {
     FATAL_ERROR_EXIT("Failed to start TCP server.");
   }
 
-  if (!init_processing(&arg_config)) {;
+  if (init_processing(&arg_config)) {;
     print_starter_state(&arg_config);
     start_block_production();
   }
