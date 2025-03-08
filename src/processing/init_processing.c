@@ -41,9 +41,9 @@ Description: Initialize globals and print program start header.
 ---------------------------------------------------------------------------------------------------------*/
 bool init_processing(const arg_config_t *arg_config)
 {
-  if (!configure_uv_threadpool(arg_config)) {
-    return XCASH_ERROR;
-  }
+//  if (!configure_uv_threadpool(arg_config)) {
+//    return XCASH_ERROR;
+//  }
 
   if (arg_config->init_db_from_seeds) {
     INFO_STAGE_PRINT("Initializing database from seeds");
@@ -71,21 +71,15 @@ if (count_db_delegates() <= 0 || count_db_statistics() <= 0) {
     return XCASH_ERROR;
 }
 
-
   // make sure we have exact copy during initial db syncing
   cleanup_db_before_upsert = false;
   if (arg_config->init_db_from_seeds || arg_config->init_db_from_top) {
-//      cleanup_db_before_upsert = true;                                               not sure about this global
+  //    cleanup_db_before_upsert = true;                                               not sure about this global
   }
 
   network_data_nodes_amount = get_seed_node_count();
   pthread_rwlock_init(&rwlock,NULL);
-  
-  current_round_part[0] = '1';
-  current_round_part[1] = '\0';
-  current_round_part_backup_node[0] = '0';
-  current_round_part_backup_node[1] = '\0';
-  memset(&previous_block_verifiers_list, 0, sizeof(previous_block_verifiers_list));
+    memset(&previous_block_verifiers_list, 0, sizeof(previous_block_verifiers_list));
   memset(&current_block_verifiers_list, 0, sizeof(current_block_verifiers_list));
   memset(&next_block_verifiers_list, 0, sizeof(next_block_verifiers_list));
 

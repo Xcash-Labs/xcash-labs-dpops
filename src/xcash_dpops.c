@@ -183,24 +183,25 @@ int main(int argc, char *argv[]) {
     FATAL_ERROR_EXIT("Failed to convert the block-verifiers-secret-key to a byte array: %s", arg_config.block_verifiers_secret_key);
   }
 
-  if (!init_processing(&arg_config)) {
-    cleanup_data_structures();
-    FATAL_ERROR_EXIT("Failed server Initialization.");
+  if (!configure_uv_threadpool(&arg_config)) {
+    return XCASH_ERROR;
   }
 
-  if (initialize_database()) {
-    INFO_PRINT("Database opened successfully");
-  } else {
+  if (!initialize_database()) {
     FATAL_ERROR_EXIT("Can't open mongo database");
   }
 
   signal(SIGINT, sigint_handler);
 
-  if (start_tcp_server(XCASH_DPOPS_PORT)) {
-    start_block_production();
-  } else {
+  if (!start_tcp_server(XCASH_DPOPS_PORT)) {
     FATAL_ERROR_EXIT("Failed to start TCP server.");
   }
+
+  if (!init_processing(&arg_config)) {;
+    FATAL_ERROR_EXIT("Failed server Initialization.");
+  }
+
+  start_block_production();
 
   stop_tcp_server();
   shutdown_database();
