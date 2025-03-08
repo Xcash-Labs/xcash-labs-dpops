@@ -55,6 +55,11 @@ BRIGHT_WHITE_TEXT("Advanced Options:\n")
 "\n"
 "  --generate-key                          Generate public/private key for block verifiers.\n"
 "\n"
+"  --init-db-from-seeds                    Sync current node data from seeds. Needed only during installation\n"
+"                                          process.\n"
+"\n"
+"  --init-db-from-top                      Sync current node data from top block_height nodes.\n"
+"\n"
 "For more details on each option, refer to the documentation or use the --help option.\n";
 
 static struct argp_option options[] = {
