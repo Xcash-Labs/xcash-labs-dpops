@@ -46,10 +46,8 @@ bool configure_uv_threadpool(const arg_config_t *arg_config) {
 Name: init_processing
 Description: Initialize globals and print program start header.
 ---------------------------------------------------------------------------------------------------------*/
-bool init_processing(const arg_config_t *arg_config)
+void init_processing(const arg_config_t *arg_config)
 {
-
-
   network_data_nodes_amount = get_seed_node_count();
   pthread_rwlock_init(&rwlock,NULL);
     memset(&previous_block_verifiers_list, 0, sizeof(previous_block_verifiers_list));

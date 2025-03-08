@@ -66,7 +66,7 @@ static struct argp_option options[] = {
   {"help", 'h', 0, 0, "List all valid parameters.", 0},
   {"block-verifiers-secret-key", 'k', "SECRET_KEY", 0, "Set the block verifier's secret key", 0},
   {"log-level", 'l', "LOG_LEVEL", 0, "Displays log messages based on the level passed.", 0},
-  {"total-threads", OPTION_TOTAL_THREADS, "THREADS", 0, "Set total threads (Default: 4).", 0},
+  {"total-threads", OPTION_TOTAL_THREADS, "THREADS", 0, "Set total threads (Default: based on server threads).", 0},
   {"generate-key", OPTION_GENERATE_KEY, 0, 0, "Generate public/private key for block verifiers.", 0},
   {"init-db-from-seeds", OPTION_INIT_DB_FROM_SEEDS, 0, 0, "Sync current node data from seeds. Needed only during installation process", 0},
   {"init-db-from-top", OPTION_INIT_DB_FROM_TOP, 0, 0, "Sync current node data from top block_height nodes.", 0},
@@ -194,13 +194,15 @@ int main(int argc, char *argv[]) {
   signal(SIGINT, sigint_handler);
 
   if (!start_tcp_server(XCASH_DPOPS_PORT)) {
+    shutdown_database();
     FATAL_ERROR_EXIT("Failed to start TCP server.");
   }
 
-  if (!init_processing(&arg_config)) {;
-    FATAL_ERROR_EXIT("Failed server Initialization.");
-  }
+//  if (!init_processing(&arg_config)) {;
+//    FATAL_ERROR_EXIT("Failed server Initialization.");
+//  }
 
+  init_processing(&arg_config);
   start_block_production();
 
   stop_tcp_server();
