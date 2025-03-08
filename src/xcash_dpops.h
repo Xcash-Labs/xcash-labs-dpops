@@ -18,6 +18,7 @@
 #include "dpops_round.h"
 #include "uv_net_server.h"
 #include "node_functions.h"
+#include "init_processing.h"
 
 // Define an enum for option IDs
 typedef enum {
