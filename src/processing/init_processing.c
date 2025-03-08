@@ -95,5 +95,5 @@ bool init_processing(const arg_config_t *arg_config)
     DATABASE_CONNECTION, arg_config->total_threads, log_level
   );
 
-  retrun XCASH_OK;
+  return XCASH_OK;
 }
