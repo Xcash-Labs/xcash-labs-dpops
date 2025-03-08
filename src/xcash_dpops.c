@@ -143,16 +143,6 @@ bool configure_uv_threadpool(const arg_config_t *arg_config) {
   return XCASH_OK;
 }
 
-
-
-
-
-
-
-
-
-
-
 /*---------------------------------------------------------------------------------------------------------
 Name: init_processing
 Description: Initialize globals and print program start header.
