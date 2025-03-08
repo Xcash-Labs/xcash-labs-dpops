@@ -7,6 +7,6 @@
 #include "structures.h"
 #include "node_functions.h"
 
-void init_processing(const arg_config_t* arg_config);
+bool init_processing(const arg_config_t* arg_config);
 
 #endif // INIT_PROCESSING_H

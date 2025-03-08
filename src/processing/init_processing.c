@@ -1,11 +1,18 @@
 #include "init_processing.h"
 
+static int total_threads = 0;
+
 /*---------------------------------------------------------------------------------------------------------
 Name: init_processing
 Description: Initialize globals and print program start header.
 ---------------------------------------------------------------------------------------------------------*/
-void init_processing(const arg_config_t *arg_config)
+bool init_processing(const arg_config_t *arg_config)
 {
+
+  if (!configure_uv_threadpool(&arg_config)) {
+    return XCASH_ERROR;
+  }
+
   network_data_nodes_amount = get_seed_node_count();
   pthread_rwlock_init(&rwlock,NULL);
   
@@ -54,4 +61,39 @@ void init_processing(const arg_config_t *arg_config)
     XCASH_WALLET_IP, XCASH_WALLET_PORT,
     DATABASE_CONNECTION, arg_config->total_threads, log_level
   );
+
+  retrun XCASH_OK;
+}
+
+/*---------------------------------------------------------------------------------------------------------
+Name: configure_uv_threadpool
+Description: Sets the UV_THREADPOOL_SIZE environment variable. Default is the system default of 4 and can
+not be greater that the number of cpus for the server.
+---------------------------------------------------------------------------------------------------------*/
+bool configure_uv_threadpool(const arg_config_t *arg_config) {
+  total_threads = arg_config->total_threads;
+
+  if (total_threads == 0) {
+    total_threads = 4;
+  }
+
+  int wsthreads = get_nprocs();
+  if (wsthreads < 1) {
+    ERROR_PRINT("Failed to get CPU core count. Defaulting to 4 threads.");
+    total_threads = 4;
+  } else if (total_threads > wsthreads) {
+    total_threads = wsthreads;
+  }
+
+  char threadpool_size[10];
+  snprintf(threadpool_size, sizeof(threadpool_size), "%d", total_threads);
+
+  if (setenv("UV_THREADPOOL_SIZE", threadpool_size, 1) != 0) {
+    ERROR_PRINT("Failed to set UV_THREADPOOL_SIZE");
+    return XCASH_ERROR;
+  } else {
+    DEBUG_PRINT("UV_THREADPOOL_SIZE set to %s", threadpool_size);
+  }
+
+  return XCASH_OK;
 }
