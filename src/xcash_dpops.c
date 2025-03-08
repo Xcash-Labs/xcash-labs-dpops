@@ -64,7 +64,7 @@ static struct argp_option options[] = {
   {"log-level", 'l', "LOG_LEVEL", 0, "Displays log messages based on the level passed.", 0},
   {"total-threads", OPTION_TOTAL_THREADS, "THREADS", 0, "Set total threads (Default: 4).", 0},
   {"generate-key", OPTION_GENERATE_KEY, 0, 0, "Generate public/private key for block verifiers.", 0},
-  {"init-db-from-seeds",  , 0, 0, "Sync current node data from seeds. Needed only during installation process", 0},
+  {"init-db-from-seeds", OPTION_INIT_DB_FROM_SEEDS, 0, 0, "Sync current node data from seeds. Needed only during installation process", 0},
   {"init-db-from-top", OPTION_INIT_DB_FROM_TOP, 0, 0, "Sync current node data from top block_height nodes.", 0},
   {0}
 };
