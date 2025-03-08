@@ -46,9 +46,10 @@
 #define SMALL_BUFFER_SIZE 2000
 #define MAXIMUM_BUFFER_SIZE 52428800 // 50 MB                                   ???????????????????????????
 
-#define BUFFER_SIZE_JSON_S 4096
-#define BUFFER_SIZE_JSON_M 16384
-#define BUFFER_SIZE_JSON_L 131072
+#define BUFFER_SIZE_JSON_VS  512
+#define BUFFER_SIZE_JSON_S 1024
+#define BUFFER_SIZE_JSON_M 4096
+#define BUFFER_SIZE_JSON_L 16384
 
 #define DATA_HASH_LENGTH 128 // The length of the SHA2-512 hash
 #define XCASH_PUBLIC_ADDR_LENGTH 98 // The length of a XCA address
