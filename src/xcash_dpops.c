@@ -115,31 +115,43 @@ Name: configure_uv_threadpool
 Description: Sets the UV_THREADPOOL_SIZE environment variable. Default is the system default of 4 and can
 not be greater that the number of cpus for the server.
 ---------------------------------------------------------------------------------------------------------*/
-bool configure_uv_threadpool(void) {
-  if (arguments->total_threads == 0) {
-    arguments->total_threads = 4;
-  }
-  if (arguments->total_threads != 4) {
-    int wsthreads = get_nprocs();
-    if (wsthreads < 1) {
-      ERROR_PRINT("Failed to get CPU core count. Defaulting to 4 threads.");
-      return XCASH_OK;
-    }
-    if (arguments->total_threads > wsthreads) {
-      arguments->total_threads = wsthreads;
-    }
+bool configure_uv_threadpool(const arg_config_t *arg_config) {
+  int total_threads = arg_config->total_threads;
 
-    char threadpool_size[10];
-    snprintf(threadpool_size, sizeof(threadpool_size), "%d", arguments->total_threads);
-    if (setenv("UV_THREADPOOL_SIZE", threadpool_size, 1) != 0) {
-      ERROR_PRINT("Failed to set UV_THREADPOOL_SIZE");
-      return XCASH_ERROR;
-    } else {
-      DEBUG_PRINT("UV_THREADPOOL_SIZE set to %s", threadpool_size);
-    }
+  if (total_threads == 0) {
+    total_threads = 4;
   }
+
+  int wsthreads = get_nprocs();
+  if (wsthreads < 1) {
+    ERROR_PRINT("Failed to get CPU core count. Defaulting to 4 threads.");
+    total_threads = 4;
+  } else if (total_threads > wsthreads) {
+    total_threads = wsthreads;
+  }
+
+  char threadpool_size[10];
+  snprintf(threadpool_size, sizeof(threadpool_size), "%d", total_threads);
+
+  if (setenv("UV_THREADPOOL_SIZE", threadpool_size, 1) != 0) {
+    ERROR_PRINT("Failed to set UV_THREADPOOL_SIZE");
+    return XCASH_ERROR;
+  } else {
+    DEBUG_PRINT("UV_THREADPOOL_SIZE set to %s", threadpool_size);
+  }
+
   return XCASH_OK;
 }
+
+
+
+
+
+
+
+
+
+
 
 /*---------------------------------------------------------------------------------------------------------
 Name: init_processing
@@ -274,7 +286,7 @@ int main(int argc, char *argv[])
     FATAL_ERROR_EXIT("Failed to convert the block-verifiers-secret-key to a byte array: %s", arg_config.block_verifiers_secret_key);
   }
 
-  if (!(configure_uv_threadpool()))
+  if (!(configure_uv_threadpool(&arg_config)))
   {
     FATAL_ERROR_EXIT("Can't configure uv_threadpool");
   }
