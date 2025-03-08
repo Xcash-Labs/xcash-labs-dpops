@@ -13,7 +13,7 @@ int get_public_address(void)
     const char* GET_PUBLIC_ADDRESS_DATA = "{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"get_address\"}";
 
     // Variables
-    char data[BUFFER_SIZE_JSON_VS] = {0};
+    char data[BUFFER_SIZE] = {0};
 
     // Send HTTP request to get the public address
     if (send_http_request(data, XCASH_WALLET_IP, "/json_rpc", XCASH_WALLET_PORT, "POST", 
