@@ -91,6 +91,4 @@ void init_processing(const arg_config_t *arg_config)
     XCASH_WALLET_IP, XCASH_WALLET_PORT,
     DATABASE_CONNECTION, total_threads, log_level
   );
-
-  return XCASH_OK;
 }
