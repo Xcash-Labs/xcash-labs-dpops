@@ -9,6 +9,7 @@
 #include "node_functions.h"
 #include "db_sync.h"
 
+void print_starter_state(const arg_config_t* arg_config);
 void init_processing(const arg_config_t* arg_config);
 bool configure_uv_threadpool(const arg_config_t* arg_config);
 

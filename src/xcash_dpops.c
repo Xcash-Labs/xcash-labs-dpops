@@ -202,7 +202,7 @@ int main(int argc, char *argv[]) {
 //    FATAL_ERROR_EXIT("Failed server Initialization.");
 //  }
 
-  init_processing(&arg_config);
+  print_starter_state(&arg_config);
   start_block_production();
 
   stop_tcp_server();

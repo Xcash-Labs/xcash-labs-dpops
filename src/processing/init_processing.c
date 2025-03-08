@@ -43,10 +43,10 @@ bool configure_uv_threadpool(const arg_config_t *arg_config) {
 }
 
 /*---------------------------------------------------------------------------------------------------------
-Name: init_processing
-Description: Initialize globals and print program start header.
+Name: print_starter_state
+Description: Print program start header.
 ---------------------------------------------------------------------------------------------------------*/
-void init_processing(const arg_config_t *arg_config)
+void print_starter_state(const arg_config_t *arg_config)
 {
   network_data_nodes_amount = get_seed_node_count();
   pthread_rwlock_init(&rwlock,NULL);
@@ -91,4 +91,12 @@ void init_processing(const arg_config_t *arg_config)
     XCASH_WALLET_IP, XCASH_WALLET_PORT,
     DATABASE_CONNECTION, total_threads, log_level
   );
+}
+
+/*---------------------------------------------------------------------------------------------------------
+Name: init_processing
+Description: Initialize globals and print program start header.
+---------------------------------------------------------------------------------------------------------*/
+void init_processing(const arg_config_t *arg_config)
+{
 }
