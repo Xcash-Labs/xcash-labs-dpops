@@ -4,7 +4,8 @@
 #include <stdbool.h>
 #include "config.h"
 #include "globals.h"
-#include "structures.h" 
+#include "structures.h"
+#include "node_functions.h"
 
 void init_processing(const arg_config_t* arg_config);
 
