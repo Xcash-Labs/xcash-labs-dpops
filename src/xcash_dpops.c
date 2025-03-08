@@ -187,7 +187,7 @@ void init_processing(const arg_config_t *arg_config)
     XCASH_DAEMON_IP, XCASH_DAEMON_PORT,
     XCASH_DPOPS_IP, XCASH_DPOPS_PORT,
     XCASH_WALLET_IP, XCASH_WALLET_PORT,
-    DATABASE_CONNECTION, total_threads, log_level
+    DATABASE_CONNECTION, log_level, log_level
   );
 }
 
