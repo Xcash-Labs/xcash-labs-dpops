@@ -940,8 +940,6 @@ bool get_nodes_from_db(void) {
     return true;
 }
 
-
-
 bool fill_delegates_from_db(void) {
     delegates_t* delegates = (delegates_t*)calloc(MAXIMUM_AMOUNT_OF_DELEGATES, sizeof(delegates_t));
     size_t total_delegates = 0;
@@ -965,7 +963,6 @@ bool fill_delegates_from_db(void) {
         }
     }
     
-
     // cleanup the allocated memory
     free(delegates);
 

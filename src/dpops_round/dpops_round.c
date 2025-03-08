@@ -15,7 +15,7 @@ xcash_round_result_t process_round(size_t round_number) {
         return ROUND_ERROR;
     }
 
-    DEBUG_PRINT("Here................................................");
+
 
     size_t network_majority_count = 0;
     xcash_node_sync_info_t* nodes_majority_list = NULL;
@@ -117,6 +117,11 @@ void start_block_production(void) {
 
             // Refresh DB if last round error occurred and enough time has passed
             if (round_result != ROUND_OK && seconds_within_block > 280) {
+
+
+                DEBUG_PRINT("Here................................................");
+
+
                 init_db_from_top();
                 round_result = ROUND_OK;
             } else {
