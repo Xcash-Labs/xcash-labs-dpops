@@ -50,7 +50,7 @@ bool init_processing(const arg_config_t *arg_config)
 
 
   if (arg_config->init_db_from_seeds) {
-    INFO_STAGE_PRINT("Initializing database from seeds")
+    INFO_STAGE_PRINT("Initializing database from seeds");
     if (!init_db_from_seeds()) {
         ERROR_PRINT("Can't initialize database from seeds");
     };
