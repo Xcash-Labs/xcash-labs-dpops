@@ -41,7 +41,7 @@ Description: Initialize globals and print program start header.
 ---------------------------------------------------------------------------------------------------------*/
 bool init_processing(const arg_config_t *arg_config)
 {
-  if (!configure_uv_threadpool(&arg_config)) {
+  if (!configure_uv_threadpool(arg_config)) {
     return XCASH_ERROR;
   }
 
