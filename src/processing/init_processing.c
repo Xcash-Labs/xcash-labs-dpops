@@ -43,17 +43,26 @@ bool configure_uv_threadpool(const arg_config_t *arg_config) {
 }
 
 /*---------------------------------------------------------------------------------------------------------
+Name: init_processing
+Description: Initialize globals and print program start header.
+---------------------------------------------------------------------------------------------------------*/
+bool init_processing(const arg_config_t *arg_config)
+{
+  network_data_nodes_amount = get_seed_node_count();
+  pthread_rwlock_init(&rwlock,NULL);
+  memset(&previous_block_verifiers_list, 0, sizeof(previous_block_verifiers_list));
+  memset(&current_block_verifiers_list, 0, sizeof(current_block_verifiers_list));
+  memset(&next_block_verifiers_list, 0, sizeof(next_block_verifiers_list));
+  
+  return XCASH_OK;
+}
+
+/*---------------------------------------------------------------------------------------------------------
 Name: print_starter_state
 Description: Print program start header.
 ---------------------------------------------------------------------------------------------------------*/
 void print_starter_state(const arg_config_t *arg_config)
 {
-  network_data_nodes_amount = get_seed_node_count();
-  pthread_rwlock_init(&rwlock,NULL);
-    memset(&previous_block_verifiers_list, 0, sizeof(previous_block_verifiers_list));
-  memset(&current_block_verifiers_list, 0, sizeof(current_block_verifiers_list));
-  memset(&next_block_verifiers_list, 0, sizeof(next_block_verifiers_list));
-
   static const char xcash_tech_header[] =
       "\n"
       " /$$   /$$                           /$$        / $$              / $$                    \n"
@@ -91,12 +100,4 @@ void print_starter_state(const arg_config_t *arg_config)
     XCASH_WALLET_IP, XCASH_WALLET_PORT,
     DATABASE_CONNECTION, total_threads, log_level
   );
-}
-
-/*---------------------------------------------------------------------------------------------------------
-Name: init_processing
-Description: Initialize globals and print program start header.
----------------------------------------------------------------------------------------------------------*/
-void init_processing(const arg_config_t *arg_config)
-{
 }
