@@ -28,6 +28,4 @@ typedef enum {
     OPTION_INIT_DB_FROM_TOP,
 } option_ids;
 
-bool configure_uv_threadpool(const arg_config_t* arg_config);
-
 #endif

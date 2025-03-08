@@ -35,7 +35,6 @@ const NetworkNode network_nodes[] = {
 // local
 static bool show_help = false;
 static bool create_key = false;
-//static int total_threads = 4;
 static int sig_requests = 0;
 
 static char doc[] =
@@ -109,40 +108,6 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 }
 
 static struct argp argp = {options, parse_opt, 0, doc, NULL, NULL, NULL};
-
-/*---------------------------------------------------------------------------------------------------------
-Name: configure_uv_threadpool
-Description: Sets the UV_THREADPOOL_SIZE environment variable. Default is the system default of 4 and can
-not be greater that the number of cpus for the server.
----------------------------------------------------------------------------------------------------------*/
-bool configure_uv_threadpool(const arg_config_t *arg_config) {
-  int total_threads = arg_config->total_threads;
-
-  if (total_threads == 0) {
-    total_threads = 4;
-  }
-
-  int wsthreads = get_nprocs();
-  if (wsthreads < 1) {
-    ERROR_PRINT("Failed to get CPU core count. Defaulting to 4 threads.");
-    total_threads = 4;
-  } else if (total_threads > wsthreads) {
-    total_threads = wsthreads;
-  }
-
-  char threadpool_size[10];
-  snprintf(threadpool_size, sizeof(threadpool_size), "%d", total_threads);
-  arg_config->total_threads = total_threads;
-
-  if (setenv("UV_THREADPOOL_SIZE", threadpool_size, 1) != 0) {
-    ERROR_PRINT("Failed to set UV_THREADPOOL_SIZE");
-    return XCASH_ERROR;
-  } else {
-    DEBUG_PRINT("UV_THREADPOOL_SIZE set to %s", threadpool_size);
-  }
-
-  return XCASH_OK;
-}
 
 /*---------------------------------------------------------------------------------------------------------
 Name: cleanup_data_structure
