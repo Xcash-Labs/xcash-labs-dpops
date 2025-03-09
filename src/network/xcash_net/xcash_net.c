@@ -214,6 +214,7 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
     }
     responses = send_multi_request(hosts, XCASH_DPOPS_PORT, message_ender);
     free(message_ender);
+    DEBUG_PRINT("NEXT jed.......1");
     if (responses)
     {
         remove_enders(responses);
