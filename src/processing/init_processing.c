@@ -67,7 +67,7 @@ bool init_processing(const arg_config_t *arg_config)
       ERROR_PRINT("Can't read delegates list from DB");
       return XCASH_ERROR;
     }
-    INFO_STAGE_PRINT("Initializing database from top height nodes")
+    INFO_STAGE_PRINT("Initializing database from top height nodes");
     if (!init_db_from_top()) {
       ERROR_PRINT("Can't initialize database from top height nodes");
       return XCASH_ERROR;
