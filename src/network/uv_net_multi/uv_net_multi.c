@@ -161,7 +161,7 @@ void start_connection(client_t* client, const struct sockaddr* addr) {
 
     DEBUG_PRINT("Starting connection to %s\n", client->response->host);
     uv_tcp_connect(&client->connect_req, &client->handle, addr, on_connect);
-    DEBUG_PRINT("NEXT........")
+    DEBUG_PRINT("NEXT........");
 
 
 
