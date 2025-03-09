@@ -135,9 +135,6 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
         }
         online_hosts[di] = NULL;  // Null-terminate the array
         hosts = online_hosts;     // Assign heap-allocated array to hosts
-    
-        DEBUG_PRINT("[DEBUG] online_hosts address: %p\n", (void *)online_hosts);
-        DEBUG_PRINT("[DEBUG] hosts address: %p\n", (void *)hosts);
     }
     break;
     
@@ -164,9 +161,6 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
         }
         delegates_hosts[host_index] = NULL;  // Null-terminate the array
         hosts = delegates_hosts;             // Assign heap-allocated array to hosts
-    
-        DEBUG_PRINT("[DEBUG] delegates_hosts address: %p\n", (void *)delegates_hosts);
-        DEBUG_PRINT("[DEBUG] hosts address: %p\n", (void *)hosts);
     }
     break;
     
@@ -196,9 +190,6 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
         }
         delegates_online_hosts[host_index] = NULL;  // Null-terminate the array
         hosts = delegates_online_hosts;              // Assign heap-allocated array to hosts
-    
-        DEBUG_PRINT("[DEBUG] delegates_online_hosts address: %p\n", (void *)delegates_online_hosts);
-        DEBUG_PRINT("[DEBUG] hosts address: %p\n", (void *)hosts);
     }
     break;
     
