@@ -86,12 +86,6 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
     switch (dest)
     {
 
-
-
-        
-
-
-
     case XNET_SEEDS_ALL:
     {
         const char **all_hosts = malloc((network_data_nodes_amount + 1) * sizeof(char *));
@@ -102,7 +96,6 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
     
         int i = 0;
         while (i < network_data_nodes_amount) {
-            DEBUG_PRINT("......................Node %s", network_nodes[i].ip_address);
             all_hosts[i] = network_nodes[i].ip_address;
             i++;
         }
@@ -111,63 +104,94 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
     }
     break;
     
-
-
-
     case XNET_SEEDS_ALL_ONLINE:
     {
-        const char *online_hosts[network_data_nodes_amount + 1];
+        const char **online_hosts = malloc((network_data_nodes_amount + 1) * sizeof(char *));
+        if (!online_hosts) {
+            ERROR_PRINT("Failed to allocate memory for online_hosts");
+            return false;  // Handle memory allocation failure
+        }
+    
         int si = 0, di = 0;
-        while (si < network_data_nodes_amount)
-        {
-            if (network_nodes[si].online_status == 1)
-            {
-                online_hosts[di++] = network_nodes[si].ip_address;
+        while (si < network_data_nodes_amount) {
+            if (network_nodes[si].online_status == 1) {
+                if (!network_nodes[si].ip_address) {  // Check for NULL IP address
+                    ERROR_PRINT("IP address is NULL for node %d", si);
+                    continue;  // Skip to next node
+                }
+                online_hosts[di++] = network_nodes[si].ip_address;  // Assign IP if online
             }
             si++;
         }
-        online_hosts[di] = NULL;
-        hosts = online_hosts;
+        online_hosts[di] = NULL;  // Null-terminate the array
+        hosts = online_hosts;     // Assign heap-allocated array to hosts
+    
+        DEBUG_PRINT("[DEBUG] online_hosts address: %p\n", (void *)online_hosts);
+        DEBUG_PRINT("[DEBUG] hosts address: %p\n", (void *)hosts);
     }
     break;
+    
 
     case XNET_DELEGATES_ALL:
     {
-        const char *delegates_hosts[BLOCK_VERIFIERS_TOTAL_AMOUNT + 1];
+        const char **delegates_hosts = malloc((BLOCK_VERIFIERS_TOTAL_AMOUNT + 1) * sizeof(char *));
+        if (!delegates_hosts) {
+            ERROR_PRINT("Failed to allocate memory for delegates_hosts");
+            return false;  // Handle memory allocation failure
+        }
+    
         size_t host_index = 0;
-        for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++)
-        {
-            if (strlen(delegates_all[i].IP_address) != 0)
-            {
+        for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
+            if (strlen(delegates_all[i].IP_address) != 0) {
+                if (!delegates_all[i].IP_address) {  // Check for NULL IP address
+                    ERROR_PRINT("IP address is NULL for delegate %s", delegates_all[i].delegate_name);
+                    continue;  // Skip to next delegate
+                }
+    
                 DEBUG_PRINT("REQ to %s : %s", delegates_all[i].delegate_name, delegates_all[i].IP_address);
-                delegates_hosts[host_index++] = delegates_all[i].IP_address;
+                delegates_hosts[host_index++] = delegates_all[i].IP_address;  // Direct assignment
             }
         }
-        delegates_hosts[host_index] = NULL;
-        hosts = delegates_hosts;
+        delegates_hosts[host_index] = NULL;  // Null-terminate the array
+        hosts = delegates_hosts;             // Assign heap-allocated array to hosts
+    
+        DEBUG_PRINT("[DEBUG] delegates_hosts address: %p\n", (void *)delegates_hosts);
+        DEBUG_PRINT("[DEBUG] hosts address: %p\n", (void *)hosts);
     }
     break;
-
+    
     case XNET_DELEGATES_ALL_ONLINE:
     {
-        const char *delegates_online_hosts[BLOCK_VERIFIERS_TOTAL_AMOUNT + 1];
+        const char **delegates_online_hosts = malloc((BLOCK_VERIFIERS_TOTAL_AMOUNT + 1) * sizeof(char *));
+        if (!delegates_online_hosts) {
+            ERROR_PRINT("Failed to allocate memory for delegates_online_hosts");
+            return false;  // Handle memory allocation failure
+        }
+    
         size_t host_index = 0;
-        for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++)
-        {
+        for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
             bool is_online = (strcmp(delegates_all[i].online_status, "true") == 0);
             bool has_ip = (strlen(delegates_all[i].IP_address) != 0);
             bool not_self = (strcmp(delegates_all[i].public_address, xcash_wallet_public_address) != 0);
-
-            if (is_online && has_ip && not_self)
-            {
-                delegates_online_hosts[host_index++] = delegates_all[i].IP_address;
+    
+            if (is_online && has_ip && not_self) {
+                if (!delegates_all[i].IP_address) {  // Check for NULL IP address
+                    ERROR_PRINT("IP address is NULL for delegate %s", delegates_all[i].delegate_name);
+                    continue;  // Skip to next delegate
+                }
+    
+                DEBUG_PRINT("Online delegate: %s (%s)", delegates_all[i].delegate_name, delegates_all[i].IP_address);
+                delegates_online_hosts[host_index++] = delegates_all[i].IP_address;  // Direct assignment
             }
         }
-        delegates_online_hosts[host_index] = NULL;
-        hosts = delegates_online_hosts;
+        delegates_online_hosts[host_index] = NULL;  // Null-terminate the array
+        hosts = delegates_online_hosts;              // Assign heap-allocated array to hosts
+    
+        DEBUG_PRINT("[DEBUG] delegates_online_hosts address: %p\n", (void *)delegates_online_hosts);
+        DEBUG_PRINT("[DEBUG] hosts address: %p\n", (void *)hosts);
     }
     break;
-
+    
     default:
     {
         ERROR_PRINT("Invalid xcash_dest_t: %d", dest);
@@ -185,7 +209,7 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
     message_ender = _build_message_ender(message);
     if (!message_ender)
     {
-        return false; // Already logged error
+        return false;
     }
 
     responses = send_multi_request(hosts, XCASH_DPOPS_PORT, message_ender);

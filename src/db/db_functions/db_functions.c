@@ -216,42 +216,65 @@ int read_document_from_collection(const char* DATABASE, const char* COLLECTION, 
 
 // Function to read a specific field from a document
 int read_document_field_from_collection(const char* DATABASE, const char* COLLECTION, const char* DATA, const char* FIELD_NAME, char* result) {
+  if (!DATABASE || !COLLECTION || !DATA || !FIELD_NAME || !result) {  // NULL checks
+      fprintf(stderr, "Invalid input parameters.\n");
+      return XCASH_ERROR;
+  }
+
   const bson_t* current_document;
   mongoc_client_t* database_client_thread = get_temporary_connection();
   if (!database_client_thread) return XCASH_ERROR;
 
   mongoc_collection_t* collection = mongoc_client_get_collection(database_client_thread, DATABASE, COLLECTION);
   if (!check_if_database_collection_exist(DATABASE, COLLECTION)) {
-    free_resources(NULL, NULL, collection, database_client_thread);
-    return XCASH_ERROR;
+      free_resources(NULL, NULL, collection, database_client_thread);
+      return XCASH_ERROR;
   }
 
   bson_error_t error;
   bson_t* document = create_bson_document(DATA, &error);
-  if (!document) return handle_error("Invalid JSON format", NULL, NULL, collection, database_client_thread);
+  if (!document) {
+      handle_error("Invalid JSON format", NULL, NULL, collection, database_client_thread);
+      return XCASH_ERROR;
+  }
 
   mongoc_cursor_t* document_settings = mongoc_collection_find_with_opts(collection, document, NULL, NULL);
   char* message = NULL;
   int count = 0;
 
   while (mongoc_cursor_next(document_settings, &current_document)) {
-    message = bson_as_canonical_extended_json(current_document, NULL);
-    char* field_start = strstr(message, FIELD_NAME);
-    if (field_start) {
-      field_start += strlen(FIELD_NAME) + 5;  // Move to value start
-      char* field_end = strstr(field_start, "\"");
-      if (field_end) {
-        strncpy(result, field_start, field_end - field_start);
-        bson_free(message);
-        count = 1;
-        break;
+      message = bson_as_canonical_extended_json(current_document, NULL);
+      if (message) {  // Ensure message is not NULL
+          char* field_start = strstr(message, FIELD_NAME);
+          if (field_start) {
+              field_start += strlen(FIELD_NAME) + 5;
+              char* field_end = strstr(field_start, "\"");
+              if (field_end) {
+                  size_t length = field_end - field_start;
+                  if (length < sizeof(result)) { 
+                      strncpy(result, field_start, length);
+                      result[length] = '\0'; 
+                      bson_free(message);
+                      count = 1;
+                      break;
+                  } else {
+                      fprintf(stderr, "Field value too large for buffer.\n");
+                      bson_free(message);
+                      break;
+                  }
+              }
+          }
+          bson_free(message);
       }
-    }
-    bson_free(message);
   }
 
   mongoc_cursor_destroy(document_settings);
-  if (count != 1) return handle_error("Field not found", document, NULL, collection, database_client_thread);
+
+  if (count != 1) {
+      handle_error("Field not found", document, NULL, collection, database_client_thread);
+      bson_destroy(document);
+      return XCASH_ERROR;
+  }
 
   free_resources(document, NULL, collection, database_client_thread);
   return XCASH_OK;

@@ -7,7 +7,9 @@ static uv_async_t async_shutdown; // Async handle for clean shutdown
 
 // Cleanup function after client disconnects
 void on_client_close(uv_handle_t *handle) {
-    free(handle);
+    if (handle) {
+        free(handle);  // Free memory allocated for the client
+    }
 }
 
 // Handle client connections
@@ -17,20 +19,30 @@ void on_new_connection(uv_stream_t *server_handle, int status) {
         return;
     }
 
-    uv_tcp_t *client = (uv_tcp_t *) malloc(sizeof(uv_tcp_t));
+    uv_tcp_t *client = (uv_tcp_t *)malloc(sizeof(uv_tcp_t));
     if (!client) {
         ERROR_PRINT("Memory allocation failed for client");
         return;
     }
 
-    uv_tcp_init(&loop, client);
+    // Initialize the TCP handle for the client
+    if (uv_tcp_init(server_handle->loop, client) < 0) {  // Use server's loop
+        ERROR_PRINT("Failed to initialize TCP handle for client");
+        free(client);  // Free memory if initialization fails
+        return;
+    }
 
-    if (uv_accept(server_handle, (uv_stream_t *) client) == 0) {
+    if (uv_accept(server_handle, (uv_stream_t *)client) == 0) {
         DEBUG_PRINT("New connection accepted.");
-        uv_read_start((uv_stream_t *) client, alloc_buffer, on_client_read);
+
+        // Start reading from the client
+        if (uv_read_start((uv_stream_t *)client, alloc_buffer, on_client_read) < 0) {
+            ERROR_PRINT("Failed to start reading from client");
+            uv_close((uv_handle_t *)client, on_client_close);
+            return;
+        }
     } else {
-        uv_close((uv_handle_t *) client, on_client_close);
-        free(client);
+        uv_close((uv_handle_t *)client, on_client_close);  // Close if accept fails
     }
 }
 
