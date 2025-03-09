@@ -256,7 +256,8 @@ bool send_message(xcash_dest_t dest, xcash_msg_t msg, response_t ***reply)
 
     // Debug: Log the start of the function
 //    DEBUG_PRINT("[DEBUG] send_message called with dest=%p, msg=%p\n", (void *)&dest, (void *)&msg);
-    DEBUG_PRINT("[DEBUG] dest string: %s, msg string: %s\n", dest, msg);
+//    DEBUG_PRINT("[DEBUG] dest string: %s, msg string: %s\n", dest, msg);
+DEBUG_PRINT("[DEBUG] dest IP: %s, dest Port: %u\n", dest->ip, dest->port);
 
 
     char *message_data = create_message(msg);
