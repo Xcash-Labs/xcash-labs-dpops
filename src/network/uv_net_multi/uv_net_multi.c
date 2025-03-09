@@ -216,10 +216,8 @@ response_t** send_multi_request(const char **hosts, int port, const char* messag
         uv_ip4_addr(hosts[i], port, &dest);
         start_connection(client, (const struct sockaddr*)&dest);
     }
- 
 
     uv_run(loop, UV_RUN_DEFAULT);
-    DEBUG_PRINT("NEXT........");
     for (int i = 0; i < total_hosts; i++) {
         if (responses[i]) {
             free(responses[i]->host);
@@ -228,9 +226,7 @@ response_t** send_multi_request(const char **hosts, int port, const char* messag
         }
     }
 
-    DEBUG_PRINT("NEXT.......1");
     free(responses);
-
     return responses;
 }
 
