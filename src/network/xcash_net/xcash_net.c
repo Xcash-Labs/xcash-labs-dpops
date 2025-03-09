@@ -194,16 +194,16 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
     }
 
     int message_buf_size = strlen(message) + strlen(SOCKET_END_STRING) + 1;
-    char *message_ender = calloc(message_buf_size, 1);
+    message_ender = calloc(message_buf_size, 1);
     if (!message_ender) {
       ERROR_PRINT("Failed to allocate memory for message_ender");
       free(hosts);  // Free allocated memory if error
       return false;
     }
     snprintf(message_ender, message_buf_size, "%s%s", message, SOCKET_END_STRING);
-    response_t **responses = send_multi_request(hosts, XCASH_DPOPS_PORT, message_ender);
+    responses = send_multi_request(hosts, XCASH_DPOPS_PORT, message_ender);
     free(message_ender);
-    free(hosts);  // Free hosts array
+    free(hosts);
     DEBUG_PRINT("NEXT jed.......1");
     if (responses) {
       remove_enders(responses);
