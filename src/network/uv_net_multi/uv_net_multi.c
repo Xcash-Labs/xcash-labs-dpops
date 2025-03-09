@@ -161,11 +161,6 @@ void start_connection(client_t* client, const struct sockaddr* addr) {
 
     DEBUG_PRINT("Starting connection to %s\n", client->response->host);
     uv_tcp_connect(&client->connect_req, &client->handle, addr, on_connect);
-    DEBUG_PRINT("NEXT........");
-
-
-
-
 }
 
 void on_resolved(uv_getaddrinfo_t *resolver, int status, struct addrinfo *res) {
@@ -221,7 +216,8 @@ response_t** send_multi_request(const char **hosts, int port, const char* messag
         uv_ip4_addr(hosts[i], port, &dest);
         start_connection(client, (const struct sockaddr*)&dest);
     }
-
+    DEBUG_PRINT("NEXT........");
+    
     uv_run(loop, UV_RUN_DEFAULT);
 
     for (int i = 0; i < total_hosts; i++) {
