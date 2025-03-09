@@ -201,6 +201,8 @@ int main(int argc, char *argv[]) {
   if (init_processing(&arg_config)) {;
     print_starter_state(&arg_config);
     start_block_production();
+  } else {
+    FATAL_ERROR("Failed server initialization."); 
   }
 
   stop_tcp_server();
