@@ -225,77 +225,19 @@ bool send_message_param(xcash_dest_t dest, xcash_msg_t msg, response_t ***reply,
     return result;
 }
 
-
-
-
-
-
-
-bool send_messagexxxx(xcash_dest_t dest, xcash_msg_t msg, response_t ***reply)
-{
-    bool result = false;
-    *reply = NULL;
-
-    char *message_data = create_message(msg);
-    if (!message_data)
-    {
-        return false;
-    }
-
-    result = xnet_send_data_multi(dest, message_data, reply);
-    free(message_data);
-
-    return result;
-}
-
-
 bool send_message(xcash_dest_t dest, xcash_msg_t msg, response_t ***reply)
 {
     bool result = false;
     *reply = NULL;
 
-    // Debug: Log the start of the function
-    DEBUG_PRINT("[DEBUG] Message Type: %d\n", msg);  // Print integer value of msg
-
-
     char *message_data = create_message(msg);
     if (!message_data)
     {
-        // Debug: Log if message creation fails
-        DEBUG_PRINT("[ERROR] Failed to create message data\n");
         return false;
     }
 
-    // Debug: Log the created message data
-    DEBUG_PRINT("[DEBUG] Created message data: %s\n", message_data);
-
-// jed
-
     result = xnet_send_data_multi(dest, message_data, reply);
-
-    // Debug: Log the result of sending data
-    if (result)
-    {
-        DEBUG_PRINT("[DEBUG] Message sent successfully\n");
-        if (*reply != NULL)
-        {
-            // Log the reply if available
-            DEBUG_PRINT("[DEBUG] Received reply: %p\n", (void *)*reply);
-        }
-        else
-        {
-            DEBUG_PRINT("[DEBUG] No reply received\n");
-        }
-    }
-    else
-    {
-        DEBUG_PRINT("[ERROR] Failed to send message\n");
-    }
-
     free(message_data);
-
-    // Debug: Log function exit
-    DEBUG_PRINT("[DEBUG] Exiting send_message with result=%d\n", result);
 
     return result;
 }
