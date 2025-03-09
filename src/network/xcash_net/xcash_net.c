@@ -86,27 +86,37 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
     switch (dest)
     {
 
-    case XNET_SEEDS_ALL:
-    {
-        const char **all_hosts = malloc((network_data_nodes_amount + 1) * sizeof(char *));
-        if (!all_hosts) {
-            ERROR_PRINT("Failed to allocate memory for all_hosts");
-            return false;  // Handle memory allocation failure
-        }
-    
-        int i = 0;
-        while (i < network_data_nodes_amount) {
-            bool not_self = (strcmp(network_nodes[i].seed_public_address, xcash_wallet_public_address) != 0);
-            if (not_self) {
-               all_hosts[i] = network_nodes[i].ip_address;
-               i++;
+        case XNET_SEEDS_ALL:
+        {
+            const char **all_hosts = malloc((network_data_nodes_amount + 1) * sizeof(char *));
+            if (!all_hosts) {
+                ERROR_PRINT("Failed to allocate memory for all_hosts");
+                return false;  // Handle memory allocation failure
             }
+        
+            int i = 0, di = 0;  // `di` is for destination index to compact the array
+            while (i < network_data_nodes_amount) {
+                bool not_self = (strcmp(network_nodes[i].seed_public_address, xcash_wallet_public_address) != 0);
+                bool has_ip = (network_nodes[i].ip_address != NULL && strlen(network_nodes[i].ip_address) != 0);
+        
+                if (not_self && has_ip) {
+                    all_hosts[di++] = network_nodes[i].ip_address;  // Only add if not self and has valid IP
+                } else if (!not_self) {
+                    DEBUG_PRINT("Skipping self: %s", network_nodes[i].ip_address);
+                } else if (!has_ip) {
+                    ERROR_PRINT("Invalid IP address for node with public address %s", network_nodes[i].seed_public_address);
+                }
+                i++;  // Move to the next node regardless of conditions
+            }
+        
+            all_hosts[di] = NULL;  // Null-terminate the array
+            hosts = all_hosts;      // Assign heap-allocated array to hosts
+        
+            DEBUG_PRINT("[DEBUG] all_hosts address: %p\n", (void *)all_hosts);
+            DEBUG_PRINT("[DEBUG] hosts address: %p\n", (void *)hosts);
         }
-        all_hosts[i] = NULL;  // Null-terminate the array
-        hosts = all_hosts;     // Assign heap-allocated array to hosts
-    }
     break;
-    
+         
     case XNET_SEEDS_ALL_ONLINE:
     {
         const char **online_hosts = malloc((network_data_nodes_amount + 1) * sizeof(char *));
