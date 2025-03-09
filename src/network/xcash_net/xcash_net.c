@@ -96,7 +96,10 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
     
         int i = 0;
         while (i < network_data_nodes_amount) {
-            all_hosts[i] = network_nodes[i].ip_address;
+            bool not_self = (strcmp(delegates_all[i].seed_public_address, xcash_wallet_public_address) != 0);
+            if (not_self) {
+               all_hosts[i] = network_nodes[i].ip_address;
+            ;
             i++;
         }
         all_hosts[i] = NULL;  // Null-terminate the array
