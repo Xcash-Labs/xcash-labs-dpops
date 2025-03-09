@@ -255,9 +255,9 @@ bool send_message(xcash_dest_t dest, xcash_msg_t msg, response_t ***reply)
     *reply = NULL;
 
     // Debug: Log the start of the function
-//    DEBUG_PRINT("[DEBUG] send_message called with dest=%p, msg=%p\n", (void *)&dest, (void *)&msg);
-//    DEBUG_PRINT("[DEBUG] dest string: %s, msg string: %s\n", dest, msg);
-DEBUG_PRINT("[DEBUG] dest IP: %s, dest Port: %u\n", dest->ip, dest->port);
+    DEBUG_PRINT("[DEBUG] Message Type: %d\n", msg);  // Print integer value of msg
+    DEBUG_PRINT("[DEBUG] Status: %d\n", status);      // Print integer value of status
+
 
 
     char *message_data = create_message(msg);
