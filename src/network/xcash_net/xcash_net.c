@@ -85,19 +85,34 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
 
     switch (dest)
     {
+
+
+
+        
+
+
+
     case XNET_SEEDS_ALL:
     {
-        const char *all_hosts[network_data_nodes_amount + 1];
+        const char **all_hosts = malloc((network_data_nodes_amount + 1) * sizeof(char *));
+        if (!all_hosts) {
+            ERROR_PRINT("Failed to allocate memory for all_hosts");
+            return false;  // Handle memory allocation failure
+        }
+    
         int i = 0;
-        while (i < network_data_nodes_amount)
-        {
+        while (i < network_data_nodes_amount) {
+            DEBUG_PRINT("......................Node %s", network_nodes[i].ip_address);
             all_hosts[i] = network_nodes[i].ip_address;
             i++;
         }
-        all_hosts[i] = NULL;
-        hosts = all_hosts;
+        all_hosts[i] = NULL;  // Null-terminate the array
+        hosts = all_hosts;     // Assign heap-allocated array to hosts
     }
     break;
+    
+
+
 
     case XNET_SEEDS_ALL_ONLINE:
     {
@@ -224,6 +239,12 @@ bool send_message_param(xcash_dest_t dest, xcash_msg_t msg, response_t ***reply,
 
     return result;
 }
+
+
+
+
+// jed
+
 
 bool send_message(xcash_dest_t dest, xcash_msg_t msg, response_t ***reply)
 {

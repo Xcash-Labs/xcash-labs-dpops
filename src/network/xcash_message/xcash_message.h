@@ -82,5 +82,4 @@ char* create_message_param(xcash_msg_t msg, ...);
 int split(const char* str, char delimiter, char*** result_elements);
 void cleanup_char_list(char** element_list);
 
-
 #endif  // XCASH_MESSAGE_H
