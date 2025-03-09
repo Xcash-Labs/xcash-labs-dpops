@@ -111,9 +111,6 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
         
             all_hosts[di] = NULL;  // Null-terminate the array
             hosts = all_hosts;      // Assign heap-allocated array to hosts
-        
-            DEBUG_PRINT("[DEBUG] all_hosts address: %p\n", (void *)all_hosts);
-            DEBUG_PRINT("[DEBUG] hosts address: %p\n", (void *)hosts);
         }
     break;
          
