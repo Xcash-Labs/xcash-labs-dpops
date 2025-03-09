@@ -63,15 +63,20 @@ void alloc_buffer(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf) {
 void on_client_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
     if (nread > 0) {
         DEBUG_PRINT("Received data: %.*s", (int)nread, buf->base);
-    } else {
-        if (nread == UV_EOF) {
-            ERROR_PRINT("Client disconnected.");
-        } else {
-            ERROR_PRINT("Read error: %s", uv_strerror(nread));
-        }
-        uv_close((uv_handle_t *) client, on_client_close);
+    } else if (nread == UV_EOF) {
+        ERROR_PRINT("Client disconnected.");
+        uv_read_stop(client);  // Stop reading if the client disconnected
+        uv_close((uv_handle_t *)client, on_client_close);
+    } else if (nread < 0) {
+        ERROR_PRINT("Read error: %s", uv_strerror(nread));
+        uv_read_stop(client);  // Stop reading if there was an error
+        uv_close((uv_handle_t *)client, on_client_close);
     }
-    free(buf->base);
+
+    // Free buf->base only if it is not NULL
+    if (buf && buf->base) {
+        free(buf->base);
+    }
 }
 
 // Thread-safe shutdown callback
