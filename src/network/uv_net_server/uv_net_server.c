@@ -14,19 +14,17 @@ void on_client_close(uv_handle_t *handle) {
 
 // Handle client connections
 void on_new_connection(uv_stream_t *server_handle, int status) {
-    DEBUG_PRINT("on_new_connection");
     if (status < 0) {
         ERROR_PRINT("Error on new connection: %s", uv_strerror(status));
         return;
     }
 
     uv_tcp_t *client = (uv_tcp_t *)malloc(sizeof(uv_tcp_t));
-    DEBUG_PRINT("on_new_connection 2");
     if (!client) {
         ERROR_PRINT("Memory allocation failed for client");
         return;
     }
-    DEBUG_PRINT("on_new_connection 3");
+    
     // Initialize the TCP handle for the client
     if (uv_tcp_init(server_handle->loop, client) < 0) {  // Use server's loop
         ERROR_PRINT("Failed to initialize TCP handle for client");

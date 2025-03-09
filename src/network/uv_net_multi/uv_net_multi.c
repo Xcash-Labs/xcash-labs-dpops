@@ -159,8 +159,13 @@ void on_connect(uv_connect_t* req, int status) {
 void start_connection(client_t* client, const struct sockaddr* addr) {
     if (!client) return;
 
-    INFO_PRINT("Starting connection to %s\n", client->response->host);
+    DEBUG_PRINT("Starting connection to %s\n", client->response->host);
     uv_tcp_connect(&client->connect_req, &client->handle, addr, on_connect);
+    DEBUG_PRINT("NEXT........")
+
+
+
+
 }
 
 void on_resolved(uv_getaddrinfo_t *resolver, int status, struct addrinfo *res) {
