@@ -256,8 +256,6 @@ bool send_message(xcash_dest_t dest, xcash_msg_t msg, response_t ***reply)
 
     // Debug: Log the start of the function
     DEBUG_PRINT("[DEBUG] Message Type: %d\n", msg);  // Print integer value of msg
-    DEBUG_PRINT("[DEBUG] Status: %d\n", status);      // Print integer value of status
-
 
 
     char *message_data = create_message(msg);
