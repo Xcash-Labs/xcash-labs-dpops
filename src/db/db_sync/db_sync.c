@@ -1310,8 +1310,6 @@ bool init_db_from_seeds(void) {
         size_t nodes_majority_count = 0;
         xcash_node_sync_info_t* nodes_majority_list = NULL;
     
-        INFO_STAGE_PRINT("Checking the network data majority");
-
         if (!get_daemon_data()) {
             WARNING_PRINT("Can't get daemon data. You need to start xcash daemon service before");
             return false;
@@ -1321,7 +1319,8 @@ bool init_db_from_seeds(void) {
             WARNING_PRINT("Can't get wallet data. You need to start xcash rpc wallet service before");
             return false;
         }
-
+        
+        INFO_STAGE_PRINT("Checking the network data majority");
         if (!get_sync_seeds_majority_list(&nodes_majority_list, &nodes_majority_count)) {
             WARNING_PRINT("Could not get data majority nodes sync list");
         }else{

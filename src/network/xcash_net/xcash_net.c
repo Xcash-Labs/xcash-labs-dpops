@@ -225,6 +225,12 @@ bool send_message_param(xcash_dest_t dest, xcash_msg_t msg, response_t ***reply,
     return result;
 }
 
+
+
+
+
+
+
 bool send_messagexxxx(xcash_dest_t dest, xcash_msg_t msg, response_t ***reply)
 {
     bool result = false;
@@ -243,19 +249,15 @@ bool send_messagexxxx(xcash_dest_t dest, xcash_msg_t msg, response_t ***reply)
 }
 
 
-
-
-
-
-
-
 bool send_message(xcash_dest_t dest, xcash_msg_t msg, response_t ***reply)
 {
     bool result = false;
     *reply = NULL;
 
     // Debug: Log the start of the function
-    DEBUG_PRINT("[DEBUG] send_message called with dest=%p, msg=%p\n", (void *)&dest, (void *)&msg);
+//    DEBUG_PRINT("[DEBUG] send_message called with dest=%p, msg=%p\n", (void *)&dest, (void *)&msg);
+    DEBUG_PRINT("[DEBUG] dest string: %s, msg string: %s\n", dest, msg);
+
 
     char *message_data = create_message(msg);
     if (!message_data)
