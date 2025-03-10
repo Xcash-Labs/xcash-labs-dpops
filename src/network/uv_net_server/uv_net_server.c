@@ -36,7 +36,7 @@ void on_new_connection(uv_stream_t *server_handle, int status) {
         DEBUG_PRINT("New connection accepted.");
 
         // Start reading from the client
-        if (uv_read_start((uv_stream_t *)client, alloc_buffer, on_client_read) < 0) {
+        if (uv_read_start((uv_stream_t *)client, alloc_buffer_srv, on_client_read) < 0) {
             ERROR_PRINT("Failed to start reading from client");
             uv_close((uv_handle_t *)client, on_client_close);
             return;
@@ -47,12 +47,12 @@ void on_new_connection(uv_stream_t *server_handle, int status) {
 }
 
 // Allocate buffer for reading
-void alloc_buffer(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf) {
+void alloc_buffer_srv(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf) {
     (void)handle;
 
     buf->base = (char *) malloc(suggested_size);
     if (!buf->base) {
-        ERROR_PRINT("Memory allocation failed in alloc_buffer()");
+        ERROR_PRINT("Memory allocation failed in alloc_buffer_srv()");
         buf->len = 0;
         return;
     }
