@@ -24,6 +24,7 @@ static char *_build_message_ender(const char *message)
 
 // Removes trailing |END| from each valid response
 void remove_enders(response_t **responses) {
+    DEBUG_PRINT("Entering......");
     if (!responses) {
         DEBUG_PRINT("[DEBUG] No responses to process.");
         return;
