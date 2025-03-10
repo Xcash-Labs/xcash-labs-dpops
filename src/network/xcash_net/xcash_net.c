@@ -14,8 +14,47 @@ static char *_build_message_ender(const char *message)
     return message_ender;
 }
 
+
+// FIXME: add support for NONRETURN messages to not mark them as INCOMPLETE
+// TODO fix message format
+// remove |END| suffix from message. fkng format
+// FIXME if there is no ender, the message will be not null terminated
+void remove_enders(response_t **responses) {
+    int i = 0;
+    while (responses && responses[i]) {
+        if (responses[i]->status == STATUS_OK) {
+            if (responses[i]->size == 0) {
+                responses[i]->status = STATUS_INCOMPLETE;
+                // FIXME wtf is this
+                DEBUG_PRINT("Returned data from host '%s' is empty. Marked it as STATUS_INCOMPLETE", responses[i]->host);
+            }else{
+                bool ender_found = false;
+                char* tmp =  calloc(responses[i]->size+1,1);
+                memcpy(tmp,responses[i]->data, responses[i]->size);
+                if (responses[i]->size >=sizeof(SOCKET_END_STRING)-1) {
+                    char* ender_position = strstr(tmp,SOCKET_END_STRING);
+                    if (ender_position) {
+                        ender_found = true;
+                        int ender_pos = ender_position - tmp;
+
+                        responses[i]->data[ender_pos] = '\0';
+                        responses[i]->size = strlen(responses[i]->data);
+                    }
+                }
+                if (!ender_found) {
+                    WARNING_PRINT("Returned data has no |END| data size %ld, message:  %s",responses[i]->size, tmp);
+                }
+                free(tmp);
+            }
+        }
+        i++;
+    }
+}
+
+
+
 // Removes trailing |END| from each valid response
-void remove_enders(response_t **responses)
+void remove_enders_OLD(response_t **responses)
 {
     if (!responses)
         return;
@@ -205,11 +244,11 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
     free(message_ender);
     free(hosts);
     if (responses) {
-        DEBUG_PRINT("NEXT jed.......1");
       remove_enders(responses);
+
+       
       result = true;
     }
-    DEBUG_PRINT("NEXT jed.......2");
     *reply = responses;
     return result;
 }
