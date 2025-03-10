@@ -30,7 +30,14 @@ void remove_enders(response_t **responses) {
         return;
     }
 
+    DEBUG_PRINT("Entering...... 2");
+
+
     for (int i = 0; responses[i]; i++) {
+        DEBUG_PRINT("[DEBUG] Processing response from host '%s'",
+            responses[i]->host);
+
+
         DEBUG_PRINT("[DEBUG] Processing response from host '%s' with status %d and size %ld",
                     responses[i]->host, responses[i]->status, responses[i]->size);
 
