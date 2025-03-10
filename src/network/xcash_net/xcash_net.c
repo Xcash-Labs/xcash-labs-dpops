@@ -34,6 +34,8 @@ void remove_enders(response_t **responses) {
 
     for (int i = 0; responses[i]; i++) {
 
+        DEBUG_PRINT("Entering...... 3");
+
         if (!responses[i]) {
             DEBUG_PRINT("[DEBUG] Response %d is NULL, skipping.", i);
             continue;
