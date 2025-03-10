@@ -19,88 +19,37 @@ static char *_build_message_ender(const char *message)
 // TODO fix message format
 // remove |END| suffix from message. fkng format
 // FIXME if there is no ender, the message will be not null terminated
-void remove_enders(response_t **responses) {
-    int i = 0;
-    while (responses && responses[i]) {
-        if (responses[i]->status == STATUS_OK) {
-            if (responses[i]->size == 0) {
-                responses[i]->status = STATUS_INCOMPLETE;
-                // FIXME wtf is this
-                DEBUG_PRINT("Returned data from host '%s' is empty. Marked it as STATUS_INCOMPLETE", responses[i]->host);
-            }else{
-                bool ender_found = false;
-                char* tmp =  calloc(responses[i]->size+1,1);
-                memcpy(tmp,responses[i]->data, responses[i]->size);
-                if (responses[i]->size >=sizeof(SOCKET_END_STRING)-1) {
-                    char* ender_position = strstr(tmp,SOCKET_END_STRING);
-                    if (ender_position) {
-                        ender_found = true;
-                        int ender_pos = ender_position - tmp;
-
-                        responses[i]->data[ender_pos] = '\0';
-                        responses[i]->size = strlen(responses[i]->data);
-                    }
-                }
-                if (!ender_found) {
-                    WARNING_PRINT("Returned data has no |END| data size %ld, message:  %s",responses[i]->size, tmp);
-                }
-                free(tmp);
-            }
-        }
-        i++;
-    }
-}
-
 
 
 // Removes trailing |END| from each valid response
-void remove_enders_OLD(response_t **responses)
-{
-    if (!responses)
-        return;
+void remove_enders(response_t **responses) {
+    if (!responses) return;
 
-    for (int i = 0; responses[i]; i++)
-    {
+    for (int i = 0; responses[i]; i++) {
         // Only process OK status
-        if (responses[i]->status == STATUS_OK)
-        {
-            if (responses[i]->size == 0)
-            {
+        if (responses[i]->status == STATUS_OK) {
+            if (responses[i]->size == 0 || !responses[i]->data) {
                 responses[i]->status = STATUS_INCOMPLETE;
-                DEBUG_PRINT("Returned data from host '%s' is empty; marked STATUS_INCOMPLETE",
+                DEBUG_PRINT("Returned data from host '%s' is empty or NULL; marked STATUS_INCOMPLETE",
                             responses[i]->host);
+                continue;
             }
-            else
-            {
-                bool ender_found = false;
-                char *tmp = calloc(responses[i]->size + 1, 1);
-                if (tmp)
-                {
-                    memcpy(tmp, responses[i]->data, responses[i]->size);
-                    tmp[responses[i]->size] = '\0';
 
-                    if (responses[i]->size >= (sizeof(SOCKET_END_STRING) - 1))
-                    {
-                        char *ender_position = strstr(tmp, SOCKET_END_STRING);
-                        if (ender_position)
-                        {
-                            ender_found = true;
-                            int ender_pos = (int)(ender_position - tmp);
-                            responses[i]->data[ender_pos] = '\0';
-                            responses[i]->size = strlen(responses[i]->data);
-                        }
-                    }
-                    if (!ender_found)
-                    {
-                        WARNING_PRINT("Returned data has no |END|; size %ld, message: %s",
-                                      responses[i]->size, tmp);
-                    }
-                    free(tmp);
-                }
-                else
-                {
-                    ERROR_PRINT("Memory allocation failed in remove_enders()");
-                }
+            // Check if response has |END| suffix
+            size_t ender_len = strlen(SOCKET_END_STRING);
+            size_t data_len = responses[i]->size;
+
+            if (data_len >= ender_len &&
+                strncmp(responses[i]->data + data_len - ender_len, SOCKET_END_STRING, ender_len) == 0) {
+
+                // Remove |END| by setting null terminator
+                responses[i]->data[data_len - ender_len] = '\0';
+                responses[i]->size = strlen(responses[i]->data);
+                DEBUG_PRINT("Removed |END| from host '%s', new size: %ld",
+                            responses[i]->host, responses[i]->size);
+            } else {
+                WARNING_PRINT("Returned data has no |END|; size %ld, message: %.50s",
+                              data_len, responses[i]->data);
             }
         }
     }
