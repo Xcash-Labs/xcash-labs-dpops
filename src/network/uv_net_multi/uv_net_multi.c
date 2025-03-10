@@ -119,7 +119,6 @@ void retry_connection(uv_timer_t* timer) {
 }
 
 void on_connect(uv_connect_t* req, int status) {
-    DEBUG_PRINT("Starting on_connect......");
     client_t* client = (client_t*)req->data;
 
     if (!client || client->is_closing) {
@@ -186,7 +185,7 @@ void on_resolved(uv_getaddrinfo_t *resolver, int status, struct addrinfo *res) {
     free(resolver);
 }
 
-response_t** send_multi_request(const char **hosts, int port, const char* message) {
+response_t** send_multi_request_OLD(const char **hosts, int port, const char* message) {
     if (!hosts || !message) return NULL;
 
     int total_hosts = 0;
@@ -230,6 +229,97 @@ response_t** send_multi_request(const char **hosts, int port, const char* messag
     free(responses);
     return responses;
 }
+
+response_t** send_multi_request(const char **hosts, int port, const char* message) {
+    if (!hosts || !message) {
+        DEBUG_PRINT("[ERROR] Hosts or message is NULL.");
+        return NULL;
+    }
+
+    int total_hosts = 0;
+    while (hosts[total_hosts] != NULL) total_hosts++;
+    if (total_hosts == 0) {
+        DEBUG_PRINT("[ERROR] No valid hosts found.");
+        return NULL;
+    }
+
+    char port_str[6];
+    snprintf(port_str, sizeof(port_str), "%d", port);
+
+    uv_loop_t* loop = uv_loop_new();  // Create a new loop instead of using default
+    if (!loop) {
+        ERROR_PRINT("Failed to create UV loop.");
+        return NULL;
+    }
+
+    response_t** responses = calloc(total_hosts + 1, sizeof(response_t*));
+    if (!responses) {
+        ERROR_PRINT("Failed to allocate memory for responses.");
+        uv_loop_delete(loop);
+        return NULL;
+    }
+
+    for (int i = 0; i < total_hosts; i++) {
+        if (!hosts[i]) continue;
+
+        client_t* client = calloc(1, sizeof(client_t));
+        if (!client) {
+            ERROR_PRINT("Failed to allocate memory for client.");
+            continue;
+        }
+
+        client->message = strdup(message);
+        if (!client->message) {
+            ERROR_PRINT("Failed to allocate memory for message.");
+            free(client);
+            continue;
+        }
+
+        client->response = calloc(1, sizeof(response_t));
+        if (!client->response) {
+            ERROR_PRINT("Failed to allocate memory for response.");
+            free(client->message);
+            free(client);
+            continue;
+        }
+
+        client->response->host = strdup(hosts[i]);
+        if (!client->response->host) {
+            ERROR_PRINT("Failed to allocate memory for host.");
+            free(client->response);
+            free(client->message);
+            free(client);
+            continue;
+        }
+
+        responses[i] = client->response;  // Save the response pointer
+
+        uv_tcp_init(loop, &client->handle);
+        client->handle.data = client;
+        uv_timer_init(loop, &client->timer);
+        client->timer.data = client;
+
+        struct sockaddr_in dest;
+        uv_ip4_addr(hosts[i], port, &dest);
+        start_connection(client, (const struct sockaddr*)&dest);
+    }
+
+    uv_run(loop, UV_RUN_DEFAULT);  // Run event loop
+
+    // Free client_t structures
+    for (int i = 0; i < total_hosts; i++) {
+        if (responses[i]) {
+            free(responses[i]->host);
+            free(responses[i]->data);
+        }
+    }
+
+    uv_loop_delete(loop);  // Free the UV loop
+    return responses;  // Return responses without freeing it
+}
+
+
+
 
 void cleanup_responses(response_t** responses) {
     if (!responses) return;  // Check if responses is NULL
