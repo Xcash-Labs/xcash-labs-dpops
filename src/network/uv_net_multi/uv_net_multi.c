@@ -185,7 +185,7 @@ void on_resolved(uv_getaddrinfo_t *resolver, int status, struct addrinfo *res) {
     free(resolver);
 }
 
-response_t** send_multi_request(const char **hosts, int port, const char* message) {
+response_t** send_multi_request_old(const char **hosts, int port, const char* message) {
     if (!hosts || !message) return NULL;
 
     int total_hosts = 0;
@@ -232,7 +232,7 @@ response_t** send_multi_request(const char **hosts, int port, const char* messag
     return responses;
 }
 
-response_t** send_multi_request_new(const char** hosts, int port, const char* message) {
+response_t** send_multi_request(const char** hosts, int port, const char* message) {
   if (!hosts || !message) {
     DEBUG_PRINT("[ERROR] Hosts or message is NULL.");
     return NULL;
