@@ -1,17 +1,18 @@
 #include "xcash_net.h"
 
 // Helper function to append SOCKET_END_STRING to a message
-//static char *_build_message_ender(const char *message) {
-//  int message_buf_size = strlen(message) + strlen(SOCKET_END_STRING) + 1;
-//  char *message_ender = calloc(message_buf_size, 1);
-//  if (!message_ender) {
-//    ERROR_PRINT("Memory allocation failed in _build_message_ender()");
-//    return NULL;
-//  }
-//  snprintf(message_ender, message_buf_size, "%s%s", message, SOCKET_END_STRING);
-//  return message_ender;
+static char *_build_message_ender(const char *message) {
+  int message_buf_size = strlen(message) + strlen(SOCKET_END_STRING) + 1;
+  char *message_ender = calloc(message_buf_size, 1);
+  if (!message_ender) {
+    ERROR_PRINT("Memory allocation failed in _build_message_ender()");
+    return NULL;
+  }
+  snprintf(message_ender, message_buf_size, "%s%s", message, SOCKET_END_STRING);
+  return message_ender;
 }
 
+// Remove |END| suffix from message.
 void remove_enders_old(response_t **responses) {
   int i = 0;
   while (responses && responses[i]) {
