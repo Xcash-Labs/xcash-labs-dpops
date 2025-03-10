@@ -112,6 +112,7 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
       int i = 0, di = 0;  // `di` is for destination index to compact the array
       while (i < network_data_nodes_amount) {
         bool not_self = (strcmp(network_nodes[i].seed_public_address, xcash_wallet_public_address) != 0);
+        not_self = true;
         bool has_ip = (network_nodes[i].ip_address != NULL && strlen(network_nodes[i].ip_address) != 0);
 
         if (not_self && has_ip) {
