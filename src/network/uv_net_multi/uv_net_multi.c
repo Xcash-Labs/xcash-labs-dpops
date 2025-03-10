@@ -28,6 +28,7 @@ void safe_close(client_t* client) {
 }
 
 void on_timeout(uv_timer_t* timer) {
+    DEBUG_PRINT("Time out occured.......................");
     client_t* client = (client_t*)timer->data;
     if (client) {
         client->response->status = STATUS_TIMEOUT;
