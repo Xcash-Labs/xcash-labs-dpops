@@ -1,11 +1,5 @@
 #include "uv_net_multi.h"
 
-#include "uv_net.h"
-#include <netinet/in.h>
-#include <arpa/inet.h>
-
-
-
 void on_close(uv_handle_t* handle) {
     client_t* client = (client_t*)handle->data;
     client->is_closing = 1;
@@ -18,7 +12,6 @@ void safe_close(client_t* client) {
         uv_close((uv_handle_t*)&client->handle, on_close); // Close the handle
     }
 }
-
 
 void on_timeout(uv_timer_t* timer) {
     client_t* client = (client_t*)timer->data;
@@ -194,7 +187,6 @@ response_t** send_multi_request(const char **hosts, int port, const char* messag
 }
     return responses;
 }
-
 
 void cleanup_responses(response_t** responses) {
     int i = 0;
