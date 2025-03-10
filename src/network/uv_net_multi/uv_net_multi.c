@@ -89,7 +89,9 @@ void on_connect(uv_connect_t* req, int status) {
     // Write the message to the server
 //    uv_buf_t buf = uv_buf_init((char*)client->message, strlen(client->message));
 
-    uv_buf_t buf = uv_buf_init((char *)client->message, strlen(client->message));  
+//    uv_buf_t buf = uv_buf_init((char *)client->message, strlen(client->message));
+    uv_buf_t buf = uv_buf_init((char *)(uintptr_t)client->message, strlen(client->message));
+ 
 
     uv_write(&client->write_req, (uv_stream_t*)&client->handle, &buf, 1, on_write);
 
