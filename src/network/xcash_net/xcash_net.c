@@ -32,9 +32,20 @@ void remove_enders(response_t **responses) {
 
     DEBUG_PRINT("Entering...... 2");
 
-    DEBUG_PRINT("[DEBUG] Processing response from host '%s'",
+
         responses[0]->host);
     for (int i = 0; responses[i]; i++) {
+
+        if (!responses[i]) {  // Check if response is NULL
+            DEBUG_PRINT("[DEBUG] Response %d is NULL, skipping.", i);
+            continue;
+        }
+    
+        if (!responses[i]->host) {  // Check if host is NULL
+            DEBUG_PRINT("[DEBUG] Host for response %d is NULL, skipping.", i);
+            continue;
+        }
+
         DEBUG_PRINT("[DEBUG] Processing response from host '%s'",
             responses[i]->host);
 
