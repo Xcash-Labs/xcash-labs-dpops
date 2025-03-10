@@ -248,7 +248,7 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
     if (responses) {
       DEBUG_PRINT("Calling remove_enders");
       remove_enders(responses);
-
+      DEBUG_PRINT("Returning from remove_enders");
        
       result = true;
     }
