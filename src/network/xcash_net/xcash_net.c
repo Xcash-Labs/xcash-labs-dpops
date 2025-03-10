@@ -21,8 +21,61 @@ static char *_build_message_ender(const char *message)
 // FIXME if there is no ender, the message will be not null terminated
 
 
+
 // Removes trailing |END| from each valid response
 void remove_enders(response_t **responses) {
+    if (!responses) {
+        DEBUG_PRINT("[DEBUG] No responses to process.");
+        return;
+    }
+
+    for (int i = 0; responses[i]; i++) {
+        DEBUG_PRINT("[DEBUG] Processing response from host '%s' with status %d and size %ld",
+                    responses[i]->host, responses[i]->status, responses[i]->size);
+
+        // Only process OK status
+        if (responses[i]->status == STATUS_OK) {
+            if (responses[i]->size == 0 || !responses[i]->data) {
+                responses[i]->status = STATUS_INCOMPLETE;
+                DEBUG_PRINT("[DEBUG] Response from host '%s' is empty or NULL; marked STATUS_INCOMPLETE",
+                            responses[i]->host);
+                continue;
+            }
+
+            // Check if response has |END| suffix
+            size_t ender_len = strlen(SOCKET_END_STRING);
+            size_t data_len = responses[i]->size;
+
+            DEBUG_PRINT("[DEBUG] Checking for |END| suffix in response from '%s' (size: %ld)",
+                        responses[i]->host, data_len);
+
+            if (data_len >= ender_len &&
+                strncmp(responses[i]->data + data_len - ender_len, SOCKET_END_STRING, ender_len) == 0) {
+
+                // Remove |END| by setting null terminator
+                responses[i]->data[data_len - ender_len] = '\0';
+                responses[i]->size = strlen(responses[i]->data);
+
+                DEBUG_PRINT("[DEBUG] Removed |END| from host '%s'. New size: %ld. New message: %.50s",
+                            responses[i]->host, responses[i]->size, responses[i]->data);
+            } else {
+                WARNING_PRINT("[WARNING] No |END| found in response from '%s'. Size: %ld. Partial message: %.50s",
+                              responses[i]->host, data_len, responses[i]->data);
+            }
+        } else {
+            DEBUG_PRINT("[DEBUG] Skipping response from host '%s' due to status %d",
+                        responses[i]->host, responses[i]->status);
+        }
+    }
+
+    DEBUG_PRINT("[DEBUG] Finished processing all responses.");
+}
+
+
+
+
+// Removes trailing |END| from each valid response
+void remove_enders_old(response_t **responses) {
     if (!responses) return;
 
     for (int i = 0; responses[i]; i++) {
