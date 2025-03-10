@@ -278,7 +278,7 @@ response_t** send_multi_request(const char **hosts, int port, const char* messag
         client->response = calloc(1, sizeof(response_t));
         if (!client->response) {
             ERROR_PRINT("Failed to allocate memory for response.");
-            free(client->message);
+            free((char *)client->message);
             free(client);
             continue;
         }
@@ -287,7 +287,7 @@ response_t** send_multi_request(const char **hosts, int port, const char* messag
         if (!client->response->host) {
             ERROR_PRINT("Failed to allocate memory for host.");
             free(client->response);
-            free(client->message);
+            free((char *)client->message);
             free(client);
             continue;
         }
