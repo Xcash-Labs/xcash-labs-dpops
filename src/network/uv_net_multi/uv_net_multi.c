@@ -139,19 +139,13 @@ response_t** send_multi_request(const char **hosts, int port, const char* messag
     for (int i = 0; i < total_hosts; i++) {
         // Initialize each client structure
         client_t* client = calloc(1, sizeof(client_t));
-
         client->message = message;
-
         client->response = (response_t*)calloc(1, sizeof(response_t));
         client->response->host = strdup(hosts[i]);
         client->response->status = STATUS_PENDING;
         client->response->client = client;
-        
         client->response->req_time_start = time(NULL);
-
-
         responses[i] = client->response;
-
         uv_timer_init(loop, &client->timer);
         client->timer.data = client;
         
@@ -162,7 +156,6 @@ response_t** send_multi_request(const char **hosts, int port, const char* messag
         client->handle.data = client;
         client->connect_req.data = client;
         client->write_req.data = client;
-
 
         if (is_ip_address(hosts[i])) {
             struct sockaddr_in dest;
@@ -193,7 +186,6 @@ void cleanup_responses(response_t** responses) {
         free(responses[i]->host);
         free(responses[i]->data);
         free(responses[i]->client);
-
         free(responses[i]);
         responses[i] = NULL;
         i++;

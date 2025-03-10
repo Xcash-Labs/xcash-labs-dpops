@@ -11,6 +11,8 @@
         "xutility": "c",
         "ios": "c",
         "xiosbase": "c",
-        "stdbool.h": "c"
+        "stdbool.h": "c",
+        "initializer_list": "c",
+        "type_traits": "c"
     }
 }
