@@ -119,6 +119,7 @@ void retry_connection(uv_timer_t* timer) {
 }
 
 void on_connect(uv_connect_t* req, int status) {
+    DEBUG_PRINT("Starting on_connect......");
     client_t* client = (client_t*)req->data;
 
     if (!client || client->is_closing) {
