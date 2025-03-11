@@ -7,9 +7,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "network_security_functions.h"
+//#include "network_security_functions.h"
+
+#include "config.h"
 #include "globals.h"
 #include "macro_functions.h"
+#include "server_functions.h"
 
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 
@@ -60,6 +63,10 @@ typedef enum {
     XMSG_XCASH_GET_SYNC_INFO, // get server hashes and block_height
     XMSG_XCASH_GET_BLOCK_PRODUCERS, // get current block producers
     XCASH_GET_BLOCK_HASH, // get block hash
+    XMSG_NODES_TO_BLOCK_VERIFIERS_RESERVE_BYTES_DATABASE_SYNC_CHECK_ALL_UPDATE, 
+    XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_RESERVE_PROOFS_DATABASE_SYNC_CHECK_UPDATE,
+    XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_RESERVE_BYTES_DATABASE_SYNC_CHECK_UPDATE,
+    XMSG_MAIN_NETWORK_DATA_NODE_TO_BLOCK_VERIFIERS_CREATE_NEW_BLOCK,
     XMSG_MESSAGES_COUNT,
     XMSG_NONE = XMSG_MESSAGES_COUNT  // for iteration purpose
 } xcash_msg_t;
@@ -81,5 +88,7 @@ char* create_message_param(xcash_msg_t msg, ...);
 // message format helpers
 int split(const char* str, char delimiter, char*** result_elements);
 void cleanup_char_list(char** element_list);
+
+void handle_srv_message(const char *data, size_t length);
 
 #endif  // XCASH_MESSAGE_H

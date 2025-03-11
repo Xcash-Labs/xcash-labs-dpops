@@ -63,7 +63,7 @@ void alloc_buffer_srv(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf)
 void on_client_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
     if (nread > 0) {
         DEBUG_PRINT("Received data: %.*s", (int)nread, buf->base);
-//        handle_transaction(buf->base, nread);
+        handle_srv_message(buf->base, nread);
     } else if (nread == UV_EOF) {
         ERROR_PRINT("Client disconnected.");
         uv_read_stop(client);  // Stop reading if the client disconnected
@@ -157,4 +157,49 @@ void stop_tcp_server() {
     } else {
         INFO_PRINT("Event loop closed successfully.");
     }
+}
+
+// Extract message type from buffer
+xcash_msg_t get_message_type(const char *buffer) {
+    for (xcash_msg_t msg = 0; msg < XMSG_MESSAGES_COUNT; msg++) {
+        if (strstr(buffer, xcash_net_messages[msg])) {
+            return msg;
+        }
+    }
+    return XMSG_NONE;
+}
+
+// Handle incoming transactions
+void handle_transaction(const char *data, size_t length) {
+    char *buffer = (char *)calloc(length + 1, sizeof(char));
+    if (!buffer) {
+        fprintf(stderr, "Memory allocation failed\n");
+        return;
+    }
+    strncpy(buffer, data, length);
+    buffer[length] = '\0';
+
+    xcash_msg_t msg_type = get_message_type(buffer);
+
+    switch (msg_type) {
+        case XMSG_XCASH_GET_SYNC_INFO:
+            server_received_msg_get_sync_info(buffer);
+            break;
+        case XMSG_XCASH_GET_BLOCK_PRODUCERS:
+            server_received_msg_get_block_producers(buffer);
+            break;
+        case XMSG_XCASH_GET_BLOCK_HASH:
+            server_received_msg_get_block_hash(buffer);
+            break;
+        case XMSG_GET_CURRENT_BLOCK_HEIGHT:
+            server_receive_data_socket_get_current_block_height(buffer);
+            break;
+        case XMSG_SEND_CURRENT_BLOCK_HEIGHT:
+            server_receive_data_socket_send_current_block_height(buffer);
+            break;
+        default:
+            fprintf(stderr, "Unknown message type received\n");
+            break;
+    }
+    free(buffer);
 }

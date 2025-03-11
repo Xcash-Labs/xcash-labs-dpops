@@ -38,6 +38,8 @@
 #define TOTAL_RESERVE_PROOFS_DATABASES 50 // The total reserve proofs databases
 #define DB_HASH_SIZE 128
 #define ID_MAX_SIZE 256 //VRF_PUBLIC_KEY_LENGTH + 64*'0' + \0 + align just in case
+#define DB_COLLECTION_DELEGATES "delegates"
+
 
 // Lengths
 #define IP_LENGTH 253
