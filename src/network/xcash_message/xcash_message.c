@@ -314,30 +314,32 @@ void cleanup_char_list(char** element_list) {
 
 // Function to check if a message type is json
 bool is_valid_json_type(const char* msg_type) {
-  for (size_t i = 0; i < sizeof(JSON_FORMAT_MESSAGES) / sizeof(JSON_FORMAT_MESSAGES[0]); ++i) {
-    if (strcmp(msg_type, JSON_FORMAT_MESSAGES[i]) == 0) {
-      return true;
-    }
+  for (size_t i = 0; i < JSON_FORMAT_MESSAGES_COUNT; i++) {
+      if (strcmp(msg_type, xcash_net_messages[JSON_FORMAT_MESSAGES[i]]) == 0) {
+          return true;
+      }
   }
   return false;
 }
 
 // Function to check if a message type is bar
 bool is_valid_bar_type(const char* msg_type) {
-  for (size_t i = 0; i < sizeof(BAR_FORMAT_MESSAGES) / sizeof(BAR_FORMAT_MESSAGES[0]); ++i) {
-    if (strcmp(msg_type, BAR_FORMAT_MESSAGES[i]) == 0) {
-      return true;
-    }
+  for (size_t i = 0; i < BAR_FORMAT_MESSAGES_COUNT; i++) {
+      if (strcmp(msg_type, xcash_net_messages[BAR_FORMAT_MESSAGES[i]]) == 0) {
+          return true;
+      }
   }
   return false;
 }
 
-// Function to convert a string message into its corresponding enum value
 xcash_msg_t get_message_type(const char* data) {
+  if (!data || *data == '\0') {
+      return XMSG_NONE;  // Handle NULL or empty data safely
+  }
   for (int i = 0; i < XMSG_MESSAGES_COUNT; i++) {
-    if (strstr(data, xcash_net_messages[i]) != NULL) {
-      return (xcash_msg_t)i;
-    }
+      if (strncmp(data, xcash_net_messages[i], strlen(xcash_net_messages[i])) == 0) {
+          return (xcash_msg_t)i;
+      }
   }
   return XMSG_NONE;  // Default case if no match is found
 }
