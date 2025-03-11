@@ -314,6 +314,10 @@ void cleanup_char_list(char** element_list) {
 
 // Function to check if a message type is json
 bool is_valid_json_type(const char* msg_type) {
+  if (!msg_type) {
+      return false;  // Handle NULL input safely
+  }
+
   for (size_t i = 0; i < JSON_FORMAT_MESSAGES_COUNT; i++) {
       if (strcmp(msg_type, xcash_net_messages[JSON_FORMAT_MESSAGES[i]]) == 0) {
           return true;
