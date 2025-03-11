@@ -6,13 +6,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-//#include "network_security_functions.h"
-
 #include "config.h"
 #include "globals.h"
 #include "macro_functions.h"
 #include "server_functions.h"
+#include "network_security_functions.h"
 
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 
