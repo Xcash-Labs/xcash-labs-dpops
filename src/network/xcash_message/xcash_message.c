@@ -352,7 +352,7 @@ xcash_msg_t get_message_type(const char* data) {
   return XMSG_NONE;  // Default case if no match is found
 }
 
-void handle_srv_message(const char* data, size_t length) {
+void handle_srv_message(const char* data, size_t length, const char *client_ip) {
   if (data == NULL || length == 0) {
     ERROR_PRINT("Message received by server is null.");
     return;
@@ -416,50 +416,42 @@ void handle_srv_message(const char* data, size_t length) {
     ERROR_PRINT("Message does not match expected format");
     return;
   }
-  pthread_mutex_lock(&lock);
-  if (getpeername(CLIENT_SOCKET, (struct sockaddr*)&addr, &addrlength) != 0 ||
-      getnameinfo((struct sockaddr*)&addr, addrlength, client_IP_address, sizeof(client_IP_address), NULL, 0, NI_NUMERICHOST) != 0) {
-    ERROR_PRINT("Unable to get servers IP address");
-    pthread_mutex_unlock(&lock);
-    return;
-  }
-  pthread_mutex_unlock(&lock);
 
   xcash_msg_t msg_type = get_message_type(data);
   switch (msg_type) {
     case XMSG_XCASH_GET_BLOCK_HASH:
-      if (server_limit_IP_addresses(1, client_IP_address) == 1) {
+      if (server_limit_IP_addresses(1, client_ip) == 1) {
         server_received_msg_get_block_hash(client_socket, data);
-        server_limit_IP_addresses(0, client_IP_address);
+        server_limit_IP_addresses(0, client_ip);
       }
       break;
 
     case XMSG_XCASH_GET_SYNC_INFO:
-      if (server_limit_IP_addresses(1, client_IP_address) == 1) {
+      if (server_limit_IP_addresses(1, client_ip) == 1) {
         server_received_msg_get_sync_info(client_socket, data);
-        server_limit_IP_addresses(0, client_IP_address);
+        server_limit_IP_addresses(0, client_ip);
       }
       break;
 
     case XMSG_XCASH_GET_BLOCK_PRODUCERS:
-      if (server_limit_IP_addresses(1, client_IP_address) == 1) {
+      if (server_limit_IP_addresses(1, client_ip) == 1) {
         server_received_msg_get_block_producers(client_socket, data);
-        server_limit_IP_addresses(0, client_IP_address);
+        server_limit_IP_addresses(0, client_ip);
       }
       break;
     case XMSG_GET_CURRENT_BLOCK_HEIGHT:
-      if (server_limit_IP_addresses(1, client_IP_address) == 1) {
-        server_receive_data_socket_get_current_block_height(client_IP_address);
-        server_limit_IP_addresses(0, client_IP_address);
+      if (server_limit_IP_addresses(1, client_ip) == 1) {
+        server_receive_data_socket_get_current_block_height(client_ip);
+        server_limit_IP_addresses(0, client_ip);
       }
       break;
 
     case XMSG_SEND_CURRENT_BLOCK_HEIGHT:
-      if (server_limit_IP_addresses(1, client_IP_address) == 1) {
+      if (server_limit_IP_addresses(1, client_ip) == 1) {
         pthread_mutex_lock(&update_current_block_height_lock);
         server_receive_data_socket_send_current_block_height(data);
         pthread_mutex_unlock(&update_current_block_height_lock);
-        server_limit_IP_addresses(0, client_IP_address);
+        server_limit_IP_addresses(0, client_ip);
       }
       break;
 
@@ -474,33 +466,33 @@ void handle_srv_message(const char* data, size_t length) {
 
     case XMSG_NODE_TO_NETWORK_DATA_NODES_GET_CURRENT_BLOCK_VERIFIERS_LIST:
       if ((strstr(data, "\"public_address\"") != NULL && server_limit_public_addresses(1, data) == 1) ||
-          (strstr(data, "\"public_address\"") == NULL && server_limit_IP_addresses(1, client_IP_address) == 1)) {
+          (strstr(data, "\"public_address\"") == NULL && server_limit_IP_addresses(1, client_ip) == 1)) {
         server_receive_data_socket_node_to_network_data_nodes_get_current_block_verifiers_list(client_socket);
         strstr(data, "\"public_address\"") != NULL ? server_limit_public_addresses(3, data)
-                                                   : server_limit_IP_addresses(0, client_IP_address);
+                                                   : server_limit_IP_addresses(0, client_ip);
       }
       break;
 
     case XMSG_NETWORK_DATA_NODES_TO_NETWORK_DATA_NODES_DATABASE_SYNC_CHECK:
-      if (server_limit_IP_addresses(1, client_IP_address) == 1) {
+      if (server_limit_IP_addresses(1, client_ip) == 1) {
         server_receive_data_socket_network_data_nodes_to_network_data_nodes_database_sync_check(data);
-        server_limit_IP_addresses(0, client_IP_address);
+        server_limit_IP_addresses(0, client_ip);
       }
       break;
 
     case XMSG_NODE_TO_BLOCK_VERIFIERS_GET_RESERVE_BYTES_DATABASE_HASH:
       if ((strstr(data, "|") != NULL && server_limit_public_addresses(2, data) == 1) ||
-          (strstr(data, "|") == NULL && server_limit_IP_addresses(1, client_IP_address) == 1)) {
+          (strstr(data, "|") == NULL && server_limit_IP_addresses(1, client_ip) == 1)) {
         server_receive_data_socket_node_to_block_verifiers_get_reserve_bytes_database_hash(client_socket, data);
         strstr(data, "|") != NULL ? server_limit_public_addresses(4, data)
-                                  : server_limit_IP_addresses(0, client_IP_address);
+                                  : server_limit_IP_addresses(0, client_ip);
       }
       break;
 
     case XMSG_NODE_TO_BLOCK_VERIFIERS_CHECK_IF_CURRENT_BLOCK_VERIFIER:
-      if (server_limit_IP_addresses(1, client_IP_address) == 1) {
+      if (server_limit_IP_addresses(1, client_ip) == 1) {
         server_receive_data_socket_node_to_block_verifiers_check_if_current_block_verifier(client_socket);
-        server_limit_IP_addresses(0, client_IP_address);
+        server_limit_IP_addresses(0, client_ip);
       }
       break;
 
@@ -561,11 +553,11 @@ void handle_srv_message(const char* data, size_t length) {
       break;
 
     case XMSG_NODE_TO_BLOCK_VERIFIERS_ADD_RESERVE_PROOF:
-      if (server_limit_IP_addresses(1, client_IP_address) == 1) {
+      if (server_limit_IP_addresses(1, client_ip) == 1) {
         pthread_mutex_lock(&add_reserve_proof_lock);
         server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(client_socket, data);
         pthread_mutex_unlock(&add_reserve_proof_lock);
-        server_limit_IP_addresses(0, client_IP_address);
+        server_limit_IP_addresses(0, client_ip);
       }
       break;
 
@@ -579,23 +571,23 @@ void handle_srv_message(const char* data, size_t length) {
       break;
 
     case XMSG_NODES_TO_BLOCK_VERIFIERS_REGISTER_DELEGATE:
-      if (server_limit_IP_addresses(1, client_IP_address) == 1) {
+      if (server_limit_IP_addresses(1, client_ip) == 1) {
         server_receive_data_socket_nodes_to_block_verifiers_register_delegates(client_socket, data);
-        server_limit_IP_addresses(0, client_IP_address);
+        server_limit_IP_addresses(0, client_ip);
       }
       break;
 
     case XMSG_NODES_TO_BLOCK_VERIFIERS_UPDATE_DELEGATE:
-      if (server_limit_IP_addresses(1, client_IP_address) == 1) {
+      if (server_limit_IP_addresses(1, client_ip) == 1) {
         server_receive_data_socket_nodes_to_block_verifiers_update_delegates(client_socket, data);
-        server_limit_IP_addresses(0, client_IP_address);
+        server_limit_IP_addresses(0, client_ip);
       }
       break;
 
     case XMSG_NODE_TO_NETWORK_DATA_NODES_CHECK_VOTE_STATUS:
-      if (server_limit_IP_addresses(1, client_IP_address) == 1) {
+      if (server_limit_IP_addresses(1, client_ip) == 1) {
         server_receive_data_socket_nodes_to_network_data_nodes_check_vote_status(client_socket, data);
-        server_limit_IP_addresses(0, client_IP_address);
+        server_limit_IP_addresses(0, client_ip);
       }
       break;
 

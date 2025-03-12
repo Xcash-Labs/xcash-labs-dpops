@@ -54,17 +54,20 @@ void get_client_ip(client_t *client) {
     struct sockaddr_storage addr;
     int namelen = sizeof(addr);
 
-    if (uv_tcp_getpeername((uv_tcp_t*)&client->handle, (struct sockaddr*)&addr, &namelen) == 0) {
-        if (addr.ss_family == AF_INET) {
-            struct sockaddr_in *s = (struct sockaddr_in*)&addr;
-            uv_inet_ntop(AF_INET, &s->sin_addr, client->client_ip, sizeof(client->client_ip));
-        } else if (addr.ss_family == AF_INET6) {
-            struct sockaddr_in6 *s = (struct sockaddr_in6*)&addr;
-            uv_inet_ntop(AF_INET6, &s->sin6_addr, client->client_ip, sizeof(client->client_ip));
-        }
-    } else {
+    int status = uv_tcp_getpeername((uv_tcp_t*)&client->handle, (struct sockaddr*)&addr, &namelen);
+    if (status != 0) {
         strncpy(client->client_ip, "Unknown", sizeof(client->client_ip));
         client->client_ip[sizeof(client->client_ip) - 1] = '\0'; // Ensure null termination
+        ERROR_PRINT("Error retrieving client IP: %s", uv_strerror(status));
+        return; 
+    }
+
+    if (addr.ss_family == AF_INET) {
+        struct sockaddr_in *s = (struct sockaddr_in*)&addr;
+        uv_inet_ntop(AF_INET, &s->sin_addr, client->client_ip, sizeof(client->client_ip));
+    } else if (addr.ss_family == AF_INET6) {
+        struct sockaddr_in6 *s = (struct sockaddr_in6*)&addr;
+        uv_inet_ntop(AF_INET6, &s->sin6_addr, client->client_ip, sizeof(client->client_ip));
     }
 }
 
@@ -115,9 +118,11 @@ void alloc_buffer_srv(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf)
 
 // Read data from client
 void on_client_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
+    client_t *client_data = (client_t *)client;
     if (nread > 0) {
         DEBUG_PRINT("Received data: %.*s", (int)nread, buf->base);
-        handle_srv_message(buf->base, nread);
+        DEBUG_PRINT("Received data from %s: %.*s", client_data->client_ip, (int)nread, buf->base);
+        handle_srv_message(buf->base, nread, client_data->client_ip);
     } else if (nread == UV_EOF) {
         ERROR_PRINT("Client disconnected.");
         uv_read_stop(client);  // Stop reading if the client disconnected
