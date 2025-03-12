@@ -42,16 +42,4 @@ extern pthread_mutex_t database_data_IP_address_lock;
 extern pthread_mutex_t update_current_block_height_lock;
 extern pthread_mutex_t hash_mutex;
 
-
-pthread_rwlock_init(&rwlock,NULL);
-pthread_rwlock_init(&rwlock_reserve_proofs,NULL);
-pthread_mutex_init(&lock, NULL);
-pthread_mutex_init(&database_lock, NULL);
-pthread_mutex_init(&verify_network_block_lock, NULL);
-pthread_mutex_init(&vote_lock, NULL);
-pthread_mutex_init(&add_reserve_proof_lock, NULL);
-pthread_mutex_init(&invalid_reserve_proof_lock, NULL);
-pthread_mutex_init(&database_data_IP_address_lock, NULL);
-pthread_mutex_init(&update_current_block_height_lock, NULL);
-
 #endif
