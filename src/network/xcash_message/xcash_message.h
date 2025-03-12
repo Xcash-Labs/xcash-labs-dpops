@@ -1,5 +1,6 @@
 #ifndef XCASH_MESSAGE_H
 #define XCASH_MESSAGE_H
+
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdarg.h>
@@ -67,19 +68,19 @@ typedef enum {
     XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_RESERVE_BYTES_DATABASE_SYNC_CHECK_UPDATE,
     XMSG_MAIN_NETWORK_DATA_NODE_TO_BLOCK_VERIFIERS_CREATE_NEW_BLOCK,
     XMSG_MESSAGES_COUNT,
-    XMSG_NONE = XMSG_MESSAGES_COUNT  // for iteration purpose
+    XMSG_NONE = XMSG_MESSAGES_COUNT
 } xcash_msg_t;
 
 extern const char* xcash_net_messages[];
 extern const xcash_msg_t xcash_db_sync_messages[];
 extern const xcash_msg_t xcash_db_download_messages[];
 
+typedef enum xcash_msg_t xcash_msg_t;
+
 bool is_unsigned_type(xcash_msg_t msg);
 bool is_walletsign_type(xcash_msg_t msg);
 bool is_nonreturn_type(xcash_msg_t msg);
-
 char* create_message_param_list(xcash_msg_t msg, const char** pair_params);
-
 char* create_message(xcash_msg_t msg);
 char* create_message_args(xcash_msg_t msg, va_list args);
 char* create_message_param(xcash_msg_t msg, ...);
