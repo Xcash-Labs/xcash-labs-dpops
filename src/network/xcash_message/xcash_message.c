@@ -328,10 +328,14 @@ bool is_valid_json_type(const char* msg_type) {
 
 // Function to check if a message type is bar
 bool is_valid_bar_type(const char* msg_type) {
+  if (!msg_type) {
+    return false;  // Handle NULL input safely
+  }
+
   for (size_t i = 0; i < BAR_FORMAT_MESSAGES_COUNT; i++) {
-      if (strcmp(msg_type, xcash_net_messages[BAR_FORMAT_MESSAGES[i]]) == 0) {
-          return true;
-      }
+    if (strcmp(msg_type, xcash_net_messages[BAR_FORMAT_MESSAGES[i]]) == 0) {
+      return true;
+    }
   }
   return false;
 }
@@ -357,7 +361,7 @@ void handle_srv_message(const char* data, size_t length) {
   // Handle JSON formatted messages
   if (length > 25 && strstr(data, "}") && strstr(data, "\",\r\n")) {
     const char* delimiter = strstr(data, "\",\r\n");  // Find ",\r\n" in data
-    size_t count = length - (delimiter - data) - 25;
+    int count = length - (delimiter - data) - 25;
     size_t copy_len = length - 25;  // Actual message length after removing prefix
 
     if (count < 0 || copy_len >= length) {
