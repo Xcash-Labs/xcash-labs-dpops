@@ -13,8 +13,19 @@ char secret_key[VRF_SECRET_KEY_LENGTH+1] = {0};
 char current_round_part[2] = "1";
 char current_round_part_backup_node[2] = "0";
 mongoc_client_pool_t* database_client_thread_pool = NULL;
+
 pthread_rwlock_t rwlock;
+pthread_rwlock_t rwlock_reserve_proofs;
+pthread_mutex_t lock;
+pthread_mutex_t database_lock;
+pthread_mutex_t verify_network_block_lock;
+pthread_mutex_t vote_lock;
+pthread_mutex_t add_reserve_proof_lock;
+pthread_mutex_t invalid_reserve_proof_lock;
+pthread_mutex_t database_data_IP_address_lock;
+pthread_mutex_t update_current_block_height_lock;
 pthread_mutex_t hash_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 const char *collection_names[XCASH_DB_COUNT] = {"delegates", "statistics", "reserve_proofs", "reserve_bytes"};
 bool cleanup_db_before_upsert = false; // delete db before put content. make sure we have exact copy during initial db syncing
 
@@ -119,8 +130,16 @@ Name: cleanup_data_structure
 Description: Clean up before ending
 ---------------------------------------------------------------------------------------------------------*/
 void cleanup_data_structures(void) {
-
   pthread_rwlock_destroy(&rwlock);
+  pthread_rwlock_destroy(&rwlock_reserve_proofs);
+  pthread_mutex_destroy(&lock);
+  pthread_mutex_destroy(&database_lock);
+  pthread_mutex_destroy(&verify_network_block_lock);
+  pthread_mutex_destroy(&vote_lock);
+  pthread_mutex_destroy(&add_reserve_proof_lock);
+  pthread_mutex_destroy(&invalid_reserve_proof_lock);
+  pthread_mutex_destroy(&database_data_IP_address_lock);
+  pthread_mutex_destroy(&update_current_block_height_lock);
   pthread_mutex_destroy(&hash_mutex);
 
   // add more later......
