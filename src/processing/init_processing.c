@@ -49,22 +49,7 @@ Description: Initialize globals and print program start header.
 bool init_processing(const arg_config_t *arg_config)
 {
   network_data_nodes_amount = get_seed_node_count();
-
-  pthread_rwlock_init(&rwlock,NULL);
-  pthread_rwlock_init(&rwlock_reserve_proofs,NULL);
-  pthread_mutex_init(&lock, NULL);
-  pthread_mutex_init(&database_lock, NULL);
-  pthread_mutex_init(&verify_network_block_lock, NULL);
-  pthread_mutex_init(&vote_lock, NULL);
-  pthread_mutex_init(&add_reserve_proof_lock, NULL);
-  pthread_mutex_init(&invalid_reserve_proof_lock, NULL);
-  pthread_mutex_init(&database_data_IP_address_lock, NULL);
-  pthread_mutex_init(&update_current_block_height_lock, NULL);
-
-  memset(&previous_block_verifiers_list, 0, sizeof(previous_block_verifiers_list));
-  memset(&current_block_verifiers_list, 0, sizeof(current_block_verifiers_list));
-  memset(&next_block_verifiers_list, 0, sizeof(next_block_verifiers_list));
-
+  
   if (arg_config->init_db_from_seeds) {
     INFO_STAGE_PRINT("Initializing database from seeds");
     if (!init_db_from_seeds()) {

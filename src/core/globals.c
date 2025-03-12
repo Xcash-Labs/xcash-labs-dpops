@@ -34,6 +34,14 @@
   block_verifiers_list_t current_block_verifiers_list;
   block_verifiers_list_t next_block_verifiers_list;
 
+  const NetworkNode network_nodes[] = {
+    {"XCA1dd7JaWhiuBavUM2ZTJG3GdgPkT1Yd5Q6VvNvnxbEfb6JhUhziTF6w5mMPVeoSv3aa1zGyhedpaa2QQtGEjBo7N6av9nhaU", "xcashseeds.us", 
+      "f681a933620c8e9e029d9ac0977d3a2f1d6a64cc49304e079458e3b5d2d4a66f" , 1},
+    {"XCA1b6Sg5QVBX4jrctQ9SVUcHFqpaGST6bqtFpyoQadTX8SaDs92xR8iec3VfaXKzhYijFiMfwoM4TuYRgy6NXzn5titJnWbra", "xcashseeds.uk",
+       "63232aa1b020a772945bf50ce96db9a04242583118b5a43952f0aaf9ecf7cfbb", 1},
+    // Sentinel value (empty entry to mark the end)
+    {NULL, NULL, NULL, 0}};
+
 void init_globals(void) {
     pthread_rwlock_init(&rwlock,NULL);
     pthread_rwlock_init(&rwlock_reserve_proofs,NULL);
