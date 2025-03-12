@@ -228,11 +228,11 @@ xcash_msg_t get_message_type(const char *buffer) {
     return XMSG_NONE;
 }
 
-void send_response(client_t *client, const char *message) {
-    if (!client || !message) {
-        ERROR_PRINT("Invalid client or message in send_response");
-        return;
-    }
+//void send_response(client_t *client, const char *message) {
+//    if (!client || !message) {
+//        ERROR_PRINT("Invalid client or message in send_response");
+//        return;
+//    }
 
-    send_data_uv(client, message, strlen(message));
-}
+//    send_data_uv(client, message, strlen(message));
+//}
