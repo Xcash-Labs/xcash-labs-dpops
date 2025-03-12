@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <uv.h>
+#include <netinet/in.h>
 #include <pthread.h>
 #include "config.h"
 #include "globals.h"

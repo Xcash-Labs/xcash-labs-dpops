@@ -4,6 +4,10 @@ static uv_loop_t loop;
 static uv_tcp_t server;
 static pthread_t uv_thread;
 static uv_async_t async_shutdown; // Async handle for clean shutdown
+typedef struct {
+    uv_tcp_t handle;
+    char client_ip[INET6_ADDRSTRLEN];
+} client_t;
 
 // Cleanup function after client disconnects
 void on_client_close(uv_handle_t *handle) {
@@ -13,7 +17,7 @@ void on_client_close(uv_handle_t *handle) {
 }
 
 // Handle client connections
-void on_new_connection(uv_stream_t *server_handle, int status) {
+void on_new_connection_OLD(uv_stream_t *server_handle, int status) {
     if (status < 0) {
         ERROR_PRINT("Error on new connection: %s", uv_strerror(status));
         return;
@@ -43,6 +47,56 @@ void on_new_connection(uv_stream_t *server_handle, int status) {
         }
     } else {
         uv_close((uv_handle_t *)client, on_client_close);  // Close if accept fails
+    }
+}
+
+void get_client_ip(client_t *client) {
+    struct sockaddr_storage addr;
+    int namelen = sizeof(addr);
+
+    if (uv_tcp_getpeername((uv_tcp_t*)&client->handle, (struct sockaddr*)&addr, &namelen) == 0) {
+        if (addr.ss_family == AF_INET) {
+            struct sockaddr_in *s = (struct sockaddr_in*)&addr;
+            uv_inet_ntop(AF_INET, &s->sin_addr, client->client_ip, sizeof(client->client_ip));
+        } else if (addr.ss_family == AF_INET6) {
+            struct sockaddr_in6 *s = (struct sockaddr_in6*)&addr;
+            uv_inet_ntop(AF_INET6, &s->sin6_addr, client->client_ip, sizeof(client->client_ip));
+        }
+    } else {
+        strncpy(client->client_ip, "Unknown", sizeof(client->client_ip));
+        client->client_ip[sizeof(client->client_ip) - 1] = '\0'; // Ensure null termination
+    }
+}
+
+void on_new_connection(uv_stream_t *server_handle, int status) {
+    if (status < 0) {
+        ERROR_PRINT("Error on new connection: %s", uv_strerror(status));
+        return;
+    }
+
+    client_t *client = (client_t *)malloc(sizeof(client_t));
+    if (!client) {
+        ERROR_PRINT("Memory allocation failed for client");
+        return;
+    }
+
+    if (uv_tcp_init(server_handle->loop, (uv_tcp_t*)&client->handle) < 0) {
+        ERROR_PRINT("Failed to initialize TCP handle for client");
+        free(client);
+        return;
+    }
+
+    if (uv_accept(server_handle, (uv_stream_t *) &client->handle) == 0) {
+        get_client_ip(client); // Store client IP
+        DEBUG_PRINT("New connection from: %s", client->client_ip);
+
+        if (uv_read_start((uv_stream_t *) &client->handle, alloc_buffer_srv, on_client_read) < 0) {
+            ERROR_PRINT("Failed to start reading from client");
+            uv_close((uv_handle_t *) &client->handle, on_client_close);
+            return;
+        }
+    } else {
+        uv_close((uv_handle_t *) &client->handle, on_client_close);
     }
 }
 
@@ -167,39 +221,4 @@ xcash_msg_t get_message_type(const char *buffer) {
         }
     }
     return XMSG_NONE;
-}
-
-// Handle incoming transactions
-void handle_transaction(const char *data, size_t length) {
-    char *buffer = (char *)calloc(length + 1, sizeof(char));
-    if (!buffer) {
-        fprintf(stderr, "Memory allocation failed\n");
-        return;
-    }
-    strncpy(buffer, data, length);
-    buffer[length] = '\0';
-
-    xcash_msg_t msg_type = get_message_type(buffer);
-
-    switch (msg_type) {
-        case XMSG_XCASH_GET_SYNC_INFO:
-            server_received_msg_get_sync_info(buffer);
-            break;
-        case XMSG_XCASH_GET_BLOCK_PRODUCERS:
-            server_received_msg_get_block_producers(buffer);
-            break;
-        case XMSG_XCASH_GET_BLOCK_HASH:
-            server_received_msg_get_block_hash(buffer);
-            break;
-        case XMSG_GET_CURRENT_BLOCK_HEIGHT:
-            server_receive_data_socket_get_current_block_height(buffer);
-            break;
-        case XMSG_SEND_CURRENT_BLOCK_HEIGHT:
-            server_receive_data_socket_send_current_block_height(buffer);
-            break;
-        default:
-            fprintf(stderr, "Unknown message type received\n");
-            break;
-    }
-    free(buffer);
 }
