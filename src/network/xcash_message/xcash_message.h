@@ -11,6 +11,7 @@
 #include "macro_functions.h"
 #include "server_functions.h"
 #include "network_security_functions.h"
+#include "uv_net_server.h"
 
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 
