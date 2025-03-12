@@ -75,8 +75,6 @@ extern const char* xcash_net_messages[];
 extern const xcash_msg_t xcash_db_sync_messages[];
 extern const xcash_msg_t xcash_db_download_messages[];
 
-// typedef enum xcash_msg_t xcash_msg_t;
-
 bool is_unsigned_type(xcash_msg_t msg);
 bool is_walletsign_type(xcash_msg_t msg);
 bool is_nonreturn_type(xcash_msg_t msg);

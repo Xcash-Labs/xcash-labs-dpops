@@ -13,6 +13,7 @@
         "xiosbase": "c",
         "stdbool.h": "c",
         "initializer_list": "c",
-        "type_traits": "c"
+        "type_traits": "c",
+        "macro_functions.h": "c"
     }
 }

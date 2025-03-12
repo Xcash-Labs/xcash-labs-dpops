@@ -21,6 +21,6 @@ void alloc_buffer_srv(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf)
 void on_client_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf);
 bool start_tcp_server(int port);
 void stop_tcp_server(void);
-//void send_response(client_t *client, const char *message)
+void send_response(client_t *client, const char *message);
 
 #endif
