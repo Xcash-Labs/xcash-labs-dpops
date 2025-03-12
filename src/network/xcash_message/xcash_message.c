@@ -196,7 +196,7 @@ char* create_message_param_list(xcash_msg_t msg, const char** pair_params) {
     message_offset = (int)strlen(message_buf);
   }
 
-  strncat(message_buf + message_offset, ",\r\n}", sizeof(message_buf) - strlen(message_buf) - 1);
+  strncat(message_buf, ",\r\n}", sizeof(message_buf) - strlen(message_buf) - 1);
 
   // If message is signed
   if (!is_unsigned_type(msg)) {
@@ -225,7 +225,6 @@ char* create_message_args(xcash_msg_t msg, va_list args) {
 
   // param_count x 2 but we store them in sequence. +1 for sentinel
   param_count = param_count * 2 + 1;
-
   const char** param_list = calloc(param_count, sizeof(char*));
   if (!param_list) {
     return NULL;
@@ -244,6 +243,10 @@ char* create_message_args(xcash_msg_t msg, va_list args) {
   param_list[index] = NULL;
 
   char* message = create_message_param_list(msg, param_list);
+  if (!message) {
+    free(param_list);
+    return NULL;
+}
   free(param_list);
   return message;
 }
