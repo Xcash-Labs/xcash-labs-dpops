@@ -10,7 +10,6 @@
 /*--------------------------------------------------------------------------------------------------
 Global Variables
 --------------------------------------------------------------------------------------------------*/
-extern const NetworkNode network_nodes[];
 extern int log_level;  // Log level for display log messages
 extern bool is_seed_node;   // True if node is a seed node - network_data_node_settings is same as seed node, removed
 extern int network_data_nodes_amount; // Number of network data nodes
@@ -41,6 +40,8 @@ extern pthread_mutex_t invalid_reserve_proof_lock;
 extern pthread_mutex_t database_data_IP_address_lock;
 extern pthread_mutex_t update_current_block_height_lock;
 extern pthread_mutex_t hash_mutex;
+
+extern const NetworkNode network_nodes[];
 
 void init_globals(void);
 
