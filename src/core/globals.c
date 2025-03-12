@@ -34,7 +34,7 @@
   block_verifiers_list_t current_block_verifiers_list;
   block_verifiers_list_t next_block_verifiers_list;
 
-void init_globals() {
+void init_globals(void) {
     pthread_rwlock_init(&rwlock,NULL);
     pthread_rwlock_init(&rwlock_reserve_proofs,NULL);
     pthread_mutex_init(&lock, NULL);
