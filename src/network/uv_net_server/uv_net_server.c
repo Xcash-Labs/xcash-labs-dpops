@@ -4,10 +4,6 @@ static uv_loop_t loop;
 static uv_tcp_t server;
 static pthread_t uv_thread;
 static uv_async_t async_shutdown; // Async handle for clean shutdown
-typedef struct {
-    uv_tcp_t handle;
-    char client_ip[INET6_ADDRSTRLEN];
-} client_t;
 
 // Cleanup function after client disconnects
 void on_client_close(uv_handle_t *handle) {
