@@ -1,6 +1,7 @@
 #include "xcash_dpops.h"
 
 // set globals defined in globals.h
+/*
 int log_level = 0;
 bool is_seed_node = false;  
 int network_data_nodes_amount = 0;
@@ -33,7 +34,7 @@ struct main_nodes_list main_nodes_list = {0};
 block_verifiers_list_t previous_block_verifiers_list;
 block_verifiers_list_t current_block_verifiers_list;
 block_verifiers_list_t next_block_verifiers_list;
-
+*/
 
 const NetworkNode network_nodes[] = {
   {"XCA1dd7JaWhiuBavUM2ZTJG3GdgPkT1Yd5Q6VvNvnxbEfb6JhUhziTF6w5mMPVeoSv3aa1zGyhedpaa2QQtGEjBo7N6av9nhaU", "xcashseeds.us", 
@@ -171,6 +172,7 @@ Return: 0 if an error has occured, 1 if successfull
 ---------------------------------------------------------------------------------------------------------*/
 int main(int argc, char *argv[]) {
   arg_config_t arg_config = {0};
+  init_globals();
   setenv("ARGP_HELP_FMT", "rmargin=120", 1);
   if (argc == 1) {
     FATAL_ERROR_EXIT("No arguments entered. Try `xcash-dpops --help'");

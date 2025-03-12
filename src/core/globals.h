@@ -42,4 +42,6 @@ extern pthread_mutex_t database_data_IP_address_lock;
 extern pthread_mutex_t update_current_block_height_lock;
 extern pthread_mutex_t hash_mutex;
 
+void init_globals();
+
 #endif
