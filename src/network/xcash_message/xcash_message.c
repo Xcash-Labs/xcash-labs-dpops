@@ -315,13 +315,13 @@ void cleanup_char_list(char** element_list) {
 // Function to check if a message type is json
 bool is_valid_json_type(const char* msg_type) {
   if (!msg_type) {
-      return false;  // Handle NULL input safely
+    return false;  // Handle NULL input safely
   }
 
   for (size_t i = 0; i < JSON_FORMAT_MESSAGES_COUNT; i++) {
-      if (strcmp(msg_type, xcash_net_messages[JSON_FORMAT_MESSAGES[i]]) == 0) {
-          return true;
-      }
+    if (strcmp(msg_type, xcash_net_messages[JSON_FORMAT_MESSAGES[i]]) == 0) {
+      return true;
+    }
   }
   return false;
 }
@@ -342,21 +342,28 @@ bool is_valid_bar_type(const char* msg_type) {
 
 xcash_msg_t get_message_type(const char* data) {
   if (!data || *data == '\0') {
-      return XMSG_NONE;  // Handle NULL or empty data safely
+    return XMSG_NONE;  // Handle NULL or empty data safely
   }
   for (int i = 0; i < XMSG_MESSAGES_COUNT; i++) {
-      if (strncmp(data, xcash_net_messages[i], strlen(xcash_net_messages[i])) == 0) {
-          return (xcash_msg_t)i;
-      }
+    if (strncmp(data, xcash_net_messages[i], strlen(xcash_net_messages[i])) == 0) {
+      return (xcash_msg_t)i;
+    }
   }
   return XMSG_NONE;  // Default case if no match is found
 }
 
-void handle_srv_message(const char* data, size_t length, const char *client_ip) {
+void handle_srv_message(const char* data, size_t length, client_t* client) {
   if (data == NULL || length == 0) {
     ERROR_PRINT("Message received by server is null.");
     return;
   }
+
+  if (!client) {
+    ERROR_PRINT("handle_srv_message: Client data is NULL");
+    return;
+  }
+
+  DEBUG_PRINT("Processing message from client IP: %s", client->client_ip);
 
   // Handle JSON formatted messages
   if (length > 25 && strstr(data, "}") && strstr(data, "\",\r\n")) {
@@ -421,21 +428,21 @@ void handle_srv_message(const char* data, size_t length, const char *client_ip) 
   switch (msg_type) {
     case XMSG_XCASH_GET_BLOCK_HASH:
       if (server_limit_IP_addresses(1, client_ip) == 1) {
-        server_received_msg_get_block_hash(client_socket, data);
+        server_received_msg_get_block_hash(client, data);
         server_limit_IP_addresses(0, client_ip);
       }
       break;
 
     case XMSG_XCASH_GET_SYNC_INFO:
       if (server_limit_IP_addresses(1, client_ip) == 1) {
-        server_received_msg_get_sync_info(client_socket, data);
+        server_received_msg_get_sync_info(client, data);
         server_limit_IP_addresses(0, client_ip);
       }
       break;
 
     case XMSG_XCASH_GET_BLOCK_PRODUCERS:
       if (server_limit_IP_addresses(1, client_ip) == 1) {
-        server_received_msg_get_block_producers(client_socket, data);
+        server_received_msg_get_block_producers(client, data);
         server_limit_IP_addresses(0, client_ip);
       }
       break;
@@ -458,7 +465,7 @@ void handle_srv_message(const char* data, size_t length, const char *client_ip) 
     case XMSG_NODE_TO_NETWORK_DATA_NODES_GET_PREVIOUS_CURRENT_NEXT_BLOCK_VERIFIERS_LIST:
       if (network_data_node_settings == 1 || test_settings == 1) {
         if (server_limit_public_addresses(1, data) == 1) {
-          server_receive_data_socket_node_to_network_data_nodes_get_previous_current_next_block_verifiers_list(client_socket);
+          server_receive_data_socket_node_to_network_data_nodes_get_previous_current_next_block_verifiers_list(client);
           server_limit_public_addresses(3, data);
         }
       }
@@ -467,7 +474,7 @@ void handle_srv_message(const char* data, size_t length, const char *client_ip) 
     case XMSG_NODE_TO_NETWORK_DATA_NODES_GET_CURRENT_BLOCK_VERIFIERS_LIST:
       if ((strstr(data, "\"public_address\"") != NULL && server_limit_public_addresses(1, data) == 1) ||
           (strstr(data, "\"public_address\"") == NULL && server_limit_IP_addresses(1, client_ip) == 1)) {
-        server_receive_data_socket_node_to_network_data_nodes_get_current_block_verifiers_list(client_socket);
+        server_receive_data_socket_node_to_network_data_nodes_get_current_block_verifiers_list(client);
         strstr(data, "\"public_address\"") != NULL ? server_limit_public_addresses(3, data)
                                                    : server_limit_IP_addresses(0, client_ip);
       }
@@ -483,7 +490,7 @@ void handle_srv_message(const char* data, size_t length, const char *client_ip) 
     case XMSG_NODE_TO_BLOCK_VERIFIERS_GET_RESERVE_BYTES_DATABASE_HASH:
       if ((strstr(data, "|") != NULL && server_limit_public_addresses(2, data) == 1) ||
           (strstr(data, "|") == NULL && server_limit_IP_addresses(1, client_ip) == 1)) {
-        server_receive_data_socket_node_to_block_verifiers_get_reserve_bytes_database_hash(client_socket, data);
+        server_receive_data_socket_node_to_block_verifiers_get_reserve_bytes_database_hash(client, data);
         strstr(data, "|") != NULL ? server_limit_public_addresses(4, data)
                                   : server_limit_IP_addresses(0, client_ip);
       }
@@ -491,63 +498,63 @@ void handle_srv_message(const char* data, size_t length, const char *client_ip) 
 
     case XMSG_NODE_TO_BLOCK_VERIFIERS_CHECK_IF_CURRENT_BLOCK_VERIFIER:
       if (server_limit_IP_addresses(1, client_ip) == 1) {
-        server_receive_data_socket_node_to_block_verifiers_check_if_current_block_verifier(client_socket);
+        server_receive_data_socket_node_to_block_verifiers_check_if_current_block_verifier(client);
         server_limit_IP_addresses(0, client_ip);
       }
       break;
 
     case XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_RESERVE_PROOFS_DATABASE_SYNC_CHECK_ALL_UPDATE:
       if (server_limit_public_addresses(1, data) == 1) {
-        server_receive_data_socket_block_verifiers_to_block_verifiers_reserve_proofs_database_sync_check_all_update(client_socket, data);
+        server_receive_data_socket_block_verifiers_to_block_verifiers_reserve_proofs_database_sync_check_all_update(client, data);
         server_limit_public_addresses(3, data);
       }
       break;
 
     case XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_RESERVE_PROOFS_DATABASE_DOWNLOAD_FILE_UPDATE:
       if (server_limit_public_addresses(1, data) == 1) {
-        server_receive_data_socket_block_verifiers_to_block_verifiers_reserve_proofs_database_download_file_update(client_socket, data);
+        server_receive_data_socket_block_verifiers_to_block_verifiers_reserve_proofs_database_download_file_update(client, data);
         server_limit_public_addresses(3, data);
       }
       break;
 
     case XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_RESERVE_BYTES_DATABASE_SYNC_CHECK_ALL_UPDATE:
       if (server_limit_public_addresses(1, data) == 1) {
-        server_receive_data_socket_block_verifiers_to_block_verifiers_reserve_bytes_database_sync_check_all_update(client_socket, data);
+        server_receive_data_socket_block_verifiers_to_block_verifiers_reserve_bytes_database_sync_check_all_update(client, data);
         server_limit_public_addresses(3, data);
       }
       break;
 
     case XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_RESERVE_BYTES_DATABASE_DOWNLOAD_FILE_UPDATE:
       if (server_limit_public_addresses(1, data) == 1) {
-        server_receive_data_socket_block_verifiers_to_block_verifiers_reserve_bytes_database_download_file_update(client_socket, data);
+        server_receive_data_socket_block_verifiers_to_block_verifiers_reserve_bytes_database_download_file_update(client, data);
         server_limit_public_addresses(3, data);
       }
       break;
 
     case XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_DELEGATES_DATABASE_SYNC_CHECK_UPDATE:
       if (server_limit_public_addresses(1, data) == 1) {
-        server_receive_data_socket_block_verifiers_to_block_verifiers_delegates_database_sync_check_update(client_socket, data);
+        server_receive_data_socket_block_verifiers_to_block_verifiers_delegates_database_sync_check_update(client, data);
         server_limit_public_addresses(3, data);
       }
       break;
 
     case XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_DELEGATES_DATABASE_DOWNLOAD_FILE_UPDATE:
       if (server_limit_public_addresses(1, data) == 1) {
-        server_receive_data_socket_block_verifiers_to_block_verifiers_delegates_database_download_file_update(client_socket);
+        server_receive_data_socket_block_verifiers_to_block_verifiers_delegates_database_download_file_update(client);
         server_limit_public_addresses(3, data);
       }
       break;
 
     case XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_STATISTICS_DATABASE_SYNC_CHECK_UPDATE:
       if (server_limit_public_addresses(1, data) == 1) {
-        server_receive_data_socket_block_verifiers_to_block_verifiers_statistics_database_sync_check_update(client_socket, data);
+        server_receive_data_socket_block_verifiers_to_block_verifiers_statistics_database_sync_check_update(client, data);
         server_limit_public_addresses(3, data);
       }
       break;
 
     case XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_STATISTICS_DATABASE_DOWNLOAD_FILE_UPDATE:
       if (server_limit_public_addresses(1, data) == 1) {
-        server_receive_data_socket_block_verifiers_to_block_verifiers_statistics_database_download_file_update(client_socket);
+        server_receive_data_socket_block_verifiers_to_block_verifiers_statistics_database_download_file_update(client);
         server_limit_public_addresses(3, data);
       }
       break;
@@ -555,7 +562,7 @@ void handle_srv_message(const char* data, size_t length, const char *client_ip) 
     case XMSG_NODE_TO_BLOCK_VERIFIERS_ADD_RESERVE_PROOF:
       if (server_limit_IP_addresses(1, client_ip) == 1) {
         pthread_mutex_lock(&add_reserve_proof_lock);
-        server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(client_socket, data);
+        server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(client, data);
         pthread_mutex_unlock(&add_reserve_proof_lock);
         server_limit_IP_addresses(0, client_ip);
       }
@@ -572,28 +579,28 @@ void handle_srv_message(const char* data, size_t length, const char *client_ip) 
 
     case XMSG_NODES_TO_BLOCK_VERIFIERS_REGISTER_DELEGATE:
       if (server_limit_IP_addresses(1, client_ip) == 1) {
-        server_receive_data_socket_nodes_to_block_verifiers_register_delegates(client_socket, data);
+        server_receive_data_socket_nodes_to_block_verifiers_register_delegates(client, data);
         server_limit_IP_addresses(0, client_ip);
       }
       break;
 
     case XMSG_NODES_TO_BLOCK_VERIFIERS_UPDATE_DELEGATE:
       if (server_limit_IP_addresses(1, client_ip) == 1) {
-        server_receive_data_socket_nodes_to_block_verifiers_update_delegates(client_socket, data);
+        server_receive_data_socket_nodes_to_block_verifiers_update_delegates(client, data);
         server_limit_IP_addresses(0, client_ip);
       }
       break;
 
     case XMSG_NODE_TO_NETWORK_DATA_NODES_CHECK_VOTE_STATUS:
       if (server_limit_IP_addresses(1, client_ip) == 1) {
-        server_receive_data_socket_nodes_to_network_data_nodes_check_vote_status(client_socket, data);
+        server_receive_data_socket_nodes_to_network_data_nodes_check_vote_status(client, data);
         server_limit_IP_addresses(0, client_ip);
       }
       break;
 
     case XMSG_BLOCK_VERIFIERS_TO_NETWORK_DATA_NODE_BLOCK_VERIFIERS_CURRENT_TIME:
       if (server_limit_public_addresses(1, data) == 1) {
-        server_receive_data_socket_block_verifiers_to_network_data_nodes_block_verifiers_current_time(client_socket);
+        server_receive_data_socket_block_verifiers_to_network_data_nodes_block_verifiers_current_time(client);
         server_limit_public_addresses(3, data);
       }
       break;

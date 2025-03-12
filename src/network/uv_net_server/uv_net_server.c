@@ -105,15 +105,20 @@ void on_new_connection(uv_stream_t *server_handle, int status) {
 
 // Allocate buffer for reading
 void alloc_buffer_srv(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf) {
-    (void)handle;
+    (void)handle;  // Unused parameter
 
-    buf->base = (char *) malloc(suggested_size);
+    // Ensure a minimum allocation size
+    size_t buffer_size = (suggested_size > SMALL_BUFFER_SIZE) ? suggested_size : SMALL_BUFFER_SIZE;
+
+    // Allocate memory safely
+    buf->base = (char *)calloc(1, buffer_size);
     if (!buf->base) {
         ERROR_PRINT("Memory allocation failed in alloc_buffer_srv()");
         buf->len = 0;
         return;
     }
-    buf->len = suggested_size;
+
+    buf->len = buffer_size;
 }
 
 // Read data from client
@@ -121,8 +126,7 @@ void on_client_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
     client_t *client_data = (client_t *)client;
     if (nread > 0) {
         DEBUG_PRINT("Received data: %.*s", (int)nread, buf->base);
-        DEBUG_PRINT("Received data from %s: %.*s", client_data->client_ip, (int)nread, buf->base);
-        handle_srv_message(buf->base, nread, client_data->client_ip);
+        handle_srv_message(buf->base, nread, client_data);
     } else if (nread == UV_EOF) {
         ERROR_PRINT("Client disconnected.");
         uv_read_stop(client);  // Stop reading if the client disconnected
@@ -226,4 +230,13 @@ xcash_msg_t get_message_type(const char *buffer) {
         }
     }
     return XMSG_NONE;
+}
+
+void send_response(client_t *client, const char *message) {
+    if (!client || !message) {
+        ERROR_PRINT("Invalid client or message in send_response");
+        return;
+    }
+
+    send_data_uv(client, message, strlen(message));
 }
