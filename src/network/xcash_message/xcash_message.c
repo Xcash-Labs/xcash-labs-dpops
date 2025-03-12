@@ -466,7 +466,7 @@ void handle_srv_message(const char* data, size_t length, client_t* client) {
       break;
 
     case XMSG_NODE_TO_NETWORK_DATA_NODES_GET_PREVIOUS_CURRENT_NEXT_BLOCK_VERIFIERS_LIST:
-      if (network_data_node_settings == 1 || test_settings == 1) {
+      if (is_seed_node) {
         if (server_limit_public_addresses(1, data) == 1) {
           server_receive_data_socket_node_to_network_data_nodes_get_previous_current_next_block_verifiers_list(client);
           server_limit_public_addresses(3, data);
