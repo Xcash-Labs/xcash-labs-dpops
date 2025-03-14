@@ -13,7 +13,7 @@ bool get_block_hash(unsigned long block_height, char* block_hash, size_t block_h
   bson_t *filter = BCON_NEW("block_height", BCON_UTF8(block_height_str));
   bson_t *doc = bson_new();
   if (!db_find_doc(database_name, db_collection_name, filter, doc, &error)) {
-    log_error("Failed to find document: %s", error.message);
+    ERROR_PRINT("Failed to find document: %s", error.message);
     bson_destroy(filter);
     bson_destroy(doc);
     return false;
@@ -25,7 +25,7 @@ bool get_block_hash(unsigned long block_height, char* block_hash, size_t block_h
     strncpy(block_hash, hash, block_hash_size - 1);
     block_hash[block_hash_size - 1] = '\0';
   } else {
-    log_error("block_hash not found in document");
+    ERROR_PRINT("block_hash not found in document");
     bson_destroy(filter);
     bson_destroy(doc);
     return false;
@@ -85,8 +85,6 @@ void server_received_msg_get_block_hash(server_client_t* client, const char* MES
     free(message_result_data);
 
 }
-
-server_client_t* client, const char* MESSAGE
 
 void server_received_msg_get_block_producers(server_client_t* client, const char* MESSAGE)
 {

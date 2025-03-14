@@ -9,6 +9,7 @@
 #include "globals.h"
 #include "macro_functions.h"
 #include "uv_net_server.h"
+#include "db_operations.h"
 
 void server_received_msg_get_block_hash(server_client_t* client, const char* MESSAGE);
 
