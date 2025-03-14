@@ -1,4 +1,4 @@
-#include "block_verifiers_synchronize_check_functions.h"
+#include "block_verifiers_synchronize_server_functions.h"
 
 bool get_block_hash(unsigned long block_height, char* block_hash, size_t block_hash_size) {
   char db_collection_name[DB_COLLECTION_NAME_SIZE];
