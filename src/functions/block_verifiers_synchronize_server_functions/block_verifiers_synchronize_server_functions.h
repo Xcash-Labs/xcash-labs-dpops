@@ -10,7 +10,7 @@
 #include "macro_functions.h"
 #include "uv_net_server.h"
 
-void server_received_msg_get_block_hash(const server_client_t* client, const char* MESSAGE);
+void server_received_msg_get_block_hash(server_client_t* client, const char* MESSAGE);
 
 void server_received_msg_get_block_producers(const int CLIENT_SOCKET, const char* MESSAGE);
 

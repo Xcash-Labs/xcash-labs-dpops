@@ -37,7 +37,7 @@ bool get_block_hash(unsigned long block_height, char* block_hash, size_t block_h
 }
 
 
-void server_received_msg_get_block_hash(const server_client_t* client, const char* MESSAGE)
+void server_received_msg_get_block_hash(server_client_t* client, const char* MESSAGE)
 {
     DEBUG_PRINT("received %s, %s", __func__, "XCASH_GET_BLOCK_HASH");
 
@@ -81,7 +81,7 @@ void server_received_msg_get_block_hash(const server_client_t* client, const cha
     strcat(message_result_data, SOCKET_END_STRING);
 
 
-    send_data_uv(client, char message_result_data);
+    send_data_uv(client, message_result_data);
     free(message_result_data);
 
 }
@@ -127,8 +127,6 @@ void server_received_msg_get_block_producers(const int CLIENT_SOCKET, const char
     free(message_result_data);
 
 }
-
-
 
 void server_received_msg_get_sync_info(const int CLIENT_SOCKET, const char* MESSAGE)
 {
