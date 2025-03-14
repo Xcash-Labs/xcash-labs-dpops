@@ -1,46 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <netdb.h> 
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <sys/epoll.h>
-#include <unistd.h>
-#include <signal.h>
-#include <pthread.h>
-#include <errno.h>
-#include <sys/sysinfo.h>
-#include <mongoc/mongoc.h>
-#include <bson/bson.h>
 
-#include "define_macro_functions.h"
-#include "define_macros.h"
-#include "structures.h"
-#include "variables.h"
-#include "initialize_and_reset_structs_define_macros.h"
-
-#include "blockchain_functions.h"
-#include "block_verifiers_synchronize_functions.h"
-#include "block_verifiers_synchronize_check_functions.h"
-#include "block_verifiers_thread_server_functions.h"
-#include "database_functions.h"
-#include "read_database_functions.h"
-#include "insert_database_functions.h"
-#include "delete_database_functions.h"
-#include "file_functions.h"
-#include "network_daemon_functions.h"
-#include "network_functions.h"
-#include "network_security_functions.h"
-#include "network_wallet_functions.h"
-#include "server_functions.h"
-// #include "organize_functions.h"
-#include "string_functions.h"
-#include "thread_functions.h"
-#include "convert.h"
-#include "vrf.h"
-#include "crypto_vrf.h"
-#include "VRF_functions.h"
-#include "sha512EL.h"
 
 /*
 -----------------------------------------------------------------------------------------------------------
@@ -76,14 +34,6 @@ for (count = 0; count < BLOCK_VERIFIERS_AMOUNT; count++) \
     } \
   } \
 }
-
-
-
-/*
------------------------------------------------------------------------------------------------------------
-Functions
------------------------------------------------------------------------------------------------------------
-*/
 
 /*
 -----------------------------------------------------------------------------------------------------------

@@ -1,11 +1,10 @@
 #ifndef BLOCK_VERIFIERS_SYNCHRONIZE_CHECK_FUNCTIONS_H_   /* Include guard */
 #define BLOCK_VERIFIERS_SYNCHRONIZE_CHECK_FUNCTIONS_H_
 
-/*
------------------------------------------------------------------------------------------------------------
-Function prototypes
------------------------------------------------------------------------------------------------------------
-*/
+#include <stdio.h>
+#include <string.h>
+#include <time.h>
+#include <stdlib.h>
 
 int check_if_databases_are_synced(const int SETTINGS, const int RESERVE_BYTES_START_SETTINGS);
 int sync_check_reserve_proofs_database(int settings);
