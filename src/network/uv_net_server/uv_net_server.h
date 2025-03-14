@@ -10,6 +10,7 @@
 #include "config.h"
 #include "globals.h"
 #include "macro_functions.h"
+#include "xcash_message.h"
 
 typedef struct {
     uv_tcp_t handle;
