@@ -1,6 +1,8 @@
 #ifndef UV_NET_SERVER_H
 #define UV_NET_SERVER_H
 
+#include <uv.h>
+
 typedef struct {
     uv_tcp_t handle;
     char client_ip[INET6_ADDRSTRLEN];
@@ -9,7 +11,6 @@ typedef struct {
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <uv.h>
 #include <netinet/in.h>
 #include <pthread.h>
 #include "config.h"
