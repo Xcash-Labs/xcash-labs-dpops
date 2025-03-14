@@ -12,17 +12,17 @@
 #include "macro_functions.h"
 #include "xcash_message.h"
 
-//typedef struct {
-//    uv_tcp_t handle;
-//    char client_ip[INET6_ADDRSTRLEN];
-//} server_client_t;
+typedef struct {
+    uv_tcp_t handle;
+    char client_ip[INET6_ADDRSTRLEN];
+} server_client_t;
 
-//typedef struct {
-//    uv_write_t req;
-//    uv_timer_t timer;
-//    char *message_copy;
-//    server_client_t *client;
-//} write_srv_request_t;
+typedef struct {
+    uv_write_t req;
+    uv_timer_t timer;
+    char *message_copy;
+    server_client_t *client;
+} write_srv_request_t;
 
 void on_new_connection(uv_stream_t *server_handle, int status);
 void alloc_buffer_srv(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf);

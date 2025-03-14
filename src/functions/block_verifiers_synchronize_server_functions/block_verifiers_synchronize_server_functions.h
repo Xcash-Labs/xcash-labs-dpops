@@ -11,7 +11,6 @@
 #include "macro_functions.h"
 #include "db_operations.h"
 
-//typedef struct server_client_t server_client_t;
 
 void server_received_msg_get_block_hash(server_client_t* client, const char* MESSAGE);
 void server_received_msg_get_block_producers(server_client_t* client, const char* MESSAGE);
