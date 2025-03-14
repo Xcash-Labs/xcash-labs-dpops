@@ -13,9 +13,7 @@
 #include "uv_net_server.h"
 #include "server_functions.h"
 #include "network_security_functions.h"
-#include "uv_net_server.h"
 #include "block_verifiers_synchronize_server_functions.h"
-
 
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 
