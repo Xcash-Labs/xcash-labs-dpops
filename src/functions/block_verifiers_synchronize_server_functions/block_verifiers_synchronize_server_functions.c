@@ -12,7 +12,7 @@ bool get_block_hash(unsigned long block_height, char* block_hash, size_t block_h
   bson_error_t error;
   bson_t *filter = BCON_NEW("block_height", BCON_UTF8(block_height_str));
   bson_t *doc = bson_new();
-  if (!db_find_doc(database_name, db_collection_name, filter, doc, &error)) {
+  if (!db_find_doc(DATABASE_NAME, db_collection_name, filter, doc, &error)) {
     ERROR_PRINT("Failed to find document: %s", error.message);
     bson_destroy(filter);
     bson_destroy(doc);
@@ -583,7 +583,7 @@ void server_receive_data_socket_node_to_block_verifiers_get_reserve_bytes_databa
   }
 
   size_t reserve_bytes_index = 0;
-  if (get_db_max_block_height(database_name, &count2,&reserve_bytes_index)<0) {
+  if (get_db_max_block_height(DATABASE_NAME, &count2,&reserve_bytes_index)<0) {
     ERROR_PRINT("Can't get block height from database");
     send_data_uv(client,("Could not get the network blocks reserve bytes database hash}"); \
     return;
@@ -628,7 +628,7 @@ void server_receive_data_socket_node_to_block_verifiers_get_reserve_bytes_databa
     snprintf(data+14,MAXIMUM_NUMBER_SIZE,"%zu",count2);
     
     // get the data hash
-    if (read_document_field_from_collection(database_name,data,data2,"reserve_bytes_data_hash",message) == 0)
+    if (read_document_field_from_collection(DATABASE_NAME,data,data2,"reserve_bytes_data_hash",message) == 0)
     {
       if (strlen(message2) != 0)
       {
@@ -642,39 +642,34 @@ void server_receive_data_socket_node_to_block_verifiers_get_reserve_bytes_databa
     memcpy(message2+strlen(message2),"|",sizeof(char));
   }
 
-  if (current_block_height_reserve_bytes >= BLOCK_HEIGHT_SF_V_1_2_0)
-  {
-    // reset the count
-    current_block_height_reserve_bytes = current_block_height_reserve_bytes_copy;
+  // reset the count
+  current_block_height_reserve_bytes = current_block_height_reserve_bytes_copy;
 
-    // create the message for the stealth addresses
-    for (count = 0; count < reserve_bytes_blocks_amount; count++, current_block_height_reserve_bytes++)
-    {
-      // create the message
-      memset(data,0,strlen(data));
-      memset(data2,0,strlen(data2));
-      memset(message,0,strlen(message));
-      memcpy(data2,"{\"block_height\": \"",18);
-      snprintf(data2+18,sizeof(data2)-19,"%zu",current_block_height_reserve_bytes);
-      memcpy(data2+strlen(data2),"\"}",2);
+  // create the message for the stealth addresses
+  for (count = 0; count < reserve_bytes_blocks_amount; count++, current_block_height_reserve_bytes++) {
+    // create the message
+    memset(data, 0, strlen(data));
+    memset(data2, 0, strlen(data2));
+    memset(message, 0, strlen(message));
+    memcpy(data2, "{\"block_height\": \"", 18);
+    snprintf(data2 + 18, sizeof(data2) - 19, "%zu", current_block_height_reserve_bytes);
+    memcpy(data2 + strlen(data2), "\"}", 2);
 
-      count2 = ((current_block_height_reserve_bytes - XCASH_PROOF_OF_STAKE_BLOCK_HEIGHT) / BLOCKS_PER_DAY_FIVE_MINUTE_BLOCK_TIME) + 1;
-  
-      memcpy(data,"reserve_bytes_",14);
-      snprintf(data+14,MAXIMUM_NUMBER_SIZE,"%zu",count2);
-    
-      // get the reserve bytes
-      if (read_document_field_from_collection(database_name,data,data2,"reserve_bytes",message) == 0 || strstr(message,BLOCKCHAIN_STEALTH_ADDRESS_END) == NULL)
-      {
-        SERVER_RECEIVE_DATA_SOCKET_NODE_TO_BLOCK_VERIFIERS_GET_RESERVE_BYTES_DATABASE_HASH_ERROR("Could not get the previous blocks reserve bytes");
-      }
+    count2 = ((current_block_height_reserve_bytes - XCASH_PROOF_OF_STAKE_BLOCK_HEIGHT) / BLOCKS_PER_DAY_FIVE_MINUTE_BLOCK_TIME) + 1;
 
-      // get the stealth address    
-      memcpy(message2+strlen(message2),&message[(strlen(message) - strlen(strstr(message,BLOCKCHAIN_STEALTH_ADDRESS_END))) - STEALTH_ADDRESS_OUTPUT_LENGTH],STEALTH_ADDRESS_OUTPUT_LENGTH);
-      memcpy(message2+strlen(message2),"|",sizeof(char));
+    memcpy(data, "reserve_bytes_", 14);
+    snprintf(data + 14, MAXIMUM_NUMBER_SIZE, "%zu", count2);
+
+    // get the reserve bytes
+    if (read_document_field_from_collection(DATABASE_NAME, data, data2, "reserve_bytes", message) == 0 || strstr(message, BLOCKCHAIN_STEALTH_ADDRESS_END) == NULL) {
+      SERVER_RECEIVE_DATA_SOCKET_NODE_TO_BLOCK_VERIFIERS_GET_RESERVE_BYTES_DATABASE_HASH_ERROR("Could not get the previous blocks reserve bytes");
     }
+
+    // get the stealth address
+    memcpy(message2 + strlen(message2), &message[(strlen(message) - strlen(strstr(message, BLOCKCHAIN_STEALTH_ADDRESS_END))) - STEALTH_ADDRESS_OUTPUT_LENGTH], STEALTH_ADDRESS_OUTPUT_LENGTH);
+    memcpy(message2 + strlen(message2), "|", sizeof(char));
   }
-  
+
   memcpy(message2+strlen(message2),"}",sizeof(char));
   
   // send the data
@@ -683,8 +678,6 @@ void server_receive_data_socket_node_to_block_verifiers_get_reserve_bytes_databa
   
   #undef SERVER_RECEIVE_DATA_SOCKET_NODE_TO_BLOCK_VERIFIERS_GET_RESERVE_BYTES_DATABASE_HASH_ERROR
 }
-
-
 
 /*
 -----------------------------------------------------------------------------------------------------------
@@ -765,7 +758,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_reserve_proof
   // disable this part for now, as we need to figure out how to only check reserve proofs that are not empty, otherwise it will give the empty string data hash
 
   /*// get the database data hash for the reserve proofs database
-  if (get_database_data_hash(data2,database_name,"reserve_proofs") == 0)
+  if (get_database_data_hash(data2,DATABASE_NAME,"reserve_proofs") == 0)
   {
     SERVER_RECEIVE_DATA_SOCKET_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_RESERVE_PROOFS_DATABASE_SYNC_CHECK_ALL_UPDATE_ERROR("Could not get the database data hash for the reserve proofs database");
   }
@@ -795,7 +788,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_reserve_proof
       memset(data2,0,strlen(data2));  
       memcpy(data2,"reserve_proofs_",15);  
       snprintf(data2+15,MAXIMUM_NUMBER_SIZE,"%d",count);
-      if (get_database_data_hash(reserve_proofs_database,database_name,data2) == 0)
+      if (get_database_data_hash(reserve_proofs_database,DATABASE_NAME,data2) == 0)
       {
         SERVER_RECEIVE_DATA_SOCKET_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_RESERVE_PROOFS_DATABASE_SYNC_CHECK_ALL_UPDATE_ERROR("Could not get the database data hash for the reserve proofs database");
       }
@@ -859,7 +852,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_reserve_proof
   }
 
   // get the size of the database and allocate the amount of memory
-  const size_t DATABASE_COLLECTION_SIZE = get_database_collection_size(database_name,buffer);
+  const size_t DATABASE_COLLECTION_SIZE = get_database_collection_size(DATABASE_NAME,buffer);
 
   if (DATABASE_COLLECTION_SIZE == 0)
   {
@@ -906,7 +899,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_reserve_proof
   }
 
   // get the database data for the reserve proofs database
-  if (get_database_data(data2,database_name,buffer) == 0)
+  if (get_database_data(data2,DATABASE_NAME,buffer) == 0)
   {
     pointer_reset_all;
     SERVER_RECEIVE_DATA_SOCKET_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_RESERVE_PROOFS_DATABASE_DOWNLOAD_FILE_UPDATE_ERROR("Could not get the database data hash for the reserve proofs database");
@@ -987,7 +980,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_reserve_bytes
     SERVER_RECEIVE_DATA_SOCKET_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_RESERVE_BYTES_DATABASE_SYNC_CHECK_ALL_UPDATE_ERROR("Could not get the database data hash for the reserve bytes database");
 
   }
-  // if (get_database_data_hash(data2,database_name,"reserve_bytes") == 0)
+  // if (get_database_data_hash(data2,DATABASE_NAME,"reserve_bytes") == 0)
   // {
   //   SERVER_RECEIVE_DATA_SOCKET_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_RESERVE_BYTES_DATABASE_SYNC_CHECK_ALL_UPDATE_ERROR("Could not get the database data hash for the reserve bytes database");
   // }
@@ -1095,7 +1088,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_reserve_bytes
   }
 
   // get the size of the database and allocate the amount of memory
-  const size_t DATABASE_COLLECTION_SIZE = get_database_collection_size(database_name,buffer);
+  const size_t DATABASE_COLLECTION_SIZE = get_database_collection_size(DATABASE_NAME,buffer);
 
   if (DATABASE_COLLECTION_SIZE == 0)
   {
@@ -1143,7 +1136,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_reserve_bytes
   }
 
   // get the database data for the reserve bytes database
-  if (get_database_data(data2,database_name,buffer) == 0)
+  if (get_database_data(data2,DATABASE_NAME,buffer) == 0)
   {
     pointer_reset_all;
     SERVER_RECEIVE_DATA_SOCKET_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_RESERVE_BYTES_DATABASE_DOWNLOAD_FILE_UPDATE_ERROR("Could not get the database data hash for the reserve bytes database");
@@ -1199,7 +1192,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_delegates_dat
   memset(data2,0,sizeof(data2));
 
   // get the database data hash for the delegates database
-  if (get_database_data_hash(data2,database_name,DATABASE_COLLECTION) == 0)
+  if (get_database_data_hash(data2,DATABASE_NAME,DATABASE_COLLECTION) == 0)
   {
     SERVER_RECEIVE_DATA_SOCKET_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_DELEGATES_DATABASE_SYNC_CHECK_UPDATE_ERROR("Could not get the database data hash for the delegates database");
   }
@@ -1256,7 +1249,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_delegates_dat
   
 
   // Constants
-  const size_t DATABASE_COLLECTION_SIZE = get_database_collection_size(database_name,DATABASE_COLLECTION);
+  const size_t DATABASE_COLLECTION_SIZE = get_database_collection_size(DATABASE_NAME,DATABASE_COLLECTION);
 
   if (DATABASE_COLLECTION_SIZE == 0)
   {
@@ -1320,7 +1313,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_delegates_dat
   }
 
   // get the database data for the reserve bytes database
-  if (get_database_data(data2,database_name,DATABASE_COLLECTION) == 0)
+  if (get_database_data(data2,DATABASE_NAME,DATABASE_COLLECTION) == 0)
   {
     SERVER_RECEIVE_DATA_SOCKET_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_DELEGATES_DATABASE_DOWNLOAD_FILE_UPDATE_ERROR("Could not get the database data hash for the delegates database");
   }
@@ -1380,7 +1373,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_statistics_da
   memset(data2,0,sizeof(data2));
 
   // get the database data hash for the statistics database
-  if (get_database_data_hash(data2,database_name,DATABASE_COLLECTION) == 0)
+  if (get_database_data_hash(data2,DATABASE_NAME,DATABASE_COLLECTION) == 0)
   {
     SERVER_RECEIVE_DATA_SOCKET_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_STATISTICS_DATABASE_SYNC_CHECK_UPDATE_ERROR("Could not get the database data hash for the statistics database");
   }
@@ -1436,7 +1429,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_statistics_da
   DEBUG_PRINT("received %s, %s", __func__, "BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_STATISTICS_DATABASE_DOWNLOAD_FILE_UPDATE");
 
   // Constants
-  const size_t DATABASE_COLLECTION_SIZE = get_database_collection_size(database_name,DATABASE_COLLECTION);
+  const size_t DATABASE_COLLECTION_SIZE = get_database_collection_size(DATABASE_NAME,DATABASE_COLLECTION);
 
   if (DATABASE_COLLECTION_SIZE == 0)
   {
@@ -1498,7 +1491,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_statistics_da
   }
 
   // get the database data for the reserve bytes database
-  if (get_database_data(data2,database_name,DATABASE_COLLECTION) == 0)
+  if (get_database_data(data2,DATABASE_NAME,DATABASE_COLLECTION) == 0)
   {
     SERVER_RECEIVE_DATA_SOCKET_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_STATISTICS_DATABASE_DOWNLOAD_FILE_UPDATE_ERROR("Could not get the database data hash for the statistics database");
   }
