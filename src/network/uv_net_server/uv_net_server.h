@@ -14,7 +14,7 @@
 typedef struct {
     uv_tcp_t handle;
     char client_ip[INET6_ADDRSTRLEN];
-} client_t;
+} server_client_t;
 
 #include "xcash_message.h"
 
@@ -23,6 +23,6 @@ void alloc_buffer_srv(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf)
 void on_client_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf);
 bool start_tcp_server(int port);
 void stop_tcp_server(void);
-void send_response(client_t *client, const char *message);
+void send_response(server_client_t *client, const char *message);
 
 #endif

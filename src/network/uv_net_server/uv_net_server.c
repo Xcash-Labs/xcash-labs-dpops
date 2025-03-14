@@ -46,7 +46,7 @@ void on_new_connection_OLD(uv_stream_t *server_handle, int status) {
     }
 }
 
-void get_client_ip(client_t *client) {
+void get_client_ip(server_client_t *client) {
     struct sockaddr_storage addr;
     int namelen = sizeof(addr);
 
@@ -73,7 +73,7 @@ void on_new_connection(uv_stream_t *server_handle, int status) {
         return;
     }
 
-    client_t *client = (client_t *)malloc(sizeof(client_t));
+    server_client_t *client = (server_client_t *)malloc(sizeof(server_client_t));
     if (!client) {
         ERROR_PRINT("Memory allocation failed for client");
         return;
@@ -119,7 +119,7 @@ void alloc_buffer_srv(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf)
 
 // Read data from client
 void on_client_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
-    client_t *client_data = (client_t *)client;
+    server_client_t *client_data = (server_client_t *)client;
     if (nread > 0) {
         DEBUG_PRINT("Received data: %.*s", (int)nread, buf->base);
         handle_srv_message(buf->base, nread, client_data);
@@ -228,7 +228,7 @@ xcash_msg_t get_message_type(const char *buffer) {
     return XMSG_NONE;
 }
 
-void send_response(client_t *client, const char *message) {
+void send_response(server_client_t *client, const char *message) {
     if (!client || !message) {
         ERROR_PRINT("Invalid client or message in send_response");
         return;
