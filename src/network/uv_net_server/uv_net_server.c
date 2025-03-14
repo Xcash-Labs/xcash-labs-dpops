@@ -228,10 +228,42 @@ xcash_msg_t get_message_type(const char *buffer) {
     return XMSG_NONE;
 }
 
-void send_response(server_client_t *client, const char *message) {
+void send_data_uv(server_client_t *client, const char *message) {
     if (!client || !message) {
-        ERROR_PRINT("Invalid client or message in send_response");
+        ERROR_PRINT("Invalid parameters in send_data_uv");
         return;
     }
-    send_data_uv(client, message, strlen(message));
+
+    size_t length = strlen(message);
+
+    uv_write_t *req = malloc(sizeof(uv_write_t)); // Allocate memory for write request
+    if (!req) {
+        ERROR_PRINT("Memory allocation failed for uv_write_t");
+        return;
+    }
+
+    char *message_copy = strdup(message); // Copy message to avoid memory issues
+    if (!message_copy) {
+        ERROR_PRINT("Memory allocation failed for message copy");
+        free(req);
+        return;
+    }
+
+    uv_buf_t buf = uv_buf_init(message_copy, length);
+
+    int result = uv_write(req, (uv_stream_t*)&client->handle, &buf, 1, on_write_complete);
+    if (result < 0) {
+        ERROR_PRINT("uv_write error: %s", uv_strerror(result));
+        free(req);
+        free(message_copy); // Free the copied message
+    }
+}
+
+void on_write_complete(uv_write_t *req, int status) {
+    if (status < 0) {
+        ERROR_PRINT("Write error: %s", uv_strerror(status));
+    } else {
+        DEBUG_PRINT("Message sent successfully");
+    }
+    free(req); // Free the `uv_write_t` request
 }

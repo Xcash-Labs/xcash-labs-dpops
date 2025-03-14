@@ -4,12 +4,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <jansson.h>
 #include "config.h"
 #include "globals.h"
 #include "macro_functions.h"
 #include "uv_net_server.h"
 
-void server_received_msg_get_block_hash(const int CLIENT_SOCKET, const char* MESSAGE);
+void server_received_msg_get_block_hash(const server_client_t* client, const char* MESSAGE);
 
 void server_received_msg_get_block_producers(const int CLIENT_SOCKET, const char* MESSAGE);
 

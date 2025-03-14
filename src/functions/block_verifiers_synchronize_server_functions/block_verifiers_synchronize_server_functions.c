@@ -37,23 +37,20 @@ bool get_block_hash(unsigned long block_height, char* block_hash, size_t block_h
 }
 
 
-void server_received_msg_get_block_hash(const int CLIENT_SOCKET, const char* MESSAGE)
+void server_received_msg_get_block_hash(const server_client_t* client, const char* MESSAGE)
 {
-    (void)MESSAGE;
-    (void)CLIENT_SOCKET;
-
-    log_info("received %s, %s", __func__, "XCASH_GET_BLOCK_HASH");
+    DEBUG_PRINT("received %s, %s", __func__, "XCASH_GET_BLOCK_HASH");
 
     json_error_t error;
     json_t *json_message = json_loads(MESSAGE, 0, &error);
     if (!json_message) {
-      log_error("Error parsing JSON: %s", error.text);
+      ERROR_PRINT("Error parsing JSON: %s", error.text);
       return;
     }
 
     json_t *block_height_json = json_object_get(json_message, "block_height");
     if (!json_is_integer(block_height_json)) {
-      log_error("block_height is not an integer");
+      ERROR_PRINT("block_height is not an integer");
       json_decref(json_message);
       return;
     }
@@ -65,12 +62,11 @@ void server_received_msg_get_block_hash(const int CLIENT_SOCKET, const char* MES
     // find block hash
     const char block_hash[DATA_HASH_LENGTH + 1];
     if (!get_block_hash(block_height, block_hash, sizeof(block_hash))) {
-      log_error("Failed to get block hash for block height %lu", block_height);
+      ERROR_PRINT("Failed to get block hash for block height %lu", block_height);
       return;
     }
 
     json_t *reply_json = json_object();
-
     json_object_set_new(reply_json, "message_settings", json_string("XCASH_GET_BLOCK_HASH"));
     json_object_set_new(reply_json, "public_address", json_string(xcash_wallet_public_address));
     json_object_set_new(reply_json, "block_hash", json_string(block_hash));
@@ -85,7 +81,7 @@ void server_received_msg_get_block_hash(const int CLIENT_SOCKET, const char* MES
     strcat(message_result_data, SOCKET_END_STRING);
 
 
-    send_data(CLIENT_SOCKET,(unsigned char*)message_result_data,0,0,"");
+    send_data_uv(client, char message_result_data);
     free(message_result_data);
 
 }
