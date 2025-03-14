@@ -1,6 +1,11 @@
 #ifndef UV_NET_SERVER_H
 #define UV_NET_SERVER_H
 
+typedef struct {
+    uv_tcp_t handle;
+    char client_ip[INET6_ADDRSTRLEN];
+} server_client_t;
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,12 +15,6 @@
 #include "config.h"
 #include "globals.h"
 #include "macro_functions.h"
-
-typedef struct {
-    uv_tcp_t handle;
-    char client_ip[INET6_ADDRSTRLEN];
-} server_client_t;
-
 #include "xcash_message.h"
 
 void on_new_connection(uv_stream_t *server_handle, int status);

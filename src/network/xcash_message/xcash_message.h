@@ -88,6 +88,6 @@ char* create_message_param(xcash_msg_t msg, ...);
 int split(const char* str, char delimiter, char*** result_elements);
 void cleanup_char_list(char** element_list);
 
-void handle_srv_message(const char *data, size_t length, client_t* client);
+void handle_srv_message(const char *data, size_t length, server_client_t* client);
 
 #endif  // XCASH_MESSAGE_H

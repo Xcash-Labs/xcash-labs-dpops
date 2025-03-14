@@ -355,7 +355,7 @@ xcash_msg_t get_message_type(const char* data) {
   return XMSG_NONE;  // Default case if no match is found
 }
 
-void handle_srv_message(const char* data, size_t length, client_t* client) {
+void handle_srv_message(const char* data, size_t length, server_client_t* client) {
   if (data == NULL || length == 0) {
     ERROR_PRINT("Message received by server is null.");
     return;
