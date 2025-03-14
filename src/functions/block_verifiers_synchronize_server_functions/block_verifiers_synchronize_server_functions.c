@@ -171,7 +171,7 @@ void server_received_msg_get_sync_info(server_client_t* client, const char* MESS
       strcat(message_data,SOCKET_END_STRING);
 
       // send the data
-      send_data_uv(client, message_result_data);
+      send_data_uv(client, message_data);
       free(message_data);
     }
 }
@@ -207,8 +207,6 @@ void server_receive_data_socket_get_current_block_height(const char* CLIENT_IP_A
   send_data_socket(CLIENT_IP_ADDRESS,SEND_DATA_PORT,data,SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS);
   return;
 }
-
-
 
 /*
 -----------------------------------------------------------------------------------------------------------
@@ -339,14 +337,12 @@ void server_receive_data_socket_node_to_network_data_nodes_get_previous_current_
   }
 
   // send the data
-  send_data_uv(CLIENT_SOCKET,(unsigned char*)data,0,1,"");
+  send_data_uv(client, data);
   return;
 
   #undef SERVER_RECEIVE_DATA_SOCKET_NODE_TO_NETWORK_DATA_NODES_GET_PREVIOUS_CURRENT_NEXT_BLOCK_VERIFIERS_LIST_ERROR
   #undef COPY_PREVIOUS_CURRENT_NEXT_BLOCK_VERIFIERS_LIST_DATA
 }
-
-
 
 /*
 -----------------------------------------------------------------------------------------------------------
@@ -373,7 +369,7 @@ void server_receive_data_socket_node_to_network_data_nodes_get_current_block_ver
   memcpy(error_message.data[error_message.total],settings,sizeof(settings)-1); \
   error_message.total++; \
   } \
-  send_data_uv(CLIENT_SOCKET,(unsigned char*)"Could not get a list of the current block verifiers",0,1,""); \
+  send_data_uv(client,"Could not get a list of the current block verifiers"); \
   return;
   
   memset(data,0,sizeof(data));
@@ -415,13 +411,11 @@ void server_receive_data_socket_node_to_network_data_nodes_get_current_block_ver
   }
   
   // send the data
-  send_data_uv(CLIENT_SOCKET,(unsigned char*)data,0,1,"");
+  send_data_uv(client, data);
   return;
 
   #undef SERVER_RECEIVE_DATA_SOCKET_NODE_TO_NETWORK_DATA_NODES_GET_CURRENT_BLOCK_VERIFIERS_LIST_ERROR
 }
-
-
 
 /*
 -----------------------------------------------------------------------------------------------------------
@@ -548,7 +542,7 @@ void server_receive_data_socket_node_to_block_verifiers_get_reserve_bytes_databa
   memcpy(error_message.data[error_message.total],settings,sizeof(settings)-1); \
   error_message.total++; \
   } \
-  send_data_uv(CLIENT_SOCKET,(unsigned char*)"Could not get the network blocks reserve bytes database hash}",0,0,""); \
+  send_data_uv(client,"Could not get the network blocks reserve bytes database hash}"); \
   return;
 
   memset(data,0,sizeof(data));
@@ -593,7 +587,7 @@ void server_receive_data_socket_node_to_block_verifiers_get_reserve_bytes_databa
   size_t reserve_bytes_index = 0;
   if (get_db_max_block_height(database_name, &count2,&reserve_bytes_index)<0) {
     ERROR_PRINT("Can't get block height from database");
-    send_data_uv(CLIENT_SOCKET,(unsigned char*)"Could not get the network blocks reserve bytes database hash}",0,0,""); \
+    send_data_uv(client,("Could not get the network blocks reserve bytes database hash}"); \
     return;
   }
   sscanf(data,"%zu",&current_block_height_reserve_bytes);
@@ -686,7 +680,7 @@ void server_receive_data_socket_node_to_block_verifiers_get_reserve_bytes_databa
   memcpy(message2+strlen(message2),"}",sizeof(char));
   
   // send the data
-  test_settings == 0 ? send_data_uv(CLIENT_SOCKET,(unsigned char*)message2,0,0,"") : send_data_uv(CLIENT_SOCKET,(unsigned char*)message2,0,1,"");
+  send_data_uv(client,message2);
   return;
   
   #undef SERVER_RECEIVE_DATA_SOCKET_NODE_TO_BLOCK_VERIFIERS_GET_RESERVE_BYTES_DATABASE_HASH_ERROR
@@ -725,11 +719,9 @@ void server_receive_data_socket_node_to_block_verifiers_check_if_current_block_v
   }
 
   // send the data
-  test_settings == 0 ? send_data_uv(CLIENT_SOCKET,(unsigned char*)data,0,0,"") : send_data_uv(CLIENT_SOCKET,(unsigned char*)data,0,1,"");
+  send_data_uv(client,data);
   return;
 }
-
-
 
 /*
 -----------------------------------------------------------------------------------------------------------
@@ -740,7 +732,6 @@ Parameters:
   MESSAGE - The message
 -----------------------------------------------------------------------------------------------------------
 */
-
 void server_receive_data_socket_block_verifiers_to_block_verifiers_reserve_proofs_database_sync_check_all_update(server_client_t* client, const char* MESSAGE)
 {
   // Variables
@@ -824,7 +815,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_reserve_proof
   }
 
   // send the data
-  send_data_uv(CLIENT_SOCKET,(unsigned char*)message,0,1,"");
+  send_data_uv(client,message);
   return;
   
   #undef SERVER_RECEIVE_DATA_SOCKET_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_RESERVE_PROOFS_DATABASE_SYNC_CHECK_ALL_UPDATE_ERROR
@@ -929,7 +920,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_reserve_proof
   memcpy(data+strlen(data),"\",\r\n}",5);
 
   // send the data
-  send_data_uv(CLIENT_SOCKET,(unsigned char*)data,0,1,"");
+  send_data_uv(client,data);
 
   pointer_reset_all;
   return;
@@ -1060,7 +1051,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_reserve_bytes
   }
 
   // send the data
-  send_data_uv(CLIENT_SOCKET,(unsigned char*)message,0,1,"");
+  send_data_uv(client,message2);
   return;
   
   #undef SERVER_RECEIVE_DATA_SOCKET_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_RESERVE_BYTES_DATABASE_SYNC_CHECK_ALL_UPDATE_ERROR
@@ -1166,7 +1157,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_reserve_bytes
   memcpy(data+strlen(data),"\",\r\n}",5);
 
   // send the data
-  send_data_uv(CLIENT_SOCKET,(unsigned char*)data,0,1,"");
+  send_data_uv(client,data);
 
   pointer_reset_all;
   return;
@@ -1240,7 +1231,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_delegates_dat
   }
 
   // send the data
-  send_data_uv(CLIENT_SOCKET,(unsigned char*)data,0,1,"");
+  send_data_uv(client,data);
 
   return;
 
@@ -1342,7 +1333,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_delegates_dat
   memcpy(data+strlen(data),"\",\r\n}",5);
 
   // send the data
-  send_data_uv(CLIENT_SOCKET,(unsigned char*)data,0,1,"");
+  send_data_uv(client,data);
 
   DEBUG_PRINT("answered %s", __func__);
 
@@ -1421,7 +1412,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_statistics_da
   }
 
   // send the data
-  send_data_uv(CLIENT_SOCKET,(unsigned char*)data,0,1,"");
+  send_data_uv(client,data);
 
   return;
   
@@ -1520,7 +1511,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_statistics_da
   memcpy(data+strlen(data),"\",\r\n}",5);
 
   // send the data
-  send_data_uv(CLIENT_SOCKET,(unsigned char*)data,0,1,"");
+  send_data_uv(client,data);
 
   pointer_reset_all;
   return;
@@ -1529,4 +1520,3 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_statistics_da
   #undef pointer_reset_all
   #undef SERVER_RECEIVE_DATA_SOCKET_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_STATISTICS_DATABASE_DOWNLOAD_FILE_UPDATE_ERROR
 }
-
