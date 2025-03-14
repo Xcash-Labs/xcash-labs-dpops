@@ -1,6 +1,7 @@
 #ifndef BLOCK_VERIFIERS_SYNCHRONIZE_SERVER_FUNCTIONS_H_   /* Include guard */
 #define BLOCK_VERIFIERS_SYNCHRONIZE_SERVER_FUNCTIONS_H_
 
+#include "uv_net_server.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,7 +9,6 @@
 #include "config.h"
 #include "globals.h"
 #include "macro_functions.h"
-//#include "uv_net_server.h"
 #include "db_operations.h"
 
 //typedef struct server_client_t server_client_t;

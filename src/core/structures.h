@@ -67,4 +67,25 @@ typedef struct {
     char block_verifiers_IP_address[BLOCK_VERIFIERS_TOTAL_AMOUNT][BLOCK_VERIFIERS_IP_ADDRESS_TOTAL_LENGTH+1]; // The block verifiers IP address
 } block_verifiers_list_t;
 
+
+
+
+
+typedef struct {
+    uv_tcp_t handle;
+    char client_ip[INET6_ADDRSTRLEN];
+} server_client_t;
+
+typedef struct {
+    uv_write_t req;
+    uv_timer_t timer;
+    char *message_copy;
+    server_client_t *client;
+} write_srv_request_t;
+
+
+
+
+
+
 #endif
