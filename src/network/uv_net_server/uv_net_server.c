@@ -218,15 +218,9 @@ void stop_tcp_server() {
     }
 }
 
-// Extract message type from buffer
-xcash_msg_t get_message_type(const char *buffer) {
-    for (xcash_msg_t msg = 0; msg < XMSG_MESSAGES_COUNT; msg++) {
-        if (strstr(buffer, xcash_net_messages[msg])) {
-            return msg;
-        }
-    }
-    return XMSG_NONE;
-}
+void on_write_complete(uv_write_t *req, int status);
+
+void on_write_timeout(uv_timer_t *timer);
 
 void send_data_uv(server_client_t *client, const char *message) {
     if (!client || !message) {
@@ -234,36 +228,65 @@ void send_data_uv(server_client_t *client, const char *message) {
         return;
     }
 
-    size_t length = strlen(message);
+    // from old code - need to look into this ...  big buffer ???
+    size_t length = strlen(message) >= MAXIMUM_BUFFER_SIZE ? MAXIMUM_BUFFER_SIZE : strlen(message) + BUFFER_SIZE;
 
-    uv_write_t *req = malloc(sizeof(uv_write_t)); // Allocate memory for write request
-    if (!req) {
-        ERROR_PRINT("Memory allocation failed for uv_write_t");
+    write_srv_request_t *write_req = malloc(sizeof(write_srv_request_t));
+    if (!write_req) {
+        ERROR_PRINT("Memory allocation failed for write_srv_request_t");
         return;
     }
 
-    char *message_copy = strdup(message); // Copy message to avoid memory issues
-    if (!message_copy) {
+    write_req->message_copy = strdup(message);
+    if (!write_req->message_copy) {
         ERROR_PRINT("Memory allocation failed for message copy");
-        free(req);
+        free(write_req);
         return;
     }
 
-    uv_buf_t buf = uv_buf_init(message_copy, length);
+    write_req->client = client;
 
-    int result = uv_write(req, (uv_stream_t*)&client->handle, &buf, 1, on_write_complete);
+    uv_buf_t buf = uv_buf_init(write_req->message_copy, length);
+
+    int result = uv_write(&write_req->req, (uv_stream_t*)&client->handle, &buf, 1, on_write_complete);
     if (result < 0) {
         ERROR_PRINT("uv_write error: %s", uv_strerror(result));
-        free(req);
-        free(message_copy); // Free the copied message
+        free(write_req->message_copy);
+        free(write_req);
+        return;
     }
+
+    // Initialize the timer for the timeout
+    uv_timer_init(uv_default_loop(), &write_req->timer);
+    write_req->timer.data = write_req;
+    uv_timer_start(&write_req->timer, on_write_timeout, SEND_TIMEOUT, 0);
 }
 
 void on_write_complete(uv_write_t *req, int status) {
+    write_srv_request_t *write_req = (write_srv_request_t *)req;
+
     if (status < 0) {
         ERROR_PRINT("Write error: %s", uv_strerror(status));
     } else {
         DEBUG_PRINT("Message sent successfully");
     }
-    free(req); // Free the `uv_write_t` request
+
+    // Stop and close the timer
+    uv_timer_stop(&write_req->timer);
+    uv_close((uv_handle_t *)&write_req->timer, NULL);
+
+    free(write_req->message_copy);
+    free(write_req);
+}
+
+void on_write_timeout(uv_timer_t *timer) {
+    write_srv_request_t *write_req = (write_srv_request_t *)timer->data;
+
+    ERROR_PRINT("Write operation timed out");
+
+    // Close the client connection
+    uv_close((uv_handle_t *)&write_req->client->handle, NULL);
+
+    free(write_req->message_copy);
+    free(write_req);
 }

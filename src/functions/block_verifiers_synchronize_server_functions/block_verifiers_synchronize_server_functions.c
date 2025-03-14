@@ -86,14 +86,14 @@ void server_received_msg_get_block_hash(server_client_t* client, const char* MES
 
 }
 
+server_client_t* client, const char* MESSAGE
 
-
-void server_received_msg_get_block_producers(const int CLIENT_SOCKET, const char* MESSAGE)
+void server_received_msg_get_block_producers(server_client_t* client, const char* MESSAGE)
 {
     (void)MESSAGE;
     (void)CLIENT_SOCKET;
 
-    log_info("received %s, %s", __func__, "XCASH_GET_BLOCK_PRODUCERS");
+    DEBUG_PRINT("received %s, %s", __func__, "XCASH_GET_BLOCK_PRODUCERS");
 
 
     json_t *reply_json = json_object();
@@ -122,16 +122,15 @@ void server_received_msg_get_block_producers(const int CLIENT_SOCKET, const char
     message_result_data = realloc(message_result_data, message_result_size + sizeof(SOCKET_END_STRING));
     strcat(message_result_data, SOCKET_END_STRING);
 
-
-    send_data(CLIENT_SOCKET,(unsigned char*)message_result_data,0,0,"");
+    send_data_uv(client, message_result_data);
     free(message_result_data);
 
 }
 
-void server_received_msg_get_sync_info(const int CLIENT_SOCKET, const char* MESSAGE)
+void server_received_msg_get_sync_info(server_client_t* client, const char* MESSAGE)
 {
     (void)MESSAGE;
-    log_info("received %s, %s", __func__, "XCASH_GET_SYNC_INFO");
+    DEBUG_PRINT("received %s, %s", __func__, "XCASH_GET_SYNC_INFO");
 
     xcash_node_sync_info_t sync_info;
     if (!get_node_sync_info(&sync_info)) {
@@ -140,7 +139,7 @@ void server_received_msg_get_sync_info(const int CLIENT_SOCKET, const char* MESS
     }
 
     if (!sync_info.db_reserve_bytes_synced) {
-      log_info("Local Reserve bytes DB is not fully synced. Will not respond");
+      ERROR_PRINT("Local Reserve bytes DB is not fully synced. Will not respond");
       return;
     }
   
@@ -172,10 +171,9 @@ void server_received_msg_get_sync_info(const int CLIENT_SOCKET, const char* MESS
       strcat(message_data,SOCKET_END_STRING);
 
       // send the data
-      send_data(CLIENT_SOCKET,(unsigned char*)message_data,0,0,"");
+      send_data_uv(client, message_result_data);
       free(message_data);
     }
-
 }
 
 /*
@@ -192,7 +190,7 @@ void server_receive_data_socket_get_current_block_height(const char* CLIENT_IP_A
   // Variables
   char data[SMALL_BUFFER_SIZE];
 
-  log_info("received %s, %s", __func__, "GET_CURRENT_BLOCK_HEIGHT");
+  DEBUG_PRINT("received %s, %s", __func__, "GET_CURRENT_BLOCK_HEIGHT");
   memset(data,0,sizeof(data));
 
   // create the message
@@ -230,7 +228,7 @@ void server_receive_data_socket_send_current_block_height(const char* MESSAGE)
   int count;
   size_t count2;
 
-  log_info("received %s, %s", __func__, MESSAGE);
+  DEBUG_PRINT("received %s, %s", __func__, MESSAGE);
 
   // define macros
   #define SERVER_RECEIVE_DATA_SOCKET_SEND_CURRENT_BLOCK_HEIGHT_ERROR(settings) \
@@ -277,14 +275,14 @@ Parameters:
 -----------------------------------------------------------------------------------------------------------
 */
 
-void server_receive_data_socket_node_to_network_data_nodes_get_previous_current_next_block_verifiers_list(const int CLIENT_SOCKET)
+void server_receive_data_socket_node_to_network_data_nodes_get_previous_current_next_block_verifiers_list(server_client_t* client)
 {
   // Variables
   char data[BUFFER_SIZE];
   int count;
   size_t total_delegates = 0;
 
-  log_info("received %s, %s", __func__, "NODE_TO_NETWORK_DATA_NODES_GET_PREVIOUS_CURRENT_NEXT_BLOCK_VERIFIERS_LIST");
+  DEBUG_PRINT("received %s, %s", __func__, "NODE_TO_NETWORK_DATA_NODES_GET_PREVIOUS_CURRENT_NEXT_BLOCK_VERIFIERS_LIST");
 
   // define macros
   #define SERVER_RECEIVE_DATA_SOCKET_NODE_TO_NETWORK_DATA_NODES_GET_PREVIOUS_CURRENT_NEXT_BLOCK_VERIFIERS_LIST_ERROR(settings) \
@@ -341,7 +339,7 @@ void server_receive_data_socket_node_to_network_data_nodes_get_previous_current_
   }
 
   // send the data
-  send_data(CLIENT_SOCKET,(unsigned char*)data,0,1,"");
+  send_data_uv(CLIENT_SOCKET,(unsigned char*)data,0,1,"");
   return;
 
   #undef SERVER_RECEIVE_DATA_SOCKET_NODE_TO_NETWORK_DATA_NODES_GET_PREVIOUS_CURRENT_NEXT_BLOCK_VERIFIERS_LIST_ERROR
@@ -359,13 +357,13 @@ Parameters:
 -----------------------------------------------------------------------------------------------------------
 */
 
-void server_receive_data_socket_node_to_network_data_nodes_get_current_block_verifiers_list(const int CLIENT_SOCKET)
+void server_receive_data_socket_node_to_network_data_nodes_get_current_block_verifiers_list(server_client_t* client)
 {
   // Variables
   char data[BUFFER_SIZE];
   int count;
 
-  log_info("received %s, %s", __func__, "NODE_TO_NETWORK_DATA_NODES_GET_CURRENT_BLOCK_VERIFIERS_LIST");
+  DEBUG_PRINT("received %s, %s", __func__, "NODE_TO_NETWORK_DATA_NODES_GET_CURRENT_BLOCK_VERIFIERS_LIST");
 
   // define macros
   #define SERVER_RECEIVE_DATA_SOCKET_NODE_TO_NETWORK_DATA_NODES_GET_CURRENT_BLOCK_VERIFIERS_LIST_ERROR(settings) \
@@ -375,7 +373,7 @@ void server_receive_data_socket_node_to_network_data_nodes_get_current_block_ver
   memcpy(error_message.data[error_message.total],settings,sizeof(settings)-1); \
   error_message.total++; \
   } \
-  send_data(CLIENT_SOCKET,(unsigned char*)"Could not get a list of the current block verifiers",0,1,""); \
+  send_data_uv(CLIENT_SOCKET,(unsigned char*)"Could not get a list of the current block verifiers",0,1,""); \
   return;
   
   memset(data,0,sizeof(data));
@@ -417,7 +415,7 @@ void server_receive_data_socket_node_to_network_data_nodes_get_current_block_ver
   }
   
   // send the data
-  send_data(CLIENT_SOCKET,(unsigned char*)data,0,1,"");
+  send_data_uv(CLIENT_SOCKET,(unsigned char*)data,0,1,"");
   return;
 
   #undef SERVER_RECEIVE_DATA_SOCKET_NODE_TO_NETWORK_DATA_NODES_GET_CURRENT_BLOCK_VERIFIERS_LIST_ERROR
@@ -443,7 +441,7 @@ void server_receive_data_socket_network_data_nodes_to_network_data_nodes_databas
   int count;
   int count2;
 
-  log_info("received %s, %s", __func__, MESSAGE);
+  DEBUG_PRINT("received %s, %s", __func__, MESSAGE);
 
   // define macros
   #define SERVER_RECEIVE_DATA_SOCKET_NETWORK_DATA_NODES_TO_NETWORK_DATA_NODES_DATABASE_SYNC_CHECK_ERROR(settings) \
@@ -524,7 +522,7 @@ Parameters:
 -----------------------------------------------------------------------------------------------------------
 */
 
-void server_receive_data_socket_node_to_block_verifiers_get_reserve_bytes_database_hash(const int CLIENT_SOCKET, const char* MESSAGE)
+void server_receive_data_socket_node_to_block_verifiers_get_reserve_bytes_database_hash(server_client_t* client, const char* MESSAGE)
 {  
 
   // TODO rewrite this comple
@@ -540,7 +538,7 @@ void server_receive_data_socket_node_to_block_verifiers_get_reserve_bytes_databa
   size_t reserve_bytes_blocks_amount;
   size_t data_size;
 
-  log_info("received %s, %s", __func__, MESSAGE);
+  DEBUG_PRINT("received %s, %s", __func__, MESSAGE);
 
   // define macros
   #define SERVER_RECEIVE_DATA_SOCKET_NODE_TO_BLOCK_VERIFIERS_GET_RESERVE_BYTES_DATABASE_HASH_ERROR(settings) \
@@ -550,7 +548,7 @@ void server_receive_data_socket_node_to_block_verifiers_get_reserve_bytes_databa
   memcpy(error_message.data[error_message.total],settings,sizeof(settings)-1); \
   error_message.total++; \
   } \
-  send_data(CLIENT_SOCKET,(unsigned char*)"Could not get the network blocks reserve bytes database hash}",0,0,""); \
+  send_data_uv(CLIENT_SOCKET,(unsigned char*)"Could not get the network blocks reserve bytes database hash}",0,0,""); \
   return;
 
   memset(data,0,sizeof(data));
@@ -594,8 +592,8 @@ void server_receive_data_socket_node_to_block_verifiers_get_reserve_bytes_databa
 
   size_t reserve_bytes_index = 0;
   if (get_db_max_block_height(database_name, &count2,&reserve_bytes_index)<0) {
-    DEBUG_PRINT("Can't get block height from database");
-    send_data(CLIENT_SOCKET,(unsigned char*)"Could not get the network blocks reserve bytes database hash}",0,0,""); \
+    ERROR_PRINT("Can't get block height from database");
+    send_data_uv(CLIENT_SOCKET,(unsigned char*)"Could not get the network blocks reserve bytes database hash}",0,0,""); \
     return;
   }
   sscanf(data,"%zu",&current_block_height_reserve_bytes);
@@ -688,7 +686,7 @@ void server_receive_data_socket_node_to_block_verifiers_get_reserve_bytes_databa
   memcpy(message2+strlen(message2),"}",sizeof(char));
   
   // send the data
-  test_settings == 0 ? send_data(CLIENT_SOCKET,(unsigned char*)message2,0,0,"") : send_data(CLIENT_SOCKET,(unsigned char*)message2,0,1,"");
+  test_settings == 0 ? send_data_uv(CLIENT_SOCKET,(unsigned char*)message2,0,0,"") : send_data_uv(CLIENT_SOCKET,(unsigned char*)message2,0,1,"");
   return;
   
   #undef SERVER_RECEIVE_DATA_SOCKET_NODE_TO_BLOCK_VERIFIERS_GET_RESERVE_BYTES_DATABASE_HASH_ERROR
@@ -705,13 +703,13 @@ Parameters:
 -----------------------------------------------------------------------------------------------------------
 */
 
-void server_receive_data_socket_node_to_block_verifiers_check_if_current_block_verifier(const int CLIENT_SOCKET)
+void server_receive_data_socket_node_to_block_verifiers_check_if_current_block_verifier(server_client_t* client)
 {  
   // Variables
   char data[10];
   int count;
 
-  log_info("received %s, %s", __func__, "NODE_TO_BLOCK_VERIFIERS_CHECK_IF_CURRENT_BLOCK_VERIFIER");
+  DEBUG_PRINT("received %s, %s", __func__, "NODE_TO_BLOCK_VERIFIERS_CHECK_IF_CURRENT_BLOCK_VERIFIER");
 
   memset(data,0,sizeof(data));
   memcpy(data,"0}",2);
@@ -727,7 +725,7 @@ void server_receive_data_socket_node_to_block_verifiers_check_if_current_block_v
   }
 
   // send the data
-  test_settings == 0 ? send_data(CLIENT_SOCKET,(unsigned char*)data,0,0,"") : send_data(CLIENT_SOCKET,(unsigned char*)data,0,1,"");
+  test_settings == 0 ? send_data_uv(CLIENT_SOCKET,(unsigned char*)data,0,0,"") : send_data_uv(CLIENT_SOCKET,(unsigned char*)data,0,1,"");
   return;
 }
 
@@ -743,7 +741,7 @@ Parameters:
 -----------------------------------------------------------------------------------------------------------
 */
 
-void server_receive_data_socket_block_verifiers_to_block_verifiers_reserve_proofs_database_sync_check_all_update(const int CLIENT_SOCKET, const char* MESSAGE)
+void server_receive_data_socket_block_verifiers_to_block_verifiers_reserve_proofs_database_sync_check_all_update(server_client_t* client, const char* MESSAGE)
 {
   // Variables
   char message[BUFFER_SIZE];
@@ -752,7 +750,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_reserve_proof
   char data2[BUFFER_SIZE];
   int count;
 
-  log_info("received %s, %s", __func__, MESSAGE);
+  DEBUG_PRINT("received %s, %s", __func__, MESSAGE);
 
   // define macros
   #define SERVER_RECEIVE_DATA_SOCKET_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_RESERVE_PROOFS_DATABASE_SYNC_CHECK_ALL_UPDATE_ERROR(settings) \
@@ -826,7 +824,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_reserve_proof
   }
 
   // send the data
-  send_data(CLIENT_SOCKET,(unsigned char*)message,0,1,"");
+  send_data_uv(CLIENT_SOCKET,(unsigned char*)message,0,1,"");
   return;
   
   #undef SERVER_RECEIVE_DATA_SOCKET_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_RESERVE_PROOFS_DATABASE_SYNC_CHECK_ALL_UPDATE_ERROR
@@ -844,14 +842,14 @@ Parameters:
 -----------------------------------------------------------------------------------------------------------
 */
 
-void server_receive_data_socket_block_verifiers_to_block_verifiers_reserve_proofs_database_download_file_update(const int CLIENT_SOCKET, const char* MESSAGE)
+void server_receive_data_socket_block_verifiers_to_block_verifiers_reserve_proofs_database_download_file_update(server_client_t* client, const char* MESSAGE)
 {
   // Variables
   char buffer[1024];
   time_t current_date_and_time;
   struct tm current_UTC_date_and_time;
 
-  log_info("received %s, %s", __func__, MESSAGE);
+  DEBUG_PRINT("received %s, %s", __func__, MESSAGE);
 
   // define macros
   #define SERVER_RECEIVE_DATA_SOCKET_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_RESERVE_PROOFS_DATABASE_DOWNLOAD_FILE_UPDATE_ERROR(settings) \
@@ -931,7 +929,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_reserve_proof
   memcpy(data+strlen(data),"\",\r\n}",5);
 
   // send the data
-  send_data(CLIENT_SOCKET,(unsigned char*)data,0,1,"");
+  send_data_uv(CLIENT_SOCKET,(unsigned char*)data,0,1,"");
 
   pointer_reset_all;
   return;
@@ -952,7 +950,7 @@ Parameters:
 -----------------------------------------------------------------------------------------------------------
 */
 
-void server_receive_data_socket_block_verifiers_to_block_verifiers_reserve_bytes_database_sync_check_all_update(const int CLIENT_SOCKET, const char* MESSAGE)
+void server_receive_data_socket_block_verifiers_to_block_verifiers_reserve_bytes_database_sync_check_all_update(server_client_t* client, const char* MESSAGE)
 {
   // Variables
   char message[BUFFER_SIZE];
@@ -963,7 +961,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_reserve_bytes
   size_t count;
   size_t current_reserve_bytes_database;
 
-  log_info("received %s, %s", __func__, MESSAGE);
+  DEBUG_PRINT("received %s, %s", __func__, MESSAGE);
 
   // define macros
   #define SERVER_RECEIVE_DATA_SOCKET_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_RESERVE_BYTES_DATABASE_SYNC_CHECK_ALL_UPDATE_ERROR(settings) \
@@ -1062,7 +1060,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_reserve_bytes
   }
 
   // send the data
-  send_data(CLIENT_SOCKET,(unsigned char*)message,0,1,"");
+  send_data_uv(CLIENT_SOCKET,(unsigned char*)message,0,1,"");
   return;
   
   #undef SERVER_RECEIVE_DATA_SOCKET_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_RESERVE_BYTES_DATABASE_SYNC_CHECK_ALL_UPDATE_ERROR
@@ -1080,14 +1078,14 @@ Parameters:
 -----------------------------------------------------------------------------------------------------------
 */
 
-void server_receive_data_socket_block_verifiers_to_block_verifiers_reserve_bytes_database_download_file_update(const int CLIENT_SOCKET, const char* MESSAGE)
+void server_receive_data_socket_block_verifiers_to_block_verifiers_reserve_bytes_database_download_file_update(server_client_t* client, const char* MESSAGE)
 {
   // Variables
   char buffer[1024];
   time_t current_date_and_time;
   struct tm current_UTC_date_and_time;
 
-  log_info("received %s, %s", __func__, MESSAGE);
+  DEBUG_PRINT("received %s, %s", __func__, MESSAGE);
 
   // define macros
   #define SERVER_RECEIVE_DATA_SOCKET_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_RESERVE_BYTES_DATABASE_DOWNLOAD_FILE_UPDATE_ERROR(settings) \
@@ -1168,7 +1166,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_reserve_bytes
   memcpy(data+strlen(data),"\",\r\n}",5);
 
   // send the data
-  send_data(CLIENT_SOCKET,(unsigned char*)data,0,1,"");
+  send_data_uv(CLIENT_SOCKET,(unsigned char*)data,0,1,"");
 
   pointer_reset_all;
   return;
@@ -1189,13 +1187,13 @@ Parameters:
 -----------------------------------------------------------------------------------------------------------
 */
 
-void server_receive_data_socket_block_verifiers_to_block_verifiers_delegates_database_sync_check_update(const int CLIENT_SOCKET, const char* MESSAGE)
+void server_receive_data_socket_block_verifiers_to_block_verifiers_delegates_database_sync_check_update(server_client_t* client, const char* MESSAGE)
 {
   // Variables
   char data[SMALL_BUFFER_SIZE];
   char data2[DATA_HASH_LENGTH+1];
 
-  log_info("received %s, %s", __func__, MESSAGE);
+  DEBUG_PRINT("received %s, %s", __func__, MESSAGE);
 
   // define macros
   #define DATABASE_COLLECTION "delegates"
@@ -1242,7 +1240,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_delegates_dat
   }
 
   // send the data
-  send_data(CLIENT_SOCKET,(unsigned char*)data,0,1,"");
+  send_data_uv(CLIENT_SOCKET,(unsigned char*)data,0,1,"");
 
   return;
 
@@ -1261,9 +1259,9 @@ Parameters:
 -----------------------------------------------------------------------------------------------------------
 */
 
-void server_receive_data_socket_block_verifiers_to_block_verifiers_delegates_database_download_file_update(const int CLIENT_SOCKET)
+void server_receive_data_socket_block_verifiers_to_block_verifiers_delegates_database_download_file_update(server_client_t* client)
 {
-  log_info("received %s, %s", __func__, "BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_DELEGATES_DATABASE_DOWNLOAD_FILE_UPDATE");
+  DEBUG_PRINT("received %s, %s", __func__, "BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_DELEGATES_DATABASE_DOWNLOAD_FILE_UPDATE");
   // define macros
   #define DATABASE_COLLECTION "delegates"
   
@@ -1344,9 +1342,9 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_delegates_dat
   memcpy(data+strlen(data),"\",\r\n}",5);
 
   // send the data
-  send_data(CLIENT_SOCKET,(unsigned char*)data,0,1,"");
+  send_data_uv(CLIENT_SOCKET,(unsigned char*)data,0,1,"");
 
-  log_info("answered %s", __func__);
+  DEBUG_PRINT("answered %s", __func__);
 
 
 
@@ -1370,13 +1368,13 @@ Parameters:
 -----------------------------------------------------------------------------------------------------------
 */
 
-void server_receive_data_socket_block_verifiers_to_block_verifiers_statistics_database_sync_check_update(const int CLIENT_SOCKET, const char* MESSAGE)
+void server_receive_data_socket_block_verifiers_to_block_verifiers_statistics_database_sync_check_update(server_client_t* client, const char* MESSAGE)
 {
   // Variables
   char data[SMALL_BUFFER_SIZE];
   char data2[DATA_HASH_LENGTH+1];
 
-  log_info("received %s, %s", __func__, MESSAGE);
+  DEBUG_PRINT("received %s, %s", __func__, MESSAGE);
 
   // define macros
   #define DATABASE_COLLECTION "statistics"
@@ -1423,7 +1421,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_statistics_da
   }
 
   // send the data
-  send_data(CLIENT_SOCKET,(unsigned char*)data,0,1,"");
+  send_data_uv(CLIENT_SOCKET,(unsigned char*)data,0,1,"");
 
   return;
   
@@ -1441,12 +1439,12 @@ Parameters:
 -----------------------------------------------------------------------------------------------------------
 */
 
-void server_receive_data_socket_block_verifiers_to_block_verifiers_statistics_database_download_file_update(const int CLIENT_SOCKET)
+void server_receive_data_socket_block_verifiers_to_block_verifiers_statistics_database_download_file_update(server_client_t* client)
 {
   // define macros
   #define DATABASE_COLLECTION "statistics"
   
-  log_info("received %s, %s", __func__, "BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_STATISTICS_DATABASE_DOWNLOAD_FILE_UPDATE");
+  DEBUG_PRINT("received %s, %s", __func__, "BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_STATISTICS_DATABASE_DOWNLOAD_FILE_UPDATE");
 
   // Constants
   const size_t DATABASE_COLLECTION_SIZE = get_database_collection_size(database_name,DATABASE_COLLECTION);
@@ -1522,7 +1520,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_statistics_da
   memcpy(data+strlen(data),"\",\r\n}",5);
 
   // send the data
-  send_data(CLIENT_SOCKET,(unsigned char*)data,0,1,"");
+  send_data_uv(CLIENT_SOCKET,(unsigned char*)data,0,1,"");
 
   pointer_reset_all;
   return;

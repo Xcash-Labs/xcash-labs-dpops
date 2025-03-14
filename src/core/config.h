@@ -20,11 +20,10 @@
 
 #define TRANSFER_BUFFER_SIZE 4096  // Size of the buffer used for data transfer in bytes (4 KB)
 #define RESPONSE_TIMEOUT 5000  // Maximum time (in milliseconds) to wait for a response before closing the connection (5 seconds)
+#define SEND_TIMEOUT 5000  // Maximum time (in milliseconds) to wait for a response before closing the connection (5 seconds)
 #define CONNECTION_TIMEOUT 3000  // Maximum time (in milliseconds) to wait for a connection to be established before retrying or failing (3 seconds)
-#define MAX_RETRIES 3  // Number of times a failed connection attempt will be retried before marking it as failed
-#define RETRY_DELAY_MS 500  // Delay (in milliseconds) before retrying a failed connection attempt (0.5 seconds)
 #define MAX_CONNECTIONS 1024 // Max connection for incomming transactions
-#define MAX_THREADS 8 // Max threads to use
+#define MAX_THREADS 10 // Max threads to use
 
 // Database
 #define DATABASE_CONNECTION "mongodb://127.0.0.1:27017" // The database connection string
