@@ -1,7 +1,6 @@
-#ifndef BLOCK_VERIFIERS_SYNCHRONIZE_SERVER_FUNCTIONS_H_
+#ifndef BLOCK_VERIFIERS_SYNCHRONIZE_SERVER_FUNCTIONS_H_   /* Include guard */
 #define BLOCK_VERIFIERS_SYNCHRONIZE_SERVER_FUNCTIONS_H_
 
-#include "uv_net_server.h"  // Ensure uv_net_server.h is included first
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,15 +8,15 @@
 #include "config.h"
 #include "globals.h"
 #include "macro_functions.h"
+#include "uv_net_server.h"
 #include "db_operations.h"
 
-// No need for a forward declaration, `server_client_t` is already defined in uv_net_server.h
+typedef struct server_client_t server_client_t; 
 
 void server_received_msg_get_block_hash(server_client_t* client, const char* MESSAGE);
 void server_received_msg_get_block_producers(server_client_t* client, const char* MESSAGE);
 void server_received_msg_get_sync_info(server_client_t* client, const char* MESSAGE);
-
-void server_receive_data_socket_get_current_block_height(const char* CLIENT_IP_ADDRESS);
+void server_receive_data_socket_get_current_block_height(const char* CLIENT_IP_ADDRESS);   //  ???????????
 void server_receive_data_socket_send_current_block_height(const char* MESSAGE);
 void server_receive_data_socket_node_to_network_data_nodes_get_previous_current_next_block_verifiers_list(server_client_t* client);
 void server_receive_data_socket_node_to_network_data_nodes_get_current_block_verifiers_list(server_client_t* client);
@@ -32,5 +31,4 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_delegates_dat
 void server_receive_data_socket_block_verifiers_to_block_verifiers_delegates_database_download_file_update(server_client_t* client);
 void server_receive_data_socket_block_verifiers_to_block_verifiers_statistics_database_sync_check_update(server_client_t* client, const char* MESSAGE);
 void server_receive_data_socket_block_verifiers_to_block_verifiers_statistics_database_download_file_update(server_client_t* client);
-
-#endif /* BLOCK_VERIFIERS_SYNCHRONIZE_SERVER_FUNCTIONS_H_ */
+#endif
