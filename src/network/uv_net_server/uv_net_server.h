@@ -10,6 +10,7 @@
 #include "config.h"
 #include "globals.h"
 #include "macro_functions.h"
+#include "xcash_message.h"
 
 typedef struct {
     uv_tcp_t handle;
@@ -22,8 +23,6 @@ typedef struct {
     char *message_copy;
     server_client_t *client;
 } write_srv_request_t;
-
-//#include "xcash_message.h"
 
 void on_new_connection(uv_stream_t *server_handle, int status);
 void alloc_buffer_srv(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf);
