@@ -13,7 +13,7 @@ int server_limit_public_addresses(const int SETTINGS, const char* MESSAGE) {
   char data[SMALL_BUFFER_SIZE] = {0};
   char data2[SMALL_BUFFER_SIZE] = {0};
   char data3[SMALL_BUFFER_SIZE] = {0};
-  size_t data_size = 0;S
+  size_t data_size = 0;
   long long int number = 0;
 
   // Extract public address based on SETTINGS
