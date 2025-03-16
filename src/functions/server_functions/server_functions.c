@@ -10,9 +10,9 @@ Parameters:
   Return: 0 if there is multiple connections, 1 if there is a single connection
 ---------------------------------------------------------------------------------------------------------*/
 int server_limit_public_addresses(const int SETTINGS, const char* MESSAGE) {
-  char data[SMALL_BUFFER_SIZE] = {0};
-  char data2[SMALL_BUFFER_SIZE + 10] = {0};
-  char data3[2100] = {0}; // or larger, e.g., 4096
+  char data[SMALL_BUFFER_SIZE + 10] = {0};
+  char data2[SMALL_BUFFER_SIZE] = {0};
+  char data3[4096] = {0};
   size_t data_size = 0;
   long long int number = 0;
 
