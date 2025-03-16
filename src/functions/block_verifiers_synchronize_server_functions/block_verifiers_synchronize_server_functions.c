@@ -18,13 +18,13 @@ bool get_block_hash(unsigned long block_height, char* block_hash, size_t block_h
   bson_t *doc = bson_new();
 
   if (!filter || !doc) {
-    log_error("Failed to allocate BSON filter or document");
+    ERROR_PRINT("Failed to allocate BSON filter or document");
     goto cleanup;
   }
 
   // Query MongoDB
   if (!db_find_doc(DATABASE_NAME, db_collection_name, filter, doc, &error)) {
-    log_error("Failed to find document: %s", error.message);
+    ERROR_PRINT("Failed to find document: %s", error.message);
     goto cleanup;
   }
 
@@ -41,7 +41,7 @@ bool get_block_hash(unsigned long block_height, char* block_hash, size_t block_h
     }
   }
 
-  log_error("block_hash not found in document");
+  ERROR_PRINT("block_hash not found in document");
 
 cleanup:
   if (filter) bson_destroy(filter);
