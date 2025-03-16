@@ -35,13 +35,14 @@ int server_limit_public_addresses(const int SETTINGS, const char* MESSAGE) {
     }
   }
 
-  snprintf(data, sizeof(data), "|%s", data2);
+  snprintf(data, sizeof(data), "|%.*s", (int)(sizeof(data) - 2), data2);
 
   // Start processing based on SETTINGS
   if (SETTINGS == 1 || SETTINGS == 2) {
     if (verify_data(MESSAGE, 0) == 0) return 0;
 
-    snprintf(data3, sizeof(data3), "{\"public_address\":\"%s\"}", data2);
+    snprintf(data3, sizeof(data3), "{\"public_address\":\"%.*s\"}", (int)(sizeof(data3) - 23), data2);
+
 
     if (is_seed_address(data2)) {
       goto check_limit;
