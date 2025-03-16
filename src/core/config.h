@@ -14,6 +14,8 @@
 #define XCASH_WALLET_IP "127.0.0.1" // The X-CASH Wallet IP
 #define XCASH_DPOPS_IP "127.0.0.1" // The X-CASH Wallet IP
 #define SOCKET_END_STRING "|END|" // End string when sending data between nodes, to signal the end of sending data
+#define MAXIMUM_CONNECTIONS_IP_ADDRESS_OR_PUBLIC_ADDRESS 20 // The maximum connections a specific IP address or specific public address can have at one time
+
 
 #define XCASH_WALLET_PREFIX "XCA" // The prefix of a XCA address
 #define XCASH_SIGN_DATA_PREFIX "SigV1" // The prefix of a XCASH_DPOPS_signature for the signed data
@@ -92,6 +94,7 @@
 #define BLOCK_VERIFIERS_SETTINGS 3 // The time in seconds to wait to send data to the block verifiers
 #define NETWORK_DATA_NODES_VALID_AMOUNT 2 // The amount of network data nodes need to reach a consensus on the database data
 
+#define GET_RESERVE_BYTES_DATABASE_HASH_PARAMETER_AMOUNT 5 // The GET_RESERVE_BYTES_DATABASE_HASH parameter amount
 
 #define ALPHANUM_STRING "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 

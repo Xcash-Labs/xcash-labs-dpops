@@ -10,10 +10,6 @@ Parameters:
   Return: 0 if there is multiple connections, 1 if there is a single connection
 ---------------------------------------------------------------------------------------------------------*/
 int server_limit_public_addresses(const int SETTINGS, const char* MESSAGE) {
-  if (test_settings == 1) {
-    return 1;
-  }
-
   char data[SMALL_BUFFER_SIZE] = {0};
   char data2[SMALL_BUFFER_SIZE] = {0};
   char data3[SMALL_BUFFER_SIZE] = {0};
@@ -54,8 +50,7 @@ int server_limit_public_addresses(const int SETTINGS, const char* MESSAGE) {
     // Check delegate registration and vote count
     if (read_document_field_from_collection(database_name, DB_COLLECTION_DELEGATES, data3, "total_vote_count", data2) == 1) {
       sscanf(data2, "%lld", &number);
-      if ((production_settings == 1 && number < DATABASE_DATA_SYNC_DELEGATE_MINIMUM_AMOUNT) ||
-          (production_settings == 0 && number < 0)) {
+      if (number < 0) {
         return 0;
       }
     } else {

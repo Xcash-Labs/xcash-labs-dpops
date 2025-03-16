@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include "config.h"
 #include "globals.h"
+#include "string_functions.h"
 
 /*
 -----------------------------------------------------------------------------------------------------------
