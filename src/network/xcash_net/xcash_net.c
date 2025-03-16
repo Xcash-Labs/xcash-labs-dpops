@@ -224,7 +224,7 @@ responses = send_multi_request(hosts, XCASH_DPOPS_PORT, message);
 //  free(message_ender);
   free(hosts);
   if (responses) {
-//    remove_enders(responses);
+    remove_enders(responses);
     result = true;
   }
   *reply = responses;
