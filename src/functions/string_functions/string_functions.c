@@ -289,3 +289,66 @@ void md5_hex(const char *src, char *dest)
 
     bin_to_hex(md5_bin, MD5_DIGEST_LENGTH, dest);  // Convert binary MD5 to hex string
 }
+
+/*---------------------------------------------------------------------------------------------------------
+Name: string_replace
+Description: String replace only a specific amount of string occurences
+Parameters:
+  data - The string to replace the data
+  DATA_TOTAL_LENGTH - The maximum size of data
+  STR1 - The string to be replaced
+  STR2 - The string to replace the other string
+  COUNT - The number of string occurences to replace
+Return: The result string
+---------------------------------------------------------------------------------------------------------*/
+void string_replace_limit(char *data, const size_t DATA_TOTAL_LENGTH, const char* STR1, const char* STR2, const int COUNT)
+{
+  // Early exit if invalid inputs
+  if (data == NULL || STR1 == NULL || STR2 == NULL || COUNT <= 0) return;
+  
+  size_t slen = strlen(STR1);
+  size_t rlen = strlen(STR2);
+  if (slen == 0) return;  // avoid infinite loop
+
+  size_t buf_size = DATA_TOTAL_LENGTH;
+  char* buf = calloc(buf_size, sizeof(char));
+  if (buf == NULL) return;
+
+  const char* current = data;
+  char* dest = buf;
+  int replaced = 0;
+
+  while (*current != '\0') {
+    const char* found = strstr(current, STR1);
+
+    if (found == NULL || replaced >= COUNT) {
+      // Copy remaining part
+      size_t remaining = strlen(current);
+      if ((dest - buf) + remaining >= buf_size) break;  // prevent overflow
+      memcpy(dest, current, remaining);
+      dest += remaining;
+      break;
+    }
+
+    // Copy up to found STR1
+    size_t prefix_len = found - current;
+    if ((dest - buf) + prefix_len + rlen >= buf_size) break;  // prevent overflow
+    memcpy(dest, current, prefix_len);
+    dest += prefix_len;
+
+    // Copy replacement STR2
+    memcpy(dest, STR2, rlen);
+    dest += rlen;
+    current = found + slen;
+    replaced++;
+  }
+
+  // Null-terminate
+  *dest = '\0';
+
+  // Copy back safely
+  strncpy(data, buf, DATA_TOTAL_LENGTH - 1);
+  data[DATA_TOTAL_LENGTH - 1] = '\0'; // Ensure null termination
+
+  free(buf);
+}
