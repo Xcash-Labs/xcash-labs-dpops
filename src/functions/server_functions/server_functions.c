@@ -48,7 +48,7 @@ int server_limit_public_addresses(const int SETTINGS, const char* MESSAGE) {
     }
 
     // Check delegate registration and vote count
-    if (read_document_field_from_collection(database_name, DB_COLLECTION_DELEGATES, data3, "total_vote_count", data2) == 1) {
+    if (read_document_field_from_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, data3, "total_vote_count", data2) == 1) {
       sscanf(data2, "%lld", &number);
       if (number < 0) {
         return 0;

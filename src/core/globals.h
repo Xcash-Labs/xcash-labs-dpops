@@ -44,6 +44,9 @@ extern pthread_mutex_t hash_mutex;
 
 extern const NetworkNode network_nodes[];
 
+extern char* server_limit_IP_address_list; // holds all of the IP addresses that are currently running on the server.
+extern char* server_limit_public_address_list; // holds all of the public addresses that are currently running on the server.
+
 void init_globals(void);
 
 #endif
