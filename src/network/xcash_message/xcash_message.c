@@ -641,7 +641,7 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
 //        server_receive_data_socket_node_to_node_majority(data);
 //        server_limit_public_addresses(3, data);
 //      }
-/      break;
+//     break;
 
 //    case XMSG_NODES_TO_NODES_VOTE_RESULTS:
 //      if (server_limit_public_addresses(1, data) == 1) {
