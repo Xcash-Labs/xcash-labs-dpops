@@ -9,7 +9,7 @@
 #include "config.h"
 #include "globals.h"
 #include "string_functions.h"
-#include "network_secruity_functions.h"
+#include "network_security_functions.h"
 
 /*
 -----------------------------------------------------------------------------------------------------------

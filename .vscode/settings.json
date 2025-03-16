@@ -15,6 +15,7 @@
         "initializer_list": "c",
         "type_traits": "c",
         "macro_functions.h": "c",
-        "uv_net_server.h": "c"
+        "uv_net_server.h": "c",
+        "network_security_functions.h": "c"
     }
 }
