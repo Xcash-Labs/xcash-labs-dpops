@@ -374,8 +374,11 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
     int count = length - (delimiter - data) - 25;
     size_t copy_len = length - 25;  // Actual message length after removing prefix
 
+    ERROR_PRINT("");
+
     if (count < 0 || copy_len >= length) {
-      ERROR_PRINT("Invalid message length received by server");
+      DEBUG_PRINT("count %d", count);
+      ERROR_PRINT("Invalid message length received by server: %zu", length);
       return;
     }
 
