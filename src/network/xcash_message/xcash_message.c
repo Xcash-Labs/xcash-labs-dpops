@@ -354,8 +354,9 @@ xcash_msg_t get_message_type(const char* data) {
   }
   return XMSG_NONE;  // Default case if no match is found
 }
-
+//
 //  Handle Server Messages
+//
 void handle_srv_message(const char* data, size_t length, server_client_t* client) {
   if (data == NULL || length == 0) {
     ERROR_PRINT("Message received by server is null.");
@@ -370,7 +371,8 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
   DEBUG_PRINT("Processing message from client IP: %s", client->client_ip);
 
   // Handle JSON formatted messages
-  if (length > 25 && strstr(data, "}") && strstr(data, "\",\r\n")) {
+  // if (length > 25 && (strstr(data, "\r\n}") || strstr(data, "\n}"))) {
+  if (length > 25 && strstr(data, "}") && strstr(data, "\"\r\n")) {
     json_error_t error;
     json_t* json_obj = json_loads(data, 0, &error);
     if (!json_obj) {
@@ -379,7 +381,7 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
     }
     const char* message_settings = json_string_value(json_object_get(json_obj, "message_settings"));
     if (message_settings) {
-      DEBUG_PRINT("Message Settings: %s\n", message_settings);
+      DEBUG_PRINT("Message Settings: %s", message_settings);
       if (!is_valid_json_type(message_settings)) {
         ERROR_PRINT("Invalid message type received, expecting JSON format");
         json_decref(json_obj);
