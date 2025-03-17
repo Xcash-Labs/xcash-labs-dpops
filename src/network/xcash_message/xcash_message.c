@@ -371,8 +371,7 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
   DEBUG_PRINT("Processing message from client IP: %s", client->client_ip);
 
   // Handle JSON formatted messages
-  // if (length > 25 && (strstr(data, "\r\n}") || strstr(data, "\n}"))) {
-  if (length > 25 && strstr(data, "\r\n}")) {
+  if (length > 25 && strstr(data, "}") && strstr(data, "}")) {
     json_error_t error;
     json_t* json_obj = json_loads(data, 0, &error);
     if (!json_obj) {
