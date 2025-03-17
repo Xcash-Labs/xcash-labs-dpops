@@ -196,7 +196,7 @@ char* create_message_param_list(xcash_msg_t msg, const char** pair_params) {
     message_offset = (int)strlen(message_buf);
   }
 
-  strncat(message_buf, ",\r\n}", sizeof(message_buf) - strlen(message_buf) - 1);
+  strncat(message_buf, "\r\n}", sizeof(message_buf) - strlen(message_buf) - 1);
 
   // If message is signed
   if (!is_unsigned_type(msg)) {
