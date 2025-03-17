@@ -12,40 +12,6 @@ static char *_build_message_ender(const char *message) {
   return message_ender;
 }
 
-// Remove |END| suffix from message.
-void remove_enders_old(response_t **responses) {
-  int i = 0;
-  while (responses && responses[i]) {
-    if (responses[i]->status == STATUS_OK) {
-      if (responses[i]->size == 0) {
-        responses[i]->status = STATUS_INCOMPLETE;
-        // FIXME wtf is this
-        DEBUG_PRINT("Returned data from host '%s' is empty. Marked it as STATUS_INCOMPLETE", responses[i]->host);
-      } else {
-        bool ender_found = false;
-        char *tmp = calloc(responses[i]->size + 1, 1);
-        memcpy(tmp, responses[i]->data, responses[i]->size);
-        if (responses[i]->size >= sizeof(SOCKET_END_STRING) - 1) {
-          char *ender_position = strstr(tmp, SOCKET_END_STRING);
-          if (ender_position) {
-            ender_found = true;
-            int ender_pos = ender_position - tmp;
-
-            responses[i]->data[ender_pos] = '\0';
-            responses[i]->size = strlen(responses[i]->data);
-          }
-        }
-        if (!ender_found) {
-          WARNING_PRINT("Returned data has no |END| data size %ld, message:  %s", responses[i]->size, tmp);
-        }
-        free(tmp);
-      }
-    }
-    i++;
-  }
-}
-
-
 void remove_enders(response_t **responses) {
     if (!responses) {
         return;
@@ -87,7 +53,7 @@ void remove_enders(response_t **responses) {
     }
 }
 
-// Sends a message (with appended |END|) to a group of hosts via send_multi_request()
+// Sends a message (with appended to a group of hosts via send_multi_request()
 bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***reply) {
   bool result = false;
   if (!reply) {

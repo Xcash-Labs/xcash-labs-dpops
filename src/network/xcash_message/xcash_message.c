@@ -355,6 +355,7 @@ xcash_msg_t get_message_type(const char* data) {
   return XMSG_NONE;  // Default case if no match is found
 }
 
+//  Handle Server Messages
 void handle_srv_message(const char* data, size_t length, server_client_t* client) {
   if (data == NULL || length == 0) {
     ERROR_PRINT("Message received by server is null.");
@@ -370,11 +371,14 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
 
   // Handle JSON formatted messages
   if (length > 25 && strstr(data, "}") && strstr(data, "\",\r\n")) {
+
     const char* delimiter = strstr(data, "\",\r\n");  // Find ",\r\n" in data
     int count = length - (delimiter - data) - 25;
-    size_t copy_len = length - 25;  // Actual message length after removing prefix
+    int count = strlen(buffer) - strlen(strstr(buffer,"\",\r\n")) - 25);
 
-    ERROR_PRINT("");
+    {"message_settings": "XCASH_GET_SYNC_INFO"}
+
+    size_t copy_len = length - 25;  // Actual message length after removing prefix
 
     if (count < 0 || copy_len >= length) {
       DEBUG_PRINT("count %d", count);
