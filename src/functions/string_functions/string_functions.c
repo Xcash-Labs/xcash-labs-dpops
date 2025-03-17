@@ -122,9 +122,6 @@ int parse_json_data(const char *data, const char *field_name, char *result, size
     return XCASH_OK;
 }
 
-
-
-
 /*---------------------------------------------------------------------------------------------------------
 Name: string_replace
 Description: String replace

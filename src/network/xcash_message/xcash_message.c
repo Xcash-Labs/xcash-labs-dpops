@@ -371,37 +371,26 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
 
   // Handle JSON formatted messages
   if (length > 25 && strstr(data, "}") && strstr(data, "\",\r\n")) {
-
-    const char* delimiter = strstr(data, "\",\r\n");  // Find ",\r\n" in data
-    int count = length - (delimiter - data) - 25;
-    int count = strlen(buffer) - strlen(strstr(buffer,"\",\r\n")) - 25);
-
-    {"message_settings": "XCASH_GET_SYNC_INFO"}
-
-    size_t copy_len = length - 25;  // Actual message length after removing prefix
-
-    if (count < 0 || copy_len >= length) {
-      DEBUG_PRINT("count %d", count);
-      ERROR_PRINT("Invalid message length received by server: %zu", length);
+    json_error_t error;
+    json_t* json_obj = json_loads(data, 0, &error);
+    if (!json_obj) {
+      ERROR_PRINT("Invalid message received, JSON parsing error in handle_srv_message: %s", error.text);
       return;
     }
-
-    char* data2 = (char*)malloc(copy_len + 1);
-    if (!data2) {
-      ERROR_PRINT("Memory allocation failed");
+    const char* message_settings = json_string_value(json_object_get(json_obj, "message_settings"));
+    if (message_settings) {
+      DEBUG_PRINT("Message Settings: %s\n", message_settings);
+      if (!is_valid_json_type(message_settings)) {
+        ERROR_PRINT("Invalid message type received, expecting JSON format");
+        json_decref(json_obj);
+        return;
+      }
+    } else {
+      ERROR_PRINT("Invalid message received, missing message_settings");
+      json_decref(json_obj);
       return;
     }
-
-    memcpy(data2, &data[25], copy_len);
-    data2[copy_len] = '\0';
-
-    // Validate message type
-    if (!is_valid_json_type(data2)) {
-      ERROR_PRINT("Invalid message type received, expecting JSON format");
-      free(data2);
-      return;
-    }
-    free(data2);
+    json_decref(json_obj);
   }
   // Handle BAR formatted messages
   else if (strstr(data, "|")) {

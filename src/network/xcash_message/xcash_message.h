@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "config.h"
+#include <jansson.h>
 #include "globals.h"
 #include "macro_functions.h"
 #include "uv_net_server.h"
