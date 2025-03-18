@@ -239,11 +239,15 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
     return;
   }
 
+  Message Settings:
   DEBUG_PRINT("Processing message from client IP: %s", client->client_ip);
 
   const char* message_settings = NULL;
 
+  DEBUG_PRINT("Message Settings 1: %s", data);
+
   if (strstr(data, "{") && strstr(data, "}")) {
+    DEBUG_PRINT("Received JSON message");
     json_error_t error;
     json_t* json_obj = json_loads(data, 0, &error);
     if (!json_obj) {
@@ -258,6 +262,8 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
       return;
     }
     message_settings = json_string_value(settings_obj);
+    DEBUG_PRINT("Message Settings 2: %s", message_settings);
+    
     json_decref(json_obj);
   } else if (strstr(data, "|")) {  
 
@@ -269,7 +275,7 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
     return;
   }
 
-  DEBUG_PRINT("Message Settings: %s", message_settings);
+  DEBUG_PRINT("Message Settings 2: %s", message_settings);
 
   xcash_msg_t msg_type = get_message_type(data);
   switch (msg_type) {
