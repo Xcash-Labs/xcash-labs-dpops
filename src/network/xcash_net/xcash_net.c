@@ -1,17 +1,5 @@
 #include "xcash_net.h"
 
-// Helper function to append SOCKET_END_STRING to a message
-static char *_build_message_ender(const char *message) {
-  int message_buf_size = strlen(message) + strlen(SOCKET_END_STRING) + 1;
-  char *message_ender = calloc(message_buf_size, 1);
-  if (!message_ender) {
-    ERROR_PRINT("Memory allocation failed in _build_message_ender()");
-    return NULL;
-  }
-  snprintf(message_ender, message_buf_size, "%s%s", message, SOCKET_END_STRING);
-  return message_ender;
-}
-
 void remove_enders(response_t **responses) {
     if (!responses) {
         return;
@@ -176,15 +164,6 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
     return false;
   }
 
-//  int message_buf_size = strlen(message) + strlen(SOCKET_END_STRING) + 1;
-//  message_ender = calloc(message_buf_size, 1);
-//  if (!message_ender) {
-//    ERROR_PRINT("Failed to allocate memory for message_ender");
-//    free(hosts);  // Free allocated memory if error
-//    return false;
-//  }
-//  snprintf(message_ender, message_buf_size, "%s%s", message, SOCKET_END_STRING);
-
 responses = send_multi_request(hosts, XCASH_DPOPS_PORT, message);
 //  free(message_ender);
   free(hosts);
@@ -258,15 +237,8 @@ bool send_direct_message_param_list(const char *host, xcash_msg_t msg, response_
     return false;
   }
 
-  char *message_ender = _build_message_ender(message_data);
+  response_t **responses = send_multi_request(hosts, XCASH_DPOPS_PORT, message_data);
   free(message_data);
-
-  if (!message_ender) {
-    return false;
-  }
-
-  response_t **responses = send_multi_request(hosts, XCASH_DPOPS_PORT, message_ender);
-  free(message_ender);
 
   if (responses) {
     remove_enders(responses);
@@ -293,15 +265,8 @@ bool send_direct_message_param(const char *host, xcash_msg_t msg, response_t ***
     return false;
   }
 
-  char *message_ender = _build_message_ender(message_data);
+  response_t **responses = send_multi_request(hosts, XCASH_DPOPS_PORT, message_data);
   free(message_data);
-
-  if (!message_ender) {
-    return false;
-  }
-
-  response_t **responses = send_multi_request(hosts, XCASH_DPOPS_PORT, message_ender);
-  free(message_ender);
 
   if (responses) {
     remove_enders(responses);
