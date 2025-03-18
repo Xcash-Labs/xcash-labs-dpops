@@ -3,8 +3,6 @@
 
 #include <stdbool.h>
 #include <stdlib.h>
-
-#include "xcash_message.h"
 #include "config.h"
 #include "db_helpers.h"
 #include "db_operations.h"
@@ -14,7 +12,6 @@
 #include "uv_net_multi.h"
 #include "xcash_net.h"
 #include "delegates.h"
-
 
 typedef struct {
     size_t db_rec_index;
