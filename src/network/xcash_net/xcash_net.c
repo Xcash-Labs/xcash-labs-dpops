@@ -65,7 +65,6 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
   // Host array placeholders
   const char **hosts = NULL;
   response_t **responses = NULL;
-  char *message_ender = NULL;
 
   switch (dest) {
     case XNET_SEEDS_ALL: {
@@ -87,7 +86,7 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
         } else if (!has_ip) {
           ERROR_PRINT("Invalid IP address for node with public address %s", network_nodes[i].seed_public_address);
         }
-        i++;  // Move to the next node regardless of conditions
+        i++;  // Move to the nmessage_enderext node regardless of conditions
       }
 
       all_hosts[di] = NULL;  // Null-terminate the array
