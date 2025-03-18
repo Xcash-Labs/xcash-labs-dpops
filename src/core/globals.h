@@ -48,6 +48,8 @@ extern char* server_limit_IP_address_list; // holds all of the IP addresses that
 extern char* server_limit_public_address_list; // holds all of the public addresses that are currently running on the server.
 
 extern const char* xcash_net_messages[];
+extern const xcash_msg_t xcash_db_sync_messages[];
+extern const xcash_msg_t xcash_db_download_messages[];
 
 void init_globals(void);
 

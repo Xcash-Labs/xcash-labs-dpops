@@ -18,9 +18,6 @@
 
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 
-extern const xcash_msg_t xcash_db_sync_messages[];
-extern const xcash_msg_t xcash_db_download_messages[];
-
 bool is_unsigned_type(xcash_msg_t msg);
 bool is_walletsign_type(xcash_msg_t msg);
 bool is_nonreturn_type(xcash_msg_t msg);
