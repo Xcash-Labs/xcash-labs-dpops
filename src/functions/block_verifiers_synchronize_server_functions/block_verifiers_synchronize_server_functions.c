@@ -101,7 +101,7 @@ void server_received_msg_get_block_hash(server_client_t *client, const char *MES
 void server_received_msg_get_sync_info(server_client_t *client, const char *MESSAGE)
 {
     (void)MESSAGE;
-    log_info("received %s, %s", __func__, "XCASH_GET_SYNC_INFO");
+    DEBUG_PRINT("received %s, %s", __func__, "XCASH_GET_SYNC_INFO");
 
     xcash_node_sync_info_t sync_info;
     if (!get_node_sync_info(&sync_info)) {
