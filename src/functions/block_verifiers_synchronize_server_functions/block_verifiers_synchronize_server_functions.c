@@ -119,7 +119,7 @@ void server_received_msg_get_sync_info(server_client_t *client, const char *MESS
 
     snprintf(block_height_str, sizeof(block_height_str), "%ld", sync_info.block_height);
 
-    const int PARAM_COUNT = DATABASE_TOTAL + 2 + 1;  // block_height + public_address + terminator
+    const int PARAM_COUNT = DATABASE_TOTAL + 2 + 1;  // block_height + public_address + NULL terminator
     const char **param_list = calloc(PARAM_COUNT * 2, sizeof(char *));  // key-value pairs
 
     if (!param_list) {
@@ -143,23 +143,12 @@ void server_received_msg_get_sync_info(server_client_t *client, const char *MESS
     param_list[param_index] = NULL;  // NULL terminate
 
     char* message_data = create_message_param_list(XMSG_XCASH_GET_SYNC_INFO, param_list);
-    free(param_list);
+    free(param_list);  // Free after usage
 
     if (message_data) {
-        size_t message_length = strlen(message_data);
-        size_t total_length = message_length + strlen(SOCKET_END_STRING) + 1;
-        char* final_message = malloc(total_length);
-        if (!final_message) {
-            ERROR_PRINT("Memory allocation failed for final_message");
-            free(message_data);
-            return;
-        }
-
-        snprintf(final_message, total_length, "%s%s", message_data, SOCKET_END_STRING);
+        send_data_uv(client, message_data);
         free(message_data);
-
-        // send the data
-        send_data(CLIENT_SOCKET, (unsigned char*)final_message, 0, 0, "");
-        free(final_message);
     }
+
+    return;
 }
