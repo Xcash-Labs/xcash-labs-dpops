@@ -5,12 +5,12 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdarg.h>
-
 #include "xcash_message.h"
 #include "config.h"
 #include "globals.h"
 #include "network_functions.h"
 #include "uv_net_multi.h"
+#include "xcash_net.h"
 
 typedef enum XNET_DEST{
     XNET_SEEDS_ALL,
