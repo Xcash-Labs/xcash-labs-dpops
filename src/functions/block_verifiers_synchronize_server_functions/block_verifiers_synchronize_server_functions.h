@@ -11,6 +11,7 @@
 #include "macro_functions.h"
 #include "db_operations.h"
 #include "db_sync.h"
+#include "xcash_message.h"
 
 void server_received_msg_get_block_hash(server_client_t* client, const char* MESSAGE);
 //void server_received_msg_get_block_producers(server_client_t* client, const char* MESSAGE);
