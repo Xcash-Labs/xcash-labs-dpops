@@ -13,7 +13,6 @@
 #define XCASH_DAEMON_IP "127.0.0.1" // The X-CASH Wallet IP
 #define XCASH_WALLET_IP "127.0.0.1" // The X-CASH Wallet IP
 #define XCASH_DPOPS_IP "127.0.0.1" // The X-CASH Wallet IP
-//#define SOCKET_END_STRING "|END|" // End string when sending data between nodes, to signal the end of sending data
 #define MAXIMUM_CONNECTIONS_IP_ADDRESS_OR_PUBLIC_ADDRESS 20 // The maximum connections a specific IP address or specific public address can have at one time
 
 

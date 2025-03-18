@@ -1,44 +1,27 @@
 #include "xcash_net.h"
 
-void remove_enders(response_t **responses) {
-    if (!responses) {
-        return;
-    }
+void check_responses(response_t **responses) {
+  if (!responses) {
+      return;
+  }
 
-    int i = 0;
-    while (responses[i]) {
-        if (!responses[i]->data) {
-            WARNING_PRINT("[WARNING] Response data is NULL for host '%s'. Skipping...", responses[i]->host);
-            responses[i]->status = STATUS_INCOMPLETE;
-            i++;
-            continue;
-        }
+  int i = 0;
+  while (responses[i]) {
+      if (!responses[i]->data) {
+          WARNING_PRINT("[WARNING] Response data is NULL for host '%s'. Skipping...", responses[i]->host);
+          responses[i]->status = STATUS_INCOMPLETE;
+          i++;
+          continue;
+      }
 
-        if (responses[i]->status == STATUS_OK) {
-            if (responses[i]->size == 0) {
-                responses[i]->status = STATUS_INCOMPLETE;
-                DEBUG_PRINT("[DEBUG] Returned data from host '%s' is empty. Marked as STATUS_INCOMPLETE", responses[i]->host);
-            } else {
-                size_t ender_len = strlen(SOCKET_END_STRING);
-                size_t data_len = responses[i]->size;
-
-                // Check if response has |END| suffix
-                if (data_len >= ender_len && 
-                    strncmp(responses[i]->data + data_len - ender_len, SOCKET_END_STRING, ender_len) == 0) {
-
-                    // Remove |END| by setting null terminator
-                    responses[i]->data[data_len - ender_len] = '\0';
-                    responses[i]->size = strlen(responses[i]->data);
-                    DEBUG_PRINT("[DEBUG] Removed |END| from host '%s'. New size: %ld",
-                                responses[i]->host, responses[i]->size);
-                } else {
-                    WARNING_PRINT("[WARNING] Returned data has no |END|. Data size: %ld, Message (truncated): %.50s",
-                                  data_len, responses[i]->data);
-                }
-            }
-        }
-        i++;
-    }
+      if (responses[i]->status == STATUS_OK) {
+          if (responses[i]->size == 0) {
+              responses[i]->status = STATUS_INCOMPLETE;
+              DEBUG_PRINT("[DEBUG] Returned data from host '%s' is empty. Marked as STATUS_INCOMPLETE", responses[i]->host);
+          }
+      }
+      i++;
+  }
 }
 
 // Sends a message (with appended to a group of hosts via send_multi_request()
@@ -168,7 +151,7 @@ responses = send_multi_request(hosts, XCASH_DPOPS_PORT, message);
 //  free(message_ender);
   free(hosts);
   if (responses) {
-    remove_enders(responses);
+    check_responses(responses);
     result = true;
   }
   *reply = responses;
@@ -241,7 +224,7 @@ bool send_direct_message_param_list(const char *host, xcash_msg_t msg, response_
   free(message_data);
 
   if (responses) {
-    remove_enders(responses);
+    check_responses(responses);
     result = true;
   }
   *reply = responses;
@@ -269,7 +252,7 @@ bool send_direct_message_param(const char *host, xcash_msg_t msg, response_t ***
   free(message_data);
 
   if (responses) {
-    remove_enders(responses);
+    check_responses(responses);
     result = true;
   }
 
