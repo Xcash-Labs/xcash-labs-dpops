@@ -239,7 +239,6 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
     return;
   }
 
-  Message Settings:
   DEBUG_PRINT("Processing message from client IP: %s", client->client_ip);
 
   const char* message_settings = NULL;
@@ -263,7 +262,7 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
     }
     message_settings = json_string_value(settings_obj);
     DEBUG_PRINT("Message Settings 2: %s", message_settings);
-    
+
     json_decref(json_obj);
   } else if (strstr(data, "|")) {  
 
