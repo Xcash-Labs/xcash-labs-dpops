@@ -26,7 +26,7 @@
 #define MAX_CONNECTIONS 1024 // Max connection for incomming transactions
 #define MAX_THREADS 10 // Max threads to use
 
-// Database
+// Database 
 #define DATABASE_CONNECTION "mongodb://127.0.0.1:27017" // The database connection string
 #define DATABASE_NAME "XCASH_PROOF_OF_STAKE" // The name of the database
 #define DATABASE_NAME_DELEGATES "XCASH_PROOF_OF_STAKE_DELEGATES" // The name of the database for the delegates
