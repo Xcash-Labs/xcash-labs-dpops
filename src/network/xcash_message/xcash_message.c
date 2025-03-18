@@ -263,11 +263,11 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
     message_settings = json_string_value(settings_obj);
     DEBUG_PRINT("Message Settings 2: %s", message_settings);
 
-    json_decref(json_obj);
   } else if (strstr(data, "|")) {  
 
     DEBUG_PRINT("........ADD BAR DATATYPE HERE.............");
     message_settings = NULL;
+    // if this gets set remember to clear it also 
 
   } else {
     ERROR_PRINT("Message does not match one of the expected format");
@@ -276,7 +276,7 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
 
   DEBUG_PRINT("Message Settings 2: %s", message_settings);
 
-  xcash_msg_t msg_type = get_message_type(data);
+  xcash_msg_t msg_type = get_message_type(message_settings);
   switch (msg_type) {
     case XMSG_XCASH_GET_BLOCK_HASH:
       if (server_limit_IP_addresses(1, client->client_ip) == 1) {
@@ -503,6 +503,10 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
     default:
       ERROR_PRINT("Unknown message type received: %s", data);
       break;
+  }
+
+  if (json_obj) {
+    json_decref(json_obj);
   }
 
   return;
