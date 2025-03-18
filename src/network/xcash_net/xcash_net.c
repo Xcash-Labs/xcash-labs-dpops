@@ -233,8 +233,6 @@ bool send_message_param(xcash_dest_t dest, xcash_msg_t msg, response_t ***reply,
   return result;
 }
 
-// jed
-
 bool send_message(xcash_dest_t dest, xcash_msg_t msg, response_t ***reply) {
   bool result = false;
   *reply = NULL;

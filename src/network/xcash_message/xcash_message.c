@@ -95,42 +95,6 @@ const xcash_msg_t xcash_db_download_messages[] = {
     XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_RESERVE_PROOFS_DATABASE_DOWNLOAD_FILE_UPDATE,
     XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_RESERVE_BYTES_DATABASE_DOWNLOAD_FILE_UPDATE};
 
-const xcash_msg_t JSON_FORMAT_MESSAGES[] = {
-    XMSG_NODE_TO_NETWORK_DATA_NODES_GET_PREVIOUS_CURRENT_NEXT_BLOCK_VERIFIERS_LIST,
-    XMSG_NODE_TO_NETWORK_DATA_NODES_GET_CURRENT_BLOCK_VERIFIERS_LIST,
-    XMSG_NODES_TO_BLOCK_VERIFIERS_RESERVE_BYTES_DATABASE_SYNC_CHECK_ALL_UPDATE,
-    XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_RESERVE_PROOFS_DATABASE_SYNC_CHECK_ALL_UPDATE,
-    XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_RESERVE_PROOFS_DATABASE_SYNC_CHECK_UPDATE,
-    XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_RESERVE_BYTES_DATABASE_SYNC_CHECK_ALL_UPDATE,
-    XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_RESERVE_BYTES_DATABASE_SYNC_CHECK_UPDATE,
-    XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_DELEGATES_DATABASE_SYNC_CHECK_UPDATE,
-    XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_STATISTICS_DATABASE_SYNC_CHECK_UPDATE,
-    XMSG_NODE_TO_BLOCK_VERIFIERS_ADD_RESERVE_PROOF,
-    XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_INVALID_RESERVE_PROOFS,
-    XMSG_NODES_TO_BLOCK_VERIFIERS_REGISTER_DELEGATE,
-    XMSG_NODES_TO_BLOCK_VERIFIERS_RECOVER_DELEGATE,
-    XMSG_NODES_TO_BLOCK_VERIFIERS_UPDATE_DELEGATE,
-    XMSG_MAIN_NETWORK_DATA_NODE_TO_BLOCK_VERIFIERS_START_BLOCK,
-    XMSG_MAIN_NODES_TO_NODES_PART_4_OF_ROUND_CREATE_NEW_BLOCK,
-    XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_VRF_DATA,
-    XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_BLOCK_BLOB_SIGNATURE,
-    XMSG_NODES_TO_NODES_VOTE_RESULTS,
-    XMSG_NONE  // Sentinel value
-};
-const size_t JSON_FORMAT_MESSAGES_COUNT = ARRAY_SIZE(JSON_FORMAT_MESSAGES) - 1;
-
-const xcash_msg_t BAR_FORMAT_MESSAGES[] = {
-    XMSG_NODE_TO_NETWORK_DATA_NODES_GET_PREVIOUS_CURRENT_NEXT_BLOCK_VERIFIERS_LIST,
-    XMSG_NODE_TO_NETWORK_DATA_NODES_GET_CURRENT_BLOCK_VERIFIERS_LIST,
-    XMSG_NODE_TO_BLOCK_VERIFIERS_GET_RESERVE_BYTES_DATABASE_HASH,
-    XMSG_NODES_TO_BLOCK_VERIFIERS_RESERVE_BYTES_DATABASE_SYNC_CHECK_ALL_UPDATE,
-    XMSG_NODE_TO_BLOCK_VERIFIERS_ADD_RESERVE_PROOF,
-    XMSG_NODES_TO_BLOCK_VERIFIERS_REGISTER_DELEGATE,
-    XMSG_NODES_TO_BLOCK_VERIFIERS_RECOVER_DELEGATE,
-    XMSG_NODES_TO_BLOCK_VERIFIERS_UPDATE_DELEGATE,
-    XMSG_NODE_TO_NETWORK_DATA_NODES_CHECK_VOTE_STATUS};
-const size_t BAR_FORMAT_MESSAGES_COUNT = ARRAY_SIZE(BAR_FORMAT_MESSAGES) - 1;
-
 // Checks if a message is unsigned
 bool is_unsigned_type(xcash_msg_t msg) {
   for (size_t i = 0; i < UNSIGNED_MESSAGES_COUNT; i++) {
@@ -315,34 +279,6 @@ void cleanup_char_list(char** element_list) {
   free(element_list);
 }
 
-// Function to check if a message type is json
-bool is_valid_json_type(const char* msg_type) {
-  if (!msg_type) {
-    return false;  // Handle NULL input safely
-  }
-
-  for (size_t i = 0; i < JSON_FORMAT_MESSAGES_COUNT; i++) {
-    if (strcmp(msg_type, xcash_net_messages[JSON_FORMAT_MESSAGES[i]]) == 0) {
-      return true;
-    }
-  }
-  return false;
-}
-
-// Function to check if a message type is bar
-bool is_valid_bar_type(const char* msg_type) {
-  if (!msg_type) {
-    return false;  // Handle NULL input safely
-  }
-
-  for (size_t i = 0; i < BAR_FORMAT_MESSAGES_COUNT; i++) {
-    if (strcmp(msg_type, xcash_net_messages[BAR_FORMAT_MESSAGES[i]]) == 0) {
-      return true;
-    }
-  }
-  return false;
-}
-
 xcash_msg_t get_message_type(const char* data) {
   if (!data || *data == '\0') {
     return XMSG_NONE;  // Handle NULL or empty data safely
@@ -354,6 +290,7 @@ xcash_msg_t get_message_type(const char* data) {
   }
   return XMSG_NONE;  // Default case if no match is found
 }
+
 //
 //  Handle Server Messages
 //
@@ -369,61 +306,36 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
   }
 
   DEBUG_PRINT("Processing message from client IP: %s", client->client_ip);
-  DEBUG_PRINT("..........Message:%s", data);
 
-  // Handle JSON formatted messages
-  if (length > 25 && strstr(data, "{") && strstr(data, "}")) {
+  const char* message_settings = NULL;
+
+  if (strstr(data, "{") && strstr(data, "}")) {
     json_error_t error;
     json_t* json_obj = json_loads(data, 0, &error);
     if (!json_obj) {
       ERROR_PRINT("Invalid message received, JSON parsing error in handle_srv_message: %s", error.text);
       return;
     }
-    const char* message_settings = json_string_value(json_object_get(json_obj, "message_settings"));
-    if (message_settings) {
-      DEBUG_PRINT("Message Settings: %s", message_settings);
-      if (!is_valid_json_type(message_settings)) {
-        ERROR_PRINT("Invalid message type received, expecting JSON format");
-        json_decref(json_obj);
-        return;
-      }
-    } else {
-      ERROR_PRINT("Invalid message received, missing message_settings");
+    // Optional: Explicitly get field
+    json_t* settings_obj = json_object_get(json_obj, "message_settings");
+    if (!settings_obj || !json_is_string(settings_obj)) {
+      ERROR_PRINT("Invalid message received, missing or invalid message_settings");
       json_decref(json_obj);
       return;
     }
+    message_settings = json_string_value(settings_obj);
     json_decref(json_obj);
-  }
-  // Handle BAR formatted messages
-  else if (strstr(data, "|")) {
-    const char* bar_position = strstr(data, "|");
+  } else if (strstr(data, "|")) {  
 
-    size_t copy_len = bar_position - data;
-    if (copy_len >= length) {
-      ERROR_PRINT("Invalid message length in BAR format.");
-      return;
-    }
+    DEBUG_PRINT("........ADD BAR DATATYPE HERE.............");
+    message_settings = NULL;
 
-    char* data2 = (char*)malloc(copy_len + 1);
-    if (!data2) {
-      ERROR_PRINT("Memory allocation failed");
-      return;
-    }
-
-    memcpy(data2, data, copy_len);
-    data2[copy_len] = '\0';
-
-    if (!is_valid_bar_type(data2)) {
-      ERROR_PRINT("Invalid message type received, expecting BAR format.");
-      free(data2);
-      return;
-    }
-
-    free(data2);
   } else {
-    ERROR_PRINT("Message does not match expected format");
+    ERROR_PRINT("Message does not match one of the expected format");
     return;
   }
+
+  DEBUG_PRINT("Message Settings: %s", message_settings);
 
   xcash_msg_t msg_type = get_message_type(data);
   switch (msg_type) {
@@ -440,6 +352,7 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
 //        server_limit_IP_addresses(0, client->client_ip);
 //      }
 //      break;
+
 //    case XMSG_XCASH_GET_BLOCK_PRODUCERS:
 //      if (server_limit_IP_addresses(1, client->client_ip) == 1) {
 //        server_received_msg_get_block_producers(client, data);
