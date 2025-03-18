@@ -24,7 +24,6 @@ void check_responses(response_t **responses) {
   }
 }
 
-
 // Sends a message (with appended to a group of hosts via send_multi_request()
 bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***reply) {
   bool result = false;
