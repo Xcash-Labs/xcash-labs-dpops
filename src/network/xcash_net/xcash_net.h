@@ -1,11 +1,11 @@
 #ifndef XCASH_NET_H
 #define XCASH_NET_H
 
+
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdarg.h>
-#include "xcash_message.h"
 #include "config.h"
 #include "globals.h"
 #include "network_functions.h"
@@ -18,6 +18,8 @@ typedef enum XNET_DEST{
     XNET_DELEGATES_ALL_ONLINE,
     XNET_NONE
 } xcash_dest_t;
+
+#include "xcash_message.h"
 
 void remove_enders(response_t **responses);
 bool xnet_send_data_multi(xcash_dest_t dest, const char* message, response_t ***reply);
