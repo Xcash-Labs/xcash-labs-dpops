@@ -97,7 +97,7 @@ void server_received_msg_get_block_hash(server_client_t *client, const char *MES
   send_data_uv(client, message_result_data);
   free(message_result_data);
 }
-
+/*
 void server_received_msg_get_sync_info(server_client_t *client, const char *MESSAGE)
 {
     (void)MESSAGE;
@@ -163,3 +163,4 @@ void server_received_msg_get_sync_info(server_client_t *client, const char *MESS
         free(final_message);
     }
 }
+*/
