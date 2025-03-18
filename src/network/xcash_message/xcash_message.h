@@ -17,7 +17,7 @@
 #include "block_verifiers_synchronize_server_functions.h"
 
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
-
+/*
 typedef enum {
     XMSG_NODE_TO_BLOCK_VERIFIERS_ADD_RESERVE_PROOF,
     XMSG_NODES_TO_BLOCK_VERIFIERS_REGISTER_DELEGATE,
@@ -72,7 +72,7 @@ typedef enum {
     XMSG_MESSAGES_COUNT,
     XMSG_NONE = XMSG_MESSAGES_COUNT
 } xcash_msg_t;
-
+*/
 extern const char* xcash_net_messages[];
 extern const xcash_msg_t xcash_db_sync_messages[];
 extern const xcash_msg_t xcash_db_download_messages[];
