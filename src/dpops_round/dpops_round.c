@@ -31,24 +31,26 @@ xcash_round_result_t process_round(size_t round_number) {
         return ROUND_ERROR;
     }
 
-return ROUND_ERROR;
 
-//    // Update online status from majority list
-//    INFO_STAGE_PRINT("Nodes online in block %s, round %ld", current_block_height, round_number);
 
-//    for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT && strlen(delegates_all[i].public_address) > 0; i++) {
-//        strcpy(delegates_all[i].online_status, "false");
+    // Update online status from majority list
+    INFO_STAGE_PRINT("Nodes online in block %s, round %ld", current_block_height, round_number);
 
-//        for (size_t j = 0; j < network_majority_count; j++) {
-//            if (strcmp(delegates_all[i].public_address, nodes_majority_list[j].public_address) == 0) {
-//                strcpy(delegates_all[i].online_status, "true");
-//                INFO_PRINT_STATUS_OK("Node: " BLUE_TEXT("%-30s"), delegates_all[i].delegate_name);
-//                break;
-//            }
-//        }
-//    }
+    for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT && strlen(delegates_all[i].public_address) > 0; i++) {
+        strcpy(delegates_all[i].online_status, "false");
 
-//    free(nodes_majority_list);  // Clean up the majority list after use
+        for (size_t j = 0; j < network_majority_count; j++) {
+            if (strcmp(delegates_all[i].public_address, nodes_majority_list[j].public_address) == 0) {
+                strcpy(delegates_all[i].online_status, "true");
+                INFO_PRINT_STATUS_OK("Node: " BLUE_TEXT("%-30s"), delegates_all[i].delegate_name);
+                break;
+            }
+        }
+    }
+
+    free(nodes_majority_list);  // Clean up the majority list after use
+
+    return ROUND_ERROR;
 
 //    // Check if we have enough nodes for block production
 //    if (network_majority_count < BLOCK_VERIFIERS_VALID_AMOUNT) {
