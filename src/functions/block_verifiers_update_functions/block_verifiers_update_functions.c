@@ -12,7 +12,7 @@ Return: 0 if an error has occurred, 1 if successful
 ---------------------------------------------------------------------------------------------------------*/
 int get_block_verifiers_from_network_block(const int TOTAL_DELEGATES, const delegates_t* delegates, const size_t CURRENT_BLOCK_HEIGHT, const int SETTINGS) {
   char data[BUFFER_SIZE] = {0};
-  char data2[BUFFER_SIZE] = {0};
+//  char data2[BUFFER_SIZE] = {0};
   char data3[BUFFER_SIZE] = {0};
   char message[BUFFER_SIZE] = {0};
   char* message_copy;
@@ -126,16 +126,16 @@ int update_block_verifiers_list(void) {
     }
   }
 
-  void copy_delegate_to_list(delegates_t * delegates, block_verifiers_list_t * list, int count) {
-    memcpy(list->block_verifiers_name[count], delegates[count].delegate_name,
-           strnlen(delegates[count].delegate_name, sizeof(list->block_verifiers_name[count])));
-    memcpy(list->block_verifiers_public_address[count], delegates[count].public_address,
-           strnlen(delegates[count].public_address, sizeof(list->block_verifiers_public_address[count])));
-    memcpy(list->block_verifiers_public_key[count], delegates[count].public_key,
-           strnlen(delegates[count].public_key, sizeof(list->block_verifiers_public_key[count])));
-    memcpy(list->block_verifiers_IP_address[count], delegates[count].IP_address,
-           strnlen(delegates[count].IP_address, sizeof(list->block_verifiers_IP_address[count])));
-  }
+  void copy_delegate_to_list(delegates_t *delegates, block_verifiers_list_t *list, int index) {
+    memcpy(list->block_verifiers_name[index], delegates[index].delegate_name,
+           strnlen(delegates[index].delegate_name, sizeof(list->block_verifiers_name[index])));
+    memcpy(list->block_verifiers_public_address[index], delegates[index].public_address,
+           strnlen(delegates[index].public_address, sizeof(list->block_verifiers_public_address[index])));
+    memcpy(list->block_verifiers_public_key[index], delegates[index].public_key,
+           strnlen(delegates[index].public_key, sizeof(list->block_verifiers_public_key[index])));
+    memcpy(list->block_verifiers_IP_address[index], delegates[index].IP_address,
+           strnlen(delegates[index].IP_address, sizeof(list->block_verifiers_IP_address[index])));
+}
 
   if (current_block_height_count <= XCASH_PROOF_OF_STAKE_BLOCK_HEIGHT) {
     // No previous blocks

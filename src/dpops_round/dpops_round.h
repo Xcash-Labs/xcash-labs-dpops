@@ -12,6 +12,7 @@
 #include "macro_functions.h"
 #include "network_daemon_functions.h"
 #include "db_sync.h"
+#include "block_verifiers_update_functions.h"
 
 typedef struct {
     char public_address[XCASH_WALLET_LENGTH+1];
