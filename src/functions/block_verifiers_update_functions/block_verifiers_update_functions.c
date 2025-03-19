@@ -33,7 +33,7 @@ int get_block_verifiers_from_network_block(const int TOTAL_DELEGATES, const dele
   snprintf(data3, sizeof(data3), "reserve_bytes_%zu", reserve_block_height);
 
   // Fetch reserve bytes
-  if (read_document_field_from_collection(database_name, data3, data, "reserve_bytes", message) == 0) {
+  if (read_document_field_from_collection(DATABASE_NAME, data3, data, "reserve_bytes", message) == 0) {
     ERROR_PRINT("Can't read from DB %s, searching for block_height %zu", data3, CURRENT_BLOCK_HEIGHT);
     return XCASH_ERROR;
   }
