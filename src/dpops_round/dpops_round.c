@@ -15,8 +15,6 @@ xcash_round_result_t process_round(size_t round_number) {
         return ROUND_ERROR;
     }
 
-
-
     size_t network_majority_count = 0;
     xcash_node_sync_info_t* nodes_majority_list = NULL;
 
@@ -26,14 +24,14 @@ xcash_round_result_t process_round(size_t round_number) {
         return ROUND_ERROR;
     }
 
-    return ROUND_ERROR;
-
     // Update with fresh delegates list
-//    if (!fill_delegates_from_db()) {
-//        DEBUG_PRINT("Can't read delegates list from DB");
-//        free(nodes_majority_list);
-//        return ROUND_ERROR;
-//    }
+    if (!fill_delegates_from_db()) {
+        DEBUG_PRINT("Can't read delegates list from DB");
+        free(nodes_majority_list);
+        return ROUND_ERROR;
+    }
+
+return ROUND_ERROR;
 
 //    // Update online status from majority list
 //    INFO_STAGE_PRINT("Nodes online in block %s, round %ld", current_block_height, round_number);
