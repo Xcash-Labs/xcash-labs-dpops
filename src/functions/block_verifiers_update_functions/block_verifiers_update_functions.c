@@ -116,7 +116,7 @@ int update_block_verifiers_list(void) {
   total_delegates = total_delegates > BLOCK_VERIFIERS_TOTAL_AMOUNT ? BLOCK_VERIFIERS_TOTAL_AMOUNT : total_delegates;
   sscanf(current_block_height, "%zu", &current_block_height_count);
 
-  // Helper functions
+  // Helper function
   void clear_verifier_lists(block_verifiers_list_t * list) {
     for (int i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
       memset(list->block_verifiers_name[i], 0, sizeof(list->block_verifiers_name[i]));
@@ -126,15 +126,16 @@ int update_block_verifiers_list(void) {
     }
   }
 
-  void copy_delegate_to_list(delegates_t *delegates, block_verifiers_list_t *list, int index) {
-    memcpy(list->block_verifiers_name[index], delegates[index].delegate_name,
-           strnlen(delegates[index].delegate_name, sizeof(list->block_verifiers_name[index])));
-    memcpy(list->block_verifiers_public_address[index], delegates[index].public_address,
-           strnlen(delegates[index].public_address, sizeof(list->block_verifiers_public_address[index])));
-    memcpy(list->block_verifiers_public_key[index], delegates[index].public_key,
-           strnlen(delegates[index].public_key, sizeof(list->block_verifiers_public_key[index])));
-    memcpy(list->block_verifiers_IP_address[index], delegates[index].IP_address,
-           strnlen(delegates[index].IP_address, sizeof(list->block_verifiers_IP_address[index])));
+  // Helper function
+  void copy_delegate_to_list(delegates_t *delegate_list, block_verifiers_list_t *list, int index) {
+    memcpy(list->block_verifiers_name[index], delegate_list[index].delegate_name,
+           strnlen(delegate_list[index].delegate_name, sizeof(list->block_verifiers_name[index])));
+    memcpy(list->block_verifiers_public_address[index], delegate_list[index].public_address,
+           strnlen(delegate_list[index].public_address, sizeof(list->block_verifiers_public_address[index])));
+    memcpy(list->block_verifiers_public_key[index], delegate_list[index].public_key,
+           strnlen(delegate_list[index].public_key, sizeof(list->block_verifiers_public_key[index])));
+    memcpy(list->block_verifiers_IP_address[index], delegate_list[index].IP_address,
+           strnlen(delegate_list[index].IP_address, sizeof(list->block_verifiers_IP_address[index])));
 }
 
   if (current_block_height_count <= XCASH_PROOF_OF_STAKE_BLOCK_HEIGHT) {
