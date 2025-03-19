@@ -50,14 +50,14 @@ xcash_round_result_t process_round(size_t round_number) {
 
     free(nodes_majority_list);  // Clean up the majority list after use
 
-    return ROUND_ERROR;
+    // Check if we have enough nodes for block production
+    if (network_majority_count < BLOCK_VERIFIERS_VALID_AMOUNT) {
+        INFO_PRINT_STATUS_FAIL("Nodes majority: [%ld/%d]", network_majority_count, BLOCK_VERIFIERS_VALID_AMOUNT);
+        WARNING_PRINT("Nodes majority is NOT enough for block production. Waiting for network recovery...");
+        return ROUND_RETRY;
+    }
 
-//    // Check if we have enough nodes for block production
-//    if (network_majority_count < BLOCK_VERIFIERS_VALID_AMOUNT) {
-//        INFO_PRINT_STATUS_FAIL("Nodes majority: [%ld/%d]", network_majority_count, BLOCK_VERIFIERS_VALID_AMOUNT);
-//        WARNING_PRINT("Nodes majority is NOT enough for block production. Waiting for network recovery...");
-//        return ROUND_RETRY;
-//    }
+    return ROUND_ERROR;
 
 //    INFO_PRINT_STATUS_OK("Nodes majority: [%ld/%d]", network_majority_count, BLOCK_VERIFIERS_VALID_AMOUNT);
 
