@@ -57,16 +57,17 @@ xcash_round_result_t process_round(size_t round_number) {
         return ROUND_RETRY;
     }
 
-    return ROUND_ERROR;
-
-//    INFO_PRINT_STATUS_OK("Nodes majority: [%ld/%d]", network_majority_count, BLOCK_VERIFIERS_VALID_AMOUNT);
+    INFO_PRINT_STATUS_OK("Nodes majority: [%ld/%d]", network_majority_count, BLOCK_VERIFIERS_VALID_AMOUNT);
 
     // STEP 2: Update block verifiers list
 
-//    if (update_block_verifiers_list() == 0) {
-//        DEBUG_PRINT("Could not update the previous, current, and next block verifiers list from database");
-//        return ROUND_ERROR;
-//    }
+    if (update_block_verifiers_list() == 0) {
+        DEBUG_PRINT("Could not update the previous, current, and next block verifiers list from database");
+        return ROUND_ERROR;
+    }
+
+
+return ROUND_ERROR;
 
     // Fill block verifiers list with proven online nodes
 //    block_verifiers_list_t* bf = &current_block_verifiers_list;
