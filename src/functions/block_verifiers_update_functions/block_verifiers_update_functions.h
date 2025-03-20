@@ -9,6 +9,7 @@
 #include "globals.h"
 #include "macro_functions.h"
 #include "db_functions.h"
+#include "delegates.h"
 
 int get_block_verifiers_from_network_block(const int TOTAL_DELEGATES, const delegates_t* delegates, const size_t CURRENT_BLOCK_HEIGHT, const int SETTINGS);
 int update_block_verifiers_list(void);
