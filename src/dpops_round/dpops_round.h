@@ -15,6 +15,13 @@
 #include "block_verifiers_update_functions.h"
 
 typedef struct {
+    char* public_address;
+    char* IP_address;
+} producer_ref_t;
+
+extern producer_ref_t producer_refs[];
+
+typedef struct {
     char public_address[XCASH_WALLET_LENGTH+1];
     char IP_address[BLOCK_VERIFIERS_IP_ADDRESS_TOTAL_LENGTH+1];
     bool is_online;
@@ -28,6 +35,10 @@ typedef enum {
     ROUND_NEXT,
 } xcash_round_result_t;
 
+bool select_block_producers(size_t round_number);
+void select_block_producers2(size_t round_number);
+void show_block_producer(size_t round_number);
+xcash_round_result_t process_round(size_t round_number);
 void start_block_production(void);
 
 #endif
