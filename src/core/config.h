@@ -16,7 +16,6 @@
 #define MAXIMUM_CONNECTIONS_IP_ADDRESS_OR_PUBLIC_ADDRESS 20 // The maximum connections a specific IP address or specific public address can have at one time
 #define BLOCKCHAIN_DATA_SEGMENT_PUBLIC_ADDRESS_STRING_DATA "7c424c4f434b434841494e5f444154415f5345474d454e545f535452494e475f5055424c49435f4b45597c"
 
-
 #define XCASH_WALLET_PREFIX "XCA" // The prefix of a XCA address
 #define XCASH_SIGN_DATA_PREFIX "SigV1" // The prefix of a XCASH_DPOPS_signature for the signed data
 
@@ -41,10 +40,10 @@
 #define ID_MAX_SIZE 256 //VRF_PUBLIC_KEY_LENGTH + 64*'0' + \0 + align just in case
 #define DB_COLLECTION_DELEGATES "delegates"
 
+#define MAXIMUM_TRANSACATIONS_PER_BLOCK 500 // The maximum amount of transaction per block
 
 // Lengths
 #define IP_LENGTH 253
-
 #define BUFFER_SIZE_NETWORK_BLOCK_DATA 500
 #define BUFFER_SIZE 300000
 #define SMALL_BUFFER_SIZE 2048
