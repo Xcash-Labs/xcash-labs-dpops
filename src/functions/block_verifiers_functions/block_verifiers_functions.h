@@ -9,6 +9,7 @@
 #include "globals.h"
 #include "macro_functions.h"
 #include "vrf.h"
+#include "dpops_round.h"
 
 //int sync_all_delegates(void);
 //int start_blocks_create_vrf_data(void);
