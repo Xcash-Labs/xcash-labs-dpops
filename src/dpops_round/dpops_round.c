@@ -1,5 +1,14 @@
 #include "dpops_round.h"
 
+producer_ref_t producer_refs[] = {
+    {main_nodes_list.block_producer_public_address, main_nodes_list.block_producer_IP_address},
+    {main_nodes_list.block_producer_backup_block_verifier_1_public_address, main_nodes_list.block_producer_backup_block_verifier_1_IP_address},
+    {main_nodes_list.block_producer_backup_block_verifier_2_public_address, main_nodes_list.block_producer_backup_block_verifier_2_IP_address},
+    {main_nodes_list.block_producer_backup_block_verifier_3_public_address, main_nodes_list.block_producer_backup_block_verifier_3_IP_address},
+    {main_nodes_list.block_producer_backup_block_verifier_4_public_address, main_nodes_list.block_producer_backup_block_verifier_4_IP_address},
+    {main_nodes_list.block_producer_backup_block_verifier_5_public_address, main_nodes_list.block_producer_backup_block_verifier_5_IP_address},
+};
+
 unsigned char* get_pseudo_random_hash(size_t seed, size_t feed_size) {
     char salt_data[512];
     SHA512_CTX sha512;
