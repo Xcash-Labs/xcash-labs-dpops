@@ -1,5 +1,96 @@
 #include "dpops_round.h"
 
+bool select_block_producers(size_t round_number) {
+    (void)round_number;
+    producer_node_t producers_list[BLOCK_VERIFIERS_AMOUNT] = {0};
+    size_t num_producers = 0;
+
+    // Count valid delegates
+    for (size_t i = 0, j = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
+        if (strlen(delegates_all[i].public_address) == 0) {
+            break; // End of delegate list
+        }
+
+        // skip seed nodes from block production
+        if (is_seed_address(delegates_all[i].public_address))
+            continue;
+
+        // Skip offline nodes
+        if (strcmp(delegates_all[i].online_status, "false") == 0) {
+            continue;
+        }
+
+        // Copy to producers list
+        strcpy(producers_list[j].public_address, delegates_all[i].public_address);
+        strcpy(producers_list[j].IP_address, delegates_all[i].IP_address);
+        producers_list[j].is_online = true;
+
+        j++;
+        num_producers++;
+    }
+
+    if (num_producers == 0) {
+        WARNING_PRINT("No valid producers generated during producer selection.");
+        return false;
+    }
+
+    // Get block height
+    size_t block_height, seed_block;
+    sscanf(current_block_height, "%zu", &block_height);
+
+    // Seed block ensures same shuffle list for the day
+    seed_block = block_height / BLOCKS_PER_DAY_FIVE_MINUTE_BLOCK_TIME;
+
+    unsigned char* pseudo_random_hash = get_pseudo_random_hash(seed_block, BLOCKS_PER_DAY_FIVE_MINUTE_BLOCK_TIME);
+
+    // Initialize shuffled list
+    producer_node_t* producers_shuffle_list[BLOCKS_PER_DAY_FIVE_MINUTE_BLOCK_TIME];
+    for (size_t i = 0; i < BLOCKS_PER_DAY_FIVE_MINUTE_BLOCK_TIME; i++) {
+        size_t producer_index = i % num_producers;
+        producers_shuffle_list[i] = &producers_list[producer_index];
+    }
+
+    // Fisher-Yates Shuffle using pseudo_random_hash
+    for (size_t i = BLOCKS_PER_DAY_FIVE_MINUTE_BLOCK_TIME - 1; i > 0; i--) {
+        unsigned int j = (pseudo_random_hash[i * 2] << 8 | pseudo_random_hash[i * 2 + 1]) % (i + 1);
+        producer_node_t* temp = producers_shuffle_list[i];
+        producers_shuffle_list[i] = producers_shuffle_list[j];
+        producers_shuffle_list[j] = temp;
+    }
+
+    free(pseudo_random_hash);
+
+    // Clear current main_nodes_list
+    memset(&main_nodes_list, 0, sizeof(main_nodes_list));
+
+    // Determine producing position based on block height and current time
+    size_t producing_position = block_height % BLOCKS_PER_DAY_FIVE_MINUTE_BLOCK_TIME;
+
+    struct timeval current_time;
+    gettimeofday(&current_time, NULL);
+    size_t shift_position = (current_time.tv_sec / (BLOCK_TIME * 60)) % BLOCKS_PER_DAY_FIVE_MINUTE_BLOCK_TIME;
+
+    DEBUG_PRINT("Positions: %ld (block: %ld, shift: %ld)", producing_position + shift_position, producing_position, shift_position);
+
+    producing_position += shift_position;
+
+    // Assign producers to producer_refs
+    size_t producer_refs_size = sizeof(producer_refs) / sizeof(producer_ref_t);
+    for (size_t i = 0; i < producer_refs_size; i++) {
+        producing_position = producing_position % BLOCKS_PER_DAY_FIVE_MINUTE_BLOCK_TIME;
+
+        strcpy(producer_refs[i].public_address, producers_shuffle_list[producing_position]->public_address);
+        strcpy(producer_refs[i].IP_address, producers_shuffle_list[producing_position]->IP_address);
+
+        producing_position++;
+    }
+
+    return true;
+}
+
+
+
+
 xcash_round_result_t process_round(size_t round_number) {
     // STEP 1: Sync the databases and build the majority list
 
@@ -166,3 +257,8 @@ void start_block_production(void) {
         }
     }
 }
+
+void show_block_producer(size_t round_number) {
+    INFO_STAGE_PRINT("Block producers for block: [%s]", current_block_height);
+    INFO_PRINT("Main Block Producer: "GREEN_TEXT("%s"), address_to_node_name(producer_refs[round_number].public_address));
+};

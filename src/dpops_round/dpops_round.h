@@ -36,7 +36,6 @@ typedef enum {
 } xcash_round_result_t;
 
 bool select_block_producers(size_t round_number);
-void select_block_producers2(size_t round_number);
 void show_block_producer(size_t round_number);
 xcash_round_result_t process_round(size_t round_number);
 void start_block_production(void);
