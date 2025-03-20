@@ -28,6 +28,7 @@ extern block_verifiers_list_t next_block_verifiers_list; // The list of block ve
 extern const char* collection_names[XCASH_DB_COUNT];
 extern bool cleanup_db_before_upsert;
 extern int main_network_data_node_create_block; // 1 if the main network data node can create a block, 0 if not
+extern bool is_block_creation_stage;
 extern mongoc_client_pool_t* database_client_thread_pool;  // database
 
 extern pthread_rwlock_t rwlock;
