@@ -76,10 +76,10 @@ xcash_round_result_t process_round(size_t round_number) {
         j++;
     }
 
-return ROUND_ERROR;
-
     // STEP 3: Select block producer using deterministic algorithm
-//   select_block_producers(round_number);
+   select_block_producers(round_number);
+
+return ROUND_ERROR;
 
 //    is_block_creation_stage = true;
 //    INFO_STAGE_PRINT("Starting block production for block %s", current_block_height);
