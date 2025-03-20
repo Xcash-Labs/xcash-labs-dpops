@@ -64,20 +64,19 @@ xcash_round_result_t process_round(size_t round_number) {
         return ROUND_ERROR;
     }
 
-
-return ROUND_ERROR;
-
     // Fill block verifiers list with proven online nodes
     block_verifiers_list_t* bf = &current_block_verifiers_list;
     memset(bf, 0, sizeof(block_verifiers_list_t));
 
-//    for (size_t i = 0, j = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
-//        strcpy(bf->block_verifiers_name[j], delegates_all[i].delegate_name);
-//        strcpy(bf->block_verifiers_public_address[j], delegates_all[i].public_address);
-//        strcpy(bf->block_verifiers_public_key[j], delegates_all[i].public_key);
-//        strcpy(bf->block_verifiers_IP_address[j], delegates_all[i].IP_address);
-//        j++;
-//    }
+    for (size_t i = 0, j = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
+        strcpy(bf->block_verifiers_name[j], delegates_all[i].delegate_name);
+        strcpy(bf->block_verifiers_public_address[j], delegates_all[i].public_address);
+        strcpy(bf->block_verifiers_public_key[j], delegates_all[i].public_key);
+        strcpy(bf->block_verifiers_IP_address[j], delegates_all[i].IP_address);
+        j++;
+    }
+
+return ROUND_ERROR;
 
     // STEP 3: Select block producer using deterministic algorithm
 //   select_block_producers(round_number);
