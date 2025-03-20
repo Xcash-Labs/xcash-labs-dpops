@@ -76,6 +76,78 @@ typedef struct {
     char block_verifiers_IP_address[BLOCK_VERIFIERS_TOTAL_AMOUNT][BLOCK_VERIFIERS_IP_ADDRESS_TOTAL_LENGTH+1]; // The block verifiers IP address
 } block_verifiers_list_t;
 
+struct VRF_data { 
+    char* vrf_secret_key_data; // The VRF secret key text for round part 4
+    unsigned char* vrf_secret_key; // The VRF secret key for round part 4
+    char* vrf_public_key_data; // The VRF public key text for round part 4
+    unsigned char* vrf_public_key; // The VRF public key for round part 4
+    char* vrf_alpha_string_data; // The VRF alpha string (input string) text for round part 4
+    unsigned char* vrf_alpha_string; // The VRF alpha string (input string) for round part 4
+    char* vrf_proof_data; // The VRF proof text for round part 4
+    unsigned char* vrf_proof; // The VRF proof for round part 4
+    char* vrf_beta_string_data; // The VRF beta string (output string) text for round part 4
+    unsigned char* vrf_beta_string; // The VRF beta string (output string) for round part 4
+    char* block_verifiers_vrf_secret_key_data[BLOCK_VERIFIERS_TOTAL_AMOUNT]; // The VRF secret key text that all of the block verifiers create
+    unsigned char* block_verifiers_vrf_secret_key[BLOCK_VERIFIERS_TOTAL_AMOUNT]; // The VRF secret key that all of the block verifiers create
+    char* block_verifiers_vrf_public_key_data[BLOCK_VERIFIERS_TOTAL_AMOUNT]; // The VRF public key text that all of the block verifiers create
+    unsigned char* block_verifiers_vrf_public_key[BLOCK_VERIFIERS_TOTAL_AMOUNT]; // The VRF public key that all of the block verifiers create
+    char* block_verifiers_random_data[BLOCK_VERIFIERS_TOTAL_AMOUNT]; // The random data that all of the block verifiers create
+    char* block_blob_signature[BLOCK_VERIFIERS_TOTAL_AMOUNT]; // The signed block data text
+    char* block_blob; // The block_blob that the block producer creates to send to the consensus node
+    char* reserve_bytes_data_hash; // The reserve bytes data hash
+};
+
+struct blockchain_data {
+    char* network_version_data; // The network_version
+    size_t network_version_data_length; // The amount of characters of the network_version_data
+    char* timestamp_data; // The timestamp
+    size_t timestamp; // Variant decoded timestamp
+    size_t timestamp_data_length; // The amount of characters of the timestamp_data
+    char* previous_block_hash_data; // The previous_block_hash
+    size_t previous_block_hash_data_length; // The amount of characters of the previous_block_hash_data
+    char* nonce_data; // The nonce
+    size_t nonce_data_length; // The amount of characters of the nonce_data
+    char* block_reward_transaction_version_data; // The block_reward_transaction_version
+    size_t block_reward_transaction_version_data_length; // The amount of characters of the block_reward_transaction_version_data
+    char* unlock_block_data; // The unlock_block
+    size_t unlock_block; // Variant decoded unlock_block
+    size_t unlock_block_data_length; // The amount of characters of the unlock_block_data
+    char* block_reward_input_data; // The block_reward_input
+    size_t block_reward_input_data_length; // The amount of characters of the block_reward_input_data
+    char* vin_type_data; // The vin_type
+    size_t vin_type_data_length; // The amount of characters of the vin_type_data
+    char* block_height_data; // The block_height
+    size_t block_height; // Variant decoded block_height
+    size_t block_height_data_length; // The amount of characters of the block_height_data
+    char* block_reward_output_data; // The block_reward_output
+    size_t block_reward_output_data_length; // The amount of characters of the block_reward_output_data
+    char* block_reward_data; // The block_reward
+    size_t block_reward; // Variant decoded block_reward
+    size_t block_reward_data_length; // The amount of characters of the block_reward_data
+    char* stealth_address_output_tag_data; // The stealth_address_output_tag
+    size_t stealth_address_output_tag_data_length; // The amount of characters of the stealth_address_output_tag_data
+    char* stealth_address_output_data; // The stealth_address_output
+    size_t stealth_address_output_data_length; // The amount of characters of the stealth_address_output_data
+    char* extra_bytes_size_data; // The extra_bytes_size
+    size_t extra_bytes_size; // Variant decoded extra_bytes_size
+    size_t extra_bytes_size_data_length; // The amount of characters of the extra_bytes_size
+    char* transaction_public_key_tag_data; // The transaction_public_key_tag
+    size_t transaction_public_key_tag_data_length; // The amount of characters of the transaction_public_key_tag
+    char* transaction_public_key_data; // The transaction_public_key
+    size_t transaction_public_key_data_length; // The amount of characters of the transaction_public_key
+    char* extra_nonce_tag_data; // The extra_nonce_tag
+    size_t extra_nonce_tag_data_length; // The amount of characters of the extra_nonce_tag
+    char* reserve_bytes_size_data; // The reserve_bytes_size
+    size_t reserve_bytes_size; // Variant decoded reserve_bytes_size
+    size_t reserve_bytes_size_data_length; // The amount of characters of the reserve_bytes_size
+    struct blockchain_reserve_bytes blockchain_reserve_bytes; // A blockchain_reserve_bytes struct that holds all of the reserve bytes
+    char* ringct_version_data; // The ringct_version
+    size_t ringct_version_data_length; // The amount of characters of the ringct_version
+    char* transaction_amount_data; // The transaction_amount
+    size_t transaction_amount; // Variant decoded transaction_amount
+    size_t transaction_amount_data_length; // The amount of characters of the transaction_amount
+    char* transactions[MAXIMUM_TRANSACATIONS_PER_BLOCK]; // All of the transactions in the block.
+};
 
 typedef enum {
     XMSG_NODE_TO_BLOCK_VERIFIERS_ADD_RESERVE_PROOF,

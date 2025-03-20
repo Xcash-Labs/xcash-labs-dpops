@@ -29,6 +29,10 @@ extern const char* collection_names[XCASH_DB_COUNT];
 extern bool cleanup_db_before_upsert;
 extern int main_network_data_node_create_block; // 1 if the main network data node can create a block, 0 if not
 extern bool is_block_creation_stage;
+extern struct VRF_data VRF_data; // The list of all of the VRF data to send to the block producer.
+extern struct blockchain_data blockchain_data; // The data for a new block to be added to the network.
+
+
 extern mongoc_client_pool_t* database_client_thread_pool;  // database
 
 extern pthread_rwlock_t rwlock;
