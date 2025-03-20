@@ -1,5 +1,52 @@
 #include "dpops_round.h"
 
+unsigned char* get_pseudo_random_hash(size_t seed, size_t feed_size) {
+    char salt_data[512];
+    SHA512_CTX sha512;
+
+    // we need 2 bytes for each step
+    size_t iterations = (feed_size*2 / SHA512_DIGEST_LENGTH) +1;
+
+    unsigned char* hash_buf = calloc(iterations, SHA512_DIGEST_LENGTH);
+
+    for (size_t i = 0; i < iterations; i++)
+    {
+        snprintf(salt_data, sizeof(salt_data), "%020ld%020ld", seed, i);
+        SHA512_Init(&sha512);
+        SHA512_Update(&sha512, salt_data, (size_t)strlen((const char*)salt_data));
+        SHA512_Update(&sha512, hash_buf, (size_t)strlen((const char*)hash_buf));
+        SHA512_Final(hash_buf + i*SHA512_DIGEST_LENGTH, &sha512);
+    }
+
+    return hash_buf;
+}
+
+unsigned char* get_pseudo_random_hash(size_t seed, size_t feed_size) {
+    char salt_data[64];  // No need for 512 bytes, 64 is plenty for two size_t values formatted
+    SHA512_CTX sha512;
+
+    size_t hash_len = SHA512_DIGEST_LENGTH;
+    size_t iterations = (feed_size * 2 / hash_len) + 1;
+    size_t total_len = iterations * hash_len;
+
+    unsigned char* hash_buf = calloc(iterations, hash_len);
+    if (!hash_buf) return NULL;  // Check allocation
+
+    for (size_t i = 0; i < iterations; i++) {
+        snprintf(salt_data, sizeof(salt_data), "%020zu%020zu", seed, i);  // %zu for size_t
+
+        SHA512_Init(&sha512);
+        SHA512_Update(&sha512, salt_data, strlen(salt_data));
+        SHA512_Update(&sha512, hash_buf, i * hash_len);
+        SHA512_Final(hash_buf + i * hash_len, &sha512);
+    }
+
+    return hash_buf;
+}
+
+
+
+
 bool select_block_producers(size_t round_number) {
     (void)round_number;
     producer_node_t producers_list[BLOCK_VERIFIERS_AMOUNT] = {0};
