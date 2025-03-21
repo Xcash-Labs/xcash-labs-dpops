@@ -205,6 +205,10 @@ struct current_round_part_vote_data {
     int vote_results_invalid; // The current part of the round vote count for a invalid vote.
 };
 
+struct current_block_verifiers_majority_vote {
+    char data[BLOCK_VERIFIERS_AMOUNT][BLOCK_VERIFIERS_AMOUNT][500]; // The data for each received data from each block verifier
+};
+
 typedef enum {
     XMSG_NODE_TO_BLOCK_VERIFIERS_ADD_RESERVE_PROOF,
     XMSG_NODES_TO_BLOCK_VERIFIERS_REGISTER_DELEGATE,

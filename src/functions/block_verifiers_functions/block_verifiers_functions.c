@@ -183,7 +183,6 @@ Return: 0 if an error has occured, 1 if successfull
 ---------------------------------------------------------------------------------------------------------*/
 int block_verifiers_create_block(size_t round_number) {
   char data[BUFFER_SIZE] = {0};
-  char data2[BUFFER_SIZE] = {0};
   size_t count, count2;
   int backup_node_index = current_round_part_backup_node[0] = (char)('0' + round_number) - '0';
 
