@@ -62,15 +62,13 @@ int block_verifiers_create_block_signature(char* message)
   // Add backup node names, comma-separated
   blockchain_data.blockchain_reserve_bytes.block_producer_backup_nodes_names[0] = '\0';  // Init empty string
   for (size_t i = 0; i < 5; i++) {
-    size_t len = strnlen(current_block_verifiers_list.block_verifiers_name[block_producer_backup_settings[i]],
-                         sizeof(current_block_verifiers_list.block_verifiers_name[block_producer_backup_settings[i]]));
-    strcat(blockchain_data.blockchain_reserve_bytes.block_producer_backup_nodes_names,
-           current_block_verifiers_list.block_verifiers_name[block_producer_backup_settings[i]]);
-    if (i != 4) {
-      strcat(blockchain_data.blockchain_reserve_bytes.block_producer_backup_nodes_names, ",");
-    }
+      strcat(blockchain_data.blockchain_reserve_bytes.block_producer_backup_nodes_names,
+             current_block_verifiers_list.block_verifiers_name[block_producer_backup_settings[i]]);
+      if (i != 4) {
+          strcat(blockchain_data.blockchain_reserve_bytes.block_producer_backup_nodes_names, ",");
+      }
   }
-
+  
   // Add VRF data
   memcpy(blockchain_data.blockchain_reserve_bytes.vrf_secret_key, VRF_data.vrf_secret_key, crypto_vrf_SECRETKEYBYTES);
   memcpy(blockchain_data.blockchain_reserve_bytes.vrf_secret_key_data, VRF_data.vrf_secret_key_data, VRF_SECRET_KEY_LENGTH);
