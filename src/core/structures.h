@@ -199,6 +199,12 @@ struct blockchain_data {
     char* transactions[MAXIMUM_TRANSACATIONS_PER_BLOCK]; // All of the transactions in the block.
 };
 
+struct current_round_part_vote_data {
+    char current_vote_results[DATA_HASH_LENGTH+1]; // The SHA2-512 hash of the vote results that the block verifier calculated
+    int vote_results_valid; // The current part of the round vote count for a valid vote.
+    int vote_results_invalid; // The current part of the round vote count for a invalid vote.
+};
+
 typedef enum {
     XMSG_NODE_TO_BLOCK_VERIFIERS_ADD_RESERVE_PROOF,
     XMSG_NODES_TO_BLOCK_VERIFIERS_REGISTER_DELEGATE,

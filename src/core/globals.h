@@ -32,6 +32,9 @@ extern bool is_block_creation_stage;
 extern struct VRF_data VRF_data; // The list of all of the VRF data to send to the block producer.
 extern struct blockchain_data blockchain_data; // The data for a new block to be added to the network.
 extern char delegates_error_list[(MAXIMUM_BUFFER_SIZE_DELEGATES_NAME * 100) + 5000]; // Holds the list of delegates that did not complete a part of the round
+extern struct current_round_part_vote_data current_round_part_vote_data; // The vote data for the current part of the round
+
+
 
 
 extern mongoc_client_pool_t* database_client_thread_pool;  // database
