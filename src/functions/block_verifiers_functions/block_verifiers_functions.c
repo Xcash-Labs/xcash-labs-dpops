@@ -269,7 +269,8 @@ int block_verifiers_create_block(size_t round_number) {
 
   // Part 9 - Check overall majority
   INFO_STAGE_PRINT("Part 9 - Check overall majority for VRF data");
-  RESET_DELEGATE_ERROR_MESSAGE;
+  memset(delegates_error_list,0,sizeof(delegates_error_list)); \
+  memcpy(delegates_error_list,"The following delegates are reported as not working for this part:",66);
   count2 = 0;
   for (count = 0; count < BLOCK_VERIFIERS_AMOUNT; count++) {
       if (strncmp(VRF_data.block_verifiers_vrf_secret_key_data[count], GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_VRF_SECRET_KEY_DATA, BUFFER_SIZE) != 0)
