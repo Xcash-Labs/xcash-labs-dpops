@@ -19,7 +19,7 @@ struct blockchain_data blockchain_data;
 char delegates_error_list[(MAXIMUM_BUFFER_SIZE_DELEGATES_NAME * 100) + 5000];     // not sure if this is used    
 struct current_round_part_vote_data current_round_part_vote_data;
 struct current_block_verifiers_majority_vote current_block_verifiers_majority_vote;
-
+int replayed_round_settings = 0;
 
 
 
@@ -139,6 +139,9 @@ void init_globals(void) {
 
   server_limit_IP_address_list = (char*)calloc(15728640, sizeof(char));      // 15 MB
   server_limit_public_address_list = (char*)calloc(15728640, sizeof(char));  // 15 MB
+
+  // initialize the current_round_part_vote_data struct
+  memset(current_round_part_vote_data.current_vote_results,0,sizeof(current_round_part_vote_data.current_vote_results));
 
   // initialize the main_nodes_list struct
   memset(main_nodes_list.block_producer_public_address, 0, sizeof(main_nodes_list.block_producer_public_address));

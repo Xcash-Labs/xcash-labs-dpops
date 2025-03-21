@@ -34,7 +34,7 @@ extern struct blockchain_data blockchain_data; // The data for a new block to be
 extern char delegates_error_list[(MAXIMUM_BUFFER_SIZE_DELEGATES_NAME * 100) + 5000]; // Holds the list of delegates that did not complete a part of the round
 extern struct current_round_part_vote_data current_round_part_vote_data; // The vote data for the current part of the round
 extern struct current_block_verifiers_majority_vote current_block_verifiers_majority_vote; // The vote majority data for the current part of the round
-
+extern int replayed_round_settings; // 1 if the round is a replayed round, 0 if not
 
 
 extern mongoc_client_pool_t* database_client_thread_pool;  // database
