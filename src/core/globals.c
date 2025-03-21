@@ -16,6 +16,7 @@ int main_network_data_node_create_block = 0;
 bool is_block_creation_stage = false;
 struct VRF_data VRF_data;
 struct blockchain_data blockchain_data;
+char delegates_error_list[(MAXIMUM_BUFFER_SIZE_DELEGATES_NAME * 100) + 5000];
 
 
 mongoc_client_pool_t* database_client_thread_pool = NULL;

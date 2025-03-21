@@ -352,7 +352,8 @@ int block_verifiers_create_block(size_t round_number) {
 
   // Part 20 - Overall majority signature
   INFO_STAGE_PRINT("Part 20 - Check overall block template signature majority");
-  RESET_DELEGATE_ERROR_MESSAGE;
+  memset(delegates_error_list,0,sizeof(delegates_error_list)); \
+  memcpy(delegates_error_list,"The following delegates are reported as not working for this part:",66);
   count2 = 0;
   for (count = 0; count < BLOCK_VERIFIERS_AMOUNT; count++) {
       if (strncmp(VRF_data.block_blob_signature[count], GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_SIGNATURE, BUFFER_SIZE) != 0)
