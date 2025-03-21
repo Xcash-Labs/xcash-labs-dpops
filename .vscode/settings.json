@@ -19,6 +19,7 @@
         "network_security_functions.h": "c",
         "globals.h": "c",
         "xcash_message.h": "c",
-        "stdarg.h": "c"
+        "stdarg.h": "c",
+        "vrf_functions.h": "c"
     }
 }

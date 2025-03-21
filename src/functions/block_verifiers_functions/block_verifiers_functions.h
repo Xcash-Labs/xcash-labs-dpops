@@ -8,7 +8,7 @@
 #include "config.h"
 #include "globals.h"
 #include "macro_functions.h"
-#include "vrf.h"
+#include "VRF_functions.h"
 #include "dpops_round.h"
 
 //int sync_all_delegates(void);
