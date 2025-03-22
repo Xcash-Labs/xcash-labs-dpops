@@ -49,9 +49,9 @@
 #define TRANSACTION_LENGTH 64 // The length of a transaction
 #define CONSENSUS_NODE_NETWORK_BLOCK_NONCE "11111111" // The network block nonce used when the consensus node creates the block
 #define VARINT_DECODED_VALUE_END_4_BYTE 34359738367 // end of 4 byte length
-
-
-
+#define VARINT_DECODED_VALUE_START_7_BYTE 562949953421312 // start of 7 byte length
+#define VARINT_ENCODED_VALUE_END_7_BYTE 0xffffffffffffff7f // end of 7 byte length
+#define VARINT_DECODED_VALUE_END_1_BYTE 16383 // end of 1 byte length
 
 
 
@@ -93,8 +93,11 @@
 #define BLOCK_HASH_LENGTH 64 // The length of the block hash
 #define RANDOM_STRING_LENGTH 100 // The length of the random string
 #define XCASH_SIGN_DATA_LENGTH 93 // The length of a XCASH_DPOPS_signature for the signed data
+#define MINIMUM_BUFFER_SIZE_DELEGATES_NAME 5 // The minimum length of the block verifiers name
+#define MINIMUM_BUFFER_SIZE_DELEGATES_BACKUP_NAMES 30 // The minimum length of the block verifiers name
 
-#define BLOCK_VERIFIERS_IP_ADDRESS_TOTAL_LENGTH 100 // The maximum length of the block verifiers IP address  ????
+
+#define BLOCK_VERIFIERS_IP_ADDRESS_TOTAL_LENGTH 100 // The maximum length of the block verifiers IP address
 #define MD5_HASH_SIZE 32
 #define BLOCK_VERIFIERS_VALID_AMOUNT 3 // The amount of block verifiers that need to vote true for the part of the round to be valid
 
