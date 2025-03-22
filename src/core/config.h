@@ -33,7 +33,12 @@
 #define NETWORK_VERSION "0d0d" // The network version
 #define TIMESTAMP_LENGTH 10 // The length of the timestamp
 #define BLOCK_REWARD_INPUT "01"
-
+#define BLOCK_REWARD_TRANSACTION_VERSION "02"
+#define VIN_TYPE "ff"
+#define BLOCK_REWARD_OUTPUT "01"
+#define STEALTH_ADDRESS_OUTPUT_LENGTH 64 // The length of the stealth address output
+#define BLOCKCHAIN_RESERVED_BYTES_START "7c424c4f434b434841494e5f52455345525645445f42595445535f53544152547c"
+#define BLOCKCHAIN_RESERVED_BYTES_END "7c424c4f434b434841494e5f52455345525645445f42595445535f454e447c"
 
 #define TRANSFER_BUFFER_SIZE 4096  // Size of the buffer used for data transfer in bytes (4 KB)
 #define RESPONSE_TIMEOUT 5000  // Maximum time (in milliseconds) to wait for a response before closing the connection (5 seconds)
