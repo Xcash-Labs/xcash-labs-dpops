@@ -44,9 +44,9 @@
 #define STEALTH_ADDRESS_OUTPUT_TAG "02"
 #define TRANSACTION_PUBLIC_KEY_LENGTH 66 // The length of the transaction public key
 #define EXTRA_NONCE_TAG "02"
-
-
-
+#define TRANSACTION_PUBLIC_KEY_TAG "01"
+#define RINGCT_VERSION "00"
+#define TRANSACTION_LENGTH 64 // The length of a transaction
 
 
 #define TRANSFER_BUFFER_SIZE 4096  // Size of the buffer used for data transfer in bytes (4 KB)
