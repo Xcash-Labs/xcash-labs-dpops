@@ -52,8 +52,8 @@
 #define VARINT_DECODED_VALUE_START_7_BYTE 562949953421312 // start of 7 byte length
 #define VARINT_ENCODED_VALUE_END_7_BYTE 0xffffffffffffff7f // end of 7 byte length
 #define VARINT_DECODED_VALUE_END_1_BYTE 16383 // end of 1 byte length
-
-
+#define VARINT_DECODED_VALUE_START_6_BYTE 4398046511104 // start of 6 byte length
+#define MAXIMUM_BUFFER_SIZE_DELEGATES_BACKUP_NAMES 505 // The maximum length of the block verifiers name
 
 
 #define TRANSFER_BUFFER_SIZE 4096  // Size of the buffer used for data transfer in bytes (4 KB)
