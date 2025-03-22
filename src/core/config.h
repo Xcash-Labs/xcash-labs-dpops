@@ -6,6 +6,18 @@
 #define XCASH_DPOPS_CURRENT_VERSION "xCash Labs DPoPs V. 2.0.0"
 #define XCASH_PROOF_OF_STAKE_BLOCK_HEIGHT 2 // The start block height for X-CASH proof of stake
 
+// Blockchain
+#define XCASH_WALLET_PREFIX "XCA" // The prefix of a XCA address
+#define XCASH_TOTAL_SUPPLY 100000000000 // The total supply
+#define XCASH_PREMINE_TOTAL_SUPPLY 40000000000 // The total supply of the premine
+#define FIRST_BLOCK_MINING_REWARD 190734.863281 // The first blocks mining reward
+#define XCASH_SIGN_DATA_PREFIX "SigV1" // The prefix of a XCASH_DPOPS_signature for the signed data
+#define XCASH_EMMISION_FACTOR 524288 // The emmision factor (2^19)
+#define XCASH_DPOPS_EMMISION_FACTOR 262144 // The xcash-dpops emmision factor (2^18)
+#define BLOCKCHAIN_RESERVED_BYTES_LENGTH_TEXT "7c424c4f434b434841494e5f52455345525645445f42595445535f4c454e4754487c"
+#define BLOCKCHAIN_EXTRA_BYTES_LENGTH_TEXT "7c424c4f434b434841494e5f45585452415f42595445535f4c454e4754487c"
+
+
 // Network
 #define XCASH_DAEMON_PORT 18281 // The X-CASH Daemon RPC Port
 #define XCASH_WALLET_PORT 18285 // The X-CASH Wallet RPC Port
@@ -15,9 +27,7 @@
 #define XCASH_DPOPS_IP "127.0.0.1" // The X-CASH Wallet IP
 #define MAXIMUM_CONNECTIONS_IP_ADDRESS_OR_PUBLIC_ADDRESS 20 // The maximum connections a specific IP address or specific public address can have at one time
 #define BLOCKCHAIN_DATA_SEGMENT_PUBLIC_ADDRESS_STRING_DATA "7c424c4f434b434841494e5f444154415f5345474d454e545f535452494e475f5055424c49435f4b45597c"
-
-#define XCASH_WALLET_PREFIX "XCA" // The prefix of a XCA address
-#define XCASH_SIGN_DATA_PREFIX "SigV1" // The prefix of a XCASH_DPOPS_signature for the signed data
+#define BLOCKCHAIN_DATA_SEGMENT_STRING "7c424c4f434b434841494e5f444154415f5345474d454e545f535452494e477c"
 
 #define TRANSFER_BUFFER_SIZE 4096  // Size of the buffer used for data transfer in bytes (4 KB)
 #define RESPONSE_TIMEOUT 5000  // Maximum time (in milliseconds) to wait for a response before closing the connection (5 seconds)
