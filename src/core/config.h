@@ -47,6 +47,13 @@
 #define TRANSACTION_PUBLIC_KEY_TAG "01"
 #define RINGCT_VERSION "00"
 #define TRANSACTION_LENGTH 64 // The length of a transaction
+#define CONSENSUS_NODE_NETWORK_BLOCK_NONCE "11111111" // The network block nonce used when the consensus node creates the block
+#define VARINT_DECODED_VALUE_END_4_BYTE 34359738367 // end of 4 byte length
+
+
+
+
+
 
 
 #define TRANSFER_BUFFER_SIZE 4096  // Size of the buffer used for data transfer in bytes (4 KB)

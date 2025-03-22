@@ -1220,7 +1220,8 @@ int verify_network_block_data(const int BLOCK_VALIDATION_SIGNATURES_SETTINGS, co
     return XCASH_ERROR;
   }  
 
-  RESET_DELEGATE_ERROR_MESSAGE;
+  memset(delegates_error_list,0,sizeof(delegates_error_list)); \
+  memcpy(delegates_error_list,"The following delegates are reported as not working for this part:",66);
 
   // block_validation_node_signature
   if (BLOCK_VALIDATION_SIGNATURES_SETTINGS == 1)
