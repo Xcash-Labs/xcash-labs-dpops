@@ -26,8 +26,12 @@
 #define XCASH_WALLET_IP "127.0.0.1" // The X-CASH Wallet IP
 #define XCASH_DPOPS_IP "127.0.0.1" // The X-CASH Wallet IP
 #define MAXIMUM_CONNECTIONS_IP_ADDRESS_OR_PUBLIC_ADDRESS 20 // The maximum connections a specific IP address or specific public address can have at one time
+
+// Network block string
 #define BLOCKCHAIN_DATA_SEGMENT_PUBLIC_ADDRESS_STRING_DATA "7c424c4f434b434841494e5f444154415f5345474d454e545f535452494e475f5055424c49435f4b45597c"
 #define BLOCKCHAIN_DATA_SEGMENT_STRING "7c424c4f434b434841494e5f444154415f5345474d454e545f535452494e477c"
+#define NETWORK_VERSION "0d0d" // The network version
+
 
 #define TRANSFER_BUFFER_SIZE 4096  // Size of the buffer used for data transfer in bytes (4 KB)
 #define RESPONSE_TIMEOUT 5000  // Maximum time (in milliseconds) to wait for a response before closing the connection (5 seconds)
@@ -58,7 +62,7 @@
 #define BUFFER_SIZE 300000
 #define SMALL_BUFFER_SIZE 2048
 #define MAXIMUM_BUFFER_SIZE 52428800 // 50 MB                                   ???????????????????????????
-
+#define BITS_IN_BYTE 8 // 8 bits in 1 byte
 
 #define DATA_HASH_LENGTH 128 // The length of the SHA2-512 hash
 #define XCASH_PUBLIC_ADDR_LENGTH 98 // The length of a XCA address
