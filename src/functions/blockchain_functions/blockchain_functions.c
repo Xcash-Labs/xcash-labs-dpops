@@ -44,22 +44,62 @@ Parameters:
   varint - The varint to decode
 Return: The decoded varint
 ---------------------------------------------------------------------------------------------------------*/
-size_t varint_decode(const unsigned char* varint_bytes, size_t length) {
-  size_t result = 0;
-  size_t shift = 0;
+size_t varint_decode(size_t varint)
+{
+  // Variables
+  int length = 0;
+  size_t number = 1;
+  int byte_index = 0;
+  int bit_index = BITS_IN_BYTE - 1;
+  int start = 0;
 
-  for (size_t i = 0; i < length; i++) {
-      unsigned char byte = varint_bytes[i];
-      result |= (size_t)(byte & 0x7F) << shift;
-      if ((byte & 0x80) == 0) {
-          // MSB is 0 → last byte
-          return result;
-      }
-      shift += 7;
+  // Determine length based on varint size
+  if (varint <= 0xFF) {
+    return varint;
+  } else if (varint <= 0xFFFF) {
+    length = 2;
+  } else if (varint <= 0xFFFFFF) {
+    length = 3;
+  } else if (varint <= 0xFFFFFFFF) {
+    length = 4;
+  } else if (varint <= 0xFFFFFFFFFF) {
+    length = 5;
+  } else if (varint <= 0xFFFFFFFFFFFF) {
+    length = 6;
+  } else if (varint <= 0xFFFFFFFFFFFFFF) {
+    length = 7;
+  } else {
+    length = 8;
   }
 
-  // If all bytes have MSB = 1, invalid or too large number
-  return 0;
+  // Extract bytes (little endian)
+  unsigned char bytes[8] = {0};
+  for (int i = 0; i < length; i++) {
+    bytes[i] = (varint >> (BITS_IN_BYTE * i)) & 0xFF;
+  }
+
+  // Decode bits
+  for (int i = 0; i < length * BITS_IN_BYTE; i++) {
+    if (bit_index != (BITS_IN_BYTE - 1)) {
+      if (bytes[byte_index] & (1 << bit_index)) {
+        if (start) {
+          number = (number << 1) | 1;
+        }
+        start = 1;
+      } else {
+        if (start) {
+          number <<= 1;
+        }
+      }
+    }
+
+    if (--bit_index < 0) {
+      bit_index = BITS_IN_BYTE - 1;
+      byte_index++;
+    }
+  }
+
+  return number;
 }
 
 /*---------------------------------------------------------------------------------------------------------
