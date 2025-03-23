@@ -102,3 +102,33 @@ int VRF_sign_data(char *beta_string, char *proof, const char *data)
 
     return XCASH_OK;
 }
+
+/*---------------------------------------------------------------------------------------------------------
+Name: sign_network_block_string
+Description: Signs the network block string
+Parameters:
+  data - The signed data
+  MESSAGE - The sign_data
+  MESSAGE_SETTINGS - 1 to print the messages, otherwise 0. This is used for the testing flag to not print any 
+  success or error messages
+Return: 0 if an error has occured, 1 if successfull
+---------------------------------------------------------------------------------------------------------*/
+int sign_network_block_string(char *data, const char *MESSAGE)
+{
+  // Variables
+  char beta_string[SMALL_BUFFER_SIZE] = {0};
+  char proof[SMALL_BUFFER_SIZE] = {0};
+
+  // Sign the data using VRF
+  if (VRF_sign_data(beta_string, proof, MESSAGE) == 0)
+  {
+    ERROR_PRINT("Could not sign the network block string");
+    return XCASH_ERROR;
+  }
+
+  // Copy proof and beta string into the result
+  memcpy(data, proof, VRF_PROOF_LENGTH);
+  memcpy(data + VRF_PROOF_LENGTH, beta_string, VRF_BETA_LENGTH);
+
+  return XCASH_OK;
+}
