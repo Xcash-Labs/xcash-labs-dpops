@@ -149,4 +149,13 @@
 #define XCASH_OK 1
 #define XCASH_ERROR 0
 
-#endif // CONFIG_H_
+// ===================== Enums =====================
+typedef enum XCASH_DBS {
+    XCASH_DB_DELEGATES = 0,
+    XCASH_DB_STATISTICS = 1,
+    XCASH_DB_RESERVE_PROOFS = 2,
+    XCASH_DB_RESERVE_BYTES = 3,
+    XCASH_DB_COUNT
+} xcash_dbs_t;
+
+#endif

@@ -12,8 +12,14 @@
 #include "globals.h"
 #include "macro_functions.h" 
 
+typedef enum {
+    STATUS_ERROR,
+    STATUS_OK,
+    STATUS_PENDING,
+    STATUS_TIMEOUT,
+    STATUS_INCOMPLETE,
+} response_status_t;
 
-/*
 typedef struct client_t client_t;
 
 typedef struct {
@@ -26,7 +32,6 @@ typedef struct {
     client_t *client;
 } response_t;
 
-
 struct client_t{
     uv_tcp_t handle;
     uv_connect_t connect_req;
@@ -36,8 +41,6 @@ struct client_t{
     response_t *response;
     const char *message;
 };
-
-*/
 
 void on_close(uv_handle_t * handle);
 void on_timeout(uv_timer_t *timer);

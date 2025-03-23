@@ -3,9 +3,6 @@
 
 #include <stddef.h> 
 
-#include <time.h>
-#include <uv.h>
-
 typedef struct {
     char *block_verifiers_secret_key;
     int total_threads;
@@ -266,41 +263,5 @@ typedef enum {
     XMSG_MESSAGES_COUNT,
     XMSG_NONE = XMSG_MESSAGES_COUNT
 } xcash_msg_t;
-
-typedef enum XCASH_DBS {
-    XCASH_DB_DELEGATES = 0,
-    XCASH_DB_STATISTICS = 1,
-    XCASH_DB_RESERVE_PROOFS = 2,
-    XCASH_DB_RESERVE_BYTES = 3,
-    XCASH_DB_COUNT
-} xcash_dbs_t;
-
-typedef enum {
-    STATUS_ERROR,
-    STATUS_OK,
-    STATUS_PENDING,
-    STATUS_TIMEOUT,
-    STATUS_INCOMPLETE,
-} response_status_t;
-
-typedef struct {
-    char *host;
-    char *data;
-    size_t size;
-    time_t req_time_start; // timestamp before connection start
-    time_t req_time_end; // timestamp after connection closed
-    response_status_t status;
-    client_t *client;
-} response_t;
-
-struct client_t{
-    uv_tcp_t handle;
-    uv_connect_t connect_req;
-    uv_write_t write_req;
-    uv_timer_t timer;
-    int is_closing;
-    response_t *response;
-    const char *message;
-};
 
 #endif
