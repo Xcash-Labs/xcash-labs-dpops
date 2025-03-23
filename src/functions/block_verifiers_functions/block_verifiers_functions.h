@@ -10,6 +10,7 @@
 #include "macro_functions.h"
 #include "VRF_functions.h"
 #include "dpops_round.h"
+#include "blockchain_functions.h"
 
 //int sync_all_delegates(void);
 //int start_blocks_create_vrf_data(void);
