@@ -3,6 +3,9 @@
 
 #include <stddef.h> 
 
+#include <time.h>
+
+
 typedef struct {
     char *block_verifiers_secret_key;
     int total_threads;
