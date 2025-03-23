@@ -769,136 +769,112 @@ Return: 0 if an error has occured, 1 if successfull
 int block_verifiers_create_block_and_update_database(void)
 {
   // Variables
-  char data[BUFFER_SIZE];
-  char data2[BUFFER_SIZE];
-  char data3[BUFFER_SIZE];
+  char data[BUFFER_SIZE] = {0};
+  char data2[BUFFER_SIZE] = {0};
+  char data3[BUFFER_SIZE] = {0};
   time_t current_date_and_time;
   struct tm current_UTC_date_and_time;
   size_t count;
   size_t block_height;
-  // time_t current_time = time(NULL);
-
-  // threads
   pthread_t thread_id;
 
-  memset(data,0,sizeof(data));
-  memset(data2,0,sizeof(data2));
-  memset(data3,0,sizeof(data3));
-
-  memset(data,0,sizeof(data));
-  memset(data2,0,sizeof(data2));
-
-  // add the data hash to the network block string
+  // Add data hash to the network block string
   INFO_STAGE_PRINT("Part 26 - Add the data hash of the reserve bytes to the block");
-
-  if (add_data_hash_to_network_block_string(VRF_data.block_blob,data) == 0)
+  if (add_data_hash_to_network_block_string(VRF_data.block_blob, data) == 0)
   {
     ERROR_PRINT("Could not add the data hash of the reserve bytes to the block");
     return XCASH_ERROR;
   }
-
   INFO_PRINT_STATUS_OK("Added the data hash of the reserve bytes to the block");
 
+  // Update reserve bytes database
   INFO_STAGE_PRINT("Part 27 - Add the reserve bytes to the database");
-  
-  // update the reserve bytes database
+  get_reserve_bytes_database(count, 0);
 
-  get_reserve_bytes_database(count,0); 
+  snprintf(data2, sizeof(data2),
+           "{\"block_height\":\"%s\",\"reserve_bytes_data_hash\":\"%s\",\"reserve_bytes\":\"%s\"}",
+           current_block_height, VRF_data.reserve_bytes_data_hash, VRF_data.block_blob);
 
-  memset(data2,0,sizeof(data2));
-  memcpy(data2,"{\"block_height\":\"",17);
-  memcpy(data2+17,current_block_height,strnlen(current_block_height,sizeof(current_block_height)));
-  memcpy(data2+strlen(data2),"\",\"reserve_bytes_data_hash\":\"",29);
-  memcpy(data2+strlen(data2),VRF_data.reserve_bytes_data_hash,DATA_HASH_LENGTH);
-  memcpy(data2+strlen(data2),"\",\"reserve_bytes\":\"",19);
-  memcpy(data2+strlen(data2),VRF_data.block_blob,strnlen(VRF_data.block_blob,sizeof(data2)));
-  memcpy(data2+strlen(data2),"\"}",2);
+  snprintf(data3, sizeof(data3), "reserve_bytes_%zu", count);
 
-  // add the network block string to the database
-  memcpy(data3,"reserve_bytes_",14);
-  snprintf(data3+14,MAXIMUM_NUMBER_SIZE,"%zu",count);
-  // FIXME replace to upsert function
-
-  if (upsert_json_to_db(database_name,XCASH_DB_RESERVE_BYTES, count, data2, false) == XCASH_ERROR){
+  if (upsert_json_to_db(database_name, XCASH_DB_RESERVE_BYTES, count, data2, false) == XCASH_ERROR)
+  {
     ERROR_PRINT("Could not add the reserve bytes to the database");
     return XCASH_ERROR;
-  };
-
+  }
   INFO_PRINT_STATUS_OK("Added the reserve bytes to the database");
-  
-  if (strncmp(current_round_part_backup_node,"0",1) == 0)
+
+  // Handle reserve proofs check
+  if (strncmp(current_round_part_backup_node, "0", 1) == 0)
   {
+    sscanf(current_block_height, "%zu", &block_height);
+    get_current_UTC_time(current_date_and_time, current_UTC_date_and_time);
 
-    sscanf(current_block_height,"%zu", &block_height);
-
-    // get the current date and time
-    get_current_UTC_time(current_date_and_time,current_UTC_date_and_time);
     if (block_height >= BLOCK_HEIGHT_SF_V_1_0_1 && current_UTC_date_and_time.tm_min > 30 && current_UTC_date_and_time.tm_min < 35)
     {
-      // start the reserve proofs delegate check
       INFO_STAGE_PRINT("Part 28 - Starting the reserve proofs delegate check");
       reserve_proofs_delegate_check();
       INFO_PRINT_STATUS_OK("The reserve proofs delegate check is finished");
     }
     else
     {
-      // start the reserve proofs timer
       INFO_STAGE_PRINT("Part 28 - Check for invalid reserve proofs and wait for the block producer to submit the block to the network");
       pthread_create(&thread_id, NULL, &check_reserve_proofs_timer_thread, NULL);
       pthread_detach(thread_id);
     }
   }
 
-  if (sync_block_verifiers_minutes_and_seconds((BLOCK_TIME -1),0) == XCASH_ERROR){
-      return XCASH_ERROR;
+  if (sync_block_verifiers_minutes_and_seconds((BLOCK_TIME - 1), 0) == XCASH_ERROR)
+  {
+    return XCASH_ERROR;
   }
 
-  // sync_block_verifiers_minutes_and_seconds((BLOCK_TIME-1),SUBMIT_NETWORK_BLOCK_TIME_SECONDS);
-
-  // let the block producer try to submit the block first, then loop through all of the network data nodes to make sure it was submitted
+  // Submit block template if this node is the block producer or backup producer
   if ((strncmp(current_round_part_backup_node, "0", 1) == 0 &&
        strncmp(main_nodes_list.block_producer_public_address, xcash_wallet_public_address, XCASH_WALLET_LENGTH) == 0) ||
       (strncmp(current_round_part_backup_node, "1", 1) == 0 &&
-       strncmp(main_nodes_list.block_producer_backup_block_verifier_1_public_address, xcash_wallet_public_address,
-               XCASH_WALLET_LENGTH) == 0) ||
+       strncmp(main_nodes_list.block_producer_backup_block_verifier_1_public_address, xcash_wallet_public_address, XCASH_WALLET_LENGTH) == 0) ||
       (strncmp(current_round_part_backup_node, "2", 1) == 0 &&
-       strncmp(main_nodes_list.block_producer_backup_block_verifier_2_public_address, xcash_wallet_public_address,
-               XCASH_WALLET_LENGTH) == 0) ||
+       strncmp(main_nodes_list.block_producer_backup_block_verifier_2_public_address, xcash_wallet_public_address, XCASH_WALLET_LENGTH) == 0) ||
       (strncmp(current_round_part_backup_node, "3", 1) == 0 &&
-       strncmp(main_nodes_list.block_producer_backup_block_verifier_3_public_address, xcash_wallet_public_address,
-               XCASH_WALLET_LENGTH) == 0) ||
+       strncmp(main_nodes_list.block_producer_backup_block_verifier_3_public_address, xcash_wallet_public_address, XCASH_WALLET_LENGTH) == 0) ||
       (strncmp(current_round_part_backup_node, "4", 1) == 0 &&
-       strncmp(main_nodes_list.block_producer_backup_block_verifier_4_public_address, xcash_wallet_public_address,
-               XCASH_WALLET_LENGTH) == 0) ||
+       strncmp(main_nodes_list.block_producer_backup_block_verifier_4_public_address, xcash_wallet_public_address, XCASH_WALLET_LENGTH) == 0) ||
       (strncmp(current_round_part_backup_node, "5", 1) == 0 &&
-       strncmp(main_nodes_list.block_producer_backup_block_verifier_5_public_address, xcash_wallet_public_address,
-               XCASH_WALLET_LENGTH) == 0)) {
-      INFO_STAGE_PRINT("Sending the new block to blockchain");
-
-      if (submit_block_template(data)!= XCASH_OK) {
-        WARNING_PRINT("Sending the new block to blockchain returned error");
-      }else{
-        INFO_PRINT_STATUS_OK("New block sent to blockchain successfully");
-      }
+       strncmp(main_nodes_list.block_producer_backup_block_verifier_5_public_address, xcash_wallet_public_address, XCASH_WALLET_LENGTH) == 0))
+  {
+    INFO_STAGE_PRINT("Sending the new block to blockchain");
+    if (submit_block_template(data) != XCASH_OK)
+    {
+      WARNING_PRINT("Sending the new block to blockchain returned error");
+    }
+    else
+    {
+      INFO_PRINT_STATUS_OK("New block sent to blockchain successfully");
+    }
   }
+
   sleep(BLOCK_VERIFIERS_SETTINGS);
 
-  // TODO there is a place where we're related on SEED nodes to store created block
-  for (count = 0; network_nodes[count].seed_public_address != NULL; count++) 
+  // Ensure seed nodes also submit the block
+  for (count = 0; network_nodes[count].seed_public_address != NULL; count++)
   {
-    if (strncmp(network_nodes[count].seed_public_address, xcash_wallet_public_address, XCASH_WALLET_LENGTH) == 0) 
+    if (strncmp(network_nodes[count].seed_public_address, xcash_wallet_public_address, XCASH_WALLET_LENGTH) == 0)
     {
       INFO_STAGE_PRINT("Sending the new block to blockchain");
-      if (submit_block_template(data) != XCASH_OK) {
+      if (submit_block_template(data) != XCASH_OK)
+      {
         WARNING_PRINT("Sending the new block to blockchain returned error");
-      } else {
+      }
+      else
+      {
         INFO_PRINT_STATUS_OK("New block sent to blockchain successfully");
       }
     }
   }
 
   INFO_STAGE_PRINT("Waiting for block propagation...");
-  sync_block_verifiers_minutes_and_seconds((BLOCK_TIME -1),40);
+  sync_block_verifiers_minutes_and_seconds((BLOCK_TIME - 1), 40);
 
   return XCASH_OK;
 }
