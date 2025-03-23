@@ -168,6 +168,6 @@ int submit_block_template(const char* DATA)
   memcpy(message+61,DATA,DATA_LENGTH);
   memcpy(message+61+DATA_LENGTH,"\"]}",3);
 
-  send_http_request(data,XCASH_daemon_IP_address,"/json_rpc",XCASH_DAEMON_PORT,"POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH,message,SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS);
+  send_http_request(data,XCASH_DAEMON_IP,"/json_rpc",XCASH_DAEMON_PORT,"POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH,message,SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS);
   return XCASH_OK;
 }
