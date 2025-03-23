@@ -776,7 +776,6 @@ int block_verifiers_create_block_and_update_database(void)
   struct tm current_UTC_date_and_time;
   size_t count;
   size_t block_height;
-  pthread_t thread_id;
 
   // Add data hash to the network block string
   INFO_STAGE_PRINT("Part 26 - Add the data hash of the reserve bytes to the block");
