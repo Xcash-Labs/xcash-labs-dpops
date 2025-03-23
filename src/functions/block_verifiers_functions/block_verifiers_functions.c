@@ -612,7 +612,7 @@ int block_verifiers_create_VRF_data(void)
   size_t count, count2, counter;
 
   // Initialize vrf_alpha_string
-  memset(VRF_data.vrf_alpha_string, 0, sizeof(VRF_data.vrf_alpha_string));
+  memset(VRF_data.vrf_alpha_string, 0, strlen((const char*)VRF_data.vrf_alpha_string));
   memcpy(VRF_data.vrf_alpha_string, previous_block_hash, BLOCK_HASH_LENGTH);
 
   // Append block verifiers random data or placeholder
