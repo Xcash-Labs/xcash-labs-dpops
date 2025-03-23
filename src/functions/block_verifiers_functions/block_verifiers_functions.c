@@ -884,16 +884,14 @@ int block_verifiers_create_block_and_update_database(void)
   sleep(BLOCK_VERIFIERS_SETTINGS);
 
   // TODO there is a place where we're related on SEED nodes to store created block
-
-  // if we're the seed node, we store block on our side
-  for (count = 0; count < NETWORK_DATA_NODES_AMOUNT; count++)
+  for (count = 0; network_nodes[count].seed_public_address != NULL; count++) 
   {
-    if (strncmp(network_data_nodes_list.network_data_nodes_public_address[count],xcash_wallet_public_address,XCASH_WALLET_LENGTH) == 0)
+    if (strncmp(network_nodes[count].seed_public_address, xcash_wallet_public_address, XCASH_WALLET_LENGTH) == 0) 
     {
       INFO_STAGE_PRINT("Sending the new block to blockchain");
-      if (submit_block_template(data)!= XCASH_OK) {
+      if (submit_block_template(data) != XCASH_OK) {
         WARNING_PRINT("Sending the new block to blockchain returned error");
-      }else{
+      } else {
         INFO_PRINT_STATUS_OK("New block sent to blockchain successfully");
       }
     }
