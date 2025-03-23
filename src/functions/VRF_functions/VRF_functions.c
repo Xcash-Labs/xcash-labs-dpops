@@ -132,3 +132,44 @@ int sign_network_block_string(char *data, const char *MESSAGE)
 
   return XCASH_OK;
 }
+
+/*---------------------------------------------------------------------------------------------------------
+Name: VRF_data_verify
+Description: Verifies data
+Parameters:
+  PUBLIC_ADDRESS - The public address
+  DATA_SIGNATURE - The data signature
+  DATA - The data
+Return: 0 if an error has occured, 1 if successfull
+---------------------------------------------------------------------------------------------------------*/
+int VRF_data_verify(const char* BLOCK_VERIFIERS_PUBLIC_KEY, const char* BLOCK_VERIFIERS_DATA_SIGNATURE, const char* DATA)
+{
+  // Variables
+  unsigned char public_key_data[crypto_vrf_PUBLICKEYBYTES] = {0};
+  unsigned char proof_data[crypto_vrf_PROOFBYTES] = {0};
+  unsigned char beta_string_data[crypto_vrf_OUTPUTBYTES] = {0};
+  char hex_byte[3] = {0}; // Holds two hex chars + null terminator
+  int i;
+
+  // Convert public key hex string to bytes
+  for (i = 0; i < VRF_PUBLIC_KEY_LENGTH; i += 2) {
+    memcpy(hex_byte, &BLOCK_VERIFIERS_PUBLIC_KEY[i], 2);
+    public_key_data[i / 2] = (unsigned char)strtol(hex_byte, NULL, 16);
+  }
+
+  // Convert proof hex string to bytes
+  for (i = 0; i < VRF_PROOF_LENGTH; i += 2) {
+    memcpy(hex_byte, &BLOCK_VERIFIERS_DATA_SIGNATURE[i], 2);
+    proof_data[i / 2] = (unsigned char)strtol(hex_byte, NULL, 16);
+  }
+
+  // Convert beta string hex to bytes
+  for (i = 0; i < VRF_BETA_LENGTH; i += 2) {
+    memcpy(hex_byte, &BLOCK_VERIFIERS_DATA_SIGNATURE[VRF_PROOF_LENGTH + i], 2);
+    beta_string_data[i / 2] = (unsigned char)strtol(hex_byte, NULL, 16);
+  }
+
+  // Verify
+  return crypto_vrf_verify(beta_string_data, public_key_data, proof_data,
+    (const unsigned char*)DATA, (unsigned long long)strlen(DATA)) == 0 ? XCASH_OK : XCASH_ERROR;
+}
