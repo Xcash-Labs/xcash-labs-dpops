@@ -9,7 +9,7 @@
 #include "globals.h"
 #include "macro_functions.h"
 #include "VRF_functions.h"
-#include "dpops_round.h"
+#include "xcash_round.h"
 #include "blockchain_functions.h"
 
 //int sync_all_delegates(void);

@@ -1,5 +1,5 @@
-#ifndef DPOPS_ROUND_H
-#define DPOPS_ROUND_H
+#ifndef XCASH_ROUND_H
+#define XCASH_ROUND_H
 
 #include <stdbool.h>
 #include <time.h> 

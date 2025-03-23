@@ -1,4 +1,4 @@
-#include "dpops_round.h"
+#include "xcash_round.h"
 
 producer_ref_t producer_refs[] = {
     {main_nodes_list.block_producer_public_address, main_nodes_list.block_producer_IP_address},
