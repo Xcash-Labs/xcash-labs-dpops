@@ -789,7 +789,7 @@ int block_verifiers_create_block_and_update_database(void)
 
   // Update reserve bytes database
   INFO_STAGE_PRINT("Part 27 - Add the reserve bytes to the database");
-  get_reserve_bytes_database(count, 0);
+  get_reserve_bytes_database(&count, 0);
 
   snprintf(data2, sizeof(data2),
            "{\"block_height\":\"%s\",\"reserve_bytes_data_hash\":\"%s\",\"reserve_bytes\":\"%s\"}",
