@@ -139,3 +139,35 @@ int get_block_template(char *result)
   ERROR_PRINT("Could not create the block template");
   return XCASH_ERROR;
 }
+
+/*---------------------------------------------------------------------------------------------------------
+Name: submit_block_template
+Description: Adds a network block to the network
+Parameters:
+  DATA - The block_blob
+Return: 0 if an error has occured, 1 if successfull
+---------------------------------------------------------------------------------------------------------*/
+int submit_block_template(const char* DATA)
+{
+  DEBUG_PRINT("Block template: %s", DATA);
+
+  // Constants
+  const char* HTTP_HEADERS[] = {"Content-Type: application/json","Accept: application/json"}; 
+  const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS)/sizeof(HTTP_HEADERS[0]);
+  const size_t DATA_LENGTH = strnlen(DATA,BUFFER_SIZE);
+
+  // Variables
+  char data[BUFFER_SIZE];
+  char message[BUFFER_SIZE];
+  
+  memset(data,0,sizeof(data));
+  memset(message,0,sizeof(message));
+
+  // create the message
+  memcpy(message,"{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"submit_block\",\"params\":[\"",61);
+  memcpy(message+61,DATA,DATA_LENGTH);
+  memcpy(message+61+DATA_LENGTH,"\"]}",3);
+
+  send_http_request(data,XCASH_daemon_IP_address,"/json_rpc",XCASH_DAEMON_PORT,"POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH,message,SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS);
+  return XCASH_OK;
+}
