@@ -781,14 +781,6 @@ int block_verifiers_create_block_and_update_database(void)
   // threads
   pthread_t thread_id;
 
-  // define macros
-  #define BLOCK_VERIFIERS_CREATE_BLOCK_TIMEOUT_SETTINGS 5 // The time to wait to check if the block was created
-  #define BLOCK_VERIFIERS_CREATE_BLOCK_AND_UPDATE_DATABASES_ERROR(settings) \
-  memcpy(error_message.function[error_message.total],"block_verifiers_create_block_and_update_database",48); \
-  memcpy(error_message.data[error_message.total],settings,sizeof(settings)-1); \
-  error_message.total++; \
-  return 0; 
-
   memset(data,0,sizeof(data));
   memset(data2,0,sizeof(data2));
   memset(data3,0,sizeof(data3));
@@ -801,7 +793,8 @@ int block_verifiers_create_block_and_update_database(void)
 
   if (add_data_hash_to_network_block_string(VRF_data.block_blob,data) == 0)
   {
-    BLOCK_VERIFIERS_CREATE_BLOCK_AND_UPDATE_DATABASES_ERROR("Could not add the data hash of the reserve bytes to the block");
+    ERROR_PRINT("Could not add the data hash of the reserve bytes to the block");
+    return XCASH_ERROR;
   }
 
   INFO_PRINT_STATUS_OK("Added the data hash of the reserve bytes to the block");
@@ -906,12 +899,8 @@ int block_verifiers_create_block_and_update_database(void)
     }
   }
 
-
   INFO_STAGE_PRINT("Waiting for block propagation...");
   sync_block_verifiers_minutes_and_seconds((BLOCK_TIME -1),40);
 
   return XCASH_OK;
-
-  #undef BLOCK_VERIFIERS_CREATE_BLOCK_TIMEOUT_SETTINGS
-  #undef BLOCK_VERIFIERS_CREATE_BLOCK_AND_UPDATE_DATABASES_ERROR
 }

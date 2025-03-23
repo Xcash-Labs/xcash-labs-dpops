@@ -148,7 +148,7 @@
 #define BLOCK_VERIFIERS_IP_ADDRESS_TOTAL_LENGTH 100
 #define MINIMUM_BYTE_RANGE 1 // The minimum byte range to use when calculating the next block producer
 #define MAXIMUM_BYTE_RANGE 250 // The maximum byte range to use when calculating the next block producer
-
+#define BLOCK_VERIFIERS_CREATE_BLOCK_TIMEOUT_SETTINGS 5 // The time to wait to check if the block was created
 
 // ===================== Constants =====================
 #define ALPHANUM_STRING "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
