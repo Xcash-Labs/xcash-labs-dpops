@@ -185,8 +185,10 @@ int block_verifiers_create_block(size_t round_number) {
   int backup_node_index = current_round_part_backup_node[0] = (char)('0' + round_number) - '0';
 
   // Clear all VRF data
+  pthread_mutex_lock(&majority_vote_mutex);
   memset(&VRF_data, 0, sizeof(VRF_data));
   memset(&current_block_verifiers_majority_vote, 0, sizeof(current_block_verifiers_majority_vote));
+  pthread_mutex_unlock(&majority_vote_mutex);
 
   // Initial sync
   INFO_STAGE_PRINT("Waiting for block synchronization start time...");
@@ -497,4 +499,102 @@ int block_verifiers_create_VRF_secret_key_and_VRF_public_key(char* message)
   } 
 
   return XCASH_OK;
+}
+
+/*---------------------------------------------------------------------------------------------------------
+Name: block_verifiers_create_vote_majority_results
+Description: The block verifiers will create the vote majority results
+Parameters:
+  result - The result
+  SETTINGS - The data settings
+---------------------------------------------------------------------------------------------------------*/
+void block_verifiers_create_vote_majority_results(char *result, const int SETTINGS)
+{
+  const char *MESSAGE_HEADER = "{\r\n \"message_settings\": \"NODES_TO_NODES_VOTE_MAJORITY_RESULTS\",\r\n ";
+  const char *VOTE_KEY_PREFIX = "\"vote_data_";
+  const char *VOTE_KEY_SUFFIX = "\": \"";
+  const char *VOTE_ENTRY_SUFFIX = "\",\r\n ";
+  
+  size_t offset = 0;
+  int count, count2;
+
+  // Clear result buffer
+  memset(result, 0, BUFFER_SIZE);
+
+  // reset the current_block_verifiers_majority_vote
+  pthread_mutex_lock(&majority_vote_mutex);
+  for (count = 0; count < BLOCK_VERIFIERS_AMOUNT; count++) {
+    for (count2 = 0; count2 < BLOCK_VERIFIERS_AMOUNT; count2++) {
+      memset(current_block_verifiers_majority_vote.data[count][count2], 0, sizeof(current_block_verifiers_majority_vote.data[count][count2]));
+    }
+  }
+  pthread_mutex_unlock(&majority_vote_mutex);
+
+  // Add message header
+  memcpy(result, MESSAGE_HEADER, strlen(MESSAGE_HEADER));
+  offset = strlen(MESSAGE_HEADER);
+
+  // Loop through block verifiers
+  for (count = 0; count < BLOCK_VERIFIERS_AMOUNT; count++)
+  {
+    offset += snprintf(result + offset, BUFFER_SIZE - offset, "%s%d%s", VOTE_KEY_PREFIX, count + 1, VOTE_KEY_SUFFIX);
+
+    if (SETTINGS == 0)
+    {
+      if (strlen(VRF_data.block_verifiers_vrf_secret_key_data[count]) == VRF_SECRET_KEY_LENGTH &&
+          strlen(VRF_data.block_verifiers_vrf_public_key_data[count]) == VRF_PUBLIC_KEY_LENGTH &&
+          strlen(VRF_data.block_verifiers_random_data[count]) == RANDOM_STRING_LENGTH)
+      {
+        memcpy(result + offset, VRF_data.block_verifiers_vrf_secret_key_data[count], VRF_SECRET_KEY_LENGTH);
+        offset += VRF_SECRET_KEY_LENGTH;
+        memcpy(result + offset, VRF_data.block_verifiers_vrf_public_key_data[count], VRF_PUBLIC_KEY_LENGTH);
+        offset += VRF_PUBLIC_KEY_LENGTH;
+        memcpy(result + offset, VRF_data.block_verifiers_random_data[count], RANDOM_STRING_LENGTH);
+        offset += RANDOM_STRING_LENGTH;
+      }
+      else
+      {
+        memcpy(result + offset, BLOCK_VERIFIER_MAJORITY_VRF_DATA_TEMPLATE, strlen(BLOCK_VERIFIER_MAJORITY_VRF_DATA_TEMPLATE));
+        offset += strlen(BLOCK_VERIFIER_MAJORITY_VRF_DATA_TEMPLATE);
+      }
+    }
+    else
+    {
+      if (strlen(VRF_data.block_blob_signature[count]) == VRF_PROOF_LENGTH + VRF_BETA_LENGTH)
+      {
+        memcpy(result + offset, VRF_data.block_blob_signature[count], VRF_PROOF_LENGTH + VRF_BETA_LENGTH);
+        offset += VRF_PROOF_LENGTH + VRF_BETA_LENGTH;
+      }
+      else
+      {
+        memcpy(result + offset, BLOCK_VERIFIER_MAJORITY_BLOCK_VERIFIERS_SIGNATURE_TEMPLATE, strlen(BLOCK_VERIFIER_MAJORITY_BLOCK_VERIFIERS_SIGNATURE_TEMPLATE));
+        offset += strlen(BLOCK_VERIFIER_MAJORITY_BLOCK_VERIFIERS_SIGNATURE_TEMPLATE);
+      }
+    }
+
+    memcpy(result + offset, VOTE_ENTRY_SUFFIX, strlen(VOTE_ENTRY_SUFFIX));
+    offset += strlen(VOTE_ENTRY_SUFFIX);
+  }
+
+  // Replace the last comma with closing bracket
+  result[offset - 3] = '}';
+  result[offset - 2] = '\0';
+
+  // Add to current_block_verifiers_majority_vote
+  for (count = 0; count < BLOCK_VERIFIERS_AMOUNT; count++)
+  {
+    if (strncmp(current_block_verifiers_list.block_verifiers_public_address[count], xcash_wallet_public_address, XCASH_WALLET_LENGTH) == 0)
+    {
+      break;
+    }
+  }
+  pthread_mutex_lock(&majority_vote_mutex);
+  for (count2 = 0; count2 < BLOCK_VERIFIERS_AMOUNT; count2++)
+  {
+    memcpy(current_block_verifiers_majority_vote.data[count][count2], VRF_data.block_verifiers_vrf_secret_key_data[count2], VRF_SECRET_KEY_LENGTH);
+    memcpy(current_block_verifiers_majority_vote.data[count][count2] + VRF_SECRET_KEY_LENGTH, VRF_data.block_verifiers_vrf_public_key_data[count2], VRF_PUBLIC_KEY_LENGTH);
+    memcpy(current_block_verifiers_majority_vote.data[count][count2] + VRF_SECRET_KEY_LENGTH + VRF_PUBLIC_KEY_LENGTH, VRF_data.block_verifiers_random_data[count2], RANDOM_STRING_LENGTH);
+  }
+  pthread_mutex_unlock(&majority_vote_mutex);
+  return;
 }

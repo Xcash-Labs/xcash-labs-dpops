@@ -36,6 +36,7 @@ pthread_mutex_t invalid_reserve_proof_lock;
 pthread_mutex_t database_data_IP_address_lock;
 pthread_mutex_t update_current_block_height_lock;
 pthread_mutex_t hash_mutex = PTHREAD_MUTEX_INITIALIZER;
+ptherad_mutex_t majority_vote_lock = PTHREAD_MUTEX_INITIALIZER;
 
 const char* collection_names[XCASH_DB_COUNT] = {"delegates", "statistics", "reserve_proofs", "reserve_bytes"};
 bool cleanup_db_before_upsert = false;  // delete db before put content. make sure we have exact copy during initial db syncing

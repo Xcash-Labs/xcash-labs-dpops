@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
+#include <pthread.h>
 #include "config.h"
 #include "globals.h"
 #include "macro_functions.h"
@@ -13,7 +13,6 @@
 #include "blockchain_functions.h"
 #include "xcash_block.h"
 
-
 //int sync_all_delegates(void);
 //int start_blocks_create_vrf_data(void);
 //int start_blocks_create_data(char* message, char* network_block_string);
@@ -21,7 +20,7 @@
 int block_verifiers_create_VRF_secret_key_and_VRF_public_key(char* message);
 //int block_verifiers_create_VRF_data(void);
 int block_verifiers_create_block_signature(char* message);
-//void block_verifiers_create_vote_majority_results(char *result, const int SETTINGS);
+void block_verifiers_create_vote_majority_results(char *result, const int SETTINGS);
 //int block_verifiers_calculate_vote_majority_results(const int SETTINGS);
 //int block_verifiers_create_vote_results(char* message);
 //int block_verifiers_create_block_and_update_database(void);
