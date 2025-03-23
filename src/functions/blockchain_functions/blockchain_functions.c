@@ -572,7 +572,7 @@ int network_block_string_to_blockchain_data(const char* DATA, const char* BLOCK_
     memcpy(blockchain_data.transactions[number],&DATA[count-TRANSACTION_LENGTH],TRANSACTION_LENGTH);
   }
 
-  return XCASH_OK
+  return XCASH_OK;
 }
 
 /*---------------------------------------------------------------------------------------------------------
