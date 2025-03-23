@@ -429,3 +429,72 @@ int sync_block_verifiers_minutes_and_seconds(const int MINUTES, const int SECOND
 
   return XCASH_OK;
 }
+
+/*---------------------------------------------------------------------------------------------------------
+Name: block_verifiers_create_VRF_secret_key_and_VRF_public_key
+Description: The block verifiers will create a VRF secret key and a VRF public key
+Parameters:
+  message - The message to send to the block verifiers
+Return: 0 if an error has occured, 1 if successfull
+---------------------------------------------------------------------------------------------------------*/
+int block_verifiers_create_VRF_secret_key_and_VRF_public_key(char* message)
+{
+  // Variables
+  char data[SMALL_BUFFER_SIZE];
+  size_t count;
+  size_t counter;
+
+   memset(data,0,sizeof(data));
+  
+  // create a random VRF public key and secret key
+  if (create_random_VRF_keys(VRF_data.vrf_public_key,VRF_data.vrf_secret_key) != 1 || crypto_vrf_is_valid_key((const unsigned char*)VRF_data.vrf_public_key) != 1)
+  {
+    ERROR_PRINT("Could not create the VRF secret key or VRF public key for the VRF data");
+    return XCASH_ERROR;
+  }  
+
+  // convert the VRF secret key to hexadecimal
+  for (count = 0, counter = 0; count < crypto_vrf_SECRETKEYBYTES; count++, counter += 2)
+  {
+    snprintf(VRF_data.vrf_secret_key_data+counter,BUFFER_SIZE_NETWORK_BLOCK_DATA-1,"%02x",VRF_data.vrf_secret_key[count] & 0xFF);
+  }
+
+  // convert the VRF public key to hexadecimal
+  for (count = 0, counter = 0; count < crypto_vrf_PUBLICKEYBYTES; count++, counter += 2)
+  {
+    snprintf(VRF_data.vrf_public_key_data+counter,BUFFER_SIZE_NETWORK_BLOCK_DATA-1,"%02x",VRF_data.vrf_public_key[count] & 0xFF);
+  } 
+
+  // create the message
+  memset(message,0,strlen(message));
+  memcpy(message,"{\r\n \"message_settings\": \"BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_VRF_DATA\",\r\n \"vrf_secret_key\": \"",92);
+  memcpy(message+92,VRF_data.vrf_secret_key_data,VRF_SECRET_KEY_LENGTH);
+  memcpy(message+220,"\",\r\n \"vrf_public_key\": \"",24);
+  memcpy(message+244,VRF_data.vrf_public_key_data,VRF_PUBLIC_KEY_LENGTH);
+  memcpy(message+308,"\",\r\n \"random_data\": \"",21);
+  
+  // create random data to use in the alpha string of the VRF data
+  if (random_string(data,RANDOM_STRING_LENGTH) == 0)
+  {
+    ERROR_PRINT("Could not create random data for the VRF data");
+    return XCASH_ERROR;
+  }
+
+  memcpy(message+329,data,RANDOM_STRING_LENGTH);
+  memcpy(message+429,"\",\r\n}",5);
+
+  // add the VRF data to the block verifiers VRF data copy
+  for (count = 0; count < BLOCK_VERIFIERS_AMOUNT; count++)
+  {
+    if (strncmp(current_block_verifiers_list.block_verifiers_public_address[count],xcash_wallet_public_address,XCASH_WALLET_LENGTH) == 0)
+    {        
+      memcpy(VRF_data.block_verifiers_vrf_secret_key[count],VRF_data.vrf_secret_key,crypto_vrf_SECRETKEYBYTES);
+      memcpy(VRF_data.block_verifiers_vrf_secret_key_data[count],VRF_data.vrf_secret_key_data,VRF_SECRET_KEY_LENGTH);
+      memcpy(VRF_data.block_verifiers_vrf_public_key[count],VRF_data.vrf_public_key,crypto_vrf_PUBLICKEYBYTES);
+      memcpy(VRF_data.block_verifiers_vrf_public_key_data[count],VRF_data.vrf_public_key_data,VRF_PUBLIC_KEY_LENGTH);
+      memcpy(VRF_data.block_verifiers_random_data[count],data,RANDOM_STRING_LENGTH);
+    }
+  } 
+
+  return XCASH_OK;
+}
