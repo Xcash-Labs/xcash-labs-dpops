@@ -90,3 +90,52 @@ int get_previous_block_hash(char *result)
     ERROR_PRINT("Could not get the previous block hash after multiple attempts.");
     return XCASH_ERROR;
 }
+
+/*---------------------------------------------------------------------------------------------------------
+Name: get_block_template
+Description: Gets the block template for creating a new block
+Parameters:
+  result - The block template
+Return: 0 if an error has occured, 1 if successfull
+---------------------------------------------------------------------------------------------------------*/
+int get_block_template(char *result)
+{
+  // Constants
+  const char* HTTP_HEADERS[] = {"Content-Type: application/json", "Accept: application/json"}; 
+  const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0]);
+  const char* RPC_ENDPOINT = "/json_rpc";
+  const char* RPC_METHOD = "POST";
+  const char* JSON_REQUEST_PREFIX = "{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"get_block_template\",\"params\":{\"wallet_address\":\"";
+  const char* JSON_REQUEST_SUFFIX = "\",\"reserve_size\":128}";
+
+  // Variables
+  char message[SMALL_BUFFER_SIZE];
+  char response[BUFFER_SIZE];
+  int retry_attempts = 2;
+
+  for (int attempt = 0; attempt < retry_attempts; attempt++) 
+  {
+    // Clear buffers
+    memset(message, 0, sizeof(message));
+    memset(response, 0, sizeof(response));
+
+    // Compose JSON request
+    snprintf(message, sizeof(message), "%s%s%s", JSON_REQUEST_PREFIX, xcash_wallet_public_address, JSON_REQUEST_SUFFIX);
+
+    // Send HTTP request
+    if (send_http_request(response, XCASH_daemon_IP_address, RPC_ENDPOINT, XCASH_DAEMON_PORT, RPC_METHOD, HTTP_HEADERS, HTTP_HEADERS_LENGTH, message, SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) > 0 &&
+        parse_json_data(response, "blocktemplate_blob", result, BUFFER_SIZE) == 1) 
+    {
+      return XCASH_OK;
+    }
+
+    // On failure, sleep and retry
+    if (attempt + 1 < retry_attempts) 
+    {
+      sleep(INVALID_RESERVE_PROOFS_SETTINGS);
+    }
+  }
+
+  ERROR_PRINT("Could not create the block template");
+  return XCASH_ERROR;
+}
