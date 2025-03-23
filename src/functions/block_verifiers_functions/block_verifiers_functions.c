@@ -598,3 +598,103 @@ void block_verifiers_create_vote_majority_results(char *result, const int SETTIN
   pthread_mutex_unlock(&majority_vote_lock);
   return;
 }
+
+/*---------------------------------------------------------------------------------------------------------
+Name: block_verifiers_create_VRF_data
+Description: The block verifiers will create all of the VRF data
+Return: 0 if an error has occured, 1 if successfull
+---------------------------------------------------------------------------------------------------------*/
+int block_verifiers_create_VRF_data(void)
+{
+  // Variables
+  char data[SMALL_BUFFER_SIZE] = {0};
+  char data2[SMALL_BUFFER_SIZE] = {0};
+  size_t count, count2, counter;
+
+  // Initialize vrf_alpha_string
+  memset(VRF_data.vrf_alpha_string, 0, sizeof(VRF_data.vrf_alpha_string));
+  memcpy(VRF_data.vrf_alpha_string, previous_block_hash, BLOCK_HASH_LENGTH);
+
+  // Append block verifiers random data or placeholder
+  for (count = 0; count < BLOCK_VERIFIERS_AMOUNT; count++) {
+      if (strlen((const char*)VRF_data.block_verifiers_vrf_secret_key[count]) == crypto_vrf_SECRETKEYBYTES &&
+          strlen((const char*)VRF_data.block_verifiers_vrf_public_key[count]) == crypto_vrf_PUBLICKEYBYTES &&
+          strlen(VRF_data.block_verifiers_random_data[count]) == RANDOM_STRING_LENGTH) {
+          memcpy(VRF_data.vrf_alpha_string + strlen((const char*)VRF_data.vrf_alpha_string),
+                 VRF_data.block_verifiers_random_data[count], RANDOM_STRING_LENGTH);
+      } else {
+          memcpy(VRF_data.vrf_alpha_string + strlen((const char*)VRF_data.vrf_alpha_string),
+                 GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_RANDOM_STRING,
+                 sizeof(GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_RANDOM_STRING) - 1);
+      }
+  }
+
+  // Convert vrf_alpha_string to hex string
+  size_t alpha_len = strlen((const char*)VRF_data.vrf_alpha_string);
+  for (count2 = 0, count = 0; count2 < alpha_len; count2++, count += 2) {
+    snprintf(VRF_data.vrf_alpha_string_data + count, BUFFER_SIZE - count, "%02x", VRF_data.vrf_alpha_string[count2] & 0xFF);
+  }
+
+  // Hash vrf_alpha_string_data
+  crypto_hash_sha512((unsigned char*)data, (const unsigned char*)VRF_data.vrf_alpha_string_data, strlen(VRF_data.vrf_alpha_string_data));
+
+  // Convert hash to hex string
+  for (count2 = 0, count = 0; count2 < DATA_HASH_LENGTH / 2; count2++, count += 2) {
+    snprintf(data2 + count, sizeof(data2) - count, "%02x", data[count2] & 0xFF);
+  }
+
+  // Determine which verifier's keys to use
+  for (count = 0; count < DATA_HASH_LENGTH; count += 2) {
+    char byte_str[3] = {0};
+    memcpy(byte_str, &data2[count], 2);
+    counter = (int)strtol(byte_str, NULL, 16);
+
+    if (counter >= MINIMUM_BYTE_RANGE && counter <= MAXIMUM_BYTE_RANGE) {
+      counter %= BLOCK_VERIFIERS_AMOUNT;
+
+      if (strncmp(VRF_data.block_verifiers_vrf_secret_key_data[counter],
+                  GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_VRF_SECRET_KEY_DATA,
+                  sizeof(GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_VRF_SECRET_KEY_DATA) - 1) != 0 &&
+          strncmp(VRF_data.block_verifiers_vrf_public_key_data[counter],
+                  GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_VRF_PUBLIC_KEY_DATA,
+                  sizeof(GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_VRF_PUBLIC_KEY_DATA) - 1) != 0 &&
+          strncmp(VRF_data.block_verifiers_random_data[counter], GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_RANDOM_STRING,
+                  sizeof(GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_RANDOM_STRING) - 1) != 0) {
+          break;
+      }
+    }
+  }
+
+  // Set selected verifier's keys
+  memcpy(VRF_data.vrf_secret_key_data, VRF_data.block_verifiers_vrf_secret_key_data[counter], VRF_SECRET_KEY_LENGTH);
+  memcpy(VRF_data.vrf_secret_key, VRF_data.block_verifiers_vrf_secret_key[counter], crypto_vrf_SECRETKEYBYTES);
+  memcpy(VRF_data.vrf_public_key_data, VRF_data.block_verifiers_vrf_public_key_data[counter], VRF_PUBLIC_KEY_LENGTH);
+  memcpy(VRF_data.vrf_public_key, VRF_data.block_verifiers_vrf_public_key[counter], crypto_vrf_PUBLICKEYBYTES);
+
+  // Create VRF proof and beta string
+  if (crypto_vrf_prove(VRF_data.vrf_proof, (const unsigned char*)VRF_data.vrf_secret_key,
+                       (const unsigned char*)VRF_data.vrf_alpha_string_data, strlen((const char*)VRF_data.vrf_alpha_string_data)) != 0) {
+    ERROR_PRINT("Could not create the vrf proof");
+    return XCASH_ERROR;
+  }
+  if (crypto_vrf_proof_to_hash(VRF_data.vrf_beta_string, (const unsigned char*)VRF_data.vrf_proof) != 0) {
+    ERROR_PRINT("Could not create the vrf beta string");
+    return XCASH_ERROR;
+  }
+  if (crypto_vrf_verify(VRF_data.vrf_beta_string, (const unsigned char*)VRF_data.vrf_public_key,
+                        (const unsigned char*)VRF_data.vrf_proof, (const unsigned char*)VRF_data.vrf_alpha_string_data,
+                        strlen((const char*)VRF_data.vrf_alpha_string_data)) != 0) {
+    ERROR_PRINT("Could not verify the VRF data");
+    return XCASH_ERROR;
+  }
+
+  // Convert proof and beta string to hex strings
+  for (counter = 0, count = 0; counter < crypto_vrf_PROOFBYTES; counter++, count += 2) {
+    snprintf(VRF_data.vrf_proof_data + count, BUFFER_SIZE_NETWORK_BLOCK_DATA - count, "%02x", VRF_data.vrf_proof[counter] & 0xFF);
+  }
+  for (counter = 0, count = 0; counter < crypto_vrf_OUTPUTBYTES; counter++, count += 2) {
+    snprintf(VRF_data.vrf_beta_string_data + count, BUFFER_SIZE_NETWORK_BLOCK_DATA - count, "%02x", VRF_data.vrf_beta_string[counter] & 0xFF);
+  }
+
+  return XCASH_OK;
+}
