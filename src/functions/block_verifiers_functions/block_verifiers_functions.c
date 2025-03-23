@@ -393,3 +393,39 @@ int block_verifiers_create_block(size_t round_number) {
 
   return ROUND_OK;
 }
+
+/*---------------------------------------------------------------------------------------------------------
+Name: sync_block_verifiers_minutes_and_seconds
+Description: Syncs the block verifiers to a specific minute and second
+Parameters:
+  minutes - The minutes
+  seconds - The seconds
+---------------------------------------------------------------------------------------------------------*/
+int sync_block_verifiers_minutes_and_seconds(const int MINUTES, const int SECONDS)
+{
+  struct timeval current_time;
+
+  // Get current time
+  if (gettimeofday(&current_time, NULL) != 0)
+  {
+    ERROR_PRINT("Failed to get current time");
+    return XCASH_ERROR;
+  }
+
+  size_t seconds_per_block = BLOCK_TIME * 60;
+  size_t seconds_within_block = current_time.tv_sec % seconds_per_block;
+  size_t target_seconds = MINUTES * 60 + SECONDS;
+
+  if (seconds_within_block >= target_seconds)
+  {
+    WARNING_PRINT("Sleep time exceeded current time by %zu seconds", seconds_within_block - target_seconds);
+    return XCASH_ERROR;
+  }
+
+  size_t sleep_seconds = target_seconds - seconds_within_block;
+  DEBUG_PRINT("Sleeping for %zu seconds to sync to target time...", sleep_seconds);
+
+  sleep(sleep_seconds);
+
+  return XCASH_OK;
+}
