@@ -185,10 +185,10 @@ int block_verifiers_create_block(size_t round_number) {
   int backup_node_index = current_round_part_backup_node[0] = (char)('0' + round_number) - '0';
 
   // Clear all VRF data
-  pthread_mutex_lock(&majority_vote_mutex);
+  pthread_mutex_lock(&majority_vote_lock);
   memset(&VRF_data, 0, sizeof(VRF_data));
   memset(&current_block_verifiers_majority_vote, 0, sizeof(current_block_verifiers_majority_vote));
-  pthread_mutex_unlock(&majority_vote_mutex);
+  pthread_mutex_unlock(&majority_vote_lock);
 
   // Initial sync
   INFO_STAGE_PRINT("Waiting for block synchronization start time...");
@@ -522,13 +522,13 @@ void block_verifiers_create_vote_majority_results(char *result, const int SETTIN
   memset(result, 0, BUFFER_SIZE);
 
   // reset the current_block_verifiers_majority_vote
-  pthread_mutex_lock(&majority_vote_mutex);
+  pthread_mutex_lock(&majority_vote_lock);
   for (count = 0; count < BLOCK_VERIFIERS_AMOUNT; count++) {
     for (count2 = 0; count2 < BLOCK_VERIFIERS_AMOUNT; count2++) {
       memset(current_block_verifiers_majority_vote.data[count][count2], 0, sizeof(current_block_verifiers_majority_vote.data[count][count2]));
     }
   }
-  pthread_mutex_unlock(&majority_vote_mutex);
+  pthread_mutex_unlock(&majority_vote_lock);
 
   // Add message header
   memcpy(result, MESSAGE_HEADER, strlen(MESSAGE_HEADER));
@@ -588,13 +588,13 @@ void block_verifiers_create_vote_majority_results(char *result, const int SETTIN
       break;
     }
   }
-  pthread_mutex_lock(&majority_vote_mutex);
+  pthread_mutex_lock(&majority_vote_lock);
   for (count2 = 0; count2 < BLOCK_VERIFIERS_AMOUNT; count2++)
   {
     memcpy(current_block_verifiers_majority_vote.data[count][count2], VRF_data.block_verifiers_vrf_secret_key_data[count2], VRF_SECRET_KEY_LENGTH);
     memcpy(current_block_verifiers_majority_vote.data[count][count2] + VRF_SECRET_KEY_LENGTH, VRF_data.block_verifiers_vrf_public_key_data[count2], VRF_PUBLIC_KEY_LENGTH);
     memcpy(current_block_verifiers_majority_vote.data[count][count2] + VRF_SECRET_KEY_LENGTH + VRF_PUBLIC_KEY_LENGTH, VRF_data.block_verifiers_random_data[count2], RANDOM_STRING_LENGTH);
   }
-  pthread_mutex_unlock(&majority_vote_mutex);
+  pthread_mutex_unlock(&majority_vote_lock);
   return;
 }
