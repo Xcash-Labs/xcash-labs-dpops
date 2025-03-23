@@ -146,6 +146,9 @@
 #define MAX_CONNECTIONS 1024
 #define MAX_THREADS 10
 #define BLOCK_VERIFIERS_IP_ADDRESS_TOTAL_LENGTH 100
+#define MINIMUM_BYTE_RANGE 1 // The minimum byte range to use when calculating the next block producer
+#define MAXIMUM_BYTE_RANGE 250 // The maximum byte range to use when calculating the next block producer
+
 
 // ===================== Constants =====================
 #define ALPHANUM_STRING "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
