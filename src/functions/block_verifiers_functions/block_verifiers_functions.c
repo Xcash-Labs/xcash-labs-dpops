@@ -797,7 +797,7 @@ int block_verifiers_create_block_and_update_database(void)
 
   snprintf(data3, sizeof(data3), "reserve_bytes_%zu", count);
 
-  if (upsert_json_to_db(database_name, XCASH_DB_RESERVE_BYTES, count, data2, false) == XCASH_ERROR)
+  if (upsert_json_to_db(DATABASE_NAME, XCASH_DB_RESERVE_BYTES, count, data2, false) == XCASH_ERROR)
   {
     ERROR_PRINT("Could not add the reserve bytes to the database");
     return XCASH_ERROR;
@@ -809,19 +809,9 @@ int block_verifiers_create_block_and_update_database(void)
   {
     sscanf(current_block_height, "%zu", &block_height);
     get_current_UTC_time(current_date_and_time, current_UTC_date_and_time);
-
-    if (block_height >= BLOCK_HEIGHT_SF_V_1_0_1 && current_UTC_date_and_time.tm_min > 30 && current_UTC_date_and_time.tm_min < 35)
-    {
-      INFO_STAGE_PRINT("Part 28 - Starting the reserve proofs delegate check");
-      reserve_proofs_delegate_check();
-      INFO_PRINT_STATUS_OK("The reserve proofs delegate check is finished");
-    }
-    else
-    {
-      INFO_STAGE_PRINT("Part 28 - Check for invalid reserve proofs and wait for the block producer to submit the block to the network");
-      pthread_create(&thread_id, NULL, &check_reserve_proofs_timer_thread, NULL);
-      pthread_detach(thread_id);
-    }
+    INFO_STAGE_PRINT("Part 28 - Starting the reserve proofs delegate check");
+    reserve_proofs_delegate_check();
+    INFO_PRINT_STATUS_OK("The reserve proofs delegate check is finished");
   }
 
   if (sync_block_verifiers_minutes_and_seconds((BLOCK_TIME - 1), 0) == XCASH_ERROR)
