@@ -42,6 +42,6 @@ int get_database_data(char *database_data, const char* DATABASE, const char* COL
 int get_database_data_hash(char *data_hash, const char* DATABASE, const char* COLLECTION);
 size_t get_database_collection_size(const char* DATABASE, const char* COLLECTION);
 int get_data(mongoc_client_t *client, const char *db_name, const char *field_name, char *data);
-//void reserve_proofs_delegate_check(void);
+void reserve_proofs_delegate_check(void);
 
 #endif
