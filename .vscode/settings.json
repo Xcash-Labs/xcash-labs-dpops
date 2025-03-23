@@ -21,6 +21,7 @@
         "xcash_message.h": "c",
         "stdarg.h": "c",
         "vrf_functions.h": "c",
-        "sha512el.h": "c"
+        "sha512el.h": "c",
+        "uv_net_multi.h": "c"
     }
 }
