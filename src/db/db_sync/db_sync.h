@@ -11,7 +11,7 @@
 #include "node_functions.h"
 #include "uv_net_multi.h"
 #include "xcash_net.h"
-#include "delegates.h"
+#include "xcash_delegates.h"
 
 typedef struct {
     size_t db_rec_index;

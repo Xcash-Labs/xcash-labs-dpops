@@ -1,4 +1,4 @@
-#include "delegates.h"
+#include "xcash_delegates.h"
 
 delegates_t temp_instance;
 

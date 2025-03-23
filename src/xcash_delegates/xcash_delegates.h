@@ -1,5 +1,5 @@
-#ifndef __XCASH_DELEGATES_H
-#define __XCASH_DELEGATES_H
+#ifndef XCASH_DELEGATES_H
+#define XCASH_DELEGATES_H
 
 #include "db_operations.h"
 #include "db_helpers.h"
