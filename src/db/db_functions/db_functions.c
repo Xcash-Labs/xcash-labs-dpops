@@ -862,7 +862,6 @@ int get_data(mongoc_client_t *client, const char *db_name, const char *field_nam
     return result;
 }
 
-
 /*---------------------------------------------------------------------------------------------------------
 Name: reserve_proofs_delegate_check
 Description: Checks the reserve proofs and delegates data
@@ -899,12 +898,6 @@ void reserve_proofs_delegate_check(void)
   static const char DATABASE_FIELD_NAME_RESERVE_PROOFS_1[] = ", \"public_address_voted_for\" : \"";
   static const char DATABASE_FIELD_NAME_RESERVE_PROOFS_2[] = ", \"total\" : \"";
 
-  #define database_reset_all \
-  bson_destroy(document); \
-  mongoc_cursor_destroy(document_settings); \
-  mongoc_collection_destroy(collection); \
-  mongoc_client_pool_push(database_client_thread_pool, database_client_thread);
-
   memset(data,0,sizeof(data));
   memset(data2,0,sizeof(data2));
   memset(data3,0,sizeof(data3));
@@ -924,11 +917,11 @@ void reserve_proofs_delegate_check(void)
   }
 
   // set the collection
-  collection = mongoc_client_get_collection(database_client_thread, database_name, "delegates");
+  collection = mongoc_client_get_collection(database_client_thread, DATABASE_NAME, "delegates");
 
-  if (!(document = bson_new()))
-  {
-    database_reset_all;
+  if (!(document = bson_new())) {
+    free_resources(document, null, collection, database_client_thread);
+    mongoc_cursor_destroy(document_settings);
     return;
   }
 
@@ -946,19 +939,22 @@ void reserve_proofs_delegate_check(void)
     // parse the public_address
     if (strstr(data2,DATABASE_FIELD_NAME_DELEGATES) == NULL)
     {
-      database_reset_all;
-      return;
+      free_resources(document, null, collection, database_client_thread);
+      mongoc_cursor_destroy(document_settings);
+      return;;
     }
     message_copy1 = strstr(data2,DATABASE_FIELD_NAME_DELEGATES) + strnlen(DATABASE_FIELD_NAME_DELEGATES,BUFFER_SIZE);
     if (message_copy1 == NULL)
     {
-      database_reset_all;
+      free_resources(document, null, collection, database_client_thread);
+      mongoc_cursor_destroy(document_settings);
       return;
     }
     message_copy2 = strstr(message_copy1,"\"");
     if (message_copy2 == NULL)
     {
-      database_reset_all;
+      free_resources(document, null, collection, database_client_thread);
+      mongoc_cursor_destroy(document_settings);
       return;
     }
     memset(data,0,sizeof(data));
@@ -986,7 +982,8 @@ void reserve_proofs_delegate_check(void)
 
     if (!(document = bson_new()))
     {
-      database_reset_all;
+      free_resources(document, null, collection, database_client_thread);
+      mongoc_cursor_destroy(document_settings);
       return;
     }
 
@@ -1003,19 +1000,22 @@ void reserve_proofs_delegate_check(void)
       // parse the public_address_voted_for
       if (strstr(data2,DATABASE_FIELD_NAME_RESERVE_PROOFS_1) == NULL)
       {
-        database_reset_all;
+        free_resources(document, null, collection, database_client_thread);
+        mongoc_cursor_destroy(document_settings);
         return;
       }
       message_copy1 = strstr(data2,DATABASE_FIELD_NAME_RESERVE_PROOFS_1) + strnlen(DATABASE_FIELD_NAME_RESERVE_PROOFS_1,BUFFER_SIZE);
       if (message_copy1 == NULL)
       {
-        database_reset_all;
+        free_resources(document, null, collection, database_client_thread);
+        mongoc_cursor_destroy(document_settings);
         return;
       }
       message_copy2 = strstr(message_copy1,"\"");
       if (message_copy2 == NULL)
       {
-        database_reset_all;
+        free_resources(document, null, collection, database_client_thread);
+        mongoc_cursor_destroy(document_settings);
         return;
       }
       memset(data,0,sizeof(data));
@@ -1024,19 +1024,22 @@ void reserve_proofs_delegate_check(void)
       // parse the total
       if (strstr(data2,DATABASE_FIELD_NAME_RESERVE_PROOFS_2) == NULL)
       {
-        database_reset_all;
+        free_resources(document, null, collection, database_client_thread);
+        mongoc_cursor_destroy(document_settings);
         return;
       }
       message_copy1 = strstr(data2,DATABASE_FIELD_NAME_RESERVE_PROOFS_2) + strnlen(DATABASE_FIELD_NAME_RESERVE_PROOFS_2,BUFFER_SIZE);
       if (message_copy1 == NULL)
       {
-        database_reset_all;
+        free_resources(document, null, collection, database_client_thread);
+        mongoc_cursor_destroy(document_settings);
         return;
       }
       message_copy2 = strstr(message_copy1,"\"");
       if (message_copy2 == NULL)
       {
-        database_reset_all;
+        free_resources(document, null, collection, database_client_thread);
+        mongoc_cursor_destroy(document_settings);
         return;
       }
       memset(buffer,0,sizeof(buffer));
@@ -1075,8 +1078,7 @@ void reserve_proofs_delegate_check(void)
     }
   }
   
-  database_reset_all;
+  free_resources(document, null, collection, database_client_thread);
+  mongoc_cursor_destroy(document_settings);
   return;
-
-  #undef database_reset_all
 }
