@@ -12,7 +12,6 @@
 #include "xcash_round.h"
 #include "blockchain_functions.h"
 #include "xcash_block.h"
-#include "network_daemon_functions.h"
 
 //int sync_all_delegates(void);
 //int start_blocks_create_vrf_data(void);
