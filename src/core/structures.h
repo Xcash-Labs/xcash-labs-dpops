@@ -4,7 +4,7 @@
 #include <stddef.h> 
 
 #include <time.h>
-
+#include <uv.h>
 
 typedef struct {
     char *block_verifiers_secret_key;
