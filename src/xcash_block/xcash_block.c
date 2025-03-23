@@ -62,14 +62,16 @@ bool sync_block_producers(void) {
         } else if (strlen(delegates_all[i].public_address) !=0){
             strcpy(delegates_all[i].online_status, "false");
             if (producers_majority[i]>0) {
-                INFO_PRINT_STATUS_FAIL("[%02d] %-40s",producers_majority[i], delegates_all[i].delegate_name);
+//                INFO_PRINT_STATUS_FAIL("[%02d] %-40s",producers_majority[i], delegates_all[i].delegate_name);
+                INFO_PRINT_STATUS_FAIL("[%02zu] %-40s", producers_majority[i], delegates_all[i].delegate_name);
             }
         }
     }
 
 
     if (majority_nodes_count < BLOCK_VERIFIERS_VALID_AMOUNT) {
-        INFO_PRINT_STATUS_FAIL("[%02d/%02d] Not enough valid producers to continue", majority_nodes_count, BLOCK_VERIFIERS_VALID_AMOUNT);
+//        INFO_PRINT_STATUS_FAIL("[%02d/%02d] Not enough valid producers to continue", majority_nodes_count, BLOCK_VERIFIERS_VALID_AMOUNT);
+        INFO_PRINT_STATUS_FAIL("[%02zu/%02d] Not enough valid producers to continue", majority_nodes_count, BLOCK_VERIFIERS_VALID_AMOUNT);
         return false;
     }
 
