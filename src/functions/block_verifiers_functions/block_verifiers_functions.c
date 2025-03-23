@@ -808,13 +808,8 @@ int block_verifiers_create_block_and_update_database(void)
   if (strncmp(current_round_part_backup_node, "0", 1) == 0)
   {
     sscanf(current_block_height, "%zu", &block_height);
-
-
-//    get_current_UTC_time(current_date_and_time, current_UTC_date_and_time);
-    
     time(&current_date_and_time);
     gmtime_r(&current_date_and_time,&current_UTC_date_and_time);
-    
     INFO_STAGE_PRINT("Part 28 - Starting the reserve proofs delegate check");
     reserve_proofs_delegate_check();
     INFO_PRINT_STATUS_OK("The reserve proofs delegate check is finished");
