@@ -263,4 +263,21 @@ typedef enum {
     XMSG_MESSAGES_COUNT,
     XMSG_NONE = XMSG_MESSAGES_COUNT
 } xcash_msg_t;
+
+typedef enum XCASH_DBS {
+    XCASH_DB_DELEGATES = 0,
+    XCASH_DB_STATISTICS = 1,
+    XCASH_DB_RESERVE_PROOFS = 2,
+    XCASH_DB_RESERVE_BYTES = 3,
+    XCASH_DB_COUNT
+} xcash_dbs_t;
+
+typedef enum {
+    STATUS_ERROR,
+    STATUS_OK,
+    STATUS_PENDING,
+    STATUS_TIMEOUT,
+    STATUS_INCOMPLETE,
+} response_status_t;
+
 #endif

@@ -12,15 +12,6 @@
 #include "globals.h"
 #include "macro_functions.h" 
 
-typedef enum {
-    STATUS_ERROR,
-    STATUS_OK,
-    STATUS_PENDING,
-    STATUS_TIMEOUT,
-    STATUS_INCOMPLETE,
-} response_status_t;
-
-
 typedef struct client_t client_t;
 
 typedef struct {
@@ -52,4 +43,4 @@ void on_connect(uv_connect_t *req, int status);
 response_t **send_multi_request(const char **hosts, int port, const char *message);
 void cleanup_responses(response_t **responses);
 
-#endif // UV_NET_H
+#endif
