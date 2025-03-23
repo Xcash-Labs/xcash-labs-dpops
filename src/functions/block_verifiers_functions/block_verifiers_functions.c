@@ -712,7 +712,6 @@ int block_verifiers_create_vote_results(char* message)
   char data[BUFFER_SIZE] = {0};
   char hash_raw[SMALL_BUFFER_SIZE] = {0};
   char hash_hex[SMALL_BUFFER_SIZE] = {0};
-  size_t count;
 
   INFO_STAGE_PRINT("Part 21 - Verify the block verifiers from the previous block signatures are valid");
 
