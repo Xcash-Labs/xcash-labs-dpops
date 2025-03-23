@@ -698,3 +698,64 @@ int block_verifiers_create_VRF_data(void)
 
   return XCASH_OK;
 }
+
+/*---------------------------------------------------------------------------------------------------------
+Name: block_verifiers_create_vote_results
+Description: The block verifiers will create the vote results
+Parameters:
+  message - The message to send to the block verifiers
+Return: 0 if an error has occured, 1 if successfull
+---------------------------------------------------------------------------------------------------------*/
+int block_verifiers_create_vote_results(char* message)
+{
+  // Variables
+  char data[BUFFER_SIZE] = {0};
+  char hash_raw[SMALL_BUFFER_SIZE] = {0};
+  char hash_hex[SMALL_BUFFER_SIZE] = {0};
+  size_t count;
+
+  INFO_STAGE_PRINT("Part 21 - Verify the block verifiers from the previous block signatures are valid");
+
+  // Verify block signatures validity
+  if (verify_network_block_data(1, 1, "0", BLOCK_VERIFIERS_AMOUNT) == 0)
+  {
+    ERROR_PRINT("The MAIN_NODES_TO_NODES_PART_4_OF_ROUND message is invalid");
+    return XCASH_ERROR;
+  }
+
+  INFO_STAGE_PRINT("Part 22 - Create the overall majority data for the reserve bytes (block template with VRF data)");
+
+  // Convert blockchain_data to network block string
+  if (blockchain_data_to_network_block_string(data, BLOCK_VERIFIERS_AMOUNT) == 0)
+  {
+    ERROR_PRINT("Could not convert the blockchain_data to a network_block_string");
+    return XCASH_ERROR;
+  }
+
+  // Copy network block string to VRF block blob
+  memset(VRF_data.block_blob, 0, strlen(VRF_data.block_blob));
+  memcpy(VRF_data.block_blob, data, strnlen(data, BUFFER_SIZE));
+
+  // Hash the network block string using SHA512
+  crypto_hash_sha512((unsigned char*)hash_raw, (const unsigned char*)data, strnlen(data, BUFFER_SIZE));
+
+  // Convert SHA512 hash to hex string
+  for (size_t i = 0; i < DATA_HASH_LENGTH / 2; i++)
+  {
+    snprintf(hash_hex + (i * 2), 3, "%02x", hash_raw[i] & 0xFF);
+  }
+
+  // Reset vote data structure
+  memset(current_round_part_vote_data.current_vote_results, 0, sizeof(current_round_part_vote_data.current_vote_results));
+  current_round_part_vote_data.vote_results_valid = 1;
+  current_round_part_vote_data.vote_results_invalid = 0;
+  memcpy(current_round_part_vote_data.current_vote_results, hash_hex, DATA_HASH_LENGTH);
+
+  // Construct the JSON message
+  snprintf(message, BUFFER_SIZE,
+           "{\r\n \"message_settings\": \"NODES_TO_NODES_VOTE_RESULTS\",\r\n "
+           "\"vote_settings\": \"valid\",\r\n \"vote_data\": \"%s\",\r\n}", 
+           current_round_part_vote_data.current_vote_results);
+
+  return XCASH_OK;
+}

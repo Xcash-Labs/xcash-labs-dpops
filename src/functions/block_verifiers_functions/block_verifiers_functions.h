@@ -22,7 +22,7 @@ int block_verifiers_create_VRF_data(void);
 int block_verifiers_create_block_signature(char* message);
 void block_verifiers_create_vote_majority_results(char *result, const int SETTINGS);
 //int block_verifiers_calculate_vote_majority_results(const int SETTINGS);
-//int block_verifiers_create_vote_results(char* message);
+int block_verifiers_create_vote_results(char* message);
 //int block_verifiers_create_block_and_update_database(void);
 //void print_block_producer(void);
 int block_verifiers_create_block(size_t round_number);
