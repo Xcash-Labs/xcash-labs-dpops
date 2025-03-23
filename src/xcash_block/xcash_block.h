@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <jansson.h>
-#include "uv_net.h"
+#include "uv_net_multi.h"
 #include "xcash_net.h"
 #include "xcash_round.h"
 #include "variables.h
