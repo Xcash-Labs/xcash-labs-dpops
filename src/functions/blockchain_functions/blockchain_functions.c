@@ -1221,61 +1221,18 @@ int verify_network_block_data(const int BLOCK_VALIDATION_SIGNATURES_SETTINGS, co
   
   for (count = 0; count < BLOCK_VERIFIERS_AMOUNT; count++)
   {
-    if (strncmp(current_block_verifiers_list.block_verifiers_public_address[count],network_data_nodes_list.network_data_nodes_public_address[0],XCASH_WALLET_LENGTH) == 0)
+    if (strncmp(current_block_verifiers_list.block_verifiers_public_address[count], network_nodes[0].seed_public_address, XCASH_WALLET_LENGTH) == 0)
     {
-      //counter = (int)count;
       break;
     }
   }
   
-  /* Disable this part for now
-  check what block verifiers vrf secret key and vrf public key to use
-  if (main_network_data_node_create_block == 0)
-  {
-    if (strncmp(blockchain_data.blockchain_reserve_bytes.block_verifiers_random_data[counter],GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_RANDOM_STRING_DATA,sizeof(GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_RANDOM_STRING_DATA)-1) != 0)
-    {
-      for (count = 0; count < DATA_HASH_LENGTH; count += 2)
-      {
-        memset(data,0,strlen(data));
-        memcpy(data,&data2[count],2);
-        counter = (int)strtol(data, NULL, 16); */
-   
-        /* if it is not in the range of 01 - FA or it has already been calculated then skip the byte
-           This number needs to be evenly divisible by how many maximum block verifiers there will be
-           This is so block verifiers in specific spots do not have more of a chance to be the block producer than others
-           The goal is to use as many bytes as possible, since the more unused bytes, the more chance that it will run out of bytes when selecting the block producer
-        */
-        /*if (counter >= MINIMUM_BYTE_RANGE && counter <= MAXIMUM_BYTE_RANGE)
-        {
-          counter = counter % BLOCK_VERIFIERS_TOTAL; 
-
-          // check if the block verifier created the data
-          if (strncmp(VRF_data.block_verifiers_vrf_secret_key_data[counter],GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_VRF_SECRET_KEY_DATA,sizeof(GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_VRF_SECRET_KEY_DATA)-1) != 0 && strncmp(VRF_data.block_verifiers_vrf_public_key_data[counter],GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_VRF_PUBLIC_KEY_DATA,sizeof(GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_VRF_PUBLIC_KEY_DATA)-1) != 0 && strncmp(VRF_data.block_verifiers_random_data[counter],GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_RANDOM_STRING,sizeof(GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_RANDOM_STRING)-1) != 0)
-          {
-            break;
-          }
-        }
-      }
-    }
-    else
-    {
-      counter = 0;
-    }
-
-    // check if the selected vrf secret key and vrf public key are the same as the vrf_secret_key and vrf_public_key
-    if (strncmp((char*)blockchain_data.blockchain_reserve_bytes.vrf_secret_key,(char*)blockchain_data.blockchain_reserve_bytes.block_verifiers_vrf_secret_key[counter],crypto_vrf_SECRETKEYBYTES) != 0 || strncmp((char*)blockchain_data.blockchain_reserve_bytes.vrf_public_key,(char*)blockchain_data.blockchain_reserve_bytes.block_verifiers_vrf_public_key[counter],crypto_vrf_PUBLICKEYBYTES) != 0)
-    {
-      ERROR_PRINT("Invalid VRF data");
-      return XCASH_ERROR;
-    }
-  }*/
-
   // previous_block_hash
   if (PREVIOUS_BLOCK_HASH_SETTINGS == 1 && (blockchain_data.blockchain_reserve_bytes.previous_block_hash_data_length != BLOCK_HASH_LENGTH || strncmp(blockchain_data.blockchain_reserve_bytes.previous_block_hash_data,previous_block_hash,BLOCK_HASH_LENGTH) != 0))
   { 
     ERROR_PRINT("Invalid previous block hash");
     return XCASH_ERROR;
-  }  
+  }
 
   memset(delegates_error_list,0,sizeof(delegates_error_list)); \
   memcpy(delegates_error_list,"The following delegates are reported as not working for this part:",66);
@@ -1294,10 +1251,9 @@ int verify_network_block_data(const int BLOCK_VALIDATION_SIGNATURES_SETTINGS, co
 
       // replace the main network data nodes block validation signature with the GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_SIGNATURE_DATA
       string_replace(network_block_string,sizeof(network_block_string),blockchain_data.blockchain_reserve_bytes.block_validation_node_signature_data[0],GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_SIGNATURE_DATA);
- 
-      for (count2 = 0; (int)count2 < BLOCK_VERIFIERS_TOTAL; count2++)
+       for (count2 = 0; (int)count2 < BLOCK_VERIFIERS_TOTAL; count2++)
       {
-        if (strncmp(current_block_verifiers_list.block_verifiers_public_address[count2],network_data_nodes_list.network_data_nodes_public_address[0],XCASH_WALLET_LENGTH) == 0)
+        if (strncmp(current_block_verifiers_list.block_verifiers_public_address[count2], network_nodes[0].seed_public_address, XCASH_WALLET_LENGTH) == 0)
         {
           vrf_data_verify_count = VRF_data_verify(current_block_verifiers_list.block_verifiers_public_key[count2],blockchain_data.blockchain_reserve_bytes.block_validation_node_signature[0],network_block_string) == 1 ? BLOCK_VERIFIERS_AMOUNT : 0;
         }

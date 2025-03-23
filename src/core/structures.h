@@ -1,7 +1,7 @@
 #ifndef STRUCTURES_H
 #define STRUCTURES_H
 
-#include <stddef.h> 
+#include <stddef.h>
 
 typedef struct {
     char *block_verifiers_secret_key;
