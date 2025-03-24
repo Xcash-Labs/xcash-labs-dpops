@@ -911,7 +911,7 @@ int start_blocks_create_data(char* message, char* network_block_string)
   memset(blockchain_data.blockchain_reserve_bytes.block_producer_delegates_name,0,strnlen(blockchain_data.blockchain_reserve_bytes.block_producer_delegates_name,BUFFER_SIZE));
   memcpy(blockchain_data.blockchain_reserve_bytes.block_producer_delegates_name,"network_data_node_1",19);
   memset(blockchain_data.blockchain_reserve_bytes.block_producer_public_address,0,strnlen(blockchain_data.blockchain_reserve_bytes.block_producer_public_address,BUFFER_SIZE));
-  memcpy(blockchain_data.blockchain_reserve_bytes.block_producer_public_address,network_data_nodes_list.network_data_nodes_public_address[0],XCASH_WALLET_LENGTH);
+  memcpy(blockchain_data.blockchain_reserve_bytes.block_producer_public_address, network_nodes[0].seed_public_address, XCASH_WALLET_LENGTH);
   memset(blockchain_data.blockchain_reserve_bytes.block_producer_node_backup_count,0,strnlen(blockchain_data.blockchain_reserve_bytes.block_producer_node_backup_count,BUFFER_SIZE));
   memcpy(blockchain_data.blockchain_reserve_bytes.block_producer_node_backup_count,"0",sizeof(char));
   memset(blockchain_data.blockchain_reserve_bytes.block_producer_backup_nodes_names,0,strnlen(blockchain_data.blockchain_reserve_bytes.block_producer_backup_nodes_names,BUFFER_SIZE));
@@ -974,7 +974,7 @@ int start_blocks_create_data(char* message, char* network_block_string)
   memcpy(data2+strlen(data2),"\"}",2);
 
   // add the network block string to the database
-  if (insert_document_into_collection_json(database_name,DATABASE_COLLECTION,data2) == 0)
+  if (insert_document_into_collection_json(DATABASE_NAME,DATABASE_COLLECTION,data2) == 0)
   {
     ERROR_PRINT("Could not add the new block to the database");
     return XCASH_ERROR;
