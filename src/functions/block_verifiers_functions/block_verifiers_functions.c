@@ -868,3 +868,135 @@ int block_verifiers_create_block_and_update_database(void)
 
   return XCASH_OK;
 }
+
+/*---------------------------------------------------------------------------------------------------------
+Name: start_blocks_create_data
+Description: Creates the data for the start block
+Parameters:
+  message - The data
+  network_block_string - The network_block_string
+Return: 0 if an error has occured, 1 if successfull
+---------------------------------------------------------------------------------------------------------*/
+int start_blocks_create_data(char* message, char* network_block_string)
+{
+  // Variables
+  char data[BUFFER_SIZE];
+  char data2[BUFFER_SIZE];
+  char data3[BUFFER_SIZE];
+  size_t count;
+
+  const char DATABASE_COLLECTION[] = "reserve_bytes_1";
+  memset(data,0,sizeof(data));
+  memset(data2,0,sizeof(data2));
+  memset(data3,0,sizeof(data3));
+
+  // get a block template
+  if (get_block_template(data) == 0)
+  {
+    ERROR_PRINT("Could not get a block template");
+    return XCASH_ERROR;
+  }
+
+  // convert the network_block_string to blockchain_data
+  if (network_block_string_to_blockchain_data((const char*)data,"0",BLOCK_VERIFIERS_AMOUNT) == 0)
+  {
+    ERROR_PRINT("Could not convert the network_block_string to blockchain_data");
+    return XCASH_ERROR;
+  }
+
+  // change the nonce to the CONSENSUS_NODE_NETWORK_BLOCK_NONCE
+  memcpy(blockchain_data.nonce_data,CONSENSUS_NODE_NETWORK_BLOCK_NONCE,sizeof(CONSENSUS_NODE_NETWORK_BLOCK_NONCE)-1);
+
+  // add the delegates data to the network_block_string
+  memset(blockchain_data.blockchain_reserve_bytes.block_producer_delegates_name,0,strnlen(blockchain_data.blockchain_reserve_bytes.block_producer_delegates_name,BUFFER_SIZE));
+  memcpy(blockchain_data.blockchain_reserve_bytes.block_producer_delegates_name,"network_data_node_1",19);
+  memset(blockchain_data.blockchain_reserve_bytes.block_producer_public_address,0,strnlen(blockchain_data.blockchain_reserve_bytes.block_producer_public_address,BUFFER_SIZE));
+  memcpy(blockchain_data.blockchain_reserve_bytes.block_producer_public_address,network_data_nodes_list.network_data_nodes_public_address[0],XCASH_WALLET_LENGTH);
+  memset(blockchain_data.blockchain_reserve_bytes.block_producer_node_backup_count,0,strnlen(blockchain_data.blockchain_reserve_bytes.block_producer_node_backup_count,BUFFER_SIZE));
+  memcpy(blockchain_data.blockchain_reserve_bytes.block_producer_node_backup_count,"0",sizeof(char));
+  memset(blockchain_data.blockchain_reserve_bytes.block_producer_backup_nodes_names,0,strnlen(blockchain_data.blockchain_reserve_bytes.block_producer_backup_nodes_names,BUFFER_SIZE));
+  memcpy(blockchain_data.blockchain_reserve_bytes.block_producer_backup_nodes_names,"network_data_node_1,network_data_node_1,network_data_node_1,network_data_node_1,network_data_node_1",99);
+
+  // add the VRF data
+  if (start_blocks_create_vrf_data() == 0)
+  {
+    ERROR_PRINT("Could not add the VRF data");
+    return XCASH_ERROR;
+  }
+  
+  // add the next block verifiers and add 0`s for the block_validation_node_signature
+  for (count = 0; count < BLOCK_VERIFIERS_AMOUNT; count++)
+  { 
+    memcpy(blockchain_data.blockchain_reserve_bytes.next_block_verifiers_public_address[count],next_block_verifiers_list.block_verifiers_public_key[count],VRF_PUBLIC_KEY_LENGTH);
+    memcpy(blockchain_data.blockchain_reserve_bytes.block_validation_node_signature_data[count],GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_SIGNATURE_DATA,sizeof(GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_SIGNATURE_DATA)-1);
+    memcpy(blockchain_data.blockchain_reserve_bytes.block_validation_node_signature[count],GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_SIGNATURE,sizeof(GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_SIGNATURE)-1);
+  }
+  
+  // convert the blockchain_data to a network_block_string
+  memset(data,0,sizeof(data));
+  if (blockchain_data_to_network_block_string(data,BLOCK_VERIFIERS_AMOUNT) == 0)
+  {
+    ERROR_PRINT("Could not convert the blockchain_data to a network_block_string");
+    return XCASH_ERROR;
+  }
+
+  // sign the network block string
+  if (sign_network_block_string(blockchain_data.blockchain_reserve_bytes.block_validation_node_signature[0],data) == 0)
+  {
+    ERROR_PRINT("Could not sign the network block string");
+    return XCASH_ERROR;
+  }
+
+  // convert the blockchain_data to a network_block_string
+  memset(VRF_data.block_blob,0,strlen(VRF_data.block_blob));
+  if (blockchain_data_to_network_block_string(VRF_data.block_blob,BLOCK_VERIFIERS_AMOUNT) == 0)
+  {
+    ERROR_PRINT("Could not convert the blockchain_data to a network_block_string");
+    return XCASH_ERROR;
+  }
+
+  // add the data hash to the network block string
+  memset(network_block_string,0,strlen(network_block_string));
+  if (add_data_hash_to_network_block_string(VRF_data.block_blob,network_block_string) == 0)
+  {
+    ERROR_PRINT("Could not add the network block string data hash");
+    return XCASH_ERROR;
+  }
+
+  // update the reserve bytes database
+  memset(data2,0,sizeof(data2));
+  memcpy(data2,"{\"block_height\":\"",17);
+  memcpy(data2+17,current_block_height,strnlen(current_block_height,sizeof(current_block_height)));
+  memcpy(data2+strlen(data2),"\",\"reserve_bytes_data_hash\":\"",29);
+  memcpy(data2+strlen(data2),VRF_data.reserve_bytes_data_hash,DATA_HASH_LENGTH);
+  memcpy(data2+strlen(data2),"\",\"reserve_bytes\":\"",19);
+  memcpy(data2+strlen(data2),VRF_data.block_blob,strnlen(VRF_data.block_blob,sizeof(data2)));
+  memcpy(data2+strlen(data2),"\"}",2);
+
+  // add the network block string to the database
+  if (insert_document_into_collection_json(database_name,DATABASE_COLLECTION,data2) == 0)
+  {
+    ERROR_PRINT("Could not add the new block to the database");
+    return XCASH_ERROR;
+  }
+
+  // create the message
+  memset(message,0,strlen(message));
+  memcpy(message,"{\r\n \"message_settings\": \"MAIN_NETWORK_DATA_NODE_TO_BLOCK_VERIFIERS_START_BLOCK\",\r\n \"database_data\": \"",101);
+  memcpy(message+101,data2,strnlen(data2,BUFFER_SIZE));
+  memcpy(message+strlen(message),"\",\r\n \"reserve_bytes_data_hash\": \"",33);
+  memcpy(message+strlen(message),VRF_data.reserve_bytes_data_hash,DATA_HASH_LENGTH);
+  memcpy(message+strlen(message),"\",\r\n}",5);
+  
+  // sign_data
+  if (sign_data(message) == 0)
+  { 
+    ERROR_PRINT("Could not sign_data");
+    return XCASH_ERROR;
+  }
+
+  // clear the VRF_data.block_blob so at the start of the next round, the main network data node does not try to update the databases
+  memset(VRF_data.block_blob,0,strlen(VRF_data.block_blob));
+
+  return XCASH_OK;
+}

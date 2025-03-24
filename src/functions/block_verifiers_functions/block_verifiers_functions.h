@@ -15,7 +15,7 @@
 
 //int sync_all_delegates(void);
 //int start_blocks_create_vrf_data(void);
-//int start_blocks_create_data(char* message, char* network_block_string);
+int start_blocks_create_data(char* message, char* network_block_string);
 //int start_current_round_start_blocks(void);
 int block_verifiers_create_VRF_secret_key_and_VRF_public_key(char* message);
 int block_verifiers_create_VRF_data(void);
