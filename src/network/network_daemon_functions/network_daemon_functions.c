@@ -124,7 +124,7 @@ int get_block_template(char *result)
 
     // Send HTTP request
     if (send_http_request(response, XCASH_DAEMON_IP, RPC_ENDPOINT, XCASH_DAEMON_PORT, RPC_METHOD, HTTP_HEADERS, HTTP_HEADERS_LENGTH, message, SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) > 0 &&
-        parse_json_data(response, "blocktemplate_blob", result, BUFFER_SIZE) == 1) 
+        parse_json_data(response, "result.blocktemplate_blob", result, BUFFER_SIZE) == 1) 
     {
       return XCASH_OK;
     }
