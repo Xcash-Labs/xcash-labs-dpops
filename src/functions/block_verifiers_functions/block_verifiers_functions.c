@@ -914,11 +914,12 @@ int start_blocks_create_data(char* message, char* network_block_string)
   memcpy(blockchain_data.blockchain_reserve_bytes.block_producer_public_address, network_nodes[0].seed_public_address, XCASH_WALLET_LENGTH);
   memset(blockchain_data.blockchain_reserve_bytes.block_producer_node_backup_count,0,strnlen(blockchain_data.blockchain_reserve_bytes.block_producer_node_backup_count,BUFFER_SIZE));
   memcpy(blockchain_data.blockchain_reserve_bytes.block_producer_node_backup_count,"0",sizeof(char));
-  memset(blockchain_data.blockchain_reserve_bytes.block_producer_backup_nodes_names,0,strnlen(blockchain_data.blockchain_reserve_bytes.block_producer_backup_nodes_names,BUFFER_SIZE));
-//  memcpy(blockchain_data.blockchain_reserve_bytes.block_producer_backup_nodes_names,"xcashseeds_us,xcashseeds_us,xcashseeds_us,xcashseeds_us,xcashseeds_us",99);
-
-  snprintf(blockchain_data.blockchain_reserve_bytes.block_producer_backup_nodes_names, sizeof(blockchain_data.blockchain_reserve_bytes.block_producer_backup_nodes_names), "%s,%s,%s,%s,%s",
-  NETWORK_NODE_0, NETWORK_NODE_0, NETWORK_NODE_0, NETWORK_NODE_0, NETWORK_NODE_0);
+  memset(blockchain_data.blockchain_reserve_bytes.block_producer_backup_nodes_names, 0, strnlen(blockchain_data.blockchain_reserve_bytes.block_producer_backup_nodes_names, BUFFER_SIZE));
+  char backup_nodes_string[128];
+  snprintf(backup_nodes_string, sizeof(backup_nodes_string),
+    "%s,%s,%s,%s,%s", NETWORK_NODE_0, NETWORK_NODE_0, NETWORK_NODE_0, NETWORK_NODE_0, NETWORK_NODE_0);
+  size_t len = strlen(backup_nodes_string);
+  memcpy(blockchain_data.blockchain_reserve_bytes.block_producer_backup_nodes_names, backup_nodes_string, len + 1);  // +1 for null terminator
 
   // add the VRF data
   if (start_blocks_create_vrf_data() == 0)
