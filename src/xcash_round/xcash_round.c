@@ -427,7 +427,7 @@ void start_block_production(void) {
     }
 
     // Check if current block height is healthy
-    bool current_block_healthy = (get_current_block_height(current_block_height) == XCASH_OK);
+    current_block_healthy = (get_current_block_height(current_block_height) == XCASH_OK);
     if (!current_block_healthy) {
       WARNING_PRINT("Block height unavailable. Node might be syncing. Retrying...");
       sleep(5);
