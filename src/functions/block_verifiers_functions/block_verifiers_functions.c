@@ -897,6 +897,8 @@ int start_blocks_create_data(char* message, char* network_block_string)
     return XCASH_ERROR;
   }
 
+  DEBUG_PRINT("Here.................................");
+
   // convert the network_block_string to blockchain_data
   if (network_block_string_to_blockchain_data((const char*)data,"0",BLOCK_VERIFIERS_AMOUNT) == 0)
   {
