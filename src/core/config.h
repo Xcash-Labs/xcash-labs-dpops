@@ -150,6 +150,7 @@
 #define MAXIMUM_BYTE_RANGE 250 // The maximum byte range to use when calculating the next block producer
 #define BLOCK_VERIFIERS_CREATE_BLOCK_TIMEOUT_SETTINGS 5 // The time to wait to check if the block was created
 #define SUBMIT_NETWORK_BLOCK_TIME_SECONDS 25 // The time to submit the network block
+#define NETWORK_NODE_0 "xcashseeds_us" // Network node 0
 
 // ===================== Constants =====================
 #define ALPHANUM_STRING "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
