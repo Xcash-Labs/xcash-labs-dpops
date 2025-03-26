@@ -1114,7 +1114,6 @@ int start_current_round_start_blocks(void)
   // Variables
   char data[BUFFER_SIZE];
   char data2[BUFFER_SIZE];
-  const char DATABASE_COLLECTION[] = "reserve_bytes_1";
   memset(data,0,sizeof(data));
   memset(data2,0,sizeof(data2));
 
