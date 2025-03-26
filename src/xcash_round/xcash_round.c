@@ -206,6 +206,109 @@ xcash_round_result_t process_round(size_t round_number) {
   return (xcash_round_result_t)block_creation_result;
 }
 
+/*
+***************************************************************
+
+  #define RESET_VARIABLES \
+  for (count = 0; count < BLOCK_VERIFIERS_AMOUNT; count++) \
+  { \
+    memset(VRF_data.block_verifiers_vrf_secret_key_data[count],0,strlen(VRF_data.block_verifiers_vrf_secret_key_data[count])); \
+    memset(VRF_data.block_verifiers_vrf_secret_key[count],0,strlen((const char*)VRF_data.block_verifiers_vrf_secret_key[count])); \
+    memset(VRF_data.block_verifiers_vrf_public_key_data[count],0,strlen(VRF_data.block_verifiers_vrf_public_key_data[count])); \
+    memset(VRF_data.block_verifiers_vrf_public_key[count],0,strlen((const char*)VRF_data.block_verifiers_vrf_public_key[count])); \
+    memset(VRF_data.block_verifiers_random_data[count],0,strlen(VRF_data.block_verifiers_random_data[count])); \
+    memset(VRF_data.block_blob_signature[count],0,strlen(VRF_data.block_blob_signature[count])); \
+  } \
+  memset(VRF_data.vrf_secret_key_data,0,strlen(VRF_data.vrf_secret_key_data)); \
+  memset(VRF_data.vrf_secret_key,0,strlen((const char*)VRF_data.vrf_secret_key)); \
+  memset(VRF_data.vrf_public_key_data,0,strlen(VRF_data.vrf_public_key_data)); \
+  memset(VRF_data.vrf_public_key,0,strlen((const char*)VRF_data.vrf_public_key)); \
+  memset(VRF_data.vrf_alpha_string_data,0,strlen(VRF_data.vrf_alpha_string_data)); \
+  memset(VRF_data.vrf_alpha_string,0,strlen((const char*)VRF_data.vrf_alpha_string)); \
+  memset(VRF_data.vrf_proof_data,0,strlen(VRF_data.vrf_proof_data)); \
+  memset(VRF_data.vrf_proof,0,strlen((const char*)VRF_data.vrf_proof)); \
+  memset(VRF_data.vrf_beta_string_data,0,strlen(VRF_data.vrf_beta_string_data)); \
+  memset(VRF_data.vrf_beta_string,0,strlen((const char*)VRF_data.vrf_beta_string)); \
+  memset(VRF_data.reserve_bytes_data_hash,0,strlen(VRF_data.reserve_bytes_data_hash)); \
+  memset(VRF_data.block_blob,0,strlen(VRF_data.block_blob));
+
+if (count == XCASH_PROOF_OF_STAKE_BLOCK_HEIGHT)
+{
+  // this is the first block of the network
+  color_print("The current block is the first block on the network, meaning that the main network node will create this block","yellow");
+
+  RESET_VARIABLES;
+  
+  // set the main_network_data_node_create_block so the main network data node can create the block
+  main_network_data_node_create_block = 1;
+  if (start_current_round_start_blocks() == 0)
+  {      
+    START_NEW_ROUND_ERROR("start_current_round_start_blocks error");
+  } 
+}
+
+int start_current_round_start_blocks(void)
+{
+  // Variables
+  char data[BUFFER_SIZE];
+  char data2[BUFFER_SIZE];
+  
+  // define macros
+  #define DATABASE_COLLECTION "reserve_bytes_1"
+
+  #define START_CURRENT_ROUND_START_BLOCKS_ERROR(settings) \
+  memcpy(error_message.function[error_message.total],"start_current_round_start_blocks",32); \
+  memcpy(error_message.data[error_message.total],settings,sizeof(settings)-1); \
+  error_message.total++; \
+  return 0;
+  
+  memset(data,0,sizeof(data));
+  memset(data2,0,sizeof(data2));
+
+  // set the main_network_data_node_create_block so the main network data node can create the block
+  main_network_data_node_create_block = 1;
+
+  // check if the block verifier is the main network data node
+  if (strncmp(network_data_nodes_list.network_data_nodes_public_address[0],xcash_wallet_public_address,XCASH_WALLET_LENGTH) != 0)
+  {
+    color_print("Your block verifier is not the main data network node so your block verifier will sit out for the remainder of the round\n","yellow");
+    sync_block_verifiers_minutes_and_seconds((BLOCK_TIME-1),SUBMIT_NETWORK_BLOCK_TIME_SECONDS);
+    return 1;
+  } 
+
+  color_print("Your block verifier is the main data network node so your block verifier will create the block\n","yellow");
+
+  // wait until the non network data nodes have synced the previous current and next block verifiers list
+  sleep(30);
+  
+  // create the data
+  if (start_blocks_create_data(data,data2) == 0)
+  {
+    START_CURRENT_ROUND_START_BLOCKS_ERROR("Could not create the start blocks data");
+  }
+
+  // send the database data to all block verifiers
+  sleep(BLOCK_VERIFIERS_SETTINGS);
+  block_verifiers_send_data_socket((const char*)data);
+
+  color_print("Waiting for the block producer to submit the block to the network\n","blue");
+  sync_block_verifiers_minutes_and_seconds((BLOCK_TIME-1),SUBMIT_NETWORK_BLOCK_TIME_SECONDS);
+
+  // have the main network data node submit the block to the network  
+  submit_block_template(data2);
+  
+  return 1;
+
+  #undef DATABASE_COLLECTION
+  #undef START_CURRENT_ROUND_START_BLOCKS_ERROR
+}
+
+
+
+
+****************************************************************
+*/
+
 void start_block_production(void) {
   struct timeval current_time, round_start_time, block_start_time;
   xcash_round_result_t round_result = ROUND_OK;
@@ -220,6 +323,7 @@ void start_block_production(void) {
     }
   }
 
+  /*
   while (true) {
     gettimeofday(&current_time, NULL);
     size_t seconds_within_block = current_time.tv_sec % (BLOCK_TIME * 60);
@@ -256,30 +360,134 @@ void start_block_production(void) {
     size_t round_number = 0;
     bool round_created = false;
 
-    // Retry loop for round processing with a maximum of 2 retries
-    for (retries = 0; retries < 2 && round_number < 1; retries++) {
-      gettimeofday(&round_start_time, NULL);
-      round_result = process_round(round_number);
-
-      if (round_result == ROUND_RETRY) {
-        sleep(5);  // Wait before retrying
-        continue;  // Retry the same round
-      }
-
-      if (round_result == ROUND_ERROR || round_result == ROUND_SKIP) {
-        round_created = false;
-      } else if (round_result == ROUND_OK) {
-        round_created = true;
-      }
-
-      if (round_created) {
-        INFO_PRINT_STATUS_OK("Block %s created successfully", current_block_height);
+    // check for first POS block
+    if (current_block_height == XCASH_PROOF_OF_STAKE_BLOCK_HEIGHT) {
+      if (strncmp(network_nodes[0].seed_public_address, xcash_wallet_public_address, XCASH_WALLET_LENGTH) == 0) {
+        if (start_current_round_start_blocks() == 0) {
+          ERROR_PRINT("Start_current_round_start_blocks error");
+          round_created = false;
+        } else {
+          round_created = true;
+        }
       } else {
-        INFO_PRINT_STATUS_FAIL("Block %s not created within %ld rounds", current_block_height, round_number);
+        INFO_PRINT("This block verifier is not the main data network node so it will sit out for the remainder of this round",);
+        sleep(SUBMIT_NETWORK_BLOCK_TIME_SECONDS);
+        continue;  // Skip to next loop iteration
       }
-      break;
+    } else {
+      // Retry loop for round processing with a maximum of 2 retries
+      for (retries = 0; retries < 2 && round_number < 1; retries++) {
+        gettimeofday(&round_start_time, NULL);
+        round_result = process_round(round_number);
+
+        if (round_result == ROUND_RETRY) {
+          sleep(5);  // Wait before retrying
+          continue;  // Retry the same round
+        }
+
+        if (round_result == ROUND_ERROR || round_result == ROUND_SKIP) {
+          round_created = false;
+        } else if (round_result == ROUND_OK) {
+          round_created = true;
+        }
+      }
     }
+    if (round_created) {
+      INFO_PRINT_STATUS_OK("Block %s created successfully", current_block_height);
+    } else {
+      INFO_PRINT_STATUS_FAIL("Block %s not created within %ld rounds", current_block_height, round_number);
+    }
+    break;
   }
+*/
+
+
+
+  while (true) {
+    gettimeofday(&current_time, NULL);
+    size_t seconds_within_block = current_time.tv_sec % (BLOCK_TIME * 60);
+    size_t minute_within_block = (current_time.tv_sec / 60) % BLOCK_TIME;
+
+    // Skip block production if outside the first 25 seconds of the block interval
+    if (seconds_within_block > 25) {
+      retries = 0;
+
+      // Refresh DB if previous round failed and we're late in the interval
+      if (round_result != ROUND_OK && seconds_within_block > 280) {
+        init_db_from_top();
+        round_result = ROUND_OK;
+      } else {
+        INFO_STAGE_PRINT("Waiting for next round... Block %d in [%ld:%02ld]",
+                         (int)atof(current_block_height),
+                         BLOCK_TIME - 1 - minute_within_block,
+                         59 - (current_time.tv_sec % 60));
+        sleep(5);
+      }
+      continue;
+    }
+
+    // Check if current block height is healthy
+    bool current_block_healthy = (get_current_block_height(current_block_height) == XCASH_OK);
+    if (!current_block_healthy) {
+      WARNING_PRINT("Block height unavailable. Node might be syncing. Retrying...");
+      sleep(5);
+      continue;
+    }
+
+    gettimeofday(&block_start_time, NULL);
+    size_t round_number = 0;
+    bool round_created = false;
+    round_result = ROUND_NONE;
+
+    // Check for first PoS block
+    if (strtoull(current_block_height, NULL, 10) == XCASH_PROOF_OF_STAKE_BLOCK_HEIGHT) {
+      if (strncmp(network_nodes[0].seed_public_address, xcash_wallet_public_address, XCASH_WALLET_LENGTH) == 0) {
+        if (start_current_round_start_blocks() != 0) {
+          round_created = true;
+        } else {
+          ERROR_PRINT("start_current_round_start_blocks failed");
+        }
+      } else {
+        INFO_PRINT("Node is not the primary data network node. Sitting out this round.");
+        sleep(SUBMIT_NETWORK_BLOCK_TIME_SECONDS);
+        continue;
+      }
+    } else {
+      // Standard round processing logic (up to 2 retries)
+      for (retries = 0; retries < 2; retries++) {
+        gettimeofday(&round_start_time, NULL);
+        round_result = process_round(round_number);
+
+        if (round_result == ROUND_RETRY) {
+          sleep(5);
+          continue;
+        }
+
+        if (round_result == ROUND_ERROR || round_result == ROUND_SKIP) {
+          round_created = false;
+          break;
+        }
+
+        if (round_result == ROUND_OK) {
+          round_created = true;
+          break;
+        }
+
+        round_number++;
+      }
+    }
+
+    // Final round result handling
+    if (round_created) {
+      INFO_PRINT_STATUS_OK("Block %s created successfully", current_block_height);
+    } else {
+      INFO_PRINT_STATUS_FAIL("Block %s not created after %zu attempt(s)", current_block_height, round_number + 1);
+    }
+
+    break;  // Exit main production loop
+  }
+
+
 }
 
 void show_block_producer(size_t round_number) {
