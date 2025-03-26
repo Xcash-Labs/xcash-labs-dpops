@@ -437,7 +437,7 @@ void start_block_production(void) {
     gettimeofday(&block_start_time, NULL);
     size_t round_number = 0;
     bool round_created = false;
-    round_result = ROUND_NONE;
+    round_result = ROUND_OK;
 
     // Check for first PoS block
     if (strtoull(current_block_height, NULL, 10) == XCASH_PROOF_OF_STAKE_BLOCK_HEIGHT) {
