@@ -908,8 +908,6 @@ int start_blocks_create_data(char* message, char* network_block_string)
   memcpy(blockchain_data.nonce_data,CONSENSUS_NODE_NETWORK_BLOCK_NONCE,sizeof(CONSENSUS_NODE_NETWORK_BLOCK_NONCE)-1);
 
   // add the delegates data to the network_block_string
-
-  
   memset(blockchain_data.blockchain_reserve_bytes.block_producer_delegates_name,0,strnlen(blockchain_data.blockchain_reserve_bytes.block_producer_delegates_name,BUFFER_SIZE));
   memcpy(blockchain_data.blockchain_reserve_bytes.block_producer_delegates_name, "NEWTORK_NODE_0", 13);
   memset(blockchain_data.blockchain_reserve_bytes.block_producer_public_address,0,strnlen(blockchain_data.blockchain_reserve_bytes.block_producer_public_address,BUFFER_SIZE));
@@ -919,7 +917,7 @@ int start_blocks_create_data(char* message, char* network_block_string)
   memset(blockchain_data.blockchain_reserve_bytes.block_producer_backup_nodes_names,0,strnlen(blockchain_data.blockchain_reserve_bytes.block_producer_backup_nodes_names,BUFFER_SIZE));
 //  memcpy(blockchain_data.blockchain_reserve_bytes.block_producer_backup_nodes_names,"xcashseeds_us,xcashseeds_us,xcashseeds_us,xcashseeds_us,xcashseeds_us",99);
 
-  snprintf(blockchain_data.blockchain_reserve_bytes.block_producer_backup_nodes_names, sizeof(backup_nodes_string), "%s,%s,%s,%s,%s",
+  snprintf(blockchain_data.blockchain_reserve_bytes.block_producer_backup_nodes_names, sizeof(blockchain_data.blockchain_reserve_bytes.block_producer_backup_nodes_names), "%s,%s,%s,%s,%s",
   NETWORK_NODE_0, NETWORK_NODE_0, NETWORK_NODE_0, NETWORK_NODE_0, NETWORK_NODE_0);
 
   // add the VRF data
