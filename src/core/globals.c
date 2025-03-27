@@ -134,7 +134,6 @@ void init_globals(void) {
   pthread_mutex_init(&database_data_IP_address_lock, NULL);
   pthread_mutex_init(&update_current_block_height_lock, NULL);
 
-*******************************
   // Variables
   char data[SMALL_BUFFER_SIZE];
   size_t count = 0;
@@ -192,7 +191,7 @@ void init_globals(void) {
   synced_block_verifiers.vote_settings_true = 0;
   synced_block_verifiers.vote_settings_false = 0;
   synced_block_verifiers.last_refresh_time_of_synced_block_verifiers = 0;
-  
+
   // initialize the main_nodes_list struct 
   memset(main_nodes_list.block_producer_public_address,0,sizeof(main_nodes_list.block_producer_public_address));
   memset(main_nodes_list.block_producer_IP_address,0,sizeof(main_nodes_list.block_producer_IP_address));
