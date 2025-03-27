@@ -160,7 +160,7 @@ int submit_block_template(const char* DATA)
   // Variables
   char message[SMALL_BUFFER_SIZE];
   char data[SMALL_BUFFER_SIZE];
-  char reslut[255];
+  char result[255];
 
   memset(data,0,sizeof(data));
   memset(message,0,sizeof(message));
