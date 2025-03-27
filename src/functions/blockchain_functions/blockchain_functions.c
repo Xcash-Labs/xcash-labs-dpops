@@ -136,7 +136,6 @@ Parameters:
   BLOCK_VERIFIERS_TOTAL - The maximum amount of block verifiers
 Return: 0 if an error has occured, 1 if successfull
 ---------------------------------------------------------------------------------------------------------*/
-*****
 int network_block_string_to_blockchain_data(const char* DATA, const char* BLOCK_HEIGHT, const int BLOCK_VERIFIERS_TOTAL)
 {
   // Variables
