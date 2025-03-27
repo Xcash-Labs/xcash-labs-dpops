@@ -158,9 +158,9 @@ int submit_block_template(const char* DATA)
   const char* RPC_ENDPOINT = "/json_rpc";
 
   // Variables
-  char data[BUFFER_SIZE];
-  char message[BUFFER_SIZE];
-  
+  char message[SMALL_BUFFER_SIZE];
+  char data[SMALL_BUFFER_SIZE];
+
   memset(data,0,sizeof(data));
   memset(message,0,sizeof(message));
 
@@ -171,10 +171,11 @@ int submit_block_template(const char* DATA)
 
   // Send HTTP request
   if (send_http_request(data, XCASH_DAEMON_IP, RPC_ENDPOINT, XCASH_DAEMON_PORT, "POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH, message, SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) > 0 &&
-      parse_json_data(response, "result.status", result, BUFFER_SIZE) == 1) {
+      parse_json_data(data, "result.status", result, BUFFER_SIZE) == 1) {
     return XCASH_OK;
   } else {
     ERROR_PRINT("Could not submit the block template");
     return XCASH_ERROR;
   }
+
 }
