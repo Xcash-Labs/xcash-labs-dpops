@@ -1,11 +1,13 @@
 #ifndef GLOBALS_H_   /* Include guard */
 #define GLOBALS_H_
 
-#include "config.h"
-#include "structures.h"
+
 #include <mongoc/mongoc.h>
 #include "crypto_vrf.h"
 #include <pthread.h>
+#include "config.h"
+#include "macro_functions.h"
+#include "structures.h"
 
 /*--------------------------------------------------------------------------------------------------
 Global Variables
