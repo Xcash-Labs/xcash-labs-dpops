@@ -174,7 +174,8 @@ int submit_block_template(const char* DATA)
   // Send HTTP request
   if (send_http_request(data, XCASH_DAEMON_IP, RPC_ENDPOINT, XCASH_DAEMON_PORT, "POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH, message, SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) > 0 &&
       parse_json_data(data, "error.message", result, SMALL_BUFFER_SIZE) == 1) {
-    return XCASH_OK;
+        DEBUG_PRINT("%s",result);
+        return XCASH_OK;
   } else {
     DEBUG_PRINT("%s",result);
     ERROR_PRINT("Could not submit the block template");
