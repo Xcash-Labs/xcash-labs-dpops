@@ -115,12 +115,6 @@ void cleanup_data_structures(void) {
   free(server_limit_IP_address_list);
   free(server_limit_public_address_list);
 
-  // initialize the error_message struct
-  for (count = 0; count < TOTAL_ERROR_MESSAGES; count++) {
-    free(error_message.function[count]);
-    free(error_message.data[count]);
-  }
-
   // initialize the VRF_data struct
   free(VRF_data.vrf_secret_key_data);
   free(VRF_data.vrf_secret_key);
@@ -201,11 +195,6 @@ void cleanup_data_structures(void) {
   }
   free(blockchain_data.ringct_version_data);
   free(blockchain_data.transaction_amount_data);
-
-  // for (count = 0; count < MAXIMUM_TRANSACATIONS_PER_BLOCK; count++)
-  // {
-  //   free(  blockchain_data.transactions[count]);
-  // }
 
   for (count = 0; count < MAXIMUM_TRANSACATIONS_PER_BLOCK; count++) {
     free(blockchain_data.transactions[count]);
