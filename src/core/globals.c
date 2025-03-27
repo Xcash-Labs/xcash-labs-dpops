@@ -322,16 +322,14 @@ void init_globals(void) {
 
   //invalid_reserve_proofs.count = 0;
 
-  //for (count = 0; count < MAXIMUM_TRANSACATIONS_PER_BLOCK; count++)
-  //{
-  //  blockchain_data.transactions[count] = (char*)calloc(TRANSACTION_HASH_LENGTH+1,sizeof(char));
+  for (count = 0; count < MAXIMUM_TRANSACATIONS_PER_BLOCK; count++) {
+    blockchain_data.transactions[count] = (char*)calloc(TRANSACTION_HASH_LENGTH + 1, sizeof(char));
 
     // check if the memory needed was allocated on the heap successfully
-  //  if (blockchain_data.transactions[count] == NULL)
-  //  {
-  //    FATAL_ERROR_EXIT("Can't allocate memory for blockchain");
-  //  }
-  //}
+    if (blockchain_data.transactions[count] == NULL) {
+      FATAL_ERROR_EXIT("Can't allocate memory for blockchain");
+    }
+  }
 
   return;
 }
