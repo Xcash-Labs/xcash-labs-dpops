@@ -193,7 +193,7 @@ int network_block_string_to_blockchain_data(const char* DATA, const char* BLOCK_
   memset(blockchain_data.blockchain_reserve_bytes.vrf_data_round,0,strlen(blockchain_data.blockchain_reserve_bytes.vrf_data_round));
   memset(blockchain_data.blockchain_reserve_bytes.vrf_data,0,strlen(blockchain_data.blockchain_reserve_bytes.vrf_data));
   memset(blockchain_data.blockchain_reserve_bytes.previous_block_hash_data,0,strlen(blockchain_data.blockchain_reserve_bytes.previous_block_hash_data));
-  DEBUG_PRINT("loop")
+  DEBUG_PRINT("loop");
   for (count = 0; (int)count < BLOCK_VERIFIERS_TOTAL_AMOUNT; count++) 
   {
     memset(blockchain_data.blockchain_reserve_bytes.block_verifiers_vrf_secret_key_data[count],0,strlen(blockchain_data.blockchain_reserve_bytes.block_verifiers_vrf_secret_key_data[count]));
@@ -209,7 +209,7 @@ int network_block_string_to_blockchain_data(const char* DATA, const char* BLOCK_
   }
   memset(blockchain_data.ringct_version_data,0,strlen(blockchain_data.ringct_version_data));
   memset(blockchain_data.transaction_amount_data,0,strlen(blockchain_data.transaction_amount_data));
-  DEBUG_PRINT("loop 2")
+  DEBUG_PRINT("loop 2");
   for (count = 0; count < MAXIMUM_TRANSACATIONS_PER_BLOCK; count++) 
   {
     memset(blockchain_data.transactions[count],0,strlen(blockchain_data.transactions[count]));
