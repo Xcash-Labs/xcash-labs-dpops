@@ -148,6 +148,7 @@ int network_block_string_to_blockchain_data(const char* DATA, const char* BLOCK_
   size_t count3;
   size_t number;
 
+  DEBUG_PRINT("Setting up data");
   memset(block_height,0,sizeof(block_height));
   memset(data2,0,sizeof(data2));
   memset(blockchain_data.network_version_data,0,strlen(blockchain_data.network_version_data));
@@ -211,6 +212,7 @@ int network_block_string_to_blockchain_data(const char* DATA, const char* BLOCK_
   count = 0;
   
   // network_version
+  DEBUG_PRINT("Parsing Network Version");
   blockchain_data.network_version_data_length = sizeof(NETWORK_VERSION)-1;
   count+= blockchain_data.network_version_data_length;
   memcpy(blockchain_data.network_version_data,DATA,blockchain_data.network_version_data_length);
