@@ -903,7 +903,6 @@ int start_blocks_create_data(char* message, char* network_block_string)
     ERROR_PRINT("Could not convert the network_block_string to blockchain_data");
     return XCASH_ERROR;
   }
-  DEBUG_PRINT("Here.................................2");
 
   // change the nonce to the CONSENSUS_NODE_NETWORK_BLOCK_NONCE
   memcpy(blockchain_data.nonce_data,CONSENSUS_NODE_NETWORK_BLOCK_NONCE,sizeof(CONSENSUS_NODE_NETWORK_BLOCK_NONCE)-1);

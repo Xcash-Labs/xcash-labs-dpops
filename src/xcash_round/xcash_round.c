@@ -447,6 +447,7 @@ void start_block_production(void) {
           round_created = true;
         } else {
           ERROR_PRINT("The function start_current_round_start_blocks failed");
+          round_created = false;
         }
       } else {
         INFO_PRINT("Node is not the primary data network node. Sitting out this round.");
