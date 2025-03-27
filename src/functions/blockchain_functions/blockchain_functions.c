@@ -148,15 +148,11 @@ int network_block_string_to_blockchain_data(const char* DATA, const char* BLOCK_
   size_t count3;
   size_t number;
 
-  DEBUG_PRINT("Setting up data");
+  DEBUG_PRINT("Setting up data, network_block_string_to_blockchain_data");
   memset(block_height,0,sizeof(block_height));
   memset(data2,0,sizeof(data2));
-
-  DEBUG_PRINT("network");
   memset(blockchain_data.network_version_data,0,strlen(blockchain_data.network_version_data));
-  DEBUG_PRINT("time");
   memset(blockchain_data.timestamp_data,0,strlen(blockchain_data.timestamp_data));
-  DEBUG_PRINT("previous");
   memset(blockchain_data.previous_block_hash_data,0,strlen(blockchain_data.previous_block_hash_data));
   memset(blockchain_data.nonce_data,0,strlen(blockchain_data.nonce_data));
   memset(blockchain_data.block_reward_transaction_version_data,0,strlen(blockchain_data.block_reward_transaction_version_data));
@@ -194,7 +190,6 @@ int network_block_string_to_blockchain_data(const char* DATA, const char* BLOCK_
   memset(blockchain_data.blockchain_reserve_bytes.vrf_data_round,0,strlen(blockchain_data.blockchain_reserve_bytes.vrf_data_round));
   memset(blockchain_data.blockchain_reserve_bytes.vrf_data,0,strlen(blockchain_data.blockchain_reserve_bytes.vrf_data));
   memset(blockchain_data.blockchain_reserve_bytes.previous_block_hash_data,0,strlen(blockchain_data.blockchain_reserve_bytes.previous_block_hash_data));
-  DEBUG_PRINT("loop");
   for (count = 0; (int)count < BLOCK_VERIFIERS_TOTAL_AMOUNT; count++) 
   {
     memset(blockchain_data.blockchain_reserve_bytes.block_verifiers_vrf_secret_key_data[count],0,strlen(blockchain_data.blockchain_reserve_bytes.block_verifiers_vrf_secret_key_data[count]));
@@ -210,7 +205,6 @@ int network_block_string_to_blockchain_data(const char* DATA, const char* BLOCK_
   }
   memset(blockchain_data.ringct_version_data,0,strlen(blockchain_data.ringct_version_data));
   memset(blockchain_data.transaction_amount_data,0,strlen(blockchain_data.transaction_amount_data));
-  DEBUG_PRINT("loop 2");
   for (count = 0; count < MAXIMUM_TRANSACATIONS_PER_BLOCK; count++) 
   {
     memset(blockchain_data.transactions[count],0,strlen(blockchain_data.transactions[count]));

@@ -422,6 +422,7 @@ void start_block_production(void) {
                          BLOCK_TIME - 1 - minute_within_block,
                          59 - (current_time.tv_sec % 60));
         sleep(5);
+
       }
       continue;
     }
@@ -442,10 +443,10 @@ void start_block_production(void) {
     // Check for first PoS block
     if (strtoull(current_block_height, NULL, 10) == XCASH_PROOF_OF_STAKE_BLOCK_HEIGHT) {
       if (strncmp(network_nodes[0].seed_public_address, xcash_wallet_public_address, XCASH_WALLET_LENGTH) == 0) {
-        if (start_current_round_start_blocks() != 0) {
+        if (start_current_round_start_blocks() != XCASH_ERROR) {
           round_created = true;
         } else {
-          ERROR_PRINT("start_current_round_start_blocks failed");
+          ERROR_PRINT("The function start_current_round_start_blocks failed");
         }
       } else {
         INFO_PRINT("Node is not the primary data network node. Sitting out this round.");

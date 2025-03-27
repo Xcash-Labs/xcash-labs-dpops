@@ -897,8 +897,6 @@ int start_blocks_create_data(char* message, char* network_block_string)
     return XCASH_ERROR;
   }
 
-  DEBUG_PRINT("Here.................................");
-
   // convert the network_block_string to blockchain_data
   if (network_block_string_to_blockchain_data((const char*)data,"0",BLOCK_VERIFIERS_AMOUNT) == 0)
   {
@@ -1142,8 +1140,13 @@ int start_current_round_start_blocks(void)
   // INFO_PRINT("Waiting for the block producer to submit the block to the network.");
   // sync_block_verifiers_minutes_and_seconds((BLOCK_TIME-1),SUBMIT_NETWORK_BLOCK_TIME_SECONDS);
 
-  // have the main network data node submit the block to the network  
-  submit_block_template(data2);
+  // have the main network data node submit the block to the network
+
+  if (submit_block_template(data2) != XCASH_OK) {
+    ERROR_PRINT("Could not create the starting block.");
+    return XCASH_ERROR;
+  }
+
   main_network_data_node_create_block = 0;
 
   return XCASH_OK;
