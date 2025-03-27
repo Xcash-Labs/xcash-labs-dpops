@@ -134,7 +134,6 @@ void init_globals(void) {
   pthread_mutex_init(&database_data_IP_address_lock, NULL);
   pthread_mutex_init(&update_current_block_height_lock, NULL);
 
-  // Variables
   char data[SMALL_BUFFER_SIZE];
   size_t count = 0;
   srand(time(NULL));
