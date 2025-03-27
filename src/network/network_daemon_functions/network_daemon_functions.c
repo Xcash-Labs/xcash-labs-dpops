@@ -164,7 +164,7 @@ int submit_block_template(const char* DATA)
 
   memset(data,0,sizeof(data));
   memset(message,0,sizeof(message));
-  memset(reslut,0,sizeof(result));
+  memset(result,0,sizeof(result));
 
   // create the message
   memcpy(message,"{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"submit_block\",\"params\":[\"",61);
