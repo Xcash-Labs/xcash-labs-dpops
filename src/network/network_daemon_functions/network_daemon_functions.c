@@ -176,7 +176,7 @@ int submit_block_template(const char* DATA)
       parse_json_data(data, "result.error.message", result, BUFFER_SIZE) == 1) {
     return XCASH_OK;
   } else {
-    DEBUG_PRINT(result);
+    DEBUG_PRINT("%s",result);
     ERROR_PRINT("Could not submit the block template");
     return XCASH_ERROR;
   }
