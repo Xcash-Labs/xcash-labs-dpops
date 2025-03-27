@@ -251,8 +251,7 @@ int network_block_string_to_blockchain_data(const char* DATA, const char* BLOCK_
   {
     sscanf(BLOCK_HEIGHT, "%zu", &number);
   }
-  DEBUG_PRINT("Here.................................3");
-  
+ 
   blockchain_data.unlock_block_data_length = (number + UNLOCK_BLOCK_AMOUNT) > (VARINT_DECODED_VALUE_END_2_BYTE-UNLOCK_BLOCK_AMOUNT) ? 8 : 6;  
   count+= blockchain_data.unlock_block_data_length;
   memcpy(blockchain_data.unlock_block_data,&DATA[count-blockchain_data.unlock_block_data_length],blockchain_data.unlock_block_data_length);
@@ -329,6 +328,9 @@ int network_block_string_to_blockchain_data(const char* DATA, const char* BLOCK_
   count+= blockchain_data.reserve_bytes_size_data_length;
   memcpy(blockchain_data.reserve_bytes_size_data,&DATA[count-blockchain_data.reserve_bytes_size_data_length],blockchain_data.reserve_bytes_size_data_length);
   blockchain_data.reserve_bytes_size = varint_decode((size_t)strtol(blockchain_data.reserve_bytes_size_data, NULL, 16));
+
+
+  DEBUG_PRINT("Here.................................3");
 
   if (strstr(DATA,BLOCKCHAIN_RESERVED_BYTES_DATA_HASH) == NULL)
   {
@@ -572,6 +574,8 @@ int network_block_string_to_blockchain_data(const char* DATA, const char* BLOCK_
     count+= TRANSACTION_LENGTH;
     memcpy(blockchain_data.transactions[number],&DATA[count-TRANSACTION_LENGTH],TRANSACTION_LENGTH);
   }
+
+  DEBUG_PRINT("Here.................................4");
 
   return XCASH_OK;
 }
