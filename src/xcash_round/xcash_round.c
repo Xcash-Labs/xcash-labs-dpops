@@ -477,19 +477,20 @@ void start_block_production(void) {
 
         round_number++;
       }
-    }
 
-    // Final round result handling
-    if (round_created) {
-      INFO_PRINT_STATUS_OK("Block %s created successfully", current_block_height);
-    } else {
-      INFO_PRINT_STATUS_FAIL("Block %s not created after %zu attempt(s)", current_block_height, round_number + 1);
+
+      // Final round result handling
+      if (round_created) {
+        INFO_PRINT_STATUS_OK("Block %s created successfully", current_block_height);
+      } else {
+        INFO_PRINT_STATUS_FAIL("Block %s not created after %zu attempt(s)", current_block_height, round_number + 1);
+      }
+
+//      break;  // Exit main production loop
     }
 
     break;  // Exit main production loop
   }
-
-
 }
 
 void show_block_producer(size_t round_number) {
