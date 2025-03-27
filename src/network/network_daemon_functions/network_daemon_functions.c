@@ -160,9 +160,11 @@ int submit_block_template(const char* DATA)
   // Variables
   char message[SMALL_BUFFER_SIZE];
   char data[SMALL_BUFFER_SIZE];
+  char reslut[255];
 
   memset(data,0,sizeof(data));
   memset(message,0,sizeof(message));
+  memset(reslut,0,sizeof(result));
 
   // create the message
   memcpy(message,"{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"submit_block\",\"params\":[\"",61);
@@ -171,9 +173,10 @@ int submit_block_template(const char* DATA)
 
   // Send HTTP request
   if (send_http_request(data, XCASH_DAEMON_IP, RPC_ENDPOINT, XCASH_DAEMON_PORT, "POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH, message, SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) > 0 &&
-      parse_json_data(data, "result.status", result, BUFFER_SIZE) == 1) {
+      parse_json_data(data, "result.error.message", result, BUFFER_SIZE) == 1) {
     return XCASH_OK;
   } else {
+    DEBUG_PRINT(result);
     ERROR_PRINT("Could not submit the block template");
     return XCASH_ERROR;
   }
