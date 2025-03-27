@@ -826,13 +826,8 @@ int network_block_string_to_blockchain_data(const char* DATA, const char* BLOCK_
   memset(blockchain_data.blockchain_reserve_bytes.vrf_data_round,0,sizeof(blockchain_data.blockchain_reserve_bytes.vrf_data_round));
   memset(blockchain_data.blockchain_reserve_bytes.vrf_data,0,sizeof(blockchain_data.blockchain_reserve_bytes.vrf_data));
   memset(blockchain_data.blockchain_reserve_bytes.previous_block_hash_data,0,sizeof(blockchain_data.blockchain_reserve_bytes.previous_block_hash_data));
-
-  DEBUG_PRINT("Clearing block verifier arrays, total = %d", BLOCK_VERIFIERS_TOTAL_AMOUNT);
-
   for (count = 0; (int)count < BLOCK_VERIFIERS_TOTAL_AMOUNT; count++)
   {
-    DEBUG_PRINT("Clearing verifier index %zu", count);
-    DEBUG_PRINT(" -> verifier key ptr = %p", (void*)blockchain_data.blockchain_reserve_bytes.block_verifiers_vrf_secret_key_data[count]);
     memset(blockchain_data.blockchain_reserve_bytes.block_verifiers_vrf_secret_key_data[count],0,sizeof(blockchain_data.blockchain_reserve_bytes.block_verifiers_vrf_secret_key_data[count]));
     memset(blockchain_data.blockchain_reserve_bytes.block_verifiers_vrf_secret_key[count],0,sizeof(blockchain_data.blockchain_reserve_bytes.block_verifiers_vrf_secret_key[count]));
     memset(blockchain_data.blockchain_reserve_bytes.block_verifiers_vrf_public_key_data[count],0,sizeof(blockchain_data.blockchain_reserve_bytes.block_verifiers_vrf_public_key_data[count]));
