@@ -150,9 +150,6 @@ void init_globals(void) {
   memset(current_round_part_backup_node,0,sizeof(current_round_part_backup_node));
   memcpy(current_round_part,"1",sizeof(char));
   memcpy(current_round_part_backup_node,"0",sizeof(char));
-  memset(database_path_write,0,sizeof(database_path_write));
-  memset(database_path_write_before_majority,0,sizeof(database_path_write_before_majority));
-  memset(database_path_read,0,sizeof(database_path_read));
 
   server_limit_IP_address_list = (char*)calloc(15728640,sizeof(char)); // 15 MB
   server_limit_public_address_list = (char*)calloc(15728640,sizeof(char)); // 15 MB
