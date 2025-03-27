@@ -203,15 +203,15 @@ void init_globals(void) {
   memset(main_nodes_list.block_producer_backup_block_verifier_5_IP_address,0,sizeof(main_nodes_list.block_producer_backup_block_verifier_5_IP_address));
 
   // initialize the network_data_nodes_list struct
-  for (count = 0; count < NETWORK_DATA_NODES_AMOUNT; count++)
-  {
-    memset(network_data_nodes_list.network_data_nodes_public_address[count],0,sizeof(network_data_nodes_list.network_data_nodes_public_address[count]));
-    memset(network_data_nodes_list.network_data_nodes_IP_address[count],0,sizeof(network_data_nodes_list.network_data_nodes_IP_address[count]));
-    network_data_nodes_list.online_status[count] = 1;
-  }
+  //for (count = 0; count < NETWORK_DATA_NODES_AMOUNT; count++)
+  //{
+  //  memset(network_data_nodes_list.network_data_nodes_public_address[count],0,sizeof(network_data_nodes_list.network_data_nodes_public_address[count]));
+  //  memset(network_data_nodes_list.network_data_nodes_IP_address[count],0,sizeof(network_data_nodes_list.network_data_nodes_IP_address[count]));
+  //  network_data_nodes_list.online_status[count] = 1;
+  //}
 
   // set the network_data_node_settings
-  network_data_node_settings = 0;
+  //network_data_node_settings = 0;
 
   // initialize the current_round_part_vote_data struct
   memset(current_round_part_vote_data.current_vote_results,0,sizeof(current_round_part_vote_data.current_vote_results));
