@@ -136,6 +136,7 @@ Parameters:
   BLOCK_VERIFIERS_TOTAL - The maximum amount of block verifiers
 Return: 0 if an error has occured, 1 if successfull
 ---------------------------------------------------------------------------------------------------------*/
+*****
 int network_block_string_to_blockchain_data(const char* DATA, const char* BLOCK_HEIGHT, const int BLOCK_VERIFIERS_TOTAL)
 {
   // Variables
@@ -151,6 +152,7 @@ int network_block_string_to_blockchain_data(const char* DATA, const char* BLOCK_
   DEBUG_PRINT("Setting up data");
   memset(block_height,0,sizeof(block_height));
   memset(data2,0,sizeof(data2));
+
   DEBUG_PRINT("network");
   memset(blockchain_data.network_version_data,0,strlen(blockchain_data.network_version_data));
   DEBUG_PRINT("time");
@@ -215,9 +217,8 @@ int network_block_string_to_blockchain_data(const char* DATA, const char* BLOCK_
     memset(blockchain_data.transactions[count],0,strlen(blockchain_data.transactions[count]));
   }
   count = 0;
-  
+
   // network_version
-  DEBUG_PRINT("Parsing Network Version");
   blockchain_data.network_version_data_length = sizeof(NETWORK_VERSION)-1;
   count+= blockchain_data.network_version_data_length;
   memcpy(blockchain_data.network_version_data,DATA,blockchain_data.network_version_data_length);
@@ -258,7 +259,7 @@ int network_block_string_to_blockchain_data(const char* DATA, const char* BLOCK_
   {
     sscanf(BLOCK_HEIGHT, "%zu", &number);
   }
- 
+
   blockchain_data.unlock_block_data_length = (number + UNLOCK_BLOCK_AMOUNT) > (VARINT_DECODED_VALUE_END_2_BYTE-UNLOCK_BLOCK_AMOUNT) ? 8 : 6;  
   count+= blockchain_data.unlock_block_data_length;
   memcpy(blockchain_data.unlock_block_data,&DATA[count-blockchain_data.unlock_block_data_length],blockchain_data.unlock_block_data_length);
