@@ -138,6 +138,7 @@ Return: 0 if an error has occured, 1 if successfull
 ---------------------------------------------------------------------------------------------------------*/
 int network_block_string_to_blockchain_data(const char* DATA, const char* BLOCK_HEIGHT, const int BLOCK_VERIFIERS_TOTAL)
 {
+  DEBUG_PRINT("Here.................................3");
   // Variables
   char block_height[MAXIMUM_NUMBER_SIZE];
   char data2[BUFFER_SIZE];
