@@ -98,9 +98,121 @@ void cleanup_data_structures(void) {
   pthread_mutex_destroy(&update_current_block_height_lock);
   pthread_mutex_destroy(&hash_mutex);
 
-  // add more later......
+  size_t count;
+  pthread_mutex_destroy(&lock);
+  pthread_mutex_destroy(&database_lock);
+  pthread_mutex_destroy(&verify_network_block_lock);
+  pthread_mutex_destroy(&vote_lock);
+  pthread_mutex_destroy(&add_reserve_proof_lock);
+  pthread_mutex_destroy(&invalid_reserve_proof_lock);
+  pthread_mutex_destroy(&database_data_IP_address_lock);
+  pthread_mutex_destroy(&update_current_block_height_lock);
+  pthread_rwlock_destroy(&rwlock_reserve_proofs);
+  pthread_rwlock_destroy(&rwlock);
+
+  pthread_mutex_destroy(&hash_mutex);
+
+  free(server_limit_IP_address_list);
+  free(server_limit_public_address_list);
+
+  // initialize the error_message struct
+  for (count = 0; count < TOTAL_ERROR_MESSAGES; count++) {
+    free(error_message.function[count]);
+    free(error_message.data[count]);
+  }
+
+  // initialize the VRF_data struct
+  free(VRF_data.vrf_secret_key_data);
+  free(VRF_data.vrf_secret_key);
+  free(VRF_data.vrf_public_key_data);
+  free(VRF_data.vrf_public_key);
+  free(VRF_data.vrf_alpha_string_data);
+  free(VRF_data.vrf_alpha_string);
+  free(VRF_data.vrf_proof_data);
+  free(VRF_data.vrf_proof);
+  free(VRF_data.vrf_beta_string_data);
+  free(VRF_data.vrf_beta_string);
+  free(VRF_data.block_blob);
+  free(VRF_data.reserve_bytes_data_hash);
+
+  // check if the memory needed was allocated on the heap successfully
+
+  for (count = 0; count < BLOCK_VERIFIERS_TOTAL_AMOUNT; count++) {
+    free(VRF_data.block_verifiers_vrf_secret_key_data[count]);
+    free(VRF_data.block_verifiers_vrf_secret_key[count]);
+    free(VRF_data.block_verifiers_vrf_public_key_data[count]);
+    free(VRF_data.block_verifiers_vrf_public_key[count]);
+    free(VRF_data.block_verifiers_random_data[count]);
+    free(VRF_data.block_blob_signature[count]);
+  }
+
+  // initialize the blockchain_data struct
+  free(blockchain_data.network_version_data);
+  free(blockchain_data.timestamp_data);
+  free(blockchain_data.previous_block_hash_data);
+  free(blockchain_data.nonce_data);
+  free(blockchain_data.block_reward_transaction_version_data);
+  free(blockchain_data.unlock_block_data);
+  free(blockchain_data.block_reward_input_data);
+  free(blockchain_data.vin_type_data);
+  free(blockchain_data.block_height_data);
+  free(blockchain_data.block_reward_output_data);
+  free(blockchain_data.block_reward_data);
+  free(blockchain_data.stealth_address_output_tag_data);
+  free(blockchain_data.stealth_address_output_data);
+  free(blockchain_data.extra_bytes_size_data);
+  free(blockchain_data.transaction_public_key_tag_data);
+  free(blockchain_data.transaction_public_key_data);
+  free(blockchain_data.extra_nonce_tag_data);
+  free(blockchain_data.reserve_bytes_size_data);
+  free(blockchain_data.blockchain_reserve_bytes.block_producer_delegates_name_data);
+  free(blockchain_data.blockchain_reserve_bytes.block_producer_delegates_name);
+  free(blockchain_data.blockchain_reserve_bytes.block_producer_public_address_data);
+  free(blockchain_data.blockchain_reserve_bytes.block_producer_public_address);
+  free(blockchain_data.blockchain_reserve_bytes.block_producer_node_backup_count_data);
+  free(blockchain_data.blockchain_reserve_bytes.block_producer_node_backup_count);
+  free(blockchain_data.blockchain_reserve_bytes.block_producer_backup_nodes_names_data);
+  free(blockchain_data.blockchain_reserve_bytes.block_producer_backup_nodes_names);
+  free(blockchain_data.blockchain_reserve_bytes.vrf_secret_key_data);
+  free(blockchain_data.blockchain_reserve_bytes.vrf_secret_key);
+  free(blockchain_data.blockchain_reserve_bytes.vrf_public_key_data);
+  free(blockchain_data.blockchain_reserve_bytes.vrf_public_key);
+  free(blockchain_data.blockchain_reserve_bytes.vrf_alpha_string_data);
+  free(blockchain_data.blockchain_reserve_bytes.vrf_alpha_string);
+  free(blockchain_data.blockchain_reserve_bytes.vrf_proof_data);
+  free(blockchain_data.blockchain_reserve_bytes.vrf_proof);
+  free(blockchain_data.blockchain_reserve_bytes.vrf_beta_string_data);
+  free(blockchain_data.blockchain_reserve_bytes.vrf_beta_string);
+  free(blockchain_data.blockchain_reserve_bytes.vrf_data_round);
+  free(blockchain_data.blockchain_reserve_bytes.vrf_data);
+  free(blockchain_data.blockchain_reserve_bytes.previous_block_hash_data);
+
+  for (count = 0; count < BLOCK_VERIFIERS_TOTAL_AMOUNT; count++) {
+    free(blockchain_data.blockchain_reserve_bytes.next_block_verifiers_public_address_data[count]);
+    free(blockchain_data.blockchain_reserve_bytes.next_block_verifiers_public_address[count]);
+    free(blockchain_data.blockchain_reserve_bytes.block_validation_node_signature_data[count]);
+    free(blockchain_data.blockchain_reserve_bytes.block_validation_node_signature[count]);
+    free(blockchain_data.blockchain_reserve_bytes.block_verifiers_vrf_secret_key_data[count]);
+    free(blockchain_data.blockchain_reserve_bytes.block_verifiers_vrf_secret_key[count]);
+    free(blockchain_data.blockchain_reserve_bytes.block_verifiers_vrf_public_key_data[count]);
+    free(blockchain_data.blockchain_reserve_bytes.block_verifiers_vrf_public_key[count]);
+    free(blockchain_data.blockchain_reserve_bytes.block_verifiers_random_data[count]);
+    free(blockchain_data.blockchain_reserve_bytes.block_verifiers_random_data_text[count]);
+  }
+  free(blockchain_data.ringct_version_data);
+  free(blockchain_data.transaction_amount_data);
+
+  // for (count = 0; count < MAXIMUM_TRANSACATIONS_PER_BLOCK; count++)
+  // {
+  //   free(  blockchain_data.transactions[count]);
+  // }
+
+  for (count = 0; count < MAXIMUM_TRANSACATIONS_PER_BLOCK; count++) {
+    free(blockchain_data.transactions[count]);
+  }
   fprintf(stderr, "Daemon shutting down...\n");
 
+  return;
 }
 
 /*---------------------------------------------------------------------------------------------------------
