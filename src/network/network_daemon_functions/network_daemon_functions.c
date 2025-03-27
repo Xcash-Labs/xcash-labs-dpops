@@ -136,7 +136,7 @@ int get_block_template(char *result)
     }
   }
 
-  ERROR_PRINT("Could not create the block template");
+  ERROR_PRINT("Could not get the block template");
   return XCASH_ERROR;
 }
 
@@ -155,6 +155,7 @@ int submit_block_template(const char* DATA)
   const char* HTTP_HEADERS[] = {"Content-Type: application/json","Accept: application/json"}; 
   const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS)/sizeof(HTTP_HEADERS[0]);
   const size_t DATA_LENGTH = strnlen(DATA,BUFFER_SIZE);
+  const char* RPC_ENDPOINT = "/json_rpc";
 
   // Variables
   char data[BUFFER_SIZE];
@@ -168,6 +169,12 @@ int submit_block_template(const char* DATA)
   memcpy(message+61,DATA,DATA_LENGTH);
   memcpy(message+61+DATA_LENGTH,"\"]}",3);
 
-  send_http_request(data,XCASH_DAEMON_IP,"/json_rpc",XCASH_DAEMON_PORT,"POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH,message,SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS);
-  return XCASH_OK;
+  // Send HTTP request
+  if (send_http_request(data, XCASH_DAEMON_IP, RPC_ENDPOINT, XCASH_DAEMON_PORT, "POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH, message, SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) > 0 &&
+      parse_json_data(response, "result.status", result, BUFFER_SIZE) == 1) {
+    return XCASH_OK;
+  } else {
+    ERROR_PRINT("Could not submit the block template");
+    return XCASH_ERROR;
+  }
 }
