@@ -51,23 +51,13 @@ bool init_processing(const arg_config_t *arg_config)
   network_data_nodes_amount = get_seed_node_count();
   
   if (arg_config->init_db_from_seeds) {
-    INFO_STAGE_PRINT("Initializing database from seeds");
-    if (!init_db_from_seeds()) {
-      ERROR_PRINT("Can't initialize database from seeds");
-      return XCASH_ERROR;
-    };
+    ERROR_PRINT("Option not yet implemented");
+    return XCASH_ERROR;
   }
 
   if (arg_config->init_db_from_top) {
-    if (!fill_delegates_from_db()) {
-      ERROR_PRINT("Can't read delegates list from DB");
-      return XCASH_ERROR;
-    }
-    INFO_STAGE_PRINT("Initializing database from top height nodes");
-    if (!init_db_from_top()) {
-      ERROR_PRINT("Can't initialize database from top height nodes");
-      return XCASH_ERROR;
-    };
+    ERROR_PRINT("Option not yet implemented");
+    return XCASH_ERROR;
   }
 
   // brief check if database is empty
