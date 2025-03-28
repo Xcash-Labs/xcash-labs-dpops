@@ -1120,7 +1120,7 @@ int start_current_round_start_blocks(void)
   INFO_PRINT("Your block verifier is the main data network node so the first block will be created.");
 
   // wait until the non network data nodes have synced the previous current and next block verifiers list
-  sleep(30);
+  //sleep(30);
   
   // create the data
   if (start_blocks_create_data(data,data2) == 0)
@@ -1140,12 +1140,6 @@ int start_current_round_start_blocks(void)
   // sync_block_verifiers_minutes_and_seconds((BLOCK_TIME-1),SUBMIT_NETWORK_BLOCK_TIME_SECONDS);
 
   // have the main network data node submit the block to the network
-
-
-  DEBUG_PRINT("data2 = '%s'", data2);
-  DEBUG_PRINT("Length of data2 = %zu, buffer size = %zu", strlen(data2), sizeof(data2));
-  
-
 
   if (submit_block_template(data2) != XCASH_OK) {
     ERROR_PRINT("Could not create the starting block.");
