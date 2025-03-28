@@ -1142,7 +1142,9 @@ int start_current_round_start_blocks(void)
   // have the main network data node submit the block to the network
 
 
-  DEBUG_PRINT("...........Length of data2: %zu", strlen(data2));
+  DEBUG_PRINT("data2 = '%s'", data2);
+  DEBUG_PRINT("Length of data2 = %zu, buffer size = %zu", strlen(data2), sizeof(data2));
+  
 
 
   if (submit_block_template(data2) != XCASH_OK) {
