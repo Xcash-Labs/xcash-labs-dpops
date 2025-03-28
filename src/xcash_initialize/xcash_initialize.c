@@ -1,4 +1,4 @@
-#include "init_processing.h"
+#include "xcash_initialize.h"
 
 static int total_threads = 0;
 

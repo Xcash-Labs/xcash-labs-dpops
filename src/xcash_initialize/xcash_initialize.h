@@ -1,5 +1,5 @@
-#ifndef INIT_PROCESSING_H
-#define INIT_PROCESSING_H
+#ifndef XCASH_INITIALIZE_H
+#define XCASH_INITIALIZE_H
 
 #include <stdbool.h>
 #include <sys/sysinfo.h>

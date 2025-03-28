@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "structures.h": "c",
+        "xcash_round.h": "c"
+    }
+}
