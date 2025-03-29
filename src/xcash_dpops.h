@@ -7,14 +7,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
+#include <uv.h>
 #include "config.h"
-#include "globals.h"
 #include "macro_functions.h"
+#include "globals.h"
 #include "db_init.h"
 #include "structures.h"
-#include "uv_net_server.h"
-#include "xcash_initialize.h"
+#include "VRF_functions.h"
 #include "xcash_round.h"
+#include "uv_net_server.h"
+#include "node_functions.h"
+#include "init_processing.h"
 
 // Define an enum for option IDs
 typedef enum {
