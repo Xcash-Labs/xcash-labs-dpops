@@ -72,8 +72,50 @@ bool init_processing(const arg_config_t *arg_config)
 
   // brief check if database is empty
   if (count_db_delegates() <= 0 || count_db_statistics() <= 0) {
-    ERROR_PRINT("'delegates' or 'statistics' DB not initialized. Do it manually with --init-db-from-seeds");
-    return XCASH_ERROR;
+//    ERROR_PRINT("'delegates' or 'statistics' DB not initialized. Do it manually with --init-db-from-seeds");
+//    return XCASH_ERROR;
+  // check if it should create the default database data
+  
+char delegate_name[256];
+strncpy(delegate_name, network_nodes[i].ip_address, sizeof(delegate_name));
+delegate_name[sizeof(delegate_name) - 1] = '\0';  // Ensure null-termination
+
+for (char* p = delegate_name; *p; p++) {
+    if (*p == '.') *p = '_';
+}
+  char json_buffer[SMALL_BUFFER_SIZE];
+  for (int i = 0; network_nodes[i].seed_public_address != NULL; i++) {
+    snprintf(json_buffer, sizeof(json_buffer),
+        "{"
+          "\"public_address\":\"%s\","
+          "\"total_vote_count\":\"0\","
+          "\"IP_address\":\"%s\","
+          "\"delegate_name\":\"%s\","
+          "\"about\":\"Official xcash-labs node\","
+          "\"website\":\"%s\","
+          "\"team\":\"xcash-labs Team\","
+          "\"shared_delegate_status\":\"solo\","
+          "\"delegate_fee\":\"\","
+          "\"server_specs\":\"Operating System = Ubuntu 22.04\","
+          "\"block_verifier_score\":\"0\","
+          "\"online_status\":\"%s\","
+          "\"block_verifier_total_rounds\":\"0\","
+          "\"block_verifier_online_total_rounds\":\"0\","
+          "\"block_verifier_online_percentage\":\"0\","
+          "\"block_producer_total_rounds\":\"0\","
+          "\"block_producer_block_heights\":\"|%s\","
+          "\"public_key\":\"%s\""
+        "}",
+        network_nodes[i].seed_public_address,
+        network_nodes[i].ip_address,
+        network_nodes[i].ip_address, 
+        "NONE",
+        network_nodes[i].online_status ? "true" : "false",
+        XCASH_PROOF_OF_STAKE_BLOCK_HEIGHT,
+        network_nodes[i].seed_public_key
+    );
+
+    insert_document_into_collection_json(database_name, "delegates", json_buffer);
   }
 
   return XCASH_OK;
