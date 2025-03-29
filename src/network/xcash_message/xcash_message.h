@@ -7,15 +7,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <jansson.h>
+#include <jansson.h>6s
 #include "config.h"
 #include "globals.h"
 #include "macro_functions.h"
 #include "structures.h"
 #include "uv_net_server.h"
-#include "server_functions.h"
-#include "network_security_functions.h"
-#include "block_verifiers_synchronize_server_functions.h"
 
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 
