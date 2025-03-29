@@ -78,10 +78,11 @@ bool init_processing(const arg_config_t *arg_config) {
 
 
 
-    // Finish later... add option to load seednodes into db.
+    // Finish later... add option to load seednodes into db.  Not sure if it matters if the id of the db record is the same 
+    on all nodes. My guess is yes...
 
 
-    
+
       char delegate_name[256];
       strncpy(delegate_name, network_nodes[i].ip_address, sizeof(delegate_name));
       delegate_name[sizeof(delegate_name) - 1] = '\0';  // Null-terminate
