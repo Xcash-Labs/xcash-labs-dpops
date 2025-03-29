@@ -118,6 +118,102 @@ bool select_block_producers(size_t round_number) {
     return true;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+bool select_block_producers_2(size_t round_number, const unsigned char* vrf_output, size_t vrf_output_len) {
+  producer_node_t producers_list[BLOCK_VERIFIERS_AMOUNT] = {0};
+  size_t num_producers = 0;
+
+  // Step 1: Collect eligible delegates
+  for (size_t i = 0, j = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
+      if (strlen(delegates_all[i].public_address) == 0)
+          break;
+
+      if (is_seed_address(delegates_all[i].public_address))
+          continue;
+
+      if (strcmp(delegates_all[i].online_status, "false") == 0)
+          continue;
+
+      strcpy(producers_list[j].public_address, delegates_all[i].public_address);
+      strcpy(producers_list[j].IP_address, delegates_all[i].IP_address);
+      producers_list[j].is_online = true;
+
+      j++;
+      num_producers++;
+  }
+
+  if (num_producers == 0) {
+      WARNING_PRINT("No valid producers generated during producer selection.");
+      return false;
+  }
+
+  // Step 2: Generate deterministic entropy for shuffling
+  size_t entropy_bytes = BLOCKS_PER_DAY_FIVE_MINUTE_BLOCK_TIME * 2;
+  unsigned char* entropy = generate_deterministic_entropy(vrf_output, vrf_output_len, entropy_bytes);
+  if (!entropy) {
+      ERROR_PRINT("Failed to generate VRF-based entropy.");
+      return false;
+  }
+
+  // Step 3: Initialize producer pointers for shuffling
+  producer_node_t* producers_shuffle_list[BLOCKS_PER_DAY_FIVE_MINUTE_BLOCK_TIME];
+  for (size_t i = 0; i < BLOCKS_PER_DAY_FIVE_MINUTE_BLOCK_TIME; i++) {
+      producers_shuffle_list[i] = &producers_list[i % num_producers];
+  }
+
+  // Step 4: Fisher-Yates Shuffle using entropy
+  for (size_t i = BLOCKS_PER_DAY_FIVE_MINUTE_BLOCK_TIME - 1; i > 0; i--) {
+      size_t index = (entropy[i * 2] << 8 | entropy[i * 2 + 1]) % (i + 1);
+      producer_node_t* temp = producers_shuffle_list[i];
+      producers_shuffle_list[i] = producers_shuffle_list[index];
+      producers_shuffle_list[index] = temp;
+  }
+
+  free(entropy);
+
+  // Step 5: Select producing position for this round
+  size_t producing_position = round_number % BLOCKS_PER_DAY_FIVE_MINUTE_BLOCK_TIME;
+
+  // Step 6: Fill producer_refs[] with N producing slots
+  size_t producer_refs_size = sizeof(producer_refs) / sizeof(producer_ref_t);
+  for (size_t i = 0; i < producer_refs_size; i++) {
+      producing_position = producing_position % BLOCKS_PER_DAY_FIVE_MINUTE_BLOCK_TIME;
+
+      strcpy(producer_refs[i].public_address, producers_shuffle_list[producing_position]->public_address);
+      strcpy(producer_refs[i].IP_address, producers_shuffle_list[producing_position]->IP_address);
+
+      producing_position++;
+  }
+
+  return true;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 xcash_round_result_t process_round(size_t round_number) {
   // STEP 1: Sync the databases and build the majority list
 
@@ -205,109 +301,6 @@ xcash_round_result_t process_round(size_t round_number) {
 
   return (xcash_round_result_t)block_creation_result;
 }
-
-/*
-***************************************************************
-
-  #define RESET_VARIABLES \
-  for (count = 0; count < BLOCK_VERIFIERS_AMOUNT; count++) \
-  { \
-    memset(VRF_data.block_verifiers_vrf_secret_key_data[count],0,strlen(VRF_data.block_verifiers_vrf_secret_key_data[count])); \
-    memset(VRF_data.block_verifiers_vrf_secret_key[count],0,strlen((const char*)VRF_data.block_verifiers_vrf_secret_key[count])); \
-    memset(VRF_data.block_verifiers_vrf_public_key_data[count],0,strlen(VRF_data.block_verifiers_vrf_public_key_data[count])); \
-    memset(VRF_data.block_verifiers_vrf_public_key[count],0,strlen((const char*)VRF_data.block_verifiers_vrf_public_key[count])); \
-    memset(VRF_data.block_verifiers_random_data[count],0,strlen(VRF_data.block_verifiers_random_data[count])); \
-    memset(VRF_data.block_blob_signature[count],0,strlen(VRF_data.block_blob_signature[count])); \
-  } \
-  memset(VRF_data.vrf_secret_key_data,0,strlen(VRF_data.vrf_secret_key_data)); \
-  memset(VRF_data.vrf_secret_key,0,strlen((const char*)VRF_data.vrf_secret_key)); \
-  memset(VRF_data.vrf_public_key_data,0,strlen(VRF_data.vrf_public_key_data)); \
-  memset(VRF_data.vrf_public_key,0,strlen((const char*)VRF_data.vrf_public_key)); \
-  memset(VRF_data.vrf_alpha_string_data,0,strlen(VRF_data.vrf_alpha_string_data)); \
-  memset(VRF_data.vrf_alpha_string,0,strlen((const char*)VRF_data.vrf_alpha_string)); \
-  memset(VRF_data.vrf_proof_data,0,strlen(VRF_data.vrf_proof_data)); \
-  memset(VRF_data.vrf_proof,0,strlen((const char*)VRF_data.vrf_proof)); \
-  memset(VRF_data.vrf_beta_string_data,0,strlen(VRF_data.vrf_beta_string_data)); \
-  memset(VRF_data.vrf_beta_string,0,strlen((const char*)VRF_data.vrf_beta_string)); \
-  memset(VRF_data.reserve_bytes_data_hash,0,strlen(VRF_data.reserve_bytes_data_hash)); \
-  memset(VRF_data.block_blob,0,strlen(VRF_data.block_blob));
-
-if (count == XCASH_PROOF_OF_STAKE_BLOCK_HEIGHT)
-{
-  // this is the first block of the network
-  color_print("The current block is the first block on the network, meaning that the main network node will create this block","yellow");
-
-  RESET_VARIABLES;
-  
-  // set the main_network_data_node_create_block so the main network data node can create the block
-  main_network_data_node_create_block = 1;
-  if (start_current_round_start_blocks() == 0)
-  {      
-    START_NEW_ROUND_ERROR("start_current_round_start_blocks error");
-  } 
-}
-
-int start_current_round_start_blocks(void)
-{
-  // Variables
-  char data[BUFFER_SIZE];
-  char data2[BUFFER_SIZE];
-  
-  // define macros
-  #define DATABASE_COLLECTION "reserve_bytes_1"
-
-  #define START_CURRENT_ROUND_START_BLOCKS_ERROR(settings) \
-  memcpy(error_message.function[error_message.total],"start_current_round_start_blocks",32); \
-  memcpy(error_message.data[error_message.total],settings,sizeof(settings)-1); \
-  error_message.total++; \
-  return 0;
-  
-  memset(data,0,sizeof(data));
-  memset(data2,0,sizeof(data2));
-
-  // set the main_network_data_node_create_block so the main network data node can create the block
-  main_network_data_node_create_block = 1;
-
-  // check if the block verifier is the main network data node
-  if (strncmp(network_data_nodes_list.network_data_nodes_public_address[0],xcash_wallet_public_address,XCASH_WALLET_LENGTH) != 0)
-  {
-    color_print("Your block verifier is not the main data network node so your block verifier will sit out for the remainder of the round\n","yellow");
-    sync_block_verifiers_minutes_and_seconds((BLOCK_TIME-1),SUBMIT_NETWORK_BLOCK_TIME_SECONDS);
-    return 1;
-  } 
-
-  color_print("Your block verifier is the main data network node so your block verifier will create the block\n","yellow");
-
-  // wait until the non network data nodes have synced the previous current and next block verifiers list
-  sleep(30);
-  
-  // create the data
-  if (start_blocks_create_data(data,data2) == 0)
-  {
-    START_CURRENT_ROUND_START_BLOCKS_ERROR("Could not create the start blocks data");
-  }
-
-  // send the database data to all block verifiers
-  sleep(BLOCK_VERIFIERS_SETTINGS);
-  block_verifiers_send_data_socket((const char*)data);
-
-  color_print("Waiting for the block producer to submit the block to the network\n","blue");
-  sync_block_verifiers_minutes_and_seconds((BLOCK_TIME-1),SUBMIT_NETWORK_BLOCK_TIME_SECONDS);
-
-  // have the main network data node submit the block to the network  
-  submit_block_template(data2);
-  
-  return 1;
-
-  #undef DATABASE_COLLECTION
-  #undef START_CURRENT_ROUND_START_BLOCKS_ERROR
-}
-
-
-
-
-****************************************************************
-*/
 
 void start_block_production(void) {
   struct timeval current_time, round_start_time, block_start_time;
