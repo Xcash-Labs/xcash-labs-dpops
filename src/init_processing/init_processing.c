@@ -46,10 +46,9 @@ bool configure_uv_threadpool(const arg_config_t *arg_config) {
 Name: init_processing
 Description: Initialize globals and print program start header.
 ---------------------------------------------------------------------------------------------------------*/
-bool init_processing(const arg_config_t *arg_config)
-{
+bool init_processing(const arg_config_t *arg_config) {
   network_data_nodes_amount = get_seed_node_count();
-  
+
   if (arg_config->init_db_from_seeds) {
     INFO_STAGE_PRINT("Initializing database from seeds");
     if (!init_db_from_seeds()) {
@@ -76,50 +75,47 @@ bool init_processing(const arg_config_t *arg_config)
     char json_buffer[SMALL_BUFFER_SIZE];
 
     for (int i = 0; network_nodes[i].seed_public_address != NULL; i++) {
-        char delegate_name[256];
-        strncpy(delegate_name, network_nodes[i].ip_address, sizeof(delegate_name));
-        delegate_name[sizeof(delegate_name) - 1] = '\0';  // Null-terminate
+      char delegate_name[256];
+      strncpy(delegate_name, network_nodes[i].ip_address, sizeof(delegate_name));
+      delegate_name[sizeof(delegate_name) - 1] = '\0';  // Null-terminate
 
-        // Replace '.' with '_'
-        for (char *p = delegate_name; *p; p++) {
-            if (*p == '.') *p = '_';
-        }
+      // Replace '.' with '_'
+      for (char *p = delegate_name; *p; p++) {
+        if (*p == '.') *p = '_';
+      }
 
-        snprintf(json_buffer, sizeof(json_buffer),
-            "{"
-            "\"public_address\":\"%s\","
-            "\"total_vote_count\":\"0\","
-            "\"IP_address\":\"%s\","
-            "\"delegate_name\":\"%s_xcash_foundation\","
-            "\"about\":\"Official xCash-Labs Node\","
-            "\"website\":\"%s\","
-            "\"team\":\"xCash-Labs Team\","
-            "\"shared_delegate_status\":\"solo\","
-            "\"delegate_fee\":\"\","
-            "\"server_specs\":\"Operating System = Ubuntu 22.04\","
-            "\"block_verifier_score\":\"0\","
-            "\"online_status\":\"false\","
-            "\"block_verifier_total_rounds\":\"0\","
-            "\"block_verifier_online_total_rounds\":\"0\","
-            "\"block_verifier_online_percentage\":\"0\","
-            "\"block_producer_total_rounds\":\"0\","
-            "\"block_producer_block_heights\":\"|%d\","
-            "\"public_key\":\"%s\""
-            "}",
-            network_nodes[i].seed_public_address,
-            network_nodes[i].ip_address,
-            delegate_name,
-            network_nodes[i].ip_address,
-            XCASH_PROOF_OF_STAKE_BLOCK_HEIGHT,
-            network_nodes[i].seed_public_key
-        );
+      snprintf(json_buffer, sizeof(json_buffer),
+               "{"
+               "\"public_address\":\"%s\","
+               "\"total_vote_count\":\"0\","
+               "\"IP_address\":\"%s\","
+               "\"delegate_name\":\"%s_xcash_foundation\","
+               "\"about\":\"Official xCash-Labs Node\","
+               "\"website\":\"%s\","
+               "\"team\":\"xCash-Labs Team\","
+               "\"shared_delegate_status\":\"solo\","
+               "\"delegate_fee\":\"\","
+               "\"server_specs\":\"Operating System = Ubuntu 22.04\","
+               "\"block_verifier_score\":\"0\","
+               "\"online_status\":\"false\","
+               "\"block_verifier_total_rounds\":\"0\","
+               "\"block_verifier_online_total_rounds\":\"0\","
+               "\"block_verifier_online_percentage\":\"0\","
+               "\"block_producer_total_rounds\":\"0\","
+               "\"block_producer_block_heights\":\"|%d\","
+               "\"public_key\":\"%s\""
+               "}",
+               network_nodes[i].seed_public_address,
+               network_nodes[i].ip_address,
+               delegate_name,
+               network_nodes[i].ip_address,
+               XCASH_PROOF_OF_STAKE_BLOCK_HEIGHT,
+               network_nodes[i].seed_public_key);
 
-        insert_document_into_collection_json(DATABASE_NAME, "delegates", json_buffer);
+      insert_document_into_collection_json(DATABASE_NAME, "delegates", json_buffer);
     }
-
-    return XCASH_OK;
-}
-
+  }
+  return XCASH_OK;
 }
 
 /*---------------------------------------------------------------------------------------------------------
