@@ -10,12 +10,12 @@
 #include "config.h"
 #include "macro_functions.h"
 #include "globals.h"
-#include "db_functions.h"
-#include "network_daemon_functions.h"
-#include "network_functions.h"
-#include "string_functions.h"
-#include "VRF_functions.h"
-#include "node_functions.h"
+//#include "db_functions.h"
+//#include "network_daemon_functions.h"
+//#include "network_functions.h"
+//#include "string_functions.h"
+//#include "VRF_functions.h"
+//#include "node_functions.h"
 
 int handle_error(const char *function_name, const char *message, char *result, char *string);
 bool is_valid_message_type(const char *message_settings, const char *valid_types[], size_t valid_types_count);
