@@ -13,7 +13,7 @@
 #include "db_init.h"
 #include "structures.h"
 #include "uv_net_server.h"
-#include  "xcash_initialize.h"
+#include "xcash_initialize.h"
 #include "xcash_round.h"
 
 // Define an enum for option IDs
