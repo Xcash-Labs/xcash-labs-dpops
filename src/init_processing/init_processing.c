@@ -103,7 +103,7 @@ bool init_processing(const arg_config_t *arg_config)
             "\"block_verifier_online_total_rounds\":\"0\","
             "\"block_verifier_online_percentage\":\"0\","
             "\"block_producer_total_rounds\":\"0\","
-            "\"block_producer_block_heights\":\"|%s\","
+            "\"block_producer_block_heights\":\"|%d\","
             "\"public_key\":\"%s\""
             "}",
             network_nodes[i].seed_public_address,
@@ -114,7 +114,7 @@ bool init_processing(const arg_config_t *arg_config)
             network_nodes[i].seed_public_key
         );
 
-        insert_document_into_collection_json(database_name, "delegates", json_buffer);
+        insert_document_into_collection_json(DATABASE_NAME, "delegates", json_buffer);
     }
 
     return XCASH_OK;
