@@ -75,10 +75,16 @@ bool init_processing(const arg_config_t *arg_config) {
     char json_buffer[SMALL_BUFFER_SIZE];
 
     for (int i = 0; network_nodes[i].seed_public_address != NULL; i++) {
+
+
+
+    // Finish later... add option to load seednodes into db.
+
+
+    
       char delegate_name[256];
       strncpy(delegate_name, network_nodes[i].ip_address, sizeof(delegate_name));
       delegate_name[sizeof(delegate_name) - 1] = '\0';  // Null-terminate
-
       // Replace '.' with '_'
       for (char *p = delegate_name; *p; p++) {
         if (*p == '.') *p = '_';
