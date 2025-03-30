@@ -39,6 +39,7 @@ int varint_encode_new(long long int number, char *result, const size_t RESULT_TO
 
 
 
+
 int varint_encode(long long int number, char *result, const size_t RESULT_TOTAL_LENGTH)
 {
   // Variables
@@ -65,11 +66,11 @@ int varint_encode(long long int number, char *result, const size_t RESULT_TOTAL_
   {
     if (number_copy % 2 == 1)
     {
-      append_string(data,"1",sizeof(data));
+      memcpy(data1+strlen(data1),data2,strnlen(data2,(data1_length) - strlen(data1) - 1));
     }
     else
     {
-      append_string(data,"0",sizeof(data));
+      memcpy(data1+strlen(data1),data2,strnlen(data2,(data1_length) - strlen(data1) - 1));
     }
     number_copy /= 2; 
   }
@@ -77,7 +78,7 @@ int varint_encode(long long int number, char *result, const size_t RESULT_TOTAL_
   // pad the string to a mulitple of 7 bits  
   for (count = strnlen(data,sizeof(data)); count % (BITS_IN_BYTE-1) != 0; count++)
   {
-    append_string(result,"0",RESULT_TOTAL_LENGTH);
+    memcpy(data1+strlen(data1),data2,strnlen(data2,(data1_length) - strlen(data1) - 1));
   }
 
   // reverse the string
@@ -87,7 +88,7 @@ int varint_encode(long long int number, char *result, const size_t RESULT_TOTAL_
     memcpy(result+strlen(result),&data[length - count],sizeof(char));
   }
   memset(data,0,sizeof(data));
-  append_string(data,result,sizeof(data));
+  memcpy(data1+strlen(data1),data2,strnlen(data2,(data1_length) - strlen(data1) - 1));
   memset(result,0,RESULT_TOTAL_LENGTH);
 
   /*
