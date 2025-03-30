@@ -37,7 +37,7 @@ int varint_encode_new(long long int number, char *result, const size_t RESULT_TO
   return XCASH_OK;
 }
 
-//#define append_string(data1,data2,data1_length) \
+//define append_string(data1,data2,data1_length) 
 //memcpy(data1+strlen(data1),data2,strnlen(data2,(data1_length) - strlen(data1) - 1));
 
 
