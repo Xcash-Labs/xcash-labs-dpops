@@ -8,7 +8,7 @@ Parameters:
   result - the string to store the result
 Return: 1 if successfull, otherwise 0
 ---------------------------------------------------------------------------------------------------------*/
-int varint_encode_new(long long int number, char *result, const size_t RESULT_TOTAL_LENGTH) {
+int varint_encode(long long int number, char *result, const size_t RESULT_TOTAL_LENGTH) {
   size_t index = 0;
   unsigned char byte_array[16];  // Enough space for 64-bit integer varint encoding
 
@@ -57,7 +57,7 @@ void append_string(char *dest, const char *src, size_t dest_size) {
   dest[current_len + copy_len] = '\0';  // ensure null-termination
 }
 
-int varint_encode(long long int number, char *result, const size_t RESULT_TOTAL_LENGTH)
+int varint_encode_xxxx(long long int number, char *result, const size_t RESULT_TOTAL_LENGTH)
 {
   // Variables
   char data[SMALL_BUFFER_SIZE];
