@@ -195,7 +195,7 @@ int block_verifiers_create_block(size_t round_number) {
   if (sync_with_backup_fallback(backup_node_index, 0, 30, 3, 5) == XCASH_ERROR)
       return ROUND_SKIP;
 
-  // Check block height
+  // Check block height 
   if (get_current_block_height(data) == 1 && strncmp(current_block_height, data, BUFFER_SIZE) != 0) {
       WARNING_PRINT("Your block height is not synced correctly, waiting for next round");
       replayed_round_settings = 1;
@@ -208,6 +208,8 @@ int block_verifiers_create_block(size_t round_number) {
       return ROUND_NEXT;
   }
 
+  
+  //******************************************************************************** 
   // Part 0 - Sync block producers
   INFO_STAGE_PRINT("Part 0 - Exchanging block producers list");
   if (!sync_block_producers()) {

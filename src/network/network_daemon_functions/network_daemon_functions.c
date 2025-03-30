@@ -16,8 +16,7 @@ int get_current_block_height(char *result) {
     // Constants
     const char *HTTP_HEADERS[] = {"Content-Type: application/json", "Accept: application/json"};
     const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0]);
-    const char *request_payload = "{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"sync_info\"}";
-//    const char *request_payload = "{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"get_block_count\"}";
+    const char *request_payload = "{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"get_block_count\"}";
 
     // Buffer to store the response
     char response_data[SMALL_BUFFER_SIZE] = {0};

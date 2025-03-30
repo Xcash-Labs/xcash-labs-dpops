@@ -114,8 +114,6 @@ int read_organize_delegates(delegates_t* delegates, size_t* delegates_count_resu
         return XCASH_ERROR;
     }
 
-    // TODO probably, if the db is brand new, we should fill at least the nodes information
-
     delegates_count = count_recs(delegates_db_data);
     if (delegates_count == 0 || delegates_count < 20) {
         WARNING_PRINT("delegates db has only %d delegates", delegates_count);
