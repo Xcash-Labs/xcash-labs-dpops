@@ -31,11 +31,17 @@ DPOPS_MINIMUM_AMOUNT=0
 XCASH_DPOPS_BLOCK_HEIGHT=3
 
 # Latest versions
-# MONGODB_LATEST_VERSION="mongodb-linux-x86_64-ubuntu1804-4.4.1"
-MONGODB_LATEST_VERSION="mongodb-linux-x86_64-ubuntu2004-4.4.24"
-MONGODB_TOOLS_LATEST_VERSION="mongodb-database-tools-ubuntu1804-x86_64-100.2.1"
-MONGOC_DRIVER_LATEST_VERSION="mongo-c-driver-1.17.1"
-NODEJS_LATEST_VERSION="node-v14.10.1-linux-x64"
+# MONGODB_LATEST_VERSION="mongodb-linux-x86_64-ubuntu2004-4.4.24"
+# MONGODB_TOOLS_LATEST_VERSION="mongodb-database-tools-ubuntu1804-x86_64-100.2.1"
+MONGODB_LATEST_VERSION="mongodb-linux-x86_64-ubuntu2004-6.0.14"  # or latest 6.0.x
+MONGODB_TOOLS_LATEST_VERSION="mongodb-database-tools-ubuntu2004-x86_64-100.7.0"  # match tools to version
+
+# MONGOC_DRIVER_LATEST_VERSION="mongo-c-driver-1.17.1"
+MONGOC_DRIVER_LATEST_VERSION="mongo-c-driver-1.26.1"
+
+#NODEJS_LATEST_VERSION="node-v14.10.1-linux-x64"
+NODEJS_LATEST_VERSION="node-v18.19.1-linux-x64"
+
 
 # Restore versions
 # MONGODB_RESTORE_VERSION="mongodb-linux-x86_64-ubuntu1804-4.4.1"
@@ -74,7 +80,8 @@ MONGOC_DRIVER_URL="https://github.com/mongodb/mongo-c-driver/releases/download/$
 MONGOC_DRIVER_URL="https://github.com/mongodb/mongo-c-driver/releases/download/${MONGOC_DRIVER_LATEST_VERSION:15}/${MONGOC_DRIVER_LATEST_VERSION}.tar.gz"
 MONGOC_DRIVER_DIR=""
 MONGOC_DRIVER_CURRENT_VERSION=""
-XCASH_DPOPS_PACKAGES="build-essential cmake pkg-config libboost-all-dev libssl-dev libzmq3-dev libunbound-dev libsodium-dev libminiupnpc-dev libunwind8-dev liblzma-dev libreadline6-dev libldns-dev libexpat1-dev libgtest-dev doxygen graphviz libpcsclite-dev git screen p7zip-full moreutils wget iptables libuv1-dev jq curl iproute2 libjansson-dev libcurl4-openssl-dev libcjson-dev"
+# XCASH_DPOPS_PACKAGES="build-essential cmake pkg-config libboost-all-dev libssl-dev libzmq3-dev libunbound-dev libsodium-dev libminiupnpc-dev libunwind8-dev liblzma-dev libreadline6-dev libldns-dev libexpat1-dev libgtest-dev doxygen graphviz libpcsclite-dev git screen p7zip-full moreutils wget iptables libuv1-dev jq curl iproute2 libjansson-dev libcurl4-openssl-dev libcjson-dev"
+XCASH_DPOPS_PACKAGES="build-essential cmake pkg-config libssl-dev libzmq3-dev libunbound-dev libsodium-dev libunwind8-dev liblzma-dev libreadline6-dev libexpat1-dev qttools5-dev-tools libhidapi-dev libusb-1.0-0-dev libprotobuf-dev protobuf-compiler libudev-dev libboost-chrono-dev libboost-date-time-dev libboost-filesystem-dev libboost-locale-dev libboost-program-options-dev libboost-regex-dev libboost-serialization-dev libboost-system-dev libboost-thread-dev python3 ccache doxygen graphviz git curl autoconf libtool gperf"
 
 CURRENT_XCASH_WALLET_INFORMATION=""
 PUBLIC_ADDRESS=""
@@ -116,8 +123,6 @@ regex_XCASH_DPOPS_INSTALLATION_DIR="(^\/(.*?)\/$)|(^$)" # anything that starts w
 regex_MNEMONIC_SEED="^\b([a-z]+\s+){24}\b([a-z]+)$" # 25 words exactly
 regex_DPOPS_FEE="\b(^[0-9]{1}[0-9]{0,1}.?[0-9]{0,6}$)\b$" # between 0 and 100 with up to 6 decimal places
 regex_DPOPS_MINIMUM_AMOUNT="\b(^[1-9]{1}[0-9]{4,6}$)\b$|^10000000$" # between 10000 and 10000000
-
-
 
 # Disable script execution with sudo and warns the user if root install
 if [ $SUDO_USER ] ; then
@@ -789,6 +794,7 @@ function build_xcash()
   echo -ne "${COLOR_PRINT_YELLOW}Building X-CASH (This Might Take A While)${END_COLOR_PRINT}"
   cd "${XCASH_DIR}"
   git checkout --quiet ${XCASH_CORE_BRANCH}
+  git submodule update --init --force
   if [ "$RAM_CPU_RATIO" -ge "$RAM_CPU_RATIO_ALL_CPU_THREADS" ]; then
     echo "y" | make clean &>/dev/null
     make release -j "${CPU_THREADS}" &>/dev/null
@@ -879,32 +885,34 @@ function create_systemd_service_files()
   echo
 }
 
-function build_libssl11()
-{
-  echo -ne "${COLOR_PRINT_YELLOW}Installing Libssl1.1${END_COLOR_PRINT}"
-  cd "${XCASH_DPOPS_INSTALLATION_DIR}"
+#jed
+#function build_libssl11()
+#{
+#  echo -ne "${COLOR_PRINT_YELLOW}Installing Libssl1.1${END_COLOR_PRINT}"
+#  cd "${XCASH_DPOPS_INSTALLATION_DIR}"
 
-  wget https://www.openssl.org/source/openssl-1.1.1.tar.gz &>/dev/null
-  tar xvf openssl-1.1.1.tar.gz &>/dev/null
-  rm openssl-1.1.1.tar.gz 
-  cd openssl-1.1.1/
-  ./config &>/dev/null
-  make -j "${CPU_THREADS}" &>/dev/null
-  sudo make install &>/dev/null
-  cd ..
-  rm -rf ./openssl-1.1.1
-  echo -ne "\r${COLOR_PRINT_GREEN}Installing Libssl1.1${END_COLOR_PRINT}"
-  echo
-}
+#  wget https://www.openssl.org/source/openssl-1.1.1.tar.gz &>/dev/null
+#  tar xvf openssl-1.1.1.tar.gz &>/dev/null
+#  rm openssl-1.1.1.tar.gz 
+#  cd openssl-1.1.1/
+#  ./config &>/dev/null
+#  make -j "${CPU_THREADS}" &>/dev/null
+#  sudo make install &>/dev/null
+#  cd ..
+#  rm -rf ./openssl-1.1.1
+#  echo -ne "\r${COLOR_PRINT_GREEN}Installing Libssl1.1${END_COLOR_PRINT}"
+#  echo
+#}
 
 function install_mongodb()
 {
-  if ldconfig -p | grep -q "libssl.so.1.1"; then
-      echo "libssl.so.1.1 is available on the system."
-  else
-      echo "libssl.so.1.1 is NOT found on the system."
-      build_libssl11
-  fi
+// jed
+#  if ldconfig -p | grep -q "libssl.so.1.1"; then
+#      echo "libssl.so.1.1 is available on the system."
+#  else
+#      echo "libssl.so.1.1 is NOT found on the system."
+#      build_libssl11
+#  fi
 
   echo -ne "${COLOR_PRINT_YELLOW}Installing MongoDB${END_COLOR_PRINT}"
   cd "${XCASH_DPOPS_INSTALLATION_DIR}"
