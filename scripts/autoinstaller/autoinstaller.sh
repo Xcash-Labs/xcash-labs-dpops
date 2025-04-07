@@ -905,7 +905,6 @@ function create_systemd_service_files()
 
 function install_mongodb()
 {
-// jed
 #  if ldconfig -p | grep -q "libssl.so.1.1"; then
 #      echo "libssl.so.1.1 is available on the system."
 #  else
