@@ -2202,48 +2202,35 @@ function install_or_update_blockchain()
   done
 
   cd $HOME
-  XCASH_BLOCKCHAIN_INSTALLATION_DIR=$(sudo find / -path /sys -prune -o -path /proc -prune -o -path /dev -prune -o -path /var -prune -o -type d -name ".X-CASH" -print)/
-  if [ $XCASH_BLOCKCHAIN_INSTALLATION_DIR = "/" ]; then
-    XCASH_BLOCKCHAIN_INSTALLATION_DIR="${HOME}/.X-CASH/"
-  fi
   # Install 7z and wget if not already installed
   wait_for_package_manager
-  sudo apt install -y p7zip-full wget &>/dev/null
-  cd && test -f xcash-blockchain.7z && sudo rm -rf xcash-blockchain.7z*
+  sudo apt install -y p7zip-full wget &>/dev/nul
+  cd && test -f block-2.7z && sudo rm -rf block-2.7z*
   echo -e "${COLOR_PRINT_GREEN}Starting the Download${END_COLOR_PRINT}"
   wget -q --show-progress ${XCASH_BLOCKCHAIN_BOOTSTRAP_URL}
   echo -e "${COLOR_PRINT_GREEN}Starting Extraction${END_COLOR_PRINT}"
   sudo rm -r ${XCASH_BLOCKCHAIN_INSTALLATION_DIR} &>/dev/null || true  
-  7z x xcash-blockchain.7z -bso0 -bse0 -o${XCASH_BLOCKCHAIN_INSTALLATION_DIR::-8}
-  sudo rm xcash-blockchain.7z
-  echo -e "${COLOR_PRINT_GREEN}Installing / Updating The BlockChain Completed${END_COLOR_PRINT}"
+  7z x block-2.7z -bso0 -bse0
+  sudo rm block-2.7z 
+  echo -e "${COLOR_PRINT_GREEN}Installing The BlockChain Completed${END_COLOR_PRINT}"
   echo
 }
 
 function install_blockchain()
 {
-  if [ ! -d ${XCASH_BLOCKCHAIN_INSTALLATION_DIR} ] || [ ! -d ${XCASH_BLOCKCHAIN_INSTALLATION_DIR}lmdb/ ]; then
-    echo -e "${COLOR_PRINT_GREEN}Installing The BlockChain (This Might Take a While, please follow the progress)${END_COLOR_PRINT}"
-    
-    # wait for the blockchain file to be created
-    hour=$(date +"%H")
-    while [ $hour == 0 ]
-    do
-      sleep 60s
-      hour=$(date +"%H")
-    done
-
-    cd $HOME
-    cd && test -f xcash-blockchain.7z && sudo rm -rf xcash-blockchain.7z*
-    echo -e "${COLOR_PRINT_GREEN}Starting the Download${END_COLOR_PRINT}"
-    wget -q --show-progress ${XCASH_BLOCKCHAIN_BOOTSTRAP_URL}
-    echo -e "${COLOR_PRINT_GREEN}Starting Extraction${END_COLOR_PRINT}"
-    sudo rm -r ${XCASH_BLOCKCHAIN_INSTALLATION_DIR} &>/dev/null || true  
-    7z x block-2.7z -bso0 -bse0 -o${XCASH_BLOCKCHAIN_INSTALLATION_DIR::-8}
-    sudo rm block-2.7z 
-    echo -e "${COLOR_PRINT_GREEN}Installing The BlockChain Completed${END_COLOR_PRINT}"
-    echo
-  fi
+  cd $HOME
+  # Install 7z and wget if not already installed
+  wait_for_package_manager
+  sudo apt install -y p7zip-full wget &>/dev/nul
+  cd && test -f block-2.7z && sudo rm -rf block-2.7z*
+  echo -e "${COLOR_PRINT_GREEN}Starting the Download${END_COLOR_PRINT}"
+  wget -q --show-progress ${XCASH_BLOCKCHAIN_BOOTSTRAP_URL}
+  echo -e "${COLOR_PRINT_GREEN}Starting Extraction${END_COLOR_PRINT}"
+  sudo rm -r ${XCASH_BLOCKCHAIN_INSTALLATION_DIR} &>/dev/null || true  
+  7z x block-2.7z -bso0 -bse0
+  sudo rm block-2.7z 
+  echo -e "${COLOR_PRINT_GREEN}Installing The BlockChain Completed${END_COLOR_PRINT}"
+  echo
 }
 
 function edit_shared_delegate_settings()
