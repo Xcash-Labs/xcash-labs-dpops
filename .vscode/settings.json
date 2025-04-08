@@ -23,6 +23,7 @@
         "vrf_functions.h": "c",
         "sha512el.h": "c",
         "uv_net_multi.h": "c",
-        "xcash_delegates.h": "c"
+        "xcash_delegates.h": "c",
+        "block_verifiers_functions.h": "c"
     }
 }

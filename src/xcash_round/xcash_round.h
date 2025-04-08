@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/time.h>
+#include <openssl/sha.h>
 #include <openssl/evp.h>
 #include "config.h"
 #include "globals.h"
