@@ -33,15 +33,15 @@ XCASH_DPOPS_BLOCK_HEIGHT=3
 # Latest versions
 # MONGODB_LATEST_VERSION="mongodb-linux-x86_64-ubuntu2004-4.4.24"
 # MONGODB_TOOLS_LATEST_VERSION="mongodb-database-tools-ubuntu1804-x86_64-100.2.1"
-MONGODB_LATEST_VERSION="mongodb-linux-x86_64-ubuntu2004-6.0.14"  # or latest 6.0.x
-MONGODB_TOOLS_LATEST_VERSION="mongodb-database-tools-ubuntu2004-x86_64-100.7.0"  # match tools to version
+
+MONGODB_LATEST_VERSION="mongodb-linux-x86_64-ubuntu2204-8.0.6"  # or latest 6.0.x
+MONGODB_TOOLS_LATEST_VERSION="mongodb-database-tools-ubuntu2204-x86_64-100.12.0"  
 
 # MONGOC_DRIVER_LATEST_VERSION="mongo-c-driver-1.17.1"
-MONGOC_DRIVER_LATEST_VERSION="mongo-c-driver-1.26.1"
+MONGOC_DRIVER_LATEST_VERSION="mongo-c-driver-1.30.2"
 
 #NODEJS_LATEST_VERSION="node-v14.10.1-linux-x64"
 NODEJS_LATEST_VERSION="node-v18.19.1-linux-x64"
-
 
 # Restore versions
 # MONGODB_RESTORE_VERSION="mongodb-linux-x86_64-ubuntu1804-4.4.1"
@@ -77,7 +77,7 @@ MONGODB_TOOLS_URL="https://fastdl.mongodb.org/tools/db/${MONGODB_TOOLS_LATEST_VE
 MONGODB_DIR=""
 MONGODB_CURRENT_VERSION=""
 MONGOC_DRIVER_URL="https://github.com/mongodb/mongo-c-driver/releases/download/${MONGOC_DRIVER_LATEST_VERSION:15}/${MONGOC_DRIVER_LATEST_VERSION}.tar.gz"
-MONGOC_DRIVER_URL="https://github.com/mongodb/mongo-c-driver/releases/download/${MONGOC_DRIVER_LATEST_VERSION:15}/${MONGOC_DRIVER_LATEST_VERSION}.tar.gz"
+##MONGOC_DRIVER_URL="https://github.com/mongodb/mongo-c-driver/releases/download/${MONGOC_DRIVER_LATEST_VERSION:15}/${MONGOC_DRIVER_LATEST_VERSION}.tar.gz"
 MONGOC_DRIVER_DIR=""
 MONGOC_DRIVER_CURRENT_VERSION=""
 # XCASH_DPOPS_PACKAGES="build-essential cmake pkg-config libboost-all-dev libssl-dev libzmq3-dev libunbound-dev libsodium-dev libminiupnpc-dev libunwind8-dev liblzma-dev libreadline6-dev libldns-dev libexpat1-dev libgtest-dev doxygen graphviz libpcsclite-dev git screen p7zip-full moreutils wget iptables libuv1-dev jq curl iproute2 libjansson-dev libcurl4-openssl-dev libcjson-dev"
@@ -793,7 +793,7 @@ function build_xcash()
   echo -ne "${COLOR_PRINT_YELLOW}Building X-CASH (This Might Take A While)${END_COLOR_PRINT}"
   cd "${XCASH_DIR}"
   git checkout --quiet ${XCASH_CORE_BRANCH}
-  git submodule update --init --force
+  git submodule update --init --force > /dev/null
   if [ "$RAM_CPU_RATIO" -ge "$RAM_CPU_RATIO_ALL_CPU_THREADS" ]; then
     echo "y" | make clean &>/dev/null
     make release -j "${CPU_THREADS}" &>/dev/null
