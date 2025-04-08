@@ -793,7 +793,7 @@ function build_xcash()
   echo -ne "${COLOR_PRINT_YELLOW}Building X-CASH (This Might Take A While)${END_COLOR_PRINT}"
   cd "${XCASH_DIR}"
   git checkout --quiet ${XCASH_CORE_BRANCH}
-  git submodule update --init --force > /dev/null
+  git submodule update --init --force > /dev/null 2>&1
   if [ "$RAM_CPU_RATIO" -ge "$RAM_CPU_RATIO_ALL_CPU_THREADS" ]; then
     echo "y" | make clean &>/dev/null
     make release -j "${CPU_THREADS}" &>/dev/null

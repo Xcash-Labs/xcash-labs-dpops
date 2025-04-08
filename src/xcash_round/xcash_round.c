@@ -10,24 +10,41 @@ producer_ref_t producer_refs[] = {
 };
 
 unsigned char* get_pseudo_random_hash(size_t seed, size_t feed_size) {
-    char salt_data[512];
-    SHA512_CTX sha512;
+  char salt_data[512];
 
-    // we need 2 bytes for each step
-    size_t iterations = (feed_size*2 / SHA512_DIGEST_LENGTH) +1;
+  // Calculate how many 64-byte (SHA-512) blocks are needed
+  size_t iterations = (feed_size * 2 / SHA512_DIGEST_LENGTH) + 1;
+  size_t hash_len = SHA512_DIGEST_LENGTH;
 
-    unsigned char* hash_buf = calloc(iterations, SHA512_DIGEST_LENGTH);
+  // Allocate buffer to hold all hash outputs
+  unsigned char* hash_buf = calloc(iterations, hash_len);
+  if (!hash_buf) return NULL;
 
-    for (size_t i = 0; i < iterations; i++)
-    {
-        snprintf(salt_data, sizeof(salt_data), "%020ld%020ld", seed, i);
-        SHA512_Init(&sha512);
-        SHA512_Update(&sha512, salt_data, (size_t)strlen((const char*)salt_data));
-        SHA512_Update(&sha512, hash_buf, (size_t)strlen((const char*)hash_buf));
-        SHA512_Final(hash_buf + i*SHA512_DIGEST_LENGTH, &sha512);
-    }
+  for (size_t i = 0; i < iterations; i++) {
+      // Format salt_data with seed and iteration count
+      snprintf(salt_data, sizeof(salt_data), "%020ld%020ld", seed, i);
 
-    return hash_buf;
+      // Create a new SHA-512 digest context
+      EVP_MD_CTX* mdctx = EVP_MD_CTX_new();
+      if (!mdctx) {
+          free(hash_buf);
+          return NULL;
+      }
+
+      // Start the SHA-512 digest
+      if (EVP_DigestInit_ex(mdctx, EVP_sha512(), NULL) != 1 ||
+          EVP_DigestUpdate(mdctx, salt_data, strlen(salt_data)) != 1 ||
+          EVP_DigestUpdate(mdctx, hash_buf, i * hash_len) != 1 ||  // Use all prior bytes in hash_buf
+          EVP_DigestFinal_ex(mdctx, hash_buf + (i * hash_len), NULL) != 1) {
+          EVP_MD_CTX_free(mdctx);
+          free(hash_buf);
+          return NULL;
+      }
+
+      EVP_MD_CTX_free(mdctx);
+  }
+
+  return hash_buf;
 }
 
 bool select_block_producers(size_t round_number) {
