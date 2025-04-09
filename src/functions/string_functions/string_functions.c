@@ -275,16 +275,30 @@ void bin_to_hex(const unsigned char *bin_data, int data_size, char *buf)
 
 void md5_hex(const char *src, char *dest)
 {
-    if (!src || !dest) {  // Validate inputs
-        if (dest) *dest = '\0';  // Ensure dest is null-terminated if it's not NULL
+    if (!src || !dest) {
+        if (dest) *dest = '\0';
         return;
     }
 
-    unsigned char md5_bin[MD5_DIGEST_LENGTH];  // Use MD5_DIGEST_LENGTH for clarity and safety
+    unsigned char md5_bin[MD5_DIGEST_LENGTH] = {0};
 
-    MD5((const unsigned char *)src, strlen(src), md5_bin);  // Combines Init, Update, and Final
+    EVP_MD_CTX *mdctx = EVP_MD_CTX_new();
+    if (!mdctx) {
+        *dest = '\0';
+        return;
+    }
 
-    bin_to_hex(md5_bin, MD5_DIGEST_LENGTH, dest);  // Convert binary MD5 to hex string
+    if (EVP_DigestInit_ex(mdctx, EVP_md5(), NULL) != 1 ||
+        EVP_DigestUpdate(mdctx, src, strlen(src)) != 1 ||
+        EVP_DigestFinal_ex(mdctx, md5_bin, NULL) != 1) {
+        EVP_MD_CTX_free(mdctx);
+        *dest = '\0';
+        return;
+    }
+
+    EVP_MD_CTX_free(mdctx);
+
+    bin_to_hex(md5_bin, MD5_DIGEST_LENGTH, dest);
 }
 
 /*---------------------------------------------------------------------------------------------------------
