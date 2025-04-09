@@ -164,8 +164,8 @@ int calc_db_hashes(mongoc_client_t *client, const char *db_name, char *hash, cha
     bson_t *opts = NULL;
     const bson_t *doc = NULL;
 
-    MD5_CTX md5;
-    unsigned char md5_bin[MD5_DIGEST_LENGTH] = {0};  // Use MD5_DIGEST_LENGTH for clarity
+    EVP_MD_CTX *mdctx = NULL;
+    unsigned char md5_bin[MD5_DIGEST_LENGTH] = {0};
     int result = 0;
 
     // Get collection
@@ -192,17 +192,29 @@ int calc_db_hashes(mongoc_client_t *client, const char *db_name, char *hash, cha
         goto cleanup;
     }
 
-    MD5_Init(&md5);
+    // Create MD5 EVP digest context
+    mdctx = EVP_MD_CTX_new();
+    if (!mdctx) {
+        ERROR_PRINT("Failed to allocate EVP_MD_CTX");
+        result = -5;
+        goto cleanup;
+    }
+
+    if (EVP_DigestInit_ex(mdctx, EVP_md5(), NULL) != 1) {
+        ERROR_PRINT("EVP_DigestInit_ex failed for MD5");
+        result = -6;
+        goto cleanup;
+    }
 
     // Process each document
     while (mongoc_cursor_next(cursor, &doc)) {
         char *str = bson_as_canonical_extended_json(doc, NULL);
         if (str) {
-            MD5_Update(&md5, str, strlen(str));
+            EVP_DigestUpdate(mdctx, str, strlen(str));
             bson_free(str);
         } else {
             ERROR_PRINT("Failed to convert BSON document to JSON.");
-            result = -5;
+            result = -7;
             goto cleanup;
         }
     }
@@ -210,22 +222,28 @@ int calc_db_hashes(mongoc_client_t *client, const char *db_name, char *hash, cha
     // Check for cursor errors
     if (mongoc_cursor_error(cursor, NULL)) {
         ERROR_PRINT("Cursor error while iterating documents.");
-        result = -6;
+        result = -8;
         goto cleanup;
     }
 
-    MD5_Final(md5_bin, &md5);
+    // Finalize the MD5 hash
+    if (EVP_DigestFinal_ex(mdctx, md5_bin, NULL) != 1) {
+        ERROR_PRINT("EVP_DigestFinal_ex failed.");
+        result = -9;
+        goto cleanup;
+    }
 
     // Convert MD5 binary to hex
     bin_to_hex(md5_bin, MD5_DIGEST_LENGTH, db_hash);
 
     // Zero-pad the hash and copy the MD5 hex string
     memset(hash, '0', 96);
-    strncpy(hash + 96, db_hash, 32);  // Use strncpy for safety
+    strncpy(hash + 96, db_hash, 32);
     hash[128] = '\0';  // Ensure null-termination
 
 cleanup:
     // Cleanup allocated resources
+    if (mdctx) EVP_MD_CTX_free(mdctx);
     if (opts) bson_destroy(opts);
     if (query) bson_destroy(query);
     if (cursor) mongoc_cursor_destroy(cursor);

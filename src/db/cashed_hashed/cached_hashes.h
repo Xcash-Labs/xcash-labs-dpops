@@ -1,15 +1,10 @@
 #ifndef CACHED_HASHES_H_
 #define CACHED_HASHES_H_
 
-//#include <stdlib.h>
-//#include <string.h>
-//#include <stdio.h>
-//#include <sys/time.h>
-//#include <openssl/md5.h>
-
+#include <string.h>
 #include <bson/bson.h>
 #include <mongoc/mongoc.h>
-#include <openssl/md5.h>
+#include <openssl/evp.h>
 #include "config.h"
 #include "globals.h"
 #include "macro_functions.h"
