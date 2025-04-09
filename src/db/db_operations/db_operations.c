@@ -105,7 +105,7 @@ bool db_upsert_doc(const char *db_name, const char *collection_name, const bson_
             result = false;
         }
     } else {
-        char *str = bson_as_json(doc, NULL);
+        char *str = bson_as_legacy_extended_json(doc, NULL);
         DEBUG_PRINT("Failed to find '_id' in upsert document: %s", str);
         free(str);
 
@@ -161,7 +161,7 @@ bool db_upsert_multi_docs(const char *db_name, const char *collection_name, cons
             if (bson_iter_init_find(&child, &sub_doc, "_id")) {
                 bson_append_value(&query, "_id", -1, bson_iter_value(&child));
             } else {
-                char *str = bson_as_json(&sub_doc, NULL);
+                char *str = bson_as_legacy_extended_json(&sub_doc, NULL);
                 DEBUG_PRINT("Failed to find '_id' in upsert document: %s", str);
                 free(str);
 

@@ -364,7 +364,7 @@ int get_db_max_block_height(const char *dbname, size_t* max_block_heigh, size_t*
     // List all collections and find the one with the maximum number
     cursor = mongoc_database_find_collections_with_opts(database, NULL);
     while (mongoc_cursor_next(cursor, &doc)) {
-        str = bson_as_json(doc, NULL);
+        str = bson_as_legacy_extended_json(doc, NULL);
         const char *name = bson_lookup_utf8(doc, "name");
         if (strncmp(name, RESERVE_BYTES_PREFIX, RESERVE_BYTES_PREFIX_SIZE) == 0) {
             int collectionNumber = atoi(name + RESERVE_BYTES_PREFIX_SIZE);
