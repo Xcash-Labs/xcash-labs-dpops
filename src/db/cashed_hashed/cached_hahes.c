@@ -323,13 +323,12 @@ int get_dbhash(mongoc_client_t *client, const char *db_name, char *db_hash)
 
 int calc_multi_hash(mongoc_client_t *client, const char *db_prefix, int max_index, char *hash)
 {
-    // Validate input arguments
     if (!client || !db_prefix || !hash || max_index <= 0) {
         ERROR_PRINT("Invalid arguments passed to calc_multi_hash");
         return -1;
     }
 
-    MD5_CTX md5;
+    EVP_MD_CTX *mdctx = NULL;
     struct timeval start_time, last_time, current_time, tmp_time;
     char l_db_hash[33] = {0};
     unsigned char md5_bin[16] = {0};
@@ -341,27 +340,35 @@ int calc_multi_hash(mongoc_client_t *client, const char *db_prefix, int max_inde
         return 0;  // Return immediately if cache hit
     }
 
-    // Allocate memory for sorting array and validate allocation
     char (*names_array)[MAXIMUM_NUMBER_SIZE] = calloc(max_index, MAXIMUM_NUMBER_SIZE);
     if (!names_array) {
         ERROR_PRINT("Memory allocation failed for names_array");
         return -1;
     }
 
-    // Prepare and sort index names
     for (int i = 0; i < max_index; i++) {
         snprintf(names_array[i], MAXIMUM_NUMBER_SIZE, "%d", i + 1);
     }
     qsort(names_array, max_index, MAXIMUM_NUMBER_SIZE, cmpfunc);
 
     // Initialize MD5 context
-    MD5_Init(&md5);
+    mdctx = EVP_MD_CTX_new();
+    if (!mdctx) {
+        ERROR_PRINT("EVP_MD_CTX allocation failed");
+        free(names_array);
+        return -1;
+    }
 
-    // Start measuring time
+    if (EVP_DigestInit_ex(mdctx, EVP_md5(), NULL) != 1) {
+        ERROR_PRINT("EVP_DigestInit_ex failed");
+        EVP_MD_CTX_free(mdctx);
+        free(names_array);
+        return -1;
+    }
+
     gettimeofday(&start_time, NULL);
     last_time = start_time;
 
-    // Process each sorted database name
     for (int i = 0; i < max_index; i++) {
         snprintf(db_name, sizeof(db_name), "%s_%s", db_prefix, names_array[i]);
 
@@ -371,9 +378,12 @@ int calc_multi_hash(mongoc_client_t *client, const char *db_prefix, int max_inde
             break;
         }
 
-        MD5_Update(&md5, l_db_hash, strlen(l_db_hash));
+        if (EVP_DigestUpdate(mdctx, l_db_hash, strlen(l_db_hash)) != 1) {
+            ERROR_PRINT("EVP_DigestUpdate failed for %s", db_name);
+            result = -1;
+            break;
+        }
 
-        // Log if processing is slow
         gettimeofday(&current_time, NULL);
         timersub(&current_time, &last_time, &tmp_time);
         if (tmp_time.tv_sec > 2) {
@@ -382,24 +392,26 @@ int calc_multi_hash(mongoc_client_t *client, const char *db_prefix, int max_inde
         }
     }
 
-    // Finalize MD5 hash
-    MD5_Final(md5_bin, &md5);
-
-    // Convert binary hash to hex and store in the result buffer
-    memset(hash, '0', 96);                   // Ensure the first 96 chars are '0'
-    bin_to_hex(md5_bin, sizeof(md5_bin), hash + 96);  // Store MD5 hex result starting at hash + 96
-
-    // Free allocated memory
-    free(names_array);
-
-    // Update multi-hash in the database
-    result = update_hashes(client, db_prefix, hash, hash + 96);
-    if (result != 0) {
-        ERROR_PRINT("Failed to update multi-hash for %s", db_prefix);
-        return -2;  // Return specific error if update fails
+    if (result == 0) {
+        if (EVP_DigestFinal_ex(mdctx, md5_bin, NULL) != 1) {
+            ERROR_PRINT("EVP_DigestFinal_ex failed");
+            result = -1;
+        } else {
+            memset(hash, '0', 96);
+            bin_to_hex(md5_bin, sizeof(md5_bin), hash + 96);
+            result = update_hashes(client, db_prefix, hash, hash + 96);
+            if (result != 0) {
+                ERROR_PRINT("Failed to update multi-hash for %s", db_prefix);
+                result = -2;
+            }
+        }
     }
 
-    return 0;  // Return 0 if successful
+    // Cleanup
+    EVP_MD_CTX_free(mdctx);
+    free(names_array);
+
+    return result;
 }
 
 int get_hash(mongoc_client_t *client, const char *db_name, char *hash)
