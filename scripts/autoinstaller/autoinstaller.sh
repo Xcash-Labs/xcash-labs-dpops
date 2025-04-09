@@ -530,7 +530,7 @@ function get_current_xcash_wallet_data()
   sudo systemctl start xcash-daemon &>/dev/null
   sleep 20s
 
-  screen -dmS XCASH_RPC_Wallet "${XCASH_DIR}"build/release/bin/xcash-wallet-rpc --wallet-file "${XCASH_WALLET_DIR}"delegate-wallet --password "${WALLET_PASSWORD}" --rpc-bind-port 18288 --confirm-external-bind --disable-rpc-login --trusted-daemon --log-file "${XCASH_LOGS_DIR}"xcash-wallet-rpc.log
+  screen -dmS XCASH_RPC_Wallet "${XCASH_DIR}"build/Linux/master/release/bin/xcash-wallet-rpc --wallet-file "${XCASH_WALLET_DIR}"delegate-wallet --password "${WALLET_PASSWORD}" --rpc-bind-port 18288 --confirm-external-bind --disable-rpc-login --trusted-daemon --log-file "${XCASH_LOGS_DIR}"xcash-wallet-rpc.log
   sleep 10s
   
    while
@@ -1082,7 +1082,7 @@ function create_xcash_wallet()
   echo
 
   echo -e "${COLOR_PRINT_GREEN}Starting Wallet Refresh${END_COLOR_PRINT}"
-  echo "exit" | "${XCASH_DIR}"build/release/bin/xcash-wallet-cli --generate-new-wallet "${XCASH_DPOPS_INSTALLATION_DIR}"xcash-wallets/delegate-wallet --password "${WALLET_PASSWORD}" --mnemonic-language English --restore-height 0 --trusted-daemon | stdbuf -oL tr '\r' '\n' | stdbuf -o 0 grep -C 1 "Height" | stdbuf -o 0 awk '{print "Processing: ",$1,$2,$3,$4}' ORS="\r"
+  echo "exit" | "${XCASH_DIR}"build/Linux/master/release/bin/xcash-wallet-cli --generate-new-wallet "${XCASH_DPOPS_INSTALLATION_DIR}"xcash-wallets/delegate-wallet --password "${WALLET_PASSWORD}" --mnemonic-language English --restore-height 0 --trusted-daemon | stdbuf -oL tr '\r' '\n' | stdbuf -o 0 grep -C 1 "Height" | stdbuf -o 0 awk '{print "Processing: ",$1,$2,$3,$4}' ORS="\r"
   echo -ne "                                                                              \r"
   echo -e "${COLOR_PRINT_GREEN}Wallet Refresh Completed${END_COLOR_PRINT}"
 
@@ -1111,7 +1111,7 @@ function import_xcash_wallet()
   echo
   
   echo -e "${COLOR_PRINT_GREEN}Starting Wallet Refresh${END_COLOR_PRINT}"
-  (echo -ne "\n"; echo "${WALLET_PASSWORD}"; echo "exit") | "${XCASH_DIR}"build/release/bin/xcash-wallet-cli --restore-deterministic-wallet --electrum-seed "${WALLET_SEED}" --generate-new-wallet "${XCASH_DPOPS_INSTALLATION_DIR}"xcash-wallets/delegate-wallet --password "${WALLET_PASSWORD}" --mnemonic-language English --restore-height 0 --trusted-daemon | stdbuf -oL tr '\r' '\n' | stdbuf -o 0 grep -C 1 "Height" | stdbuf -o 0 awk '{print "Processing: ",$1,$2,$3,$4}' ORS="\r"
+  (echo -ne "\n"; echo "${WALLET_PASSWORD}"; echo "exit") | "${XCASH_DIR}"build/Linux/master/release/bin/xcash-wallet-cli --restore-deterministic-wallet --electrum-seed "${WALLET_SEED}" --generate-new-wallet "${XCASH_DPOPS_INSTALLATION_DIR}"xcash-wallets/delegate-wallet --password "${WALLET_PASSWORD}" --mnemonic-language English --restore-height 0 --trusted-daemon | stdbuf -oL tr '\r' '\n' | stdbuf -o 0 grep -C 1 "Height" | stdbuf -o 0 awk '{print "Processing: ",$1,$2,$3,$4}' ORS="\r"
   echo -ne "                                                                              \r"
   echo -e "${COLOR_PRINT_GREEN}Wallet Refresh Completed${END_COLOR_PRINT}"
 
@@ -1587,7 +1587,7 @@ function install()
   fi
   
   # Create xcash wallet log symlink to old location
-  touch "${XCASH_LOGS_DIR}xcash-wallet-rpc.log" && sudo rm -f "${XCASH_DIR}build/release/bin/xcash-wallet-rpc.log" && ln -s "${XCASH_LOGS_DIR}xcash-wallet-rpc.log" "${XCASH_DIR}build/release/bin/xcash-wallet-rpc.log"
+  touch "${XCASH_LOGS_DIR}xcash-wallet-rpc.log" && sudo rm -f "${XCASH_DIR}build/Linux/master/release/bin/xcash-wallet-rpc.log" && ln -s "${XCASH_LOGS_DIR}xcash-wallet-rpc.log" "${XCASH_DIR}build/Linux/master/release/bin/xcash-wallet-rpc.log"
 
   # Start the systemd service files
   start_systemd_service_files
@@ -1748,7 +1748,7 @@ function update()
   fi
   
   # Create xcash wallet log symlink to old location
-  touch "${XCASH_LOGS_DIR}xcash-wallet-rpc.log" && sudo rm -f "${XCASH_DIR}build/release/bin/xcash-wallet-rpc.log" && ln -s "${XCASH_LOGS_DIR}xcash-wallet-rpc.log" "${XCASH_DIR}build/release/bin/xcash-wallet-rpc.log"
+  touch "${XCASH_LOGS_DIR}xcash-wallet-rpc.log" && sudo rm -f "${XCASH_DIR}build/Linux/master/release/bin/xcash-wallet-rpc.log" && ln -s "${XCASH_LOGS_DIR}xcash-wallet-rpc.log" "${XCASH_DIR}build/Linux/master/release/bin/xcash-wallet-rpc.log"
 
   # Start the systemd service files
   start_systemd_service_files
@@ -2095,7 +2095,7 @@ function test_update()
   sudo systemctl stop xcash-daemon
   sleep 30s
   if [ $data -ne 0 ]; then
-    "${XCASH_DIR}"build/release/bin/xcash-blockchain-import --data-dir "${XCASH_BLOCKCHAIN_INSTALLATION_DIR}" --pop-blocks ${data} &>/dev/null
+    "${XCASH_DIR}"build/Linux/master/release/bin/xcash-blockchain-import --data-dir "${XCASH_BLOCKCHAIN_INSTALLATION_DIR}" --pop-blocks ${data} &>/dev/null
   fi
   echo -ne "\r${COLOR_PRINT_GREEN}Resetting the Blockchain${END_COLOR_PRINT}"
   echo
@@ -2120,7 +2120,7 @@ function test_update_reset_delegates()
   sudo systemctl stop xcash-daemon &>/dev/null
   sleep 30s
   if [ $data -ne 0 ]; then
-    "${XCASH_DIR}"build/release/bin/xcash-blockchain-import --data-dir "${XCASH_BLOCKCHAIN_INSTALLATION_DIR}" --pop-blocks ${data} &>/dev/null
+    "${XCASH_DIR}"build/Linux/master/release/bin/xcash-blockchain-import --data-dir "${XCASH_BLOCKCHAIN_INSTALLATION_DIR}" --pop-blocks ${data} &>/dev/null
   fi
   echo -ne "\r${COLOR_PRINT_GREEN}Resetting the Blockchain${END_COLOR_PRINT}"
   echo
@@ -2285,7 +2285,7 @@ function register_update_delegate()
     BLOCK_VERIFIER_SECRET_KEY=${BLOCK_VERIFIER_SECRET_KEY:1:$BLOCK_VERIFIERS_SECRET_KEY_LENGTH}
     BLOCK_VERIFIER_PUBLIC_KEY="${BLOCK_VERIFIER_SECRET_KEY: -${BLOCK_VERIFIERS_PUBLIC_KEY_LENGTH}}"
     # Run the wallet passing the registration information  
-    (echo "delegate_register ${XCASH_DELEGATE_NAME} ${XCASH_DELEGATE_DOMAIN} ${BLOCK_VERIFIER_PUBLIC_KEY}"; echo "${WALLET_PASSWORD}"; echo "exit" ) | ${XCASH_DIR}build/release/bin/xcash-wallet-cli --wallet-file ${XCASH_WALLET_DIR}delegate-wallet --password ${WALLET_PASSWORD} --trusted-daemon --log-file ${XCASH_LOGS_DIR}xcash-wallet-rpc.log
+    (echo "delegate_register ${XCASH_DELEGATE_NAME} ${XCASH_DELEGATE_DOMAIN} ${BLOCK_VERIFIER_PUBLIC_KEY}"; echo "${WALLET_PASSWORD}"; echo "exit" ) | ${XCASH_DIR}build/Linux/master/release/bin/xcash-wallet-cli --wallet-file ${XCASH_WALLET_DIR}delegate-wallet --password ${WALLET_PASSWORD} --trusted-daemon --log-file ${XCASH_LOGS_DIR}xcash-wallet-rpc.log
     # Start the rpc wallet service
     sudo systemctl start xcash-rpc-wallet &>/dev/null
   fi
@@ -2337,7 +2337,7 @@ function register_update_delegate()
     sudo systemctl stop xcash-rpc-wallet &>/dev/null
     # Disable ask-password inside the wallet (will be re-enabled at the end of the configuration)
     COMMAND_STRING="${COMMAND_STRING}set ask-password 0\n${WALLET_PASSWORD}\n"
-    (echo -ne ${COMMAND_STRING}; echo "exit" ) | ${XCASH_DIR}build/release/bin/xcash-wallet-cli --wallet-file ${XCASH_WALLET_DIR}delegate-wallet --password ${WALLET_PASSWORD} --trusted-daemon --log-file ${XCASH_LOGS_DIR}xcash-wallet-rpc.log
+    (echo -ne ${COMMAND_STRING}; echo "exit" ) | ${XCASH_DIR}build/Linux/master/release/bin/xcash-wallet-cli --wallet-file ${XCASH_WALLET_DIR}delegate-wallet --password ${WALLET_PASSWORD} --trusted-daemon --log-file ${XCASH_LOGS_DIR}xcash-wallet-rpc.log
     echo
     # Create the update sequence
     COMMAND_STRING=""
@@ -2350,7 +2350,7 @@ function register_update_delegate()
     if [ ! "$UPDATE_SERVER_SPECS" == "" ]; then COMMAND_STRING="${COMMAND_STRING}delegate_update server_specs ${UPDATE_SERVER_SPECS}\n"; fi
     COMMAND_STRING="${COMMAND_STRING}set ask-password 1\n${WALLET_PASSWORD}\n"
     # Run the wallet passing the registration information  
-    (echo -ne ${COMMAND_STRING}; echo "exit" ) | ${XCASH_DIR}build/release/bin/xcash-wallet-cli --wallet-file ${XCASH_WALLET_DIR}delegate-wallet --password ${WALLET_PASSWORD} --trusted-daemon --log-file ${XCASH_LOGS_DIR}xcash-wallet-rpc.log
+    (echo -ne ${COMMAND_STRING}; echo "exit" ) | ${XCASH_DIR}build/Linux/master/release/bin/xcash-wallet-cli --wallet-file ${XCASH_WALLET_DIR}delegate-wallet --password ${WALLET_PASSWORD} --trusted-daemon --log-file ${XCASH_LOGS_DIR}xcash-wallet-rpc.log
     # Start the rpc wallet service
     sudo systemctl start xcash-rpc-wallet &>/dev/null
   fi
@@ -2559,7 +2559,7 @@ function restore_tools()
   fi
   
   # Create xcash wallet log symlink to old location
-  touch "${XCASH_LOGS_DIR}xcash-wallet-rpc.log" && sudo rm -f "${XCASH_DIR}build/release/bin/xcash-wallet-rpc.log" && ln -s "${XCASH_LOGS_DIR}xcash-wallet-rpc.log" "${XCASH_DIR}build/release/bin/xcash-wallet-rpc.log"
+  touch "${XCASH_LOGS_DIR}xcash-wallet-rpc.log" && sudo rm -f "${XCASH_DIR}build/Linux/master/release/bin/xcash-wallet-rpc.log" && ln -s "${XCASH_LOGS_DIR}xcash-wallet-rpc.log" "${XCASH_DIR}build/Linux/master/release/bin/xcash-wallet-rpc.log"
 
   # Start the systemd service files
   start_systemd_service_files
