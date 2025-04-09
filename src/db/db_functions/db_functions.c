@@ -611,31 +611,33 @@ int delete_database(const char* DATABASE) {
 
 // Function to get database collection size
 size_t get_database_collection_size(const char* DATABASE, const char* COLLECTION) {
-  if (!check_if_database_collection_exist(DATABASE, COLLECTION)) return 0;
+    if (!check_if_database_collection_exist(DATABASE, COLLECTION)) return 0;
 
-  mongoc_client_t* database_client_thread = get_temporary_connection();
-  if (!database_client_thread) return 0;
+    mongoc_client_t* database_client_thread = get_temporary_connection();
+    if (!database_client_thread) return 0;
 
-  mongoc_collection_t* collection = mongoc_client_get_collection(database_client_thread, DATABASE, COLLECTION);
-  bson_t* command = BCON_NEW("collStats", BCON_UTF8(COLLECTION));
-  bson_t document;
-  bson_error_t error;
+    mongoc_collection_t* collection = mongoc_client_get_collection(database_client_thread, DATABASE, COLLECTION);
+    bson_t* command = BCON_NEW("collStats", BCON_UTF8(COLLECTION));
+    bson_t document;
+    bson_error_t error;
+    size_t size = 0;
 
-  if (!mongoc_collection_command_simple(collection, command, NULL, &document, &error)) {
-    handle_error("Failed to get collection stats", command, NULL, collection, database_client_thread);
-    return 0;
-  }
+    if (!mongoc_collection_command_simple(collection, command, NULL, &document, &error)) {
+        handle_error("Failed to get collection stats", command, NULL, collection, database_client_thread);
+        return 0;
+    }
 
-  char* message = bson_as_json(&document, NULL);
-  size_t size = 0;
-  if (message) {
-    char* size_str = strstr(message, "\"size\"");
-    if (size_str) sscanf(size_str + 8, "%zu", &size);
-    bson_free(message);
-  }
+    bson_iter_t iter;
+    if (bson_iter_init_find(&iter, &document, "size") && BSON_ITER_HOLDS_DOUBLE(&iter)) {
+        size = (size_t)bson_iter_double(&iter);
+    } else if (bson_iter_init_find(&iter, &document, "size") && BSON_ITER_HOLDS_INT64(&iter)) {
+        size = (size_t)bson_iter_int64(&iter);
+    } else if (bson_iter_init_find(&iter, &document, "size") && BSON_ITER_HOLDS_INT32(&iter)) {
+        size = (size_t)bson_iter_int32(&iter);
+    }
 
-  free_resources(command, NULL, collection, database_client_thread);
-  return size;
+    free_resources(command, NULL, collection, database_client_thread);
+    return size;
 }
 
 /**
