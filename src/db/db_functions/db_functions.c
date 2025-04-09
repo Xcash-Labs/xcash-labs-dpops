@@ -724,7 +724,7 @@ int get_database_data_hash(char *data_hash, const char *DATABASE, const char *CO
         return handle_error("Command execution failed.", &document, command, collection, database_client_thread);
     }
 
-    if (!(message = bson_as_json(&document, NULL))) {
+    if (!(message = bson_as_legacy_extended_json(&document, NULL))) {
         return handle_error("Failed to convert BSON to JSON.", &document, command, collection, database_client_thread);
     }
 
