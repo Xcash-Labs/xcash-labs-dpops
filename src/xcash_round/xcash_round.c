@@ -135,39 +135,55 @@ bool select_block_producers(size_t round_number) {
     return true;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 unsigned char* generate_deterministic_entropy(const unsigned char* vrf_output, size_t vrf_output_len, size_t total_bytes_needed) {
-  SHA512_CTX sha512;
-  size_t iterations = (total_bytes_needed / SHA512_DIGEST_LENGTH) + 1;
+    size_t iterations = (total_bytes_needed / SHA512_DIGEST_LENGTH) + 1;
 
-  unsigned char* hash_buf = calloc(iterations, SHA512_DIGEST_LENGTH);
-  if (!hash_buf) return NULL;
+    unsigned char* hash_buf = calloc(iterations, SHA512_DIGEST_LENGTH);
+    if (!hash_buf) return NULL;
 
-  for (size_t i = 0; i < iterations; i++) {
-      SHA512_Init(&sha512);
-      SHA512_Update(&sha512, vrf_output, vrf_output_len);
+    for (size_t i = 0; i < iterations; i++) {
+        // Create new EVP digest context
+        EVP_MD_CTX *mdctx = EVP_MD_CTX_new();
+        if (!mdctx) {
+            free(hash_buf);
+            return NULL;
+        }
 
-      unsigned char counter[8];
-      for (int j = 0; j < 8; j++)
-          counter[j] = (i >> (8 * j)) & 0xff;
+        if (EVP_DigestInit_ex(mdctx, EVP_sha512(), NULL) != 1) {
+            EVP_MD_CTX_free(mdctx);
+            free(hash_buf);
+            return NULL;
+        }
 
-      SHA512_Update(&sha512, counter, sizeof(counter));
-      SHA512_Final(hash_buf + i * SHA512_DIGEST_LENGTH, &sha512);
-  }
+        // Add VRF output
+        if (EVP_DigestUpdate(mdctx, vrf_output, vrf_output_len) != 1) {
+            EVP_MD_CTX_free(mdctx);
+            free(hash_buf);
+            return NULL;
+        }
 
-  return hash_buf;
+        // Add counter as 8-byte little-endian integer
+        unsigned char counter[8];
+        for (int j = 0; j < 8; j++)
+            counter[j] = (i >> (8 * j)) & 0xff;
+
+        if (EVP_DigestUpdate(mdctx, counter, sizeof(counter)) != 1) {
+            EVP_MD_CTX_free(mdctx);
+            free(hash_buf);
+            return NULL;
+        }
+
+        // Finalize digest into proper slice of hash_buf
+        if (EVP_DigestFinal_ex(mdctx, hash_buf + (i * SHA512_DIGEST_LENGTH), NULL) != 1) {
+            EVP_MD_CTX_free(mdctx);
+            free(hash_buf);
+            return NULL;
+        }
+
+        EVP_MD_CTX_free(mdctx);
+    }
+
+    return hash_buf;
 }
 
 bool select_block_producers_2(size_t round_number, const unsigned char* vrf_output, size_t vrf_output_len) {
