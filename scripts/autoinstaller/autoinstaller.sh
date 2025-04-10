@@ -40,8 +40,12 @@ MONGODB_TOOLS_LATEST_VERSION="mongodb-database-tools-ubuntu2204-x86_64-100.12.0"
 # MONGOC_DRIVER_LATEST_VERSION="mongo-c-driver-1.17.1"
 MONGOC_DRIVER_LATEST_VERSION="mongo-c-driver-1.30.2"
 
+MONGOSH_VERSION="2.0.2"
+
 #NODEJS_LATEST_VERSION="node-v14.10.1-linux-x64"
 NODEJS_LATEST_VERSION="node-v18.19.1-linux-x64"
+
+
 
 # Restore versions
 # MONGODB_RESTORE_VERSION="mongodb-linux-x86_64-ubuntu1804-4.4.1"
@@ -74,6 +78,7 @@ NODEJS_DIR=""
 NODEJS_CURRENT_VERSION=""
 MONGODB_URL="https://fastdl.mongodb.org/linux/${MONGODB_LATEST_VERSION}.tgz"
 MONGODB_TOOLS_URL="https://fastdl.mongodb.org/tools/db/${MONGODB_TOOLS_LATEST_VERSION}.tgz"
+MONGODB_MONGOSH_URL="https://downloads.mongodb.com/compass/mongosh-${MONGOSH_VERSION}-linux-x64.tgz"
 MONGODB_DIR=""
 MONGODB_CURRENT_VERSION=""
 MONGOC_DRIVER_URL="https://github.com/mongodb/mongo-c-driver/releases/download/${MONGOC_DRIVER_LATEST_VERSION:15}/${MONGOC_DRIVER_LATEST_VERSION}.tar.gz"
@@ -516,10 +521,6 @@ function installation_settings()
   fi
 }
 
-
-
-
-
 function get_current_xcash_wallet_data()
 {
   echo
@@ -820,12 +821,6 @@ function install_xcash()
   build_xcash
 }
 
-
-
-
-
-
-
 function create_directories()
 {
   echo -ne "${COLOR_PRINT_YELLOW}Creating Directories${END_COLOR_PRINT}"
@@ -836,7 +831,7 @@ function create_directories()
     sudo mkdir -p "${MONGODB_INSTALLATION_DIR}"
     sudo chmod 770 "${MONGODB_INSTALLATION_DIR}"
     sudo chown "$USER" "${MONGODB_INSTALLATION_DIR}"
-  fi 
+  fi
   if [ ! -d "$XCASH_WALLET_DIR" ]; then
     mkdir -p "${XCASH_WALLET_DIR}"
   fi
@@ -938,6 +933,25 @@ function install_mongodb_tools()
   echo
 }
 
+
+function install_mongodb_mongosh()
+{
+  echo -ne "${COLOR_PRINT_YELLOW}Installing MongoDB Mongosh...${END_COLOR_PRINT}"
+  cd "${XCASH_DPOPS_INSTALLATION_DIR}"mongodb-linux-x86_64-*/bin/ || {
+    echo -e "\n${COLOR_PRINT_RED}MongoDB bin directory not found${END_COLOR_PRINT}"
+    return 1
+  }
+  wget -q "${MONGODB_MONGOSH_URL}"
+  tar -xf "mongosh-${MONGOSH_VERSION}-linux-x64.tgz" &>/dev/null
+  rm -f "mongosh-${MONGOSH_VERSION}-linux-x64.tgz"
+  cp -a "mongosh-${MONGOSH_VERSION}-linux-x64"/bin/* ./
+  rm -rf "mongosh-${MONGOSH_VERSION}-linux-x64"
+  echo -e "\r${COLOR_PRINT_GREEN}MongoDB Mongosh installed successfully${END_COLOR_PRINT}"
+  echo
+}
+
+
+
 function install_mongoc_driver()
 {
   echo -ne "${COLOR_PRINT_YELLOW}Installing MongoC Driver${END_COLOR_PRINT}"
@@ -1027,6 +1041,7 @@ function install_xcash_dpops()
   echo -e "${COLOR_PRINT_GREEN}############################################################${END_COLOR_PRINT}"
   install_mongodb
   install_mongodb_tools
+  install_mongodb_mongosh
   install_mongoc_driver
   download_xcash_dpops
   build_xcash_dpops
@@ -1728,6 +1743,7 @@ function update()
   if [ ! "$MONGODB_CURRENT_VERSION" == "$MONGODB_LATEST_VERSION" ]; then
     update_mongodb
     install_mongodb_tools
+    install_mongodb_mongosh
   else
     echo -e "${COLOR_PRINT_GREEN}MongoDB Is Already Up To Date${END_COLOR_PRINT}"
   fi
