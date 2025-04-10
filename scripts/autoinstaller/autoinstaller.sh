@@ -946,7 +946,7 @@ function install_mongodb_mongosh()
   rm -f "mongosh-${MONGOSH_VERSION}-linux-x64.tgz"
   cp -a "mongosh-${MONGOSH_VERSION}-linux-x64"/bin/* ./
   rm -rf "mongosh-${MONGOSH_VERSION}-linux-x64"
-  echo -e "\r${COLOR_PRINT_GREEN}MongoDB Mongosh installed successfully${END_COLOR_PRINT}"
+  echo -ne "\r${COLOR_PRINT_GREEN}MongoDB Mongosh installed successfully${END_COLOR_PRINT}"
   echo
 }
 

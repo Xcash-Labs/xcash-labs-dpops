@@ -7,8 +7,10 @@ Type=forking
 User=${USER}
 RemainAfterExit=yes
 PIDFile=${XCASH_DPOPS_INSTALLATION_DIR}systemdpid/mongod.pid
-ExecStart=${MONGODB_DIR}bin/mongod --fork --syslog --dbpath ${MONGODB_INSTALLATION_DIR}
+ExecStart=${MONGODB_DIR}bin/mongod --fork --logpath=/data/db/mongod.log --pidfilepath=${XCASH_DPOPS_INSTALLATION_DIR}systemdpid/mongod.pid \
+  --dbpath=${MONGODB_INSTALLATION_DIR}
 
+TimeoutSec=60
 LimitFSIZE=infinity
 LimitCPU=infinity
 LimitAS=infinity
