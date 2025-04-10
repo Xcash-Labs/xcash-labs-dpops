@@ -76,13 +76,12 @@ bool init_processing(const arg_config_t *arg_config) {
 
     const char* statistics_default_data =
     "{\"username\":\"XCASH\","
-    "\"most_total_rounds_delegate_name\":\"us1_xcash_foundation\","
+    "\"most_total_rounds_delegate_name\":\"xcashseeds_us\","
     "\"most_total_rounds\":\"0\","
-    "\"best_block_verifier_online_percentage_delegate_name\":\"us1_xcash_foundation\","
+    "\"best_block_verifier_online_percentage_delegate_name\":\"xcashseeds_us\","
     "\"best_block_verifier_online_percentage\":\"0\","
-    "\"most_block_producer_total_rounds_delegate_name\":\"us1_xcash_foundation\","
+    "\"most_block_producer_total_rounds_delegate_name\":\"xcashseeds_us\","
     "\"most_block_producer_total_rounds\":\"0\"}";
-
 
     for (int i = 0; network_nodes[i].seed_public_address != NULL; i++) {
       char delegate_name[256];
@@ -128,14 +127,6 @@ bool init_processing(const arg_config_t *arg_config) {
     }
   }
 
-  const char* statistics_default_data =
-  "{\"username\":\"XCASH\","
-  "\"most_total_rounds_delegate_name\":\"xcashseeds_us\","
-  "\"most_total_rounds\":\"0\","
-  "\"best_block_verifier_online_percentage_delegate_name\":\"xcashseeds_us\","
-  "\"best_block_verifier_online_percentage\":\"0\","
-  "\"most_block_producer_total_rounds_delegate_name\":\"xcashseeds_us\","
-  "\"most_block_producer_total_rounds\":\"0\"}";
   if (insert_document_into_collection_json(DATABASE_NAME, "statistics", statistics_default_data) != XCASH_OK) {
     ERROR_PRINT("Failed to insert statistics document during initialization.");
     return XCASH_ERROR;
