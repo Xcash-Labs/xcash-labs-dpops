@@ -7,6 +7,8 @@ Type=forking
 User=${USER}
 RemainAfterExit=yes
 PIDFile=${XCASH_DPOPS_INSTALLATION_DIR}systemdpid/mongod.pid
+Environment="GLIBC_TUNABLES=glibc.pthread.rseq=0"
+
 ExecStart=${MONGODB_DIR}bin/mongod --fork --logpath=/data/db/mongod.log --pidfilepath=${XCASH_DPOPS_INSTALLATION_DIR}systemdpid/mongod.pid \
   --dbpath=${MONGODB_INSTALLATION_DIR}
 
