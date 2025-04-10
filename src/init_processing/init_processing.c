@@ -137,7 +137,7 @@ bool init_processing(const arg_config_t *arg_config) {
   "\"most_block_producer_total_rounds_delegate_name\":\"xcashseeds_us\","
   "\"most_block_producer_total_rounds\":\"0\"}";
   if (insert_document_into_collection_json(DATABASE_NAME, "statistics", statistics_default_data) != XCASH_OK) {
-    ERROR_PRINT("Failed to insert statistics document during initialization.);
+    ERROR_PRINT("Failed to insert statistics document during initialization.");
     return XCASH_ERROR;
   }
 
