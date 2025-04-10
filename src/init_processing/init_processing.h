@@ -5,6 +5,7 @@
 #include <sys/sysinfo.h>
 #include "config.h"
 #include "globals.h"
+#include "macro_functions.h"
 #include "structures.h"
 #include "node_functions.h"
 #include "db_sync.h"
