@@ -776,10 +776,6 @@ function build_libgtest()
   fi
 }
 
-
-
-
-
 function download_xcash()
 {
   echo -ne "${COLOR_PRINT_YELLOW}Downloading X-CASH${END_COLOR_PRINT}"
