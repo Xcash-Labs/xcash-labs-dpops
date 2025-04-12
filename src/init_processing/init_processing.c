@@ -71,6 +71,7 @@ bool init_processing(const arg_config_t *arg_config) {
 
   // brief check if database is empty
   if (count_db_delegates() <= 0 && count_db_statistics() <= 0) {
+    DEBUG_PRINT("Both are less <= 0 ............................................................");
     // Check if it should create the default database data
     char json_buffer[TRANSFER_BUFFER_SIZE];
 
@@ -116,20 +117,20 @@ bool init_processing(const arg_config_t *arg_config) {
         return XCASH_ERROR;
       }
     }
-  }
 
-  const char* statistics_default_data =
-    "{\"username\":\"XCASH\","
-    "\"most_total_rounds_delegate_name\":\"xcashseeds_us\","
-    "\"most_total_rounds\":\"0\","
-    "\"best_block_verifier_online_percentage_delegate_name\":\"xcashseeds_us\","
-    "\"best_block_verifier_online_percentage\":\"0\","
-      "\"most_block_producer_total_rounds_delegate_name\":\"xcashseeds_us\","
-    "\"most_block_producer_total_rounds\":\"0\"}";
+    const char *statistics_default_data =
+        "{\"username\":\"XCASH\","
+        "\"most_total_rounds_delegate_name\":\"xcashseeds_us\","
+        "\"most_total_rounds\":\"0\","
+        "\"best_block_verifier_online_percentage_delegate_name\":\"xcashseeds_us\","
+        "\"best_block_verifier_online_percentage\":\"0\","
+        "\"most_block_producer_total_rounds_delegate_name\":\"xcashseeds_us\","
+        "\"most_block_producer_total_rounds\":\"0\"}";
 
-  if (insert_document_into_collection_json(DATABASE_NAME, "statistics", statistics_default_data) != XCASH_OK) {
-    ERROR_PRINT("Failed to insert statistics document during initialization.");
-    return XCASH_ERROR;
+    if (insert_document_into_collection_json(DATABASE_NAME, "statistics", statistics_default_data) != XCASH_OK) {
+      ERROR_PRINT("Failed to insert statistics document during initialization.");
+      return XCASH_ERROR;
+    }
   }
 
   return XCASH_OK;
