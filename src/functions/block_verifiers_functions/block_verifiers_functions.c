@@ -2,20 +2,8 @@
 
 int block_verifiers_create_block_signature(char* message)
 {
-  char data[BUFFER_SIZE];
+  char data[BUFFER_SIZE] = {0};
   size_t count, count2, counter;
-  int block_producer_backup_settings[5] = {0};  // 5 backups
-
-  const char* backup_public_addresses[] = {
-    main_nodes_list.block_producer_public_address,
-    main_nodes_list.block_producer_backup_block_verifier_1_public_address,
-    main_nodes_list.block_producer_backup_block_verifier_2_public_address,
-    main_nodes_list.block_producer_backup_block_verifier_3_public_address,
-    main_nodes_list.block_producer_backup_block_verifier_4_public_address,
-    main_nodes_list.block_producer_backup_block_verifier_5_public_address
-  };
-
-  memset(data, 0, sizeof(data));
 
   // Convert network block string to blockchain data
   if (network_block_string_to_blockchain_data(VRF_data.block_blob, "0", BLOCK_VERIFIERS_AMOUNT) == 0) {
@@ -23,53 +11,27 @@ int block_verifiers_create_block_signature(char* message)
     return XCASH_ERROR;
   }
 
-  // Set block producer network block nonce
+  // Set block producer nonce
   memcpy(blockchain_data.nonce_data, BLOCK_PRODUCER_NETWORK_BLOCK_NONCE, sizeof(BLOCK_PRODUCER_NETWORK_BLOCK_NONCE) - 1);
 
-  // Determine current block producer or backup node
-  int backup_index = current_round_part_backup_node[0] - '0'; // Converts "0"-"5" to integer
-
-  if (backup_index >= 0 && backup_index <= 5) {
-    for (count = 0; count < BLOCK_VERIFIERS_AMOUNT; count++) {
-      if (strncmp(current_block_verifiers_list.block_verifiers_public_address[count],
-                  backup_public_addresses[backup_index], XCASH_WALLET_LENGTH) == 0) {
-        memcpy(blockchain_data.blockchain_reserve_bytes.block_producer_delegates_name,
-               current_block_verifiers_list.block_verifiers_name[count],
-               strnlen(current_block_verifiers_list.block_verifiers_name[count],
-                       sizeof(current_block_verifiers_list.block_verifiers_name[count])));
-        memcpy(blockchain_data.blockchain_reserve_bytes.block_producer_public_address,
-               current_block_verifiers_list.block_verifiers_public_address[count],
-               XCASH_WALLET_LENGTH);
-        break;
-      }
+  // Determine block producer identity
+  for (count = 0; count < BLOCK_VERIFIERS_AMOUNT; count++) {
+    if (strncmp(current_block_verifiers_list.block_verifiers_public_address[count], producer_refs[0].public_address, XCASH_WALLET_LENGTH) == 0) {
+      memcpy(blockchain_data.blockchain_reserve_bytes.block_producer_delegates_name,
+             current_block_verifiers_list.block_verifiers_name[count],
+             sizeof(blockchain_data.blockchain_reserve_bytes.block_producer_delegates_name));
+      memcpy(blockchain_data.blockchain_reserve_bytes.block_producer_public_address,
+             current_block_verifiers_list.block_verifiers_public_address[count],
+             XCASH_WALLET_LENGTH);
+      break;
     }
   }
 
-  // Map backup node indexes
-  for (size_t backup_idx = 0; backup_idx < 5; backup_idx++) {
-    for (count = 0; count < BLOCK_VERIFIERS_AMOUNT; count++) {
-      if (strncmp(backup_public_addresses[backup_idx + 1], current_block_verifiers_list.block_verifiers_public_address[count], XCASH_WALLET_LENGTH) == 0) {
-        block_producer_backup_settings[backup_idx] = (int)count;
-        break;
-      }
-    }
-  }
+// Stub out legacy backup node fields
+  memset(blockchain_data.blockchain_reserve_bytes.block_producer_node_backup_count, '0', sizeof(blockchain_data.blockchain_reserve_bytes.block_producer_node_backup_count));
+  memset(blockchain_data.blockchain_reserve_bytes.block_producer_backup_nodes_names, 0, sizeof(blockchain_data.blockchain_reserve_bytes.block_producer_backup_nodes_names));
 
-  // Backup node index in blockchain data
-  memcpy(blockchain_data.blockchain_reserve_bytes.block_producer_node_backup_count,
-         current_round_part_backup_node, sizeof(char));
-
-  // Add backup node names, comma-separated
-  blockchain_data.blockchain_reserve_bytes.block_producer_backup_nodes_names[0] = '\0';  // Init empty string
-  for (size_t i = 0; i < 5; i++) {
-      strcat(blockchain_data.blockchain_reserve_bytes.block_producer_backup_nodes_names,
-             current_block_verifiers_list.block_verifiers_name[block_producer_backup_settings[i]]);
-      if (i != 4) {
-          strcat(blockchain_data.blockchain_reserve_bytes.block_producer_backup_nodes_names, ",");
-      }
-  }
-  
-  // Add VRF data
+  // Attach VRF data
   memcpy(blockchain_data.blockchain_reserve_bytes.vrf_secret_key, VRF_data.vrf_secret_key, crypto_vrf_SECRETKEYBYTES);
   memcpy(blockchain_data.blockchain_reserve_bytes.vrf_secret_key_data, VRF_data.vrf_secret_key_data, VRF_SECRET_KEY_LENGTH);
   memcpy(blockchain_data.blockchain_reserve_bytes.vrf_public_key, VRF_data.vrf_public_key, crypto_vrf_PUBLICKEYBYTES);
@@ -81,6 +43,7 @@ int block_verifiers_create_block_signature(char* message)
   memcpy(blockchain_data.blockchain_reserve_bytes.vrf_beta_string, VRF_data.vrf_beta_string, crypto_vrf_OUTPUTBYTES);
   memcpy(blockchain_data.blockchain_reserve_bytes.vrf_beta_string_data, VRF_data.vrf_beta_string_data, VRF_BETA_LENGTH);
 
+  // Attach data for all verifiers
   for (count = 0; count < BLOCK_VERIFIERS_AMOUNT; count++) {
     memcpy(blockchain_data.blockchain_reserve_bytes.block_verifiers_vrf_secret_key[count], VRF_data.block_verifiers_vrf_secret_key[count], crypto_vrf_SECRETKEYBYTES);
     memcpy(blockchain_data.blockchain_reserve_bytes.block_verifiers_vrf_public_key[count], VRF_data.block_verifiers_vrf_public_key[count], crypto_vrf_PUBLICKEYBYTES);
@@ -99,20 +62,18 @@ int block_verifiers_create_block_signature(char* message)
 
   memcpy(blockchain_data.blockchain_reserve_bytes.previous_block_hash_data, blockchain_data.previous_block_hash_data, BLOCK_HASH_LENGTH);
 
-  // Convert blockchain_data to network block string
+  // Convert and sign
   if (blockchain_data_to_network_block_string(VRF_data.block_blob, BLOCK_VERIFIERS_AMOUNT) == 0) {
     ERROR_PRINT("Could not convert the blockchain_data to a network_block_string");
     return XCASH_ERROR;
   }
 
-  // Sign network block string
   memset(data, 0, sizeof(data));
   if (sign_network_block_string(data, VRF_data.block_blob) == 0) {
     ERROR_PRINT("Could not sign the network block string");
     return XCASH_ERROR;
   }
 
-  // Add signature to VRF data
   for (count = 0; count < BLOCK_VERIFIERS_AMOUNT; count++) {
     if (strncmp(current_block_verifiers_list.block_verifiers_public_address[count], xcash_wallet_public_address, XCASH_WALLET_LENGTH) == 0) {
       memcpy(VRF_data.block_blob_signature[count], data, strnlen(data, BUFFER_SIZE));
@@ -120,35 +81,14 @@ int block_verifiers_create_block_signature(char* message)
     }
   }
 
-  // Construct message
-  // create the message
-  memset(message,0,strlen(message));
-  memcpy(message,"{\r\n \"message_settings\": \"BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_BLOCK_BLOB_SIGNATURE\",\r\n \"block_blob_signature\": \"",110);
-  memcpy(message+110,data,strnlen(data,BUFFER_SIZE));
-  memcpy(message+strlen(message),"\",\r\n}",5);
+  // Build the signature message
+  snprintf(message, BUFFER_SIZE,
+           "{\r\n \"message_settings\": \"BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_BLOCK_BLOB_SIGNATURE\",\r\n \"block_blob_signature\": \"%s\",\r\n}",
+           data);
+
   return XCASH_OK;
 }
 
-// Helper function: Sync fallback logic
-int sync_with_backup_fallback(int backup_index, int primary_min, int primary_sec, int backup_min, int backup_sec) {
-  if (backup_index == 0) {
-      return sync_block_verifiers_minutes_and_seconds(primary_min, primary_sec);
-  } else {
-      return sync_block_verifiers_minutes_and_seconds(backup_min, backup_sec);
-  }
-}
-
-// Helper function: Check majority and log
-int check_majority(size_t valid_count, const char* stage_description) {
-  if (valid_count >= BLOCK_VERIFIERS_VALID_AMOUNT) {
-      INFO_PRINT_STATUS_OK("[%zu / %d] block verifiers have a majority for %s", valid_count, BLOCK_VERIFIERS_VALID_AMOUNT, stage_description);
-      return XCASH_OK;
-  } else {
-      INFO_PRINT_STATUS_FAIL("[%zu / %d] block verifiers lack majority for %s", valid_count, BLOCK_VERIFIERS_VALID_AMOUNT, stage_description);
-      WARNING_PRINT("Insufficient majority for %s", stage_description);
-      return XCASH_ERROR;
-  }
-}
 
 // Helper function: Restart logic if alone verifier
 int check_restart_if_alone(size_t count) {
@@ -179,26 +119,24 @@ Name: block_verifiers_create_block
 Description: Runs the round where the block verifiers will create the block
 Return: 0 if an error has occured, 1 if successfull
 ---------------------------------------------------------------------------------------------------------*/
-int block_verifiers_create_block(size_t round_number) {
+int block_verifiers_create_block(void) {
   char data[BUFFER_SIZE] = {0};
   size_t count, count2;
-  int backup_node_index = current_round_part_backup_node[0] = (char)('0' + round_number) - '0';
 
-  // Clear all VRF data
+  // Clear previous VRF data
   pthread_mutex_lock(&majority_vote_lock);
   memset(&VRF_data, 0, sizeof(VRF_data));
   memset(&current_block_verifiers_majority_vote, 0, sizeof(current_block_verifiers_majority_vote));
   pthread_mutex_unlock(&majority_vote_lock);
 
-  // Initial sync
+  // Sync start
   INFO_STAGE_PRINT("Waiting for block synchronization start time...");
-  if (sync_with_backup_fallback(backup_node_index, 0, 30, 3, 5) == XCASH_ERROR)
+  if (sync_block_verifiers_minutes_and_seconds(0, 30) == XCASH_ERROR)
       return ROUND_SKIP;
 
-  // Check block height 
+  // Confirm block height hasn't drifted (this node may be behind the network)
   if (get_current_block_height(data) == 1 && strncmp(current_block_height, data, BUFFER_SIZE) != 0) {
       WARNING_PRINT("Your block height is not synced correctly, waiting for next round");
-      replayed_round_settings = 1;
       return ROUND_NEXT;
   }
 
@@ -208,190 +146,91 @@ int block_verifiers_create_block(size_t round_number) {
       return ROUND_NEXT;
   }
 
-  
-  //******************************************************************************** 
-  // Part 0 - Sync block producers
-  INFO_STAGE_PRINT("Part 0 - Exchanging block producers list");
+  // Part 2 - Sync delegates from DB
+  INFO_STAGE_PRINT("Part 2 - Syncing delegates");
   if (!sync_block_producers()) {
-      WARNING_PRINT("Can't select block producer");
+      WARNING_PRINT("Can't sync delegates");
       return ROUND_NEXT;
   }
+  INFO_PRINT_STATUS_OK("Delegates synced");
 
-  // Part 1 - Create VRF data
-  INFO_STAGE_PRINT("Part 1 - Create VRF data");
-  if (block_verifiers_create_VRF_secret_key_and_VRF_public_key(data) == 0 || sign_data(data) == 0) {
-      WARNING_PRINT("Could not create VRF data");
-      return ROUND_NEXT;
+  // Part 3 - Create or wait for block template
+  INFO_STAGE_PRINT("Part 3 - Create or wait for block template");
+  if (strcmp(producer_refs[0].public_address, xcash_wallet_public_address) == 0) {
+    INFO_STAGE_PRINT("Creating and sending block template");
+    if (get_block_template(VRF_data.block_blob) == 0) return ROUND_NEXT;
+    memset(data, 0, sizeof(data));
+    snprintf(data, sizeof(data),
+             "{\r\n \"message_settings\": \"MAIN_NODES_TO_NODES_PART_4_OF_ROUND_CREATE_NEW_BLOCK\",\r\n \"block_blob\": \"%s\",\r\n}",
+             VRF_data.block_blob);
+    if (sign_data(data) == 0) return ROUND_NEXT;
+    if (!send_and_cleanup(data)) return ROUND_NEXT;
+    INFO_PRINT_STATUS_OK("Block template sent");
   }
-  INFO_PRINT_STATUS_OK("The VRF data has been created");
-
-  // Part 2 - Send VRF data
-  INFO_STAGE_PRINT("Part 2 - Send VRF data to all block verifiers");
-  if (!send_and_cleanup(data)) return ROUND_NEXT;
-  INFO_PRINT_STATUS_OK("The VRF data has been sent");
-
-  // Part 3 - Wait for VRF sync
-  if (sync_with_backup_fallback(backup_node_index, 1, 10, 3, 15) == XCASH_ERROR)
+  if (sync_block_verifiers_minutes_and_seconds(2, 20) == XCASH_ERROR)
       return ROUND_SKIP;
-
-  // Part 4 - Create individual majority VRF data
-  INFO_STAGE_PRINT("Part 4 - Create each individual majority VRF data");
-  memset(data, 0, sizeof(data));
-  block_verifiers_create_vote_majority_results(data, 0);
-  if (sign_data(data) == 0) return ROUND_NEXT;
-  INFO_PRINT_STATUS_OK("Each individual majority VRF data created");
-
-  // Part 5 - Send individual VRF majority
-  INFO_STAGE_PRINT("Part 5 - Send individual majority VRF data");
-  if (!send_and_cleanup(data)) return ROUND_NEXT;
-  INFO_PRINT_STATUS_OK("Individual majority VRF data sent");
-
-  // Part 6 - Wait
-  if (sync_with_backup_fallback(backup_node_index, 1, 25, 3, 25) == XCASH_ERROR)
-      return ROUND_SKIP;
-
-  // Part 7 - Check VRF majority (temp fix applied)
-  INFO_STAGE_PRINT("Part 7 - Check VRF majority");
-  for (count = 0; count < BLOCK_VERIFIERS_AMOUNT; count++) {
-      if (strlen(VRF_data.block_verifiers_vrf_secret_key_data[count]) == 0) {
-          memcpy(VRF_data.block_verifiers_vrf_secret_key_data[count], GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_VRF_SECRET_KEY_DATA, sizeof(GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_VRF_SECRET_KEY_DATA) - 1);
-          memcpy(VRF_data.block_verifiers_vrf_secret_key[count], GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_VRF_SECRET_KEY, sizeof(GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_VRF_SECRET_KEY) - 1);
-          memcpy(VRF_data.block_verifiers_vrf_public_key_data[count], GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_VRF_PUBLIC_KEY_DATA, sizeof(GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_VRF_PUBLIC_KEY_DATA) - 1);
-          memcpy(VRF_data.block_verifiers_vrf_public_key[count], GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_VRF_PUBLIC_KEY, sizeof(GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_VRF_PUBLIC_KEY) - 1);
-          memcpy(VRF_data.block_verifiers_random_data[count], GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_RANDOM_STRING, sizeof(GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_RANDOM_STRING) - 1);
-      }
-  }
-  count = BLOCK_VERIFIERS_AMOUNT;
-  INFO_PRINT_STATUS_OK("Checked VRF data majority");
-
-  // Part 8 - Majority check
-  if (!check_majority(count, "VRF data")) return ROUND_NEXT;
-  if (check_restart_if_alone(count)) return ROUND_SKIP;
-
-  // Part 9 - Check overall majority
-  INFO_STAGE_PRINT("Part 9 - Check overall majority for VRF data");
-  memset(delegates_error_list,0,sizeof(delegates_error_list)); \
-  memcpy(delegates_error_list,"The following delegates are reported as not working for this part:",66);
-  count2 = 0;
-  for (count = 0; count < BLOCK_VERIFIERS_AMOUNT; count++) {
-      if (strncmp(VRF_data.block_verifiers_vrf_secret_key_data[count], GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_VRF_SECRET_KEY_DATA, BUFFER_SIZE) != 0)
-          count2++;
-      else {
-          strcat(delegates_error_list, current_block_verifiers_list.block_verifiers_name[count]);
-          strcat(delegates_error_list, "|");
-      }
-  }
-  if (!check_majority(count2, "overall VRF data")) return ROUND_NEXT;
-  if (check_restart_if_alone(count2)) return ROUND_SKIP;
-
-  // Part 10 - Select VRF data
-  INFO_STAGE_PRINT("Part 10 - Select VRF data to use");
-  if (block_verifiers_create_VRF_data() == 0) return ROUND_NEXT;
-  INFO_PRINT_STATUS_OK("VRF data selected");
-
-  // Part 11 - Create or wait for block template
-  if (strcmp(producer_refs[round_number].public_address, xcash_wallet_public_address) == 0) {
-      INFO_STAGE_PRINT("Part 11 - Create and send block template");
-      if (get_block_template(VRF_data.block_blob) == 0) return ROUND_NEXT;
-      memset(data, 0, sizeof(data));
-      snprintf(data, sizeof(data), "{\r\n \"message_settings\": \"MAIN_NODES_TO_NODES_PART_4_OF_ROUND_CREATE_NEW_BLOCK\",\r\n \"block_blob\": \"%s\",\r\n}", VRF_data.block_blob);
-      if (sign_data(data) == 0) return ROUND_NEXT;
-      if (!send_and_cleanup(data)) return ROUND_NEXT;
-  } else {
-      INFO_STAGE_PRINT("Part 11 - Wait for block template");
-  }
-
-  if (sync_with_backup_fallback(backup_node_index, 2, 20, 3, 35) == XCASH_ERROR)
-      return ROUND_SKIP;
-
   if (strncmp(VRF_data.block_blob, "", 1) == 0) {
-      WARNING_PRINT("Did not receive block template");
-      return ROUND_NEXT;
+    WARNING_PRINT("Did not receive block template");
+    return ROUND_NEXT;
   }
-  INFO_PRINT_STATUS_OK("Received block template");
+  INFO_STAGE_PRINT_OK("Block template received");
 
-  // Part 12 - Add VRF data and sign block
-  INFO_STAGE_PRINT("Part 12 - Add VRF data and sign block template");
+  // Part 4 - Sign block
+  INFO_STAGE_PRINT("Part 4 - Signing block");
   if (block_verifiers_create_block_signature(data) == 0 || sign_data(data) == 0)
-      return ROUND_NEXT;
-  INFO_PRINT_STATUS_OK("Block template signed");
+    return ROUND_NEXT;
+  INFO_PRINT_STATUS_OK("Block signed");
 
-  // Part 13 - Send block signature
-  INFO_STAGE_PRINT("Part 13 - Send block template signature");
+  // Part 5 - Send block signature
+  INFO_STAGE_PRINT("Part 5 - Sending block signature");
   if (!send_and_cleanup(data)) return ROUND_NEXT;
-  INFO_PRINT_STATUS_OK("Sent block template signature");
+  if (sync_block_verifiers_minutes_and_seconds(2, 30) == XCASH_ERROR)
+    return ROUND_SKIP;
+  INFO_PRINT_STATUS_OK("Block signature sent");
 
-  if (sync_with_backup_fallback(backup_node_index, 2, 30, 3, 45) == XCASH_ERROR)
-      return ROUND_SKIP;
-
-  // Part 15 - Create individual majority block signatures
-  INFO_STAGE_PRINT("Part 15 - Create majority block template signature");
+  // Part 6 - Majority signature voting
+  INFO_STAGE_PRINT("Part 6 - Majority vote on block signature");
   memset(data, 0, sizeof(data));
   block_verifiers_create_vote_majority_results(data, 1);
   if (sign_data(data) == 0) return ROUND_NEXT;
-  INFO_PRINT_STATUS_OK("Created majority block template signature");
-
-  // Part 16 - Send majority block signatures
-  INFO_STAGE_PRINT("Part 16 - Send majority block template signature");
   if (!send_and_cleanup(data)) return ROUND_NEXT;
-  INFO_PRINT_STATUS_OK("Sent majority block template signature");
-
-  if (sync_with_backup_fallback(backup_node_index, 2, 40, 3, 55) == XCASH_ERROR)
-      return ROUND_SKIP;
-
-  // Part 18 - Check individual majority signatures
-  INFO_STAGE_PRINT("Part 18 - Check block template signature majority");
-  for (count = 0; count < BLOCK_VERIFIERS_AMOUNT; count++) {
-      if (strlen(VRF_data.block_blob_signature[count]) == 0)
-          memcpy(VRF_data.block_blob_signature[count], GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_SIGNATURE, sizeof(GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_SIGNATURE) - 1);
+  INFO_PRINT_STATUS_OK("Majority block signature sent");
+  if (sync_block_verifiers_minutes_and_seconds(2, 40) == XCASH_ERROR)
+    return ROUND_SKIP;
+  if (valid_count >= BLOCK_VERIFIERS_VALID_AMOUNT) {
+      INFO_PRINT_STATUS_OK("[%zu / %d] block verifiers have a majority", valid_count, BLOCK_VERIFIERS_VALID_AMOUNT);
+  } else {
+      INFO_PRINT_STATUS_FAIL("[%zu / %d] block verifiers lack majority", valid_count, BLOCK_VERIFIERS_VALID_AMOUNT);
+      WARNING_PRINT("Insufficient majority for %s", stage_description);
+      return ROUND_NEXT;
   }
-  count = BLOCK_VERIFIERS_AMOUNT;
-  INFO_PRINT_STATUS_OK("Checked block template signature majority");
+  if (check_restart_if_alone(BLOCK_VERIFIERS_AMOUNT)) return ROUND_SKIP;
+  INFO_PRINT_STATUS_OK("Block signature majority verified");
 
-  if (!check_majority(count, "block template signature")) return ROUND_NEXT;
-  if (check_restart_if_alone(count)) return ROUND_SKIP;
-
-  // Part 20 - Overall majority signature
-  INFO_STAGE_PRINT("Part 20 - Check overall block template signature majority");
-  memset(delegates_error_list,0,sizeof(delegates_error_list)); \
-  memcpy(delegates_error_list,"The following delegates are reported as not working for this part:",66);
-  count2 = 0;
-  for (count = 0; count < BLOCK_VERIFIERS_AMOUNT; count++) {
-      if (strncmp(VRF_data.block_blob_signature[count], GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_SIGNATURE, BUFFER_SIZE) != 0)
-          count2++;
-      else {
-          strcat(delegates_error_list, current_block_verifiers_list.block_verifiers_name[count]);
-          strcat(delegates_error_list, "|");
-      }
-  }
-  if (!check_majority(count2, "overall block template signature")) return ROUND_NEXT;
-  if (check_restart_if_alone(count2)) return ROUND_SKIP;
-
-  // Part 22 - Create vote results for reserve bytes
+  // Part 7 - Reserve bytes voting
+  INFO_STAGE_PRINT("Part 7 - Reserve bytes voting");
+  memset(data, 0, sizeof(data));
   if (block_verifiers_create_vote_results(data) == 0 || sign_data(data) == 0) return ROUND_NEXT;
-  INFO_PRINT_STATUS_OK("Created reserve bytes majority data");
-
-  if (sync_with_backup_fallback(backup_node_index, 2, 45, BLOCK_TIME - 1, 0) == XCASH_ERROR)
-      return ROUND_SKIP;
-
-  // Part 23 - Send reserve bytes data
-  INFO_STAGE_PRINT("Part 23 - Send reserve bytes data");
+  INFO_PRINT_STATUS_OK("Created reserve bytes data");
+  if (sync_block_verifiers_minutes_and_seconds(2, 45) == XCASH_ERROR)
+    return ROUND_SKIP;
   if (!send_and_cleanup(data)) return ROUND_NEXT;
+  if (sync_block_verifiers_minutes_and_seconds(2, 55) == XCASH_ERROR)
+    return ROUND_SKIP;
   INFO_PRINT_STATUS_OK("Sent reserve bytes data");
 
-  if (sync_with_backup_fallback(backup_node_index, 2, 55, BLOCK_TIME - 1, 10) == XCASH_ERROR)
-      return ROUND_SKIP;
-
-  // Part 25 - Final reserve bytes majority check
-  INFO_STAGE_PRINT("Part 25 - Check reserve bytes majority");
+  // Part 8 - Final majority check
+  INFO_STAGE_PRINT("Part 8 - Final reserve bytes majority check");
   if (current_round_part_vote_data.vote_results_valid >= BLOCK_VERIFIERS_VALID_AMOUNT) {
       INFO_PRINT_STATUS_OK("[%d / %d] reserve bytes majority", current_round_part_vote_data.vote_results_valid, BLOCK_VERIFIERS_VALID_AMOUNT);
   } else {
       WARNING_PRINT("Invalid reserve bytes majority");
       return ROUND_NEXT;
   }
+  INFO_PRINT_STATUS_OK("Reserve bytes majority check complete");
 
-  // Final step - Update database
+  // Final step - Update DB
+  INFO_STAGE_PRINT("Part 9 - Update DB");
   if (block_verifiers_create_block_and_update_database() == XCASH_ERROR)
       return ROUND_ERROR;
 
@@ -409,9 +248,13 @@ int sync_block_verifiers_minutes_and_seconds(const int MINUTES, const int SECOND
 {
   struct timeval current_time;
 
+  if (MINUTES >= BLOCK_TIME || SECONDS >= 60) {
+    ERROR_PRINT("Invalid sync time: MINUTES must be < BLOCK_TIME and SECONDS < 60");
+    return XCASH_ERROR;
+  }
+
   // Get current time
-  if (gettimeofday(&current_time, NULL) != 0)
-  {
+  if (gettimeofday(&current_time, NULL) != 0) {
     ERROR_PRINT("Failed to get current time");
     return XCASH_ERROR;
   }
@@ -420,9 +263,8 @@ int sync_block_verifiers_minutes_and_seconds(const int MINUTES, const int SECOND
   size_t seconds_within_block = current_time.tv_sec % seconds_per_block;
   size_t target_seconds = MINUTES * 60 + SECONDS;
 
-  if (seconds_within_block >= target_seconds)
-  {
-    WARNING_PRINT("Sleep time exceeded current time by %zu seconds", seconds_within_block - target_seconds);
+  if (seconds_within_block >= target_seconds) {
+    WARNING_PRINT("Missed sync point by %zu seconds", seconds_within_block - target_seconds);
     return XCASH_ERROR;
   }
 
@@ -430,7 +272,6 @@ int sync_block_verifiers_minutes_and_seconds(const int MINUTES, const int SECOND
   DEBUG_PRINT("Sleeping for %zu seconds to sync to target time...", sleep_seconds);
 
   sleep(sleep_seconds);
-
   return XCASH_OK;
 }
 
@@ -443,62 +284,54 @@ Return: 0 if an error has occured, 1 if successfull
 ---------------------------------------------------------------------------------------------------------*/
 int block_verifiers_create_VRF_secret_key_and_VRF_public_key(char* message)
 {
-  // Variables
-  char data[SMALL_BUFFER_SIZE];
-  size_t count;
-  size_t counter;
+  char random_buf[RANDOM_STRING_LENGTH + 1] = {0};
+  size_t i, offset;
 
-   memset(data,0,sizeof(data));
-  
-  // create a random VRF public key and secret key
-  if (create_random_VRF_keys(VRF_data.vrf_public_key,VRF_data.vrf_secret_key) != 1 || crypto_vrf_is_valid_key((const unsigned char*)VRF_data.vrf_public_key) != 1)
-  {
-    ERROR_PRINT("Could not create the VRF secret key or VRF public key for the VRF data");
-    return XCASH_ERROR;
-  }  
-
-  // convert the VRF secret key to hexadecimal
-  for (count = 0, counter = 0; count < crypto_vrf_SECRETKEYBYTES; count++, counter += 2)
-  {
-    snprintf(VRF_data.vrf_secret_key_data+counter,BUFFER_SIZE_NETWORK_BLOCK_DATA-1,"%02x",VRF_data.vrf_secret_key[count] & 0xFF);
-  }
-
-  // convert the VRF public key to hexadecimal
-  for (count = 0, counter = 0; count < crypto_vrf_PUBLICKEYBYTES; count++, counter += 2)
-  {
-    snprintf(VRF_data.vrf_public_key_data+counter,BUFFER_SIZE_NETWORK_BLOCK_DATA-1,"%02x",VRF_data.vrf_public_key[count] & 0xFF);
-  } 
-
-  // create the message
-  memset(message,0,strlen(message));
-  memcpy(message,"{\r\n \"message_settings\": \"BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_VRF_DATA\",\r\n \"vrf_secret_key\": \"",92);
-  memcpy(message+92,VRF_data.vrf_secret_key_data,VRF_SECRET_KEY_LENGTH);
-  memcpy(message+220,"\",\r\n \"vrf_public_key\": \"",24);
-  memcpy(message+244,VRF_data.vrf_public_key_data,VRF_PUBLIC_KEY_LENGTH);
-  memcpy(message+308,"\",\r\n \"random_data\": \"",21);
-  
-  // create random data to use in the alpha string of the VRF data
-  if (random_string(data,RANDOM_STRING_LENGTH) == 0)
-  {
-    ERROR_PRINT("Could not create random data for the VRF data");
+  // Generate VRF keys
+  if (create_random_VRF_keys(VRF_data.vrf_public_key, VRF_data.vrf_secret_key) != 1) {
+    ERROR_PRINT("Failed to generate VRF key pair");
     return XCASH_ERROR;
   }
 
-  memcpy(message+329,data,RANDOM_STRING_LENGTH);
-  memcpy(message+429,"\",\r\n}",5);
+  if (crypto_vrf_is_valid_key((const unsigned char*)VRF_data.vrf_public_key) != 1) {
+    ERROR_PRINT("Generated VRF public key is invalid");
+    return XCASH_ERROR;
+  }
 
-  // add the VRF data to the block verifiers VRF data copy
-  for (count = 0; count < BLOCK_VERIFIERS_AMOUNT; count++)
-  {
-    if (strncmp(current_block_verifiers_list.block_verifiers_public_address[count],xcash_wallet_public_address,XCASH_WALLET_LENGTH) == 0)
-    {        
-      memcpy(VRF_data.block_verifiers_vrf_secret_key[count],VRF_data.vrf_secret_key,crypto_vrf_SECRETKEYBYTES);
-      memcpy(VRF_data.block_verifiers_vrf_secret_key_data[count],VRF_data.vrf_secret_key_data,VRF_SECRET_KEY_LENGTH);
-      memcpy(VRF_data.block_verifiers_vrf_public_key[count],VRF_data.vrf_public_key,crypto_vrf_PUBLICKEYBYTES);
-      memcpy(VRF_data.block_verifiers_vrf_public_key_data[count],VRF_data.vrf_public_key_data,VRF_PUBLIC_KEY_LENGTH);
-      memcpy(VRF_data.block_verifiers_random_data[count],data,RANDOM_STRING_LENGTH);
+  // Convert VRF keys to hex
+  for (i = 0, offset = 0; i < crypto_vrf_SECRETKEYBYTES; i++, offset += 2)
+    snprintf(VRF_data.vrf_secret_key_data + offset, 3, "%02x", VRF_data.vrf_secret_key[i]);
+
+  for (i = 0, offset = 0; i < crypto_vrf_PUBLICKEYBYTES; i++, offset += 2)
+    snprintf(VRF_data.vrf_public_key_data + offset, 3, "%02x", VRF_data.vrf_public_key[i]);
+
+  // Generate random alpha string
+  if (!random_string(random_buf, RANDOM_STRING_LENGTH)) {
+    ERROR_PRINT("Failed to generate VRF random alpha string");
+    return XCASH_ERROR;
+  }
+
+  // Format message as JSON
+  snprintf(message, BUFFER_SIZE,
+           "{\r\n"
+           " \"message_settings\": \"BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_VRF_DATA\",\r\n"
+           " \"vrf_secret_key\": \"%s\",\r\n"
+           " \"vrf_public_key\": \"%s\",\r\n"
+           " \"random_data\": \"%s\"\r\n"
+           "}", VRF_data.vrf_secret_key_data, VRF_data.vrf_public_key_data, random_buf);
+
+  // Store into VRF_data struct
+  for (i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
+    if (strncmp(current_block_verifiers_list.block_verifiers_public_address[i],
+                xcash_wallet_public_address, XCASH_WALLET_LENGTH) == 0) {
+      memcpy(VRF_data.block_verifiers_vrf_secret_key[i], VRF_data.vrf_secret_key, crypto_vrf_SECRETKEYBYTES);
+      memcpy(VRF_data.block_verifiers_vrf_secret_key_data[i], VRF_data.vrf_secret_key_data, VRF_SECRET_KEY_LENGTH);
+      memcpy(VRF_data.block_verifiers_vrf_public_key[i], VRF_data.vrf_public_key, crypto_vrf_PUBLICKEYBYTES);
+      memcpy(VRF_data.block_verifiers_vrf_public_key_data[i], VRF_data.vrf_public_key_data, VRF_PUBLIC_KEY_LENGTH);
+      memcpy(VRF_data.block_verifiers_random_data[i], random_buf, RANDOM_STRING_LENGTH);
+      break;
     }
-  } 
+  }
 
   return XCASH_OK;
 }
@@ -510,95 +343,86 @@ Parameters:
   result - The result
   SETTINGS - The data settings
 ---------------------------------------------------------------------------------------------------------*/
-void block_verifiers_create_vote_majority_results(char *result, const int SETTINGS)
-{
+void block_verifiers_create_vote_majority_results(char *result, const int SETTINGS) {
   const char *MESSAGE_HEADER = "{\r\n \"message_settings\": \"NODES_TO_NODES_VOTE_MAJORITY_RESULTS\",\r\n ";
   const char *VOTE_KEY_PREFIX = "\"vote_data_";
   const char *VOTE_KEY_SUFFIX = "\": \"";
-  const char *VOTE_ENTRY_SUFFIX = "\",\r\n ";
-  
+  const char *VOTE_ENTRY_SUFFIX = "\",\r\n";
+
   size_t offset = 0;
   int count, count2;
 
-  // Clear result buffer
   memset(result, 0, BUFFER_SIZE);
 
-  // reset the current_block_verifiers_majority_vote
+  // Reset majority vote memory
   pthread_mutex_lock(&majority_vote_lock);
   for (count = 0; count < BLOCK_VERIFIERS_AMOUNT; count++) {
     for (count2 = 0; count2 < BLOCK_VERIFIERS_AMOUNT; count2++) {
-      memset(current_block_verifiers_majority_vote.data[count][count2], 0, sizeof(current_block_verifiers_majority_vote.data[count][count2]));
+      memset(current_block_verifiers_majority_vote.data[count][count2], 0,
+             sizeof(current_block_verifiers_majority_vote.data[count][count2]));
     }
   }
   pthread_mutex_unlock(&majority_vote_lock);
 
-  // Add message header
-  memcpy(result, MESSAGE_HEADER, strlen(MESSAGE_HEADER));
-  offset = strlen(MESSAGE_HEADER);
+  // Write the message header
+  offset = snprintf(result, BUFFER_SIZE, "%s", MESSAGE_HEADER);
 
-  // Loop through block verifiers
-  for (count = 0; count < BLOCK_VERIFIERS_AMOUNT; count++)
-  {
+  // Compose JSON vote data
+  for (count = 0; count < BLOCK_VERIFIERS_AMOUNT; count++) {
     offset += snprintf(result + offset, BUFFER_SIZE - offset, "%s%d%s", VOTE_KEY_PREFIX, count + 1, VOTE_KEY_SUFFIX);
 
-    if (SETTINGS == 0)
-    {
+    if (SETTINGS == 0) {
+      // VRF data vote
       if (strlen(VRF_data.block_verifiers_vrf_secret_key_data[count]) == VRF_SECRET_KEY_LENGTH &&
           strlen(VRF_data.block_verifiers_vrf_public_key_data[count]) == VRF_PUBLIC_KEY_LENGTH &&
-          strlen(VRF_data.block_verifiers_random_data[count]) == RANDOM_STRING_LENGTH)
-      {
+          strlen(VRF_data.block_verifiers_random_data[count]) == RANDOM_STRING_LENGTH) {
+
         memcpy(result + offset, VRF_data.block_verifiers_vrf_secret_key_data[count], VRF_SECRET_KEY_LENGTH);
         offset += VRF_SECRET_KEY_LENGTH;
         memcpy(result + offset, VRF_data.block_verifiers_vrf_public_key_data[count], VRF_PUBLIC_KEY_LENGTH);
         offset += VRF_PUBLIC_KEY_LENGTH;
         memcpy(result + offset, VRF_data.block_verifiers_random_data[count], RANDOM_STRING_LENGTH);
         offset += RANDOM_STRING_LENGTH;
+      } else {
+        offset += snprintf(result + offset, BUFFER_SIZE - offset, "%s", BLOCK_VERIFIER_MAJORITY_VRF_DATA_TEMPLATE);
       }
-      else
-      {
-        memcpy(result + offset, BLOCK_VERIFIER_MAJORITY_VRF_DATA_TEMPLATE, strlen(BLOCK_VERIFIER_MAJORITY_VRF_DATA_TEMPLATE));
-        offset += strlen(BLOCK_VERIFIER_MAJORITY_VRF_DATA_TEMPLATE);
-      }
-    }
-    else
-    {
-      if (strlen(VRF_data.block_blob_signature[count]) == VRF_PROOF_LENGTH + VRF_BETA_LENGTH)
-      {
+    } else {
+      // Signature vote
+      if (strlen(VRF_data.block_blob_signature[count]) == (VRF_PROOF_LENGTH + VRF_BETA_LENGTH)) {
         memcpy(result + offset, VRF_data.block_blob_signature[count], VRF_PROOF_LENGTH + VRF_BETA_LENGTH);
-        offset += VRF_PROOF_LENGTH + VRF_BETA_LENGTH;
-      }
-      else
-      {
-        memcpy(result + offset, BLOCK_VERIFIER_MAJORITY_BLOCK_VERIFIERS_SIGNATURE_TEMPLATE, strlen(BLOCK_VERIFIER_MAJORITY_BLOCK_VERIFIERS_SIGNATURE_TEMPLATE));
-        offset += strlen(BLOCK_VERIFIER_MAJORITY_BLOCK_VERIFIERS_SIGNATURE_TEMPLATE);
+        offset += (VRF_PROOF_LENGTH + VRF_BETA_LENGTH);
+      } else {
+        offset += snprintf(result + offset, BUFFER_SIZE - offset, "%s", BLOCK_VERIFIER_MAJORITY_BLOCK_VERIFIERS_SIGNATURE_TEMPLATE);
       }
     }
 
-    memcpy(result + offset, VOTE_ENTRY_SUFFIX, strlen(VOTE_ENTRY_SUFFIX));
-    offset += strlen(VOTE_ENTRY_SUFFIX);
+    offset += snprintf(result + offset, BUFFER_SIZE - offset, "%s", VOTE_ENTRY_SUFFIX);
   }
 
-  // Replace the last comma with closing bracket
-  result[offset - 3] = '}';
-  result[offset - 2] = '\0';
+  // Fix final trailing comma: Replace last ',\r\n' with closing }
+  if (offset >= 3) {
+    result[offset - 3] = '}';
+    result[offset - 2] = '\0';
+  }
 
-  // Add to current_block_verifiers_majority_vote
-  for (count = 0; count < BLOCK_VERIFIERS_AMOUNT; count++)
-  {
-    if (strncmp(current_block_verifiers_list.block_verifiers_public_address[count], xcash_wallet_public_address, XCASH_WALLET_LENGTH) == 0)
-    {
+  // Store vote into current_block_verifiers_majority_vote
+  for (count = 0; count < BLOCK_VERIFIERS_AMOUNT; count++) {
+    if (strncmp(current_block_verifiers_list.block_verifiers_public_address[count],
+                xcash_wallet_public_address, XCASH_WALLET_LENGTH) == 0) {
       break;
     }
   }
+
   pthread_mutex_lock(&majority_vote_lock);
-  for (count2 = 0; count2 < BLOCK_VERIFIERS_AMOUNT; count2++)
-  {
-    memcpy(current_block_verifiers_majority_vote.data[count][count2], VRF_data.block_verifiers_vrf_secret_key_data[count2], VRF_SECRET_KEY_LENGTH);
-    memcpy(current_block_verifiers_majority_vote.data[count][count2] + VRF_SECRET_KEY_LENGTH, VRF_data.block_verifiers_vrf_public_key_data[count2], VRF_PUBLIC_KEY_LENGTH);
-    memcpy(current_block_verifiers_majority_vote.data[count][count2] + VRF_SECRET_KEY_LENGTH + VRF_PUBLIC_KEY_LENGTH, VRF_data.block_verifiers_random_data[count2], RANDOM_STRING_LENGTH);
+  for (count2 = 0; count2 < BLOCK_VERIFIERS_AMOUNT; count2++) {
+    memcpy(current_block_verifiers_majority_vote.data[count][count2],
+           VRF_data.block_verifiers_vrf_secret_key_data[count2], VRF_SECRET_KEY_LENGTH);
+    memcpy(current_block_verifiers_majority_vote.data[count][count2] + VRF_SECRET_KEY_LENGTH,
+           VRF_data.block_verifiers_vrf_public_key_data[count2], VRF_PUBLIC_KEY_LENGTH);
+    memcpy(current_block_verifiers_majority_vote.data[count][count2] + VRF_SECRET_KEY_LENGTH + VRF_PUBLIC_KEY_LENGTH,
+           VRF_data.block_verifiers_random_data[count2], RANDOM_STRING_LENGTH);
   }
   pthread_mutex_unlock(&majority_vote_lock);
-  return;
 }
 
 /*---------------------------------------------------------------------------------------------------------
@@ -608,94 +432,82 @@ Return: 0 if an error has occured, 1 if successfull
 ---------------------------------------------------------------------------------------------------------*/
 int block_verifiers_create_VRF_data(void)
 {
-  // Variables
-  char data[SMALL_BUFFER_SIZE] = {0};
-  char data2[SMALL_BUFFER_SIZE] = {0};
-  size_t count, count2, counter;
+  char hash_buf[SMALL_BUFFER_SIZE] = {0};
+  char hex_buf[SMALL_BUFFER_SIZE] = {0};
+  size_t count, hex_index;
+  int selected_index = -1;
 
-  // Initialize vrf_alpha_string
-  memset(VRF_data.vrf_alpha_string, 0, strlen((const char*)VRF_data.vrf_alpha_string));
+  // Initialize alpha string with previous block hash
+  memset(VRF_data.vrf_alpha_string, 0, sizeof(VRF_data.vrf_alpha_string));
   memcpy(VRF_data.vrf_alpha_string, previous_block_hash, BLOCK_HASH_LENGTH);
 
-  // Append block verifiers random data or placeholder
+  // Append random data or placeholder
   for (count = 0; count < BLOCK_VERIFIERS_AMOUNT; count++) {
-      if (strlen((const char*)VRF_data.block_verifiers_vrf_secret_key[count]) == crypto_vrf_SECRETKEYBYTES &&
-          strlen((const char*)VRF_data.block_verifiers_vrf_public_key[count]) == crypto_vrf_PUBLICKEYBYTES &&
-          strlen(VRF_data.block_verifiers_random_data[count]) == RANDOM_STRING_LENGTH) {
-          memcpy(VRF_data.vrf_alpha_string + strlen((const char*)VRF_data.vrf_alpha_string),
-                 VRF_data.block_verifiers_random_data[count], RANDOM_STRING_LENGTH);
-      } else {
-          memcpy(VRF_data.vrf_alpha_string + strlen((const char*)VRF_data.vrf_alpha_string),
-                 GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_RANDOM_STRING,
-                 sizeof(GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_RANDOM_STRING) - 1);
-      }
+    const char* rand_data = (strlen((const char*)VRF_data.block_verifiers_vrf_secret_key[count]) == crypto_vrf_SECRETKEYBYTES &&
+                             strlen((const char*)VRF_data.block_verifiers_vrf_public_key[count]) == crypto_vrf_PUBLICKEYBYTES &&
+                             strlen(VRF_data.block_verifiers_random_data[count]) == RANDOM_STRING_LENGTH)
+                             ? VRF_data.block_verifiers_random_data[count]
+                             : GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_RANDOM_STRING;
+
+    strncat((char*)VRF_data.vrf_alpha_string, rand_data, RANDOM_STRING_LENGTH);
   }
 
-  // Convert vrf_alpha_string to hex string
+  // Convert to hex string
   size_t alpha_len = strlen((const char*)VRF_data.vrf_alpha_string);
-  for (count2 = 0, count = 0; count2 < alpha_len; count2++, count += 2) {
-    snprintf(VRF_data.vrf_alpha_string_data + count, BUFFER_SIZE - count, "%02x", VRF_data.vrf_alpha_string[count2] & 0xFF);
+  for (hex_index = 0, count = 0; count < alpha_len; count++, hex_index += 2) {
+    snprintf(VRF_data.vrf_alpha_string_data + hex_index, BUFFER_SIZE - hex_index, "%02x", VRF_data.vrf_alpha_string[count] & 0xFF);
   }
 
-  // Hash vrf_alpha_string_data
-  crypto_hash_sha512((unsigned char*)data, (const unsigned char*)VRF_data.vrf_alpha_string_data, strlen(VRF_data.vrf_alpha_string_data));
+  // Hash alpha string
+  crypto_hash_sha512((unsigned char*)hash_buf, (const unsigned char*)VRF_data.vrf_alpha_string_data, strlen(VRF_data.vrf_alpha_string_data));
 
-  // Convert hash to hex string
-  for (count2 = 0, count = 0; count2 < DATA_HASH_LENGTH / 2; count2++, count += 2) {
-    snprintf(data2 + count, sizeof(data2) - count, "%02x", data[count2] & 0xFF);
+  // Convert hash to hex
+  for (hex_index = 0, count = 0; count < DATA_HASH_LENGTH / 2; count++, hex_index += 2) {
+    snprintf(hex_buf + hex_index, sizeof(hex_buf) - hex_index, "%02x", hash_buf[count] & 0xFF);
   }
 
-  // Determine which verifier's keys to use
+  // Choose index from hash
   for (count = 0; count < DATA_HASH_LENGTH; count += 2) {
     char byte_str[3] = {0};
-    memcpy(byte_str, &data2[count], 2);
-    counter = (int)strtol(byte_str, NULL, 16);
+    memcpy(byte_str, &hex_buf[count], 2);
+    int idx = (int)strtol(byte_str, NULL, 16);
 
-    if (counter >= MINIMUM_BYTE_RANGE && counter <= MAXIMUM_BYTE_RANGE) {
-      counter %= BLOCK_VERIFIERS_AMOUNT;
-
-      if (strncmp(VRF_data.block_verifiers_vrf_secret_key_data[counter],
-                  GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_VRF_SECRET_KEY_DATA,
-                  sizeof(GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_VRF_SECRET_KEY_DATA) - 1) != 0 &&
-          strncmp(VRF_data.block_verifiers_vrf_public_key_data[counter],
-                  GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_VRF_PUBLIC_KEY_DATA,
-                  sizeof(GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_VRF_PUBLIC_KEY_DATA) - 1) != 0 &&
-          strncmp(VRF_data.block_verifiers_random_data[counter], GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_RANDOM_STRING,
-                  sizeof(GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_RANDOM_STRING) - 1) != 0) {
-          break;
+    if (idx >= MINIMUM_BYTE_RANGE && idx <= MAXIMUM_BYTE_RANGE) {
+      idx %= BLOCK_VERIFIERS_AMOUNT;
+      if (strncmp(VRF_data.block_verifiers_vrf_secret_key_data[idx], GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_VRF_SECRET_KEY_DATA, sizeof(GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_VRF_SECRET_KEY_DATA) - 1) != 0 &&
+          strncmp(VRF_data.block_verifiers_vrf_public_key_data[idx], GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_VRF_PUBLIC_KEY_DATA, sizeof(GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_VRF_PUBLIC_KEY_DATA) - 1) != 0 &&
+          strncmp(VRF_data.block_verifiers_random_data[idx], GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_RANDOM_STRING, sizeof(GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_RANDOM_STRING) - 1) != 0) {
+        selected_index = idx;
+        break;
       }
     }
   }
 
-  // Set selected verifier's keys
-  memcpy(VRF_data.vrf_secret_key_data, VRF_data.block_verifiers_vrf_secret_key_data[counter], VRF_SECRET_KEY_LENGTH);
-  memcpy(VRF_data.vrf_secret_key, VRF_data.block_verifiers_vrf_secret_key[counter], crypto_vrf_SECRETKEYBYTES);
-  memcpy(VRF_data.vrf_public_key_data, VRF_data.block_verifiers_vrf_public_key_data[counter], VRF_PUBLIC_KEY_LENGTH);
-  memcpy(VRF_data.vrf_public_key, VRF_data.block_verifiers_vrf_public_key[counter], crypto_vrf_PUBLICKEYBYTES);
+  if (selected_index < 0) {
+    ERROR_PRINT("Failed to select a valid block verifier for VRF");
+    return XCASH_ERROR;
+  }
+
+  // Copy selected verifier's data
+  memcpy(VRF_data.vrf_secret_key_data, VRF_data.block_verifiers_vrf_secret_key_data[selected_index], VRF_SECRET_KEY_LENGTH);
+  memcpy(VRF_data.vrf_secret_key, VRF_data.block_verifiers_vrf_secret_key[selected_index], crypto_vrf_SECRETKEYBYTES);
+  memcpy(VRF_data.vrf_public_key_data, VRF_data.block_verifiers_vrf_public_key_data[selected_index], VRF_PUBLIC_KEY_LENGTH);
+  memcpy(VRF_data.vrf_public_key, VRF_data.block_verifiers_vrf_public_key[selected_index], crypto_vrf_PUBLICKEYBYTES);
 
   // Create VRF proof and beta string
-  if (crypto_vrf_prove(VRF_data.vrf_proof, (const unsigned char*)VRF_data.vrf_secret_key,
-                       (const unsigned char*)VRF_data.vrf_alpha_string_data, strlen((const char*)VRF_data.vrf_alpha_string_data)) != 0) {
-    ERROR_PRINT("Could not create the vrf proof");
-    return XCASH_ERROR;
-  }
-  if (crypto_vrf_proof_to_hash(VRF_data.vrf_beta_string, (const unsigned char*)VRF_data.vrf_proof) != 0) {
-    ERROR_PRINT("Could not create the vrf beta string");
-    return XCASH_ERROR;
-  }
-  if (crypto_vrf_verify(VRF_data.vrf_beta_string, (const unsigned char*)VRF_data.vrf_public_key,
-                        (const unsigned char*)VRF_data.vrf_proof, (const unsigned char*)VRF_data.vrf_alpha_string_data,
-                        strlen((const char*)VRF_data.vrf_alpha_string_data)) != 0) {
-    ERROR_PRINT("Could not verify the VRF data");
+  if (crypto_vrf_prove(VRF_data.vrf_proof, VRF_data.vrf_secret_key, (const unsigned char*)VRF_data.vrf_alpha_string_data, strlen((const char*)VRF_data.vrf_alpha_string_data)) != 0 ||
+      crypto_vrf_proof_to_hash(VRF_data.vrf_beta_string, VRF_data.vrf_proof) != 0 ||
+      crypto_vrf_verify(VRF_data.vrf_beta_string, VRF_data.vrf_public_key, VRF_data.vrf_proof, (const unsigned char*)VRF_data.vrf_alpha_string_data, strlen((const char*)VRF_data.vrf_alpha_string_data)) != 0) {
+    ERROR_PRINT("VRF proof or verification failed");
     return XCASH_ERROR;
   }
 
-  // Convert proof and beta string to hex strings
-  for (counter = 0, count = 0; counter < crypto_vrf_PROOFBYTES; counter++, count += 2) {
-    snprintf(VRF_data.vrf_proof_data + count, BUFFER_SIZE_NETWORK_BLOCK_DATA - count, "%02x", VRF_data.vrf_proof[counter] & 0xFF);
+  // Convert proof and beta to hex
+  for (count = 0, hex_index = 0; count < crypto_vrf_PROOFBYTES; count++, hex_index += 2) {
+    snprintf(VRF_data.vrf_proof_data + hex_index, BUFFER_SIZE_NETWORK_BLOCK_DATA - hex_index, "%02x", VRF_data.vrf_proof[count] & 0xFF);
   }
-  for (counter = 0, count = 0; counter < crypto_vrf_OUTPUTBYTES; counter++, count += 2) {
-    snprintf(VRF_data.vrf_beta_string_data + count, BUFFER_SIZE_NETWORK_BLOCK_DATA - count, "%02x", VRF_data.vrf_beta_string[counter] & 0xFF);
+  for (count = 0, hex_index = 0; count < crypto_vrf_OUTPUTBYTES; count++, hex_index += 2) {
+    snprintf(VRF_data.vrf_beta_string_data + hex_index, BUFFER_SIZE_NETWORK_BLOCK_DATA - hex_index, "%02x", VRF_data.vrf_beta_string[count] & 0xFF);
   }
 
   return XCASH_OK;
@@ -710,52 +522,43 @@ Return: 0 if an error has occured, 1 if successfull
 ---------------------------------------------------------------------------------------------------------*/
 int block_verifiers_create_vote_results(char* message)
 {
-  // Variables
-  char data[BUFFER_SIZE] = {0};
-  char hash_raw[SMALL_BUFFER_SIZE] = {0};
-  char hash_hex[SMALL_BUFFER_SIZE] = {0};
-
-  INFO_STAGE_PRINT("Part 21 - Verify the block verifiers from the previous block signatures are valid");
+  char block_string[BUFFER_SIZE] = {0};
+  unsigned char hash_raw[crypto_hash_sha512_BYTES] = {0};
+  char hash_hex[DATA_HASH_LENGTH + 1] = {0};
 
   // Verify block signatures validity
-  if (verify_network_block_data(1, 1, "0", BLOCK_VERIFIERS_AMOUNT) == 0)
-  {
+  if (verify_network_block_data(1, 1, "0", BLOCK_VERIFIERS_AMOUNT) == 0) {
     ERROR_PRINT("The MAIN_NODES_TO_NODES_PART_4_OF_ROUND message is invalid");
     return XCASH_ERROR;
   }
 
-  INFO_STAGE_PRINT("Part 22 - Create the overall majority data for the reserve bytes (block template with VRF data)");
-
   // Convert blockchain_data to network block string
-  if (blockchain_data_to_network_block_string(data, BLOCK_VERIFIERS_AMOUNT) == 0)
-  {
+  if (blockchain_data_to_network_block_string(block_string, BLOCK_VERIFIERS_AMOUNT) == 0) {
     ERROR_PRINT("Could not convert the blockchain_data to a network_block_string");
     return XCASH_ERROR;
   }
 
-  // Copy network block string to VRF block blob
-  memset(VRF_data.block_blob, 0, strlen(VRF_data.block_blob));
-  memcpy(VRF_data.block_blob, data, strnlen(data, BUFFER_SIZE));
+  // Copy block string to VRF block blob
+  strncpy(VRF_data.block_blob, block_string, sizeof(VRF_data.block_blob) - 1);
 
-  // Hash the network block string using SHA512
-  crypto_hash_sha512((unsigned char*)hash_raw, (const unsigned char*)data, strnlen(data, BUFFER_SIZE));
+  // Hash the block string using SHA512
+  crypto_hash_sha512(hash_raw, (const unsigned char*)block_string, strnlen(block_string, BUFFER_SIZE));
 
   // Convert SHA512 hash to hex string
-  for (size_t i = 0; i < DATA_HASH_LENGTH / 2; i++)
-  {
-    snprintf(hash_hex + (i * 2), 3, "%02x", hash_raw[i] & 0xFF);
+  for (size_t i = 0; i < DATA_HASH_LENGTH / 2; i++) {
+    snprintf(hash_hex + (i * 2), 3, "%02x", hash_raw[i]);
   }
 
-  // Reset vote data structure
+  // Store the result in the global vote structure
   memset(current_round_part_vote_data.current_vote_results, 0, sizeof(current_round_part_vote_data.current_vote_results));
+  strncpy(current_round_part_vote_data.current_vote_results, hash_hex, DATA_HASH_LENGTH);
   current_round_part_vote_data.vote_results_valid = 1;
   current_round_part_vote_data.vote_results_invalid = 0;
-  memcpy(current_round_part_vote_data.current_vote_results, hash_hex, DATA_HASH_LENGTH);
 
-  // Construct the JSON message
+  // Construct JSON message
   snprintf(message, BUFFER_SIZE,
-           "{\r\n \"message_settings\": \"NODES_TO_NODES_VOTE_RESULTS\",\r\n "
-           "\"vote_settings\": \"valid\",\r\n \"vote_data\": \"%s\",\r\n}", 
+           "{\r\n \"message_settings\": \"NODES_TO_NODES_VOTE_RESULTS\",\r\n"
+           " \"vote_settings\": \"valid\",\r\n \"vote_data\": \"%s\",\r\n}",
            current_round_part_vote_data.current_vote_results);
 
   return XCASH_OK;
@@ -768,103 +571,59 @@ Parameters:
   message - The message to send to the block verifiers
 Return: 0 if an error has occured, 1 if successfull
 ---------------------------------------------------------------------------------------------------------*/
-int block_verifiers_create_block_and_update_database(void)
-{
-  // Variables
-  char data[BUFFER_SIZE] = {0};
-  char data2[BUFFER_SIZE] = {0};
-  char data3[BUFFER_SIZE] = {0};
-  time_t current_date_and_time;
-  struct tm current_UTC_date_and_time;
-  size_t count;
-  size_t block_height;
+int block_verifiers_create_block_and_update_database(void) {
+  char block_with_hash[BUFFER_SIZE] = {0};
+  char reserve_entry[BUFFER_SIZE] = {0};
+  char reserve_key[BUFFER_SIZE] = {0};
+  time_t now;
+  struct tm utc;
+  size_t reserve_index = 0;
+  size_t block_height = 0;
 
   // Add data hash to the network block string
-  INFO_STAGE_PRINT("Part 26 - Add the data hash of the reserve bytes to the block");
-  if (add_data_hash_to_network_block_string(VRF_data.block_blob, data) == 0)
-  {
-    ERROR_PRINT("Could not add the data hash of the reserve bytes to the block");
+  if (!add_data_hash_to_network_block_string(VRF_data.block_blob, block_with_hash)) {
+    ERROR_PRINT("Failed to add data hash to block");
     return XCASH_ERROR;
   }
-  INFO_PRINT_STATUS_OK("Added the data hash of the reserve bytes to the block");
 
-  // Update reserve bytes database
-  INFO_STAGE_PRINT("Part 27 - Add the reserve bytes to the database");
-  get_reserve_bytes_database(&count);
-
-  snprintf(data2, sizeof(data2),
+  // Add reserve bytes to database
+  get_reserve_bytes_database(&reserve_index);
+  snprintf(reserve_entry, sizeof(reserve_entry),
            "{\"block_height\":\"%s\",\"reserve_bytes_data_hash\":\"%s\",\"reserve_bytes\":\"%s\"}",
            current_block_height, VRF_data.reserve_bytes_data_hash, VRF_data.block_blob);
-
-  snprintf(data3, sizeof(data3), "reserve_bytes_%zu", count);
-
-  if (upsert_json_to_db(DATABASE_NAME, XCASH_DB_RESERVE_BYTES, count, data2, false) == XCASH_ERROR)
-  {
-    ERROR_PRINT("Could not add the reserve bytes to the database");
+  snprintf(reserve_key, sizeof(reserve_key), "reserve_bytes_%zu", reserve_index);
+  if (upsert_json_to_db(DATABASE_NAME, XCASH_DB_RESERVE_BYTES, reserve_index, reserve_entry, false) == XCASH_ERROR) {
+    ERROR_PRINT("Failed to store reserve bytes to database");
     return XCASH_ERROR;
   }
-  INFO_PRINT_STATUS_OK("Added the reserve bytes to the database");
 
-  // Handle reserve proofs check
-  if (strncmp(current_round_part_backup_node, "0", 1) == 0)
-  {
+  // Run reserve proof checks (only if primary node)
+  if (strncmp(current_round_part_backup_node, "0", 1) == 0) {
     sscanf(current_block_height, "%zu", &block_height);
-    time(&current_date_and_time);
-    gmtime_r(&current_date_and_time,&current_UTC_date_and_time);
-    INFO_STAGE_PRINT("Part 28 - Starting the reserve proofs delegate check");
+    time(&now);
+    gmtime_r(&now, &utc);
     reserve_proofs_delegate_check();
-    INFO_PRINT_STATUS_OK("The reserve proofs delegate check is finished");
   }
 
-  if (sync_block_verifiers_minutes_and_seconds((BLOCK_TIME - 1), 0) == XCASH_ERROR)
-  {
+  // Wait until the end of block window
+  if (sync_block_verifiers_minutes_and_seconds((BLOCK_TIME - 1), 0) != XCASH_OK)
     return XCASH_ERROR;
-  }
 
-  // Submit block template if this node is the block producer or backup producer
-  if ((strncmp(current_round_part_backup_node, "0", 1) == 0 &&
-       strncmp(main_nodes_list.block_producer_public_address, xcash_wallet_public_address, XCASH_WALLET_LENGTH) == 0) ||
-      (strncmp(current_round_part_backup_node, "1", 1) == 0 &&
-       strncmp(main_nodes_list.block_producer_backup_block_verifier_1_public_address, xcash_wallet_public_address, XCASH_WALLET_LENGTH) == 0) ||
-      (strncmp(current_round_part_backup_node, "2", 1) == 0 &&
-       strncmp(main_nodes_list.block_producer_backup_block_verifier_2_public_address, xcash_wallet_public_address, XCASH_WALLET_LENGTH) == 0) ||
-      (strncmp(current_round_part_backup_node, "3", 1) == 0 &&
-       strncmp(main_nodes_list.block_producer_backup_block_verifier_3_public_address, xcash_wallet_public_address, XCASH_WALLET_LENGTH) == 0) ||
-      (strncmp(current_round_part_backup_node, "4", 1) == 0 &&
-       strncmp(main_nodes_list.block_producer_backup_block_verifier_4_public_address, xcash_wallet_public_address, XCASH_WALLET_LENGTH) == 0) ||
-      (strncmp(current_round_part_backup_node, "5", 1) == 0 &&
-       strncmp(main_nodes_list.block_producer_backup_block_verifier_5_public_address, xcash_wallet_public_address, XCASH_WALLET_LENGTH) == 0))
-  {
-    INFO_STAGE_PRINT("Sending the new block to blockchain");
-    if (submit_block_template(data) != XCASH_OK)
-    {
-      WARNING_PRINT("Sending the new block to blockchain returned error");
-    }
-    else
-    {
-      INFO_PRINT_STATUS_OK("New block sent to blockchain successfully");
+  // Submit block if this node is the producer or backup
+  bool is_designated_producer =
+      (strncmp(current_round_part_backup_node, "0", 1) == 0 &&
+       strncmp(main_nodes_list.block_producer_public_address, xcash_wallet_public_address, XCASH_WALLET_LENGTH) == 0)
+
+  if (is_designated_producer) {
+    if (submit_block_template(block_with_hash) != XCASH_OK){
+      WARNING_PRINT("Failed to submit block to blockchain");
     }
   }
 
+  // Allow other backup nodes to process
   sleep(BLOCK_VERIFIERS_SETTINGS);
 
-  // Ensure seed nodes also submit the block
-  for (count = 0; network_nodes[count].seed_public_address != NULL; count++)
-  {
-    if (strncmp(network_nodes[count].seed_public_address, xcash_wallet_public_address, XCASH_WALLET_LENGTH) == 0)
-    {
-      INFO_STAGE_PRINT("Sending the new block to blockchain");
-      if (submit_block_template(data) != XCASH_OK)
-      {
-        WARNING_PRINT("Sending the new block to blockchain returned error");
-      }
-      else
-      {
-        INFO_PRINT_STATUS_OK("New block sent to blockchain successfully");
-      }
-    }
-  }
-
+  // Final wait to allow propagation
   INFO_STAGE_PRINT("Waiting for block propagation...");
   sync_block_verifiers_minutes_and_seconds((BLOCK_TIME - 1), 40);
 

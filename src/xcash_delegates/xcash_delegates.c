@@ -44,14 +44,14 @@ const char* delegate_keys[NUM_FIELDS] = {
 
 // Helper function to get the position of a delegate in the network_data_nodes_list
 int get_network_data_node_position(const char* public_address) {
-    int i = 0;
-    while (network_nodes[i].seed_public_address != NULL) {
+    for (int i = 0; i < network_data_nodes_amount; i++) {
+        if (network_nodes[i].seed_public_address == NULL) break;
         if (strcmp(public_address, network_nodes[i].seed_public_address) == 0) {
-            return i;  // Return the index if a match is found
+            return i;
         }
-        i++;
     }
-    return network_data_nodes_amount + 1;  // Return -1 if not found
+    // Return a value larger than any valid index to push non-seed nodes after seeds
+    return network_data_nodes_amount + 1;
 }
 
 // Comparison function for qsort
@@ -66,38 +66,14 @@ int compare_delegates(const void* a, const void* b) {
         return position1 - position2;
     }
 
-    // 2. Sort by if the delegate is online or offline
-
-    // to be compatible to original
-
-    // int settings;
-    // if ((settings = strcmp(delegate2->online_status, delegate1->online_status)) != 0) {
-    //     return settings < 0 ? -1 : 1;
-    // }
-
-    // int online_status1 = strcmp(delegate1->online_status, "true") == 0 ? 1 : 0;
-    // int online_status2 = strcmp(delegate2->online_status, "true") == 0 ? 1 : 0;
-    // if (online_status1 != online_status2) {
-    //     return online_status2 - online_status1;
-    // }
-
     // 3. Sort by how many total votes the delegate has
-
-    // remain code from original to be compatible
     long long int count;
     long long int count2;
     sscanf(delegate1->total_vote_count, "%lld", &count);
     sscanf(delegate2->total_vote_count, "%lld", &count2);
-
     if (count != count2) {
         return count2 - count < 0 ? -1 : 1;
     }
-
-    // int total_votes1 = atoi(delegate1->total_vote_count);
-    // int total_votes2 = atoi(delegate2->total_vote_count);
-    // if (total_votes1 != total_votes2) {
-    //     return total_votes2 - total_votes1;
-    // }
 
     // 4. Sort by the public address
     return strcmp(delegate1->public_address, delegate2->public_address);
