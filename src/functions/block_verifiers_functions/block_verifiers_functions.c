@@ -140,12 +140,6 @@ int block_verifiers_create_block(void) {
       return ROUND_NEXT;
   }
 
-  // Get previous block hash
-  if (get_previous_block_hash(previous_block_hash) == 0) {
-      WARNING_PRINT("Could not get previous block hash");
-      return ROUND_NEXT;
-  }
-
   // Part 2 - Sync delegates from DB
   INFO_STAGE_PRINT("Part 2 - Syncing delegates");
   if (!sync_block_producers()) {

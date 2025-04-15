@@ -100,15 +100,14 @@ bool select_block_producers(const unsigned char* vrf_output, size_t vrf_output_l
 }
 
 xcash_round_result_t process_round(void) {
-  // Sync the databases and build the majority list
-
-  // Get the current block height
+  // Get the current block height Then Sync the databases and build the majority list
   if (get_current_block_height(current_block_height) != XCASH_OK) {
     ERROR_PRINT("Can't get current block height");
     return ROUND_ERROR;
   }
 
   // Get the previous block hash
+  memset(previous_block_hash, 0, BLOCK_HASH_LENGTH);
   if (get_previous_block_hash(previous_block_hash) != XCASH_OK) {
     ERROR_PRINT("Can't get previous block hash");
     return ROUND_ERROR;
@@ -174,9 +173,17 @@ xcash_round_result_t process_round(void) {
     j++;
   }
 
+  unsigned char vrf_output[32] = {0};
+  if (hex_to_byte_array(previous_block_hash, vrf_output, sizeof(vrf_output)) != XCASH_OK) {
+      ERROR_PRINT("Failed to convert previous_block_hash to VRF output");
+      return ROUND_ERROR;
+  }
+  const unsigned char* final_vrf_output = vrf_output;
+  size_t final_vrf_output_len = sizeof(vrf_output);
+
   // Select block producer using deterministic algorithm
   INFO_STAGE_PRINT("Part 1 - Selecting block producers");
-  if (select_block_producers()) {
+  if (select_block_producers(final_vrf_output, final_vrf_output_len)) {
     DEBUG_PRINT("Failed to select a block producer")
     return ROUND_ERROR;
   }

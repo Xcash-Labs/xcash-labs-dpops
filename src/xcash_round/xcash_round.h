@@ -16,6 +16,7 @@
 #include "db_sync.h"
 #include "block_verifiers_update_functions.h"
 #include "block_verifiers_functions.h"
+#include "string_functions.h"
 
 typedef struct {
     char* public_address;
