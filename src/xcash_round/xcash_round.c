@@ -184,7 +184,7 @@ xcash_round_result_t process_round(void) {
   // Select block producer using deterministic algorithm
   INFO_STAGE_PRINT("Part 1 - Selecting block producers");
   if (select_block_producers(final_vrf_output, final_vrf_output_len)) {
-    DEBUG_PRINT("Failed to select a block producer")
+    DEBUG_PRINT("Failed to select a block producer");
     return ROUND_ERROR;
   }
   INFO_PRINT_STATUS_OK("Block producers selected");
