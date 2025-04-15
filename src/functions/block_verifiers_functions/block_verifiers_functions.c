@@ -121,7 +121,7 @@ Return: 0 if an error has occured, 1 if successfull
 ---------------------------------------------------------------------------------------------------------*/
 int block_verifiers_create_block(void) {
   char data[BUFFER_SIZE] = {0};
-  size_t count, count2;
+  size_t count;
 
   // Clear previous VRF data
   pthread_mutex_lock(&majority_vote_lock);
@@ -440,8 +440,8 @@ int block_verifiers_create_VRF_data(void)
   size_t count, hex_index;
   int selected_index = -1;
 
-  // Initialize alpha string with previous block hash
-  memset(VRF_data.vrf_alpha_string, 0, sizeof(VRF_data.vrf_alpha_string));
+  // Initialize vrf_alpha_string
+  memset(VRF_data.vrf_alpha_string, 0, strlen((const char*)VRF_data.vrf_alpha_string));
   memcpy(VRF_data.vrf_alpha_string, previous_block_hash, BLOCK_HASH_LENGTH);
 
   // Append random data or placeholder
@@ -615,7 +615,7 @@ int block_verifiers_create_block_and_update_database(void) {
   // Submit block if this node is the producer or backup
   bool is_designated_producer =
       (strncmp(current_round_part_backup_node, "0", 1) == 0 &&
-       strncmp(main_nodes_list.block_producer_public_address, xcash_wallet_public_address, XCASH_WALLET_LENGTH) == 0)
+       strncmp(main_nodes_list.block_producer_public_address, xcash_wallet_public_address, XCASH_WALLET_LENGTH) == 0);
 
   if (is_designated_producer) {
     if (submit_block_template(block_with_hash) != XCASH_OK){
