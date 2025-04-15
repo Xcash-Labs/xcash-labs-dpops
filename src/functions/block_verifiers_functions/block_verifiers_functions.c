@@ -82,10 +82,12 @@ int block_verifiers_create_block_signature(char* message)
     }
   }
 
-  // Build the signature message
-  snprintf(message, BUFFER_SIZE,
-           "{\r\n \"message_settings\": \"BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_BLOCK_BLOB_SIGNATURE\",\r\n \"block_blob_signature\": \"%s\",\r\n}",
-           data);
+  // Construct message
+  memset(message,0,strlen(message));
+  memcpy(message,"{\r\n \"message_settings\": \"BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_BLOCK_BLOB_SIGNATURE\",\r\n \"block_blob_signature\": \"",110);
+  memcpy(message+110,data,strnlen(data,BUFFER_SIZE));
+  memcpy(message+strlen(message),"\",\r\n}",5);
+  return XCASH_OK;
 
   return XCASH_OK;
 }
