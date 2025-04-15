@@ -90,7 +90,6 @@ int block_verifiers_create_block_signature(char* message)
   return XCASH_OK;
 }
 
-
 // Helper function: Restart logic if alone verifier
 int check_restart_if_alone(size_t count) {
   if (count <= 1) {
@@ -168,7 +167,7 @@ int block_verifiers_create_block(void) {
     WARNING_PRINT("Did not receive block template");
     return ROUND_NEXT;
   }
-  INFO_PRINT_PRINT_OK("Block template received");
+  INFO_PRINT_STATUS_OK("Block template received");
 
   // Part 4 - Sign block
   INFO_STAGE_PRINT("Part 4 - Signing block");
@@ -182,7 +181,6 @@ int block_verifiers_create_block(void) {
   if (sync_block_verifiers_minutes_and_seconds(2, 30) == XCASH_ERROR)
     return ROUND_SKIP;
   INFO_PRINT_STATUS_OK("Block signature sent");
-
 
 // Part 6 - Majority signature voting
   INFO_STAGE_PRINT("Part 6 - Majority vote on block signature");
@@ -204,15 +202,13 @@ int block_verifiers_create_block(void) {
       valid_signatures++;
     }
   }
+  if (check_restart_if_alone(BLOCK_VERIFIERS_AMOUNT)) return ROUND_SKIP;
   if (valid_signatures >= BLOCK_VERIFIERS_VALID_AMOUNT) {
     INFO_PRINT_STATUS_OK("[%zu / %d] block verifiers have a majority", valid_signatures, BLOCK_VERIFIERS_VALID_AMOUNT);
   } else {
     INFO_PRINT_STATUS_FAIL("[%zu / %d] block verifiers lack majority", valid_signatures, BLOCK_VERIFIERS_VALID_AMOUNT);
-    WARNING_PRINT("Insufficient majority for %s", stage_description);
     return ROUND_NEXT;
   }
-  if (check_restart_if_alone(BLOCK_VERIFIERS_AMOUNT)) return ROUND_SKIP;
-  INFO_PRINT_STATUS_OK("Block signature majority verified");
 
   // Part 7 - Reserve bytes voting
   INFO_STAGE_PRINT("Part 7 - Reserve bytes voting");
