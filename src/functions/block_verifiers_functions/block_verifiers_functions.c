@@ -29,8 +29,8 @@ int block_verifiers_create_block_signature(char* message)
   }
 
 // Stub out legacy backup node fields
-  memset(blockchain_data.blockchain_reserve_bytes.block_producer_node_backup_count, '0', sizeof(blockchain_data.blockchain_reserve_bytes.block_producer_node_backup_count));
-  memset(blockchain_data.blockchain_reserve_bytes.block_producer_backup_nodes_names, 0, sizeof(blockchain_data.blockchain_reserve_bytes.block_producer_backup_nodes_names));
+//  memset(blockchain_data.blockchain_reserve_bytes.block_producer_node_backup_count, '0', sizeof(blockchain_data.blockchain_reserve_bytes.block_producer_node_backup_count));
+//  memset(blockchain_data.blockchain_reserve_bytes.block_producer_backup_nodes_names, 0, sizeof(blockchain_data.blockchain_reserve_bytes.block_producer_backup_nodes_names));
 
   // Attach VRF data
   memcpy(blockchain_data.blockchain_reserve_bytes.vrf_secret_key, VRF_data.vrf_secret_key, crypto_vrf_SECRETKEYBYTES);
