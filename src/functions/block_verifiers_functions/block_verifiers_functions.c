@@ -168,7 +168,7 @@ int block_verifiers_create_block(void) {
     WARNING_PRINT("Did not receive block template");
     return ROUND_NEXT;
   }
-  INFO_STAGE_PRINT_OK("Block template received");
+  INFO_PRINT_PRINT_OK("Block template received");
 
   // Part 4 - Sign block
   INFO_STAGE_PRINT("Part 4 - Signing block");
@@ -183,21 +183,33 @@ int block_verifiers_create_block(void) {
     return ROUND_SKIP;
   INFO_PRINT_STATUS_OK("Block signature sent");
 
-  // Part 6 - Majority signature voting
+
+// Part 6 - Majority signature voting
   INFO_STAGE_PRINT("Part 6 - Majority vote on block signature");
-  memset(data, 0, sizeof(data));
+  memset(data, 0, sizeof(data));  // Make sure 'data' is a real buffer, not a pointer
   block_verifiers_create_vote_majority_results(data, 1);
-  if (sign_data(data) == 0) return ROUND_NEXT;
+  if (sign_data(data) != XCASH_OK) return ROUND_NEXT;
   if (!send_and_cleanup(data)) return ROUND_NEXT;
   INFO_PRINT_STATUS_OK("Majority block signature sent");
   if (sync_block_verifiers_minutes_and_seconds(2, 40) == XCASH_ERROR)
     return ROUND_SKIP;
-  if (valid_count >= BLOCK_VERIFIERS_VALID_AMOUNT) {
-      INFO_PRINT_STATUS_OK("[%zu / %d] block verifiers have a majority", valid_count, BLOCK_VERIFIERS_VALID_AMOUNT);
+  // Fill in default signatures if missing and count valid ones
+  size_t valid_signatures = 0;
+  for (count = 0; count < BLOCK_VERIFIERS_AMOUNT; count++) {
+    if (strlen(VRF_data.block_blob_signature[count]) == 0) {
+      memcpy(VRF_data.block_blob_signature[count],
+             GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_SIGNATURE,
+             sizeof(GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_SIGNATURE) - 1);
+    } else {
+      valid_signatures++;
+    }
+  }
+  if (valid_signatures >= BLOCK_VERIFIERS_VALID_AMOUNT) {
+    INFO_PRINT_STATUS_OK("[%zu / %d] block verifiers have a majority", valid_signatures, BLOCK_VERIFIERS_VALID_AMOUNT);
   } else {
-      INFO_PRINT_STATUS_FAIL("[%zu / %d] block verifiers lack majority", valid_count, BLOCK_VERIFIERS_VALID_AMOUNT);
-      WARNING_PRINT("Insufficient majority for %s", stage_description);
-      return ROUND_NEXT;
+    INFO_PRINT_STATUS_FAIL("[%zu / %d] block verifiers lack majority", valid_signatures, BLOCK_VERIFIERS_VALID_AMOUNT);
+    WARNING_PRINT("Insufficient majority for %s", stage_description);
+    return ROUND_NEXT;
   }
   if (check_restart_if_alone(BLOCK_VERIFIERS_AMOUNT)) return ROUND_SKIP;
   INFO_PRINT_STATUS_OK("Block signature majority verified");
