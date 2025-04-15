@@ -18,11 +18,12 @@ int block_verifiers_create_block_signature(char* message)
   for (count = 0; count < BLOCK_VERIFIERS_AMOUNT; count++) {
     if (strncmp(current_block_verifiers_list.block_verifiers_public_address[count], producer_refs[0].public_address, XCASH_WALLET_LENGTH) == 0) {
       memcpy(blockchain_data.blockchain_reserve_bytes.block_producer_delegates_name,
-             current_block_verifiers_list.block_verifiers_name[count],
-             sizeof(blockchain_data.blockchain_reserve_bytes.block_producer_delegates_name));
-      memcpy(blockchain_data.blockchain_reserve_bytes.block_producer_public_address,
-             current_block_verifiers_list.block_verifiers_public_address[count],
-             XCASH_WALLET_LENGTH);
+        current_block_verifiers_list.block_verifiers_name[count],
+        strnlen(current_block_verifiers_list.block_verifiers_name[count],
+        sizeof(current_block_verifiers_list.block_verifiers_name[count]))); 
+       memcpy(blockchain_data.blockchain_reserve_bytes.block_producer_public_address,
+            current_block_verifiers_list.block_verifiers_public_address[count],
+            XCASH_WALLET_LENGTH);
       break;
     }
   }
