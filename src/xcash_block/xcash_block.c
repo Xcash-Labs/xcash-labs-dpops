@@ -9,8 +9,8 @@ bool sync_block_producers(void) {
         return false;
     }
 
-    if (!delegates_all) {
-        WARNING_PRINT("Delegates list not initialized.");
+    if (strlen(delegates_all[0].public_address) == 0) {
+        WARNING_PRINT("Delegates list appears to be uninitialized.");
         cleanup_responses(replies);
         return false;
     }
