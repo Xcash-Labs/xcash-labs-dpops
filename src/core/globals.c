@@ -139,8 +139,8 @@ void init_globals(void) {
 
   // initialize the global variables
   memset(current_block_height,0,sizeof(current_block_height));
-  memset(current_round_part,0,sizeof(current_round_part));
-  memset(current_round_part_backup_node,0,sizeof(current_round_part_backup_node));
+//  memset(current_round_part,0,sizeof(current_round_part));
+//  memset(current_round_part_backup_node,0,sizeof(current_round_part_backup_node));
   
   // set the current_round_part, current_round_part_backup_node and server message, this way the node will start at the begining of a round
   memset(current_round_part,0,sizeof(current_round_part));
