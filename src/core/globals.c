@@ -11,7 +11,6 @@ char previous_block_hash[BLOCK_HASH_LENGTH + 1] = {0};
 unsigned char secret_key_data[crypto_vrf_SECRETKEYBYTES + 1] = {0};
 char secret_key[VRF_SECRET_KEY_LENGTH + 1] = {0};
 char current_round_part[2] = "1";
-//char current_round_part_backup_node[2] = "0";
 int main_network_data_node_create_block = 0;
 bool is_block_creation_stage = false;
 struct VRF_data VRF_data;
@@ -119,6 +118,7 @@ const xcash_msg_t xcash_db_download_messages[] = {
     XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_RESERVE_PROOFS_DATABASE_DOWNLOAD_FILE_UPDATE,
     XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_RESERVE_BYTES_DATABASE_DOWNLOAD_FILE_UPDATE};
 
+// initialize the global variables
 void init_globals(void) {
   pthread_rwlock_init(&rwlock, NULL);
   pthread_rwlock_init(&rwlock_reserve_proofs, NULL);
@@ -130,21 +130,12 @@ void init_globals(void) {
   pthread_mutex_init(&invalid_reserve_proof_lock, NULL);
   pthread_mutex_init(&database_data_IP_address_lock, NULL);
   pthread_mutex_init(&update_current_block_height_lock, NULL);
-
   char data[SMALL_BUFFER_SIZE];
   size_t count = 0;
   srand(time(NULL));
   memset(delegates_all, 0, sizeof(delegates_all));
   memset(data,0,sizeof(data));
-
-  // initialize the global variables
   memset(current_block_height,0,sizeof(current_block_height));
-
-  // set the current_round_part, current_round_part_backup_node and server message, this way the node will start at the begining of a round
-  memset(current_round_part,0,sizeof(current_round_part));
-  //memset(current_round_part_backup_node,0,sizeof(current_round_part_backup_node));
-  memcpy(current_round_part,"1",sizeof(char));
-  //memcpy(current_round_part_backup_node,"0",sizeof(char));
 
   server_limit_IP_address_list = (char*)calloc(15728640,sizeof(char)); // 15 MB
   server_limit_public_address_list = (char*)calloc(15728640,sizeof(char)); // 15 MB
