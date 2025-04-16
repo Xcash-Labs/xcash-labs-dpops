@@ -40,7 +40,6 @@ typedef enum {
 } xcash_round_result_t;
 
 bool select_block_producers(const unsigned char* vrf_output, size_t vrf_output_len);
-void show_block_producer(void);
 xcash_round_result_t process_round(void);
 void start_block_production(void);
 

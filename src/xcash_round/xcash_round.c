@@ -89,7 +89,7 @@ bool select_block_producers(const unsigned char* vrf_output, size_t vrf_output_l
   }
   free(entropy);
 
-  // Fill the global producer_refs[]
+  // Fill the global producer_refs[] - for now there is only one block producer and no backups
   memset(producer_refs, 0, sizeof(producer_refs));  // Zero out all producer slots
   for (size_t i = 0; i < PRODUCER_REF_COUNT && i < num_producers; i++) {
     strcpy(producer_refs[i].public_address, producers_list[i].public_address);
@@ -187,7 +187,7 @@ xcash_round_result_t process_round(void) {
     DEBUG_PRINT("Failed to select a block producer");
     return ROUND_ERROR;
   }
-  INFO_PRINT_STATUS_OK("Block producers selected");
+  INFO_PRINT_STATUS_OK("%s Selected as the Block Producer", address_to_node_name(producer_refs[0].public_address));
 
   is_block_creation_stage = true;
   INFO_STAGE_PRINT("Starting block production for block %s", current_block_height);
@@ -203,7 +203,7 @@ void start_block_production(void) {
   xcash_round_result_t round_result = ROUND_OK;
   bool current_block_healthy = false;
 
-  // Step 1: Wait for node to be fully synced
+  // Wait for node to be fully synced
   while (!current_block_healthy) {
       if (get_current_block_height(current_block_height) == XCASH_OK) {
           current_block_healthy = true;
@@ -213,7 +213,7 @@ void start_block_production(void) {
       }
   }
 
-  // Step 2: Start production loop
+  // Start production loop
   while (true) {
       gettimeofday(&current_time, NULL);
       size_t seconds_within_block = current_time.tv_sec % (BLOCK_TIME * 60);
@@ -244,7 +244,7 @@ void start_block_production(void) {
 
       bool round_created = false;
 
-      // Step 4: Special PoS bootstrapping block
+      // Special PoS bootstrapping block
       if (strtoull(current_block_height, NULL, 10) == XCASH_PROOF_OF_STAKE_BLOCK_HEIGHT) {
           if (strncmp(network_nodes[0].seed_public_address, xcash_wallet_public_address, XCASH_WALLET_LENGTH) == 0) {
               round_created = (start_current_round_start_blocks() != XCASH_ERROR);
@@ -257,7 +257,7 @@ void start_block_production(void) {
               continue;
           }
       } else {
-          // Step 5: Standard block production
+          // Standard block production
           round_result = process_round();
           if (round_result == ROUND_OK) {
               round_created = true;
@@ -278,9 +278,4 @@ void start_block_production(void) {
 
       break; // TEMP: exit after one round (for testing)
   }
-}
-
-void show_block_producer(void) {
-  INFO_STAGE_PRINT("Block producers for block: [%s]", current_block_height);
-  INFO_PRINT("Main Block Producer: " GREEN_TEXT("%s"), address_to_node_name(producer_refs[0].public_address));
 }

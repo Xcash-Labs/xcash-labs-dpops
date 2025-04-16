@@ -20,7 +20,6 @@ typedef enum XNET_DEST{
 } xcash_dest_t;
 
 
-void remove_enders(response_t **responses);
 bool xnet_send_data_multi(xcash_dest_t dest, const char* message, response_t ***reply);
 bool send_message_param_list(xcash_dest_t dest, xcash_msg_t msg, response_t ***reply, const char** pair_params);
 bool send_message_param(xcash_dest_t dest, xcash_msg_t msg, response_t ***reply, ...);
