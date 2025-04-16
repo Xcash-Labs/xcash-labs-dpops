@@ -1,5 +1,7 @@
 #include "xcash_round.h"
 
+producer_ref_t producer_refs[PRODUCER_REF_COUNT] = {0};
+
 unsigned char* generate_deterministic_entropy(const unsigned char* vrf_output, size_t vrf_output_len, size_t total_bytes_needed) {
     size_t iterations = (total_bytes_needed / SHA512_DIGEST_LENGTH) + 1;
 
