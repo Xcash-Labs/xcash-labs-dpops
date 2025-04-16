@@ -54,20 +54,20 @@ struct database_multiple_documents_fields {
     char* value[MAXIMUM_DATABASE_COLLECTION_DOCUMENTS][TOTAL_DELEGATES_DATABASE_FIELDS+1]; // The value
 };
 
-struct main_nodes_list {
-    char block_producer_public_address[XCASH_WALLET_LENGTH+1]; // The block producers public address
-    char block_producer_IP_address[BLOCK_VERIFIERS_IP_ADDRESS_TOTAL_LENGTH+1]; // The block producers IP address
-    char block_producer_backup_block_verifier_1_public_address[XCASH_WALLET_LENGTH+1]; // The block producers backup node 1 public address
-    char block_producer_backup_block_verifier_1_IP_address[BLOCK_VERIFIERS_IP_ADDRESS_TOTAL_LENGTH+1]; // The block producers backup node 1 IP address
-    char block_producer_backup_block_verifier_2_public_address[XCASH_WALLET_LENGTH+1]; // The block producers backup node 2 public address
-    char block_producer_backup_block_verifier_2_IP_address[BLOCK_VERIFIERS_IP_ADDRESS_TOTAL_LENGTH+1]; // The block producers backup node 2 IP address
-    char block_producer_backup_block_verifier_3_public_address[XCASH_WALLET_LENGTH+1]; // The block producers backup node 3 public address
-    char block_producer_backup_block_verifier_3_IP_address[BLOCK_VERIFIERS_IP_ADDRESS_TOTAL_LENGTH+1]; // The block producers backup node 3 IP address
-    char block_producer_backup_block_verifier_4_public_address[XCASH_WALLET_LENGTH+1]; // The block producers backup node 4 public address
-    char block_producer_backup_block_verifier_4_IP_address[BLOCK_VERIFIERS_IP_ADDRESS_TOTAL_LENGTH+1]; // The block producers backup node 4 IP address
-    char block_producer_backup_block_verifier_5_public_address[XCASH_WALLET_LENGTH+1]; // The block producers backup node 5 public address
-    char block_producer_backup_block_verifier_5_IP_address[BLOCK_VERIFIERS_IP_ADDRESS_TOTAL_LENGTH+1]; // The block producers backup node 5 IP address    
-};
+//struct main_nodes_list {
+//    char block_producer_public_address[XCASH_WALLET_LENGTH+1]; // The block producers public address
+//    char block_producer_IP_address[BLOCK_VERIFIERS_IP_ADDRESS_TOTAL_LENGTH+1]; // The block producers IP address
+//    char block_producer_backup_block_verifier_1_public_address[XCASH_WALLET_LENGTH+1]; // The block producers backup node 1 public address
+//    char block_producer_backup_block_verifier_1_IP_address[BLOCK_VERIFIERS_IP_ADDRESS_TOTAL_LENGTH+1]; // The block producers backup node 1 IP address
+//    char block_producer_backup_block_verifier_2_public_address[XCASH_WALLET_LENGTH+1]; // The block producers backup node 2 public address
+//    char block_producer_backup_block_verifier_2_IP_address[BLOCK_VERIFIERS_IP_ADDRESS_TOTAL_LENGTH+1]; // The block producers backup node 2 IP address
+//    char block_producer_backup_block_verifier_3_public_address[XCASH_WALLET_LENGTH+1]; // The block producers backup node 3 public address
+//    char block_producer_backup_block_verifier_3_IP_address[BLOCK_VERIFIERS_IP_ADDRESS_TOTAL_LENGTH+1]; // The block producers backup node 3 IP address
+//    char block_producer_backup_block_verifier_4_public_address[XCASH_WALLET_LENGTH+1]; // The block producers backup node 4 public address
+//    char block_producer_backup_block_verifier_4_IP_address[BLOCK_VERIFIERS_IP_ADDRESS_TOTAL_LENGTH+1]; // The block producers backup node 4 IP address
+//    char block_producer_backup_block_verifier_5_public_address[XCASH_WALLET_LENGTH+1]; // The block producers backup node 5 public address
+//    char block_producer_backup_block_verifier_5_IP_address[BLOCK_VERIFIERS_IP_ADDRESS_TOTAL_LENGTH+1]; // The block producers backup node 5 IP address    
+//};
 
 typedef struct {
     char block_verifiers_name[BLOCK_VERIFIERS_TOTAL_AMOUNT][MAXIMUM_BUFFER_SIZE_DELEGATES_NAME+1]; // The block verifiers name
