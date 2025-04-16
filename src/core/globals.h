@@ -22,7 +22,7 @@ extern char previous_block_hash[BLOCK_HASH_LENGTH+1]; // The previous block hash
 extern unsigned char secret_key_data[crypto_vrf_SECRETKEYBYTES+1]; // Holds the secret key for signing block verifier messages
 extern char secret_key[VRF_SECRET_KEY_LENGTH+1]; // Holds the secret key text for signing block verifier messages
 extern char current_round_part[2]; // The current round part (1-4)
-extern char current_round_part_backup_node[2]; // The current main node in the current round part (0-5)
+//extern char current_round_part_backup_node[2]; // The current main node in the current round part (0-5)
 extern struct main_nodes_list main_nodes_list; // The list of main nodes public address and IP address
 extern block_verifiers_list_t previous_block_verifiers_list; // The list of block verifiers name, public address and IP address for the previous round
 extern block_verifiers_list_t current_block_verifiers_list; // The list of block verifiers name, public address and IP address for the current round

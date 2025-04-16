@@ -11,7 +11,7 @@ char previous_block_hash[BLOCK_HASH_LENGTH + 1] = {0};
 unsigned char secret_key_data[crypto_vrf_SECRETKEYBYTES + 1] = {0};
 char secret_key[VRF_SECRET_KEY_LENGTH + 1] = {0};
 char current_round_part[2] = "1";
-char current_round_part_backup_node[2] = "0";
+//char current_round_part_backup_node[2] = "0";
 int main_network_data_node_create_block = 0;
 bool is_block_creation_stage = false;
 struct VRF_data VRF_data;
@@ -142,9 +142,9 @@ void init_globals(void) {
 
   // set the current_round_part, current_round_part_backup_node and server message, this way the node will start at the begining of a round
   memset(current_round_part,0,sizeof(current_round_part));
-  memset(current_round_part_backup_node,0,sizeof(current_round_part_backup_node));
+  //memset(current_round_part_backup_node,0,sizeof(current_round_part_backup_node));
   memcpy(current_round_part,"1",sizeof(char));
-  memcpy(current_round_part_backup_node,"0",sizeof(char));
+  //memcpy(current_round_part_backup_node,"0",sizeof(char));
 
   server_limit_IP_address_list = (char*)calloc(15728640,sizeof(char)); // 15 MB
   server_limit_public_address_list = (char*)calloc(15728640,sizeof(char)); // 15 MB

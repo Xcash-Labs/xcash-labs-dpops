@@ -602,27 +602,22 @@ int block_verifiers_create_block_and_update_database(void) {
     return XCASH_ERROR;
   }
 
-  // Run reserve proof checks (only if primary node)
-  if (strncmp(current_round_part_backup_node, "0", 1) == 0) {
+  // Run reserve proof checks
     sscanf(current_block_height, "%zu", &block_height);
     time(&now);
     gmtime_r(&now, &utc);
     reserve_proofs_delegate_check();
-  }
 
   // Wait until the end of block window
   if (sync_block_verifiers_minutes_and_seconds((BLOCK_TIME - 1), 0) != XCASH_OK)
     return XCASH_ERROR;
 
-  // Submit block if this node is the producer or backup
-  bool is_designated_producer =
-      (strncmp(current_round_part_backup_node, "0", 1) == 0 &&
-       strncmp(main_nodes_list.block_producer_public_address, xcash_wallet_public_address, XCASH_WALLET_LENGTH) == 0);
-
-  if (is_designated_producer) {
-    if (submit_block_template(block_with_hash) != XCASH_OK){
-      WARNING_PRINT("Failed to submit block to blockchain");
-    }
+  // Submit block if this node is the producer
+  bool is_producer = (strncmp(producer_refs[0].public_address, xcash_wallet_public_address, XCASH_WALLET_LENGTH) == 0);
+  if (is_producer) {
+      if (submit_block_template(block_with_hash) != XCASH_OK) {
+          WARNING_PRINT("Failed to submit block to blockchain");
+      }
   }
 
   // Allow other backup nodes to process
