@@ -1,6 +1,8 @@
 #include "xcash_round.h"
 
-producer_ref_t producer_refs[PRODUCER_REF_COUNT] = {0};
+producer_ref_t producer_refs[] = {
+  {main_nodes_list.block_producer_public_address, main_nodes_list.block_producer_IP_address},
+};
 
 unsigned char* generate_deterministic_entropy(const unsigned char* vrf_output, size_t vrf_output_len, size_t total_bytes_needed) {
     size_t iterations = (total_bytes_needed / SHA512_DIGEST_LENGTH) + 1;
@@ -91,8 +93,8 @@ bool select_block_producers(const unsigned char* vrf_output, size_t vrf_output_l
   }
   free(entropy);
 
-  // Fill the global producer_refs[] - for now there is only one block producer and no backups
-  memset(producer_refs, 0, sizeof(producer_refs));  // Zero out all producer slots
+  // For now there is only one block producer and no backups
+  memset(&main_nodes_list, 0, sizeof(main_nodes_list));
   for (size_t i = 0; i < PRODUCER_REF_COUNT && i < num_producers; i++) {
     strcpy(producer_refs[i].public_address, producers_list[i].public_address);
     strcpy(producer_refs[i].IP_address, producers_list[i].IP_address);
