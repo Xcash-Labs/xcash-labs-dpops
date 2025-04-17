@@ -55,7 +55,87 @@ unsigned char* generate_deterministic_entropy(const unsigned char* vrf_output, s
     return hash_buf;
 }
 
-bool select_block_producers(const unsigned char* vrf_output, size_t vrf_output_len) {
+
+bool select_block_producers(void) {
+  producer_node_t eligible[BLOCK_VERIFIERS_AMOUNT] = {0};
+  size_t eligible_count = 0;
+
+  unsigned char alpha_input[BLOCK_HASH_LENGTH + RANDOM_STRING_LENGTH] = {0};
+  unsigned char lowest_beta[crypto_vrf_OUTPUTBYTES] = {0xff}; // init to max
+  int selected_index = -1;
+
+  // Step 1: Collect eligible producers
+  for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
+    if (strlen(delegates_all[i].public_address) == 0) continue;
+    if (is_seed_address(delegates_all[i].public_address)) continue;
+    if (strcmp(delegates_all[i].online_status, "false") == 0) continue;
+
+    memcpy(eligible[eligible_count].public_address, delegates_all[i].public_address, XCASH_WALLET_LENGTH);
+    memcpy(eligible[eligible_count].IP_address, delegates_all[i].IP_address, XCASH_SERVER_IP_ADDRESS_MAX_LENGTH);
+    eligible[eligible_count].is_online = true;
+    eligible_count++;
+  }
+
+  if (eligible_count == 0) {
+    WARNING_PRINT("No eligible producers available.");
+    return false;
+  }
+
+  // Step 2: Prepare alpha input = previous_block_hash || random_data
+  memcpy(alpha_input, previous_block_hash, BLOCK_HASH_LENGTH);
+  memcpy(alpha_input + BLOCK_HASH_LENGTH, GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_RANDOM_STRING, RANDOM_STRING_LENGTH);
+
+  // Step 3: Loop and generate VRF proof and beta for each
+  for (size_t i = 0; i < eligible_count; i++) {
+    unsigned char vrf_pk[crypto_vrf_PUBLICKEYBYTES];
+    unsigned char vrf_sk[crypto_vrf_SECRETKEYBYTES];
+    unsigned char proof[crypto_vrf_PROOFBYTES];
+    unsigned char beta[crypto_vrf_OUTPUTBYTES];
+
+    // Generate keys (in real systems, they may be stored securely per node)
+    crypto_vrf_keypair(vrf_pk, vrf_sk);
+
+    // Generate proof
+    if (crypto_vrf_prove(proof, vrf_sk, alpha_input, sizeof(alpha_input)) != 0) {
+      WARNING_PRINT("VRF proof generation failed for node %zu", i);
+      continue;
+    }
+
+    // Convert proof to beta (output)
+    if (crypto_vrf_proof_to_hash(beta, proof) != 0) {
+      WARNING_PRINT("VRF beta conversion failed for node %zu", i);
+      continue;
+    }
+
+    // Check if this is the lowest beta so far
+    if (memcmp(beta, lowest_beta, crypto_vrf_OUTPUTBYTES) < 0) {
+      memcpy(lowest_beta, beta, crypto_vrf_OUTPUTBYTES);
+      selected_index = (int)i;
+
+      // Save for block inclusion
+      memcpy(VRF_data.vrf_proof, proof, crypto_vrf_PROOFBYTES);
+      memcpy(VRF_data.vrf_beta_string, beta, crypto_vrf_OUTPUTBYTES);
+      memcpy(VRF_data.vrf_public_key, vrf_pk, crypto_vrf_PUBLICKEYBYTES);
+    }
+  }
+
+  if (selected_index == -1) {
+    ERROR_PRINT("No valid VRF beta found.");
+    return false;
+  }
+
+  // Step 4: Set main producer
+  memset(&main_nodes_list, 0, sizeof(main_nodes_list));
+  strcpy(producer_refs[0].public_address, eligible[selected_index].public_address);
+  strcpy(producer_refs[0].IP_address, eligible[selected_index].IP_address);
+
+  INFO_PRINT("Selected block producer: %s", producer_refs[0].public_address);
+  return true;
+}
+
+
+
+bool select_block_producers____OLD____(const unsigned char* vrf_output, size_t vrf_output_len) {
   producer_node_t producers_list[BLOCK_VERIFIERS_AMOUNT] = {0};
   size_t num_producers = 0;
 
@@ -103,6 +183,11 @@ bool select_block_producers(const unsigned char* vrf_output, size_t vrf_output_l
   return true;
 }
 
+
+
+
+
+
 xcash_round_result_t process_round(void) {
   // Get the current block height Then Sync the databases and build the majority list
   if (get_current_block_height(current_block_height) != XCASH_OK) {
@@ -117,6 +202,32 @@ xcash_round_result_t process_round(void) {
     return ROUND_ERROR;
   }
 
+  // Update with fresh delegates list
+  if (!fill_delegates_from_db()) {
+    DEBUG_PRINT("Can't read delegates list from DB");
+    free(nodes_majority_list);
+    return ROUND_ERROR;
+  }
+
+  for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
+    if (strlen(delegates_all[i].public_address) == 0) {
+        continue; // Skip empty entries
+    }
+
+    DEBUG_PRINT("Delegate #%zu", i);
+    DEBUG_PRINT("  Address:           %s", delegates_all[i].public_address);
+    DEBUG_PRINT("  Name:              %s", delegates_all[i].delegate_name);
+    DEBUG_PRINT("  IP:                %s", delegates_all[i].IP_address);
+    DEBUG_PRINT("  Public Key:        %s", delegates_all[i].public_key);
+    DEBUG_PRINT("  Total Votes:       %s", delegates_all[i].total_vote_count);
+    DEBUG_PRINT("  Online Status:     %s", delegates_all[i].online_status);
+    DEBUG_PRINT("  Score:             %s", delegates_all[i].block_verifier_score);
+    DEBUG_PRINT("  Fee:               %s", delegates_all[i].delegate_fee);
+    DEBUG_PRINT("  Shared Status:     %s", delegates_all[i].shared_delegate_status);
+}
+
+exit(0);
+
   size_t network_majority_count = 0;
   xcash_node_sync_info_t* nodes_majority_list = NULL;
 
@@ -126,12 +237,7 @@ xcash_round_result_t process_round(void) {
     return ROUND_ERROR;
   }
 
-  // Update with fresh delegates list
-  if (!fill_delegates_from_db()) {
-    DEBUG_PRINT("Can't read delegates list from DB");
-    free(nodes_majority_list);
-    return ROUND_ERROR;
-  }
+
 
   // Update online status from majority list
   INFO_STAGE_PRINT("Nodes online for block %s", current_block_height);
