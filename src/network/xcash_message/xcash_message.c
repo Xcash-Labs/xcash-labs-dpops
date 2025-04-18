@@ -250,7 +250,6 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
       ERROR_PRINT("Invalid message received, JSON parsing error in handle_srv_message: %s", error.text);
       return;
     }
-    // Optional: Explicitly get field
     json_t* settings_obj = json_object_get(json_obj, "message_settings");
     if (!settings_obj || !json_is_string(settings_obj)) {
       ERROR_PRINT("Invalid message received, missing or invalid message_settings");
@@ -469,12 +468,12 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
 //      }
 //      break;
 
-//    case XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_VRF_DATA:
-//      if (server_limit_public_addresses(1, data) == 1) {
-//        server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(data);
-//        server_limit_public_addresses(3, data);
-//      }
-//      break;
+    case XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_VRF_DATA:
+      if (server_limit_public_addresses(1, data) == 1) {
+        server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(data);
+        server_limit_public_addresses(3, data);
+      }
+      break;
 
 //    case XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_BLOCK_BLOB_SIGNATURE:
 //      if (server_limit_public_addresses(1, data) == 1) {

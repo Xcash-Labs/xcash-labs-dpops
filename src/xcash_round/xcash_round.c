@@ -189,6 +189,9 @@ bool select_block_producers____OLD____(const unsigned char* vrf_output, size_t v
 
 
 xcash_round_result_t process_round(void) {
+  
+  char vrf_announcement_message[VSMALL_BUFFER_SIZE] = {0};
+
   // Get the current block height Then Sync the databases and build the majority list
   if (get_current_block_height(current_block_height) != XCASH_OK) {
     ERROR_PRINT("Can't get current block height");
@@ -226,6 +229,13 @@ xcash_round_result_t process_round(void) {
     DEBUG_PRINT("  Shared Status:     %s", delegates_all[i].shared_delegate_status);
 }
 
+if (block_verifiers_create_VRF_secret_key_and_VRF_public_key(vrf_announcement_message) != XCASH_OK) {
+  ERROR_PRINT("Failed to create VRF keys and message");
+  return ROUND_ERROR;
+}
+
+
+
 exit(0);
 
   size_t network_majority_count = 0;
@@ -236,6 +246,11 @@ exit(0);
     free(nodes_majority_list);
     return ROUND_ERROR;
   }
+
+
+
+
+
 
 
 
@@ -255,8 +270,7 @@ exit(0);
   }
 
   free(nodes_majority_list);  // Clean up the majority list after use
-
-  // Check if we have enough nodes for block production
+ // Check if we have enough nodes for block production
   if (network_majority_count < BLOCK_VERIFIERS_VALID_AMOUNT) {
     INFO_PRINT_STATUS_FAIL("Nodes majority: [%ld/%d]", network_majority_count, BLOCK_VERIFIERS_VALID_AMOUNT);
     return ROUND_RETRY;

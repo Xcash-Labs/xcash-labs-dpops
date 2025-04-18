@@ -82,6 +82,8 @@ struct VRF_data {
     char* block_verifiers_vrf_public_key_data[BLOCK_VERIFIERS_TOTAL_AMOUNT]; // The VRF public key text that all of the block verifiers create
     unsigned char* block_verifiers_vrf_public_key[BLOCK_VERIFIERS_TOTAL_AMOUNT]; // The VRF public key that all of the block verifiers create
     char* block_verifiers_random_data[BLOCK_VERIFIERS_TOTAL_AMOUNT]; // The random data that all of the block verifiers create
+    char* block_verifiers_vrf_proof_data[BLOCK_VERIFIERS_TOTAL_AMOUNT]; 
+    char* block_verifiers_vrf_beta_data[BLOCK_VERIFIERS_TOTAL_AMOUNT];
     char* block_blob_signature[BLOCK_VERIFIERS_TOTAL_AMOUNT]; // The signed block data text
     char* block_blob; // The block_blob that the block producer creates to send to the consensus node
     char* reserve_bytes_data_hash; // The reserve bytes data hash

@@ -12,40 +12,6 @@ void on_client_close(uv_handle_t *handle) {
     }
 }
 
-// Handle client connections
-void on_new_connection_OLD(uv_stream_t *server_handle, int status) {
-    if (status < 0) {
-        ERROR_PRINT("Error on new connection: %s", uv_strerror(status));
-        return;
-    }
-
-    uv_tcp_t *client = (uv_tcp_t *)malloc(sizeof(uv_tcp_t));
-    if (!client) {
-        ERROR_PRINT("Memory allocation failed for client");
-        return;
-    }
-    
-    // Initialize the TCP handle for the client
-    if (uv_tcp_init(server_handle->loop, client) < 0) {  // Use server's loop
-        ERROR_PRINT("Failed to initialize TCP handle for client");
-        free(client);  // Free memory if initialization fails
-        return;
-    }
-
-    if (uv_accept(server_handle, (uv_stream_t *)client) == 0) {
-        DEBUG_PRINT("New connection accepted.");
-
-        // Start reading from the client
-        if (uv_read_start((uv_stream_t *)client, alloc_buffer_srv, on_client_read) < 0) {
-            ERROR_PRINT("Failed to start reading from client");
-            uv_close((uv_handle_t *)client, on_client_close);
-            return;
-        }
-    } else {
-        uv_close((uv_handle_t *)client, on_client_close);  // Close if accept fails
-    }
-}
-
 void get_client_ip(server_client_t *client) {
     struct sockaddr_storage addr;
     int namelen = sizeof(addr);

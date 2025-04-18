@@ -282,65 +282,109 @@ int sync_block_verifiers_minutes_and_seconds(const int MINUTES, const int SECOND
 
 /*---------------------------------------------------------------------------------------------------------
 Name: block_verifiers_create_VRF_secret_key_and_VRF_public_key
-Description: The block verifiers will create a VRF secret key and a VRF public key
+Description:
+  Generates a new VRF key pair (public and secret key) and a random alpha string to be used for verifiable 
+  randomness in the block producer selection process. The keys and random string are stored in the 
+  appropriate VRF_data structure fields and associated with the current node (block verifier).
+  
+  The function also prepares a JSON message that includes:
+    - The public address of the sender (this node)
+    - The VRF secret key (hex-encoded)
+    - The VRF public key (hex-encoded)
+    - The generated random alpha string
+  
+  This message is broadcast to other block verifiers to allow them to include this node’s randomness 
+  contribution in the verifiable selection round.
+
 Parameters:
-  message - The message to send to the block verifiers
-Return: 0 if an error has occured, 1 if successfull
+  message - Output buffer that receives the formatted JSON message to be broadcast to peers.
+
+Return:
+  XCASH_OK (1) if the key generation and message formatting succeed.
+  XCASH_ERROR (0) if any step fails.
 ---------------------------------------------------------------------------------------------------------*/
 int block_verifiers_create_VRF_secret_key_and_VRF_public_key(char* message)
 {
   char random_buf[RANDOM_STRING_LENGTH + 1] = {0};
+  unsigned char alpha_input[BLOCK_HASH_LENGTH + RANDOM_STRING_LENGTH] = {0};
   size_t i, offset;
 
-  // Generate VRF keys
-  if (create_random_VRF_keys(VRF_data.vrf_public_key, VRF_data.vrf_secret_key) != 1) {
-    ERROR_PRINT("Failed to generate VRF key pair");
+  // Step 1: Generate VRF keypair
+  if (create_random_VRF_keys(VRF_data.vrf_public_key, VRF_data.vrf_secret_key) != 1 ||
+      crypto_vrf_is_valid_key((const unsigned char*)VRF_data.vrf_public_key) != 1) {
+    ERROR_PRINT("Failed to generate valid VRF key pair");
     return XCASH_ERROR;
   }
 
-  if (crypto_vrf_is_valid_key((const unsigned char*)VRF_data.vrf_public_key) != 1) {
-    ERROR_PRINT("Generated VRF public key is invalid");
-    return XCASH_ERROR;
-  }
-
-  // Convert VRF keys to hex
+  // Step 2: Convert keys to hex
   for (i = 0, offset = 0; i < crypto_vrf_SECRETKEYBYTES; i++, offset += 2)
     snprintf(VRF_data.vrf_secret_key_data + offset, 3, "%02x", VRF_data.vrf_secret_key[i]);
-
   for (i = 0, offset = 0; i < crypto_vrf_PUBLICKEYBYTES; i++, offset += 2)
     snprintf(VRF_data.vrf_public_key_data + offset, 3, "%02x", VRF_data.vrf_public_key[i]);
 
-  // Generate random alpha string
+  // Step 3: Generate random string (this is the VRF nonce/randomizer)
   if (!random_string(random_buf, RANDOM_STRING_LENGTH)) {
-    ERROR_PRINT("Failed to generate VRF random alpha string");
+    ERROR_PRINT("Failed to generate random alpha string");
     return XCASH_ERROR;
   }
 
-  // Format message as JSON
-  snprintf(message, BUFFER_SIZE,
-           "{\r\n"
-           " \"message_settings\": \"BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_VRF_DATA\",\r\n"
-           " \"vrf_secret_key\": \"%s\",\r\n"
-           " \"vrf_public_key\": \"%s\",\r\n"
-           " \"random_data\": \"%s\"\r\n"
-           "}", VRF_data.vrf_secret_key_data, VRF_data.vrf_public_key_data, random_buf);
+  // Step 4: Form the alpha input = previous_block_hash || random_buf
+  memcpy(alpha_input, previous_block_hash, BLOCK_HASH_LENGTH);
+  memcpy(alpha_input + BLOCK_HASH_LENGTH, random_buf, RANDOM_STRING_LENGTH);
 
-  // Store into VRF_data struct
+  // Step 5: Generate VRF proof
+  if (crypto_vrf_prove(VRF_data.vrf_proof, VRF_data.vrf_secret_key, alpha_input, sizeof(alpha_input)) != 0) {
+    ERROR_PRINT("Failed to generate VRF proof");
+    return XCASH_ERROR;
+  }
+
+  // Step 6: Convert proof to beta (random output)
+  if (crypto_vrf_proof_to_hash(VRF_data.vrf_beta_string, VRF_data.vrf_proof) != 0) {
+    ERROR_PRINT("Failed to convert VRF proof to beta");
+    return XCASH_ERROR;
+  }
+
+  // Step 7: Convert proof and beta to hex
+  for (i = 0, offset = 0; i < crypto_vrf_PROOFBYTES; i++, offset += 2)
+    snprintf(VRF_data.vrf_proof_data + offset, 3, "%02x", VRF_data.vrf_proof[i]);
+  for (i = 0, offset = 0; i < crypto_vrf_OUTPUTBYTES; i++, offset += 2)
+    snprintf(VRF_data.vrf_beta_string_data + offset, 3, "%02x", VRF_data.vrf_beta_string[i]);
+
+  // Step 8: Save to block_verifiers index in struct (for signature tracking)
   for (i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     if (strncmp(current_block_verifiers_list.block_verifiers_public_address[i],
                 xcash_wallet_public_address, XCASH_WALLET_LENGTH) == 0) {
       memcpy(VRF_data.block_verifiers_vrf_secret_key[i], VRF_data.vrf_secret_key, crypto_vrf_SECRETKEYBYTES);
-      memcpy(VRF_data.block_verifiers_vrf_secret_key_data[i], VRF_data.vrf_secret_key_data, VRF_SECRET_KEY_LENGTH);
+      memcpy(VRF_data.block_verifiers_vrf_secret_key_data[i], VRF_data.vrf_secret_key_data, VRF_SECRET_KEY_LENGTH+1);
       memcpy(VRF_data.block_verifiers_vrf_public_key[i], VRF_data.vrf_public_key, crypto_vrf_PUBLICKEYBYTES);
-      memcpy(VRF_data.block_verifiers_vrf_public_key_data[i], VRF_data.vrf_public_key_data, VRF_PUBLIC_KEY_LENGTH);
-      memcpy(VRF_data.block_verifiers_random_data[i], random_buf, RANDOM_STRING_LENGTH);
+      memcpy(VRF_data.block_verifiers_vrf_public_key_data[i], VRF_data.vrf_public_key_data, VRF_PUBLIC_KEY_LENGTH+1);
+      memcpy(VRF_data.block_verifiers_random_data[i], random_buf, RANDOM_STRING_LENGTH+1);
+      memcpy(VRF_data.block_verifiers_vrf_proof_data[i], vrf_proof, VRF_PROOF_LENGTH + 1); 
+      memcpy(VRF_data.block_verifiers_vrf_beta_data[i], vrf_beta, VRF_BETA_LENGTH + 1); 
       break;
     }
   }
 
+  // Step 9: Compose outbound message (JSON)
+  snprintf(message, VSMALL_BUFFER_SIZE,
+           "{\r\n"
+           " \"message_settings\": \"BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_VRF_DATA\",\r\n"
+          " \"public_address\": \"%s\",\r\n"
+           " \"vrf_secret_key\": \"%s\",\r\n"
+           " \"vrf_public_key\": \"%s\",\r\n"
+           " \"random_data\": \"%s\",\r\n"
+           " \"vrf_proof\": \"%s\",\r\n"
+           " \"vrf_beta\": \"%s\"\r\n"
+           "}",
+           xcash_wallet_public_address,
+           VRF_data.vrf_secret_key_data,
+           VRF_data.vrf_public_key_data,
+           random_buf,
+           VRF_data.vrf_proof_data,
+           VRF_data.vrf_beta_string_data);
+
   return XCASH_OK;
 }
-
 /*---------------------------------------------------------------------------------------------------------
 Name: block_verifiers_create_vote_majority_results
 Description: The block verifiers will create the vote majority results
