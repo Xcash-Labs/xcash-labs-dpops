@@ -359,8 +359,8 @@ int block_verifiers_create_VRF_secret_key_and_VRF_public_key(char* message)
       memcpy(VRF_data.block_verifiers_vrf_public_key[i], VRF_data.vrf_public_key, crypto_vrf_PUBLICKEYBYTES);
       memcpy(VRF_data.block_verifiers_vrf_public_key_data[i], VRF_data.vrf_public_key_data, VRF_PUBLIC_KEY_LENGTH+1);
       memcpy(VRF_data.block_verifiers_random_data[i], random_buf, RANDOM_STRING_LENGTH+1);
-      memcpy(VRF_data.block_verifiers_vrf_proof_data[i], vrf_proof, VRF_PROOF_LENGTH + 1); 
-      memcpy(VRF_data.block_verifiers_vrf_beta_data[i], vrf_beta, VRF_BETA_LENGTH + 1); 
+      memcpy(VRF_data.block_verifiers_vrf_proof_data[i], VRF_data.vrf_proof_data, VRF_PROOF_LENGTH + 1);
+      memcpy(VRF_data.block_verifiers_vrf_beta_data[i], VRF_data.vrf_beta_string_data, VRF_BETA_LENGTH + 1);
       break;
     }
   }
@@ -370,7 +370,6 @@ int block_verifiers_create_VRF_secret_key_and_VRF_public_key(char* message)
             "{\r\n"
             " \"message_settings\": \"BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_VRF_DATA\",\r\n"
             " \"public_address\": \"%s\",\r\n"
-            " \"vrf_secret_key\": \"%s\",\r\n"
             " \"vrf_public_key\": \"%s\",\r\n"
             " \"random_data\": \"%s\",\r\n"
             " \"vrf_proof\": \"%s\",\r\n"

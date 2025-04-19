@@ -67,8 +67,10 @@ typedef struct {
 } block_verifiers_list_t;
 
 struct VRF_data { 
-    char* vrf_secret_key_data; // The VRF secret key text for round part 4
-    unsigned char* vrf_secret_key; // The VRF secret key for round part 4
+//    char* vrf_secret_key_data; // The VRF secret key text for round part 4
+//    unsigned char* vrf_secret_key; // The VRF secret key for round part 4
+
+
     char* vrf_public_key_data; // The VRF public key text for round part 4
     unsigned char* vrf_public_key; // The VRF public key for round part 4
     char* vrf_alpha_string_data; // The VRF alpha string (input string) text for round part 4

@@ -14,6 +14,16 @@ bool get_node_data(void) {
 
     is_seed_node = is_seed_address(xcash_wallet_public_address);
     return true;
+
+    // Match by public_address
+    char filter_json[256];
+    snprintf(filter_json, sizeof(filter_json),
+             "{ \"public_address\": \"%s\" }", xcash_wallet_public_address);
+    if (read_document_field_from_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, filter_json, "public_key", vrf_public_key) == XCASH_OK) {
+      printf("Delegate Public Key: %s\n", vrf_public_key);
+    } else {
+      ERROR_PRINT("Failed to read public_key from db for delegate");
+    }
 }
 
 bool is_seed_address(const char* public_address) {
