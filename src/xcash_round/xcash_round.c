@@ -236,6 +236,7 @@ if (block_verifiers_create_VRF_secret_key_and_VRF_public_key(vrf_announcement_me
 
 
 
+
 exit(0);
 
   size_t network_majority_count = 0;

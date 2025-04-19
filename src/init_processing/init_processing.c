@@ -89,12 +89,12 @@ bool init_processing(const arg_config_t *arg_config) {
                "\"public_address\":\"%s\","
                "\"total_vote_count\":\"0\","
                "\"IP_address\":\"%s\","
-               "\"delegate_name\":\"%s_xcash_foundation\","
+               "\"delegate_name\":\"%s\","
                "\"about\":\"Official xCash-Labs Node\","
                "\"website\":\"%s\","
                "\"team\":\"xCash-Labs Team\","
                "\"shared_delegate_status\":\"solo\","
-               "\"delegate_fee\":\"\","
+               "\"delegate_fee\":\"0\"," 
                "\"server_specs\":\"Operating System = Ubuntu 22.04\","
                "\"block_verifier_score\":\"0\","
                "\"online_status\":\"false\","
@@ -102,7 +102,7 @@ bool init_processing(const arg_config_t *arg_config) {
                "\"block_verifier_online_total_rounds\":\"0\","
                "\"block_verifier_online_percentage\":\"0\","
                "\"block_producer_total_rounds\":\"0\","
-               "\"block_producer_block_heights\":\"|%d\","
+               "\"block_producer_block_heights\":\"%d\","
                "\"public_key\":\"%s\""
                "}",
                network_nodes[i].seed_public_address,
