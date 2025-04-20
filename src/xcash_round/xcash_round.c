@@ -4,58 +4,7 @@ producer_ref_t producer_refs[] = {
     {main_nodes_list.block_producer_public_address, main_nodes_list.block_producer_IP_address},
 };
 
-unsigned char* generate_deterministic_entropy(const unsigned char* vrf_output, size_t vrf_output_len, size_t total_bytes_needed) {
-  size_t iterations = (total_bytes_needed / SHA512_DIGEST_LENGTH) + 1;
-
-  unsigned char* hash_buf = calloc(iterations, SHA512_DIGEST_LENGTH);
-  if (!hash_buf) return NULL;
-
-  for (size_t i = 0; i < iterations; i++) {
-    // Create new EVP digest context
-    EVP_MD_CTX* mdctx = EVP_MD_CTX_new();
-    if (!mdctx) {
-      free(hash_buf);
-      return NULL;
-    }
-
-    if (EVP_DigestInit_ex(mdctx, EVP_sha512(), NULL) != 1) {
-      EVP_MD_CTX_free(mdctx);
-      free(hash_buf);
-      return NULL;
-    }
-
-    // Add VRF output
-    if (EVP_DigestUpdate(mdctx, vrf_output, vrf_output_len) != 1) {
-      EVP_MD_CTX_free(mdctx);
-      free(hash_buf);
-      return NULL;
-    }
-
-    // Add counter as 8-byte little-endian integer
-    unsigned char counter[8];
-    for (int j = 0; j < 8; j++)
-      counter[j] = (i >> (8 * j)) & 0xff;
-
-    if (EVP_DigestUpdate(mdctx, counter, sizeof(counter)) != 1) {
-      EVP_MD_CTX_free(mdctx);
-      free(hash_buf);
-      return NULL;
-    }
-
-    // Finalize digest into proper slice of hash_buf
-    if (EVP_DigestFinal_ex(mdctx, hash_buf + (i * SHA512_DIGEST_LENGTH), NULL) != 1) {
-      EVP_MD_CTX_free(mdctx);
-      free(hash_buf);
-      return NULL;
-    }
-
-    EVP_MD_CTX_free(mdctx);
-  }
-
-  return hash_buf;
-}
-
-bool select_block_producers(const unsigned char* vrf_output, size_t vrf_output_len) {
+bool select_block_producers(void) {
   producer_node_t producers_list[BLOCK_VERIFIERS_AMOUNT] = {0};
   size_t num_producers = 0;
 
@@ -76,22 +25,13 @@ bool select_block_producers(const unsigned char* vrf_output, size_t vrf_output_l
     return false;
   }
 
-  // Generate deterministic entropy
-  size_t entropy_bytes = num_producers * 2;
-  unsigned char* entropy = generate_deterministic_entropy(vrf_output, vrf_output_len, entropy_bytes);
-  if (!entropy) {
-    ERROR_PRINT("Failed to generate VRF-based entropy.");
-    return false;
-  }
 
-  // Shuffle the producers list directly
-  for (size_t i = num_producers - 1; i > 0; i--) {
-    size_t index = ((entropy[i * 2] << 8) | entropy[i * 2 + 1]) % (i + 1);
-    producer_node_t temp = producers_list[i];
-    producers_list[i] = producers_list[index];
-    producers_list[index] = temp;
-  }
-  free(entropy);
+
+
+
+
+
+
 
   // For now there is only one block producer and no backups
   memset(&main_nodes_list, 0, sizeof(main_nodes_list));
@@ -103,7 +43,11 @@ bool select_block_producers(const unsigned char* vrf_output, size_t vrf_output_l
   return true;
 }
 
+
+
 xcash_round_result_t process_round(void) {
+  char vrf_message[SMALL_BUFFER_SIZE] = {0};
+
   // Get the current block height Then Sync the databases and build the majority list
   if (get_current_block_height(current_block_height) != XCASH_OK) {
     ERROR_PRINT("Can't get current block height");
@@ -136,6 +80,9 @@ xcash_round_result_t process_round(void) {
   // Update online status from majority list
   INFO_STAGE_PRINT("Nodes online for block %s", current_block_height);
 
+
+// do I need to update the db status of a delegate here?????????? wait until after round
+
   for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT && strlen(delegates_all[i].public_address) > 0; i++) {
     strcpy(delegates_all[i].online_status, "false");
 
@@ -150,6 +97,9 @@ xcash_round_result_t process_round(void) {
 
   free(nodes_majority_list);  // Clean up the majority list after use
 
+
+// need to update this for prodction needs to be 75% response ????
+
   // Check if we have enough nodes for block production
   if (network_majority_count < BLOCK_VERIFIERS_VALID_AMOUNT) {
     INFO_PRINT_STATUS_FAIL("Nodes majority: [%ld/%d]", network_majority_count, BLOCK_VERIFIERS_VALID_AMOUNT);
@@ -158,41 +108,40 @@ xcash_round_result_t process_round(void) {
 
   INFO_PRINT_STATUS_OK("Nodes majority: [%ld/%d]", network_majority_count, BLOCK_VERIFIERS_VALID_AMOUNT);
 
-  //int block_verifiers_create_VRF_secret_key_and_VRF_public_key(char* message)
+  // Generate VRF keys and VRF message request
+  if (block_verifiers_create_VRF_secret_key_and_VRF_public_key(vrf_message) == XCASH_OK) {
+    DEBUG_PRINT("Generated VRF message: %s", vrf_message);
+  } else {
+    ERROR_PRINT("Failed to generate VRF keys and message");
+    return ROUND_ERROR;
+  }
 
-      // Update block verifiers list
-      // if (update_block_verifiers_list() == 0) {
-      //  DEBUG_PRINT("Could not update the previous, current, and next block verifiers list from database");
-      //  return ROUND_ERROR;
-      //}
+  // Fill block verifiers list with proven online nodes
+  block_verifiers_list_t* bf = &current_block_verifiers_list;
+  memset(bf, 0, sizeof(block_verifiers_list_t));
 
-      // Fill block verifiers list with proven online nodes
-  //    block_verifiers_list_t* bf = &current_block_verifiers_list;
-  //memset(bf, 0, sizeof(block_verifiers_list_t));
-
-  //for (size_t i = 0, j = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
-  //  strcpy(bf->block_verifiers_name[j], delegates_all[i].delegate_name);
-  //  strcpy(bf->block_verifiers_public_address[j], delegates_all[i].public_address);
-  //  strcpy(bf->block_verifiers_public_key[j], delegates_all[i].public_key);
-  //  strcpy(bf->block_verifiers_IP_address[j], delegates_all[i].IP_address);
-  //  j++;
-  //}
+  for (size_t i = 0, j = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
+    strcpy(bf->block_verifiers_name[j], delegates_all[i].delegate_name);
+    strcpy(bf->block_verifiers_public_address[j], delegates_all[i].public_address);
+    strcpy(bf->block_verifiers_public_key[j], delegates_all[i].public_key);
+    strcpy(bf->block_verifiers_IP_address[j], delegates_all[i].IP_address);
+    j++;
+  }
 
   unsigned char vrf_output[32] = {0};
   if (hex_to_byte_array(previous_block_hash, vrf_output, sizeof(vrf_output)) != XCASH_OK) {
     ERROR_PRINT("Failed to convert previous_block_hash to VRF output");
     return ROUND_ERROR;
   }
-  //const unsigned char* final_vrf_output = vrf_output;
-  //size_t final_vrf_output_len = sizeof(vrf_output);
 
-  // Select block producer using deterministic algorithm
-  // INFO_STAGE_PRINT("Part 1 - Selecting block producers");
-  // if (select_block_producers(final_vrf_output, final_vrf_output_len)) {
-  //  DEBUG_PRINT("Failed to select a block producer");
-  //  return ROUND_ERROR;
-  //}
-  // INFO_PRINT_STATUS_OK("%s Selected as the Block Producer", address_to_node_name(producer_refs[0].public_address));
+
+
+
+
+
+
+
+  
 
   is_block_creation_stage = true;
   INFO_STAGE_PRINT("Starting block production for block %s", current_block_height);
@@ -228,7 +177,7 @@ void start_block_production(void) {
     if (seconds_within_block > 25) {
       if (round_result != ROUND_OK && seconds_within_block > 280) {
         WARNING_PRINT("Last round failed. Refreshing DB from top...");
-        init_db_from_top();
+        init_db_from_top();  // --------------------------------------------------------------------?????
         round_result = ROUND_OK;
       } else {
         INFO_PRINT("Missed block window. Block %s — Next round starts in [%ld:%02ld]",
