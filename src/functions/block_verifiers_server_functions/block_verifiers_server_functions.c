@@ -8,13 +8,11 @@ Parameters:
 ---------------------------------------------------------------------------------------------------------*/
 void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(const char* MESSAGE)
 {
-  unsigned char vrf_pk_bin[crypto_vrf_PUBLICKEYBYTES] = {0};
   char public_address[XCASH_WALLET_LENGTH + 1] = {0};
-  char random_data[RANDOM_STRING_LENGTH + 1] = {0};
-  //char data[MAXIMUM_NUMBER_SIZE] = {0};
-  char vrf_proof[VRF_PROOF_LENGTH + 1] = {0};
-  char vrf_beta[VRF_BETA_LENGTH + 1] = {0};
   char vrf_public_key_data[VRF_PUBLIC_KEY_LENGTH + 1] = {0};
+  char vrf_proof_hex[VRF_PROOF_LENGTH + 1] = {0};  
+  char vrf_beta_hex[VRF_BETA_LENGTH + 1] = {0};
+  char random_buf_hex[(VRF_RANDOMBYTES_LENGTH * 2) + 1] = {0};
   char block_part[BLOCK_HEIGHT_LENGTH] = {0};
   char expected_block_part[BLOCK_HEIGHT_LENGTH + 4] = {0};
   int count;
@@ -28,12 +26,12 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
     strncmp(public_address, XCASH_WALLET_PREFIX, sizeof(XCASH_WALLET_PREFIX) - 1) != 0 ||  
     parse_json_data(MESSAGE, "vrf_public_key", vrf_public_key_data, sizeof(vrf_public_key_data)) == 0 ||
     strlen(vrf_public_key_data) != VRF_PUBLIC_KEY_LENGTH ||
-    parse_json_data(MESSAGE, "random_data", random_data, sizeof(random_data)) == 0 ||
-    strlen(random_data) != RANDOM_STRING_LENGTH ||
-    parse_json_data(MESSAGE, "vrf_proof", vrf_proof, sizeof(vrf_proof)) == 0 ||
-    strlen(vrf_proof) != VRF_PROOF_LENGTH ||
-    parse_json_data(MESSAGE, "vrf_beta", vrf_beta, sizeof(vrf_beta)) == 0 ||
-    strlen(vrf_beta) != VRF_BETA_LENGTH ||
+    parse_json_data(MESSAGE, "random_data", random_buf_hex, sizeof(random_buf_hex)) == 0 ||
+    strlen(random_buf_hex) != RANDOM_STRING_LENGTH ||
+    parse_json_data(MESSAGE, "vrf_proof", vrf_proof_hex, sizeof(vrf_proof_hex)) == 0 ||
+    strlen(vrf_proof_hex) != VRF_PROOF_LENGTH ||
+    parse_json_data(MESSAGE, "vrf_beta", vrf_beta_hex, sizeof(vrf_beta_hex)) == 0 ||
+    strlen(vrf_beta_hex) != VRF_BETA_LENGTH ||
     parse_json_data(MESSAGE, "block-part", block_part, sizeof(block_part)) == 0 ||
     strlen(block_part) < 3 // basic sanity check
   )
@@ -48,23 +46,17 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
       return;
   }
   
-  if (hex_to_byte_array(vrf_public_key_data, vrf_pk_bin, crypto_vrf_PUBLICKEYBYTES) != XCASH_OK) {
-    ERROR_PRINT("Failed to parse vrf_public_key_data into bytes.");
-    return;
-  }
-
   for (count = 0; count < BLOCK_VERIFIERS_AMOUNT; count++) {
-    if (strncmp(current_block_verifiers_list.block_verifiers_public_address[count], public_address, XCASH_WALLET_LENGTH) == 0 &&
-        strncmp(VRF_data.block_verifiers_vrf_public_key_data[count], "", 1) == 0 &&
-        strncmp((char*)VRF_data.block_verifiers_vrf_public_key[count], "", 1) == 0 &&
-        strncmp(VRF_data.block_verifiers_random_data[count], "", 1) == 0 &&
-        strncmp(VRF_data.block_verifiers_vrf_proof_data[count], "", 1) == 0 &&
-        strncmp(VRF_data.block_verifiers_vrf_beta_data[count], "", 1) == 0) {
-      memcpy(VRF_data.block_verifiers_vrf_public_key_data[count], vrf_public_key_data, VRF_PUBLIC_KEY_LENGTH + 1);
-      memcpy(VRF_data.block_verifiers_vrf_public_key[count], vrf_pk_bin, crypto_vrf_PUBLICKEYBYTES);
-      memcpy(VRF_data.block_verifiers_random_data[count], random_data, RANDOM_STRING_LENGTH + 1);
-      memcpy(VRF_data.block_verifiers_vrf_proof_data[count], vrf_proof, VRF_PROOF_LENGTH + 1);
-      memcpy(VRF_data.block_verifiers_vrf_beta_data[count], vrf_beta, VRF_BETA_LENGTH + 1);
+    if (strncmp(VRF_data.block_verifiers_public_address[count], public_address, XCASH_WALLET_LENGTH) == 0 &&
+        strncmp(VRF_data.block_verifiers_vrf_public_key_data_hex[count], "", 1) == 0 &&
+        strncmp(VRF_data.block_verifiers_random_hex[count], "", 1) == 0 &&
+        strncmp(VRF_data.block_verifiers_vrf_proof_hex[count], "", 1) == 0 &&
+        strncmp(VRF_data.block_verifiers_vrf_beta_hex[count], "", 1) == 0) {
+          memcpy(VRF_data.block_verifiers_public_address[count], xcash_wallet_public_address, XCASH_WALLET_LENGTH+1);
+          memcpy(VRF_data.block_verifiers_vrf_public_key_hex[count], vrf_public_key, VRF_PUBLIC_KEY_LENGTH+1);
+          memcpy(VRF_data.block_verifiers_vrf_random_hex[count], random_buf_hex, VRF_RANDOMBYTES_LENGTH * 2 + 1);
+          memcpy(VRF_data.block_verifiers_vrf_proof_hex[count], vrf_proof_hex, VRF_PROOF_LENGTH + 1); 
+          memcpy(VRF_data.block_verifiers_vrf_beta_hex[count], vrf_beta_hex, VRF_BETA_LENGTH + 1);
       break;
     }
   }
