@@ -7,6 +7,7 @@ Parameters:
   MESSAGE - The message
 ---------------------------------------------------------------------------------------------------------*/
 void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(const char* MESSAGE)
+{
   unsigned char vrf_pk_bin[crypto_vrf_PUBLICKEYBYTES] = {0};
   char public_address[XCASH_WALLET_LENGTH+1] = {0};
   char random_data[RANDOM_STRING_LENGTH+1] = {0};
