@@ -7,30 +7,19 @@ Parameters:
   MESSAGE - The message
 ---------------------------------------------------------------------------------------------------------*/
 void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(const char* MESSAGE)
-{
-  unsigned char pk_bin[crypto_vrf_PUBLICKEYBYTES] = {0};
+
+  DEBUG_PRINT("received %s, %s", __func__, MESSAGE);
+
+  unsigned char vrf_pk_bin[crypto_vrf_PUBLICKEYBYTES] = {0};
   char public_address[XCASH_WALLET_LENGTH+1] = {0};
   char random_data[RANDOM_STRING_LENGTH+1] = {0};
   char data[MAXIMUM_NUMBER_SIZE] = {0};
   char vrf_proof[VRF_PROOF_LENGTH + 1] = {0};
   char vrf_beta[VRF_BETA_LENGTH + 1] = {0};
-
-  unsigned char vrf_pk_bin[crypto_vrf_PUBLICKEYBYTES];
   char vrf_public_key_data[VRF_PUBLIC_KEY_LENGTH+1] = {0};
-
   char block_part[BLOCK_HEIGHT_LENGTH] = {0};
   char expected_block_part[BLOCK_HEIGHT_LENGTH] = {0};
-
-  int count;
   int counter;
-
-  DEBUG_PRINT("received %s, %s", __func__, MESSAGE);
-
-  memset(public_address,0,sizeof(public_address));
-  memset(random_data,0,sizeof(random_data));
-  memset(data,0,sizeof(data)); 
-  memset(vrf_pk_bin,0,sizeof(vrf_pk_bin));
-  memset(vrf_public_key_data,0,sizeof(vrf_public_key_data));
 
   // parse the message
   if (
