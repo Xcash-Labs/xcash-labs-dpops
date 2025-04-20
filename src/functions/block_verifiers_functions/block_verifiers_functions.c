@@ -385,7 +385,7 @@ int block_verifiers_create_VRF_secret_key_and_VRF_public_key(char* message)
             " \"random_data\": \"%s\",\r\n"
             " \"vrf_proof\": \"%s\",\r\n"
             " \"vrf_beta\": \"%s\",\r\n"
-            " \"block-part\": \"%s\"\r\n"
+            " \"block-part\": \"%s-P1\"\r\n"
             "}",
             xcash_wallet_public_address,
             vrf_public_key,
