@@ -4,6 +4,7 @@
 
 #include <mongoc/mongoc.h>
 #include <sodium.h>
+#include <sodium/crypto_vrf_ietf.h>
 #include <pthread.h>
 #include "config.h"
 #include "macro_functions.h"
@@ -21,6 +22,8 @@ extern char current_block_height[BLOCK_HEIGHT_LENGTH + 1]; // The current block 
 extern char previous_block_hash[BLOCK_HASH_LENGTH + 1]; // The previous block hash
 
 extern unsigned char secret_key_data[crypto_vrf_SECRETKEYBYTES+1]; // Holds the secret key for signing block verifier messages
+extern unsigned char secret_key_data[crypto_vrf_SECRETKEYBYTES + 1];
+
 extern char secret_key[VRF_SECRET_KEY_LENGTH+1]; // Holds the secret key text for signing block verifier messages
 
 extern char vrf_public_key[VRF_PUBLIC_KEY_LENGTH + 1]; 
