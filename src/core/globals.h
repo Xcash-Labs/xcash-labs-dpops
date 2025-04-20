@@ -3,7 +3,7 @@
 
 
 #include <mongoc/mongoc.h>
-//#include <sodium.h>
+#include <sodium.h>
 #include <pthread.h>
 #include "config.h"
 #include "macro_functions.h"
