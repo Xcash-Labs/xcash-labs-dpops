@@ -241,10 +241,6 @@ int main(int argc, char *argv[]) {
     return 0;
   }
 
-  if (sodium_init() < 0) {
-    FATAL_ERROR_EXIT("Failed to initialize Libsodium");
-  }
-
   if (create_key) {
     generate_key();
     return 0;
