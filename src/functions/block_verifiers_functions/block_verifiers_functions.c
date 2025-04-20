@@ -392,7 +392,7 @@ int block_verifiers_create_VRF_secret_key_and_VRF_public_key(char* message)
             random_buf,
             vrf_proof_hex,
             vrf_beta_hex,
-            current_block_part);
+            current_block_height);
 
   return XCASH_OK;
 }
