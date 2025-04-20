@@ -11,13 +11,13 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
   unsigned char vrf_pk_bin[crypto_vrf_PUBLICKEYBYTES] = {0};
   char public_address[XCASH_WALLET_LENGTH+1] = {0};
   char random_data[RANDOM_STRING_LENGTH+1] = {0};
-  char data[MAXIMUM_NUMBER_SIZE] = {0};
+  //char data[MAXIMUM_NUMBER_SIZE] = {0};
   char vrf_proof[VRF_PROOF_LENGTH + 1] = {0};
   char vrf_beta[VRF_BETA_LENGTH + 1] = {0};
   char vrf_public_key_data[VRF_PUBLIC_KEY_LENGTH+1] = {0};
   char block_part[BLOCK_HEIGHT_LENGTH] = {0};
   char expected_block_part[BLOCK_HEIGHT_LENGTH] = {0};
-  int counter, count;
+  int count;
 
   DEBUG_PRINT("received %s, %s", __func__, MESSAGE);
 
