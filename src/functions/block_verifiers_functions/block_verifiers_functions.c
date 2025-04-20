@@ -377,7 +377,7 @@ int block_verifiers_create_VRF_secret_key_and_VRF_public_key(char* message)
   }
 
   // Step 9: Compose outbound message (JSON)
-  snprintf(message, VSMALL_BUFFER_SIZE,
+  snprintf(message, SMALL_BUFFER_SIZE,
             "{\r\n"
             " \"message_settings\": \"BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_VRF_DATA\",\r\n"
             " \"public_address\": \"%s\",\r\n"
