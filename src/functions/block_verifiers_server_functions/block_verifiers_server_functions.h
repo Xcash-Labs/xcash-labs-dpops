@@ -4,9 +4,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "json_parser.h"
 #include "config.h"
 #include "globals.h"
 #include "macro_functions.h"
+#include "string_functions.h"
 
 //void server_received_data_XCASH_DPOPS_test_data(const int CLIENT_SOCKET, char* MESSAGE);
 //void server_receive_data_socket_block_verifiers_to_block_verifiers_invalid_reserve_proofs(const char* MESSAGE);
