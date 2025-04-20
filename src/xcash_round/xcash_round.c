@@ -183,8 +183,8 @@ xcash_round_result_t process_round(void) {
     ERROR_PRINT("Failed to convert previous_block_hash to VRF output");
     return ROUND_ERROR;
   }
-  const unsigned char* final_vrf_output = vrf_output;
-  size_t final_vrf_output_len = sizeof(vrf_output);
+  //const unsigned char* final_vrf_output = vrf_output;
+  //size_t final_vrf_output_len = sizeof(vrf_output);
 
   // Select block producer using deterministic algorithm
   // INFO_STAGE_PRINT("Part 1 - Selecting block producers");
