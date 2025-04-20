@@ -15,7 +15,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
   char vrf_proof[VRF_PROOF_LENGTH + 1] = {0};
   char vrf_beta[VRF_BETA_LENGTH + 1] = {0};
 
-  unsigned char vrf_public_key[crypto_vrf_PUBLICKEYBYTES];
+  unsigned char vrf_pk_bin[crypto_vrf_PUBLICKEYBYTES];
   char vrf_public_key_data[VRF_PUBLIC_KEY_LENGTH+1] = {0};
 
   char block_part[BLOCK_HEIGHT_LENGTH] = {0};
@@ -29,9 +29,8 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
   memset(public_address,0,sizeof(public_address));
   memset(random_data,0,sizeof(random_data));
   memset(data,0,sizeof(data)); 
-  memset(vrf_public_key_data,0,sizeof(vrf_public_key_data)); 
-  memset(vrf_public_key,0,sizeof(vrf_public_key));
-
+  memset(vrf_pk_bin,0,sizeof(vrf_pk_bin));
+  memset(vrf_public_key_data,0,sizeof(vrf_public_key_data));
 
   // parse the message
   if (
@@ -60,7 +59,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
       return;
   }
   
-  if (hex_to_byte_array(vrf_public_key_data, pk_bin, crypto_vrf_PUBLICKEYBYTES) != XCASH_OK) {
+  if (hex_to_byte_array(vrf_public_key_data, vrf_pk_bin, crypto_vrf_PUBLICKEYBYTES) != XCASH_OK) {
     ERROR_PRINT("Failed to parse vrf_public_key_data into bytes.");
     return;
   }
@@ -73,7 +72,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
         strncmp(VRF_data.block_verifiers_vrf_proof_data[count], "", 1) == 0 &&
         strncmp(VRF_data.block_verifiers_vrf_beta_data[count], "", 1) == 0) {
       memcpy(VRF_data.block_verifiers_vrf_public_key_data[count], vrf_public_key_data, VRF_PUBLIC_KEY_LENGTH + 1);
-      memcpy(VRF_data.block_verifiers_vrf_public_key[count], pk_bin, crypto_vrf_PUBLICKEYBYTES);
+      memcpy(VRF_data.block_verifiers_vrf_public_key[count], vrf_pk_bin, crypto_vrf_PUBLICKEYBYTES);
       memcpy(VRF_data.block_verifiers_random_data[count], random_data, RANDOM_STRING_LENGTH + 1);
       memcpy(VRF_data.block_verifiers_vrf_proof_data[count], vrf_proof, VRF_PROOF_LENGTH + 1);
       memcpy(VRF_data.block_verifiers_vrf_beta_data[count], vrf_beta, VRF_BETA_LENGTH + 1);
