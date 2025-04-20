@@ -377,6 +377,7 @@ int block_verifiers_create_VRF_secret_key_and_VRF_public_key(char* message)
   }
 
   // Step 9: Compose outbound message (JSON)
+  
   char expected_block_part[64 + 4] = {0};
   snprintf(expected_block_part, sizeof(expected_block_part), "%s-P1", current_block_height);
   snprintf(message, SMALL_BUFFER_SIZE,
