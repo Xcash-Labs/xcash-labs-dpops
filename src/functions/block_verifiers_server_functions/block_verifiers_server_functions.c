@@ -17,7 +17,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
   char vrf_public_key_data[VRF_PUBLIC_KEY_LENGTH+1] = {0};
   char block_part[BLOCK_HEIGHT_LENGTH] = {0};
   char expected_block_part[BLOCK_HEIGHT_LENGTH] = {0};
-  int counter;
+  int counter, count;
 
   DEBUG_PRINT("received %s, %s", __func__, MESSAGE);
 
