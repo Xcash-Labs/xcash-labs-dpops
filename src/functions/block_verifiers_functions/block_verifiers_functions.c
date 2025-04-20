@@ -57,7 +57,7 @@ int block_verifiers_create_block_signature(char* message)
     memcpy(blockchain_data.blockchain_reserve_bytes.block_validation_node_signature[count], GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_SIGNATURE, sizeof(GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_SIGNATURE) - 1);
 
     for (counter = 0, count2 = 0; counter < RANDOM_STRING_LENGTH; counter++, count2 += 2) {
-      snprintf(blockchain_data.blockchain_reserve_bytes.block_verifiers_random_data[count] + count2, RANDOM_STRING_LENGTH, "%02x", VRF_data.block_verifiers_random_data[count][counter] & 0xFF);
+//      snprintf(blockchain_data.blockchain_reserve_bytes.block_verifiers_random_data[count] + count2, RANDOM_STRING_LENGTH, "%02x", VRF_data.block_verifiers_random_data[count][counter] & 0xFF);
     }
   }
 
@@ -168,7 +168,7 @@ int block_verifiers_create_block(void) {
 //  if (strncmp(VRF_data.block_blob, "", 1) == 0) {
 //    WARNING_PRINT("Did not receive block template");
 //    return ROUND_NEXT;
-  }
+//  }
   INFO_PRINT_STATUS_OK("Block template received");
 
   // Part 4 - Sign block
