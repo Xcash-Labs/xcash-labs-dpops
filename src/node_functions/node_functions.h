@@ -8,6 +8,7 @@
 #include "network_wallet_functions.h"
 #include "structures.h"
 #include "network_daemon_functions.h"
+#include "db_functions.h"
 
 bool get_node_data(void);
 bool get_daemon_data(void);
