@@ -45,7 +45,8 @@ MONGOSH_VERSION="2.0.2"
 #NODEJS_LATEST_VERSION="node-v14.10.1-linux-x64"
 NODEJS_LATEST_VERSION="node-v18.19.1-linux-x64"
 
-
+jed
+LIBSODIUM_LATEST_VERSON="1.0.20"
 
 # Restore versions
 # MONGODB_RESTORE_VERSION="mongodb-linux-x86_64-ubuntu1804-4.4.1"
@@ -875,34 +876,36 @@ function create_systemd_service_files()
   echo
 }
 
-#jed
-#function build_libssl11()
-#{
-#  echo -ne "${COLOR_PRINT_YELLOW}Installing Libssl1.1${END_COLOR_PRINT}"
-#  cd "${XCASH_DPOPS_INSTALLATION_DIR}"
+function install_libsodium()
+{
+  INSTALLED_VERSION=$(pkg-config --modversion libsodium 2>/dev/null)
+  if [ -z "$INSTALLED_VERSION" ]; then
+    echo "Libsodium not found, building package"
+  elif [ "$(printf '%s\n' "$LIBSODIUM_LATEST_VERSON" "$INSTALLED_VERSION" | sort -V | head -n1)" = "$LIBSODIUM_LATEST_VERSON" ]; then
+    echo "Libsodium version $INSTALLED_VERSION meets the requirement (>= $LIBSODIUM_LATEST_VERSON)"
+    return 0
+  else
+    echo "Libsodium version $INSTALLED_VERSION is too old. Upgrading..."
+    sudo apt-get remove -y libsodium-dev libsodium23 &>/dev/null
+  fi
 
-#  wget https://www.openssl.org/source/openssl-1.1.1.tar.gz &>/dev/null
-#  tar xvf openssl-1.1.1.tar.gz &>/dev/null
-#  rm openssl-1.1.1.tar.gz 
-#  cd openssl-1.1.1/
-#  ./config &>/dev/null
-#  make -j "${CPU_THREADS}" &>/dev/null
-#  sudo make install &>/dev/null
-#  cd ..
-#  rm -rf ./openssl-1.1.1
-#  echo -ne "\r${COLOR_PRINT_GREEN}Installing Libssl1.1${END_COLOR_PRINT}"
-#  echo
-#}
+  echo -ne "${COLOR_PRINT_YELLOW}Installing libsodium${END_COLOR_PRINT}"
+  cd "${XCASH_DPOPS_INSTALLATION_DIR}"
+  wget https://download.libsodium.org/libsodium/releases/libsodium-${LIBSODIUM_LATEST_VERSON}-stable.tar.gz &>/dev/null
+  tar xvf libsodium-1.0.20-stable.tar.gz &>/dev/null
+  rm libsodium-stable.tar.gz 
+  cd libsodium-stable
+  ./configure &>/dev/null
+  make -j "${CPU_THREADS}" &>/dev/null
+  sudo make install &>/dev/null
+  cd ..
+
+  echo -ne "\r${COLOR_PRINT_GREEN}Installed libsodium${END_COLOR_PRINT}"
+  echo
+}
 
 function install_mongodb()
 {
-#  if ldconfig -p | grep -q "libssl.so.1.1"; then
-#      echo "libssl.so.1.1 is available on the system."
-#  else
-#      echo "libssl.so.1.1 is NOT found on the system."
-#      build_libssl11
-#  fi
-
   echo -ne "${COLOR_PRINT_YELLOW}Installing MongoDB${END_COLOR_PRINT}"
   cd "${XCASH_DPOPS_INSTALLATION_DIR}"
   wget -q ${MONGODB_URL}
@@ -1035,6 +1038,7 @@ function install_xcash_dpops()
   echo -e "${COLOR_PRINT_GREEN}############################################################${END_COLOR_PRINT}"
   echo -e "${COLOR_PRINT_GREEN}                Installing xcash-dpops${END_COLOR_PRINT}"
   echo -e "${COLOR_PRINT_GREEN}############################################################${END_COLOR_PRINT}"
+  install_libsodium
   install_mongodb
   install_mongodb_tools
   install_mongodb_mongosh
