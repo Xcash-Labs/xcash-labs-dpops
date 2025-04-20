@@ -175,40 +175,16 @@ void init_globals(void) {
   // initialize the current_round_part_vote_data struct
   memset(current_round_part_vote_data.current_vote_results,0,sizeof(current_round_part_vote_data.current_vote_results));
 
-  // initialize the VRF_data struct 
-  VRF_data.vrf_secret_key_data = (char*)calloc(BUFFER_SIZE_NETWORK_BLOCK_DATA,sizeof(char));
-  VRF_data.vrf_secret_key = (unsigned char*)calloc(BUFFER_SIZE_NETWORK_BLOCK_DATA,sizeof(unsigned char));
-  VRF_data.vrf_public_key_data = (char*)calloc(BUFFER_SIZE_NETWORK_BLOCK_DATA,sizeof(char));
-  VRF_data.vrf_public_key = (unsigned char*)calloc(BUFFER_SIZE_NETWORK_BLOCK_DATA,sizeof(unsigned char));
-  VRF_data.vrf_alpha_string_data = (char*)calloc(BUFFER_SIZE,sizeof(char));
-  VRF_data.vrf_alpha_string = (unsigned char*)calloc(BUFFER_SIZE,sizeof(unsigned char));
-  VRF_data.vrf_proof_data = (char*)calloc(BUFFER_SIZE_NETWORK_BLOCK_DATA,sizeof(char));
-  VRF_data.vrf_proof = (unsigned char*)calloc(BUFFER_SIZE_NETWORK_BLOCK_DATA,sizeof(unsigned char));
-  VRF_data.vrf_beta_string_data = (char*)calloc(BUFFER_SIZE_NETWORK_BLOCK_DATA,sizeof(char));
-  VRF_data.vrf_beta_string = (unsigned char*)calloc(BUFFER_SIZE_NETWORK_BLOCK_DATA,sizeof(unsigned char));
-  VRF_data.block_blob = (char*)calloc(BUFFER_SIZE,sizeof(char));
-  VRF_data.reserve_bytes_data_hash = (char*)calloc(DATA_HASH_LENGTH+1,sizeof(char));
-
-  // check if the memory needed was allocated on the heap successfully
-  if (VRF_data.vrf_public_key_data == NULL || VRF_data.vrf_public_key == NULL || VRF_data.vrf_alpha_string_data == NULL || VRF_data.vrf_alpha_string == NULL || VRF_data.vrf_proof_data == NULL || VRF_data.vrf_proof == NULL || VRF_data.vrf_beta_string_data == NULL || VRF_data.vrf_beta_string == NULL || VRF_data.block_blob == NULL)
-  {
-    FATAL_ERROR_EXIT("Can't allocate memory reserve bytes");
-  }
-
-  for (count = 0; count < BLOCK_VERIFIERS_TOTAL_AMOUNT; count++)
-  {
-    VRF_data.block_verifiers_vrf_secret_key_data[count] = (char*)calloc(VRF_SECRET_KEY_LENGTH+1,sizeof(char));
-    VRF_data.block_verifiers_vrf_secret_key[count] = (unsigned char*)calloc(crypto_vrf_SECRETKEYBYTES+1,sizeof(unsigned char));
-    VRF_data.block_verifiers_vrf_public_key_data[count] = (char*)calloc(VRF_PUBLIC_KEY_LENGTH+1,sizeof(char));
-    VRF_data.block_verifiers_vrf_public_key[count] = (unsigned char*)calloc(crypto_vrf_PUBLICKEYBYTES+1,sizeof(unsigned char));
-    VRF_data.block_verifiers_random_data[count] = (char*)calloc(RANDOM_STRING_LENGTH+1,sizeof(char));
-    VRF_data.block_verifiers_vrf_proof_data[count] = (char*)calloc(VRF_PROOF_LENGTH+1,sizeof(char));
-    VRF_data.block_verifiers_vrf_beta_data[count] = (char*)calloc(VRF_BETA_LENGTH+1,sizeof(char));
-    VRF_data.block_blob_signature[count] = (char*)calloc(VRF_PROOF_LENGTH+VRF_BETA_LENGTH+1,sizeof(char));
-   
+  // Initialize the VRF_data struct
+  memset(&VRF_data, 0, sizeof(VRF_data));
+  for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
+    memset(VRF_data.block_verifiers_public_address[i], 0, XCASH_WALLET_LENGTH + 1);
+    memset(VRF_data.block_verifiers_vrf_public_key_hex[i], 0, VRF_PUBLIC_KEY_LENGTH + 1);
+    memset(VRF_data.block_verifiers_vrf_random_hex[i], 0, VRF_RANDOMBYTES_LENGTH * 2 + 1);
+    memset(VRF_data.block_verifiers_vrf_proof_hex[i], 0, VRF_PROOF_LENGTH + 1);
+    memset(VRF_data.block_verifiers_vrf_beta_hex[i], 0, VRF_BETA_LENGTH + 1);
     // check if the memory needed was allocated on the heap successfully
-    if (VRF_data.block_blob_signature[count] == NULL || VRF_data.block_verifiers_random_data[count] == NULL)
-    {
+    if (VRF_data.block_verifiers_vrf_beta_hex[i] == NULL || VRF_data.block_verifiers_random_data[count] == NULL) {
       FATAL_ERROR_EXIT("Can't allocate memory for blob data");
     }
   }
