@@ -115,29 +115,13 @@ void cleanup_data_structures(void) {
   free(server_limit_IP_address_list);
   free(server_limit_public_address_list);
 
-  // initialize the VRF_data struct
-  free(VRF_data.vrf_secret_key_data);
-  free(VRF_data.vrf_secret_key);
-  free(VRF_data.vrf_public_key_data);
-  free(VRF_data.vrf_public_key);
-  free(VRF_data.vrf_alpha_string_data);
-  free(VRF_data.vrf_alpha_string);
-  free(VRF_data.vrf_proof_data);
-  free(VRF_data.vrf_proof);
-  free(VRF_data.vrf_beta_string_data);
-  free(VRF_data.vrf_beta_string);
-  free(VRF_data.block_blob);
-  free(VRF_data.reserve_bytes_data_hash);
-
-  // check if the memory needed was allocated on the heap successfully
-
-  for (count = 0; count < BLOCK_VERIFIERS_TOTAL_AMOUNT; count++) {
-    free(VRF_data.block_verifiers_vrf_secret_key_data[count]);
-    free(VRF_data.block_verifiers_vrf_secret_key[count]);
-    free(VRF_data.block_verifiers_vrf_public_key_data[count]);
-    free(VRF_data.block_verifiers_vrf_public_key[count]);
-    free(VRF_data.block_verifiers_random_data[count]);
-    free(VRF_data.block_blob_signature[count]);
+  // release the VRF_data struct
+    for (count = 0; count < BLOCK_VERIFIERS_TOTAL_AMOUNT; count++) {
+    free(VRF_data.bblock_verifiers_public_address[count]);
+    free(VRF_data.block_verifiers_vrf_public_key_hex[count]);
+    free(VRF_data.block_verifiers_random_hex[count]);
+    free(VRF_data.block_verifiers_proof_hex[count]);
+    free(VRF_data.block_verifiers_beta_hex[count]);
   }
 
   // initialize the blockchain_data struct
