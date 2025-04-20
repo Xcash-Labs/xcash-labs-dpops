@@ -158,7 +158,7 @@ xcash_round_result_t process_round(void) {
 
   INFO_PRINT_STATUS_OK("Nodes majority: [%ld/%d]", network_majority_count, BLOCK_VERIFIERS_VALID_AMOUNT);
 
-  int block_verifiers_create_VRF_secret_key_and_VRF_public_key(char* message)
+  //int block_verifiers_create_VRF_secret_key_and_VRF_public_key(char* message)
 
       // Update block verifiers list
       // if (update_block_verifiers_list() == 0) {
@@ -167,8 +167,8 @@ xcash_round_result_t process_round(void) {
       //}
 
       // Fill block verifiers list with proven online nodes
-      block_verifiers_list_t* bf = &current_block_verifiers_list;
-  memset(bf, 0, sizeof(block_verifiers_list_t));
+  //    block_verifiers_list_t* bf = &current_block_verifiers_list;
+  //memset(bf, 0, sizeof(block_verifiers_list_t));
 
   for (size_t i = 0, j = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     strcpy(bf->block_verifiers_name[j], delegates_all[i].delegate_name);
