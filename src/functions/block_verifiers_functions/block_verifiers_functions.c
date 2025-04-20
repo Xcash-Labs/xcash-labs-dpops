@@ -377,6 +377,8 @@ int block_verifiers_create_VRF_secret_key_and_VRF_public_key(char* message)
   }
 
   // Step 9: Compose outbound message (JSON)
+  char expected_block_part[BLOCK_HEIGHT_LENGTH + 4] = {0};
+  snprintf(expected_block_part, sizeof(expected_block_part), "%s-P1", current_block_height);
   snprintf(message, SMALL_BUFFER_SIZE,
             "{\r\n"
             " \"message_settings\": \"BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_VRF_DATA\",\r\n"
@@ -392,7 +394,7 @@ int block_verifiers_create_VRF_secret_key_and_VRF_public_key(char* message)
             random_buf,
             vrf_proof_hex,
             vrf_beta_hex,
-            current_block_height);
+            expected_block_part);
 
   return XCASH_OK;
 }
