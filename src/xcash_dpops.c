@@ -117,11 +117,11 @@ void cleanup_data_structures(void) {
 
   // release the VRF_data struct
     for (count = 0; count < BLOCK_VERIFIERS_TOTAL_AMOUNT; count++) {
-    free(VRF_data.bblock_verifiers_public_address[count]);
+    free(VRF_data.block_verifiers_public_address[count]);
     free(VRF_data.block_verifiers_vrf_public_key_hex[count]);
     free(VRF_data.block_verifiers_random_hex[count]);
-    free(VRF_data.block_verifiers_proof_hex[count]);
-    free(VRF_data.block_verifiers_beta_hex[count]);
+    free(VRF_data.block_verifiers_vrf_proof_hex[count]);
+    free(VRF_data.block_verifiers_vrf_beta_hex[count]);
   }
 
   // initialize the blockchain_data struct
