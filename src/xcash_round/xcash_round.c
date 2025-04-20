@@ -1,91 +1,107 @@
 #include "xcash_round.h"
 
 producer_ref_t producer_refs[] = {
-  {main_nodes_list.block_producer_public_address, main_nodes_list.block_producer_IP_address},
+    {main_nodes_list.block_producer_public_address, main_nodes_list.block_producer_IP_address},
 };
 
+unsigned char* generate_deterministic_entropy(const unsigned char* vrf_output, size_t vrf_output_len, size_t total_bytes_needed) {
+  size_t iterations = (total_bytes_needed / SHA512_DIGEST_LENGTH) + 1;
 
+  unsigned char* hash_buf = calloc(iterations, SHA512_DIGEST_LENGTH);
+  if (!hash_buf) return NULL;
 
+  for (size_t i = 0; i < iterations; i++) {
+    // Create new EVP digest context
+    EVP_MD_CTX* mdctx = EVP_MD_CTX_new();
+    if (!mdctx) {
+      free(hash_buf);
+      return NULL;
+    }
 
+    if (EVP_DigestInit_ex(mdctx, EVP_sha512(), NULL) != 1) {
+      EVP_MD_CTX_free(mdctx);
+      free(hash_buf);
+      return NULL;
+    }
 
+    // Add VRF output
+    if (EVP_DigestUpdate(mdctx, vrf_output, vrf_output_len) != 1) {
+      EVP_MD_CTX_free(mdctx);
+      free(hash_buf);
+      return NULL;
+    }
 
-bool select_block_producers(void) {
-  producer_node_t eligible[BLOCK_VERIFIERS_AMOUNT] = {0};
-  size_t eligible_count = 0;
+    // Add counter as 8-byte little-endian integer
+    unsigned char counter[8];
+    for (int j = 0; j < 8; j++)
+      counter[j] = (i >> (8 * j)) & 0xff;
 
-  unsigned char alpha_input[BLOCK_HASH_LENGTH + RANDOM_STRING_LENGTH] = {0};
-  unsigned char lowest_beta[crypto_vrf_OUTPUTBYTES] = {0xff}; // init to max
-  int selected_index = -1;
+    if (EVP_DigestUpdate(mdctx, counter, sizeof(counter)) != 1) {
+      EVP_MD_CTX_free(mdctx);
+      free(hash_buf);
+      return NULL;
+    }
 
-  // Step 1: Collect eligible producers
+    // Finalize digest into proper slice of hash_buf
+    if (EVP_DigestFinal_ex(mdctx, hash_buf + (i * SHA512_DIGEST_LENGTH), NULL) != 1) {
+      EVP_MD_CTX_free(mdctx);
+      free(hash_buf);
+      return NULL;
+    }
+
+    EVP_MD_CTX_free(mdctx);
+  }
+
+  return hash_buf;
+}
+
+bool select_block_producers(const unsigned char* vrf_output, size_t vrf_output_len) {
+  producer_node_t producers_list[BLOCK_VERIFIERS_AMOUNT] = {0};
+  size_t num_producers = 0;
+
+  // Collect eligible delegates
   for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
-    if (strlen(delegates_all[i].public_address) == 0) continue;
+    if (strlen(delegates_all[i].public_address) == 0) break;
     if (is_seed_address(delegates_all[i].public_address)) continue;
     if (strcmp(delegates_all[i].online_status, "false") == 0) continue;
 
-    memcpy(eligible[eligible_count].public_address, delegates_all[i].public_address, XCASH_WALLET_LENGTH);
-    memcpy(eligible[eligible_count].IP_address, delegates_all[i].IP_address, XCASH_SERVER_IP_ADDRESS_MAX_LENGTH);
-    eligible[eligible_count].is_online = true;
-    eligible_count++;
+    strcpy(producers_list[num_producers].public_address, delegates_all[i].public_address);
+    strcpy(producers_list[num_producers].IP_address, delegates_all[i].IP_address);
+    producers_list[num_producers].is_online = true;
+    num_producers++;
   }
 
-  if (eligible_count == 0) {
-    WARNING_PRINT("No eligible producers available.");
+  if (num_producers < 1) {
+    WARNING_PRINT("No valid producers generated during producer selection.");
     return false;
   }
 
-  // Step 2: Prepare alpha input = previous_block_hash || random_data
-  memcpy(alpha_input, previous_block_hash, BLOCK_HASH_LENGTH);
-  memcpy(alpha_input + BLOCK_HASH_LENGTH, GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_RANDOM_STRING, RANDOM_STRING_LENGTH);
-
-  // Step 3: Loop and generate VRF proof and beta for each
-  for (size_t i = 0; i < eligible_count; i++) {
-    unsigned char vrf_pk[crypto_vrf_PUBLICKEYBYTES];
-    unsigned char vrf_sk[crypto_vrf_SECRETKEYBYTES];
-    unsigned char proof[crypto_vrf_PROOFBYTES];
-    unsigned char beta[crypto_vrf_OUTPUTBYTES];
-
-    // Generate keys (in real systems, they may be stored securely per node)
-    crypto_vrf_keypair(vrf_pk, vrf_sk);
-
-    // Generate proof
-    if (crypto_vrf_prove(proof, vrf_sk, alpha_input, sizeof(alpha_input)) != 0) {
-      WARNING_PRINT("VRF proof generation failed for node %zu", i);
-      continue;
-    }
-
-    // Convert proof to beta (output)
-    if (crypto_vrf_proof_to_hash(beta, proof) != 0) {
-      WARNING_PRINT("VRF beta conversion failed for node %zu", i);
-      continue;
-    }
-
-    // Check if this is the lowest beta so far
-    if (memcmp(beta, lowest_beta, crypto_vrf_OUTPUTBYTES) < 0) {
-      memcpy(lowest_beta, beta, crypto_vrf_OUTPUTBYTES);
-      selected_index = (int)i;
-
-      // Save for block inclusion
-      memcpy(VRF_data.vrf_proof, proof, crypto_vrf_PROOFBYTES);
-      memcpy(VRF_data.vrf_beta_string, beta, crypto_vrf_OUTPUTBYTES);
-      memcpy(VRF_data.vrf_public_key, vrf_pk, crypto_vrf_PUBLICKEYBYTES);
-    }
-  }
-
-  if (selected_index == -1) {
-    ERROR_PRINT("No valid VRF beta found.");
+  // Generate deterministic entropy
+  size_t entropy_bytes = num_producers * 2;
+  unsigned char* entropy = generate_deterministic_entropy(vrf_output, vrf_output_len, entropy_bytes);
+  if (!entropy) {
+    ERROR_PRINT("Failed to generate VRF-based entropy.");
     return false;
   }
 
-  // Step 4: Set main producer
+  // Shuffle the producers list directly
+  for (size_t i = num_producers - 1; i > 0; i--) {
+    size_t index = ((entropy[i * 2] << 8) | entropy[i * 2 + 1]) % (i + 1);
+    producer_node_t temp = producers_list[i];
+    producers_list[i] = producers_list[index];
+    producers_list[index] = temp;
+  }
+  free(entropy);
+
+  // For now there is only one block producer and no backups
   memset(&main_nodes_list, 0, sizeof(main_nodes_list));
-  strcpy(producer_refs[0].public_address, eligible[selected_index].public_address);
-  strcpy(producer_refs[0].IP_address, eligible[selected_index].IP_address);
+  for (size_t i = 0; i < PRODUCER_REF_COUNT && i < num_producers; i++) {
+    strcpy(producer_refs[i].public_address, producers_list[i].public_address);
+    strcpy(producer_refs[i].IP_address, producers_list[i].IP_address);
+  }
 
-  INFO_PRINT("Selected block producer: %s", producer_refs[0].public_address);
   return true;
 }
-
 
 xcash_round_result_t process_round(void) {
   // Get the current block height Then Sync the databases and build the majority list
@@ -144,24 +160,14 @@ xcash_round_result_t process_round(void) {
 
   int block_verifiers_create_VRF_secret_key_and_VRF_public_key(char* message)
 
+      // Update block verifiers list
+      // if (update_block_verifiers_list() == 0) {
+      //  DEBUG_PRINT("Could not update the previous, current, and next block verifiers list from database");
+      //  return ROUND_ERROR;
+      //}
 
-
-
-
-
-
-
-
-
-
-  // Update block verifiers list
-  //if (update_block_verifiers_list() == 0) {
-  //  DEBUG_PRINT("Could not update the previous, current, and next block verifiers list from database");
-  //  return ROUND_ERROR;
-  //}
-
-  // Fill block verifiers list with proven online nodes
-  block_verifiers_list_t* bf = &current_block_verifiers_list;
+      // Fill block verifiers list with proven online nodes
+      block_verifiers_list_t* bf = &current_block_verifiers_list;
   memset(bf, 0, sizeof(block_verifiers_list_t));
 
   for (size_t i = 0, j = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
@@ -174,19 +180,19 @@ xcash_round_result_t process_round(void) {
 
   unsigned char vrf_output[32] = {0};
   if (hex_to_byte_array(previous_block_hash, vrf_output, sizeof(vrf_output)) != XCASH_OK) {
-      ERROR_PRINT("Failed to convert previous_block_hash to VRF output");
-      return ROUND_ERROR;
+    ERROR_PRINT("Failed to convert previous_block_hash to VRF output");
+    return ROUND_ERROR;
   }
   const unsigned char* final_vrf_output = vrf_output;
   size_t final_vrf_output_len = sizeof(vrf_output);
 
   // Select block producer using deterministic algorithm
-  //INFO_STAGE_PRINT("Part 1 - Selecting block producers");
-  //if (select_block_producers(final_vrf_output, final_vrf_output_len)) {
+  // INFO_STAGE_PRINT("Part 1 - Selecting block producers");
+  // if (select_block_producers(final_vrf_output, final_vrf_output_len)) {
   //  DEBUG_PRINT("Failed to select a block producer");
   //  return ROUND_ERROR;
   //}
-  //INFO_PRINT_STATUS_OK("%s Selected as the Block Producer", address_to_node_name(producer_refs[0].public_address));
+  // INFO_PRINT_STATUS_OK("%s Selected as the Block Producer", address_to_node_name(producer_refs[0].public_address));
 
   is_block_creation_stage = true;
   INFO_STAGE_PRINT("Starting block production for block %s", current_block_height);
@@ -197,14 +203,6 @@ xcash_round_result_t process_round(void) {
   return (xcash_round_result_t)block_creation_result;
 }
 
-
-
-
-
-
-
-
-
 void start_block_production(void) {
   struct timeval current_time;
   xcash_round_result_t round_result = ROUND_OK;
@@ -212,77 +210,78 @@ void start_block_production(void) {
 
   // Wait for node to be fully synced
   while (!current_block_healthy) {
-      if (get_current_block_height(current_block_height) == XCASH_OK) {
-          current_block_healthy = true;
-      } else {
-          WARNING_PRINT("Node is still syncing. Waiting for recovery...");
-          sleep(5);
-      }
+    if (get_current_block_height(current_block_height) == XCASH_OK) {
+      current_block_healthy = true;
+    } else {
+      WARNING_PRINT("Node is still syncing. Waiting for recovery...");
+      sleep(5);
+    }
   }
 
   // Start production loop
   while (true) {
-      gettimeofday(&current_time, NULL);
-      size_t seconds_within_block = current_time.tv_sec % (BLOCK_TIME * 60);
-      size_t minute_within_block  = (current_time.tv_sec / 60) % BLOCK_TIME;
+    gettimeofday(&current_time, NULL);
+    size_t seconds_within_block = current_time.tv_sec % (BLOCK_TIME * 60);
+    size_t minute_within_block = (current_time.tv_sec / 60) % BLOCK_TIME;
 
-      // Skip production if outside initial window
-      if (seconds_within_block > 25) {
-          if (round_result != ROUND_OK && seconds_within_block > 280) {
-              WARNING_PRINT("Last round failed. Refreshing DB from top...");
-              init_db_from_top();
-              round_result = ROUND_OK;
-          } else {
-              INFO_PRINT("Missed block window. Block %s — Next round starts in [%ld:%02ld]",
-                         current_block_height,
-                         BLOCK_TIME - 1 - minute_within_block,
-                         59 - (current_time.tv_sec % 60));
-          }
-          sleep(5);
-          continue;
-      }
-
-      // Step 3: Recheck block height before proceeding
-      if (get_current_block_height(current_block_height) != XCASH_OK) {
-          WARNING_PRINT("Failed to fetch current block height. Retrying...");
-          sleep(5);
-          continue;
-      }
-
-      bool round_created = false;
-
-      // Special PoS bootstrapping block
-      if (strtoull(current_block_height, NULL, 10) == XCASH_PROOF_OF_STAKE_BLOCK_HEIGHT) {
-          if (strncmp(network_nodes[0].seed_public_address, xcash_wallet_public_address, XCASH_WALLET_LENGTH) == 0) {
-              round_created = (start_current_round_start_blocks() != XCASH_ERROR);
-              if (!round_created) {
-                  ERROR_PRINT("start_current_round_start_blocks() failed");
-              }
-          } else {
-              INFO_PRINT("This node is not the PoS boot node. Skipping.");
-              sleep(SUBMIT_NETWORK_BLOCK_TIME_SECONDS);
-              continue;
-          }
+    // Skip production if outside initial window
+    if (seconds_within_block > 25) {
+      if (round_result != ROUND_OK && seconds_within_block > 280) {
+        WARNING_PRINT("Last round failed. Refreshing DB from top...");
+        init_db_from_top();
+        round_result = ROUND_OK;
       } else {
-          // Standard block production
-          round_result = process_round();
-          if (round_result == ROUND_OK) {
-              round_created = true;
-          } else if (round_result == ROUND_RETRY) {
-              INFO_PRINT("Round retry. Waiting before trying ...");;
-              sleep(10); // Allow 2 retries max within 25s window
-              continue;
-          } else {
-              round_created = false;
-          }
+        INFO_PRINT("Missed block window. Block %s — Next round starts in [%ld:%02ld]",
+                   current_block_height,
+                   BLOCK_TIME - 1 - minute_within_block,
+                   59 - (current_time.tv_sec % 60));
+      }
+      sleep(5);
+      continue;
+    }
 
-          if (round_created) {
-              INFO_PRINT_STATUS_OK("Block %s created successfully", current_block_height);
-          } else {
-              INFO_PRINT_STATUS_FAIL("Block %s was not created", current_block_height);
-          }
+    // Step 3: Recheck block height before proceeding
+    if (get_current_block_height(current_block_height) != XCASH_OK) {
+      WARNING_PRINT("Failed to fetch current block height. Retrying...");
+      sleep(5);
+      continue;
+    }
+
+    bool round_created = false;
+
+    // Special PoS bootstrapping block
+    if (strtoull(current_block_height, NULL, 10) == XCASH_PROOF_OF_STAKE_BLOCK_HEIGHT) {
+      if (strncmp(network_nodes[0].seed_public_address, xcash_wallet_public_address, XCASH_WALLET_LENGTH) == 0) {
+        round_created = (start_current_round_start_blocks() != XCASH_ERROR);
+        if (!round_created) {
+          ERROR_PRINT("start_current_round_start_blocks() failed");
+        }
+      } else {
+        INFO_PRINT("This node is not the PoS boot node. Skipping.");
+        sleep(SUBMIT_NETWORK_BLOCK_TIME_SECONDS);
+        continue;
+      }
+    } else {
+      // Standard block production
+      round_result = process_round();
+      if (round_result == ROUND_OK) {
+        round_created = true;
+      } else if (round_result == ROUND_RETRY) {
+        INFO_PRINT("Round retry. Waiting before trying ...");
+        ;
+        sleep(10);  // Allow 2 retries max within 25s window
+        continue;
+      } else {
+        round_created = false;
       }
 
-      break; // TEMP: exit after one round (for testing)
+      if (round_created) {
+        INFO_PRINT_STATUS_OK("Block %s created successfully", current_block_height);
+      } else {
+        INFO_PRINT_STATUS_FAIL("Block %s was not created", current_block_height);
+      }
+    }
+
+    break;  // TEMP: exit after one round (for testing)
   }
 }
