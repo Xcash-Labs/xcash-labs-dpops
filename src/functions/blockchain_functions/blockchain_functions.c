@@ -1279,11 +1279,11 @@ int verify_network_block_data(const int BLOCK_VALIDATION_SIGNATURES_SETTINGS, co
       for (count = 0, vrf_data_verify_count = 0; (int)count < BLOCK_VERIFIERS_TOTAL; count++)
       { 
         // check the signed data 
-        if (VRF_data_verify(current_block_verifiers_list.block_verifiers_public_key[count],VRF_data.block_blob_signature[count],network_block_string) == 1)
-        {
-          vrf_data_verify_count++;
-        }
-        else
+//        if (VRF_data_verify(current_block_verifiers_list.block_verifiers_public_key[count],VRF_data.block_blob_signature[count],network_block_string) == 1)
+//        {
+//          vrf_data_verify_count++;
+//        }
+//        else
         {
           memcpy(delegates_error_list+strlen(delegates_error_list),current_block_verifiers_list.block_verifiers_name[count],strlen(current_block_verifiers_list.block_verifiers_name[count]));
           memcpy(delegates_error_list+strlen(delegates_error_list),"|",1);
