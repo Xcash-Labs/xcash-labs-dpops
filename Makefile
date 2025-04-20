@@ -44,7 +44,7 @@ CFLAGS ?= $(INC_FLAGS) $(MongoDB_INC_DIRS) -MMD -MP -Wall -Wextra -Wstrict-proto
 
 # Linker flags
 #LDFLAGS ?= -lmongoc-1.0 -lbson-1.0 -lresolv -lpthread -lcrypto -luv -lcurl -lcjson
-LDFLAGS ?= -lmongoc-1.0 -lbson-1.0 -lresolv -lpthread -l:libcrypto.so.3 -luv -lcurl -lcjson  -ljansson -lsodium
+LDFLAGS ?= -lmongoc-1.0 -lbson-1.0 -lresolv -lpthread -l:libcrypto.so.3 -luv -lcurl -lcjson  -ljansson
 
 # Build configurations
 debug: CFLAGS += -g -fno-stack-protector
