@@ -897,8 +897,8 @@ int add_data_hash_to_network_block_string(const char* NETWORK_BLOCK_STRING, char
   }
 
   // Copy to VRF_data
-  memcpy(VRF_data.reserve_bytes_data_hash, hash_hex, DATA_HASH_LENGTH);
-  VRF_data.reserve_bytes_data_hash[DATA_HASH_LENGTH] = '\0'; // Null-terminate
+  //memcpy(VRF_data.reserve_bytes_data_hash, hash_hex, DATA_HASH_LENGTH);
+  //VRF_data.reserve_bytes_data_hash[DATA_HASH_LENGTH] = '\0'; // Null-terminate
 
   // Locate reserve bytes markers
   const char *start_ptr = strstr(NETWORK_BLOCK_STRING, BLOCKCHAIN_RESERVED_BYTES_START);
@@ -917,7 +917,7 @@ int add_data_hash_to_network_block_string(const char* NETWORK_BLOCK_STRING, char
   memcpy(network_block_string_data_hash, NETWORK_BLOCK_STRING, pre_hash_length);
 
   // Add reserve bytes data hash
-  memcpy(network_block_string_data_hash + pre_hash_length, VRF_data.reserve_bytes_data_hash, DATA_HASH_LENGTH);
+  //memcpy(network_block_string_data_hash + pre_hash_length, VRF_data.reserve_bytes_data_hash, DATA_HASH_LENGTH);
 
   // Copy remaining part of the network block string
   strcpy(network_block_string_data_hash + pre_hash_length + DATA_HASH_LENGTH, end_ptr);
@@ -1303,10 +1303,10 @@ int verify_network_block_data(const int BLOCK_VALIDATION_SIGNATURES_SETTINGS, co
         for (count2 = 0; (int)count2 < BLOCK_VERIFIERS_TOTAL; count2++)
         { 
           // check the signed data 
-          if (VRF_data_verify(current_block_verifiers_list.block_verifiers_public_key[count],VRF_data.block_blob_signature[count2],network_block_string) == 1)
-          {
-            vrf_data_verify_count++;
-          }
+//          if (VRF_data_verify(current_block_verifiers_list.block_verifiers_public_key[count],VRF_data.block_blob_signature[count2],network_block_string) == 1)
+//          {
+//            vrf_data_verify_count++;
+//          }
         }
       }
       if (vrf_data_verify_count >= BLOCK_VERIFIERS_VALID_AMOUNT)
