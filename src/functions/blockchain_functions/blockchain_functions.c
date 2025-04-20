@@ -897,7 +897,7 @@ int add_data_hash_to_network_block_string(const char* NETWORK_BLOCK_STRING, char
   }
 
   // Copy to VRF_data
-  //memcpy(VRF_data.reserve_bytes_data_hash, hash_hex, DATA_HASH_LENGTH);
+  //memcpy(VRF_data.reserve_bytes_data_hash, hash_hex, DATA_HASH_LENGTH); 
   //VRF_data.reserve_bytes_data_hash[DATA_HASH_LENGTH] = '\0'; // Null-terminate
 
   // Locate reserve bytes markers
