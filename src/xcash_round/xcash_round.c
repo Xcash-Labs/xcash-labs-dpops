@@ -181,12 +181,12 @@ xcash_round_result_t process_round(void) {
   size_t final_vrf_output_len = sizeof(vrf_output);
 
   // Select block producer using deterministic algorithm
-  INFO_STAGE_PRINT("Part 1 - Selecting block producers");
-  if (select_block_producers(final_vrf_output, final_vrf_output_len)) {
-    DEBUG_PRINT("Failed to select a block producer");
-    return ROUND_ERROR;
-  }
-  INFO_PRINT_STATUS_OK("%s Selected as the Block Producer", address_to_node_name(producer_refs[0].public_address));
+  //INFO_STAGE_PRINT("Part 1 - Selecting block producers");
+  //if (select_block_producers(final_vrf_output, final_vrf_output_len)) {
+  //  DEBUG_PRINT("Failed to select a block producer");
+  //  return ROUND_ERROR;
+  //}
+  //INFO_PRINT_STATUS_OK("%s Selected as the Block Producer", address_to_node_name(producer_refs[0].public_address));
 
   is_block_creation_stage = true;
   INFO_STAGE_PRINT("Starting block production for block %s", current_block_height);
