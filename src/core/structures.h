@@ -66,34 +66,13 @@ typedef struct {
     char block_verifiers_IP_address[BLOCK_VERIFIERS_TOTAL_AMOUNT][BLOCK_VERIFIERS_IP_ADDRESS_TOTAL_LENGTH+1]; // The block verifiers IP address
 } block_verifiers_list_t;
 
-
-/*
 struct VRF_data { 
-    char* vrf_secret_key_data; // The VRF secret key text for round part 4
-    unsigned char* vrf_secret_key; // The VRF secret key for round part 4
-
-
-    char* vrf_public_key_data; // The VRF public key 
-   unsigned char* vrf_public_key; // The VRF public key 
-    char* vrf_alpha_string_data; // The VRF alpha string 
-    unsigned char* vrf_alpha_string; // The VRF alpha string 
-    char* vrf_proof_data; // The VRF proof text 
-    unsigned char* vrf_proof; // The VRF proof 
-    char* vrf_beta_string_data; // The VRF beta string 
-    unsigned char* vrf_beta_string; // The VRF beta string
-
-    char* block_verifiers_vrf_secret_key_data[BLOCK_VERIFIERS_TOTAL_AMOUNT]; // The VRF secret key text that all of the block verifiers create
-    unsigned char* block_verifiers_vrf_secret_key[BLOCK_VERIFIERS_TOTAL_AMOUNT]; // The VRF secret key that all of the block verifiers create
-    char* block_verifiers_vrf_public_key_data[BLOCK_VERIFIERS_TOTAL_AMOUNT]; // The VRF public key text that all of the block verifiers create
-    unsigned char* block_verifiers_vrf_public_key[BLOCK_VERIFIERS_TOTAL_AMOUNT]; // The VRF public key that all of the block verifiers create
-    char* block_verifiers_random_data[BLOCK_VERIFIERS_TOTAL_AMOUNT]; // The random data that all of the block verifiers create
-    char* block_verifiers_vrf_proof_data[BLOCK_VERIFIERS_TOTAL_AMOUNT]; 
-    char* block_verifiers_vrf_beta_data[BLOCK_VERIFIERS_TOTAL_AMOUNT];
-    char* block_blob_signature[BLOCK_VERIFIERS_TOTAL_AMOUNT]; // The signed block data text
-    char* block_blob; // The block_blob that the block producer creates to send to the consensus node
-    char* reserve_bytes_data_hash; // The reserve bytes data hash
+    char* block_verifiers_public_address[BLOCK_VERIFIERS_TOTAL_AMOUNT]; // The block producers public address
+    char* block_verifiers_vrf_public_key_hex[BLOCK_VERIFIERS_TOTAL_AMOUNT]; // The VRF public key text that all of the block verifiers create
+    char* block_verifiers_random_hex[BLOCK_VERIFIERS_TOTAL_AMOUNT]; // The random data that all of the block verifiers create
+    char* block_verifiers_vrf_proof_hex[BLOCK_VERIFIERS_TOTAL_AMOUNT]; 
+    char* block_verifiers_vrf_beta_hex[BLOCK_VERIFIERS_TOTAL_AMOUNT];
 };
-*/
 
 struct blockchain_reserve_bytes {
     char* block_producer_delegates_name_data; // The block_producer_delegates_name

@@ -3,7 +3,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
+//#include <string.h>
+#include <sodium/randombytes.h>
 #include <pthread.h>
 #include "config.h"
 #include "globals.h"
@@ -12,6 +13,7 @@
 #include "xcash_round.h"
 #include "blockchain_functions.h"
 #include "xcash_block.h"
+
 
 //int sync_all_delegates(void);
 int start_blocks_create_vrf_data(void);

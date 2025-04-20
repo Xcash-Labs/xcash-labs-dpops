@@ -305,16 +305,17 @@ Return:
 ---------------------------------------------------------------------------------------------------------*/
 int block_verifiers_create_VRF_secret_key_and_VRF_public_key(char* message)
 {
-  char random_buf[RANDOM_STRING_LENGTH + 1] = {0};
-  unsigned char alpha_input[BLOCK_HASH_LENGTH + RANDOM_STRING_LENGTH] = {0};
-  size_t i, offset;
-
+  unsigned char random_buf_bin[VRF_RANDOMBYTES_LENGTH] = {0};
+  unsigned char alpha_input_bin[VRF_RANDOMBYTES_LENGTH * 2] = {0};
   unsigned char sk_bin[crypto_vrf_SECRETKEYBYTES] = {0};
   unsigned char pk_bin[crypto_vrf_PUBLICKEYBYTES] = {0};
   unsigned char vrf_proof[crypto_vrf_PROOFBYTES] = {0};
   unsigned char vrf_beta[crypto_vrf_OUTPUTBYTES] = {0};
-  char vrf_proof_hex[(crypto_vrf_PROOFBYTES * 2) + 1] = {0};
-  char vrf_beta_hex[(crypto_vrf_OUTPUTBYTES * 2) + 1] = {0};
+  unsigned char previous_block_hash_bin[BLOCK_HASH_LENGTH / 2] = {0};
+  char vrf_proof_hex[VRF_PROOF_LENGTH + 1] = {0};  
+  char vrf_beta_hex[VRF_BETA_LENGTH + 1] = {0};
+  char random_buf_hex[(VRF_RANDOMBYTES_LENGTH * 2) + 1] = {0};
+  size_t i, offset;
 
   // Step 1: Convert stored hex keys to binary
   if (!hex_to_byte_array(secret_key, sk_bin, sizeof(sk_bin))) {
@@ -333,20 +334,19 @@ int block_verifiers_create_VRF_secret_key_and_VRF_public_key(char* message)
     return XCASH_ERROR;
   }
 
-  // Step 3: Generate random string (this is the VRF nonce/randomizer)
-  if (!random_string(random_buf, RANDOM_STRING_LENGTH)) {
-    ERROR_PRINT("Failed to generate random alpha string");
-    return XCASH_ERROR;
-  }
+  // Step 3: Generate random binary string
+  randombytes_buf(random_buf_bin, VRF_RANDOMBYTES_LENGTH);
 
   // Step 4: Form the alpha input = previous_block_hash || random_buf
-  memcpy(alpha_input, previous_block_hash, BLOCK_HASH_LENGTH);
-  memcpy(alpha_input + BLOCK_HASH_LENGTH, random_buf, RANDOM_STRING_LENGTH);
+  if (!hex_to_byte_array(previous_block_hash, previous_block_hash_bin, VRF_RANDOMBYTES_LENGTH)) {
+    ERROR_PRINT("Failed to decode previous block hash");
+    return XCASH_ERROR;
+  }
+  memcpy(alpha_input_bin, previous_block_hash_bin, VRF_RANDOMBYTES_LENGTH);
+  memcpy(alpha_input_bin + VRF_RANDOMBYTES_LENGTH, random_buf_bin, VRF_RANDOMBYTES_LENGTH);
 
   // Step 5: Generate VRF proof
-
-
-  if (crypto_vrf_prove(vrf_proof, sk_bin, alpha_input, sizeof(alpha_input)) != 0) {
+  if (crypto_vrf_prove(vrf_proof, sk_bin, alpha_input_bin, sizeof(alpha_input_bin)) != 0) {
     ERROR_PRINT("Failed to generate VRF proof");
     return XCASH_ERROR;
   }
@@ -362,16 +362,19 @@ int block_verifiers_create_VRF_secret_key_and_VRF_public_key(char* message)
     snprintf(vrf_proof_hex + offset, 3, "%02x", vrf_proof[i]);
   for (i = 0, offset = 0; i < crypto_vrf_OUTPUTBYTES; i++, offset += 2)
     snprintf(vrf_beta_hex + offset, 3, "%02x", vrf_beta[i]);
+  for (i = 0, offset = 0; i < VRF_RANDOMBYTES_LENGTH; i++, offset += 2) {
+      snprintf(random_buf_hex + offset, 3, "%02x",random_buf_bin[i]);
+  }
 
   // Step 8: Save to block_verifiers index in struct (for signature tracking)
   for (i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     if (strncmp(current_block_verifiers_list.block_verifiers_public_address[i],
      xcash_wallet_public_address, XCASH_WALLET_LENGTH) == 0) {
-      memcpy(VRF_data.block_verifiers_vrf_public_key[i], pk_bin, crypto_vrf_PUBLICKEYBYTES);
-      memcpy(VRF_data.block_verifiers_vrf_public_key_data[i], vrf_public_key, VRF_PUBLIC_KEY_LENGTH+1);
-      memcpy(VRF_data.block_verifiers_random_data[i], random_buf, RANDOM_STRING_LENGTH+1);
-      memcpy(VRF_data.block_verifiers_vrf_proof_data[i], vrf_proof_hex, VRF_PROOF_LENGTH + 1); 
-      memcpy(VRF_data.block_verifiers_vrf_beta_data[i], vrf_beta_hex, VRF_BETA_LENGTH + 1); 
+      memcpy(VRF_data.block_verifiers_public_address[i], xcash_wallet_public_address, XCASH_WALLET_LENGTH+1);
+      memcpy(VRF_data.block_verifiers_vrf_public_key_hex[i], vrf_public_key, VRF_PUBLIC_KEY_LENGTH+1);
+      memcpy(VRF_data.block_verifiers_vrf_random_hex[i], random_buf_hex, VRF_RANDOMBYTES_LENGTH * 2 + 1);
+      memcpy(VRF_data.block_verifiers_vrf_proof_hex[i], vrf_proof_hex, VRF_PROOF_LENGTH + 1); 
+      memcpy(VRF_data.block_verifiers_vrf_beta_hex[i], vrf_beta_hex, VRF_BETA_LENGTH + 1); 
       break;
     }
   }
@@ -389,7 +392,7 @@ int block_verifiers_create_VRF_secret_key_and_VRF_public_key(char* message)
             "}",
             xcash_wallet_public_address,
             vrf_public_key,
-            random_buf,
+            random_buf_hex,
             vrf_proof_hex,
             vrf_beta_hex,
             current_block_height);
