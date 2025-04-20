@@ -377,6 +377,9 @@ int block_verifiers_create_VRF_secret_key_and_VRF_public_key(char* message)
   }
 
   // Step 9: Compose outbound message (JSON)
+  char expected_block_part[64] = {0};
+  strncpy(expected_block_part, current_block_height, sizeof(expected_block_part) - 4);
+  strncat(expected_block_part, "-P1", sizeof(expected_block_part) - strlen(expected_block_part) - 1);
   snprintf(message, SMALL_BUFFER_SIZE,
             "{\r\n"
             " \"message_settings\": \"BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_VRF_DATA\",\r\n"
@@ -385,14 +388,14 @@ int block_verifiers_create_VRF_secret_key_and_VRF_public_key(char* message)
             " \"random_data\": \"%s\",\r\n"
             " \"vrf_proof\": \"%s\",\r\n"
             " \"vrf_beta\": \"%s\",\r\n"
-            " \"block-part\": \"%s-P1\"\r\n"
+            " \"block-part\": \"%s\"\r\n"
             "}",
             xcash_wallet_public_address,
             vrf_public_key,
             random_buf,
             vrf_proof_hex,
             vrf_beta_hex,
-            current_block_height);
+            expected_block_part);
 
   return XCASH_OK;
 }
