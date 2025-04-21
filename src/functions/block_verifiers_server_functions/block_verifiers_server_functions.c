@@ -47,16 +47,15 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
   }
   
   for (count = 0; count < BLOCK_VERIFIERS_AMOUNT; count++) {
-    if (strncmp(VRF_data.block_verifiers_public_address[count], public_address, XCASH_WALLET_LENGTH) == 0 &&
-        strncmp(VRF_data.block_verifiers_vrf_public_key_hex[count], "", 1) == 0 &&
-        strncmp(VRF_data.block_verifiers_random_hex[count], "", 1) == 0 &&
-        strncmp(VRF_data.block_verifiers_vrf_proof_hex[count], "", 1) == 0 &&
-        strncmp(VRF_data.block_verifiers_vrf_beta_hex[count], "", 1) == 0) {
-          memcpy(VRF_data.block_verifiers_public_address[count], xcash_wallet_public_address, XCASH_WALLET_LENGTH+1);
-          memcpy(VRF_data.block_verifiers_vrf_public_key_hex[count], vrf_public_key, VRF_PUBLIC_KEY_LENGTH+1);
-          memcpy(VRF_data.block_verifiers_random_hex[count], random_buf_hex, VRF_RANDOMBYTES_LENGTH * 2 + 1);
-          memcpy(VRF_data.block_verifiers_vrf_proof_hex[count], vrf_proof_hex, VRF_PROOF_LENGTH + 1); 
-          memcpy(VRF_data.block_verifiers_vrf_beta_hex[count], vrf_beta_hex, VRF_BETA_LENGTH + 1);
+    if (strncmp(current_block_verifiers_list.block_verifiers_public_address[count], public_address, XCASH_WALLET_LENGTH) == 0 &&
+    strncmp(current_block_verifiers_list.block_verifiers_vrf_public_key_hex[count], "", 1) == 0 &&
+        strncmp(current_block_verifiers_list.block_verifiers_random_hex[count], "", 1) == 0 &&
+        strncmp(current_block_verifiers_list.block_verifiers_vrf_proof_hex[count], "", 1) == 0 &&
+        strncmp(current_block_verifiers_list.block_verifiers_vrf_beta_hex[count], "", 1) == 0) {
+          memcpy(current_block_verifiers_list.block_verifiers_vrf_public_key_hex[count], vrf_public_key, VRF_PUBLIC_KEY_LENGTH+1);
+          memcpy(current_block_verifiers_list.block_verifiers_random_hex[count], random_buf_hex, VRF_RANDOMBYTES_LENGTH * 2 + 1);
+          memcpy(current_block_verifiers_list.block_verifiers_vrf_proof_hex[count], vrf_proof_hex, VRF_PROOF_LENGTH + 1); 
+          memcpy(current_block_verifiers_list.block_verifiers_vrf_beta_hex[count], vrf_beta_hex, VRF_BETA_LENGTH + 1);
       break;
     }
   }

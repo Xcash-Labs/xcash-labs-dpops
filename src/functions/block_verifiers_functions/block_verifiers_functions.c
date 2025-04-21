@@ -368,13 +368,12 @@ int block_verifiers_create_VRF_secret_key_and_VRF_public_key(char* message)
 
   // Step 8: Save to block_verifiers index in struct (for signature tracking)
   for (i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
-    if (strncmp(VRF_data.block_verifiers_public_address[i],
-     xcash_wallet_public_address, XCASH_WALLET_LENGTH) == 0) {
-      memcpy(VRF_data.block_verifiers_public_address[i], xcash_wallet_public_address, XCASH_WALLET_LENGTH+1);
-      memcpy(VRF_data.block_verifiers_vrf_public_key_hex[i], vrf_public_key, VRF_PUBLIC_KEY_LENGTH+1);
-      memcpy(VRF_data.block_verifiers_random_hex[i], random_buf_hex, VRF_RANDOMBYTES_LENGTH * 2 + 1);
-      memcpy(VRF_data.block_verifiers_vrf_proof_hex[i], vrf_proof_hex, VRF_PROOF_LENGTH + 1); 
-      memcpy(VRF_data.block_verifiers_vrf_beta_hex[i], vrf_beta_hex, VRF_BETA_LENGTH + 1); 
+    if (strncmp(current_block_verifiers_list.block_verifiers_public_address[i], xcash_wallet_public_address, XCASH_WALLET_LENGTH) == 0) {
+      memcpy(current_block_verifiers_list.block_verifiers_public_address[i], xcash_wallet_public_address, XCASH_WALLET_LENGTH+1);
+      memcpy(current_block_verifiers_list.block_verifiers_vrf_public_key_hex[i], vrf_public_key, VRF_PUBLIC_KEY_LENGTH+1);
+      memcpy(current_block_verifiers_list.block_verifiers_random_hex[i], random_buf_hex, VRF_RANDOMBYTES_LENGTH * 2 + 1);
+      memcpy(current_block_verifiers_list.block_verifiers_vrf_proof_hex[i], vrf_proof_hex, VRF_PROOF_LENGTH + 1); 
+      memcpy(current_block_verifiers_list.block_verifiers_vrf_beta_hex[i], vrf_beta_hex, VRF_BETA_LENGTH + 1);
       break;
     }
   }

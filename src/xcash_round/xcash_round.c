@@ -25,14 +25,6 @@ bool select_block_producers(void) {
     return false;
   }
 
-
-
-
-
-
-
-
-
   // For now there is only one block producer and no backups
   memset(&main_nodes_list, 0, sizeof(main_nodes_list));
   for (size_t i = 0; i < PRODUCER_REF_COUNT && i < num_producers; i++) {
@@ -42,8 +34,6 @@ bool select_block_producers(void) {
 
   return true;
 }
-
-
 
 xcash_round_result_t process_round(void) {
   char vrf_message[SMALL_BUFFER_SIZE] = {0};
@@ -80,8 +70,7 @@ xcash_round_result_t process_round(void) {
   // Update online status from majority list
   INFO_STAGE_PRINT("Nodes online for block %s", current_block_height);
 
-
-// do I need to update the db status of a delegate here?????????? wait until after round
+  // do I need to update the db status of a delegate here?????????? wait until after round
 
   for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT && strlen(delegates_all[i].public_address) > 0; i++) {
     strcpy(delegates_all[i].online_status, "false");
@@ -97,8 +86,7 @@ xcash_round_result_t process_round(void) {
 
   free(nodes_majority_list);  // Clean up the majority list after use
 
-
-// need to update this for prodction needs to be 75% response ????
+  // need to update this for prodction needs to be 75% response ????
 
   // Check if we have enough nodes for block production
   if (network_majority_count < BLOCK_VERIFIERS_VALID_AMOUNT) {
@@ -109,21 +97,16 @@ xcash_round_result_t process_round(void) {
   INFO_PRINT_STATUS_OK("Nodes majority: [%ld/%d]", network_majority_count, BLOCK_VERIFIERS_VALID_AMOUNT);
 
   // Fill block verifiers list with proven online nodes
-  block_verifiers_list_t* bf = &current_block_verifiers_list;
-  memset(bf, 0, sizeof(block_verifiers_list_t));
-  memset(&VRF_data, 0, sizeof(VRF_data));
-
+  memset(&current_block_verifiers_list, 0, sizeof(current_block_verifiers_list));
   for (size_t i = 0, j = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
-    strcpy(bf->block_verifiers_name[j], delegates_all[i].delegate_name);
-    strcpy(bf->block_verifiers_public_address[j], delegates_all[i].public_address);
-    strcpy(bf->block_verifiers_public_key[j], delegates_all[i].public_key);
-    strcpy(bf->block_verifiers_IP_address[j], delegates_all[i].IP_address);
+    strcpy(current_block_verifiers_list.block_verifiers_name[j], delegates_all[i].delegate_name);
+    strcpy(current_block_verifiers_list.block_verifiers_public_address[j], delegates_all[i].public_address);
+    strcpy(current_block_verifiers_list.block_verifiers_public_key[j], delegates_all[i].public_key);
+    strcpy(current_block_verifiers_list.block_verifiers_IP_address[j], delegates_all[i].IP_address);
     j++;
   }
 
-
-
-  // Generate VRF keys and VRF message request
+  // Generate VRF keys and VRF message request and update current_block_verifiers_list
   if (block_verifiers_create_VRF_secret_key_and_VRF_public_key(vrf_message) == XCASH_OK) {
     DEBUG_PRINT("Generated VRF message: %s", vrf_message);
   } else {
@@ -133,20 +116,13 @@ xcash_round_result_t process_round(void) {
 
 
 
+
+  
   unsigned char vrf_output[32] = {0};
   if (hex_to_byte_array(previous_block_hash, vrf_output, sizeof(vrf_output)) != XCASH_OK) {
     ERROR_PRINT("Failed to convert previous_block_hash to VRF output");
     return ROUND_ERROR;
   }
-
-
-
-
-
-
-
-
-  
 
   is_block_creation_stage = true;
   INFO_STAGE_PRINT("Starting block production for block %s", current_block_height);
