@@ -175,24 +175,6 @@ void init_globals(void) {
   // initialize the current_round_part_vote_data struct
   memset(current_round_part_vote_data.current_vote_results,0,sizeof(current_round_part_vote_data.current_vote_results));
 
-  // Initialize the VRF_data struct
-  for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
-    VRF_data.block_verifiers_public_address[i] = calloc(XCASH_WALLET_LENGTH + 1, sizeof(char));
-    VRF_data.block_verifiers_vrf_public_key_hex[i] = calloc(VRF_PUBLIC_KEY_LENGTH + 1, sizeof(char));
-    VRF_data.block_verifiers_random_hex[i] = calloc(VRF_RANDOMBYTES_LENGTH * 2 + 1, sizeof(char));
-    VRF_data.block_verifiers_vrf_proof_hex[i] = calloc(VRF_PROOF_LENGTH + 1, sizeof(char));
-    VRF_data.block_verifiers_vrf_beta_hex[i] = calloc(VRF_BETA_LENGTH + 1, sizeof(char));
-
-    if (!VRF_data.block_verifiers_public_address[i] || 
-        !VRF_data.block_verifiers_vrf_public_key_hex[i] || 
-        !VRF_data.block_verifiers_random_hex[i] || 
-        !VRF_data.block_verifiers_vrf_proof_hex[i] || 
-        !VRF_data.block_verifiers_vrf_beta_hex[i]) 
-    {
-        FATAL_ERROR_EXIT("Failed to allocate memory for VRF_data block verifier fields");
-    }
-  }
-
   // initialize the blockchain_data struct 
   blockchain_data.network_version_data = (char*)calloc(BUFFER_SIZE_NETWORK_BLOCK_DATA,sizeof(char));
   blockchain_data.timestamp_data = (char*)calloc(BUFFER_SIZE_NETWORK_BLOCK_DATA,sizeof(char));

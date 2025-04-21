@@ -66,12 +66,12 @@ typedef struct {
     char block_verifiers_IP_address[BLOCK_VERIFIERS_TOTAL_AMOUNT][BLOCK_VERIFIERS_IP_ADDRESS_TOTAL_LENGTH+1]; // The block verifiers IP address
 } block_verifiers_list_t;
 
-struct VRF_data { 
-    char* block_verifiers_public_address[BLOCK_VERIFIERS_TOTAL_AMOUNT]; // The block producers public address
-    char* block_verifiers_vrf_public_key_hex[BLOCK_VERIFIERS_TOTAL_AMOUNT]; // The VRF public key text that all of the block verifiers create
-    char* block_verifiers_random_hex[BLOCK_VERIFIERS_TOTAL_AMOUNT]; // The random data that all of the block verifiers create
-    char* block_verifiers_vrf_proof_hex[BLOCK_VERIFIERS_TOTAL_AMOUNT]; 
-    char* block_verifiers_vrf_beta_hex[BLOCK_VERIFIERS_TOTAL_AMOUNT];
+struct VRF_data {
+    char block_verifiers_public_address[BLOCK_VERIFIERS_TOTAL_AMOUNT][XCASH_WALLET_LENGTH + 1];
+    char block_verifiers_vrf_public_key_hex[BLOCK_VERIFIERS_TOTAL_AMOUNT][VRF_PUBLIC_KEY_LENGTH + 1];
+    char block_verifiers_random_hex[BLOCK_VERIFIERS_TOTAL_AMOUNT][VRF_RANDOMBYTES_LENGTH * 2 + 1];
+    char block_verifiers_vrf_proof_hex[BLOCK_VERIFIERS_TOTAL_AMOUNT][VRF_PROOF_LENGTH + 1];
+    char block_verifiers_vrf_beta_hex[BLOCK_VERIFIERS_TOTAL_AMOUNT][VRF_BETA_LENGTH + 1];
 };
 
 struct blockchain_reserve_bytes {

@@ -108,17 +108,10 @@ xcash_round_result_t process_round(void) {
 
   INFO_PRINT_STATUS_OK("Nodes majority: [%ld/%d]", network_majority_count, BLOCK_VERIFIERS_VALID_AMOUNT);
 
-  // Generate VRF keys and VRF message request
-  if (block_verifiers_create_VRF_secret_key_and_VRF_public_key(vrf_message) == XCASH_OK) {
-    DEBUG_PRINT("Generated VRF message: %s", vrf_message);
-  } else {
-    ERROR_PRINT("Failed to generate VRF keys and message");
-    return ROUND_ERROR;
-  }
-
   // Fill block verifiers list with proven online nodes
   block_verifiers_list_t* bf = &current_block_verifiers_list;
   memset(bf, 0, sizeof(block_verifiers_list_t));
+  memset(&VRF_data, 0, sizeof(VRF_data));
 
   for (size_t i = 0, j = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     strcpy(bf->block_verifiers_name[j], delegates_all[i].delegate_name);
@@ -127,6 +120,18 @@ xcash_round_result_t process_round(void) {
     strcpy(bf->block_verifiers_IP_address[j], delegates_all[i].IP_address);
     j++;
   }
+
+
+
+  // Generate VRF keys and VRF message request
+  if (block_verifiers_create_VRF_secret_key_and_VRF_public_key(vrf_message) == XCASH_OK) {
+    DEBUG_PRINT("Generated VRF message: %s", vrf_message);
+  } else {
+    ERROR_PRINT("Failed to generate VRF keys and message");
+    return ROUND_ERROR;
+  }
+
+
 
   unsigned char vrf_output[32] = {0};
   if (hex_to_byte_array(previous_block_hash, vrf_output, sizeof(vrf_output)) != XCASH_OK) {
