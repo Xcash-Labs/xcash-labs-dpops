@@ -180,7 +180,7 @@ void init_globals(void) {
   for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     memset(VRF_data.block_verifiers_public_address[i], 0, XCASH_WALLET_LENGTH + 1);
     memset(VRF_data.block_verifiers_vrf_public_key_hex[i], 0, VRF_PUBLIC_KEY_LENGTH + 1);
-    memset(VRF_data.block_verifiers_vrf_random_hex[i], 0, VRF_RANDOMBYTES_LENGTH * 2 + 1);
+    memset(VRF_data.block_verifiers_random_hex[i], 0, VRF_RANDOMBYTES_LENGTH * 2 + 1);
     memset(VRF_data.block_verifiers_vrf_proof_hex[i], 0, VRF_PROOF_LENGTH + 1);
     memset(VRF_data.block_verifiers_vrf_beta_hex[i], 0, VRF_BETA_LENGTH + 1);
     // check if the memory needed was allocated on the heap successfully
