@@ -60,7 +60,7 @@ struct main_nodes_list {
 };
 
 
----- why is this 100 and not 50
+// ---- why is this 100 and not 50
 
 typedef struct {
     char block_verifiers_name[BLOCK_VERIFIERS_TOTAL_AMOUNT][MAXIMUM_BUFFER_SIZE_DELEGATES_NAME+1]; // The block verifiers name
