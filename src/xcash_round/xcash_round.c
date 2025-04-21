@@ -36,8 +36,6 @@ bool select_block_producers(void) {
 }
 
 xcash_round_result_t process_round(void) {
-  char vrf_message[SMALL_BUFFER_SIZE] = {0};
-
   // Get the current block height Then Sync the databases and build the majority list
   if (get_current_block_height(current_block_height) != XCASH_OK) {
     ERROR_PRINT("Can't get current block height");
@@ -107,6 +105,7 @@ xcash_round_result_t process_round(void) {
   }
 
   // Generate VRF keys and VRF message request and update current_block_verifiers_list
+  char* vrf_message = NULL;
   if (block_verifiers_create_VRF_secret_key_and_VRF_public_key(vrf_message) == XCASH_OK) {
     DEBUG_PRINT("Generated VRF message: %s", vrf_message);
   } else {
@@ -114,18 +113,18 @@ xcash_round_result_t process_round(void) {
     return ROUND_ERROR;
   }
 
-  response_t **vrf_responses = NULL;
-  if (xnet_send_data_multi(XNET_DELEGATES_ALL_ONLINE, vrf_message, &vrf_responses)) {
-      DEBUG_PRINT("VRF message sent to all online delegates");
-      // You could loop through `vrf_responses` here to process acknowledgments or logs
-      free_response_array(vrf_responses); // If you have a cleanup utility for responses
-  } else {
-      ERROR_PRINT("Failed to send VRF message to online delegates");
-  }
+  //response_t **vrf_responses = NULL;
+  //if (xnet_send_data_multi(XNET_DELEGATES_ALL_ONLINE, vrf_message, &vrf_responses)) {
+  //    DEBUG_PRINT("VRF message sent to all online delegates");
+  //    // You could loop through `vrf_responses` here to process acknowledgments or logs
+  //    free_response_array(vrf_responses); // If you have a cleanup utility for responses
+  //} else {
+  //    ERROR_PRINT("Failed to send VRF message to online delegates");
+ // }
 
 
 
-
+  free(vrf_message);
 
 
   unsigned char vrf_output[32] = {0};
