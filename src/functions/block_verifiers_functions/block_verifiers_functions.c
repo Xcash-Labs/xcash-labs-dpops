@@ -303,7 +303,7 @@ Return:
   XCASH_OK (1) if the key generation and message formatting succeed.
   XCASH_ERROR (0) if any step fails.
 ---------------------------------------------------------------------------------------------------------*/
-int block_verifiers_create_VRF_secret_key_and_VRF_public_key(char* message)
+int block_verifiers_create_VRF_secret_key_and_VRF_public_key(char** message)
 {
   unsigned char random_buf_bin[VRF_RANDOMBYTES_LENGTH] = {0};
   unsigned char alpha_input_bin[VRF_RANDOMBYTES_LENGTH * 2] = {0};
@@ -379,9 +379,10 @@ int block_verifiers_create_VRF_secret_key_and_VRF_public_key(char* message)
   }
 
   // Step 9: Compose outbound message (JSON)
-  char block_part[32];
+
+  char block_part[32+4];
   snprintf(block_part, sizeof(block_part), "%s-P1", current_block_height);
-  char *message = create_message_param(
+  *message = create_message_param(
       XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_VRF_DATA,
       "public_address", xcash_wallet_public_address,
       "vrf_public_key", vrf_public_key,
@@ -389,8 +390,7 @@ int block_verifiers_create_VRF_secret_key_and_VRF_public_key(char* message)
       "vrf_proof", vrf_proof_hex,
       "vrf_beta", vrf_beta_hex,
       "block-part", block_part,
-      NULL
-  );
+      NULL);
 
   return XCASH_OK;
 }
