@@ -106,7 +106,7 @@ xcash_round_result_t process_round(void) {
 
   // Generate VRF keys and VRF message request and update current_block_verifiers_list
   char* vrf_message = NULL;
-  if (block_verifiers_create_VRF_secret_key_and_VRF_public_key(vrf_message) == XCASH_OK) {
+  if (block_verifiers_create_VRF_secret_key_and_VRF_public_key(&vrf_message) == XCASH_OK) {
     DEBUG_PRINT("Generated VRF message: %s", vrf_message);
   } else {
     ERROR_PRINT("Failed to generate VRF keys and message");
