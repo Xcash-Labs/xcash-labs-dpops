@@ -114,10 +114,20 @@ xcash_round_result_t process_round(void) {
     return ROUND_ERROR;
   }
 
+  response_t **vrf_responses = NULL;
+  if (xnet_send_data_multi(XNET_DELEGATES_ALL_ONLINE, vrf_message, &vrf_responses)) {
+      DEBUG_PRINT("VRF message sent to all online delegates");
+      // You could loop through `vrf_responses` here to process acknowledgments or logs
+      free_response_array(vrf_responses); // If you have a cleanup utility for responses
+  } else {
+      ERROR_PRINT("Failed to send VRF message to online delegates");
+  }
 
 
 
-  
+
+
+
   unsigned char vrf_output[32] = {0};
   if (hex_to_byte_array(previous_block_hash, vrf_output, sizeof(vrf_output)) != XCASH_OK) {
     ERROR_PRINT("Failed to convert previous_block_hash to VRF output");
