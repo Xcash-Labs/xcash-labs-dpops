@@ -184,7 +184,7 @@ void init_globals(void) {
     memset(VRF_data.block_verifiers_vrf_proof_hex[i], 0, VRF_PROOF_LENGTH + 1);
     memset(VRF_data.block_verifiers_vrf_beta_hex[i], 0, VRF_BETA_LENGTH + 1);
     // check if the memory needed was allocated on the heap successfully
-    if (VRF_data.block_verifiers_vrf_beta_hex[i] == NULL || VRF_data.block_verifiers_random_data[count] == NULL) {
+    if (VRF_data.block_verifiers_vrf_beta_hex[i] == NULL) {
       FATAL_ERROR_EXIT("Can't allocate memory for blob data");
     }
   }
