@@ -176,6 +176,8 @@ void init_globals(void) {
   memset(current_round_part_vote_data.current_vote_results,0,sizeof(current_round_part_vote_data.current_vote_results));
 
   // Initialize the VRF_data struct
+  /*
+
   memset(&VRF_data, 0, sizeof(VRF_data));
   for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     memset(VRF_data.block_verifiers_public_address[i], 0, XCASH_WALLET_LENGTH + 1);
@@ -188,7 +190,7 @@ void init_globals(void) {
       FATAL_ERROR_EXIT("Can't allocate memory for blob data");
     }
   }
-
+  */
   // initialize the blockchain_data struct 
   blockchain_data.network_version_data = (char*)calloc(BUFFER_SIZE_NETWORK_BLOCK_DATA,sizeof(char));
   blockchain_data.timestamp_data = (char*)calloc(BUFFER_SIZE_NETWORK_BLOCK_DATA,sizeof(char));
