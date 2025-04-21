@@ -357,7 +357,7 @@ int block_verifiers_create_VRF_secret_key_and_VRF_public_key(char* message)
     return XCASH_ERROR;
   }
 
-  // Step 7: Convert proof and beta to hex
+  // Step 7: Convert proof, beta, and random buffer to hex
   for (i = 0, offset = 0; i < crypto_vrf_PROOFBYTES; i++, offset += 2)
     snprintf(vrf_proof_hex + offset, 3, "%02x", vrf_proof[i]);
   for (i = 0, offset = 0; i < crypto_vrf_OUTPUTBYTES; i++, offset += 2)
@@ -372,7 +372,7 @@ int block_verifiers_create_VRF_secret_key_and_VRF_public_key(char* message)
      xcash_wallet_public_address, XCASH_WALLET_LENGTH) == 0) {
       memcpy(VRF_data.block_verifiers_public_address[i], xcash_wallet_public_address, XCASH_WALLET_LENGTH+1);
       memcpy(VRF_data.block_verifiers_vrf_public_key_hex[i], vrf_public_key, VRF_PUBLIC_KEY_LENGTH+1);
-      memcpy(VRF_data.block_verifiers_vrf_random_hex[i], random_buf_hex, VRF_RANDOMBYTES_LENGTH * 2 + 1);
+      memcpy(VRF_data.block_verifiers_random_hex[i], random_buf_hex, VRF_RANDOMBYTES_LENGTH * 2 + 1);
       memcpy(VRF_data.block_verifiers_vrf_proof_hex[i], vrf_proof_hex, VRF_PROOF_LENGTH + 1); 
       memcpy(VRF_data.block_verifiers_vrf_beta_hex[i], vrf_beta_hex, VRF_BETA_LENGTH + 1); 
       break;
