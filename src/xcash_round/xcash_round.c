@@ -51,7 +51,6 @@ xcash_round_result_t process_round(void) {
 
   size_t network_majority_count = 0;
   xcash_node_sync_info_t* nodes_majority_list = NULL;
-
   if (!initial_db_sync_check(&network_majority_count, &nodes_majority_list) || !nodes_majority_list) {
     WARNING_PRINT("Can't sync databases with network majority");
     free(nodes_majority_list);
@@ -104,29 +103,25 @@ xcash_round_result_t process_round(void) {
     j++;
   }
 
-  // Generate VRF keys and VRF message request and update current_block_verifiers_list
+  response_t** responses = NULL;
   char* vrf_message = NULL;
+  // This message is defines as NONRETURN and not responses is expected
   if (block_verifiers_create_VRF_secret_key_and_VRF_public_key(&vrf_message) == XCASH_OK) {
-    DEBUG_PRINT("Generated VRF message: %s", vrf_message);
+      DEBUG_PRINT("Generated VRF message: %s", vrf_message);
+      if (xnet_send_data_multi(XNET_DELEGATES_ALL_ONLINE, vrf_message, &responses)) {
+          DEBUG_PRINT("Message sent to all online delegates.");
+      } else {
+          ERROR_PRINT("Failed to send VRF message.");
+      }
+      free(vrf_message);
   } else {
-    ERROR_PRINT("Failed to generate VRF keys and message");
-    return ROUND_ERROR;
+      ERROR_PRINT("Failed to generate VRF keys and message");
+      if (vrf_message != NULL) {
+        free(vrf_message);
+      }
+      return ROUND_ERROR;
   }
-
-  //response_t **vrf_responses = NULL;
-  //if (xnet_send_data_multi(XNET_DELEGATES_ALL_ONLINE, vrf_message, &vrf_responses)) {
-  //    DEBUG_PRINT("VRF message sent to all online delegates");
-  //    // You could loop through `vrf_responses` here to process acknowledgments or logs
-  //    free_response_array(vrf_responses); // If you have a cleanup utility for responses
-  //} else {
-  //    ERROR_PRINT("Failed to send VRF message to online delegates");
- // }
-
-
-
-  free(vrf_message);
-
-
+  
   unsigned char vrf_output[32] = {0};
   if (hex_to_byte_array(previous_block_hash, vrf_output, sizeof(vrf_output)) != XCASH_OK) {
     ERROR_PRINT("Failed to convert previous_block_hash to VRF output");
