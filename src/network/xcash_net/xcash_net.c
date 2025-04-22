@@ -37,6 +37,9 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
   const char **hosts = NULL;
   response_t **responses = NULL;
 
+  xcash_msg_t msg_type = get_message_type(message);
+  bool is_nonreturn = is_nonreturn_type(msg_type);
+
   switch (dest) {
     case XNET_SEEDS_ALL: {
       const char **all_hosts = malloc((network_data_nodes_amount + 1) * sizeof(char *));
@@ -147,8 +150,14 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
     return false;
   }
 
-responses = send_multi_request(hosts, XCASH_DPOPS_PORT, message);
-//  free(message_ender);
+  if (is_nonreturn) {
+    send_multi_request(hosts, XCASH_DPOPS_PORT, message);
+    free(hosts);
+    *reply = NULL;
+    return true;
+  }
+
+  responses = send_multi_request(hosts, XCASH_DPOPS_PORT, message);
   free(hosts);
   if (responses) {
     check_responses(responses);

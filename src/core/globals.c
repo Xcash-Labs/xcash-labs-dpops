@@ -42,7 +42,9 @@ bool cleanup_db_before_upsert = false;  // delete db before put content. make su
 
 struct main_nodes_list main_nodes_list = {0};
 block_verifiers_list_t previous_block_verifiers_list;
+
 block_verifiers_list_t current_block_verifiers_list;
+
 block_verifiers_list_t next_block_verifiers_list;
 
 NetworkNode network_nodes[] = {
