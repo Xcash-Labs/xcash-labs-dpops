@@ -27,6 +27,7 @@ char* create_message_param_list(xcash_msg_t msg, const char** pair_params);
 char* create_message(xcash_msg_t msg);
 char* create_message_args(xcash_msg_t msg, va_list args);
 char* create_message_param(xcash_msg_t msg, ...);
+xcash_msg_t get_message_type(const char* data);
 
 // message format helpers
 int split(const char* str, char delimiter, char*** result_elements);
