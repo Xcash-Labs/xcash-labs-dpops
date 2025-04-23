@@ -4,7 +4,42 @@ producer_ref_t producer_refs[] = {
     {main_nodes_list.block_producer_public_address, main_nodes_list.block_producer_IP_address},
 };
 
-bool select_block_producers(void) {
+/**
+ * @brief Selects the block producer from the current round’s verifiers using VRF beta comparison.
+ *
+ * This function scans through the list of block verifiers who submitted valid VRF data,
+ * and deterministically selects the one with the lowest VRF beta value as the block producer.
+ * The comparison is lexicographic and assumes all submitted beta strings are valid hex strings.
+ *
+ * @return int The index in `current_block_verifiers_list` of the selected block producer,
+ *             or -1 if no valid VRF beta values are found.
+ */
+int select_block_producer_from_vrf(void) {
+  int selected_index = -1;
+  char lowest_beta[VRF_BETA_LENGTH + 1] = {0};
+
+  for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
+    // Ensure this verifier submitted all data
+    if (strncmp(current_block_verifiers_list.block_verifiers_vrf_beta_hex[i], "", 1) != 0) {
+      if (selected_index == -1 ||
+          strcmp(current_block_verifiers_list.block_verifiers_vrf_beta_hex[i], lowest_beta) < 0) {
+        selected_index = (int)i;
+        strncpy(lowest_beta, current_block_verifiers_list.block_verifiers_vrf_beta_hex[i], VRF_BETA_LENGTH);
+      }
+    }
+  }
+
+  if (selected_index != -1) {
+    INFO_PRINT("Selected block producer: %s",
+               current_block_verifiers_list.block_verifiers_public_address[selected_index]);
+  } else {
+    ERROR_PRINT("No valid block producer could be selected.");
+  }
+
+  return selected_index;
+}
+
+bool select_block_producers------old(void) {
   producer_node_t producers_list[BLOCK_VERIFIERS_AMOUNT] = {0};
   size_t num_producers = 0;
 
@@ -122,11 +157,19 @@ xcash_round_result_t process_round(void) {
       return ROUND_ERROR;
   }
   
-  unsigned char vrf_output[32] = {0};
-  if (hex_to_byte_array(previous_block_hash, vrf_output, sizeof(vrf_output)) != XCASH_OK) {
-    ERROR_PRINT("Failed to convert previous_block_hash to VRF output");
-    return ROUND_ERROR;
+
+
+//  somethink like movering in the current_block_producer to producer_refs.....
+  // For now there is only one block producer and no backups
+  memset(&main_nodes_list, 0, sizeof(main_nodes_list));
+  for (size_t i = 0; i < PRODUCER_REF_COUNT && i < num_producers; i++) {
+    strcpy(producer_refs[i].public_address, producers_list[i].public_address);
+    strcpy(producer_refs[i].IP_address, producers_list[i].IP_address);
   }
+
+
+
+
 
   is_block_creation_stage = true;
   INFO_STAGE_PRINT("Starting block production for block %s", current_block_height);
