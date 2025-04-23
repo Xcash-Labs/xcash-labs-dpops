@@ -307,7 +307,7 @@ Return:
   XCASH_OK (1) if the key generation and message formatting succeed.
   XCASH_ERROR (0) if any step fails.
 ---------------------------------------------------------------------------------------------------------*/
-int generate_and_request_vrf_data_msg(char** message)
+bool generate_and_request_vrf_data_msg(char** message)
 {
   unsigned char random_buf_bin[VRF_RANDOMBYTES_LENGTH] = {0};
   unsigned char alpha_input_bin[VRF_RANDOMBYTES_LENGTH * 2] = {0};
