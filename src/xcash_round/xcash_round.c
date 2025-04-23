@@ -39,37 +39,6 @@ int select_block_producer_from_vrf(void) {
   return selected_index;
 }
 
-bool select_block_producers_____old(void) {
-  producer_node_t producers_list[BLOCK_VERIFIERS_AMOUNT] = {0};
-  size_t num_producers = 0;
-
-  // Collect eligible delegates
-  for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
-    if (strlen(delegates_all[i].public_address) == 0) break;
-    if (is_seed_address(delegates_all[i].public_address)) continue;
-    if (strcmp(delegates_all[i].online_status, "false") == 0) continue;
-
-    strcpy(producers_list[num_producers].public_address, delegates_all[i].public_address);
-    strcpy(producers_list[num_producers].IP_address, delegates_all[i].IP_address);
-    producers_list[num_producers].is_online = true;
-    num_producers++;
-  }
-
-  if (num_producers < 1) {
-    WARNING_PRINT("No valid producers generated during producer selection.");
-    return false;
-  }
-
-  // For now there is only one block producer and no backups
-  memset(&main_nodes_list, 0, sizeof(main_nodes_list));
-  for (size_t i = 0; i < PRODUCER_REF_COUNT && i < num_producers; i++) {
-    strcpy(producer_refs[i].public_address, producers_list[i].public_address);
-    strcpy(producer_refs[i].IP_address, producers_list[i].IP_address);
-  }
-
-  return true;
-}
-
 xcash_round_result_t process_round(void) {
   // Get the current block height Then Sync the databases and build the majority list
   if (get_current_block_height(current_block_height) != XCASH_OK) {
