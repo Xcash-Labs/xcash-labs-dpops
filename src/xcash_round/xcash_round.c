@@ -157,7 +157,7 @@ xcash_round_result_t process_round(void) {
       return ROUND_ERROR;
   }
 
-  int producer_indx = select_block_producer_from_vrf(void);
+  int producer_indx = select_block_producer_from_vrf();
   if (producer_indx < 0) {
     INFO_STAGE_PRINT("Block Producer not selected, skipping round");
     return ROUND_SKIP;
