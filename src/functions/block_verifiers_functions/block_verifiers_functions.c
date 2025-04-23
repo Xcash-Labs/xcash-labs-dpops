@@ -150,6 +150,12 @@ int block_verifiers_create_block(void) {
   }
   INFO_PRINT_STATUS_OK("Delegates synced");
 
+
+
+
+
+
+
   // Part 3 - Create or wait for block template
   INFO_STAGE_PRINT("Part 3 - Create or wait for block template");
   if (strcmp(producer_refs[0].public_address, xcash_wallet_public_address) == 0) {
@@ -301,7 +307,7 @@ Return:
   XCASH_OK (1) if the key generation and message formatting succeed.
   XCASH_ERROR (0) if any step fails.
 ---------------------------------------------------------------------------------------------------------*/
-int build_block_verifiers_create_VRF_secret_key_and_VRF_public_key_msg(char** message)
+int generate_and_request_vrf_data_msg(char** message)
 {
   unsigned char random_buf_bin[VRF_RANDOMBYTES_LENGTH] = {0};
   unsigned char alpha_input_bin[VRF_RANDOMBYTES_LENGTH * 2] = {0};

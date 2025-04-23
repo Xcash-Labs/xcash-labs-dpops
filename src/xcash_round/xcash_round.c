@@ -53,6 +53,7 @@ xcash_round_result_t process_round(void) {
     return ROUND_ERROR;
   }
 
+  INFO_STAGE_PRINT("Part 1 - Initial Sync, VRF creation, and Producer Selection");
   size_t network_majority_count = 0;
   xcash_node_sync_info_t* nodes_majority_list = NULL;
   if (!initial_db_sync_check(&network_majority_count, &nodes_majority_list) || !nodes_majority_list) {
@@ -115,7 +116,7 @@ xcash_round_result_t process_round(void) {
   response_t** responses = NULL;
   char* vrf_message = NULL;
   // This message is defines as NONRETURN and not responses is expected
-  if (build_block_verifiers_create_VRF_secret_key_and_VRF_public_key_msg(&vrf_message) == XCASH_OK) {
+  if (generate_and_request_vrf_data_msg) == XCASH_OK) {
       DEBUG_PRINT("Generated VRF message: %s", vrf_message);
       if (xnet_send_data_multi(XNET_DELEGATES_ALL_ONLINE, vrf_message, &responses)) {
           DEBUG_PRINT("Message sent to all online delegates.");
