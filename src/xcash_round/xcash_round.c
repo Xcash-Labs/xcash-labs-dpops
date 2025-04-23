@@ -39,7 +39,7 @@ int select_block_producer_from_vrf(void) {
   return selected_index;
 }
 
-bool select_block_producers------old(void) {
+bool select_block_producers_____old(void) {
   producer_node_t producers_list[BLOCK_VERIFIERS_AMOUNT] = {0};
   size_t num_producers = 0;
 
@@ -156,20 +156,20 @@ xcash_round_result_t process_round(void) {
       }
       return ROUND_ERROR;
   }
-  
 
-
-//  somethink like movering in the current_block_producer to producer_refs.....
-  // For now there is only one block producer and no backups
-  memset(&main_nodes_list, 0, sizeof(main_nodes_list));
-  for (size_t i = 0; i < PRODUCER_REF_COUNT && i < num_producers; i++) {
-    strcpy(producer_refs[i].public_address, producers_list[i].public_address);
-    strcpy(producer_refs[i].IP_address, producers_list[i].IP_address);
+  int producer_indx = -1;
+  producer_indx = select_block_producer_from_vrf(void);
+  if (producer_indx < 0) {
+    INFO_STAGE_PRINT("Block Producer not selected, skipping round");
+    return ROUND_SKIP;
+  } else {
+    // For now there is only one block producer and no backups
+    memset(&main_nodes_list, 0, sizeof(main_nodes_list));
+    for (size_t i = 0; i < PRODUCER_REF_COUNT && i < num_producers; i++) {
+      strcpy(producer_refs[i].public_address, current_block_verifiers_list.block_verifiers_public_address);
+      strcpy(producer_refs[i].IP_address, current_block_verifiers_list.block_verifiers_IP_address[j]);
+    }
   }
-
-
-
-
 
   is_block_creation_stage = true;
   INFO_STAGE_PRINT("Starting block production for block %s", current_block_height);
