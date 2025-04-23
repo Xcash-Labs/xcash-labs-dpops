@@ -288,12 +288,12 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
       }
       break;
 
-//    case XMSG_XCASH_GET_BLOCK_PRODUCERS:
-//      if (server_limit_IP_addresses(1, client->client_ip) == 1) {
-//        server_received_msg_get_block_producers(client, data);
-//        server_limit_IP_addresses(0, client->client_ip);
-//      }
-//      break;
+    case XMSG_XCASH_GET_BLOCK_PRODUCERS:
+      if (server_limit_IP_addresses(1, client->client_ip) == 1) {
+        server_received_msg_get_block_producers(client, data);
+        server_limit_IP_addresses(0, client->client_ip);
+      }
+      break;
 
 //    case XMSG_GET_CURRENT_BLOCK_HEIGHT:
 //      if (server_limit_IP_addresses(1, client->client_ip) == 1) {
@@ -468,10 +468,10 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
 //      }
 //      break;
 
-    case XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_VRF_DATA:
-      if (server_limit_public_addresses(1, data) == 1) {
-        server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(data);
-        server_limit_public_addresses(3, data);
+      case XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_VRF_DATA:
+      if (server_limit_IP_addresses(1, client->client_ip) == 1) {
+        server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(client, data);
+        server_limit_IP_addresses(3, client->client_ip);
       }
       break;
 

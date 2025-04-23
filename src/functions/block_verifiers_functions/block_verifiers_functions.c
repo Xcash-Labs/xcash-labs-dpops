@@ -251,21 +251,19 @@ Parameters:
 ---------------------------------------------------------------------------------------------------------*/
 int sync_block_verifiers_minutes_and_seconds(const int MINUTES, const int SECONDS)
 {
-  struct timeval current_time;
-
   if (MINUTES >= BLOCK_TIME || SECONDS >= 60) {
     ERROR_PRINT("Invalid sync time: MINUTES must be < BLOCK_TIME and SECONDS < 60");
     return XCASH_ERROR;
   }
 
-  // Get current time
-  if (gettimeofday(&current_time, NULL) != 0) {
+  time_t now = time(NULL);
+  if (now == ((time_t)-1)) {
     ERROR_PRINT("Failed to get current time");
     return XCASH_ERROR;
   }
 
   size_t seconds_per_block = BLOCK_TIME * 60;
-  size_t seconds_within_block = current_time.tv_sec % seconds_per_block;
+  size_t seconds_within_block = now % seconds_per_block;
   size_t target_seconds = MINUTES * 60 + SECONDS;
 
   if (seconds_within_block >= target_seconds) {
@@ -275,8 +273,8 @@ int sync_block_verifiers_minutes_and_seconds(const int MINUTES, const int SECOND
 
   size_t sleep_seconds = target_seconds - seconds_within_block;
   DEBUG_PRINT("Sleeping for %zu seconds to sync to target time...", sleep_seconds);
-
   sleep(sleep_seconds);
+
   return XCASH_OK;
 }
 

@@ -107,6 +107,11 @@ xcash_round_result_t process_round(void) {
     j++;
   }
 
+  // Sync start
+  INFO_STAGE_PRINT("Waiting...");
+  if (sync_block_verifiers_minutes_and_seconds(0, 20) == XCASH_ERROR)
+      return ROUND_SKIP;
+
   response_t** responses = NULL;
   char* vrf_message = NULL;
   // This message is defines as NONRETURN and not responses is expected
@@ -126,6 +131,11 @@ xcash_round_result_t process_round(void) {
       return ROUND_ERROR;
   }
 
+  // Sync start
+  INFO_STAGE_PRINT("Waiting...");
+  if (sync_block_verifiers_minutes_and_seconds(0, 40) == XCASH_ERROR)
+      return ROUND_SKIP;
+
   int producer_indx = select_block_producer_from_vrf();
   if (producer_indx < 0) {
     INFO_STAGE_PRINT("Block Producer not selected, skipping round");
@@ -143,7 +153,6 @@ xcash_round_result_t process_round(void) {
     strcpy(producer_refs[0].IP_address, current_block_verifiers_list.block_verifiers_IP_address[producer_indx]);
   }
   
-
   is_block_creation_stage = true;
   INFO_STAGE_PRINT("Starting block production for block %s", current_block_height);
 

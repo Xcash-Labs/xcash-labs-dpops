@@ -152,3 +152,40 @@ void server_received_msg_get_sync_info(server_client_t *client, const char *MESS
 
     return;
 }
+
+void server_received_msg_get_block_producers(server_client_t *client, const char *MESSAGE)
+{
+    (void)MESSAGE;
+    DEBUG_PRINT("received %s, %s", __func__, "XCASH_GET_BLOCK_PRODUCERS");
+
+    // Create root JSON object
+    json_t *reply_json = json_object();
+    json_object_set_new(reply_json, "message_settings", json_string("XCASH_GET_BLOCK_PRODUCERS"));
+    json_object_set_new(reply_json, "public_address", json_string(xcash_wallet_public_address));
+
+    // Arrays for producer addresses and IPs
+    json_t *producers_array = json_array();
+    json_t *producers_ip_array = json_array();
+
+    for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
+        if (strcmp(delegates_all[i].online_status, "true") == 0) {
+            json_array_append_new(producers_array, json_string(delegates_all[i].public_address));
+            json_array_append_new(producers_ip_array, json_string(delegates_all[i].IP_address));
+        }
+    }
+
+    // Attach arrays to the root JSON object
+    json_object_set_new(reply_json, "producers", producers_array);
+    json_object_set_new(reply_json, "producers_ip", producers_ip_array);
+
+    // Serialize JSON and send it
+    char *message_data = json_dumps(reply_json, JSON_COMPACT);
+    json_decref(reply_json);  // Done with JSON object
+
+    if (message_data) {
+        send_data_uv(client, message_data);  // Sends + appends SOCKET_END_STRING internally
+        free(message_data);
+    } else {
+        ERROR_PRINT("Failed to serialize producer JSON");
+    }
+}
