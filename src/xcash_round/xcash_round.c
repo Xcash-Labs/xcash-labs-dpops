@@ -115,7 +115,7 @@ xcash_round_result_t process_round(void) {
   response_t** responses = NULL;
   char* vrf_message = NULL;
   // This message is defines as NONRETURN and not responses is expected
-  if (block_verifiers_create_VRF_secret_key_and_VRF_public_key(&vrf_message) == XCASH_OK) {
+  if (build_block_verifiers_create_VRF_secret_key_and_VRF_public_key_msg(&vrf_message) == XCASH_OK) {
       DEBUG_PRINT("Generated VRF message: %s", vrf_message);
       if (xnet_send_data_multi(XNET_DELEGATES_ALL_ONLINE, vrf_message, &responses)) {
           DEBUG_PRINT("Message sent to all online delegates.");

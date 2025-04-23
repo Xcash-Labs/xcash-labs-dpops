@@ -19,7 +19,7 @@
 int start_blocks_create_vrf_data(void);
 int start_blocks_create_data(char* message, char* network_block_string);
 int start_current_round_start_blocks(void);
-int block_verifiers_create_VRF_secret_key_and_VRF_public_key(char** message);
+int build_block_verifiers_create_VRF_secret_key_and_VRF_public_key_msg(char** message);
 int block_verifiers_create_VRF_data(void);
 int block_verifiers_create_block_signature(char* message);
 void block_verifiers_create_vote_majority_results(char *result, const int SETTINGS);

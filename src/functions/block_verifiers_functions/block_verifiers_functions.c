@@ -301,7 +301,7 @@ Return:
   XCASH_OK (1) if the key generation and message formatting succeed.
   XCASH_ERROR (0) if any step fails.
 ---------------------------------------------------------------------------------------------------------*/
-int block_verifiers_create_VRF_secret_key_and_VRF_public_key(char** message)
+int build_block_verifiers_create_VRF_secret_key_and_VRF_public_key_msg(char** message)
 {
   unsigned char random_buf_bin[VRF_RANDOMBYTES_LENGTH] = {0};
   unsigned char alpha_input_bin[VRF_RANDOMBYTES_LENGTH * 2] = {0};
