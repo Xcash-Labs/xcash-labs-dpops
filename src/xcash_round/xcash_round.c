@@ -29,7 +29,7 @@ int select_block_producer_from_vrf(void) {
       }
     }
   }
-  pthread_rwlock_unlock(&majority_vote_lock)
+  pthread_mutex_unlock(&majority_vote_lock);
 
   if (selected_index != -1) {
     INFO_PRINT("Selected block producer: %s",
