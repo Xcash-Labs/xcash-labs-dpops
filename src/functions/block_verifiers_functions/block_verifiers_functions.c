@@ -48,7 +48,7 @@ bool add_vrf_extra_and_sign(char* block_blob_hex)
     free(block_blob_bin);
     return false;
   }
-  DEBUG_PRINT('Block Blob Signature: %s', signature_hex)
+  DEBUG_PRINT('Block Blob Signature: %s', signature_hex);
 
   block_blob_bin[pos++] = 0x74;  // Signature tag
   pos += hex_to_byte_array(signature_hex, block_blob_bin + pos, XCASH_SIGN_DATA_LENGTH / 2);
