@@ -126,7 +126,9 @@ int block_verifiers_create_block(void) {
 
     // Part 3 - Create block template
     INFO_STAGE_PRINT("Part 6 - Add VRF Data to Block Blob");
-    if(add_vrf_extra_and_sign(block_blob))
+    if(add_vrf_extra_and_sign(block_blob)) {
+      
+    }
 
     
   }
