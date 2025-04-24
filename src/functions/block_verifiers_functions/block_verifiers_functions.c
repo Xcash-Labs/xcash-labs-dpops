@@ -293,7 +293,7 @@ bool generate_and_request_vrf_data_msg(char** message)
   return XCASH_OK;
 }
 
----------------------------------------------------------------------------------------------------------
+/*---------------------------------------------------------------------------------------------------------
 Name: start_blocks_create_data
 Description: Creates the data for the start block
 Parameters:
