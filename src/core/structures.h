@@ -74,7 +74,7 @@ typedef struct {
 } block_verifiers_list_t;
 
 
-// no long used moved above
+// no longer used moved above
 struct VRF_data {
     char block_verifiers_public_address[BLOCK_VERIFIERS_TOTAL_AMOUNT][XCASH_WALLET_LENGTH + 1];
     char block_verifiers_vrf_public_key_hex[BLOCK_VERIFIERS_TOTAL_AMOUNT][VRF_PUBLIC_KEY_LENGTH + 1];

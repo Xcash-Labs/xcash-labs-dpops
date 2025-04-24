@@ -13,8 +13,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
   char vrf_proof_hex[VRF_PROOF_LENGTH + 1] = {0};  
   char vrf_beta_hex[VRF_BETA_LENGTH + 1] = {0};
   char random_buf_hex[(VRF_RANDOMBYTES_LENGTH * 2) + 1] = {0};
-  char block_part[BLOCK_HEIGHT_LENGTH] = {0};
-  char expected_block_part[BLOCK_HEIGHT_LENGTH + 4] = {0};
+  char block_height[BLOCK_HEIGHT_LENGTH] = {0};
   int count;
 
   DEBUG_PRINT("received %s, %s", __func__, MESSAGE);
@@ -32,7 +31,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
     strlen(vrf_proof_hex) != VRF_PROOF_LENGTH ||
     parse_json_data(MESSAGE, "vrf_beta", vrf_beta_hex, sizeof(vrf_beta_hex)) == 0 ||
     strlen(vrf_beta_hex) != VRF_BETA_LENGTH ||
-    parse_json_data(MESSAGE, "block-part", block_part, sizeof(block_part)) == 0 ||
+    parse_json_data(MESSAGE, "block-height", block_height, sizeof(block_height)) == 0 ||
     strlen(block_part) < 3 // basic sanity check
   )
   {
@@ -40,8 +39,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
     return;
   }
 
-  snprintf(expected_block_part, sizeof(expected_block_part), "%s-P1", current_block_height);
-    if (strcmp(block_part, expected_block_part) != 0) {
+  if (strcmp(block_height, current_block_height) != 0) {
       INFO_PRINT("Skipping VRF data: block_part [%s] does not match expected [%s]", block_part, expected_block_part);
       return;
   }

@@ -142,28 +142,45 @@ int block_verifiers_create_block(void) {
       return ROUND_NEXT;
   }
 
-
-
-
-  // Part 3 - Create or wait for block template
-  INFO_STAGE_PRINT("Part 3 - Create or wait for block template");
+  char block_blob[BLOCK_BLOB_MAX_SIZE] = {0};
+  // Only the block producer completes the following steps, producer_refs is an array in case we decide to add backup producers
   if (strcmp(producer_refs[0].public_address, xcash_wallet_public_address) == 0) {
-    INFO_STAGE_PRINT("Creating and sending block template");
-//    if (get_block_template(VRF_data.block_blob) == 0) return ROUND_NEXT;
+
+    // Part 3 - Create or wait for block template
+    INFO_STAGE_PRINT("Part 3 - Create for block template");
+    if (get_block_template(block_blob, BLOCK_BLOB_MAX_SIZE) == 0) {
+      return ROUND_NEXT;
+    }
     memset(data, 0, sizeof(data));
-//    snprintf(data, sizeof(data),
-//             "{\r\n \"message_settings\": \"MAIN_NODES_TO_NODES_PART_4_OF_ROUND_CREATE_NEW_BLOCK\",\r\n \"block_blob\": \"%s\",\r\n}",
-//             VRF_data.block_blob);
-    if (sign_data(data) == 0) return ROUND_NEXT;
-    if (!send_and_cleanup(data)) return ROUND_NEXT;
-    INFO_PRINT_STATUS_OK("Block template sent");
+    snprintf(data, sizeof(data),
+
+      if (sign_data(data) == 0) return ROUND_NEXT;
+
+    }
+
+
+
+
+
+
+
+
+
   }
+
+
+
   if (sync_block_verifiers_minutes_and_seconds(2, 20) == XCASH_ERROR)
       return ROUND_SKIP;
 //  if (strncmp(VRF_data.block_blob, "", 1) == 0) {
 //    WARNING_PRINT("Did not receive block template");
 //    return ROUND_NEXT;
 //  }
+
+
+
+
+
   INFO_PRINT_STATUS_OK("Block template received");
 
   // Part 4 - Sign block
@@ -372,9 +389,6 @@ bool generate_and_request_vrf_data_msg(char** message)
   }
 
   // Step 9: Compose outbound message (JSON)
-
-  char block_part[32+4];
-  snprintf(block_part, sizeof(block_part), "%s-P1", current_block_height);
   *message = create_message_param(
       XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_VRF_DATA,
       "public_address", xcash_wallet_public_address,
@@ -382,7 +396,7 @@ bool generate_and_request_vrf_data_msg(char** message)
       "random_data", random_buf_hex,
       "vrf_proof", vrf_proof_hex,
       "vrf_beta", vrf_beta_hex,
-      "block-part", block_part,
+      "block-height", current_block_height,
       NULL);
 
   return XCASH_OK;
