@@ -174,7 +174,7 @@ Usage Example:
   }
 -----------------------------------------------------------------------------------------------------------*/
 bool sign_block_blob(const char* block_blob_hex, char* signature_out, size_t sig_out_len) {
-  char request_json[BLOCK_BLOB_MAX_SIZE + 256];
+  char request_json[BUFFER_SIZE + 256];
   char response[BUFFER_SIZE];
 
   snprintf(request_json, sizeof(request_json),
