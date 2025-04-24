@@ -73,17 +73,6 @@ int check_restart_if_alone(size_t count) {
   return 0;
 }
 
-// Helper function: Send data & cleanup
-int send_and_cleanup(const char* data) {
-  response_t** replies = NULL;
-  if (!xnet_send_data_multi(XNET_DELEGATES_ALL_ONLINE, data, &replies)) {
-      cleanup_responses(replies);
-      return XCASH_ERROR;
-  }
-  cleanup_responses(replies);
-  return XCASH_OK;
-}
-
 /*---------------------------------------------------------------------------------------------------------
 Name: block_verifiers_create_block
 Description: Runs the round where the block verifiers will create the block
@@ -128,83 +117,23 @@ int block_verifiers_create_block(void) {
     // Part 7 - Create block template
     INFO_STAGE_PRINT("Part 7 - Add VRF Data And Sign Block Blob");
     snprintf(current_round_part, sizeof(current_round_part), "%d", 7);
-    if(add_vrf_extra_and_sign(block_blob)) {
-
+    if(!add_vrf_extra_and_sign(block_blob)) {
+      return ROUND_NEXT;
     }
 
     if (sync_block_verifiers_minutes_and_seconds(1, 40) == XCASH_ERROR)
     return ROUND_SKIP;
 
+    // Part 5 - Submit block
+    if (!submit_block_template(block_with_hash) != XCASH_OK) {
+      return ROUND_NEXT;
+    }
 
+    INFO_PRINT_STATUS_OK("Block signature sent");
+
+    // update status, database (reserve_bytes and node online status)...
     
   }
-
-
-
-
-
-
-
-
-  
-
-
-  // Part 5 - Send block signature
-  INFO_STAGE_PRINT("Part 5 - Sending block signature");
-  if (!send_and_cleanup(data)) return ROUND_NEXT;
-  if (sync_block_verifiers_minutes_and_seconds(2, 30) == XCASH_ERROR)
-    return ROUND_SKIP;
-  INFO_PRINT_STATUS_OK("Block signature sent");
-
-// Part 6 - Majority signature voting
-  INFO_STAGE_PRINT("Part 6 - Majority vote on block signature");
-  memset(data, 0, sizeof(data));  // Make sure 'data' is a real buffer, not a pointer
-  block_verifiers_create_vote_majority_results(data, 1);
-  if (sign_data(data) != XCASH_OK) return ROUND_NEXT;
-  if (!send_and_cleanup(data)) return ROUND_NEXT;
-  INFO_PRINT_STATUS_OK("Majority block signature sent");
-  if (sync_block_verifiers_minutes_and_seconds(2, 40) == XCASH_ERROR)
-    return ROUND_SKIP;
-  // Fill in default signatures if missing and count valid ones
-  size_t valid_signatures = 0;
-//  for (count = 0; count < BLOCK_VERIFIERS_AMOUNT; count++) {
-//    if (strlen(VRF_data.block_blob_signature[count]) == 0) {
-//      memcpy(VRF_data.block_blob_signature[count],
-//             GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_SIGNATURE,
-//             sizeof(GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_SIGNATURE) - 1);
-//    } else {
-//      valid_signatures++;
-//    }
-//  }
-  if (check_restart_if_alone(BLOCK_VERIFIERS_AMOUNT)) return ROUND_SKIP;
-  if (valid_signatures >= BLOCK_VERIFIERS_VALID_AMOUNT) {
-    INFO_PRINT_STATUS_OK("[%zu / %d] block verifiers have a majority", valid_signatures, BLOCK_VERIFIERS_VALID_AMOUNT);
-  } else {
-    INFO_PRINT_STATUS_FAIL("[%zu / %d] block verifiers lack majority", valid_signatures, BLOCK_VERIFIERS_VALID_AMOUNT);
-    return ROUND_NEXT;
-  }
-
-  // Part 7 - Reserve bytes voting
-  INFO_STAGE_PRINT("Part 7 - Reserve bytes voting");
-  memset(data, 0, sizeof(data));
-  if (block_verifiers_create_vote_results(data) == 0 || sign_data(data) == 0) return ROUND_NEXT;
-  INFO_PRINT_STATUS_OK("Created reserve bytes data");
-  if (sync_block_verifiers_minutes_and_seconds(2, 45) == XCASH_ERROR)
-    return ROUND_SKIP;
-  if (!send_and_cleanup(data)) return ROUND_NEXT;
-  if (sync_block_verifiers_minutes_and_seconds(2, 55) == XCASH_ERROR)
-    return ROUND_SKIP;
-  INFO_PRINT_STATUS_OK("Sent reserve bytes data");
-
-  // Part 8 - Final majority check
-  INFO_STAGE_PRINT("Part 8 - Final reserve bytes majority check");
-  if (current_round_part_vote_data.vote_results_valid >= BLOCK_VERIFIERS_VALID_AMOUNT) {
-      INFO_PRINT_STATUS_OK("[%d / %d] reserve bytes majority", current_round_part_vote_data.vote_results_valid, BLOCK_VERIFIERS_VALID_AMOUNT);
-  } else {
-      WARNING_PRINT("Invalid reserve bytes majority");
-      return ROUND_NEXT;
-  }
-  INFO_PRINT_STATUS_OK("Reserve bytes majority check complete");
 
   // Final step - Update DB
   INFO_STAGE_PRINT("Part 9 - Update DB");

@@ -150,44 +150,47 @@ int get_block_template(char* result, size_t result_size)
 
 /*---------------------------------------------------------------------------------------------------------
 Name: submit_block_template
-Description: Adds a network block to the network
+Description: Submits the final block blob to the xcashd daemon via JSON-RPC using `submit_block`.
 Parameters:
-  DATA - The block_blob
-Return: 0 if an error has occured, 1 if successfull
+  DATA - Hex-encoded block blob string to be submitted.
+Return:
+  XCASH_OK on success, XCASH_ERROR on failure.
 ---------------------------------------------------------------------------------------------------------*/
 int submit_block_template(const char* DATA)
 {
-  DEBUG_PRINT("Block template: %s", DATA);
-
-  // Constants
-  const char* HTTP_HEADERS[] = {"Content-Type: application/json","Accept: application/json"}; 
-  const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS)/sizeof(HTTP_HEADERS[0]);
-  const size_t DATA_LENGTH = strnlen(DATA,BUFFER_SIZE);
-  const char* RPC_ENDPOINT = "/json_rpc";
-
-  // Variables
-  char message[SMALL_BUFFER_SIZE];
-  char data[SMALL_BUFFER_SIZE];
-  char result[255];
-
-  memset(data,0,sizeof(data));
-  memset(message,0,sizeof(message));
-  memset(result,0,sizeof(result));
-
-  // create the message
-  memcpy(message,"{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"submit_block\",\"params\":[\"",61);
-  memcpy(message+61,DATA,DATA_LENGTH);
-  memcpy(message+61+DATA_LENGTH,"\"]}",3);
-
-  // Send HTTP request
-  if (send_http_request(data, XCASH_DAEMON_IP, RPC_ENDPOINT, XCASH_DAEMON_PORT, "POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH, message, SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) > 0 &&
-      parse_json_data(data, "error.message", result, SMALL_BUFFER_SIZE) == 1) {
-        DEBUG_PRINT("............................................... %s",result);
-        return XCASH_OK;
-  } else {
-    DEBUG_PRINT("%s",result);
-    ERROR_PRINT("Could not submit the block template");
+  if (!DATA || strlen(DATA) == 0) {
+    ERROR_PRINT("Invalid block data for submission.");
     return XCASH_ERROR;
   }
 
+  const char* HTTP_HEADERS[] = {"Content-Type: application/json", "Accept: application/json"};
+  const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0]);
+  const char* RPC_ENDPOINT = "/json_rpc";
+
+  char request_json[BUFFER_SIZE] = {0};
+  char response[BUFFER_SIZE] = {0};
+  char result[256] = {0};
+
+  // Format JSON-RPC message to submit block
+  snprintf(request_json, sizeof(request_json),
+           "{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"submit_block\",\"params\":[\"%s\"]}",
+           DATA);
+
+  // Send HTTP request
+  if (send_http_request(response, XCASH_DAEMON_IP, RPC_ENDPOINT, XCASH_DAEMON_PORT,
+                        "POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH,
+                        request_json, SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) > 0)
+  {
+    // Check if there's an error in the response
+    if (parse_json_data(response, "error.message", result, sizeof(result)) == 1) {
+      DEBUG_PRINT("Block submission returned error: %s", result);
+      return XCASH_ERROR;
+    }
+
+    DEBUG_PRINT("Block submitted successfully.");
+    return XCASH_OK;
+  }
+
+  ERROR_PRINT("Could not submit the block template.");
+  return XCASH_ERROR;
 }
