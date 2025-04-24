@@ -32,7 +32,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
     parse_json_data(MESSAGE, "vrf_beta", vrf_beta_hex, sizeof(vrf_beta_hex)) == 0 ||
     strlen(vrf_beta_hex) != VRF_BETA_LENGTH ||
     parse_json_data(MESSAGE, "block-height", block_height, sizeof(block_height)) == 0 ||
-    strlen(block_part) < 3 // basic sanity check
+    strlen(block_height) < 3 // basic sanity check
   )
   {
     ERROR_PRINT("Could not parse the block_verifiers_to_block_verifiers_vrf_data");
@@ -40,7 +40,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
   }
 
   if (strcmp(block_height, current_block_height) != 0) {
-      INFO_PRINT("Skipping VRF data: block_part [%s] does not match expected [%s]", block_part, expected_block_part);
+      INFO_PRINT("Skipping VRF data: current block_height [%s] does not match expected [%s]", current_block_height, block_height);
       return;
   }
   
