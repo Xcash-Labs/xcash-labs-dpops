@@ -121,7 +121,7 @@ int get_block_template(char* result, size_t result_size)
   for (int attempt = 0; attempt < retry_attempts; attempt++) 
   {
     // Clear response buffer before each use
-    memset(response, 0, RESPONSE_BUFFER_SIZE);
+    memset(response, 0, BUFFER_SIZE);
 
     // Compose JSON request
     snprintf(message, sizeof(message), "%s%s%s", JSON_REQUEST_PREFIX, xcash_wallet_public_address, JSON_REQUEST_SUFFIX);
