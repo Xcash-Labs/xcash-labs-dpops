@@ -3,7 +3,7 @@
 bool add_vrf_extra_and_sign(char* block_blob_hex)
 {
   // Allocate working buffer for binary blob
-  unsigned char* block_blob_bin = calloc(1, BLOCK_BLOB_MAX_SIZE);
+  unsigned char* block_blob_bin = calloc(1, BUFFER_SIZE);
   if (!block_blob_bin) {
     ERROR_PRINT("Memory allocation failed for block_blob_bin");
     return false;
@@ -21,7 +21,7 @@ bool add_vrf_extra_and_sign(char* block_blob_hex)
   size_t reserved_offset = 320;
   
   // Validate offset doesn't overflow
-  if (reserved_offset + 256 > BLOCK_BLOB_MAX_SIZE) {
+  if (reserved_offset + 256 > BUFFER_SIZE) {
     ERROR_PRINT("Reserved offset too close to end of block blob");
     free(block_blob_bin);
     return false;
@@ -54,7 +54,7 @@ bool add_vrf_extra_and_sign(char* block_blob_hex)
   pos += hex_to_byte_array(signature_hex, block_blob_bin + pos, XCASH_SIGN_DATA_LENGTH / 2);
 
   // Re-encode the full blob to hex for submission
-  bytes_to_hex(block_blob_bin, blob_len, block_blob_hex, BLOCK_BLOB_MAX_SIZE);
+  bytes_to_hex(block_blob_bin, blob_len, block_blob_hex, BUFFER_SIZE);
 
   free(block_blob_bin);
   return true;
@@ -113,7 +113,7 @@ int block_verifiers_create_block(void) {
 
     // Part 3 - Create block template
     INFO_STAGE_PRINT("Part 5 - Create block template");
-    if (get_block_template(block_blob, BLOCK_BLOB_MAX_SIZE) == 0) {
+    if (get_block_template(block_blob, BUFFER_SIZE) == 0) {
       return ROUND_NEXT;
     }
 
