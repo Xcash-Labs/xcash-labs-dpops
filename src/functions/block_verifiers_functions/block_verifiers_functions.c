@@ -675,7 +675,7 @@ int start_blocks_create_data(char* message, char* network_block_string)
   memset(data3,0,sizeof(data3));
 
   // get a block template
-  if (get_block_template(data) == 0)
+  if (get_block_template(data, BUFFER_SIZE) == 0)
   {
     ERROR_PRINT("Could not get a block template");
     return XCASH_ERROR;
