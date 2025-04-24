@@ -80,7 +80,6 @@ Return: 0 if an error has occured, 1 if successfull
 ---------------------------------------------------------------------------------------------------------*/
 int block_verifiers_create_block(void) {
   char data[BUFFER_SIZE] = {0};
-  size_t count;
 
   // Sync start
   INFO_STAGE_PRINT("Waiting for block synchronization start time...");
@@ -131,13 +130,15 @@ int block_verifiers_create_block(void) {
 
     INFO_PRINT_STATUS_OK("Block signature sent");
 
-    // update status, database (reserve_bytes and node online status)...
-    
+
   }
 
   // Final step - Update DB
   INFO_STAGE_PRINT("Part 9 - Update DB");
-  if (block_verifiers_create_block_and_update_database() == XCASH_ERROR)
+    // update status, database (reserve_bytes and node online status)...
+
+    // how do other database get updated?  wait they all know the winning block producer
+
       return ROUND_ERROR;
 
   return ROUND_OK;
