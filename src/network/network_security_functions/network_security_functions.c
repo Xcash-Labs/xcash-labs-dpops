@@ -7,7 +7,7 @@ int handle_error(const char *function_name, const char *message, char *result, c
   free(result);
   free(string);
   return XCASH_ERROR;
-}
+} 
 
 // Helper function to check if a message type is in the valid list
 bool is_valid_message_type(const char *message_settings, const char *valid_types[], size_t valid_types_count) {
