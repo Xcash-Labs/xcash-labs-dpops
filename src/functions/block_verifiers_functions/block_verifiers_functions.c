@@ -125,7 +125,7 @@ int block_verifiers_create_block(void) {
     return ROUND_SKIP;
 
     // Part 5 - Submit block
-    if (!submit_block_template(block_blob) != XCASH_OK) {
+    if (!submit_block_template(block_blob)) {
       return ROUND_NEXT;
     }
 

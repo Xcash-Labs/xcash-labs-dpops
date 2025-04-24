@@ -156,7 +156,7 @@ Parameters:
 Return:
   XCASH_OK on success, XCASH_ERROR on failure.
 ---------------------------------------------------------------------------------------------------------*/
-int submit_block_template(const char* DATA)
+bool submit_block_template(const char* DATA)
 {
   if (!DATA || strlen(DATA) == 0) {
     ERROR_PRINT("Invalid block data for submission.");
