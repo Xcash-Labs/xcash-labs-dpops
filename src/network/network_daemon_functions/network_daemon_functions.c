@@ -96,6 +96,7 @@ Name: get_block_template
 Description: Gets the block template for creating a new block
 Parameters:
   result - The block template
+  result_size - The size of the block_template
 Return: 0 if an error has occured, 1 if successfull
 ---------------------------------------------------------------------------------------------------------*/
 int get_block_template(char* result, size_t result_size)
@@ -143,6 +144,7 @@ int get_block_template(char* result, size_t result_size)
 
   ERROR_PRINT("Could not get the block template");
   free(response);
+
   return XCASH_ERROR;
 }
 
