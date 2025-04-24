@@ -299,6 +299,9 @@ Parameters:
   result - The result
   SETTINGS - The data settings
 ---------------------------------------------------------------------------------------------------------*/
+
+/*jed
+
 void block_verifiers_create_vote_majority_results(char *result, const int SETTINGS) {
   const char *MESSAGE_HEADER = "{\r\n \"message_settings\": \"NODES_TO_NODES_VOTE_MAJORITY_RESULTS\",\r\n ";
   const char *VOTE_KEY_PREFIX = "\"vote_data_";
@@ -581,7 +584,7 @@ int block_verifiers_create_block_and_update_database(void) {
   return XCASH_OK;
 }
 
-/*---------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------
 Name: start_blocks_create_data
 Description: Creates the data for the start block
 Parameters:
