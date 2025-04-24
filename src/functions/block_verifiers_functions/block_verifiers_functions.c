@@ -99,7 +99,7 @@ int block_verifiers_create_block(void) {
       return ROUND_SKIP;
 
   // Confirm block height hasn't drifted (this node may be behind the network)
-  INFO_STAGE_PRINT("Part 4 - Confirm block height hasn't drifted");
+  INFO_STAGE_PRINT("Part 5 - Confirm block height hasn't drifted");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 5);
   if (get_current_block_height(data) == 1 && strncmp(current_block_height, data, BUFFER_SIZE) != 0) {
       WARNING_PRINT("Your block height is not synced correctly, waiting for next round");
@@ -112,7 +112,8 @@ int block_verifiers_create_block(void) {
   if (strcmp(producer_refs[0].public_address, xcash_wallet_public_address) == 0) {
 
     // Part 3 - Create block template
-    INFO_STAGE_PRINT("Part 5 - Create block template");
+    INFO_STAGE_PRINT("Part 6 - Create block template");
+    snprintf(current_round_part, sizeof(current_round_part), "%d", 6);
     if (get_block_template(block_blob, BUFFER_SIZE) == 0) {
       return ROUND_NEXT;
     }
@@ -124,11 +125,16 @@ int block_verifiers_create_block(void) {
       return ROUND_NEXT;
     }
 
-    // Part 3 - Create block template
-    INFO_STAGE_PRINT("Part 6 - Add VRF Data to Block Blob");
+    // Part 7 - Create block template
+    INFO_STAGE_PRINT("Part 7 - Add VRF Data And Sign Block Blob");
+    snprintf(current_round_part, sizeof(current_round_part), "%d", 7);
     if(add_vrf_extra_and_sign(block_blob)) {
 
     }
+
+    if (sync_block_verifiers_minutes_and_seconds(1, 40) == XCASH_ERROR)
+    return ROUND_SKIP;
+
 
     
   }
@@ -142,11 +148,6 @@ int block_verifiers_create_block(void) {
 
   
 
-  // Part 4 - Sign block
-  INFO_STAGE_PRINT("Part 4 - Signing block");
-  if (block_verifiers_create_block_signature(data) == 0 || sign_data(data) == 0)
-    return ROUND_NEXT;
-  INFO_PRINT_STATUS_OK("Block signed");
 
   // Part 5 - Send block signature
   INFO_STAGE_PRINT("Part 5 - Sending block signature");
