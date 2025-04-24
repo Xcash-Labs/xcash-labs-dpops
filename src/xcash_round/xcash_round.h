@@ -21,6 +21,10 @@
 typedef struct {
     char* public_address;
     char* IP_address;
+    char* vrf_public_key;
+    char* random_buf_hex;
+    char* vrf_proof_hex;
+    char* vrf_beta_hex;
 } producer_ref_t;
 
 extern producer_ref_t producer_refs[PRODUCER_REF_COUNT];

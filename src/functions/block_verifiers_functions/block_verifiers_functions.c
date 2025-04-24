@@ -1,95 +1,63 @@
 #include "block_verifiers_functions.h"
 
-int block_verifiers_create_block_signature(char* message)
+bool add_vrf_extra_and_sign(char* block_blob_hex)
 {
-  char data[BUFFER_SIZE] = {0};
-  size_t count, count2, counter;
-
-  // Convert network block string to blockchain data
-//  if (network_block_string_to_blockchain_data(VRF_data.block_blob, "0", BLOCK_VERIFIERS_AMOUNT) == 0) {
-//    ERROR_PRINT("Could not convert the network block string to a blockchain data");
-//    return XCASH_ERROR;
-//  }
-
-  // Set block producer nonce
-  memcpy(blockchain_data.nonce_data, BLOCK_PRODUCER_NETWORK_BLOCK_NONCE, sizeof(BLOCK_PRODUCER_NETWORK_BLOCK_NONCE) - 1);
-
-  // Determine block producer identity
-  for (count = 0; count < BLOCK_VERIFIERS_AMOUNT; count++) {
-    if (strncmp(current_block_verifiers_list.block_verifiers_public_address[count], producer_refs[0].public_address, XCASH_WALLET_LENGTH) == 0) {
-      memcpy(blockchain_data.blockchain_reserve_bytes.block_producer_delegates_name,
-        current_block_verifiers_list.block_verifiers_name[count],
-        strnlen(current_block_verifiers_list.block_verifiers_name[count],
-        sizeof(current_block_verifiers_list.block_verifiers_name[count]))); 
-       memcpy(blockchain_data.blockchain_reserve_bytes.block_producer_public_address,
-            current_block_verifiers_list.block_verifiers_public_address[count],
-            XCASH_WALLET_LENGTH);
-      break;
-    }
+  // Allocate working buffer for binary blob
+  unsigned char* block_blob_bin = calloc(1, BLOCK_BLOB_MAX_SIZE);
+  if (!block_blob_bin) {
+    ERROR_PRINT("Memory allocation failed for block_blob_bin");
+    return false;
   }
 
-// Stub out legacy backup node fields
-//  memset(blockchain_data.blockchain_reserve_bytes.block_producer_node_backup_count, '0', sizeof(blockchain_data.blockchain_reserve_bytes.block_producer_node_backup_count));
-//  memset(blockchain_data.blockchain_reserve_bytes.block_producer_backup_nodes_names, 0, sizeof(blockchain_data.blockchain_reserve_bytes.block_producer_backup_nodes_names));
-
-  // Attach VRF data
-  //memcpy(blockchain_data.blockchain_reserve_bytes.vrf_secret_key, VRF_data.vrf_secret_key, crypto_vrf_SECRETKEYBYTES);
- // memcpy(blockchain_data.blockchain_reserve_bytes.vrf_secret_key_data, VRF_data.vrf_secret_key_data, VRF_SECRET_KEY_LENGTH);
- // memcpy(blockchain_data.blockchain_reserve_bytes.vrf_public_key, VRF_data.vrf_public_key, crypto_vrf_PUBLICKEYBYTES);
-  //memcpy(blockchain_data.blockchain_reserve_bytes.vrf_public_key_data, VRF_data.vrf_public_key_data, VRF_PUBLIC_KEY_LENGTH);
-  //memcpy(blockchain_data.blockchain_reserve_bytes.vrf_alpha_string, VRF_data.vrf_alpha_string, strnlen((const char*)VRF_data.vrf_alpha_string, BUFFER_SIZE));
-  //memcpy(blockchain_data.blockchain_reserve_bytes.vrf_alpha_string_data, VRF_data.vrf_alpha_string_data, strnlen(VRF_data.vrf_alpha_string_data, BUFFER_SIZE));
-  //memcpy(blockchain_data.blockchain_reserve_bytes.vrf_proof, VRF_data.vrf_proof, crypto_vrf_PROOFBYTES);
-  //memcpy(blockchain_data.blockchain_reserve_bytes.vrf_proof_data, VRF_data.vrf_proof_data, VRF_PROOF_LENGTH);
-  //memcpy(blockchain_data.blockchain_reserve_bytes.vrf_beta_string, VRF_data.vrf_beta_string, crypto_vrf_OUTPUTBYTES);
-  //memcpy(blockchain_data.blockchain_reserve_bytes.vrf_beta_string_data, VRF_data.vrf_beta_string_data, VRF_BETA_LENGTH);
-
-  // Attach data for all verifiers
-  for (count = 0; count < BLOCK_VERIFIERS_AMOUNT; count++) {
-  //  memcpy(blockchain_data.blockchain_reserve_bytes.block_verifiers_vrf_secret_key[count], VRF_data.block_verifiers_vrf_secret_key[count], crypto_vrf_SECRETKEYBYTES);
-  //  memcpy(blockchain_data.blockchain_reserve_bytes.block_verifiers_vrf_public_key[count], VRF_data.block_verifiers_vrf_public_key[count], crypto_vrf_PUBLICKEYBYTES);
-  //  memcpy(blockchain_data.blockchain_reserve_bytes.block_verifiers_vrf_secret_key_data[count], VRF_data.block_verifiers_vrf_secret_key_data[count], VRF_SECRET_KEY_LENGTH);
-  //  memcpy(blockchain_data.blockchain_reserve_bytes.block_verifiers_vrf_public_key_data[count], VRF_data.block_verifiers_vrf_public_key_data[count], VRF_PUBLIC_KEY_LENGTH);
-  //  memcpy(blockchain_data.blockchain_reserve_bytes.block_verifiers_random_data_text[count], VRF_data.block_verifiers_random_data[count], RANDOM_STRING_LENGTH);
-
-    memcpy(blockchain_data.blockchain_reserve_bytes.next_block_verifiers_public_address[count], next_block_verifiers_list.block_verifiers_public_key[count], VRF_PUBLIC_KEY_LENGTH);
-    memcpy(blockchain_data.blockchain_reserve_bytes.block_validation_node_signature_data[count], GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_SIGNATURE_DATA, sizeof(GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_SIGNATURE_DATA) - 1);
-    memcpy(blockchain_data.blockchain_reserve_bytes.block_validation_node_signature[count], GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_SIGNATURE, sizeof(GET_BLOCK_TEMPLATE_BLOCK_VERIFIERS_SIGNATURE) - 1);
-
-    for (counter = 0, count2 = 0; counter < RANDOM_STRING_LENGTH; counter++, count2 += 2) {
-//      snprintf(blockchain_data.blockchain_reserve_bytes.block_verifiers_random_data[count] + count2, RANDOM_STRING_LENGTH, "%02x", VRF_data.block_verifiers_random_data[count][counter] & 0xFF);
-    }
+  // Convert hex blob to binary
+  size_t blob_len = strlen(block_blob_hex) / 2;
+  if (!hex_to_byte_array(block_blob_hex, block_blob_bin, blob_len)) {
+    ERROR_PRINT("Failed to convert block_blob_hex to binary");
+    free(block_blob_bin);
+    return false;
   }
 
-  memcpy(blockchain_data.blockchain_reserve_bytes.previous_block_hash_data, blockchain_data.previous_block_hash_data, BLOCK_HASH_LENGTH);
+  // Get reserved_offset from previous RPC call or define statically
+  size_t reserved_offset = 320;
+  
+  // Validate offset doesn't overflow
+  if (reserved_offset + 256 > BLOCK_BLOB_MAX_SIZE) {
+    ERROR_PRINT("Reserved offset too close to end of block blob");
+    free(block_blob_bin);
+    return false;
+  }
 
-  // Convert and sign
-//  if (blockchain_data_to_network_block_string(VRF_data.block_blob, BLOCK_VERIFIERS_AMOUNT) == 0) {
-//    ERROR_PRINT("Could not convert the blockchain_data to a network_block_string");
-//    return XCASH_ERROR;
-//  }
+  // Patch in the VRF extra fields at the reserved_offset
+  size_t pos = reserved_offset;
+  block_blob_bin[pos++] = 0x70;  // VRF proof tag
+  pos += hex_to_byte_array(producer_refs[0].vrf_proof_hex, block_blob_bin + pos, VRF_PROOF_LENGTH / 2);
 
-  memset(data, 0, sizeof(data));
-//  if (sign_network_block_string(data, VRF_data.block_blob) == 0) {
-//    ERROR_PRINT("Could not sign the network block string");
-//    return XCASH_ERROR;
-//  }
+  block_blob_bin[pos++] = 0x71;  // VRF beta tag
+  pos += hex_to_byte_array(producer_refs[0].vrf_beta_hex, block_blob_bin + pos, VRF_BETA_LENGTH / 2);
 
-//  for (count = 0; count < BLOCK_VERIFIERS_AMOUNT; count++) {
-//    if (strncmp(current_block_verifiers_list.block_verifiers_public_address[count], xcash_wallet_public_address, XCASH_WALLET_LENGTH) == 0) {
-//      memcpy(VRF_data.block_blob_signature[count], data, strnlen(data, BUFFER_SIZE));
-//      break;
-//    }
-//  }
+  block_blob_bin[pos++] = 0x73;  // VRF public key tag
+  pos += hex_to_byte_array(producer_refs[0].vrf_public_key, block_blob_bin + pos, VRF_PUBLIC_KEY_LENGTH / 2);
 
-  // Construct message
-  memset(message,0,strlen(message));
-  memcpy(message,"{\r\n \"message_settings\": \"BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_BLOCK_BLOB_SIGNATURE\",\r\n \"block_blob_signature\": \"",110);
-  memcpy(message+110,data,strnlen(data,BUFFER_SIZE));
-  memcpy(message+strlen(message),"\",\r\n}",5);
-  return XCASH_OK;
+  block_blob_bin[pos++] = 0x72;  // Public address tag
+  pos += hex_to_byte_array(producer_refs[0].public_address, block_blob_bin + pos, XCASH_WALLET_LENGTH / 2);
 
-  return XCASH_OK;
+  // Sign the full blob using Wallet RPC
+  char signature_hex[XCASH_SIGN_DATA_LENGTH + 1] = {0};
+  if (!sign_block_blob(block_blob_hex, signature_hex, sizeof(signature_hex))) {
+    ERROR_PRINT("Failed to sign block blob");
+    free(block_blob_bin);
+    return false;
+  }
+  DEBUG_PRINT('Block Blob Signature: %s', signature_hex)
+
+  block_blob_bin[pos++] = 0x74;  // Signature tag
+  pos += hex_to_byte_array(signature_hex, block_blob_bin + pos, XCASH_SIGN_DATA_LENGTH / 2);
+
+  // Re-encode the full blob to hex for submission
+  bytes_to_hex(block_blob_bin, blob_len, block_blob_hex, BLOCK_BLOB_MAX_SIZE);
+
+  free(block_blob_bin);
+  return true;
 }
 
 // Helper function: Restart logic if alone verifier
@@ -125,41 +93,43 @@ int block_verifiers_create_block(void) {
   char data[BUFFER_SIZE] = {0};
   size_t count;
 
-  // Clear previous VRF data
-  pthread_mutex_lock(&majority_vote_lock);
-  memset(&VRF_data, 0, sizeof(VRF_data));
-  memset(&current_block_verifiers_majority_vote, 0, sizeof(current_block_verifiers_majority_vote));
-  pthread_mutex_unlock(&majority_vote_lock);
-
   // Sync start
   INFO_STAGE_PRINT("Waiting for block synchronization start time...");
-  if (sync_block_verifiers_minutes_and_seconds(0, 30) == XCASH_ERROR)
+  if (sync_block_verifiers_minutes_and_seconds(1, 10) == XCASH_ERROR)
       return ROUND_SKIP;
 
   // Confirm block height hasn't drifted (this node may be behind the network)
+  INFO_STAGE_PRINT("Part 4 - Confirm block height hasn't drifted");
+  snprintf(current_round_part, sizeof(current_round_part), "%d", 5);
   if (get_current_block_height(data) == 1 && strncmp(current_block_height, data, BUFFER_SIZE) != 0) {
       WARNING_PRINT("Your block height is not synced correctly, waiting for next round");
       return ROUND_NEXT;
   }
 
-  char block_blob[BLOCK_BLOB_MAX_SIZE] = {0};
-  // Only the block producer completes the following steps, producer_refs is an array in case we decide to add backup producers
+  char block_blob[BUFFER_SIZE] = {0};
+  // Only the block producer completes the following steps, producer_refs is an array in case we decide to add 
+  // backup producers in the future
   if (strcmp(producer_refs[0].public_address, xcash_wallet_public_address) == 0) {
 
     // Part 3 - Create block template
-    INFO_STAGE_PRINT("Part 3 - Create for block template");
+    INFO_STAGE_PRINT("Part 5 - Create block template");
     if (get_block_template(block_blob, BLOCK_BLOB_MAX_SIZE) == 0) {
       return ROUND_NEXT;
     }
-    memset(data, 0, sizeof(data));
-    snprintf(data, sizeof(data),
-             "{\r\n \"message_settings\": \"MAIN_NODES_TO_NODES_PART_4_OF_ROUND_CREATE_NEW_BLOCK\",\r\n \"block_blob\": \"%s\",\r\n}",
-             VRF_data.block_blob);
 
-
-      if (sign_data(data) == 0) return ROUND_NEXT;
-
+    if (sync_block_verifiers_minutes_and_seconds(1, 20) == XCASH_ERROR)
+      return ROUND_SKIP;
+    if (strncmp(block_blob, "", 1) == 0) {
+      WARNING_PRINT("Did not receive block template");
+      return ROUND_NEXT;
     }
+
+    // Part 3 - Create block template
+    INFO_STAGE_PRINT("Part 6 - Add VRF Data to Block Blob");
+    if(add_vrf_extra_and_sign(block_blob))
+
+    
+  }
 
 
 
@@ -173,12 +143,7 @@ int block_verifiers_create_block(void) {
 
 
 
-  if (sync_block_verifiers_minutes_and_seconds(2, 20) == XCASH_ERROR)
-      return ROUND_SKIP;
-//  if (strncmp(VRF_data.block_blob, "", 1) == 0) {
-//    WARNING_PRINT("Did not receive block template");
-//    return ROUND_NEXT;
-//  }
+
 
 
 

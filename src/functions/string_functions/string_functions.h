@@ -15,6 +15,7 @@
 #include "macro_functions.h"
 
 bool hex_to_byte_array(const char *hex_string, unsigned char *byte_array, size_t byte_array_size);
+void bytes_to_hex(const unsigned char* bytes, size_t byte_len, char* hex_out, size_t hex_out_len);
 int parse_json_data(const char* DATA, const char* FIELD_NAME, char *result, const size_t RESULT_TOTAL_LENGTH);
 void string_replace(char *data, const size_t DATA_TOTAL_LENGTH, const char* STR1, const char* STR2);
 int random_string(char *result, const size_t LENGTH);

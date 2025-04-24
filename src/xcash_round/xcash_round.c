@@ -1,8 +1,6 @@
 #include "xcash_round.h"
 
-producer_ref_t producer_refs[] = {
-    {main_nodes_list.block_producer_public_address, main_nodes_list.block_producer_IP_address},
-};
+producer_ref_t producer_refs[] = {0};
 
 /**
  * @brief Selects the block producer from the current round’s verifiers using VRF beta comparison.
@@ -160,11 +158,9 @@ xcash_round_result_t process_round(void) {
   }
 
   // Sync start
-  INFO_STAGE_PRINT("Waiting...");
   if (sync_block_verifiers_minutes_and_seconds(1, 0) == XCASH_ERROR)
       return ROUND_SKIP;
 
-    
   INFO_STAGE_PRINT("Part 4 - Selection Block Creator From VRF Data");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 4);
   int producer_indx = select_block_producer_from_vrf();
@@ -173,8 +169,9 @@ xcash_round_result_t process_round(void) {
     return ROUND_SKIP;
   } else {
     pthread_mutex_lock(&majority_vote_lock);
+
     // For now there is only one block producer and no backups
-    memset(&main_nodes_list, 0, sizeof(main_nodes_list));
+    memset(&main_nodes_list, 0, sizeof(main_nodes_list));                // pretty sure this is no longer used
     memset(&producer_refs, 0, sizeof(producer_refs));
     
     // Update the main block producer info
@@ -184,6 +181,11 @@ xcash_round_result_t process_round(void) {
     // Populate the reference list with the selected producer
     strcpy(producer_refs[0].public_address, current_block_verifiers_list.block_verifiers_public_address[producer_indx]);
     strcpy(producer_refs[0].IP_address, current_block_verifiers_list.block_verifiers_IP_address[producer_indx]);
+    strcpy(producer_refs[0].vrf_public_key, current_block_verifiers_list.block_verifiers_vrf_public_key_hex[indx]);
+    strcpy(producer_refs[0].random_buf_hex, current_block_verifiers_list.block_verifiers_random_hex[indx]);
+    strcpy(producer_refs[0].vrf_proof_hex, current_block_verifiers_list.block_verifiers_vrf_proof_hex[indx]);
+    strcpy(producer_refs[0].vrf_beta_hex, current_block_verifiers_list.block_verifiers_vrf_beta_hex[indx]);
+
     pthread_mutex_unlock(&majority_vote_lock);
   }
   
@@ -230,7 +232,7 @@ void start_block_production(void) {
       continue;
     }
 
-    // Step 3: Recheck block height before proceeding
+    // Recheck block height before proceeding
     if (get_current_block_height(current_block_height) != XCASH_OK) {
       WARNING_PRINT("Failed to fetch current block height. Retrying...");
       sleep(5);

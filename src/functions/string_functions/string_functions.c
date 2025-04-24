@@ -41,6 +41,36 @@ bool hex_to_byte_array(const char *hex_string, unsigned char *byte_array, size_t
 }
 
 /*---------------------------------------------------------------------------------------------------------
+Name: bytes_to_hex
+Description:
+  Converts a binary byte array into a lowercase null-terminated hexadecimal string.
+  Each byte is represented by two hex characters (e.g., 0xAB becomes "ab").
+
+Parameters:
+  bytes        - Pointer to the input byte array.
+  byte_len     - Length of the input byte array in bytes.
+  hex_out      - Pointer to the output buffer that will receive the hex string.
+  hex_out_len  - Total size of the output buffer. Must be at least (byte_len * 2 + 1).
+
+Return:
+  None. The function writes the hex string to hex_out. If inputs are invalid or the buffer is too small,
+  the function writes an empty string to hex_out.
+---------------------------------------------------------------------------------------------------------*/
+void bytes_to_hex(const unsigned char* bytes, size_t byte_len, char* hex_out, size_t hex_out_len) {
+    if (!bytes || !hex_out || hex_out_len < (byte_len * 2 + 1)) {
+      if (hex_out && hex_out_len > 0) {
+        hex_out[0] = '\0';
+      }
+      return;
+    }
+  
+    for (size_t i = 0; i < byte_len; i++) {
+      snprintf(hex_out + (i * 2), hex_out_len - (i * 2), "%02x", bytes[i]);
+    }
+    hex_out[byte_len * 2] = '\0';
+  }
+  
+/*---------------------------------------------------------------------------------------------------------
 Name: parse_json_data
 Description: Parses JSON data safely using cJSON, supporting both root-level and "result" fields.
 Parameters:

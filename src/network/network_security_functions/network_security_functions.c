@@ -150,6 +150,47 @@ int sign_data(char *message)
   return XCASH_OK;
 }
 
+/*-----------------------------------------------------------------------------------------------------------
+Name: sign_block_blob
+
+Description:
+  Signs a given block blob (hex-encoded string) using the X-Cash wallet RPC. This function sends the blob
+  to the wallet daemon over JSON-RPC and retrieves the cryptographic signature. The signature can then be
+  embedded in the block as part of the `extra` field or used for block verification.
+
+Parameters:
+  block_blob_hex   - A null-terminated string containing the block blob in hex format.
+  signature_out    - A buffer to store the resulting signature string.
+  sig_out_len      - The size of the signature_out buffer (should be at least XCASH_SIGN_DATA_LENGTH + 1).
+
+Returns:
+  true  - If the signing process succeeds and the signature is extracted successfully.
+  false - If the HTTP request fails, the response is invalid, or the signature cannot be parsed.
+
+Usage Example:
+  char signature[XCASH_SIGN_DATA_LENGTH + 1] = {0};
+  if (!sign_block_blob(block_blob_hex, signature, sizeof(signature))) {
+    ERROR_PRINT("Failed to sign the block blob.");
+  }
+-----------------------------------------------------------------------------------------------------------*/
+bool sign_block_blob(const char* block_blob_hex, char* signature_out, size_t sig_out_len) {
+  char request_json[BLOCK_BLOB_MAX_SIZE + 256];
+  char response[BUFFER_SIZE];
+
+  snprintf(request_json, sizeof(request_json),
+    "{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"sign\",\"params\":{\"data\":\"%s\"}}",
+    block_blob_hex
+  );
+
+  const char* headers[] = { "Content-Type: application/json", "Accept: application/json" };
+  if (send_http_request(response, XCASH_WALLET_IP, "/json_rpc", XCASH_WALLET_PORT,
+                        "POST", headers, 2, request_json, SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) <= 0) {
+    return false;
+  }
+
+  return parse_json_data(response, "signature", signature_out, sig_out_len);
+}
+
 /*---------------------------------------------------------------------------------------------------------
  * Name: verify_data
  * Description:
