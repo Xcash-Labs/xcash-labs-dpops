@@ -175,7 +175,7 @@ xcash_round_result_t process_round(void) {
     pthread_mutex_lock(&majority_vote_lock);
     // For now there is only one block producer and no backups
     memset(&main_nodes_list, 0, sizeof(main_nodes_list));
-    memset(&producer_refs, 0, sizeof(producer_refs);
+    memset(&producer_refs, 0, sizeof(producer_refs));
     
     // Update the main block producer info
     strcpy(main_nodes_list.block_producer_public_address, current_block_verifiers_list.block_verifiers_public_address[producer_indx]);
