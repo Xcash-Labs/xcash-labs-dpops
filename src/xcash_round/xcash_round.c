@@ -131,7 +131,7 @@ xcash_round_result_t process_round(void) {
     strcpy(current_block_verifiers_list.block_verifiers_IP_address[j], delegates_all[i].IP_address);
     j++;
   }
-  pthread_mutex_lock(&majority_vote_unlock);
+  pthread_mutex_unlock(&majority_vote_lock);
 
   // Sync start
   if (sync_block_verifiers_minutes_and_seconds(0, 30) == XCASH_ERROR)
