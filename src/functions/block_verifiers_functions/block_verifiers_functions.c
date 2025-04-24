@@ -142,17 +142,6 @@ int block_verifiers_create_block(void) {
       return ROUND_NEXT;
   }
 
-  // Part 2 - Sync delegates from DB
-  INFO_STAGE_PRINT("Part 2 - Syncing delegates");
-  if (!sync_block_producers()) {
-      WARNING_PRINT("Can't sync delegates");
-      return ROUND_NEXT;
-  }
-  INFO_PRINT_STATUS_OK("Delegates synced");
-
-
-
-
 
 
 

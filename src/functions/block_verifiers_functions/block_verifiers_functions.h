@@ -12,7 +12,6 @@
 #include "VRF_functions.h"
 #include "xcash_round.h"
 #include "blockchain_functions.h"
-#include "xcash_block.h"
 
 
 //int sync_all_delegates(void);
