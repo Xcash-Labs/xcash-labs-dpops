@@ -18,6 +18,7 @@ int select_block_producer_from_vrf(void) {
   int selected_index = -1;
   char lowest_beta[VRF_BETA_LENGTH + 1] = {0};
 
+  pthread_mutex_lock(&majority_vote_lock);
   for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     // Ensure this verifier submitted all data
     if (strncmp(current_block_verifiers_list.block_verifiers_vrf_beta_hex[i], "", 1) != 0) {
@@ -28,6 +29,7 @@ int select_block_producer_from_vrf(void) {
       }
     }
   }
+  pthread_rwlock_unlock(&majority_vote_lock)
 
   if (selected_index != -1) {
     INFO_PRINT("Selected block producer: %s",
@@ -39,8 +41,28 @@ int select_block_producer_from_vrf(void) {
   return selected_index;
 }
 
+/**
+ * @brief Runs a single round of the DPoPS consensus process.
+ *
+ * This function coordinates the full lifecycle of a consensus round, including:
+ *  1. Retrieving the current block height and previous block hash
+ *  2. Synchronizing block verifier databases and verifying node majority
+ *  3. Broadcasting locally generated VRF data and collecting it from other block verifiers
+ *  4. Selecting the block producer using VRF-based randomness
+ *  5. Initiating block production on the selected producer node
+ *
+ * Each stage is sequenced using time-based synchronization (sync_block_verifiers_minutes_and_seconds),
+ * and uses `current_round_part` for identification and message signing context.
+ *
+ * @return xcash_round_result_t - ROUND_OK if block was created and broadcast successfully,
+ *                                ROUND_SKIP if round was skipped due to node majority failure or not selected as producer,
+ *                                ROUND_ERROR on critical errors.
+ */
 xcash_round_result_t process_round(void) {
+  
   // Get the current block height Then Sync the databases and build the majority list
+  INFO_STAGE_PRINT("Part 1 - Get Current Block Height and Previous Block Hash");
+  snprintf(current_round_part, sizeof(current_round_part), "%d", 1);
   if (get_current_block_height(current_block_height) != XCASH_OK) {
     ERROR_PRINT("Can't get current block height");
     return ROUND_ERROR;
@@ -53,7 +75,8 @@ xcash_round_result_t process_round(void) {
     return ROUND_ERROR;
   }
 
-  INFO_STAGE_PRINT("Part 1 - Initial Sync, VRF creation, and Producer Selection");
+  INFO_STAGE_PRINT("Part 2 - Initial Network Block Verifiers Sync");
+  snprintf(current_round_part, sizeof(current_round_part), "%d", 2);
   size_t network_majority_count = 0;
   xcash_node_sync_info_t* nodes_majority_list = NULL;
   if (!initial_db_sync_check(&network_majority_count, &nodes_majority_list) || !nodes_majority_list) {
@@ -99,6 +122,7 @@ xcash_round_result_t process_round(void) {
   INFO_PRINT_STATUS_OK("Nodes majority: [%ld/%d]", network_majority_count, BLOCK_VERIFIERS_VALID_AMOUNT);
 
   // Fill block verifiers list with proven online nodes
+  pthread_mutex_lock(&majority_vote_lock);
   memset(&current_block_verifiers_list, 0, sizeof(current_block_verifiers_list));
   for (size_t i = 0, j = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     strcpy(current_block_verifiers_list.block_verifiers_name[j], delegates_all[i].delegate_name);
@@ -107,17 +131,20 @@ xcash_round_result_t process_round(void) {
     strcpy(current_block_verifiers_list.block_verifiers_IP_address[j], delegates_all[i].IP_address);
     j++;
   }
+  pthread_mutex_lock(&majority_vote_unlock);
 
   // Sync start
-  INFO_STAGE_PRINT("Waiting...");
-  if (sync_block_verifiers_minutes_and_seconds(0, 20) == XCASH_ERROR)
+  if (sync_block_verifiers_minutes_and_seconds(0, 30) == XCASH_ERROR)
       return ROUND_SKIP;
 
+
+  INFO_STAGE_PRINT("Part 3 - Create VRF Data and Send To All Block Verifiers");
+  snprintf(current_round_part, sizeof(current_round_part), "%d", 3);
   response_t** responses = NULL;
   char* vrf_message = NULL;
   // This message is defines as NONRETURN and not responses is expected
   if (generate_and_request_vrf_data_msg(&vrf_message)) {
-      DEBUG_PRINT("Generated VRF message: %s", vrf_message);
+      DEBUG_PRINT("Generated VRF message: %s", vrf_message); 
       if (xnet_send_data_multi(XNET_DELEGATES_ALL_ONLINE, vrf_message, &responses)) {
           DEBUG_PRINT("Message sent to all online delegates.");
       } else {
@@ -134,16 +161,21 @@ xcash_round_result_t process_round(void) {
 
   // Sync start
   INFO_STAGE_PRINT("Waiting...");
-  if (sync_block_verifiers_minutes_and_seconds(0, 40) == XCASH_ERROR)
+  if (sync_block_verifiers_minutes_and_seconds(1, 0) == XCASH_ERROR)
       return ROUND_SKIP;
 
+    
+  INFO_STAGE_PRINT("Part 4 - Selection Block Creator From VRF Data");
+  snprintf(current_round_part, sizeof(current_round_part), "%d", 4);
   int producer_indx = select_block_producer_from_vrf();
   if (producer_indx < 0) {
     INFO_STAGE_PRINT("Block Producer not selected, skipping round");
     return ROUND_SKIP;
   } else {
+    pthread_mutex_lock(&majority_vote_lock);
     // For now there is only one block producer and no backups
     memset(&main_nodes_list, 0, sizeof(main_nodes_list));
+    memset(&producer_refs, 0, sizeof(producer_refs);
     
     // Update the main block producer info
     strcpy(main_nodes_list.block_producer_public_address, current_block_verifiers_list.block_verifiers_public_address[producer_indx]);
@@ -152,13 +184,11 @@ xcash_round_result_t process_round(void) {
     // Populate the reference list with the selected producer
     strcpy(producer_refs[0].public_address, current_block_verifiers_list.block_verifiers_public_address[producer_indx]);
     strcpy(producer_refs[0].IP_address, current_block_verifiers_list.block_verifiers_IP_address[producer_indx]);
+    pthread_mutex_unlock(&majority_vote_lock);
   }
   
-  is_block_creation_stage = true;
   INFO_STAGE_PRINT("Starting block production for block %s", current_block_height);
-
   int block_creation_result = block_verifiers_create_block();
-  is_block_creation_stage = false;
 
   return (xcash_round_result_t)block_creation_result;
 }

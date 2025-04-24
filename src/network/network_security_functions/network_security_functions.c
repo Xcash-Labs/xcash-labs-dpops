@@ -59,6 +59,103 @@ Return: 0 if an error has occured, 1 if successfull
 ---------------------------------------------------------------------------------------------------------*/
 int sign_data(char *message)
 {
+  const char *HTTP_HEADERS[] = {"Content-Type: application/json", "Accept: application/json"}; 
+  const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0]);
+  const size_t MAXIMUM_AMOUNT = MAXIMUM_BUFFER_SIZE * 2;
+
+  char *result = calloc(MAXIMUM_AMOUNT, sizeof(char));
+  char *string = calloc(MAXIMUM_AMOUNT, sizeof(char));
+  if (!result || !string) {
+    FATAL_ERROR_EXIT("sign_data: Memory allocation failed.");
+  }
+
+  char random_data[RANDOM_STRING_LENGTH + 1] = {0};
+  char data[BUFFER_SIZE] = {0};
+
+  if (!random_string(random_data, RANDOM_STRING_LENGTH)) {
+    return handle_error("sign_data", "Failed to generate random data.", result, string);
+  }
+
+  // Ensure previous_block_hash is set
+  if (pthread_rwlock_tryrdlock(&rwlock) != 0) {
+    return handle_error("sign_data", "Failed to acquire read lock.", result, string);
+  }
+
+  if (strlen(previous_block_hash) == 0) {
+    char temp_hash[BLOCK_HASH_LENGTH + 1] = {0};
+    pthread_rwlock_unlock(&rwlock);
+    if (!get_previous_block_hash(temp_hash)) {
+      return handle_error("sign_data", "Previous block hash missing.", result, string);
+    }
+    pthread_rwlock_wrlock(&rwlock);
+    strncpy(previous_block_hash, temp_hash, BLOCK_HASH_LENGTH);
+    pthread_rwlock_unlock(&rwlock);
+  } else {
+    pthread_rwlock_unlock(&rwlock);
+  }
+
+  // Compose JSON payload
+  snprintf(result, MAXIMUM_AMOUNT,
+    "%s"
+    "\"public_address\": \"%s\",\r\n"
+    "\"previous_block_hash\": \"%s\",\r\n"
+    "\"current_round_part\": \"%s\",\r\n"
+    "\"data\": \"%.*s\"\r\n"
+    "}",
+    message,
+    xcash_wallet_public_address,
+    previous_block_hash,
+    current_round_part,
+    RANDOM_STRING_LENGTH, random_data
+  );
+
+  string_replace(result, MAXIMUM_AMOUNT, "\"", "\\\"");
+
+  // Build JSON-RPC request to wallet RPC for signing
+  snprintf(string, MAXIMUM_AMOUNT,
+    "{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"sign\",\"params\":{\"data\":\"%s\"}}",
+    result
+  );
+  memset(result, 0, MAXIMUM_AMOUNT);
+
+  if (send_http_request(data, XCASH_WALLET_IP, "/json_rpc", XCASH_WALLET_PORT,
+                        "POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH,
+                        string, SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) <= 0 ||
+      !parse_json_data(data, "signature", result, MAXIMUM_AMOUNT)) {
+    return handle_error("sign_data", "Wallet signature failed.", result, string);
+  }
+
+  if (strlen(result) != XCASH_SIGN_DATA_LENGTH ||
+      strncmp(result, XCASH_SIGN_DATA_PREFIX, sizeof(XCASH_SIGN_DATA_PREFIX) - 1) != 0) {
+    return handle_error("sign_data", "Invalid wallet signature format.", result, string);
+  }
+
+  pthread_rwlock_rdlock(&rwlock);
+  snprintf(message + strlen(message) - 1, MAXIMUM_AMOUNT - strlen(message),
+    "\"public_address\": \"%s\",\r\n"
+    "\"previous_block_hash\": \"%s\",\r\n"
+    "\"current_round_part\": \"%s\",\r\n"
+    "\"data\": \"%.*s\",\r\n"
+    "\"XCASH_DPOPS_signature\": \"%s\"\r\n}",
+    xcash_wallet_public_address,
+    previous_block_hash,
+    current_round_part,
+    RANDOM_STRING_LENGTH, random_data,
+    result
+  );
+  pthread_rwlock_unlock(&rwlock);
+
+  free(result);
+  free(string);
+  return XCASH_OK;
+}
+
+
+
+
+
+int sign_data(char *message)
+{
   const char *HTTP_HEADERS[] = {"Content-Type: application/json", "Accept: application/json"};
   const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0]);
   const size_t MAXIMUM_AMOUNT = MAXIMUM_BUFFER_SIZE * 2;

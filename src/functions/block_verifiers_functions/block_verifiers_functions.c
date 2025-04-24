@@ -146,13 +146,16 @@ int block_verifiers_create_block(void) {
   // Only the block producer completes the following steps, producer_refs is an array in case we decide to add backup producers
   if (strcmp(producer_refs[0].public_address, xcash_wallet_public_address) == 0) {
 
-    // Part 3 - Create or wait for block template
+    // Part 3 - Create block template
     INFO_STAGE_PRINT("Part 3 - Create for block template");
     if (get_block_template(block_blob, BLOCK_BLOB_MAX_SIZE) == 0) {
       return ROUND_NEXT;
     }
     memset(data, 0, sizeof(data));
     snprintf(data, sizeof(data),
+             "{\r\n \"message_settings\": \"MAIN_NODES_TO_NODES_PART_4_OF_ROUND_CREATE_NEW_BLOCK\",\r\n \"block_blob\": \"%s\",\r\n}",
+             VRF_data.block_blob);
+
 
       if (sign_data(data) == 0) return ROUND_NEXT;
 
@@ -377,6 +380,8 @@ bool generate_and_request_vrf_data_msg(char** message)
   }
 
   // Step 8: Save to block_verifiers index in struct (for signature tracking)
+
+  pthread_mutex_lock(&majority_vote_lock);
   for (i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     if (strncmp(current_block_verifiers_list.block_verifiers_public_address[i], xcash_wallet_public_address, XCASH_WALLET_LENGTH) == 0) {
       memcpy(current_block_verifiers_list.block_verifiers_public_address[i], xcash_wallet_public_address, XCASH_WALLET_LENGTH+1);
@@ -387,6 +392,7 @@ bool generate_and_request_vrf_data_msg(char** message)
       break;
     }
   }
+  pthread_mutex_unlock(&majority_vote_lock);
 
   // Step 9: Compose outbound message (JSON)
   *message = create_message_param(
