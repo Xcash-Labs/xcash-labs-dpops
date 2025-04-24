@@ -41,7 +41,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
 
   if (strcmp(block_height, current_block_height) != 0) {
       INFO_PRINT("Skipping VRF data: current block_height [%s] does not match expected [%s]", current_block_height, block_height);
-      return;
+      return; 
   }
   
   pthread_mutex_lock(&majority_vote_lock);

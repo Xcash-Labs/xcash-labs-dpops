@@ -287,7 +287,7 @@ bool generate_and_request_vrf_data_msg(char** message)
   char random_buf_hex[(VRF_RANDOMBYTES_LENGTH * 2) + 1] = {0};
   size_t i, offset;
 
-  // Step 1: Convert stored hex keys to binary
+  // Convert stored hex keys to binary
   if (!hex_to_byte_array(secret_key, sk_bin, sizeof(sk_bin))) {
     ERROR_PRINT("Invalid hex format for secret key");
     return XCASH_ERROR;
@@ -298,16 +298,16 @@ bool generate_and_request_vrf_data_msg(char** message)
     return XCASH_ERROR;
   }
 
-  // Step2: Validate the public key
+  // Validate the public key
   if (crypto_vrf_is_valid_key(pk_bin) != 1) {
     ERROR_PRINT("Public key failed validation");
     return XCASH_ERROR;
   }
 
-  // Step 3: Generate random binary string
+  // Generate random binary string
   randombytes_buf(random_buf_bin, VRF_RANDOMBYTES_LENGTH);
 
-  // Step 4: Form the alpha input = previous_block_hash || random_buf
+  // Form the alpha input = previous_block_hash || random_buf
   if (!hex_to_byte_array(previous_block_hash, previous_block_hash_bin, VRF_RANDOMBYTES_LENGTH)) {
     ERROR_PRINT("Failed to decode previous block hash");
     return XCASH_ERROR;
@@ -315,19 +315,19 @@ bool generate_and_request_vrf_data_msg(char** message)
   memcpy(alpha_input_bin, previous_block_hash_bin, VRF_RANDOMBYTES_LENGTH);
   memcpy(alpha_input_bin + VRF_RANDOMBYTES_LENGTH, random_buf_bin, VRF_RANDOMBYTES_LENGTH);
 
-  // Step 5: Generate VRF proof
+  // Generate VRF proof
   if (crypto_vrf_prove(vrf_proof, sk_bin, alpha_input_bin, sizeof(alpha_input_bin)) != 0) {
     ERROR_PRINT("Failed to generate VRF proof");
     return XCASH_ERROR;
   }
 
-  // Step 6: Convert proof to beta (random output)
+  // Convert proof to beta (random output)
   if (crypto_vrf_proof_to_hash(vrf_beta, vrf_proof) != 0) {
     ERROR_PRINT("Failed to convert VRF proof to beta");
     return XCASH_ERROR;
   }
 
-  // Step 7: Convert proof, beta, and random buffer to hex
+  // Convert proof, beta, and random buffer to hex
   for (i = 0, offset = 0; i < crypto_vrf_PROOFBYTES; i++, offset += 2)
     snprintf(vrf_proof_hex + offset, 3, "%02x", vrf_proof[i]);
   for (i = 0, offset = 0; i < crypto_vrf_OUTPUTBYTES; i++, offset += 2)
@@ -336,8 +336,7 @@ bool generate_and_request_vrf_data_msg(char** message)
       snprintf(random_buf_hex + offset, 3, "%02x",random_buf_bin[i]);
   }
 
-  // Step 8: Save to block_verifiers index in struct (for signature tracking)
-
+  // Save to block_verifiers index in struct (for signature tracking)
   pthread_mutex_lock(&majority_vote_lock);
   for (i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     if (strncmp(current_block_verifiers_list.block_verifiers_public_address[i], xcash_wallet_public_address, XCASH_WALLET_LENGTH) == 0) {
@@ -351,7 +350,7 @@ bool generate_and_request_vrf_data_msg(char** message)
   }
   pthread_mutex_unlock(&majority_vote_lock);
 
-  // Step 9: Compose outbound message (JSON)
+  // Compose outbound message (JSON)
   *message = create_message_param(
       XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_VRF_DATA,
       "public_address", xcash_wallet_public_address,
