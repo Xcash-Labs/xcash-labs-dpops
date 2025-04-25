@@ -150,13 +150,6 @@ int parse_json_data(const char *data, const char *field_name, char *result, size
         return XCASH_ERROR;
     }
 
-
-    } else {
-        ERROR_PRINT("Field '%s' has unsupported data type", field_name);
-        cJSON_Delete(json);
-        return XCASH_ERROR;
-    }
-
     cJSON_Delete(json);
     return XCASH_OK;
 }
