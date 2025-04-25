@@ -54,14 +54,7 @@ struct database_multiple_documents_fields {
     char* value[MAXIMUM_DATABASE_COLLECTION_DOCUMENTS][TOTAL_DELEGATES_DATABASE_FIELDS+1]; // The value
 };
 
-struct main_nodes_list {
-    char block_producer_public_address[XCASH_WALLET_LENGTH+1]; // The block producers public address
-    char block_producer_IP_address[BLOCK_VERIFIERS_IP_ADDRESS_TOTAL_LENGTH+1]; // The block producers IP address
-};
-
-
 // ---- why is this 100 and not 50
-
 typedef struct {
     char block_verifiers_name[BLOCK_VERIFIERS_TOTAL_AMOUNT][MAXIMUM_BUFFER_SIZE_DELEGATES_NAME+1]; // The block verifiers name
     char block_verifiers_public_address[BLOCK_VERIFIERS_TOTAL_AMOUNT][XCASH_WALLET_LENGTH+1]; // The block verifiers public address

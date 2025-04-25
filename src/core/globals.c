@@ -39,7 +39,6 @@ pthread_mutex_t majority_vote_lock = PTHREAD_MUTEX_INITIALIZER;
 const char* collection_names[XCASH_DB_COUNT] = {"delegates", "statistics", "reserve_proofs", "reserve_bytes"};
 bool cleanup_db_before_upsert = false;  // delete db before put content. make sure we have exact copy during initial db syncing
 
-struct main_nodes_list main_nodes_list = {0};
 block_verifiers_list_t previous_block_verifiers_list;
 
 block_verifiers_list_t current_block_verifiers_list;
@@ -168,10 +167,6 @@ void init_globals(void) {
     memset(next_block_verifiers_list.block_verifiers_public_key[count],0,sizeof(next_block_verifiers_list.block_verifiers_public_key[count]));
     memset(next_block_verifiers_list.block_verifiers_IP_address[count],0,sizeof(next_block_verifiers_list.block_verifiers_IP_address[count]));
   }
-
-  // initialize the main_nodes_list struct 
-  memset(main_nodes_list.block_producer_public_address,0,sizeof(main_nodes_list.block_producer_public_address));
-  memset(main_nodes_list.block_producer_IP_address,0,sizeof(main_nodes_list.block_producer_IP_address));
 
   // initialize the current_round_part_vote_data struct
   memset(current_round_part_vote_data.current_vote_results,0,sizeof(current_round_part_vote_data.current_vote_results));
