@@ -202,7 +202,8 @@ void start_block_production(void) {
 
   // Wait for node to be fully synced
   while (!current_block_healthy) {
-    if (get_current_block_height(current_block_height) == XCASH_OK) {
+    if (is_blockchain_synced()) {
+//    if (get_current_block_height(current_block_height) == XCASH_OK) {
       current_block_healthy = true;
     } else {
       WARNING_PRINT("Node is still syncing. Waiting for recovery...");
@@ -223,7 +224,7 @@ void start_block_production(void) {
         init_db_from_top();  // --------------------------------------------------------------------?????
         round_result = ROUND_OK;
       } else {
-        INFO_PRINT("Missed block window. Block %s — Next round starts in [%ld:%02ld]",
+        INFO_PRINT("Waiting... Block %s — Next round starts in [%ld:%02ld]",
                    current_block_height,
                    BLOCK_TIME - 1 - minute_within_block,
                    59 - (current_time.tv_sec % 60));
