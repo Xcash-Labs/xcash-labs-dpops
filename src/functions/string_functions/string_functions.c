@@ -142,6 +142,15 @@ int parse_json_data(const char *data, const char *field_name, char *result, size
         result[result_size - 1] = '\0';
     } else if (cJSON_IsNumber(current_obj)) {
         snprintf(result, result_size, "%.6f", current_obj->valuedouble);
+    } else if (cJSON_IsBool(current_obj)) {
+        snprintf(result, result_size, "%s", cJSON_IsTrue(current_obj) ? "true" : "false");
+    } else {
+        ERROR_PRINT("Field '%s' has unsupported data type", field_name);
+        cJSON_Delete(json);
+        return XCASH_ERROR;
+    }
+
+
     } else {
         ERROR_PRINT("Field '%s' has unsupported data type", field_name);
         cJSON_Delete(json);
