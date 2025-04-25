@@ -18,13 +18,16 @@ int select_block_producer_from_vrf(void) {
 
   pthread_mutex_lock(&majority_vote_lock);
   for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
-    // Ensure this verifier submitted all data
-    if (strncmp(current_block_verifiers_list.block_verifiers_vrf_beta_hex[i], "", 1) != 0) {
-      if (selected_index == -1 ||
-          strcmp(current_block_verifiers_list.block_verifiers_vrf_beta_hex[i], lowest_beta) < 0) {
-        selected_index = (int)i;
-        strncpy(lowest_beta, current_block_verifiers_list.block_verifiers_vrf_beta_hex[i], VRF_BETA_LENGTH);
-      }
+    // Skip if no beta submitted or is a seed node
+    if (strncmp(current_block_verifiers_list.block_verifiers_vrf_beta_hex[i], "", 1) == 0 ||
+        is_seed_address(current_block_verifiers_list.block_verifiers_public_address[i])) {
+      continue;
+    }
+
+    if (selected_index == -1 ||
+        strcmp(current_block_verifiers_list.block_verifiers_vrf_beta_hex[i], lowest_beta) < 0) {
+      selected_index = (int)i;
+      strncpy(lowest_beta, current_block_verifiers_list.block_verifiers_vrf_beta_hex[i], VRF_BETA_LENGTH);
     }
   }
   pthread_mutex_unlock(&majority_vote_lock);
@@ -57,7 +60,6 @@ int select_block_producer_from_vrf(void) {
  *                                ROUND_ERROR on critical errors.
  */
 xcash_round_result_t process_round(void) {
-  
   // Get the current block height Then Sync the databases and build the majority list
   INFO_STAGE_PRINT("Part 1 - Get Current Block Height and Previous Block Hash");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 1);
@@ -140,7 +142,7 @@ xcash_round_result_t process_round(void) {
   snprintf(current_round_part, sizeof(current_round_part), "%d", 3);
   response_t** responses = NULL;
   char* vrf_message = NULL;
-  // This message is defines as NONRETURN and not responses is expected
+  // This message is defines as NONRETURN and no responses are expected
   if (generate_and_request_vrf_data_msg(&vrf_message)) {
       DEBUG_PRINT("Generated VRF message: %s", vrf_message); 
       if (xnet_send_data_multi(XNET_DELEGATES_ALL_ONLINE, vrf_message, &responses)) {
@@ -161,9 +163,17 @@ xcash_round_result_t process_round(void) {
   if (sync_block_verifiers_minutes_and_seconds(1, 0) == XCASH_ERROR)
       return ROUND_SKIP;
 
-  INFO_STAGE_PRINT("Part 4 - Selection Block Creator From VRF Data");
+  INFO_STAGE_PRINT("Part 4 - Select Block Creator From VRF Data");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 4);
-  int producer_indx = select_block_producer_from_vrf();
+
+  // PoS bootstrapping block
+  if (strtoull(current_block_height, NULL, 10) == XCASH_PROOF_OF_STAKE_BLOCK_HEIGHT) {
+    INFO_PRINT("Creating first DPOPS block.");
+    int producer_indx = 0;
+  } else {
+    int producer_indx = select_block_producer_from_vrf();
+  }
+
   if (producer_indx < 0) {
     INFO_STAGE_PRINT("Block Producer not selected, skipping round");
     return ROUND_SKIP;
@@ -182,13 +192,32 @@ xcash_round_result_t process_round(void) {
 
     pthread_mutex_unlock(&majority_vote_lock);
   }
-  
+
   INFO_STAGE_PRINT("Starting block production for block %s", current_block_height);
   int block_creation_result = block_verifiers_create_block();
 
   return (xcash_round_result_t)block_creation_result;
 }
 
+/*---------------------------------------------------------------------------------------------------------
+Name: start_block_production
+Description:
+  Main loop for initiating and coordinating block production in the X-Cash DPoPS system.
+
+  - Waits until the local node is fully synchronized with the blockchain before starting.
+  - Every BLOCK_TIME window, attempts to create a new round and produce a block.
+  - If within the PoS bootstrap phase, only the designated seed node can initiate the round.
+  - Handles retry logic, round failures, and optional database reinitialization if needed.
+  - Uses the current block height and timing intervals to align with the DPoPS round schedule.
+
+  This function is designed to be run continuously as part of the main production thread.
+
+Parameters:
+  None
+
+Returns:
+  None
+---------------------------------------------------------------------------------------------------------*/
 void start_block_production(void) {
   struct timeval current_time;
   xcash_round_result_t round_result = ROUND_OK;
@@ -218,7 +247,7 @@ void start_block_production(void) {
         init_db_from_top();  // --------------------------------------------------------------------?????
         round_result = ROUND_OK;
       } else {
-        INFO_PRINT("Waiting... Block %s — Next round starts in [%ld:%02ld]",
+        INFO_PRINT("Block %s — Next round starts in [%ld:%02ld]",
                    current_block_height,
                    BLOCK_TIME - 1 - minute_within_block,
                    59 - (current_time.tv_sec % 60));
@@ -236,37 +265,22 @@ void start_block_production(void) {
 
     bool round_created = false;
 
-    // Special PoS bootstrapping block
-    if (strtoull(current_block_height, NULL, 10) == XCASH_PROOF_OF_STAKE_BLOCK_HEIGHT) {
-      if (strncmp(network_nodes[0].seed_public_address, xcash_wallet_public_address, XCASH_WALLET_LENGTH) == 0) {
-        round_created = (start_current_round_start_blocks() != XCASH_ERROR);
-        if (!round_created) {
-          ERROR_PRINT("start_current_round_start_blocks() failed");
-        }
-      } else {
-        INFO_PRINT("This node is not the PoS boot node. Skipping.");
-        sleep(SUBMIT_NETWORK_BLOCK_TIME_SECONDS);
-        continue;
-      }
+    // Standard block production
+    round_result = process_round();
+    if (round_result == ROUND_OK) {
+      round_created = true;
+    } else if (round_result == ROUND_RETRY) {
+      INFO_PRINT("Round retry. Waiting before trying ...");
+      sleep(10);  // Allow 2 retries max within 25s window
+      continue;
     } else {
-      // Standard block production
-      round_result = process_round();
-      if (round_result == ROUND_OK) {
-        round_created = true;
-      } else if (round_result == ROUND_RETRY) {
-        INFO_PRINT("Round retry. Waiting before trying ...");
-        ;
-        sleep(10);  // Allow 2 retries max within 25s window
-        continue;
-      } else {
-        round_created = false;
-      }
+      round_created = false;
+    }
 
-      if (round_created) {
-        INFO_PRINT_STATUS_OK("Block %s created successfully", current_block_height);
-      } else {
-        INFO_PRINT_STATUS_FAIL("Block %s was not created", current_block_height);
-      }
+    if (round_created) {
+      INFO_PRINT_STATUS_OK("Block %s created successfully", current_block_height);
+    } else {
+      INFO_PRINT_STATUS_FAIL("Block %s was not created", current_block_height);
     }
 
     break;  // TEMP: exit after one round (for testing)

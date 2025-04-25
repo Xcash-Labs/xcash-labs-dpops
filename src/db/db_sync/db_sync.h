@@ -44,7 +44,6 @@ bool get_sync_nodes_majority_list_top(xcash_node_sync_info_t** majority_list_res
 bool initial_db_sync_check(size_t* majority_count, xcash_node_sync_info_t** majority_list_result);
 bool check_sync_nodes_majority_list(response_t** replies, xcash_node_sync_info_t** majority_list_result,
                                     size_t* majority_count_result, bool by_top_block_height);
-//
 bool get_node_sync_info(xcash_node_sync_info_t* sync_info);
 bool download_db_from_node(const char* host, xcash_dbs_t db_type, int index, char* result_db_data_buf,
                            size_t result_db_data_buf_size);
