@@ -167,11 +167,12 @@ xcash_round_result_t process_round(void) {
   snprintf(current_round_part, sizeof(current_round_part), "%d", 4);
 
   // PoS bootstrapping block
+  int producer_indx = -1;
   if (strtoull(current_block_height, NULL, 10) == XCASH_PROOF_OF_STAKE_BLOCK_HEIGHT) {
     INFO_PRINT("Creating first DPOPS block.");
-    int producer_indx = 0;
+    producer_indx = 0;
   } else {
-    int producer_indx = select_block_producer_from_vrf();
+    producer_indx = select_block_producer_from_vrf();
   }
 
   if (producer_indx < 0) {
