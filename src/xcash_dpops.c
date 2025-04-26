@@ -47,16 +47,8 @@ Description: Load program options.  Using the argp system calls.
 ---------------------------------------------------------------------------------------------------------*/
 static error_t parse_opt(int key, char *arg, struct argp_state *state)
 {
-  // Catch malformed short options like "-log-level" early
-  if (key == ARGP_KEY_ARG && state->argv[state->next - 1] != NULL) {
-    const char* current_arg = state->argv[state->next - 1];
 
-    if (strlen(current_arg) > 2 && current_arg[0] == '-' && current_arg[1] != '-') {
-      ERROR_PRINT("Invalid or malformed short option: %s", current_arg);
-      return ARGP_ERR_UNKNOWN;
-    }
-  }
-
+  DEBUG_PRINT ("key is %s", key);
   arg_config_t *arguments = state->input;
   switch (key)
   {
