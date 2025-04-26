@@ -249,8 +249,8 @@ int main(int argc, char *argv[]) {
   }
 
   if (is_ntp_enabled()) {
-    INFO_PRINT('NTP Service is Active'); }
-    else {
+    INFO_PRINT("NTP Service is Active");
+  } else {
     FATAL_ERROR_EXIT("Please enable ntp for your server");
   }
 
