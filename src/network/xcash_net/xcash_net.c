@@ -40,6 +40,11 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
   xcash_msg_t msg_type = get_message_type(message);
   bool is_nonreturn = is_nonreturn_type(msg_type);
 
+
+  DEBUG_PRINT("Made it here xnet send data multi..........");
+
+
+
   switch (dest) {
     case XNET_SEEDS_ALL: {
 
@@ -217,6 +222,11 @@ bool send_message(xcash_dest_t dest, xcash_msg_t msg, response_t ***reply) {
     return false;
   }
 
+
+
+
+
+  DEBUG_PRINT("Made it here..........");
   result = xnet_send_data_multi(dest, message_data, reply);
   free(message_data);
 
