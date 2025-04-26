@@ -248,7 +248,7 @@ int main(int argc, char *argv[]) {
     return 0;
   }
 
-  if (is_ntp_enabled) {
+  if (!is_ntp_enabled) {
     FATAL_ERROR_EXIT("Please enable ntp for your server");
   }
 
