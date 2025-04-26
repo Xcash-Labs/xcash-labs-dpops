@@ -244,31 +244,34 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
   char trans_type[128] = {0};
   if (strstr(data, "{") && strstr(data, "}")) {
     DEBUG_PRINT("Received JSON message");
-    json_error_t error;
-    json_t* json_obj = json_loads(data, 0, &error);
+
+    cJSON* json_obj = cJSON_Parse(data);
     if (!json_obj) {
-      ERROR_PRINT("Invalid message received, JSON parsing error in handle_srv_message: %s", error.text);
+      ERROR_PRINT("Invalid message received, JSON parsing error in handle_srv_message: %s", cJSON_GetErrorPtr());
       return;
     }
-    json_t* settings_obj = json_object_get(json_obj, "message_settings");
-    if (!settings_obj || !json_is_string(settings_obj)) {
+
+    cJSON* settings_obj = cJSON_GetObjectItemCaseSensitive(json_obj, "message_settings");
+    if (!cJSON_IsString(settings_obj) || (settings_obj->valuestring == NULL)) {
       ERROR_PRINT("Invalid message received, missing or invalid message_settings");
-      json_decref(json_obj);
+      cJSON_Delete(json_obj);
       return;
     }
-    const char* message_settings = json_string_value(settings_obj);
-    snprintf(trans_type, sizeof(trans_type), "%s", message_settings);
-    json_decref(json_obj);
-  } else if (strstr(data, "|")) {  
 
-    DEBUG_PRINT("........ADD BAR DATATYPE HERE.............");
-
-    // set trans_type 
-
-  } else {
-    ERROR_PRINT("Message does not match one of the expected format");
-    return;
+    snprintf(trans_type, sizeof(trans_type), "%s", settings_obj->valuestring);
+    cJSON_Delete(json_obj);
+  } else if (strstr(data, "|")) {
+    // Handle delimited text message case
   }
+
+  DEBUG_PRINT("........ADD BAR DATATYPE HERE.............");
+
+  // set trans_type
+}
+else {
+  ERROR_PRINT("Message does not match one of the expected format");
+  return;
+}
 
   DEBUG_PRINT("Transaction Type: %s", trans_type);
 

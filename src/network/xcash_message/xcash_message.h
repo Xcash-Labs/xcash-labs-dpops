@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <jansson.h>
+#include <cjson/cJSON.h>
 #include "config.h"
 #include "globals.h"
 #include "macro_functions.h"
