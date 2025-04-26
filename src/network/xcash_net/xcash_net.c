@@ -42,6 +42,10 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
 
   switch (dest) {
     case XNET_SEEDS_ALL: {
+
+      DEBUG_PRINT('XNET_SEEDS_ALL....');
+
+
       const char **all_hosts = malloc((network_data_nodes_amount + 1) * sizeof(char *));
       if (!all_hosts) {
         ERROR_PRINT("Failed to allocate memory for all_hosts");
@@ -151,6 +155,7 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
   }
 
   if (is_nonreturn) {
+    DEBUG_PRINT("Non Return message.......");
     send_multi_request(hosts, XCASH_DPOPS_PORT, message);
     free(hosts);
     *reply = NULL;
