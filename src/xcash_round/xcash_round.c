@@ -80,7 +80,6 @@ xcash_round_result_t process_round(void) {
   // Update with fresh delegates list
   if (!fill_delegates_from_db()) {
     DEBUG_PRINT("Can't read delegates list from DB");
-    free(nodes_majority_list);
     return ROUND_ERROR;
   }
 
