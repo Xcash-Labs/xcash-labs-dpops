@@ -246,13 +246,14 @@ void start_block_production(void) {
         WARNING_PRINT("Last round failed. Refreshing DB from top...");
         init_db_from_top();  // --------------------------------------------------------------------?????
         round_result = ROUND_OK;
-      } else {
+      } else if (seconds_within_block % 10 == 0) {
+        // only print every 10 seconds
         INFO_PRINT("Block %s — Next round starts in [%ld:%02ld]",
                    current_block_height,
                    BLOCK_TIME - 1 - minute_within_block,
                    59 - (current_time.tv_sec % 60));
       }
-      sleep(5);
+      sleep(1);
       continue;
     }
 
