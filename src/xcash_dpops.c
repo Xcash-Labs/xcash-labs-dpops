@@ -47,42 +47,54 @@ Description: Load program options.  Using the argp system calls.
 ---------------------------------------------------------------------------------------------------------*/
 static error_t parse_opt(int key, char *arg, struct argp_state *state)
 {
-
-  DEBUG_PRINT ("key is %d", key);
   arg_config_t *arguments = state->input;
+
   switch (key)
   {
-  case 'h':
-    show_help = true;
-    break;
-  case 'k':
-    arguments->block_verifiers_secret_key = arg;
-    break;
-  case 'l':
-    if (atoi(arg) >= 0 && atoi(arg) <= 4)
-    {
-      log_level = atoi(arg);
-    }
-    break;
-  case OPTION_GENERATE_KEY:
-    create_key = true;
-    break;
-  case OPTION_TOTAL_THREADS:
-    arguments->total_threads = atoi(arg);
-    break;
-  case OPTION_INIT_DB_FROM_SEEDS:
-    arguments->init_db_from_seeds = true;
-    break;
-  case OPTION_INIT_DB_FROM_TOP:
-    arguments->init_db_from_top = true;
-    break;
-  default:
-    return ARGP_ERR_UNKNOWN;
+    case 'h':
+      show_help = true;
+      break;
+    case 'k':
+      arguments->block_verifiers_secret_key = arg;
+      break;
+    case 'l':
+      if (atoi(arg) >= 0 && atoi(arg) <= 4)
+        log_level = atoi(arg);
+      break;
+    case OPTION_GENERATE_KEY:
+      create_key = true;
+      break;
+    case OPTION_TOTAL_THREADS:
+      arguments->total_threads = atoi(arg);
+      break;
+    case OPTION_INIT_DB_FROM_SEEDS:
+      arguments->init_db_from_seeds = true;
+      break;
+    case OPTION_INIT_DB_FROM_TOP:
+      arguments->init_db_from_top = true;
+      break;
+
+    case ARGP_KEY_ARG:
+      // Catch malformed short option like -log-level
+      if (arg && strlen(arg) > 2 && arg[0] == '-' && arg[1] != '-') {
+        ERROR_PRINT("Malformed short option or unknown switch: %s", arg);
+        return ARGP_ERR_UNKNOWN;
+      }
+      break;
+
+    case ARGP_KEY_UNKNOWN:
+      ERROR_PRINT("Unknown argument: %s", arg);
+      return ARGP_ERR_UNKNOWN;
+
+    default:
+      return ARGP_ERR_UNKNOWN;
   }
+
   return 0;
 }
 
-static struct argp argp = {options, parse_opt, 0, doc, NULL, NULL, NULL};
+//static struct argp argp = {options, parse_opt, 0, doc, NULL, NULL, NULL};
+static struct argp argp = {options, parse_opt, NULL, doc, NULL, NULL, NULL};
 
 /*---------------------------------------------------------------------------------------------------------
 Name: cleanup_data_structure
