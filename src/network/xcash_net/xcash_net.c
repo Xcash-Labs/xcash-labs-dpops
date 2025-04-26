@@ -43,7 +43,7 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
   switch (dest) {
     case XNET_SEEDS_ALL: {
 
-      DEBUG_PRINT('XNET_SEEDS_ALL....');
+      DEBUG_PRINT("XNET_SEEDS_ALL....");
 
 
       const char **all_hosts = malloc((network_data_nodes_amount + 1) * sizeof(char *));
