@@ -248,8 +248,6 @@ int main(int argc, char *argv[]) {
     return 0;
   }
 
-
-  DEBUG_PRINT("Checking NTP");
   if (is_ntp_enabled()) {
     INFO_PRINT("NTP Service is Active");
   } else {
