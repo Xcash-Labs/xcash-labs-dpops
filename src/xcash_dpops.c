@@ -48,7 +48,7 @@ Description: Load program options.  Using the argp system calls.
 static error_t parse_opt(int key, char *arg, struct argp_state *state)
 {
 
-  DEBUG_PRINT ("key is %s", key);
+  DEBUG_PRINT ("key is %d", key);
   arg_config_t *arguments = state->input;
   switch (key)
   {
