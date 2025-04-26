@@ -194,6 +194,33 @@ void sigint_handler(int sig_num) {
 }
 
 /*---------------------------------------------------------------------------------------------------------
+Name: is_ntp_enabled
+Description: Checks if ntp is enabled for the server
+---------------------------------------------------------------------------------------------------------*/
+bool is_ntp_enabled(void) {
+  FILE *fp;
+  char buffer[256];
+  bool ntp_active = false;
+
+  fp = popen("timedatectl status", "r");
+  if (fp == NULL) {
+      perror("popen failed");
+      return false;
+  }
+
+  while (fgets(buffer, sizeof(buffer), fp)) {
+      if (strstr(buffer, "System clock synchronized: yes") ||
+          strstr(buffer, "NTP service: active")) {
+          ntp_active = true;
+          break;
+      }
+  }
+
+  pclose(fp);
+  return ntp_active;
+}
+
+/*---------------------------------------------------------------------------------------------------------
 Name: main
 Description: The start point of the program
 Parameters:
@@ -219,6 +246,10 @@ int main(int argc, char *argv[]) {
   if (create_key) {
     generate_key();
     return 0;
+  }
+
+  if (is_ntp_enabled) {
+    FATAL_ERROR_EXIT("Please enable ntp for your server");
   }
 
   if (!(get_node_data())) {
