@@ -75,7 +75,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
     break;
   default:
     if (strlen(state->argv[state->next - 1]) > 2 && state->argv[state->next - 1][0] == '-' && state->argv[state->next - 1][1] != '-') {
-      ERROR_PRINT("Unknown or malformed short option: %s", state->argv[state->next - 1]);
+      ERROR_PRINT("Unknown or malformed short option, Try again");
     }
     return ARGP_ERR_UNKNOWN;
   }
