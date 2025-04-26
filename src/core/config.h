@@ -130,7 +130,7 @@
 
 // ===================== General Settings =====================
 #define BITS_IN_BYTE 8
-#define BLOCK_TIME 5
+#define BLOCK_TIME 2
 #define BLOCK_TIME_SEC (BLOCK_TIME*60)
 #define BLOCKS_PER_DAY_FIVE_MINUTE_BLOCK_TIME 288
 #define SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS 3
