@@ -242,47 +242,47 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
   DEBUG_PRINT("Processing message from client IP: %s", client->client_ip);
 
   char trans_type[128] = {0};
+
   if (strstr(data, "{") && strstr(data, "}")) {
     DEBUG_PRINT("Received JSON message");
-
-    cJSON* json_obj = cJSON_Parse(data);
+  
+    cJSON *json_obj = cJSON_Parse(data);
     if (!json_obj) {
       ERROR_PRINT("Invalid message received, JSON parsing error in handle_srv_message: %s", cJSON_GetErrorPtr());
       return;
     }
-
-    cJSON* settings_obj = cJSON_GetObjectItemCaseSensitive(json_obj, "message_settings");
+  
+    cJSON *settings_obj = cJSON_GetObjectItemCaseSensitive(json_obj, "message_settings");
     if (!cJSON_IsString(settings_obj) || (settings_obj->valuestring == NULL)) {
       ERROR_PRINT("Invalid message received, missing or invalid message_settings");
       cJSON_Delete(json_obj);
       return;
     }
-
+  
     snprintf(trans_type, sizeof(trans_type), "%s", settings_obj->valuestring);
     cJSON_Delete(json_obj);
-  } else if (strstr(data, "|")) {
-    // Handle delimited text message case
   }
+  else if (strstr(data, "|")) {  
 
-  DEBUG_PRINT("........ADD BAR DATATYPE HERE.............");
+    DEBUG_PRINT("........ADD BAR DATATYPE HERE.............");
 
-  // set trans_type
-}
-else {
-  ERROR_PRINT("Message does not match one of the expected format");
-  return;
-}
+    // set trans_type 
+
+  } else {
+    ERROR_PRINT("Message does not match one of the expected format");
+    return;
+  }
 
   DEBUG_PRINT("Transaction Type: %s", trans_type);
 
   xcash_msg_t msg_type = get_message_type(trans_type);
   switch (msg_type) {
     case XMSG_XCASH_GET_BLOCK_HASH:
-//      if (server_limit_IP_addresses(1, client->client_ip) == 1) {
-//        server_received_msg_get_block_hash(client, data);
-//        server_limit_IP_addresses(0, client->client_ip);
-//      }
-//      break;
+      if (server_limit_IP_addresses(1, client->client_ip) == 1) {
+        server_received_msg_get_block_hash(client, data);
+        server_limit_IP_addresses(0, client->client_ip);
+      }
+      break;
 
     case XMSG_XCASH_GET_SYNC_INFO:
       if (server_limit_IP_addresses(1, client->client_ip) == 1) {
