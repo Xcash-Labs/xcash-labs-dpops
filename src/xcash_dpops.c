@@ -20,7 +20,7 @@ BRIGHT_WHITE_TEXT("Advanced Options:\n")
 "  --total-threads THREADS                 Sets the UV_THREADPOOL_SIZE environment variable that controls the.\n"
 "                                          number of worker threads in the libuv thread pool (default is 4).\n"
 "\n"
-"  --generate-key                          Generate public/private key for block verifiers.\n"
+"  -g, --generate-key                      Generate public/private key for block verifiers.\n"
 "\n"
 "  --init-db-from-seeds                    Sync current node data from seeds. Needed only during installation\n"
 "                                          process.\n"
@@ -34,7 +34,7 @@ static struct argp_option options[] = {
   {"block-verifiers-secret-key", 'k', "SECRET_KEY", 0, "Set the block verifier's secret key", 0},
   {"log-level", 'l', "LOG_LEVEL", 0, "Displays log messages based on the level passed.", 0},
   {"total-threads", OPTION_TOTAL_THREADS, "THREADS", 0, "Set total threads (Default: based on server threads).", 0},
-  {"generate-key", OPTION_GENERATE_KEY, 0, 0, "Generate public/private key for block verifiers.", 0},
+  {"generate-key", "g" OPTION_GENERATE_KEY, 0, 0, "Generate public/private key for block verifiers.", 0},
   {"init-db-from-seeds", OPTION_INIT_DB_FROM_SEEDS, 0, 0, "Sync current node data from seeds. Needed only during installation process", 0},
   {"init-db-from-top", OPTION_INIT_DB_FROM_TOP, 0, 0, "Sync current node data from top block_height nodes.", 0},
   {0}
@@ -74,14 +74,6 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
     arguments->init_db_from_top = true;
     break;
   default:
-    if (state->next > 0 && state->argv[state->next - 1] &&
-        strlen(state->argv[state->next - 1]) > 2 &&
-        state->argv[state->next - 1][0] == '-' &&
-        state->argv[state->next - 1][1] != '-' &&
-        strchr("hl", state->argv[state->next - 1][1]) == NULL)  // Only allow valid short options
-    {
-      ERROR_PRINT("Unknown or malformed short option: %s", state->argv[state->next - 1]);
-    }
     return ARGP_ERR_UNKNOWN;
   }
   return 0;
