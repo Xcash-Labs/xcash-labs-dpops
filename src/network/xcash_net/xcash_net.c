@@ -47,10 +47,6 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
 
   switch (dest) {
     case XNET_SEEDS_ALL: {
-
-      DEBUG_PRINT("XNET_SEEDS_ALL....");
-
-
       const char **all_hosts = malloc((network_data_nodes_amount + 1) * sizeof(char *));
       if (!all_hosts) {
         ERROR_PRINT("Failed to allocate memory for all_hosts");
@@ -104,6 +100,8 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
         ERROR_PRINT("Failed to allocate memory for delegates_hosts");
         return false;  // Handle memory allocation failure
       }
+
+      DEBUG_PRINT("XNET_SEEDS_ALL....");
 
       size_t host_index = 0;
       for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
