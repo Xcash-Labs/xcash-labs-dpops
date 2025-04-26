@@ -74,6 +74,9 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
     arguments->init_db_from_top = true;
     break;
   default:
+    if (strlen(state->argv[state->next - 1]) > 2 && state->argv[state->next - 1][0] == '-' && state->argv[state->next - 1][1] != '-') {
+      ERROR_PRINT("Unknown or malformed short option: %s", state->argv[state->next - 1]);
+    }
     return ARGP_ERR_UNKNOWN;
   }
   return 0;
