@@ -25,6 +25,7 @@ typedef enum {
     OPTION_TOTAL_THREADS,
     OPTION_INIT_DB_FROM_SEEDS,
     OPTION_INIT_DB_FROM_TOP,
+    OPTION_LOG_LEVEL
 } option_ids;
 
 #endif

@@ -13,7 +13,7 @@ BRIGHT_WHITE_TEXT("General Options:\n")
 "  -k, --block-verifiers-secret-key <KEY>  Set the block verifier's secret key\n"
 "\n"
 BRIGHT_WHITE_TEXT("Debug Options:\n")
-"  -l, --log-level                         The log-level displays log messages based on the level passed:\n"
+"  --log-level                             The log-level displays log messages based on the level passed:\n"
 "                                          Critial - 0, Info - 1, Warning - 2, Error - 3, Debug - 4\n"
 "\n"
 BRIGHT_WHITE_TEXT("Advanced Options:\n")
@@ -32,8 +32,7 @@ BRIGHT_WHITE_TEXT("Advanced Options:\n")
 static struct argp_option options[] = {
   {"help", 'h', 0, 0, "List all valid parameters.", 0},
   {"block-verifiers-secret-key", 'k', "SECRET_KEY", 0, "Set the block verifier's secret key", 0},
-  {"log-level", 'l', "LOG_LEVEL", 0, "Displays log messages based on the level passed.", 0},
-
+  {"log-level", OPTION_LOG_LEVEL, "LOG_LEVEL", 0, "Displays log messages based on the level passed.", 0},
   {"total-threads", OPTION_TOTAL_THREADS, "THREADS", 0, "Set total threads (Default: based on server threads).", 0},
   {"generate-key", OPTION_GENERATE_KEY, 0, 0, "Generate public/private key for block verifiers.", 0},
   {"init-db-from-seeds", OPTION_INIT_DB_FROM_SEEDS, 0, 0, "Sync current node data from seeds. Needed only during installation process", 0},
@@ -47,8 +46,6 @@ Description: Load program options.  Using the argp system calls.
 ---------------------------------------------------------------------------------------------------------*/
 static error_t parse_opt(int key, char *arg, struct argp_state *state)
 {
-
-  DEBUG_PRINT ("key is %d", key);
   arg_config_t *arguments = state->input;
   switch (key)
   {
@@ -58,7 +55,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
   case 'k':
     arguments->block_verifiers_secret_key = arg;
     break;
-  case 'l':
+  case OPTION_LOG_LEVEL:
     if (atoi(arg) >= 0 && atoi(arg) <= 4)
     {
       log_level = atoi(arg);
@@ -82,8 +79,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
   return 0;
 }
 
-//static struct argp argp = {options, parse_opt, 0, doc, NULL, NULL, NULL};
-static struct argp argp = {options, parse_opt, NULL, doc, NULL, NULL, NULL};
+static struct argp argp = {options, parse_opt, 0, doc, NULL, NULL, NULL};
 
 /*---------------------------------------------------------------------------------------------------------
 Name: cleanup_data_structure
