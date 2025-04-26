@@ -46,8 +46,8 @@ block_verifiers_list_t current_block_verifiers_list;
 block_verifiers_list_t next_block_verifiers_list;
 
 NetworkNode network_nodes[] = {
-    {"XCA1dd7JaWhiuBavUM2ZTJG3GdgPkT1Yd5Q6VvNvnxbEfb6JhUhziTF6w5mMPVeoSv3aa1zGyhedpaa2QQtGEjBo7N6av9nhaU", "xcashseeds.us",
-     "f681a933620c8e9e029d9ac0977d3a2f1d6a64cc49304e079458e3b5d2d4a66f",0},
+    {"XCA1T1uxPiS8oprWpaCrUiiFcQB3KEriiUVqeeqnVtiKakSZmrZhoXKGbzqn4wj3EXY4JFPdJHqGr7iRHVxF4yyE28NvzLQgZf", "xcashseeds.us",
+     "d6d46ef68fb24e13a307bce08e3b31ecdd6601776f5e136bf1be7f5dcfff45c7",0},
     {"XCA1b6Sg5QVBX4jrctQ9SVUcHFqpaGST6bqtFpyoQadTX8SaDs92xR8iec3VfaXKzhYijFiMfwoM4TuYRgy6NXzn5titJnWbra", "xcashseeds.uk",
      "63232aa1b020a772945bf50ce96db9a04242583118b5a43952f0aaf9ecf7cfbb",0},
     // Sentinel value (empty entry to mark the end)
