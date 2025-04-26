@@ -141,7 +141,11 @@ int parse_json_data(const char *data, const char *field_name, char *result, size
         strncpy(result, current_obj->valuestring, result_size - 1);
         result[result_size - 1] = '\0';
     } else if (cJSON_IsNumber(current_obj)) {
-        snprintf(result, result_size, "%.6f", current_obj->valuedouble);
+        if (strcmp(field_name, "result.count") == 0) {
+            snprintf(result, result_size, "%d", current_obj->valueint);
+        } else {
+            snprintf(result, result_size, "%.6f", current_obj->valuedouble);
+        }
     } else if (cJSON_IsBool(current_obj)) {
         snprintf(result, result_size, "%s", cJSON_IsTrue(current_obj) ? "true" : "false");
     } else {
