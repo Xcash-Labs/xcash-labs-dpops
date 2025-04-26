@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <jansson.h>
+#include <cjson/cJSON.h>
 #include "config.h"
 #include "globals.h"
 #include "macro_functions.h"
@@ -13,7 +13,7 @@
 #include "db_sync.h"
 #include "xcash_message.h"
 
-void server_received_msg_get_block_hash(server_client_t* client, const char* MESSAGE);
+//void server_received_msg_get_block_hash(server_client_t* client, const char* MESSAGE);
 void server_received_msg_get_block_producers(server_client_t* client, const char* MESSAGE);
 void server_received_msg_get_sync_info(server_client_t* client, const char* MESSAGE);
 //void server_receive_data_socket_get_current_block_height(const char* CLIENT_IP_ADDRESS);   //  ???????????

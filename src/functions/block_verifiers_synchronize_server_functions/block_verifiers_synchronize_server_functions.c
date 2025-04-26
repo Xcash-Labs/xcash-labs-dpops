@@ -49,55 +49,6 @@ cleanup:
   return result;
 }
 
-void server_received_msg_get_block_hash(server_client_t *client, const char *MESSAGE) {
-  INFO_PRINT("Received %s, %s", __func__, "XCASH_GET_BLOCK_HASH");
-
-  // Parse JSON
-  json_error_t error;
-  json_t *json_message = json_loads(MESSAGE, 0, &error);
-  if (!json_message) {
-    ERROR_PRINT("Error parsing JSON: %s", error.text);
-    return;
-  }
-
-  json_t *block_height_json = json_object_get(json_message, "block_height");
-  if (!json_is_integer(block_height_json)) {
-    ERROR_PRINT("block_height is not an integer");
-    json_decref(json_message);
-    return;
-  }
-
-  unsigned long block_height = (unsigned long)json_integer_value(block_height_json);
-  json_decref(json_message);
-
-  // Find block hash
-  char block_hash[DATA_HASH_LENGTH + 1] = {0};  // Initialize properly
-  if (!get_block_hash(block_height, block_hash, sizeof(block_hash))) {
-    ERROR_PRINT("Failed to get block hash for block height %lu", block_height);
-    return;
-  }
-
-  // Build reply JSON
-  json_t *reply_json = json_object();
-  if (!reply_json) {
-    ERROR_PRINT("Failed to create reply JSON object");
-    return;
-  }
-
-  json_object_set_new(reply_json, "message_settings", json_string("XCASH_GET_BLOCK_HASH"));
-  json_object_set_new(reply_json, "public_address", json_string(xcash_wallet_public_address));
-  json_object_set_new(reply_json, "block_hash", json_string(block_hash));
-  char *message_result_data = json_dumps(reply_json, JSON_COMPACT);
-  json_decref(reply_json);
-
-  if (message_result_data == NULL) {
-    ERROR_PRINT("Failed to serialize reply JSON");
-    return;
-  }
-  send_data_uv(client, message_result_data);
-  free(message_result_data);
-}
-
 void server_received_msg_get_sync_info(server_client_t *client, const char *MESSAGE)
 {
     (void)MESSAGE;
@@ -153,39 +104,51 @@ void server_received_msg_get_sync_info(server_client_t *client, const char *MESS
     return;
 }
 
+#include <cjson/cJSON.h>
+
 void server_received_msg_get_block_producers(server_client_t *client, const char *MESSAGE)
 {
     (void)MESSAGE;
     DEBUG_PRINT("received %s, %s", __func__, "XCASH_GET_BLOCK_PRODUCERS");
 
     // Create root JSON object
-    json_t *reply_json = json_object();
-    json_object_set_new(reply_json, "message_settings", json_string("XCASH_GET_BLOCK_PRODUCERS"));
-    json_object_set_new(reply_json, "public_address", json_string(xcash_wallet_public_address));
+    cJSON *reply_json = cJSON_CreateObject();
+    if (!reply_json) {
+        ERROR_PRINT("Failed to create JSON object");
+        return;
+    }
+
+    cJSON_AddStringToObject(reply_json, "message_settings", "XCASH_GET_BLOCK_PRODUCERS");
+    cJSON_AddStringToObject(reply_json, "public_address", xcash_wallet_public_address);
 
     // Arrays for producer addresses and IPs
-    json_t *producers_array = json_array();
-    json_t *producers_ip_array = json_array();
+    cJSON *producers_array = cJSON_CreateArray();
+    cJSON *producers_ip_array = cJSON_CreateArray();
+
+    if (!producers_array || !producers_ip_array) {
+        ERROR_PRINT("Failed to create JSON arrays");
+        cJSON_Delete(reply_json);
+        return;
+    }
 
     for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
         if (strcmp(delegates_all[i].online_status, "true") == 0) {
-            json_array_append_new(producers_array, json_string(delegates_all[i].public_address));
-            json_array_append_new(producers_ip_array, json_string(delegates_all[i].IP_address));
+            cJSON_AddItemToArray(producers_array, cJSON_CreateString(delegates_all[i].public_address));
+            cJSON_AddItemToArray(producers_ip_array, cJSON_CreateString(delegates_all[i].IP_address));
         }
     }
 
-    // Attach arrays to the root JSON object
-    json_object_set_new(reply_json, "producers", producers_array);
-    json_object_set_new(reply_json, "producers_ip", producers_ip_array);
+    cJSON_AddItemToObject(reply_json, "producers", producers_array);
+    cJSON_AddItemToObject(reply_json, "producers_ip", producers_ip_array);
 
-    // Serialize JSON and send it
-    char *message_data = json_dumps(reply_json, JSON_COMPACT);
-    json_decref(reply_json);  // Done with JSON object
-
+    // Serialize and send
+    char *message_data = cJSON_PrintUnformatted(reply_json);
     if (message_data) {
         send_data_uv(client, message_data);  // Sends + appends SOCKET_END_STRING internally
         free(message_data);
     } else {
         ERROR_PRINT("Failed to serialize producer JSON");
     }
+
+    cJSON_Delete(reply_json);  // Cleanup
 }

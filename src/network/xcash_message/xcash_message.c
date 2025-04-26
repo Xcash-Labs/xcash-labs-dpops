@@ -278,11 +278,11 @@ else {
   xcash_msg_t msg_type = get_message_type(trans_type);
   switch (msg_type) {
     case XMSG_XCASH_GET_BLOCK_HASH:
-      if (server_limit_IP_addresses(1, client->client_ip) == 1) {
-        server_received_msg_get_block_hash(client, data);
-        server_limit_IP_addresses(0, client->client_ip);
-      }
-      break;
+//      if (server_limit_IP_addresses(1, client->client_ip) == 1) {
+//        server_received_msg_get_block_hash(client, data);
+//        server_limit_IP_addresses(0, client->client_ip);
+//      }
+//      break;
 
     case XMSG_XCASH_GET_SYNC_INFO:
       if (server_limit_IP_addresses(1, client->client_ip) == 1) {
