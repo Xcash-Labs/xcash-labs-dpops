@@ -85,6 +85,7 @@ bool get_sync_nodes_majority_list_top(xcash_node_sync_info_t** majority_list_res
     response_t** replies = NULL;
 
     // Send message to get sync info from all nodes
+    DEBUG_PRINT("Made it here..........");
     if (!send_message(XNET_DELEGATES_ALL, XMSG_XCASH_GET_SYNC_INFO, &replies)) {
         ERROR_PRINT("Failed to get sync info from all nodes");
         cleanup_responses(replies);
