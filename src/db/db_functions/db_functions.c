@@ -128,6 +128,8 @@ int insert_document_into_collection_json(const char* DATABASE, const char* COLLE
     ERROR_PRINT("Formatted JSON size exceeds buffer limit.");
     return XCASH_ERROR;
   }
+  DEBUG_PRINT("Data_buffer %s", formatted_json);
+
 
   mongoc_client_t* database_client_thread = get_temporary_connection();
   if (!database_client_thread) return XCASH_ERROR;
