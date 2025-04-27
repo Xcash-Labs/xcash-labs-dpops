@@ -138,6 +138,14 @@ int read_organize_delegates(delegates_t* delegates, size_t* delegates_count_resu
 
     bson_destroy(delegates_db_data);
     qsort(delegates, delegates_count, sizeof(delegates_t), compare_delegates);
+
+    for (int i = 0; i < delegates_count; i++) {
+         DEBUG_PRINT("public_address: %s", delegates[i].public_address);
+         DEBUG_PRINT("delegate_name: %s", delegates[i].delegate_name);
+         DEBUG_PRINT("online_status: %s", delegates[i].online_status);
+         DEBUG_PRINT("total_vote_count: %s", delegates[i].total_vote_count);
+    }
+
     *delegates_count_result = delegates_count;
 
     return XCASH_OK;
