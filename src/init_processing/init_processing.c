@@ -71,7 +71,7 @@ bool init_processing(const arg_config_t *arg_config) {
 
   // brief check if database is empty
   if (count_db_delegates() <= 0 && count_db_statistics() <= 0) {
-    DEBUG_PRINT("Both are less <= 0 ............................................................");
+    INFO_PRINT("Delegates and Statistics collections do not exist so creating them.");
     // Check if it should create the default database data
     char json_buffer[TRANSFER_BUFFER_SIZE];
 

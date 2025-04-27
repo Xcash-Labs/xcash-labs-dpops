@@ -104,7 +104,7 @@ int insert_document_into_collection_json(const char* DATABASE, const char* COLLE
   if (strstr(COLLECTION, "reserve_proofs") && (message = strstr(data_buffer, "\"public_address_created_reserve_proof\":\""))) {
     message += 40;
     snprintf(data_hash, sizeof(data_hash), "000000000000000000000000000000%.*s", DATA_HASH_LENGTH - 32, message);
-  } else if (strstr(COLLECTION, "reserve_bytes") && (message = strstr(data_buffer, "\"reserve_bytes_data_hash\":\""))) {
+  } else if (strstr(COLLECTION, "reserve_bytes") && (message = strstr(data_buffer, f"\"reserve_bytes_data_hash\":\""))) {
     message += 27;
     strncpy(data_hash, message, DATA_HASH_LENGTH);
   } else if (strstr(COLLECTION, "delegates") && (message = strstr(data_buffer, "\"public_key\":\""))) {
@@ -121,7 +121,7 @@ int insert_document_into_collection_json(const char* DATABASE, const char* COLLE
     return XCASH_ERROR;
   }
 
-  int json_size = snprintf(formatted_json, sizeof(formatted_json), "{\"_id\":\"%s\",\"data\":%s}", data_hash, data_buffer);
+  int json_size = snprintf(formatted_json, sizeof(formatted_json), "{\"_id\":\"%s\",%s", data_hash, data_buffer);
   if (json_size < 0 || json_size >= (int)sizeof(formatted_json)) {
     ERROR_PRINT("Formatted JSON size exceeds buffer limit.");
     return XCASH_ERROR;
