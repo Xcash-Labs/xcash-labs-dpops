@@ -83,6 +83,7 @@ xcash_round_result_t process_round(void) {
     return ROUND_ERROR;
   }
 
+  INFO_STAGE_PRINT("Part 2 - Initial Network Block Verifiers Sync Part 222222");
   size_t network_majority_count = 0;
   xcash_node_sync_info_t* nodes_majority_list = NULL;
   if (!initial_db_sync_check(&network_majority_count, &nodes_majority_list) || !nodes_majority_list) {
