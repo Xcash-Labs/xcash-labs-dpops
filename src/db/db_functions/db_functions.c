@@ -121,6 +121,8 @@ int insert_document_into_collection_json(const char* DATABASE, const char* COLLE
     return XCASH_ERROR;
   }
 
+
+  DEBUG_PRINT('Data_buffer %s', data_buffer);
   int json_size = snprintf(formatted_json, sizeof(formatted_json), "{\"_id\":\"%s\",%s", data_hash, data_buffer);
   if (json_size < 0 || json_size >= (int)sizeof(formatted_json)) {
     ERROR_PRINT("Formatted JSON size exceeds buffer limit.");
