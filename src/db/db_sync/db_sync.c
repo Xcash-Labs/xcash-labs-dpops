@@ -208,7 +208,7 @@ bool get_node_sync_info(xcash_node_sync_info_t *sync_info) {
     }
 
     bson_destroy(filter);
-
+*/
     // Fill hashes for each DB
     for (size_t i = 0; i < DATABASE_TOTAL; i++) {
         if (!get_db_data_hash(collection_names[i], sync_info->db_hashes[i])) {
@@ -217,7 +217,7 @@ bool get_node_sync_info(xcash_node_sync_info_t *sync_info) {
             return XCASH_ERROR;
         }
     }
-*/
+
     return XCASH_OK;  // Sync info retrieval successful
 }
 
