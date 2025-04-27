@@ -152,6 +152,7 @@ int get_random_majority(xcash_node_sync_info_t *majority_list, size_t majority_c
  * @return int Returns XCASH_OK (1) if successful, XCASH_ERROR (0) if an error occurs.
  */
 bool get_node_sync_info(xcash_node_sync_info_t *sync_info) {
+ /*
     if (!sync_info) {
         ERROR_PRINT("Invalid sync_info pointer.");
         return XCASH_ERROR;
@@ -216,7 +217,7 @@ bool get_node_sync_info(xcash_node_sync_info_t *sync_info) {
             return XCASH_ERROR;
         }
     }
-
+*/
     return XCASH_OK;  // Sync info retrieval successful
 }
 
