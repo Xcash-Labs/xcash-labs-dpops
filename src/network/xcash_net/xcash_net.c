@@ -39,7 +39,10 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
 
   xcash_msg_t msg_type = get_message_type(message);
   bool is_nonreturn = is_nonreturn_type(msg_type);
-  DEBUG_PRINT("Message type %s is_nonreturn: %s", msg_type, is_nonreturn ? "true" : "false");
+  if (is_nonreturn) {
+      DEBUG_PRINT("Message type is_nonreturn");
+  }
+
   
 
   DEBUG_PRINT("Made it here xnet send data multi..........");
