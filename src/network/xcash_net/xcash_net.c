@@ -39,7 +39,8 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
 
   xcash_msg_t msg_type = get_message_type(message);
   bool is_nonreturn = is_nonreturn_type(msg_type);
-
+  DEBUG_PRINT("Message type %s is_nonreturn: %s", msg_type, is_nonreturn ? "true" : "false");
+  
 
   DEBUG_PRINT("Made it here xnet send data multi..........");
 
@@ -101,22 +102,35 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
         return false;  // Handle memory allocation failure
       }
 
-      DEBUG_PRINT("XNET_SEEDS_ALL....");
+      DEBUG_PRINT("XNET_DELEGATES_ALL....");
 
       size_t host_index = 0;
       for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
-        if (strlen(delegates_all[i].IP_address) != 0) {
-          if (!delegates_all[i].IP_address) {  // Check for NULL IP address
-            ERROR_PRINT("IP address is NULL for delegate %s", delegates_all[i].delegate_name);
-            continue;  // Skip to next delegate
-          }
-
-          DEBUG_PRINT("REQ to %s : %s", delegates_all[i].delegate_name, delegates_all[i].IP_address);
-          delegates_hosts[host_index++] = delegates_all[i].IP_address;  // Direct assignment
+        const char *ip = delegates_all[i].IP_address;
+        const char *delegate_name = delegates_all[i].delegate_name;
+    
+        // Null check first for safety
+        if (!ip) {
+            ERROR_PRINT("IP address is NULL for delegate %s", delegate_name);
+            continue;
         }
+    
+        // Skip empty IP strings
+        if (strlen(ip) == 0) {
+            continue;
+        }
+    
+        // Skip self by public address (assuming index `i` aligns correctly)
+        if (strcmp(network_nodes[i].seed_public_address, xcash_wallet_public_address) == 0) {
+            DEBUG_PRINT("Skipping self delegate: %s (%s)", delegate_name, ip);
+            continue;
+        }
+    
+        DEBUG_PRINT("REQ to %s : %s", delegate_name, ip);
+        delegates_hosts[host_index++] = ip;
       }
-      delegates_hosts[host_index] = NULL;  // Null-terminate the array
-      hosts = delegates_hosts;             // Assign heap-allocated array to hosts
+      delegates_hosts[host_index] = NULL; // Null-terminate the array
+      hosts = delegates_hosts;            // Assign heap-allocated array to hosts
     } break;
 
     case XNET_DELEGATES_ALL_ONLINE: {
