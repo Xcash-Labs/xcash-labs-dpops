@@ -537,6 +537,7 @@ bool check_sync_nodes_majority_list(response_t** replies, xcash_node_sync_info_t
     // char parse_buffer[DATA_HASH_LENGTH + 1] = {0}; no longer used
     // char record_name[DB_COLLECTION_NAME_SIZE] = {0}; no longer used
 
+    char parse_buffer[DATA_HASH_LENGTH + 1] = {0};
     size_t sync_state_index = 0;
 
     // Parse responses
