@@ -73,7 +73,7 @@ void show_majority_statistics(const xcash_node_sync_info_t* majority_list, size_
     INFO_PRINT("Nodes majority status (%ld nodes found):", items_count);
 }
 
-jed
+
 bool get_sync_nodes_majority_list_top(xcash_node_sync_info_t** majority_list_result, size_t* majority_count_result) {
     if (!majority_list_result || !majority_count_result) {
         ERROR_PRINT("Invalid argument: NULL pointer passed to get_sync_nodes_majority_list_top");
@@ -446,7 +446,7 @@ bool initial_sync_node(const xcash_node_sync_info_t *majority_source) {
 
 
 
-called from xcash_roound 
+//called from xcash_roound 
 bool initial_db_sync_check(size_t *majority_count, xcash_node_sync_info_t **majority_list_result) {
     if (!majority_count) {
         ERROR_PRINT("Invalid argument: majority_count is NULL.");
