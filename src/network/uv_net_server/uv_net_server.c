@@ -210,17 +210,42 @@ void send_data_uv(server_client_t *client, const char *message) {
         return;
     }
 
-    write_req->client = client;
+//    write_req->client = client;
 
-    uv_buf_t buf = uv_buf_init(write_req->message_copy, length);
+//    uv_buf_t buf = uv_buf_init(write_req->message_copy, length);
 
-    int result = uv_write(&write_req->req, (uv_stream_t*)&client->handle, &buf, 1, on_write_complete);
-    if (result < 0) {
-        ERROR_PRINT("uv_write error: %s", uv_strerror(result));
-        free(write_req->message_copy);
-        free(write_req);
-        return;
-    }
+//    int result = uv_write(&write_req->req, (uv_stream_t*)&client->handle, &buf, 1, on_write_complete);
+//    if (result < 0) {
+//        ERROR_PRINT("uv_write error: %s", uv_strerror(result));
+//        free(write_req->message_copy);
+//        free(write_req);
+//        return;
+//    }
+
+
+write_req->client = client;
+
+uv_buf_t buf = uv_buf_init(write_req->message_copy, length);
+
+// Debug checks before calling uv_write
+DEBUG_PRINT("Preparing to write message to client");
+DEBUG_PRINT("Message address: %p", (void *)write_req->message_copy);
+DEBUG_PRINT("Message content (first 50 bytes): %.50s", write_req->message_copy);
+DEBUG_PRINT("Message length: %zu", length);
+DEBUG_PRINT("Client handle: %p", (void *)&client->handle);
+
+int result = uv_write(&write_req->req, (uv_stream_t*)&client->handle, &buf, 1, on_write_complete);
+if (result < 0) {
+    ERROR_PRINT("uv_write error: %s", uv_strerror(result));
+    free(write_req->message_copy);
+    free(write_req);
+    return;
+} else {
+    DEBUG_PRINT("uv_write submitted successfully");
+}
+
+
+
 
     // Initialize the timer for the timeout
     uv_timer_init(uv_default_loop(), &write_req->timer);
