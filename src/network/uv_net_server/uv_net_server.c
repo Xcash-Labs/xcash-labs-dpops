@@ -182,9 +182,6 @@ void stop_tcp_server() {
     } else {
         INFO_PRINT("Event loop closed successfully.");
     }
-
-    // Wait for the libuv thread to fully exit
-    pthread_join(uv_thread, NULL);
 }
 
 void on_write_complete(uv_write_t *req, int status);
