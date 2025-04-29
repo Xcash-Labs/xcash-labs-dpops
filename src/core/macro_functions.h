@@ -15,10 +15,11 @@
 #define INFO_STATUS_FAIL "\t[" RED_TEXT("X") "]"
 
 // Define log levels
+
 #define LOG_LEVEL_DEBUG 4
-#define LOG_LEVEL_INFO 3
+#define LOG_LEVEL_ERROR 3
 #define LOG_LEVEL_WARNING 2
-#define LOG_LEVEL_ERROR 1
+#define LOG_LEVEL_INFO 1
 #define LOG_LEVEL_CRITICAL 0
 #define DEBUG_PRINT(fmt, ...) do { if (log_level >= LOG_LEVEL_DEBUG) { fprintf(stderr, "\033[1;35mDEBUG: " fmt "\033[0m\n", ##__VA_ARGS__); fprintf(stderr, "  --> TRACE: %s:%d, %s()\n\n", __FILE__, __LINE__, __func__); } } while (0)
 #define INFO_PRINT(fmt, ...) do { if (log_level >= LOG_LEVEL_INFO) { fprintf(stderr, BRIGHT_WHITE_TEXT("INFO: ") fmt "\n", ##__VA_ARGS__); } } while (0)

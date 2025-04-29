@@ -90,7 +90,7 @@ void on_client_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
         DEBUG_PRINT("Received data: %.*s", (int)nread, buf->base);
         handle_srv_message(buf->base, nread, client_data);
     } else if (nread == UV_EOF) {
-        ERROR_PRINT("Client disconnected.");
+        DEBUG_PRINT("Client disconnected.");
         uv_read_stop(client);  // Stop reading if the client disconnected
         uv_close((uv_handle_t *)client, on_client_close);
     } else if (nread < 0) {
