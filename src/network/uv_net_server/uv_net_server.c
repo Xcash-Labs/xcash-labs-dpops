@@ -182,102 +182,90 @@ void stop_tcp_server() {
     } else {
         INFO_PRINT("Event loop closed successfully.");
     }
+
+    // Wait for the libuv thread to fully exit
+    pthread_join(uv_thread, NULL);
 }
 
 void on_write_complete(uv_write_t *req, int status);
-
 void on_write_timeout(uv_timer_t *timer);
+void on_generic_close(uv_handle_t *handle);  // New helper
 
 void send_data_uv(server_client_t *client, const char *message) {
-    if (!client || !message) {
-        ERROR_PRINT("Invalid parameters in send_data_uv");
-        return;
-    }
+  if (!client || !message) {
+    ERROR_PRINT("Invalid parameters in send_data_uv");
+    return;
+  }
 
-    // from old code - need to look into this ...  big buffer ???
-    size_t length = strlen(message) >= MAXIMUM_BUFFER_SIZE ? MAXIMUM_BUFFER_SIZE : strlen(message) + BUFFER_SIZE;
+  size_t length = strlen(message);
+  if (length >= MAXIMUM_BUFFER_SIZE) {
+    length = MAXIMUM_BUFFER_SIZE - 1;  // Truncate safely
+  }
 
-    write_srv_request_t *write_req = malloc(sizeof(write_srv_request_t));
-    if (!write_req) {
-        ERROR_PRINT("Memory allocation failed for write_srv_request_t");
-        return;
-    }
+  write_srv_request_t *write_req = malloc(sizeof(write_srv_request_t));
+  if (!write_req) {
+    ERROR_PRINT("Memory allocation failed for write_srv_request_t");
+    return;
+  }
 
-    write_req->message_copy = strdup(message);
-    if (!write_req->message_copy) {
-        ERROR_PRINT("Memory allocation failed for message copy");
-        free(write_req);
-        return;
-    }
+  write_req->message_copy = strndup(message, length);
+  if (!write_req->message_copy) {
+    ERROR_PRINT("Memory allocation failed for message copy");
+    free(write_req);
+    return;
+  }
 
-//    write_req->client = client;
+  write_req->client = client;
 
-//    uv_buf_t buf = uv_buf_init(write_req->message_copy, length);
+  uv_buf_t buf = uv_buf_init(write_req->message_copy, length);
 
-//    int result = uv_write(&write_req->req, (uv_stream_t*)&client->handle, &buf, 1, on_write_complete);
-//    if (result < 0) {
-//        ERROR_PRINT("uv_write error: %s", uv_strerror(result));
-//        free(write_req->message_copy);
-//        free(write_req);
-//        return;
-//    }
-
-
-write_req->client = client;
-
-uv_buf_t buf = uv_buf_init(write_req->message_copy, length);
-
-// Debug checks before calling uv_write
-DEBUG_PRINT("Preparing to write message to client");
-DEBUG_PRINT("Message address: %p", (void *)write_req->message_copy);
-DEBUG_PRINT("Message content (first 50 bytes): %.50s", write_req->message_copy);
-DEBUG_PRINT("Message length: %zu", length);
-DEBUG_PRINT("Client handle: %p", (void *)&client->handle);
-
-int result = uv_write(&write_req->req, (uv_stream_t*)&client->handle, &buf, 1, on_write_complete);
-if (result < 0) {
+  int result = uv_write(&write_req->req, (uv_stream_t *)&client->handle, &buf, 1, on_write_complete);
+  if (result < 0) {
     ERROR_PRINT("uv_write error: %s", uv_strerror(result));
     free(write_req->message_copy);
     free(write_req);
     return;
-} else {
-    DEBUG_PRINT("uv_write submitted successfully");
-}
+  }
 
-
-
-
-    // Initialize the timer for the timeout
-    uv_timer_init(uv_default_loop(), &write_req->timer);
-    write_req->timer.data = write_req;
-    uv_timer_start(&write_req->timer, on_write_timeout, SEND_TIMEOUT, 0);
+  // Initialize the timer for timeout
+  uv_timer_init(uv_default_loop(), &write_req->timer);
+  write_req->timer.data = write_req;
+  uv_timer_start(&write_req->timer, on_write_timeout, SEND_TIMEOUT, 0);
 }
 
 void on_write_complete(uv_write_t *req, int status) {
-    write_srv_request_t *write_req = (write_srv_request_t *)req;
+  write_srv_request_t *write_req = (write_srv_request_t *)req;
 
-    if (status < 0) {
-        ERROR_PRINT("Write error: %s", uv_strerror(status));
-    } else {
-        DEBUG_PRINT("Message sent successfully");
-    }
+  if (status < 0) {
+    ERROR_PRINT("Write error: %s", uv_strerror(status));
+  } else {
+    DEBUG_PRINT("Message sent successfully");
+  }
 
-    // Stop and close the timer
-    uv_timer_stop(&write_req->timer);
-    uv_close((uv_handle_t *)&write_req->timer, NULL);
-
-    free(write_req->message_copy);
-    free(write_req);
+  // Stop and close the timer
+  uv_timer_stop(&write_req->timer);
+  uv_close((uv_handle_t *)&write_req->timer, on_generic_close);  // Defer free to after timer closed
 }
 
 void on_write_timeout(uv_timer_t *timer) {
-    write_srv_request_t *write_req = (write_srv_request_t *)timer->data;
+  write_srv_request_t *write_req = (write_srv_request_t *)timer->data;
 
-    ERROR_PRINT("Write operation timed out");
+  ERROR_PRINT("Write operation timed out");
 
-    // Close the client connection
-    uv_close((uv_handle_t *)&write_req->client->handle, NULL);
+  uv_close((uv_handle_t *)&write_req->timer, NULL);  // Safe, already will be handled
 
-    free(write_req->message_copy);
+  // Close the client connection (force disconnect)
+  uv_close((uv_handle_t *)&write_req->client->handle, on_generic_close);  // Defer free after client close
+}
+
+void on_generic_close(uv_handle_t *handle) {
+  write_srv_request_t *write_req = (write_srv_request_t *)handle->data;
+
+  if (write_req) {
+    if (write_req->message_copy) {
+      free(write_req->message_copy);
+      write_req->message_copy = NULL;
+    }
     free(write_req);
+  }
 }
