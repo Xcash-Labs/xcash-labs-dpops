@@ -5,6 +5,23 @@ static uv_tcp_t server;
 static pthread_t uv_thread;
 static uv_async_t async_shutdown;  // Async handle for clean shutdown
 
+void handle_message_work(uv_work_t *req) {
+    message_work_t *work = (message_work_t *)req->data;
+    handle_srv_message(work->data, work->data_len, work->client);
+}
+
+void handle_message_after(uv_work_t *req, int status) {
+    message_work_t *work = (message_work_t *)req->data;
+    DEBUG_PRINT("Finished background message processing from %s", work->client->client_ip);
+
+    work->client->received_reply = true;
+    check_if_ready_to_close(work->client);
+
+    free(work->data);
+    free(work);
+    free(req);
+}
+
 // Cleanup function after client disconnects
 void on_client_close(uv_handle_t *handle) {
   if (handle) {
@@ -132,23 +149,9 @@ void on_client_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
     uv_queue_work(
         uv_default_loop(),
         req,
-        [](uv_work_t *req) {
-          // Background thread
-          message_work_t *work = (message_work_t *)req->data;
-          handle_srv_message(work->data, work->data_len, work->client);
-        },
-        [](uv_work_t *req, int status) {
-          // Main loop thread after work finishes
-          message_work_t *work = (message_work_t *)req->data;
-          DEBUG_PRINT("Finished background message processing from %s", work->client->client_ip);
-
-          work->client->received_reply = true;
-          check_if_ready_to_close(work->client);
-
-          free(work->data);
-          free(work);
-          free(req);
-        });
+        handle_message_work,
+        handle_message_after
+    );
 
   } else if (nread == UV_EOF) {
     DEBUG_PRINT("Client disconnected.");
