@@ -11,7 +11,6 @@
 #include "globals.h"
 #include "macro_functions.h"
 
-
 typedef struct {
     uv_tcp_t handle;
     char client_ip[INET6_ADDRSTRLEN];
@@ -25,6 +24,12 @@ typedef struct {
     char *message_copy;
     server_client_t *client;
 } write_srv_request_t;
+
+typedef struct {
+    server_client_t *client;
+    char *data;
+    size_t data_len;
+} message_work_t;
 
 #include "xcash_message.h"
 

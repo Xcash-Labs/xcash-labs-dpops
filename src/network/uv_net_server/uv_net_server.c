@@ -96,22 +96,70 @@ void alloc_buffer_srv(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf)
 // Read data from client
 void on_client_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
   server_client_t *client_data = (server_client_t *)client;
+
   if (nread > 0) {
     DEBUG_PRINT("Received data: %.*s", (int)nread, buf->base);
-    handle_srv_message(buf->base, nread, client_data);
-    client_data->received_reply = true;
-    check_if_ready_to_close(client_data);
+
+    message_work_t *work_data = malloc(sizeof(message_work_t));
+    if (!work_data) {
+      ERROR_PRINT("Failed to allocate work data");
+      free(buf->base);
+      return;
+    }
+
+    work_data->client = client_data;
+    work_data->data = strndup(buf->base, nread);
+    if (!work_data->data) {
+      free(work_data);
+      ERROR_PRINT("Failed to allocate data copy");
+      free(buf->base);
+      return;
+    }
+
+    work_data->data_len = nread;
+
+    uv_work_t *req = malloc(sizeof(uv_work_t));
+    if (!req) {
+      free(work_data->data);
+      free(work_data);
+      ERROR_PRINT("Failed to allocate uv_work_t");
+      free(buf->base);
+      return;
+    }
+
+    req->data = work_data;
+
+    uv_queue_work(
+        uv_default_loop(),
+        req,
+        [](uv_work_t *req) {
+          // Background thread
+          message_work_t *work = (message_work_t *)req->data;
+          handle_srv_message(work->data, work->data_len, work->client);
+        },
+        [](uv_work_t *req, int status) {
+          // Main loop thread after work finishes
+          message_work_t *work = (message_work_t *)req->data;
+          DEBUG_PRINT("Finished background message processing from %s", work->client->client_ip);
+
+          work->client->received_reply = true;
+          check_if_ready_to_close(work->client);
+
+          free(work->data);
+          free(work);
+          free(req);
+        });
+
   } else if (nread == UV_EOF) {
     DEBUG_PRINT("Client disconnected.");
-    uv_read_stop(client);  // Stop reading if the client disconnected
+    uv_read_stop(client);
     uv_close((uv_handle_t *)client, on_client_close);
   } else if (nread < 0) {
     ERROR_PRINT("Read error: %s", uv_strerror(nread));
-    uv_read_stop(client);  // Stop reading if there was an error
+    uv_read_stop(client);
     uv_close((uv_handle_t *)client, on_client_close);
   }
 
-  // Free buf->base only if it is not NULL
   if (buf && buf->base) {
     free(buf->base);
   }
