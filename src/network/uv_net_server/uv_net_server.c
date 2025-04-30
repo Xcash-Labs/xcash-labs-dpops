@@ -7,10 +7,17 @@ static uv_async_t async_shutdown;  // Async handle for clean shutdown
 
 void on_client_close(uv_handle_t *handle) {
   if (!handle) return;
+
   server_client_t *client = (server_client_t *)handle->data;
+
   if (client) {
-    DEBUG_PRINT("Client memory being freed: %s", client->client_ip);
+    DEBUG_PRINT("Client memory being freed: %s", client->client_ip[0] ? client->client_ip : "unknown");
+
+    // If you ever add timers or dynamically allocated buffers in server_client_t, clean them here
+    // Example (if used): uv_close((uv_handle_t*)&client->timer, NULL);
+
     free(client);
+    handle->data = NULL;  // Avoid dangling pointer
   }
 }
 
@@ -79,14 +86,15 @@ void on_new_connection(uv_stream_t *server_handle, int status) {
     return;
   }
 
-  server_client_t *client = (server_client_t *)malloc(sizeof(server_client_t));
+  // Allocate and initialize server client structure
+  server_client_t *client = malloc(sizeof(server_client_t));
   if (!client) {
-    ERROR_PRINT("Memory allocation failed for client");
+    ERROR_PRINT("Memory allocation failed for new client");
     return;
   }
-
   memset(client, 0, sizeof(server_client_t));
 
+  // Initialize TCP handle
   if (uv_tcp_init(server_handle->loop, (uv_tcp_t *)&client->handle) < 0) {
     ERROR_PRINT("Failed to initialize TCP handle for client");
     free(client);
@@ -95,18 +103,19 @@ void on_new_connection(uv_stream_t *server_handle, int status) {
 
   client->handle.data = client;
 
+  // Accept the connection
   if (uv_accept(server_handle, (uv_stream_t *)&client->handle) == 0) {
-    get_client_ip(client);  // Store client IP
+    get_client_ip(client);  // Get and store IP
     DEBUG_PRINT("New connection from: %s", client->client_ip);
 
-    if (uv_read_start((uv_stream_t *)&client->handle, alloc_buffer_srv, on_client_read) < 0) {
-      ERROR_PRINT("Failed to start reading from client");
-      client->closed = true;
+    // Start reading from the client
+    int rc = uv_read_start((uv_stream_t *)&client->handle, alloc_buffer_srv, on_client_read);
+    if (rc < 0) {
+      ERROR_PRINT("uv_read_start failed: %s", uv_strerror(rc));
       uv_close((uv_handle_t *)&client->handle, on_client_close);
-      return;
     }
   } else {
-    client->closed = true;
+    ERROR_PRINT("uv_accept failed");
     uv_close((uv_handle_t *)&client->handle, on_client_close);
   }
 }
@@ -174,6 +183,8 @@ void on_client_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
 
   } else if (nread == UV_EOF) {
     DEBUG_PRINT("Client disconnected.");
+    client_data->received_reply = true;
+    check_if_ready_to_close(client_data);
     uv_read_stop(client);
     if (!client_data->closed) {
       client_data->closed = true;
@@ -295,9 +306,11 @@ void on_write_complete(uv_write_t *req, int status) {
       uv_close((uv_handle_t *)&write_req->timer, on_timer_close);
     }
   
-    if (write_req->client && !uv_is_closing((uv_handle_t *)&write_req->client->handle)) {
-      uv_close((uv_handle_t *)&write_req->client->handle, on_client_close);
-    }
+  // mark the reply as sent:
+  if (write_req->client) {
+    write_req->client->sent_reply = true;
+    check_if_ready_to_close(write_req->client);  // Let read path decide
+  }
   }
 }
 
