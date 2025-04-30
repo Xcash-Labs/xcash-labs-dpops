@@ -109,6 +109,12 @@ void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
     }
 
     client->response->data = new_data;
+    DEBUG_PRINT("Look at data: %s", new_data);
+
+
+
+
+    
     memcpy(client->response->data + client->response->size, buf->base, nread);
     client->response->size += nread;
 
