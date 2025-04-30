@@ -26,8 +26,8 @@ typedef struct {
     char *host;
     char *data;
     size_t size;
-    time_t req_time_start; // timestamp before connection start
-    time_t req_time_end; // timestamp after connection closed
+    time_t req_time_start;
+    time_t req_time_end;
     response_status_t status;
     client_t *client;
 } response_t;
