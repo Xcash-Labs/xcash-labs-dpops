@@ -31,12 +31,15 @@ void safe_close(client_t* client) {
 void on_timeout(uv_timer_t* timer) {
   client_t* client = (client_t*)timer->data;
 
-  // If response already completed, skip timeout
+  // Skip if already done
   if (client->response->status == STATUS_OK || client->is_closing) {
     return;
   }
 
-  ERROR_PRINT("Write operation timed out");
+  // Determine phase
+  const char* phase = (client->sent_request ? "read" : "write");
+
+  ERROR_PRINT("Timeout during %s phase from %s", phase, client->response->host);
   client->response->status = STATUS_TIMEOUT;
   safe_close(client);
 }
