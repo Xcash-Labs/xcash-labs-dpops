@@ -295,10 +295,12 @@ void on_write_complete(uv_write_t *req, int status) {
   }
 
   if (!uv_is_closing((uv_handle_t *)&write_req->timer)) {
-    uv_timer_stop(&write_req->timer);
     uv_close((uv_handle_t *)&write_req->timer, on_timer_close);
   }
-  check_if_ready_to_close(client);
+
+  if (!uv_is_closing((uv_handle_t *)&client->handle)) {
+    check_if_ready_to_close(client);
+  }
 }
 
 void on_write_timeout(uv_timer_t *timer) {
