@@ -85,7 +85,7 @@ void on_connect(uv_connect_t* req, int status) {
   // stop connection timeout timer
   uv_timer_stop(&client->timer);
   // Start the timer to wait for write operation
-  uv_timer_start(&client->timer, on_timeout, UV_RESPONSE_TIMEOUT, 0);
+  uv_timer_start(&client->timer, on_timeout, UV_WRITE_TIMEOUT, 0);
 
   // Write the message to the server
   uv_buf_t buf = uv_buf_init((char*)client->message, strlen(client->message));
