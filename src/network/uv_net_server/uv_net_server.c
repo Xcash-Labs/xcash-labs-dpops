@@ -261,8 +261,21 @@ void stop_tcp_server() {
   }
 }
 
-void on_write_complete(uv_write_t *req, int status);
-//void on_write_timeout(uv_timer_t *timer);
+void on_write_complete(uv_write_t *req, int status) {
+  write_srv_request_t *write_req = (write_srv_request_t *)req;
+  server_client_t *client = write_req->client;
+
+  if (status < 0) {
+    ERROR_PRINT("Write error: %s", uv_strerror(status));
+  } else {
+    DEBUG_PRINT("Message sent successfully");
+    client->sent_reply = true;
+  }
+
+  uv_timer_stop(&write_req->timer);
+  uv_close((uv_handle_t *)&write_req->timer, on_timer_close);
+  check_if_ready_to_close(client);
+}
 
 void on_write_timeout(uv_timer_t *timer) {
   write_srv_request_t *write_req = (write_srv_request_t *)timer->data;
@@ -314,20 +327,3 @@ void send_data_uv(server_client_t *client, const char *message) {
   uv_timer_init(uv_default_loop(), &write_req->timer);
   uv_timer_start(&write_req->timer, on_write_timeout, UV_SEND_TIMEOUT, 0);
 }
-
-void on_write_complete(uv_write_t *req, int status) {
-  write_srv_request_t *write_req = (write_srv_request_t *)req;
-  server_client_t *client = write_req->client;
-
-  if (status < 0) {
-    ERROR_PRINT("Write error: %s", uv_strerror(status));
-  } else {
-    DEBUG_PRINT("Message sent successfully");
-    client->sent_reply = true;
-  }
-
-  uv_timer_stop(&write_req->timer);
-  uv_close((uv_handle_t *)&write_req->timer, on_timer_close);
-  check_if_ready_to_close(client);
-}
-
