@@ -31,6 +31,13 @@ void safe_close(client_t* client) {
 
 void on_timeout(uv_timer_t* timer) {
   client_t* client = (client_t*)timer->data;
+
+  // If response already completed, skip timeout
+  if (client->response->status == STATUS_OK || client->is_closing) {
+    return;
+  }
+
+  ERROR_PRINT("Write operation timed out");
   client->response->status = STATUS_TIMEOUT;
   safe_close(client);
 }
@@ -105,7 +112,6 @@ void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
       client->response->status = STATUS_ERROR;
     }
 
-    uv_timer_stop(&client->timer);
     safe_close(client);
   }
 
@@ -215,6 +221,9 @@ response_t** send_multi_request(const char** hosts, int port, const char* messag
   }
 
   uv_run(loop, UV_RUN_DEFAULT);
+  for (int i = 0; responses[i] != NULL; i++) {
+    DEBUG_PRINT("FINAL: Host %s status %s", responses[i]->host, status_to_string(responses[i]->status));
+  }  
 
   // Fallback: mark any unresolved clients as timed out
   for (int i = 0; responses[i] != NULL; i++) {
