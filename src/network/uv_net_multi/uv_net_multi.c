@@ -12,18 +12,17 @@ const char* status_to_string(int status) {
 
 void on_close(uv_handle_t* handle) {
   client_t* client = (client_t*)handle->data;
-  //  client->is_closing = 1;
+  DEBUG_PRINT("on_close() triggered for %s", client->response->host);
   client->response->req_time_end = time(NULL);
 }
 
 void safe_close(client_t* client) {
-  if (client->is_closing) return;  // guard against multiple calls
+  if (client->is_closing) return;
   client->is_closing = 1;
 
   if (!uv_is_closing((uv_handle_t*)&client->timer)) {
     uv_close((uv_handle_t*)&client->timer, NULL);
   }
-
   if (!uv_is_closing((uv_handle_t*)&client->handle)) {
     uv_close((uv_handle_t*)&client->handle, on_close);
   }
@@ -99,14 +98,11 @@ void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
     uv_timer_start(&client->timer, on_timeout, UV_RESPONSE_TIMEOUT, 0);
   } 
   else if (nread < 0) {
+    uv_timer_stop(&client->timer);
+
     if (nread == UV_EOF) {
       DEBUG_PRINT("EOF received from %s", client->response->host);
       client->response->status = STATUS_OK;
-      uv_timer_stop(&client->timer);
-      if (!uv_is_closing((uv_handle_t*)&client->timer)) {
-          uv_close((uv_handle_t*)&client->timer, NULL);  // or a cleanup callback
-      }
-      safe_close(client);
     } else {
       ERROR_PRINT("Read error from %s: %s", client->response->host, uv_strerror(nread));
       client->response->status = STATUS_ERROR;
