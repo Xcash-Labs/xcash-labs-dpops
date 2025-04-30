@@ -38,6 +38,7 @@ struct client_t{
     uv_write_t write_req;
     uv_timer_t timer;
     int is_closing;
+    int write_complete;
     response_t *response;
     const char *message;
 };

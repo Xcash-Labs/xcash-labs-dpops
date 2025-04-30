@@ -31,15 +31,13 @@ void safe_close(client_t* client) {
 void on_timeout(uv_timer_t* timer) {
   client_t* client = (client_t*)timer->data;
 
-  // Skip if already done
   if (client->response->status == STATUS_OK || client->is_closing) {
     return;
   }
 
-  // Determine phase
-  const char* phase = (client->sent_request ? "read" : "write");
-
+  const char* phase = client->write_complete ? "read" : "write";
   ERROR_PRINT("Timeout during %s phase from %s", phase, client->response->host);
+
   client->response->status = STATUS_TIMEOUT;
   safe_close(client);
 }
@@ -66,6 +64,7 @@ void on_write(uv_write_t* req, int status) {
 
   uv_timer_start(&client->timer, on_timeout, UV_RESPONSE_TIMEOUT, 0);
 
+  client->write_complete = 1;
   int rc = uv_read_start((uv_stream_t*)req->handle, alloc_buffer, on_read);
   if (rc < 0) {
     ERROR_PRINT("uv_read_start failed: %s", uv_strerror(rc));
