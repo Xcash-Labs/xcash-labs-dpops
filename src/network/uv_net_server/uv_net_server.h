@@ -16,6 +16,7 @@ typedef struct {
     char client_ip[INET6_ADDRSTRLEN];
     bool sent_reply;
     bool received_reply;
+    bool write_timeout;
 } server_client_t;
 
 typedef struct {

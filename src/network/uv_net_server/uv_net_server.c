@@ -5,7 +5,13 @@ static uv_tcp_t server;
 static pthread_t uv_thread;
 static uv_async_t async_shutdown;  // Async handle for clean shutdown
 
-void check_if_ready_to_close(server_client_t *client);
+void check_if_ready_to_close(server_client_t *client) {
+  if (client->sent_reply && client->received_reply) {
+    INFO_PRINT("Round-trip with %s complete. Closing connection.", client->client_ip);
+    uv_read_stop((uv_stream_t *)&client->handle);
+    uv_close((uv_handle_t *)&client->handle, on_client_close);
+  }
+}
 
 void on_timer_close(uv_handle_t *handle) {
   write_srv_request_t *write_req = (write_srv_request_t *)handle->data;
@@ -40,14 +46,6 @@ void handle_message_after(uv_work_t *req, int status) {
 void on_client_close(uv_handle_t *handle) {
   if (handle) {
     free(handle);  // Free memory allocated for the client
-  }
-}
-
-void check_if_ready_to_close(server_client_t *client) {
-  if (client->sent_reply && client->received_reply) {
-    INFO_PRINT("Round-trip with %s complete. Closing connection.", client->client_ip);
-    uv_read_stop((uv_stream_t *)&client->handle);
-    uv_close((uv_handle_t *)&client->handle, on_client_close);
   }
 }
 
@@ -281,8 +279,9 @@ void on_write_timeout(uv_timer_t *timer) {
   write_srv_request_t *write_req = (write_srv_request_t *)timer->data;
 
   ERROR_PRINT("Write operation timed out");
+  write_req->client->write_timeout = true;
   uv_close((uv_handle_t *)&write_req->client->handle, NULL);
-  uv_close((uv_handle_t *)&write_req->timer, on_timer_close);  
+//  uv_close((uv_handle_t *)&write_req->timer, on_timer_close);  
 }
 
 void send_data_uv(server_client_t *client, const char *message) {
