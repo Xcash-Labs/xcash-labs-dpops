@@ -262,7 +262,15 @@ void stop_tcp_server() {
 }
 
 void on_write_complete(uv_write_t *req, int status);
-void on_write_timeout(uv_timer_t *timer);
+//void on_write_timeout(uv_timer_t *timer);
+
+void on_write_timeout(uv_timer_t *timer) {
+  write_srv_request_t *write_req = (write_srv_request_t *)timer->data;
+
+  ERROR_PRINT("Write operation timed out");
+  uv_close((uv_handle_t *)&write_req->client->handle, NULL);
+  uv_close((uv_handle_t *)&write_req->timer, on_timer_close);  
+}
 
 void send_data_uv(server_client_t *client, const char *message) {
   if (!client || !message) {
@@ -323,10 +331,3 @@ void on_write_complete(uv_write_t *req, int status) {
   check_if_ready_to_close(client);
 }
 
-void on_write_timeout(uv_timer_t *timer) {
-  write_srv_request_t *write_req = (write_srv_request_t *)timer->data;
-
-  ERROR_PRINT("Write operation timed out");
-  uv_close((uv_handle_t *)&write_req->client->handle, NULL);
-  uv_close((uv_handle_t *)&write_req->timer, on_timer_close);  
-  }
