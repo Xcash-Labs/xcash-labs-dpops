@@ -129,7 +129,7 @@ void on_connect(uv_connect_t* req, int status) {
   uv_timer_stop(&client->timer); // Stop connect timeout
 
   // Prepare for write
-  uv_buf_t buf = uv_buf_init((char*)client->message, strlen(client->message));
+  uv_buf_t buf = uv_buf_init((char *)(uintptr_t)client->message, strlen(client->message));
   client->write_req.data = client;
 
   uv_timer_start(&client->timer, on_timeout, UV_WRITE_TIMEOUT, 0);
