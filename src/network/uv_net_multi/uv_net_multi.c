@@ -50,20 +50,19 @@ void alloc_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
 
 void on_write(uv_write_t* req, int status) {
   client_t* client = (client_t*)req->data;
+
   if (status < 0) {
-    // Handle write error
+    ERROR_PRINT("Write error: %s", uv_strerror(status));
     client->response->status = STATUS_ERROR;
     safe_close(client);
     return;
   }
 
-  // stop write timeout timer
-  uv_timer_stop(&client->timer);
+  if (uv_is_active((uv_handle_t*)&client->timer))
+    uv_timer_stop(&client->timer);
 
-  // Restart the read response timeout timer after successfully writing
   uv_timer_start(&client->timer, on_timeout, UV_RESPONSE_TIMEOUT, 0);
 
-  // Start reading from the server
   int rc = uv_read_start((uv_stream_t*)req->handle, alloc_buffer, on_read);
   if (rc < 0) {
     ERROR_PRINT("uv_read_start failed: %s", uv_strerror(rc));
@@ -73,6 +72,7 @@ void on_write(uv_write_t* req, int status) {
 }
 
 void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
+  client_t* client = (client_t*)stream->data;
   DEBUG_PRINT("on_read() called for %s with nread = %zd", client->response->host, nread);
   client_t* client = (client_t*)stream->data;
 
@@ -119,20 +119,28 @@ void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
 
 void on_connect(uv_connect_t* req, int status) {
   client_t* client = (client_t*)req->data;
+
   if (client->is_closing || status < 0) {
-    // Handle connection error
     DEBUG_PRINT("Connection error %s: %s", client->response->host, uv_strerror(status));
     client->response->status = STATUS_ERROR;
     safe_close(client);
     return;
   }
-  // stop connection timeout timer
-  uv_timer_stop(&client->timer);
-  // Start the timer to wait for write operation
+
+  uv_timer_stop(&client->timer); // Stop connect timeout
+
+  // Prepare for write
+  uv_buf_t buf = uv_buf_init((char*)client->message, strlen(client->message));
+  client->write_req.data = client;
+
   uv_timer_start(&client->timer, on_timeout, UV_WRITE_TIMEOUT, 0);
-  // Write the message to the server
-  uv_buf_t buf = uv_buf_init((char*)(uintptr_t)client->message, strlen(client->message));
-  uv_write(&client->write_req, (uv_stream_t*)&client->handle, &buf, 1, on_write);
+
+  int rc = uv_write(&client->write_req, (uv_stream_t*)&client->handle, &buf, 1, on_write);
+  if (rc < 0) {
+    ERROR_PRINT("uv_write() failed: %s", uv_strerror(rc));
+    client->response->status = STATUS_ERROR;
+    safe_close(client);
+  }
 }
 
 int is_ip_address(const char* host) {
