@@ -7,6 +7,17 @@ static uv_async_t async_shutdown;  // Async handle for clean shutdown
 
 void check_if_ready_to_close(server_client_t *client);
 
+void on_timer_close(uv_handle_t *handle) {
+  write_srv_request_t *write_req = (write_srv_request_t *)handle->data;
+
+  if (write_req) {
+    if (write_req->message_copy) {
+      free(write_req->message_copy);
+    }
+    free(write_req);
+  }
+}
+
 void handle_message_work(uv_work_t *req) {
     message_work_t *work = (message_work_t *)req->data;
     handle_srv_message(work->data, work->data_len, work->client);
@@ -252,7 +263,6 @@ void stop_tcp_server() {
 
 void on_write_complete(uv_write_t *req, int status);
 void on_write_timeout(uv_timer_t *timer);
-void on_generic_close(uv_handle_t *handle);  // New helper
 
 void send_data_uv(server_client_t *client, const char *message) {
   if (!client || !message) {
@@ -279,6 +289,8 @@ void send_data_uv(server_client_t *client, const char *message) {
   }
 
   write_req->client = client;
+  write_req->timer.data = write_req;
+  write_req->req.data = write_req;
 
   uv_buf_t buf = uv_buf_init(write_req->message_copy, length);
 
@@ -292,8 +304,6 @@ void send_data_uv(server_client_t *client, const char *message) {
 
   // Initialize the timer for timeout
   uv_timer_init(uv_default_loop(), &write_req->timer);
-  write_req->timer.data = write_req;
-  write_req->req.data = write_req;
   uv_timer_start(&write_req->timer, on_write_timeout, UV_SEND_TIMEOUT, 0);
 }
 
@@ -309,9 +319,7 @@ void on_write_complete(uv_write_t *req, int status) {
   }
 
   uv_timer_stop(&write_req->timer);
-  uv_close((uv_handle_t *)&write_req->timer, on_generic_close);
-
-  // 💡 Check if both flags are true
+  uv_close((uv_handle_t *)&write_req->timer, on_timer_close);
   check_if_ready_to_close(client);
 }
 
@@ -319,22 +327,6 @@ void on_write_timeout(uv_timer_t *timer) {
   write_srv_request_t *write_req = (write_srv_request_t *)timer->data;
 
   ERROR_PRINT("Write operation timed out");
-
-  uv_close((uv_handle_t *)&write_req->timer, NULL);  // Safe, already will be handled
-
-  // Close the client connection (force disconnect)
-  uv_close((uv_handle_t *)&write_req->client->handle, on_generic_close);  // Defer free after client close
-}
-
-void on_generic_close(uv_handle_t *handle) {
-  if (!handle || !handle->data) return;
-
-  write_srv_request_t *write_req = (write_srv_request_t *)handle->data;
-
-  if (write_req->message_copy) {
-    free(write_req->message_copy);
-    write_req->message_copy = NULL;
+  uv_close((uv_handle_t *)&write_req->client->handle, NULL);
+  uv_close((uv_handle_t *)&write_req->timer, on_timer_close);  
   }
-
-  free(write_req);
-}
