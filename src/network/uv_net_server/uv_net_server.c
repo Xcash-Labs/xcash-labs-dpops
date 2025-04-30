@@ -337,6 +337,13 @@ void send_data_uv(server_client_t *client, const char *message) {
     DEBUG_PRINT("Message length truncated to %zu", length);
   }
 
+  DEBUG_PRINT("Sending message to %s, size is %zu", client->client_ip, length);
+
+
+
+  
+
+
   DEBUG_PRINT("Preparing to send message to %s", client->client_ip);
 
   write_srv_request_t *write_req = malloc(sizeof(write_srv_request_t));
