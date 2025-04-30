@@ -17,6 +17,7 @@ typedef struct {
     bool sent_reply;
     bool received_reply;
     bool write_timeout;
+    bool closed; 
 } server_client_t;
 
 typedef struct {

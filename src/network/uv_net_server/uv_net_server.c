@@ -13,7 +13,8 @@ void on_client_close(uv_handle_t *handle) {
 }
 
 void check_if_ready_to_close(server_client_t *client) {
-  if ((client->sent_reply || client->write_timeout) && client->received_reply) {
+  if (!client->closed && (client->sent_reply || client->write_timeout) && client->received_reply)
+    client->closed = true;  // prevent double close
     INFO_PRINT("Round-trip with %s complete. Closing connection.", client->client_ip);
     uv_read_stop((uv_stream_t *)&client->handle);
     uv_close((uv_handle_t *)&client->handle, on_client_close);
