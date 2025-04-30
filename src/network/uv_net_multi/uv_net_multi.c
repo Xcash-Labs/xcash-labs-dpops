@@ -26,14 +26,22 @@ void safe_close(client_t* client) {
 
   client->is_closing = 1;
 
+  // Stop timer explicitly if still active
+  if (uv_is_active((uv_handle_t*)&client->timer)) {
+    uv_timer_stop(&client->timer);
+  }
+
+  // Then close it
   if (!uv_is_closing((uv_handle_t*)&client->timer)) {
     uv_close((uv_handle_t*)&client->timer, NULL);
   }
 
+  // Close client stream
   if (!uv_is_closing((uv_handle_t*)&client->handle)) {
     uv_close((uv_handle_t*)&client->handle, on_close);
   }
 }
+
 
 void on_timeout(uv_timer_t* timer) {
   client_t* client = (client_t*)timer->data;
@@ -81,7 +89,6 @@ void on_write(uv_write_t* req, int status) {
   }
 }
 
-
 void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
   client_t* client = (client_t*)stream->data;
   DEBUG_PRINT("on_read() called for %s with nread = %zd", client->response->host, nread);
@@ -113,6 +120,7 @@ void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
 
     if (nread == UV_EOF) {
       DEBUG_PRINT("EOF received from %s", client->response->host);
+      client->response->req_time_end = time(NULL);
       client->response->status = STATUS_OK;
       client->is_closing = 1;
     } else {
@@ -183,74 +191,112 @@ void on_resolved(uv_getaddrinfo_t* resolver, int status, struct addrinfo* res) {
 }
 
 response_t** send_multi_request(const char** hosts, int port, const char* message) {
-  // count the number of hosts
   int total_hosts = 0;
   while (hosts[total_hosts] != NULL) total_hosts++;
-  if (total_hosts == 0)
-    return NULL;
+  if (total_hosts == 0) return NULL;
 
-  char port_str[6];  // maximum 0..65535 + \0
-  sprintf(port_str, "%d", port);
+  char port_str[6];
+  snprintf(port_str, sizeof(port_str), "%d", port);
 
   uv_loop_t* loop = uv_default_loop();
 
   response_t** responses = calloc(total_hosts + 1, sizeof(response_t*));
   if (!responses) {
-    ERROR_PRINT("[ERROR] Failed to allocate memory for responses.");
+    ERROR_PRINT("Failed to allocate memory for responses.");
     return NULL;
   }
 
   for (int i = 0; i < total_hosts; i++) {
-    // Initialize each client structure
     client_t* client = calloc(1, sizeof(client_t));
+    if (!client) {
+      ERROR_PRINT("Failed to allocate memory for client.");
+      continue;
+    }
+
     client->message = message;
-    client->response = (response_t*)calloc(1, sizeof(response_t));
+
+    client->response = calloc(1, sizeof(response_t));
+    if (!client->response) {
+      ERROR_PRINT("Failed to allocate memory for response.");
+      free(client);
+      continue;
+    }
+
     client->response->host = strdup(hosts[i]);
+    if (!client->response->host) {
+      ERROR_PRINT("Failed to allocate memory for host string.");
+      free(client->response);
+      free(client);
+      continue;
+    }
+
     client->response->status = STATUS_PENDING;
     client->response->client = client;
     client->response->req_time_start = time(NULL);
     responses[i] = client->response;
-    uv_timer_init(loop, &client->timer);
+
+    // Initialize libuv handles
+    if (uv_timer_init(loop, &client->timer) < 0 ||
+        uv_tcp_init(loop, &client->handle) < 0) {
+      ERROR_PRINT("libuv handle init failed for host %s", hosts[i]);
+      client->response->status = STATUS_ERROR;
+      continue;
+    }
+
     client->timer.data = client;
-
-    // Start the connection timeout timer
-    uv_timer_start(&client->timer, on_timeout, UV_CONNECTION_TIMEOUT, 0);
-
-    uv_tcp_init(loop, &client->handle);
     client->handle.data = client;
     client->connect_req.data = client;
     client->write_req.data = client;
 
+    // Start timeout for connection phase
+    uv_timer_start(&client->timer, on_timeout, UV_CONNECTION_TIMEOUT, 0);
+
     if (is_ip_address(hosts[i])) {
       struct sockaddr_in dest;
-      uv_ip4_addr(hosts[i], port, &dest);
-      start_connection(client, (const struct sockaddr*)&dest);
+      if (uv_ip4_addr(hosts[i], port, &dest) == 0) {
+        start_connection(client, (const struct sockaddr*)&dest);
+      } else {
+        ERROR_PRINT("Failed to resolve IP for %s", hosts[i]);
+        client->response->status = STATUS_ERROR;
+      }
     } else {
       uv_getaddrinfo_t* resolver = malloc(sizeof(uv_getaddrinfo_t));
-      struct addrinfo hints;
-      memset(&hints, 0, sizeof(hints));
+      if (!resolver) {
+        ERROR_PRINT("Failed to allocate resolver for %s", hosts[i]);
+        client->response->status = STATUS_ERROR;
+        continue;
+      }
+
+      struct addrinfo hints = {0};
       hints.ai_family = PF_INET;
       hints.ai_socktype = SOCK_STREAM;
       resolver->data = client;
-      uv_getaddrinfo(uv_default_loop(), resolver, on_resolved, hosts[i], port_str, &hints);
+
+      int rc = uv_getaddrinfo(loop, resolver, on_resolved, hosts[i], port_str, &hints);
+      if (rc != 0) {
+        ERROR_PRINT("uv_getaddrinfo failed for %s: %s", hosts[i], uv_strerror(rc));
+        free(resolver);
+        client->response->status = STATUS_ERROR;
+      }
     }
   }
 
+  // Run loop
   uv_run(loop, UV_RUN_DEFAULT);
-  for (int i = 0; responses[i] != NULL; i++) {
-    DEBUG_PRINT("FINAL: Host %s status %s", responses[i]->host, status_to_string(responses[i]->status));
-  }  
 
-  // Fallback: mark any unresolved clients as timed out
+  // Finalize results
   for (int i = 0; responses[i] != NULL; i++) {
     if (responses[i]->status == STATUS_PENDING) {
       responses[i]->status = STATUS_TIMEOUT;
     }
+    DEBUG_PRINT("FINAL: Host %s status %s",
+                responses[i]->host,
+                status_to_string(responses[i]->status));
   }
 
   int result = uv_loop_close(loop);
   if (result != 0) {
-    DEBUG_PRINT("Error closing loop: %s\n", uv_strerror(result));
+    DEBUG_PRINT("Error closing loop: %s", uv_strerror(result));
   }
 
   for (int i = 0; responses[i] != NULL; i++) {
