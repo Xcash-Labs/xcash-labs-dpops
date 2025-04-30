@@ -290,12 +290,14 @@ void on_write_complete(uv_write_t *req, int status) {
     client->sent_reply = true;
   }
 
-  if (!uv_is_closing((uv_handle_t *)&write_req->timer)) {
-    uv_close((uv_handle_t *)&write_req->timer, on_timer_close);
-  }
-
-  if (!uv_is_closing((uv_handle_t *)&client->handle)) {
-    check_if_ready_to_close(client);
+  if (write_req) {
+    if (!uv_is_closing((uv_handle_t *)&write_req->timer)) {
+      uv_close((uv_handle_t *)&write_req->timer, on_timer_close);
+    }
+  
+    if (write_req->client && !uv_is_closing((uv_handle_t *)&write_req->client->handle)) {
+      uv_close((uv_handle_t *)&write_req->client->handle, on_client_close);
+    }
   }
 }
 
