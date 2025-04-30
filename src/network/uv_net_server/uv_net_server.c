@@ -293,6 +293,7 @@ void send_data_uv(server_client_t *client, const char *message) {
   // Initialize the timer for timeout
   uv_timer_init(uv_default_loop(), &write_req->timer);
   write_req->timer.data = write_req;
+  write_req->req.data = write_req;
   uv_timer_start(&write_req->timer, on_write_timeout, UV_SEND_TIMEOUT, 0);
 }
 
@@ -326,13 +327,14 @@ void on_write_timeout(uv_timer_t *timer) {
 }
 
 void on_generic_close(uv_handle_t *handle) {
+  if (!handle || !handle->data) return;
+
   write_srv_request_t *write_req = (write_srv_request_t *)handle->data;
 
-  if (write_req) {
-    if (write_req->message_copy) {
-      free(write_req->message_copy);
-      write_req->message_copy = NULL;
-    }
-    free(write_req);
+  if (write_req->message_copy) {
+    free(write_req->message_copy);
+    write_req->message_copy = NULL;
   }
+
+  free(write_req);
 }
