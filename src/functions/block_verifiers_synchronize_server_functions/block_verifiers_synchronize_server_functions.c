@@ -49,12 +49,12 @@ cleanup:
   return result;
 }
 
-
 void server_received_msg_get_sync_info(server_client_t *client, const char *MESSAGE)
 {
     (void)MESSAGE;
     DEBUG_PRINT("received %s, %s", __func__, "XCASH_GET_SYNC_INFO");
 
+    // Only two key-value pairs + NULL terminator
     const int PARAM_COUNT = 3;
     const char **param_list = calloc(PARAM_COUNT * 2, sizeof(char *));  // key-value pairs
 
@@ -63,79 +63,12 @@ void server_received_msg_get_sync_info(server_client_t *client, const char *MESS
         return;
     }
 
-    DEBUG_PRINT("Allocated param_list");
-
     int param_index = 0;
     param_list[param_index++] = "block_height";
     param_list[param_index++] = current_block_height;
-    DEBUG_PRINT("Added param: block_height = %s", current_block_height);
 
     param_list[param_index++] = "public_address";
     param_list[param_index++] = xcash_wallet_public_address;
-    DEBUG_PRINT("Added param: public_address = %s", xcash_wallet_public_address);
-
-    param_list[param_index] = NULL;  // NULL terminate
-
-    DEBUG_PRINT("Creating message with param list for XMSG_XCASH_GET_SYNC_INFO...");
-    char* message_data = create_message_param_list(XMSG_XCASH_GET_SYNC_INFO, param_list);
-
-    free(param_list);  // Free after usage
-    DEBUG_PRINT("Freed param_list");
-
-    if (message_data) {
-        DEBUG_PRINT("Created message: %s", message_data);
-        DEBUG_PRINT("Sending message to client %s", client->client_ip);
-        send_data_uv(client, message_data);
-        free(message_data);
-        DEBUG_PRINT("Freed message_data after send");
-    } else {
-        ERROR_PRINT("Failed to create message_data");
-    }
-}
-
-
-// Delete later
-void server_received_msg_get_sync_info_old(server_client_t *client, const char *MESSAGE)
-{
-    (void)MESSAGE;
-    DEBUG_PRINT("received %s, %s", __func__, "XCASH_GET_SYNC_INFO");
-
-    xcash_node_sync_info_t sync_info;
-    if (!get_node_sync_info(&sync_info)) {
-        ERROR_PRINT("Can't set sync info");
-        return;
-    }
-
-    if (!sync_info.db_reserve_bytes_synced) {
-        INFO_PRINT("Local Reserve bytes DB is not fully synced. Will not respond");
-        return;
-    }
-
-    char dn_field_names[DATABASE_TOTAL][DB_COLLECTION_NAME_SIZE + 1];
-    char block_height_str[DB_COLLECTION_NAME_SIZE + 1];
-
-    snprintf(block_height_str, sizeof(block_height_str), "%ld", sync_info.block_height);
-
-    const int PARAM_COUNT = DATABASE_TOTAL + 2 + 1;  // block_height + public_address + NULL terminator
-    const char **param_list = calloc(PARAM_COUNT * 2, sizeof(char *));  // key-value pairs
-
-    if (!param_list) {
-        ERROR_PRINT("Memory allocation failed for param_list");
-        return;
-    }
-
-    int param_index = 0;
-    param_list[param_index++] = "block_height";
-    param_list[param_index++] = block_height_str;
-
-    param_list[param_index++] = "public_address";
-    param_list[param_index++] = xcash_wallet_public_address;
-
-    for (size_t i = 0; i < DATABASE_TOTAL; i++) {
-        snprintf(dn_field_names[i], sizeof(dn_field_names[i]), "data_hash_%s", collection_names[i]);
-        param_list[param_index++] = dn_field_names[i];
-        param_list[param_index++] = sync_info.db_hashes[i];
-    }
 
     param_list[param_index] = NULL;  // NULL terminate
 
@@ -146,8 +79,6 @@ void server_received_msg_get_sync_info_old(server_client_t *client, const char *
         send_data_uv(client, message_data);
         free(message_data);
     }
-
-    return;
 }
 
 void server_received_msg_get_block_producers(server_client_t *client, const char *MESSAGE)

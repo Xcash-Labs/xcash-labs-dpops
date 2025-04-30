@@ -314,7 +314,7 @@ void on_write_timeout(uv_timer_t *timer) {
   } 
 }
 
-void send_data_uv(server_client_t *client, const char *message) {
+void send_data_uv_old(server_client_t *client, const char *message) {
   if (!client || !message) {
     ERROR_PRINT("Invalid parameters in send_data_uv");
     return;
@@ -355,4 +355,54 @@ void send_data_uv(server_client_t *client, const char *message) {
   // Initialize the timer for timeout
   uv_timer_init(uv_default_loop(), &write_req->timer);
   uv_timer_start(&write_req->timer, on_write_timeout, UV_SEND_TIMEOUT, 0);
+}
+
+void send_data_uv(server_client_t *client, const char *message) {
+  if (!client || !message) {
+    ERROR_PRINT("Invalid parameters in send_data_uv");
+    return;
+  }
+
+  size_t length = strlen(message);
+  if (length >= MAXIMUM_BUFFER_SIZE) {
+    length = MAXIMUM_BUFFER_SIZE - 1;  // Truncate safely
+    DEBUG_PRINT("Message length truncated to %zu", length);
+  }
+
+  DEBUG_PRINT("Preparing to send message to %s", client->client_ip);
+
+  write_srv_request_t *write_req = malloc(sizeof(write_srv_request_t));
+  if (!write_req) {
+    ERROR_PRINT("Memory allocation failed for write_srv_request_t");
+    return;
+  }
+
+  write_req->message_copy = strndup(message, length);
+  if (!write_req->message_copy) {
+    ERROR_PRINT("Memory allocation failed for message copy");
+    free(write_req);
+    return;
+  }
+
+  write_req->client = client;
+  write_req->timer.data = write_req;
+  write_req->req.data = write_req;
+
+  uv_buf_t buf = uv_buf_init(write_req->message_copy, length);
+
+  int result = uv_write(&write_req->req, (uv_stream_t *)&client->handle, &buf, 1, on_write_complete);
+  if (result < 0) {
+    ERROR_PRINT("uv_write error: %s", uv_strerror(result));
+    free(write_req->message_copy);
+    free(write_req);
+    return;
+  }
+
+  DEBUG_PRINT("uv_write started to %s, message length: %zu", client->client_ip, length);
+
+  // Initialize the timer for timeout
+  uv_timer_init(uv_default_loop(), &write_req->timer);
+  uv_timer_start(&write_req->timer, on_write_timeout, UV_SEND_TIMEOUT, 0);
+
+  DEBUG_PRINT("Write timeout timer started for %s (timeout = %d ms)", client->client_ip, UV_SEND_TIMEOUT);
 }
