@@ -6,11 +6,19 @@ static pthread_t uv_thread;
 static uv_async_t async_shutdown;  // Async handle for clean shutdown
 
 // Cleanup function after client disconnects
-void on_client_close(uv_handle_t *handle) {
+void on_client_close_old(uv_handle_t *handle) {
   if (handle) {
     free(handle);  // Free memory allocated for the client
   }
 }
+
+void on_client_close(uv_handle_t *handle) {
+  if (!handle) return;
+  server_client_t *client = (server_client_t *)handle;
+  DEBUG_PRINT("Client memory being freed: %s", client->client_ip);
+  free(client);
+}
+
 
 void check_if_ready_to_close(server_client_t *client) {
   if (!client->closed && (client->sent_reply || client->write_timeout) && client->received_reply) {
@@ -188,7 +196,7 @@ void on_client_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
 
   if (buf && buf->base) {
     free(buf->base);
-  }
+  }6
 }
 
 // Thread-safe shutdown callback
