@@ -75,6 +75,7 @@ void on_write(uv_write_t* req, int status) {
   }
 
   client->write_complete = 1;
+
   if (uv_is_active((uv_handle_t*)&client->timer)) {
     uv_timer_stop(&client->timer);
   }
@@ -83,9 +84,11 @@ void on_write(uv_write_t* req, int status) {
 
   int rc = uv_read_start((uv_stream_t*)req->handle, alloc_buffer, on_read);
   if (rc < 0) {
-    ERROR_PRINT("uv_read_start failed: %s", uv_strerror(rc));
+    ERROR_PRINT("uv_read_start failed for %s: %s", client->response->host, uv_strerror(rc));
     client->response->status = STATUS_ERROR;
     safe_close(client);
+  } else {
+    DEBUG_PRINT("uv_read_start succeeded for %s", client->response->host);
   }
 }
 
