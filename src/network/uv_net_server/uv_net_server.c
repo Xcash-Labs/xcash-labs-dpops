@@ -13,6 +13,7 @@ void handle_message_work(uv_work_t *req) {
 }
 
 void handle_message_after(uv_work_t *req, int status) {
+    (void)status;
     message_work_t *work = (message_work_t *)req->data;
     DEBUG_PRINT("Finished background message processing from %s", work->client->client_ip);
 
