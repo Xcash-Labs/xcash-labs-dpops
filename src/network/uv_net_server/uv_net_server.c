@@ -13,7 +13,7 @@ void on_client_close(uv_handle_t *handle) {
 }
 
 void check_if_ready_to_close(server_client_t *client) {
-  if (client->sent_reply && client->received_reply) {
+  if ((client->sent_reply || client->write_timeout) && client->received_reply) {
     INFO_PRINT("Round-trip with %s complete. Closing connection.", client->client_ip);
     uv_read_stop((uv_stream_t *)&client->handle);
     uv_close((uv_handle_t *)&client->handle, on_client_close);
@@ -280,8 +280,7 @@ void on_write_timeout(uv_timer_t *timer) {
 
   ERROR_PRINT("Write operation timed out");
   write_req->client->write_timeout = true;
-  uv_close((uv_handle_t *)&write_req->client->handle, NULL);
-//  uv_close((uv_handle_t *)&write_req->timer, on_timer_close);  
+  uv_close((uv_handle_t *)&write_req->timer, on_timer_close);  
 }
 
 void send_data_uv(server_client_t *client, const char *message) {
