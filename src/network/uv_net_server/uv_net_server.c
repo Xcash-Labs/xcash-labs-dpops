@@ -19,7 +19,6 @@ void on_client_close(uv_handle_t *handle) {
   free(client);
 }
 
-
 void check_if_ready_to_close(server_client_t *client) {
   if (!client->closed && (client->sent_reply || client->write_timeout) && client->received_reply) {
     client->closed = true;
@@ -196,7 +195,9 @@ void on_client_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
 
   if (buf && buf->base) {
     free(buf->base);
-  }6
+  }
+
+  return;
 }
 
 // Thread-safe shutdown callback
