@@ -15,6 +15,8 @@
 typedef struct {
     uv_tcp_t handle;
     char client_ip[INET6_ADDRSTRLEN];
+    bool sent_reply;
+    bool received_reply;
 } server_client_t;
 
 typedef struct {

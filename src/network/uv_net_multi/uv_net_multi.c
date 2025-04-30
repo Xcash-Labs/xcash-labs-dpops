@@ -206,7 +206,7 @@ response_t** send_multi_request(const char** hosts, int port, const char* messag
   }
 
   for (int i = 0; responses[i] != NULL; i++) {
-    DEBUG_PRINT("Host: %s | Status: %d | Size: %zu | Time: %lds",
+    DEBUG_PRINT("Host: %s | Status: %s | Size: %zu | Time: %lds",
                 responses[i]->host,
                 status_to_string(responses[i]->status),
                 responses[i]->size,
