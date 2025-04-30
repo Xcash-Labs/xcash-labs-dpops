@@ -97,12 +97,16 @@ void on_new_connection(uv_stream_t *server_handle, int status) {
 
     if (uv_read_start((uv_stream_t *)&client->handle, alloc_buffer_srv, on_client_read) < 0) {
       ERROR_PRINT("Failed to start reading from client");
+      client->closed = true;
       uv_close((uv_handle_t *)&client->handle, on_client_close);
       return;
     }
   } else {
+    client->closed = true;
     uv_close((uv_handle_t *)&client->handle, on_client_close);
   }
+
+  return;
 }
 
 // Allocate buffer for reading
@@ -169,11 +173,17 @@ void on_client_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
   } else if (nread == UV_EOF) {
     DEBUG_PRINT("Client disconnected.");
     uv_read_stop(client);
-    uv_close((uv_handle_t *)client, on_client_close);
+    if (!client_data->closed) {
+      client_data->closed = true;
+      uv_close((uv_handle_t *)client, on_client_close);
+    }
   } else if (nread < 0) {
     ERROR_PRINT("Read error: %s", uv_strerror(nread));
     uv_read_stop(client);
-    uv_close((uv_handle_t *)client, on_client_close);
+    if (!client_data->closed) {
+      client_data->closed = true;
+      uv_close((uv_handle_t *)client, on_client_close);
+    }
   }
 
   if (buf && buf->base) {
@@ -184,8 +194,12 @@ void on_client_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
 // Thread-safe shutdown callback
 void on_shutdown_signal(uv_async_t *async) {
   DEBUG_PRINT("Shutting down UV event loop...");
-  uv_close((uv_handle_t *)&server, NULL);
-  uv_close((uv_handle_t *)async, NULL);
+  if (!uv_is_closing((uv_handle_t *)&server)) {
+    uv_close((uv_handle_t *)&server, NULL);
+  }
+  if (!uv_is_closing((uv_handle_t *)async)) {
+    uv_close((uv_handle_t *)async, NULL);
+  }
   uv_stop(&loop);
 }
 
@@ -271,8 +285,8 @@ void on_write_complete(uv_write_t *req, int status) {
     client->sent_reply = true;
   }
 
-  uv_timer_stop(&write_req->timer);
   if (!uv_is_closing((uv_handle_t *)&write_req->timer)) {
+    uv_timer_stop(&write_req->timer);
     uv_close((uv_handle_t *)&write_req->timer, on_timer_close);
   }
   check_if_ready_to_close(client);
@@ -284,6 +298,7 @@ void on_write_timeout(uv_timer_t *timer) {
   ERROR_PRINT("Write operation timed out");
   write_req->client->write_timeout = true;
   if (!uv_is_closing((uv_handle_t *)&write_req->timer)) {
+    uv_timer_stop(&write_req->timer);
     uv_close((uv_handle_t *)&write_req->timer, on_timer_close);
   } 
 }
