@@ -5,18 +5,13 @@ static uv_tcp_t server;
 static pthread_t uv_thread;
 static uv_async_t async_shutdown;  // Async handle for clean shutdown
 
-// Cleanup function after client disconnects
-void on_client_close_old(uv_handle_t *handle) {
-  if (handle) {
-    free(handle);  // Free memory allocated for the client
-  }
-}
-
 void on_client_close(uv_handle_t *handle) {
   if (!handle) return;
-  server_client_t *client = (server_client_t *)handle;
-  DEBUG_PRINT("Client memory being freed: %s", client->client_ip);
-  free(client);
+  server_client_t *client = (server_client_t *)handle->data;
+  if (client) {
+    DEBUG_PRINT("Client memory being freed: %s", client->client_ip);
+    free(client);
+  }
 }
 
 void check_if_ready_to_close(server_client_t *client) {
@@ -98,6 +93,8 @@ void on_new_connection(uv_stream_t *server_handle, int status) {
     return;
   }
 
+  client->handle.data = client;
+
   if (uv_accept(server_handle, (uv_stream_t *)&client->handle) == 0) {
     get_client_ip(client);  // Store client IP
     DEBUG_PRINT("New connection from: %s", client->client_ip);
@@ -112,8 +109,6 @@ void on_new_connection(uv_stream_t *server_handle, int status) {
     client->closed = true;
     uv_close((uv_handle_t *)&client->handle, on_client_close);
   }
-
-  return;
 }
 
 // Allocate buffer for reading
@@ -227,6 +222,7 @@ bool start_tcp_server(int port) {
   // Initialize the loop
   uv_loop_init(&loop);
   uv_tcp_init(&loop, &server);
+  server.data = &server;
   uv_async_init(&loop, &async_shutdown, on_shutdown_signal);
 
   // Bind to given port
@@ -312,49 +308,6 @@ void on_write_timeout(uv_timer_t *timer) {
     uv_timer_stop(&write_req->timer);
     uv_close((uv_handle_t *)&write_req->timer, on_timer_close);
   } 
-}
-
-void send_data_uv_old(server_client_t *client, const char *message) {
-  if (!client || !message) {
-    ERROR_PRINT("Invalid parameters in send_data_uv");
-    return;
-  }
-
-  size_t length = strlen(message);
-  if (length >= MAXIMUM_BUFFER_SIZE) {
-    length = MAXIMUM_BUFFER_SIZE - 1;  // Truncate safely
-  }
-
-  write_srv_request_t *write_req = malloc(sizeof(write_srv_request_t));
-  if (!write_req) {
-    ERROR_PRINT("Memory allocation failed for write_srv_request_t");
-    return;
-  }
-
-  write_req->message_copy = strndup(message, length);
-  if (!write_req->message_copy) {
-    ERROR_PRINT("Memory allocation failed for message copy");
-    free(write_req);
-    return;
-  }
-
-  write_req->client = client;
-  write_req->timer.data = write_req;
-  write_req->req.data = write_req;
-
-  uv_buf_t buf = uv_buf_init(write_req->message_copy, length);
-
-  int result = uv_write(&write_req->req, (uv_stream_t *)&client->handle, &buf, 1, on_write_complete);
-  if (result < 0) {
-    ERROR_PRINT("uv_write error: %s", uv_strerror(result));
-    free(write_req->message_copy);
-    free(write_req);
-    return;
-  }
-
-  // Initialize the timer for timeout
-  uv_timer_init(uv_default_loop(), &write_req->timer);
-  uv_timer_start(&write_req->timer, on_write_timeout, UV_SEND_TIMEOUT, 0);
 }
 
 void send_data_uv(server_client_t *client, const char *message) {
