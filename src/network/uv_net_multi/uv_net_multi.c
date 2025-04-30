@@ -17,10 +17,15 @@ void on_close(uv_handle_t* handle) {
 }
 
 void safe_close(client_t* client) {
+  if (client->is_closing) return;  // guard against multiple calls
+  client->is_closing = 1;
+
+  if (!uv_is_closing((uv_handle_t*)&client->timer)) {
+    uv_close((uv_handle_t*)&client->timer, NULL);
+  }
+
   if (!uv_is_closing((uv_handle_t*)&client->handle)) {
-    client->is_closing = 1;
-    uv_close((uv_handle_t*)&client->timer, NULL);       // Close the timer handle
-    uv_close((uv_handle_t*)&client->handle, on_close);  // Close the handle
+    uv_close((uv_handle_t*)&client->handle, on_close);
   }
 }
 
@@ -90,6 +95,11 @@ void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
     if (nread == UV_EOF) {
       DEBUG_PRINT("EOF received from %s", client->response->host);
       client->response->status = STATUS_OK;
+      uv_timer_stop(&client->timer);
+      if (!uv_is_closing((uv_handle_t*)&client->timer)) {
+          uv_close((uv_handle_t*)&client->timer, NULL);  // or a cleanup callback
+      }
+      safe_close(client);
     } else {
       ERROR_PRINT("Read error from %s: %s", client->response->host, uv_strerror(nread));
       client->response->status = STATUS_ERROR;
