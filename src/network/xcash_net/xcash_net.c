@@ -43,12 +43,6 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
       DEBUG_PRINT("Message type is_nonreturn");
   }
 
-  
-
-  DEBUG_PRINT("Made it here xnet send data multi..........");
-
-
-
   switch (dest) {
     case XNET_SEEDS_ALL: {
       const char **all_hosts = malloc((network_data_nodes_amount + 1) * sizeof(char *));
@@ -104,9 +98,7 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
         ERROR_PRINT("Failed to allocate memory for delegates_hosts");
         return false;  // Handle memory allocation failure
       }
-
-      DEBUG_PRINT("XNET_DELEGATES_ALL....");
-
+      
       size_t host_index = 0;
       for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
         const char *ip = delegates_all[i].IP_address;
@@ -237,11 +229,6 @@ bool send_message(xcash_dest_t dest, xcash_msg_t msg, response_t ***reply) {
     return false;
   }
 
-
-
-
-
-  DEBUG_PRINT("Made it here..........");
   result = xnet_send_data_multi(dest, message_data, reply);
   free(message_data);
 
