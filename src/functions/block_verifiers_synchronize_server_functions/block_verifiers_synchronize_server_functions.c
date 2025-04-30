@@ -50,20 +50,11 @@ cleanup:
 }
 
 
-
-
-
-
-
-
-
-
 void server_received_msg_get_sync_info(server_client_t *client, const char *MESSAGE)
 {
     (void)MESSAGE;
     DEBUG_PRINT("received %s, %s", __func__, "XCASH_GET_SYNC_INFO");
 
-    // Only two key-value pairs + NULL terminator
     const int PARAM_COUNT = 3;
     const char **param_list = calloc(PARAM_COUNT * 2, sizeof(char *));  // key-value pairs
 
@@ -72,23 +63,36 @@ void server_received_msg_get_sync_info(server_client_t *client, const char *MESS
         return;
     }
 
+    DEBUG_PRINT("Allocated param_list");
+
     int param_index = 0;
     param_list[param_index++] = "block_height";
     param_list[param_index++] = current_block_height;
+    DEBUG_PRINT("Added param: block_height = %s", current_block_height);
 
     param_list[param_index++] = "public_address";
     param_list[param_index++] = xcash_wallet_public_address;
+    DEBUG_PRINT("Added param: public_address = %s", xcash_wallet_public_address);
 
     param_list[param_index] = NULL;  // NULL terminate
 
+    DEBUG_PRINT("Creating message with param list for XMSG_XCASH_GET_SYNC_INFO...");
     char* message_data = create_message_param_list(XMSG_XCASH_GET_SYNC_INFO, param_list);
+
     free(param_list);  // Free after usage
+    DEBUG_PRINT("Freed param_list");
 
     if (message_data) {
+        DEBUG_PRINT("Created message: %s", message_data);
+        DEBUG_PRINT("Sending message to client %s", client->client_ip);
         send_data_uv(client, message_data);
         free(message_data);
+        DEBUG_PRINT("Freed message_data after send");
+    } else {
+        ERROR_PRINT("Failed to create message_data");
     }
 }
+
 
 // Delete later
 void server_received_msg_get_sync_info_old(server_client_t *client, const char *MESSAGE)
