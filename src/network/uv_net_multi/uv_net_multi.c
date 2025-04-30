@@ -17,12 +17,19 @@ void on_close(uv_handle_t* handle) {
 }
 
 void safe_close(client_t* client) {
-  if (client->is_closing) return;
+  if (!client) return;
+
+  if (client->is_closing) {
+    DEBUG_PRINT("safe_close: already closing %s", client->response ? client->response->host : "unknown");
+    return;
+  }
+
   client->is_closing = 1;
 
   if (!uv_is_closing((uv_handle_t*)&client->timer)) {
     uv_close((uv_handle_t*)&client->timer, NULL);
   }
+
   if (!uv_is_closing((uv_handle_t*)&client->handle)) {
     uv_close((uv_handle_t*)&client->handle, on_close);
   }
@@ -31,7 +38,7 @@ void safe_close(client_t* client) {
 void on_timeout(uv_timer_t* timer) {
   client_t* client = (client_t*)timer->data;
 
-  if (client->response->status == STATUS_OK || client->is_closing) {
+  if (client->is_closing || client->response->status == STATUS_OK) {
     return;
   }
 
@@ -59,12 +66,13 @@ void on_write(uv_write_t* req, int status) {
     return;
   }
 
-  if (uv_is_active((uv_handle_t*)&client->timer))
+  client->write_complete = 1;
+  if (uv_is_active((uv_handle_t*)&client->timer)) {
     uv_timer_stop(&client->timer);
+  }
 
   uv_timer_start(&client->timer, on_timeout, UV_RESPONSE_TIMEOUT, 0);
 
-  client->write_complete = 1;
   int rc = uv_read_start((uv_stream_t*)req->handle, alloc_buffer, on_read);
   if (rc < 0) {
     ERROR_PRINT("uv_read_start failed: %s", uv_strerror(rc));
@@ -72,6 +80,7 @@ void on_write(uv_write_t* req, int status) {
     safe_close(client);
   }
 }
+
 
 void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
   client_t* client = (client_t*)stream->data;
@@ -105,6 +114,7 @@ void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
     if (nread == UV_EOF) {
       DEBUG_PRINT("EOF received from %s", client->response->host);
       client->response->status = STATUS_OK;
+      client->is_closing = 1;
     } else {
       ERROR_PRINT("Read error from %s: %s", client->response->host, uv_strerror(nread));
       client->response->status = STATUS_ERROR;
