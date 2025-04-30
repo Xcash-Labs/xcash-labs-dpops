@@ -5,6 +5,8 @@ static uv_tcp_t server;
 static pthread_t uv_thread;
 static uv_async_t async_shutdown;  // Async handle for clean shutdown
 
+void check_if_ready_to_close(server_client_t *client);
+
 void handle_message_work(uv_work_t *req) {
     message_work_t *work = (message_work_t *)req->data;
     handle_srv_message(work->data, work->data_len, work->client);
