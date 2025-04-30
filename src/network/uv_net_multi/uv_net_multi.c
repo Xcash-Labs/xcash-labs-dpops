@@ -53,42 +53,55 @@ void on_write(uv_write_t* req, int status) {
   uv_timer_start(&client->timer, on_timeout, UV_RESPONSE_TIMEOUT, 0);
 
   // Start reading from the server
-  uv_read_start((uv_stream_t*)req->handle, alloc_buffer, on_read);
+  int rc = uv_read_start((uv_stream_t*)req->handle, alloc_buffer, on_read);
+  if (rc < 0) {
+    ERROR_PRINT("uv_read_start failed: %s", uv_strerror(rc));
+    client->response->status = STATUS_ERROR;
+    safe_close(client);
+  }
 }
 
 void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
   client_t* client = (client_t*)stream->data;
 
   if (nread > 0) {
+    DEBUG_PRINT("Received %zd bytes from %s", nread, client->response->host);
+
     char* new_data = realloc(client->response->data, client->response->size + nread);
     if (!new_data) {
-      ERROR_PRINT("Realloc failed during response read.");
+      ERROR_PRINT("Realloc failed during response read from %s", client->response->host);
       client->response->status = STATUS_ERROR;
       safe_close(client);
       free(buf->base);
       return;
     }
+
     client->response->data = new_data;
     memcpy(client->response->data + client->response->size, buf->base, nread);
     client->response->size += nread;
 
-    // extend timeout_if_data_received
-    if (client->response->size > 0) {
-      uv_timer_stop(&client->timer);
-      uv_timer_start(&client->timer, on_timeout, UV_RESPONSE_TIMEOUT, 0);
-    }
+    DEBUG_PRINT("Total response size so far from %s: %zu", client->response->host, client->response->size);
 
-  } else if (nread < 0) {
+    // Reset timer after receiving data
+    uv_timer_stop(&client->timer);
+    uv_timer_start(&client->timer, on_timeout, UV_RESPONSE_TIMEOUT, 0);
+  } 
+  else if (nread < 0) {
     if (nread == UV_EOF) {
+      DEBUG_PRINT("EOF received from %s", client->response->host);
       client->response->status = STATUS_OK;
     } else {
+      ERROR_PRINT("Read error from %s: %s", client->response->host, uv_strerror(nread));
       client->response->status = STATUS_ERROR;
     }
+
     uv_timer_stop(&client->timer);
     safe_close(client);
   }
 
-  free(buf->base);
+  if (buf && buf->base) {
+    free(buf->base);
+  }
 }
 
 void on_connect(uv_connect_t* req, int status) {
