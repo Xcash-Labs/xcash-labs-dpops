@@ -5,6 +5,13 @@ static uv_tcp_t server;
 static pthread_t uv_thread;
 static uv_async_t async_shutdown;  // Async handle for clean shutdown
 
+// Cleanup function after client disconnects
+void on_client_close(uv_handle_t *handle) {
+  if (handle) {
+    free(handle);  // Free memory allocated for the client
+  }
+}
+
 void check_if_ready_to_close(server_client_t *client) {
   if (client->sent_reply && client->received_reply) {
     INFO_PRINT("Round-trip with %s complete. Closing connection.", client->client_ip);
@@ -40,13 +47,6 @@ void handle_message_after(uv_work_t *req, int status) {
     free(work->data);
     free(work);
     free(req);
-}
-
-// Cleanup function after client disconnects
-void on_client_close(uv_handle_t *handle) {
-  if (handle) {
-    free(handle);  // Free memory allocated for the client
-  }
 }
 
 void get_client_ip(server_client_t *client) {
