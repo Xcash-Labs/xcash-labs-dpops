@@ -73,6 +73,7 @@ void on_write(uv_write_t* req, int status) {
 }
 
 void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
+  DEBUG_PRINT("on_read() called for %s with nread = %zd", client->response->host, nread);
   client_t* client = (client_t*)stream->data;
 
   if (nread > 0) {
