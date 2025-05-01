@@ -79,7 +79,7 @@ void on_write(uv_write_t* req, int status) {
 
   client->write_complete = 1;
 
-  // Tell the server we’re done sending
+  // Signal EOF to server (shutdown write side)
   uv_shutdown_t* shutdown_req = malloc(sizeof(uv_shutdown_t));
   if (shutdown_req) {
     shutdown_req->data = client;
