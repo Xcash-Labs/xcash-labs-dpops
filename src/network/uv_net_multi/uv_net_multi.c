@@ -73,6 +73,42 @@ void on_shutdown_complete_mul(uv_shutdown_t* req, int status) {
   free(req);
 }
 
+void on_write_old(uv_write_t* req, int status) {
+  client_t* client = (client_t*)req->data;
+
+  if (status < 0) {
+    ERROR_PRINT("Write error: %s", uv_strerror(status));
+    client->response->status = STATUS_ERROR;
+    safe_close(client);
+    return;
+  }
+
+  client->write_complete = 1;
+
+  // Signal EOF to server (shutdown write side)
+  uv_shutdown_t* shutdown_req = malloc(sizeof(uv_shutdown_t));
+  if (shutdown_req) {
+    shutdown_req->data = client;
+    uv_shutdown(shutdown_req, (uv_stream_t*)&client->handle, on_shutdown_complete_mul);
+  }
+
+  if (uv_is_active((uv_handle_t*)&client->timer)) {
+    uv_timer_stop(&client->timer);
+  }
+
+  uv_timer_start(&client->timer, on_timeout, UV_RESPONSE_TIMEOUT, 0);
+
+  int rc = uv_read_start((uv_stream_t*)req->handle, alloc_buffer, on_read);
+  if (rc < 0) {
+    ERROR_PRINT("uv_read_start failed for %s: %s", client->response->host, uv_strerror(rc));
+    client->response->status = STATUS_ERROR;
+    safe_close(client);
+  } else {
+    DEBUG_PRINT("uv_read_start succeeded for %s", client->response->host);
+  }
+}
+
+
 
 
 
@@ -108,7 +144,6 @@ void on_write(uv_write_t* req, int status) {
     uv_timer_stop(&client->timer);
   }
 
-  client->response->req_time_start = time(NULL);
   uv_timer_start(&client->timer, on_timeout, UV_RESPONSE_TIMEOUT, 0);
 
   int rc = uv_read_start((uv_stream_t*)req->handle, alloc_buffer, on_read);
@@ -165,40 +200,26 @@ void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
     DEBUG_PRINT("Total response size so far from %s: %zu", client->response->host, client->response->size);
     DEBUG_PRINT("Data so far from %s:\n%.*s", client->response->host, (int)client->response->size, client->response->data);
 
-
     // Reset timer after receiving data
     uv_timer_stop(&client->timer);
     uv_timer_start(&client->timer, on_timeout, UV_RESPONSE_TIMEOUT, 0);
   } 
-
   else if (nread < 0) {
-
     uv_timer_stop(&client->timer);
-  
+
     if (nread == UV_EOF) {
-
-      client->response->req_time_end = time(NULL);
-      long duration = client->response->req_time_end - client->response->req_time_start;
-      DEBUG_PRINT("EOF received from %s after %ld seconds", client->response->host, duration);
-
       DEBUG_PRINT("EOF received from %s", client->response->host);
-  
-      if (client->response->size > 0 && client->response->data) {
-        client->response->req_time_end = time(NULL);
-        client->response->status = STATUS_OK;
-      } else {
-        WARNING_PRINT("EOF received but no data from %s", client->response->host);
-        client->response->status = STATUS_ERROR;
-      }
-  
+      client->response->req_time_end = time(NULL);
+      client->response->status = STATUS_OK;
       client->is_closing = 1;
     } else {
       ERROR_PRINT("Read error from %s: %s", client->response->host, uv_strerror(nread));
       client->response->status = STATUS_ERROR;
     }
-  
+
     safe_close(client);
   }
+
   if (buf && buf->base) {
     free(buf->base);
   }
