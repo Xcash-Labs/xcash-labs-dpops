@@ -171,7 +171,7 @@ void alloc_buffer_srv(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf)
 
 
 
-void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
+void on_client_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
   client_t* client = (client_t*)stream->data;
 
   if (nread > 0) {
@@ -210,7 +210,7 @@ void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
         uv_close((uv_handle_t*)&client->handle, on_close);
       }
       if (!uv_is_closing((uv_handle_t*)&client->timer)) {
-          uv_close((uv_handle_t*)&client->timer, NULL);
+          uv_close((uv_handle_t*)&client->timer, NULL); // NULL is fine unless you need a callback
       }
   }
   else if (nread < 0) {
@@ -223,7 +223,7 @@ void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
         uv_close((uv_handle_t*)&client->handle, on_close);
       }
       if (!uv_is_closing((uv_handle_t*)&client->timer)) {
-          uv_close((uv_handle_t*)&client->timer, NULL); 
+          uv_close((uv_handle_t*)&client->timer, NULL); // NULL is fine unless you need a callback
       }
   }
 
