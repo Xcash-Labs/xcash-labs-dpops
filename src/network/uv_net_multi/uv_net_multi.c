@@ -108,7 +108,7 @@ void on_write(uv_write_t* req, int status) {
     uv_timer_stop(&client->timer);
   }
 
-
+  client->response->req_time_start = time(NULL);
   uv_timer_start(&client->timer, on_timeout, UV_RESPONSE_TIMEOUT, 0);
 
   int rc = uv_read_start((uv_stream_t*)req->handle, alloc_buffer, on_read);
@@ -172,6 +172,14 @@ void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
   } 
 
   else if (nread < 0) {
+
+    client->response->req_time_end = time(NULL);
+    client->response->status = STATUS_OK;
+    client->is_closing = 1;
+  
+    long duration = client->response->req_time_end - client->response->req_time_start;
+    DEBUG_PRINT("EOF received from %s after %ld seconds", client->response->host, duration
+
     uv_timer_stop(&client->timer);
   
     if (nread == UV_EOF) {
