@@ -119,6 +119,8 @@ void on_new_connection(uv_stream_t *server_handle, int status) {
   memset(client, 0, sizeof(server_client_t));
 
   // Initialize TCP handle
+
+
   if (uv_tcp_init(server_handle->loop, (uv_tcp_t *)&client->handle) < 0) {
     ERROR_PRINT("Failed to initialize TCP handle for client");
     free(client);
@@ -127,8 +129,18 @@ void on_new_connection(uv_stream_t *server_handle, int status) {
 
   client->handle.data = client;
 
+  uv_tcp_t *client = (uv_tcp_t*) malloc(sizeof(uv_tcp_t));
+  uv_tcp_init(loop, client);
+  if (uv_accept(server, (uv_stream_t*) client) == 0) {
+    uv_read_start((uv_stream_t*) client, alloc_buffer, echo_read);  jed
+  }
+  else {
+    uv_close((uv_handle_t*) client, NULL);
+  }
+
+
   // Accept the connection
-  if (uv_accept(server_handle, (uv_stream_t *)&client->handle) == 0) {
+/*  if (uv_accept(server_handle, (uv_stream_t *)&client->handle) == 0) {
     get_client_ip(client);  // Get and store IP
     DEBUG_PRINT("New connection from: %s", client->client_ip);
 
@@ -142,6 +154,7 @@ void on_new_connection(uv_stream_t *server_handle, int status) {
     ERROR_PRINT("uv_accept failed");
     uv_close((uv_handle_t *)&client->handle, on_client_close);
   }
+*/
 }
 
 // Allocate buffer for reading
@@ -162,7 +175,32 @@ void alloc_buffer_srv(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf)
   buf->len = buffer_size;
 }
 
+
+
+void echo_write(uv_write_t *req, int status) {
+  if (status == -1) {
+    fprintf(stderr, "Write error!\n");
+  }
+  char *base = (char*) req->data;
+  free(base);
+  free(req);
+}
+
 // Read data from client
+void on_client_read(uv_stream_t *client, ssize_t nread, uv_buf_t buf) {
+  if (nread == -1) {
+    fprintf(stderr, "Read error!\n");
+    uv_close((uv_handle_t*)client, NULL);
+    return;
+  }
+
+  uv_write_t *write_req = (uv_write_t*)malloc(sizeof(uv_write_t));
+  write_req->data = (void*)buf.base;
+  buf.len = nread;
+  uv_write(write_req, client, &buf, 1, echo_write);
+}
+
+/*
 void on_client_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
   server_client_t *client_data = (server_client_t *)client;
 
@@ -229,6 +267,7 @@ void on_client_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
 
   return;
 }
+  */
 
 // Thread-safe shutdown callback
 void on_shutdown_signal(uv_async_t *async) {
