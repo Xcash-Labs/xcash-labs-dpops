@@ -171,70 +171,53 @@ void alloc_buffer_srv(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf)
 
 
 
-void on_client_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
+
+void on_client_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
   server_client_t *client_data = (server_client_t *)client;
 
   if (nread > 0) {
-      DEBUG_PRINT("on_read() called for %s with nread = %zd", client_data->response->host, nread);
+    DEBUG_PRINT("Received data: %.*s", (int)nread, buf->base);
 
-      // Reallocate buffer to hold new data
-      char* new_data = realloc(client_data->response->data, client_data->response->size + nread);
-      if (!new_data) {
-          ERROR_PRINT("Realloc failed during response read from %s", client_data->response->host);
-          client_data->response->status = STATUS_ERROR;
-//          safe_close_test(client);
-          free(buf->base);
-          return;
-      }
-
-      client_data->response->data = new_data;
-      memcpy(client_data->response->data + client_data->response->size, buf->base, nread);
-      client_data->response->size += nread;
-
-      DEBUG_PRINT("Total response size so far from %s: %zu", client_data->response->host, client_data->response->size);
-      DEBUG_PRINT("Data so far from %s:\n%.*s", client_data->response->host, (int)client_data->response->size, client_data->response->data);
-
-      // Extend timeout because we got data
-      uv_timer_stop(&client_data->timer);
-      uv_timer_start(&client_data->timer, on_timeout, UV_RESPONSE_TIMEOUT, 0);
-  }
-  else if (nread == UV_EOF) {
-      DEBUG_PRINT("EOF received from %s", client_data->response->host);
-      uv_timer_stop(&client_data->timer);
-
-      client_data->response->status = STATUS_OK;
-      client_data->response->req_time_end = time(NULL);
-      client_data->is_closing = 1;
-
-      handle_srv_message(
-        client_data->response->data,
-        client_data->response->size,
-        client_data
-    );
-
-      if (!uv_is_closing((uv_handle_t*)&client_data->handle)) {
-        uv_close((uv_handle_t*)&client_data->handle, on_close);
-      }
-      if (!uv_is_closing((uv_handle_t*)&client_data->timer)) {
-          uv_close((uv_handle_t*)&client_data->timer, NULL); // NULL is fine unless you need a callback
-      }
-  }
-  else if (nread < 0) {
-      ERROR_PRINT("Read error from %s: %s", client_data->response->host, uv_strerror(nread));
+    // Reallocate response buffer to append data
+    char *new_data = realloc(client_data->response->data, client_data->response->size + nread + 1); // +1 for null-terminator
+    if (!new_data) {
+      ERROR_PRINT("Failed to realloc buffer for %s", client_data->response->host);
       client_data->response->status = STATUS_ERROR;
-      uv_timer_stop(&client_data->timer);
+      goto cleanup;
+    }
 
+    client_data->response->data = new_data;
+    memcpy(client_data->response->data + client_data->response->size, buf->base, nread);
+    client_data->response->size += nread;
+    client_data->response->data[client_data->response->size] = '\0'; // null-terminate
 
-      if (!uv_is_closing((uv_handle_t*)&client_data->handle)) {
-        uv_close((uv_handle_t*)&client_data->handle, on_close);
-      }
-      if (!uv_is_closing((uv_handle_t*)&client_data->timer)) {
-          uv_close((uv_handle_t*)&client_data->timer, NULL); // NULL is fine unless you need a callback
-      }
+  } else if (nread == UV_EOF) {
+    DEBUG_PRINT("EOF received from %s", client_data->response->host);
+    uv_read_stop(client);
+
+    client_data->response->status = STATUS_OK;
+    client_data->received_reply = true;
+
+    // Process the response now that it's complete
+    handle_srv_message(client_data->response->data, client_data->response->size, client_data);
+
+    // Attempt to close
+    check_if_ready_to_close(client_data);
+
+  } else if (nread < 0) {
+    ERROR_PRINT("Read error from %s: %s", client_data->response->host, uv_strerror(nread));
+    uv_read_stop(client);
+
+    client_data->response->status = STATUS_ERROR;
+    if (!client_data->closed) {
+      client_data->closed = true;
+      uv_close((uv_handle_t *)client, on_client_close);
+    }
   }
 
+cleanup:
   if (buf && buf->base) {
-      free(buf->base);
+    free(buf->base);
   }
 }
 
@@ -248,7 +231,13 @@ void on_client_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
 
 
 
-void on_client_read__OLD(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
+
+
+
+
+
+
+void on_client_read_OLD(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
   server_client_t *client_data = (server_client_t *)client;
 
   if (nread > 0) {
