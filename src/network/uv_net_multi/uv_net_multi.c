@@ -115,19 +115,18 @@ void on_write_old(uv_write_t* req, int status) {
 
 
 void shutdown_idle_mul(uv_idle_t* handle) {
-  server_client_t* client = (server_client_t*)handle->data;
-
-  uv_idle_stop(handle);
-  uv_close((uv_handle_t*)handle, free);  // Clean up the idle handle
-
+  client_t* client = (client_t*)handle->data;
+  uv_close((uv_handle_t*)handle, (uv_close_cb)free);  // Clean up the idle handle
   uv_shutdown_t* shutdown_req = malloc(sizeof(uv_shutdown_t));
-  if (shutdown_req) {
-    shutdown_req->data = client;
-    uv_shutdown(shutdown_req, (uv_stream_t*)&client->handle, on_shutdown_complete);
-  } else {
+  if (!shutdown_req) {
     ERROR_PRINT("Failed to allocate uv_shutdown_t");
+    return;
   }
+
+  shutdown_req->data = client;
+  uv_shutdown(shutdown_req, (uv_stream_t*)&client->handle, on_shutdown_complete_mul);
 }
+
 
 void on_write(uv_write_t* req, int status) {
   client_t* client = (client_t*)req->data;
