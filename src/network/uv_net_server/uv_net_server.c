@@ -21,6 +21,27 @@ void on_client_close(uv_handle_t *handle) {
   }
 }
 
+
+
+
+
+void on_shutdown_complete(uv_shutdown_t* req, int status) {
+  server_client_t* client = (server_client_t*)req->handle->data;
+  DEBUG_PRINT("Shutdown complete for %s", client->client_ip);
+  uv_close((uv_handle_t*)&client->handle, on_client_close);
+  free(req); // shutdown_req was malloc'd
+
+  if (client && !uv_is_closing((uv_handle_t*)&client->handle)) {
+    uv_close((uv_handle_t*)&client->handle, on_client_close);
+  }
+}
+
+
+
+
+
+
+
 void check_if_ready_to_close(server_client_t *client) {
   if (!client->closed && (client->sent_reply || client->write_timeout) && client->received_reply) {
     client->closed = true;
@@ -31,13 +52,16 @@ void check_if_ready_to_close(server_client_t *client) {
 }
 
 void on_timer_close(uv_handle_t *handle) {
-  write_srv_request_t *write_req = (write_srv_request_t *)handle->data;
+  if (!handle) return;
 
+  write_srv_request_t *write_req = (write_srv_request_t *)handle->data;
   if (write_req) {
     if (write_req->message_copy) {
       free(write_req->message_copy);
+      write_req->message_copy = NULL;
     }
     free(write_req);
+    handle->data = NULL; // prevent accidental reuse
   }
 }
 
@@ -301,24 +325,27 @@ void on_write_complete(uv_write_t *req, int status) {
     client->sent_reply = true;
   }
 
-  if (write_req) {
-    if (!uv_is_closing((uv_handle_t *)&write_req->timer)) {
-      uv_close((uv_handle_t *)&write_req->timer, on_timer_close);
-    }
+  // Stop and close the timer if it was used
+  if (!uv_is_closing((uv_handle_t *)&write_req->timer)) {
+    uv_timer_stop(&write_req->timer);
+    uv_close((uv_handle_t *)&write_req->timer, on_timer_close);
+  }
 
-    if (client && !client->closed) {
-      // 💡 Initiate a graceful shutdown so the client receives UV_EOF
-      DEBUG_PRINT("Calling uv_shutdown......");
-      uv_shutdown_t *shutdown_req = malloc(sizeof(uv_shutdown_t));
-      if (shutdown_req) {
-        shutdown_req->data = client;
-        uv_shutdown(shutdown_req, (uv_stream_t *)&client->handle, NULL);
-      } else {
-        ERROR_PRINT("Failed to allocate uv_shutdown_t");
-      }
-    }
+  // Clean up the message copy
+  if (write_req->message_copy) {
+    free(write_req->message_copy);
+    write_req->message_copy = NULL;
+  }
 
-    check_if_ready_to_close(client);  // your existing logic
+  // Start graceful shutdown so the client sees EOF
+  if (client && !client->closed && !uv_is_closing((uv_handle_t *)&client->handle)) {
+    uv_shutdown_t *shutdown_req = malloc(sizeof(uv_shutdown_t));
+    if (shutdown_req) {
+      shutdown_req->data = client;
+      uv_shutdown(shutdown_req, (uv_stream_t *)&client->handle, on_shutdown_complete);
+    } else {
+      ERROR_PRINT("Failed to allocate uv_shutdown_t");
+    }
   }
 }
 
