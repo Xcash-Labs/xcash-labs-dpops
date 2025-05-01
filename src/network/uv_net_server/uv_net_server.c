@@ -41,8 +41,6 @@ void on_shutdown_complete(uv_shutdown_t* req, int status) {
 
 
 
-
-
 void check_if_ready_to_close(server_client_t *client) {
   if (!client->closed && (client->sent_reply || client->write_timeout) && client->received_reply) {
     client->closed = true;
@@ -318,7 +316,7 @@ void stop_tcp_server() {
   }
 }
 
-void on_write_complete(uv_write_t *req, int status) {
+void on_write_complete_old(uv_write_t *req, int status) {
   write_srv_request_t *write_req = (write_srv_request_t *)req;
   server_client_t *client = write_req->client;
 
@@ -352,6 +350,67 @@ void on_write_complete(uv_write_t *req, int status) {
     }
   }
 }
+
+
+
+
+
+
+void on_write_complete(uv_write_t *req, int status) {
+  write_srv_request_t *write_req = (write_srv_request_t *)req;
+  server_client_t *client = write_req->client;
+
+  if (status < 0) {
+    ERROR_PRINT("Write error: %s", uv_strerror(status));
+  } else {
+    DEBUG_PRINT("Message sent successfully to %s", client->client_ip);
+    client->sent_reply = true;
+  }
+
+  // Stop and close the timer if it was used
+  if (!uv_is_closing((uv_handle_t *)&write_req->timer)) {
+    uv_timer_stop(&write_req->timer);
+    uv_close((uv_handle_t *)&write_req->timer, on_timer_close);
+  }
+
+  // Clean up the message copy
+  if (write_req->message_copy) {
+    free(write_req->message_copy);
+    write_req->message_copy = NULL;
+  }
+
+  // Delay uv_shutdown slightly to ensure client is ready to receive EOF
+  if (client && !client->closed && !uv_is_closing((uv_handle_t *)&client->handle)) {
+    uv_timer_t* shutdown_timer = malloc(sizeof(uv_timer_t));
+    if (!shutdown_timer) {
+      ERROR_PRINT("Failed to allocate shutdown timer");
+      return;
+    }
+
+    uv_timer_init(client->handle.loop, shutdown_timer);
+    shutdown_timer->data = client;
+
+    uv_timer_start(shutdown_timer, [](uv_timer_t* handle) {
+      server_client_t* client = (server_client_t*)handle->data;
+      uv_shutdown_t* shutdown_req = malloc(sizeof(uv_shutdown_t));
+      if (shutdown_req) {
+        shutdown_req->data = client;
+        uv_shutdown(shutdown_req, (uv_stream_t*)&client->handle, on_shutdown_complete);
+      } else {
+        ERROR_PRINT("Failed to allocate uv_shutdown_t");
+      }
+      uv_close((uv_handle_t*)handle, NULL); // Clean up timer
+    }, 1, 0); // 1 ms delay, one-shot
+  }
+}
+
+
+
+
+
+
+
+
 
 void on_write_timeout(uv_timer_t *timer) {
   write_srv_request_t *write_req = (write_srv_request_t *)timer->data;

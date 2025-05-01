@@ -73,7 +73,7 @@ void on_shutdown_complete_mul(uv_shutdown_t* req, int status) {
   free(req);
 }
 
-void on_write(uv_write_t* req, int status) {
+void on_write_old(uv_write_t* req, int status) {
   client_t* client = (client_t*)req->data;
 
   if (status < 0) {
@@ -107,6 +107,68 @@ void on_write(uv_write_t* req, int status) {
     DEBUG_PRINT("uv_read_start succeeded for %s", client->response->host);
   }
 }
+
+
+
+
+
+void delayed_shutdown_cb(uv_timer_t* timer) {
+  client_t* client = (client_t*)timer->data;
+
+  uv_shutdown_t* shutdown_req = malloc(sizeof(uv_shutdown_t));
+  if (shutdown_req) {
+    shutdown_req->data = client;
+    uv_shutdown(shutdown_req, (uv_stream_t*)&client->handle, on_shutdown_complete_mul);
+  } else {
+    ERROR_PRINT("Failed to allocate uv_shutdown_t");
+  }
+
+  uv_close((uv_handle_t*)timer, free); // Free timer after use
+}
+
+void on_write(uv_write_t* req, int status) {
+  client_t* client = (client_t*)req->data;
+
+  if (status < 0) {
+    ERROR_PRINT("Write error: %s", uv_strerror(status));
+    client->response->status = STATUS_ERROR;
+    safe_close(client);
+    return;
+  }
+
+  client->write_complete = 1;
+
+  if (uv_is_active((uv_handle_t*)&client->timer)) {
+    uv_timer_stop(&client->timer);
+  }
+
+  uv_timer_start(&client->timer, on_timeout, UV_RESPONSE_TIMEOUT, 0);
+
+  // Start reading reply immediately
+  int rc = uv_read_start((uv_stream_t*)req->handle, alloc_buffer, on_read);
+  if (rc < 0) {
+    ERROR_PRINT("uv_read_start failed for %s: %s", client->response->host, uv_strerror(rc));
+    client->response->status = STATUS_ERROR;
+    safe_close(client);
+    return;
+  } else {
+    DEBUG_PRINT("uv_read_start succeeded for %s", client->response->host);
+  }
+
+  // Delay shutdown to ensure server is ready to read EOF
+  uv_timer_t* shutdown_timer = malloc(sizeof(uv_timer_t));
+  if (shutdown_timer) {
+    uv_timer_init(uv_default_loop(), shutdown_timer);
+    shutdown_timer->data = client;
+    uv_timer_start(shutdown_timer, delayed_shutdown_cb, 10, 0);  // Delay = 10ms
+  } else {
+    ERROR_PRINT("Failed to allocate shutdown delay timer");
+  }
+}
+
+
+
+
 
 
 
