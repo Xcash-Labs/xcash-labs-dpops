@@ -169,7 +169,67 @@ void alloc_buffer_srv(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf)
 
 
 
-void on_client_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
+
+void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
+  client_t* client = (client_t*)stream->data;
+
+  if (nread > 0) {
+      DEBUG_PRINT("on_read() called for %s with nread = %zd", client->response->host, nread);
+
+      // Reallocate buffer to hold new data
+      char* new_data = realloc(client->response->data, client->response->size + nread);
+      if (!new_data) {
+          ERROR_PRINT("Realloc failed during response read from %s", client->response->host);
+          client->response->status = STATUS_ERROR;
+          safe_close(client);
+          free(buf->base);
+          return;
+      }
+
+      client->response->data = new_data;
+      memcpy(client->response->data + client->response->size, buf->base, nread);
+      client->response->size += nread;
+
+      DEBUG_PRINT("Total response size so far from %s: %zu", client->response->host, client->response->size);
+      DEBUG_PRINT("Data so far from %s:\n%.*s", client->response->host, (int)client->response->size, client->response->data);
+
+      // Extend timeout because we got data
+      uv_timer_stop(&client->timer);
+      uv_timer_start(&client->timer, on_timeout, UV_RESPONSE_TIMEOUT, 0);
+  }
+  else if (nread == UV_EOF) {
+      DEBUG_PRINT("EOF received from %s", client->response->host);
+      uv_timer_stop(&client->timer);
+
+      client->response->status = STATUS_OK;
+      client->response->req_time_end = time(NULL);
+      client->is_closing = 1;
+
+      safe_close(client);
+  }
+  else if (nread < 0) {
+      ERROR_PRINT("Read error from %s: %s", client->response->host, uv_strerror(nread));
+      client->response->status = STATUS_ERROR;
+      uv_timer_stop(&client->timer);
+      safe_close(client);
+  }
+
+  if (buf && buf->base) {
+      free(buf->base);
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+void on_client_read__OLD(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
   server_client_t *client_data = (server_client_t *)client;
 
   if (nread > 0) {
