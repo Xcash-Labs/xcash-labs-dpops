@@ -110,37 +110,6 @@ void on_write(uv_write_t* req, int status) {
 
 
 
-
-
-
-void on_write_old(uv_write_t* req, int status) {
-  client_t* client = (client_t*)req->data;
-
-  if (status < 0) {
-    ERROR_PRINT("Write error: %s", uv_strerror(status));
-    client->response->status = STATUS_ERROR;
-    safe_close(client);
-    return;
-  }
-
-  client->write_complete = 1;
-
-  if (uv_is_active((uv_handle_t*)&client->timer)) {
-    uv_timer_stop(&client->timer);
-  }
-
-  uv_timer_start(&client->timer, on_timeout, UV_RESPONSE_TIMEOUT, 0);
-
-  int rc = uv_read_start((uv_stream_t*)req->handle, alloc_buffer, on_read);
-  if (rc < 0) {
-    ERROR_PRINT("uv_read_start failed for %s: %s", client->response->host, uv_strerror(rc));
-    client->response->status = STATUS_ERROR;
-    safe_close(client);
-  } else {
-    DEBUG_PRINT("uv_read_start succeeded for %s", client->response->host);
-  }
-}
-
 void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
   client_t* client = (client_t*)stream->data;
   DEBUG_PRINT("on_read() called for %s with nread = %zd", client->response->host, nread);
@@ -162,6 +131,7 @@ void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
     client->response->size += nread;
 
     DEBUG_PRINT("Total response size so far from %s: %zu", client->response->host, client->response->size);
+    DEBUG_PRINT("Data so far from %s:\n%.*s", client->response->host, (int)client->response->size, client->response->data);
 
     // Reset timer after receiving data
     uv_timer_stop(&client->timer);
