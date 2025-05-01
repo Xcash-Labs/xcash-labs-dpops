@@ -66,11 +66,11 @@ void alloc_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
 
 
 void on_shutdown_complete(uv_shutdown_t* req, int status) {
-  server_client_t* client = (server_client_t*)req->data;
-  DEBUG_PRINT("Shutdown complete for client %s", client->client_ip);
+  if (!req || !req->data) return;
+  client_t* client = (client_t*)req->data;
+  DEBUG_PRINT("Shutdown complete for client %s", client->response ? client->response->host : "unknown");
   free(req);
 }
-
 
 void on_write(uv_write_t* req, int status) {
   client_t* client = (client_t*)req->data;
