@@ -179,6 +179,8 @@ void on_connect(uv_connect_t* req, int status) {
   client_t* client = (client_t*)req->data;
 
   if (client->is_closing || status < 0) {
+    DEBUG_PRINT("Skipping connection to %s: status=%d, is_closing=%d", 
+                client->response->host, status, client->is_closing);
     DEBUG_PRINT("Connection error %s: %s", client->response->host, uv_strerror(status));
     client->response->status = STATUS_ERROR;
     safe_close(client);
