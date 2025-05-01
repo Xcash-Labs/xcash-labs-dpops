@@ -98,7 +98,7 @@ void on_write_old(uv_write_t* req, int status) {
 
   uv_timer_start(&client->timer, on_timeout, UV_RESPONSE_TIMEOUT, 0);
 
-  int rc = uv_read_start((uv_stream_t*)req->handle, alloc_buffer, on_read);
+  int rc = uv_read_start((uv_stream_t*)req->handle, alloc_buffer, on_read_mul);
   if (rc < 0) {
     ERROR_PRINT("uv_read_start failed for %s: %s", client->response->host, uv_strerror(rc));
     client->response->status = STATUS_ERROR;
@@ -146,7 +146,7 @@ void on_write(uv_write_t* req, int status) {
 
   uv_timer_start(&client->timer, on_timeout, UV_RESPONSE_TIMEOUT, 0);
 
-  int rc = uv_read_start((uv_stream_t*)req->handle, alloc_buffer, on_read);
+  int rc = uv_read_start((uv_stream_t*)req->handle, alloc_buffer, on_read_mul);
   if (rc < 0) {
     ERROR_PRINT("uv_read_start failed for %s: %s", client->response->host, uv_strerror(rc));
     client->response->status = STATUS_ERROR;
@@ -177,7 +177,7 @@ void on_write(uv_write_t* req, int status) {
 
 
 
-void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
+void on_read_mul(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
   client_t* client = (client_t*)stream->data;
   DEBUG_PRINT("on_read() called for %s with nread = %zd", client->response->host, nread);
 
