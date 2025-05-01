@@ -73,42 +73,6 @@ void on_shutdown_complete_mul(uv_shutdown_t* req, int status) {
   free(req);
 }
 
-void on_write_old(uv_write_t* req, int status) {
-  client_t* client = (client_t*)req->data;
-
-  if (status < 0) {
-    ERROR_PRINT("Write error: %s", uv_strerror(status));
-    client->response->status = STATUS_ERROR;
-    safe_close(client);
-    return;
-  }
-
-  client->write_complete = 1;
-
-  // Signal EOF to server (shutdown write side)
-  uv_shutdown_t* shutdown_req = malloc(sizeof(uv_shutdown_t));
-  if (shutdown_req) {
-    shutdown_req->data = client;
-    uv_shutdown(shutdown_req, (uv_stream_t*)&client->handle, on_shutdown_complete_mul);
-  }
-
-  if (uv_is_active((uv_handle_t*)&client->timer)) {
-    uv_timer_stop(&client->timer);
-  }
-
-  uv_timer_start(&client->timer, on_timeout, UV_RESPONSE_TIMEOUT, 0);
-
-  int rc = uv_read_start((uv_stream_t*)req->handle, alloc_buffer, on_read);
-  if (rc < 0) {
-    ERROR_PRINT("uv_read_start failed for %s: %s", client->response->host, uv_strerror(rc));
-    client->response->status = STATUS_ERROR;
-    safe_close(client);
-  } else {
-    DEBUG_PRINT("uv_read_start succeeded for %s", client->response->host);
-  }
-}
-
-
 
 
 
@@ -144,6 +108,7 @@ void on_write(uv_write_t* req, int status) {
     uv_timer_stop(&client->timer);
   }
 
+  gettimeofday(&client->request_start_time, NULL);
   uv_timer_start(&client->timer, on_timeout, UV_RESPONSE_TIMEOUT, 0);
 
   int rc = uv_read_start((uv_stream_t*)req->handle, alloc_buffer, on_read);
@@ -210,6 +175,15 @@ void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
     uv_timer_stop(&client->timer);
   
     if (nread == UV_EOF) {
+      
+      struct timeval now;
+      gettimeofday(&now, NULL);
+    
+      long seconds = now.tv_sec - client->request_start_time.tv_sec;
+      long useconds = now.tv_usec - client->request_start_time.tv_usec;
+      long msec_elapsed = (seconds * 1000) + (useconds / 1000);
+    
+      DEBUG_PRINT("EOF received from %s after %ld ms", client->response->host, msec_elapsed);
       DEBUG_PRINT("EOF received from %s", client->response->host);
   
       if (client->response->size > 0 && client->response->data) {
