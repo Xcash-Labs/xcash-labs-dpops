@@ -26,6 +26,7 @@ void on_client_close(uv_handle_t *handle) {
 
 
 void on_shutdown_complete(uv_shutdown_t* req, int status) {
+  (void)status;
   server_client_t* client = (server_client_t*)req->handle->data;
   DEBUG_PRINT("Shutdown complete for %s", client->client_ip);
   uv_close((uv_handle_t*)&client->handle, on_client_close);

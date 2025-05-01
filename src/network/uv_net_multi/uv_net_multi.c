@@ -66,6 +66,7 @@ void alloc_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
 
 
 void on_shutdown_complete(uv_shutdown_t* req, int status) {
+  (void)status;
   if (!req || !req->data) return;
   client_t* client = (client_t*)req->data;
   DEBUG_PRINT("Shutdown complete for client %s", client->response ? client->response->host : "unknown");
