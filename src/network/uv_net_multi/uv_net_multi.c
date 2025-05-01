@@ -128,44 +128,7 @@ void shutdown_idle_mul(uv_idle_t* handle) {
 }
 
 
-void on_write(uv_write_t* req, int status) {
-  client_t* client = (client_t*)req->data;
 
-  if (status < 0) {
-    ERROR_PRINT("Write error: %s", uv_strerror(status));
-    client->response->status = STATUS_ERROR;
-    safe_close(client);
-    return;
-  }
-
-  client->write_complete = 1;
-
-  if (uv_is_active((uv_handle_t*)&client->timer)) {
-    uv_timer_stop(&client->timer);
-  }
-
-  uv_timer_start(&client->timer, on_timeout, UV_RESPONSE_TIMEOUT, 0);
-
-  int rc = uv_read_start((uv_stream_t*)req->handle, alloc_buffer, on_read_mul);
-  if (rc < 0) {
-    ERROR_PRINT("uv_read_start failed for %s: %s", client->response->host, uv_strerror(rc));
-    client->response->status = STATUS_ERROR;
-    safe_close(client);
-    return;
-  } else {
-    DEBUG_PRINT("uv_read_start succeeded for %s", client->response->host);
-  }
-
-  // Schedule shutdown using uv_idle to give libuv a tick before sending EOF
-  uv_idle_t* shutdown_idle = malloc(sizeof(uv_idle_t));
-  if (shutdown_idle) {
-    uv_idle_init(uv_default_loop(), shutdown_idle);
-    shutdown_idle->data = client;
-    uv_idle_start(shutdown_idle, shutdown_idle_mul);
-  } else {
-    ERROR_PRINT("Failed to allocate uv_idle_t for shutdown");
-  }
-}
 
 
 
@@ -224,6 +187,48 @@ void on_read_mul(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
     free(buf->base);
   }
 }
+
+
+void on_write(uv_write_t* req, int status) {
+  client_t* client = (client_t*)req->data;
+
+  if (status < 0) {
+    ERROR_PRINT("Write error: %s", uv_strerror(status));
+    client->response->status = STATUS_ERROR;
+    safe_close(client);
+    return;
+  }
+
+  client->write_complete = 1;
+
+  if (uv_is_active((uv_handle_t*)&client->timer)) {
+    uv_timer_stop(&client->timer);
+  }
+
+  uv_timer_start(&client->timer, on_timeout, UV_RESPONSE_TIMEOUT, 0);
+
+  int rc = uv_read_start((uv_stream_t*)req->handle, alloc_buffer, on_read_mul);
+  if (rc < 0) {
+    ERROR_PRINT("uv_read_start failed for %s: %s", client->response->host, uv_strerror(rc));
+    client->response->status = STATUS_ERROR;
+    safe_close(client);
+    return;
+  } else {
+    DEBUG_PRINT("uv_read_start succeeded for %s", client->response->host);
+  }
+
+  // Schedule shutdown using uv_idle to give libuv a tick before sending EOF
+  uv_idle_t* shutdown_idle = malloc(sizeof(uv_idle_t));
+  if (shutdown_idle) {
+    uv_idle_init(uv_default_loop(), shutdown_idle);
+    shutdown_idle->data = client;
+    uv_idle_start(shutdown_idle, shutdown_idle_mul);
+  } else {
+    ERROR_PRINT("Failed to allocate uv_idle_t for shutdown");
+  }
+}
+
+
 
 void on_connect(uv_connect_t* req, int status) {
   client_t* client = (client_t*)req->data;
