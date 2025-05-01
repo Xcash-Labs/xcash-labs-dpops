@@ -174,15 +174,15 @@ void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
   else if (nread < 0) {
 
     client->response->req_time_end = time(NULL);
-    client->response->status = STATUS_OK;
-    client->is_closing = 1;
-  
     long duration = client->response->req_time_end - client->response->req_time_start;
-    DEBUG_PRINT("EOF received from %s after %ld seconds", client->response->host, duration
-
+    DEBUG_PRINT("Stop timer received from %s after %ld seconds", client->response->host, duration);
     uv_timer_stop(&client->timer);
   
     if (nread == UV_EOF) {
+
+      client->response->req_time_end = time(NULL);
+      long duration = client->response->req_time_end - client->response->req_time_start;
+      DEBUG_PRINT("EOF received from %s after %ld seconds", client->response->host, duration);
 
       DEBUG_PRINT("EOF received from %s", client->response->host);
   
