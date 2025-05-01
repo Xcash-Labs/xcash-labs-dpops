@@ -65,7 +65,7 @@ void alloc_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
 }
 
 
-void on_shutdown_complete(uv_shutdown_t* req, int status) {
+void on_shutdown_complete_mul(uv_shutdown_t* req, int status) {
   (void)status;
   if (!req || !req->data) return;
   client_t* client = (client_t*)req->data;
@@ -89,7 +89,7 @@ void on_write(uv_write_t* req, int status) {
   uv_shutdown_t* shutdown_req = malloc(sizeof(uv_shutdown_t));
   if (shutdown_req) {
     shutdown_req->data = client;
-    uv_shutdown(shutdown_req, (uv_stream_t*)&client->handle, on_shutdown_complete);
+    uv_shutdown(shutdown_req, (uv_stream_t*)&client->handle, on_shutdown_complete_mul);
   }
 
   if (uv_is_active((uv_handle_t*)&client->timer)) {
