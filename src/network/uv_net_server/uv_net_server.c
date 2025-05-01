@@ -166,7 +166,6 @@ void on_client_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
     char *new_data = realloc(client_data->data, client_data->data_size + nread + 1);
     if (!new_data) {
       ERROR_PRINT("Failed to realloc data buffer");
-      client_data->status = STATUS_ERROR;
       goto cleanup;
     }
 
@@ -187,7 +186,6 @@ void on_client_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
   } else if (nread < 0) {
     ERROR_PRINT("Read error: %s", uv_strerror(nread));
     uv_read_stop(client);
-    client_data->status = STATUS_ERROR;
     if (!client_data->closed) {
       client_data->closed = true;
       uv_close((uv_handle_t *)client, on_client_close);
