@@ -157,10 +157,52 @@ void alloc_buffer_srv(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf)
 
 
 
-
-
-
 void on_client_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
+  server_client_t *client_data = (server_client_t *)client;
+
+  if (nread > 0) {
+    DEBUG_PRINT("Received data: %.*s", (int)nread, buf->base);
+
+    char *new_data = realloc(client_data->data, client_data->data_size + nread + 1);
+    if (!new_data) {
+      ERROR_PRINT("Failed to realloc data buffer");
+      client_data->status = STATUS_ERROR;
+      goto cleanup;
+    }
+
+    client_data->data = new_data;
+    memcpy(client_data->data + client_data->data_size, buf->base, nread);
+    client_data->data_size += nread;
+    client_data->data[client_data->data_size] = '\0'; // null-terminate for safety
+
+  } else if (nread == UV_EOF) {
+    DEBUG_PRINT("Client received UV_EOF.");
+    uv_read_stop(client);
+    client_data->received_reply = true;
+
+    handle_srv_message(client_data->data, client_data->data_size, client_data);
+
+    check_if_ready_to_close(client_data);
+
+  } else if (nread < 0) {
+    ERROR_PRINT("Read error: %s", uv_strerror(nread));
+    uv_read_stop(client);
+    client_data->status = STATUS_ERROR;
+    if (!client_data->closed) {
+      client_data->closed = true;
+      uv_close((uv_handle_t *)client, on_client_close);
+    }
+  }
+
+cleanup:
+  if (buf && buf->base) {
+    free(buf->base);
+  }
+}
+
+
+
+void on_client_read_OLD(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
   server_client_t *client_data = (server_client_t *)client;
 
   if (nread > 0) {
