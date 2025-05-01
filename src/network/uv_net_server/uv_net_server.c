@@ -297,7 +297,7 @@ void on_write_complete(uv_write_t *req, int status) {
   if (status < 0) {
     ERROR_PRINT("Write error: %s", uv_strerror(status));
   } else {
-    DEBUG_PRINT("Message sent successfully");
+    DEBUG_PRINT("Message sent successfully to %s", client->client_ip);
     client->sent_reply = true;
   }
 
@@ -305,12 +305,20 @@ void on_write_complete(uv_write_t *req, int status) {
     if (!uv_is_closing((uv_handle_t *)&write_req->timer)) {
       uv_close((uv_handle_t *)&write_req->timer, on_timer_close);
     }
-  
-  // mark the reply as sent:
-  if (write_req->client) {
-    write_req->client->sent_reply = true;
-    check_if_ready_to_close(write_req->client);  // Let read path decide
-  }
+
+    if (client && !client->closed) {
+      // 💡 Initiate a graceful shutdown so the client receives UV_EOF
+      DEBUG_PRINT("Calling uv_shutdown......");
+      uv_shutdown_t *shutdown_req = malloc(sizeof(uv_shutdown_t));
+      if (shutdown_req) {
+        shutdown_req->data = client;
+        uv_shutdown(shutdown_req, (uv_stream_t *)&client->handle, NULL);
+      } else {
+        ERROR_PRINT("Failed to allocate uv_shutdown_t");
+      }
+    }
+
+    check_if_ready_to_close(client);  // your existing logic
   }
 }
 
@@ -336,18 +344,8 @@ void send_data_uv(server_client_t *client, const char *message) {
     length = MAXIMUM_BUFFER_SIZE - 1;  // Truncate safely
     DEBUG_PRINT("Message length truncated to %zu", length);
   }
-
-  DEBUG_PRINT("Message is %s, size is %zu", message, length);
-
-
-
-
   
-
-
-
   DEBUG_PRINT("Preparing to send message to %s", client->client_ip);
-
   write_srv_request_t *write_req = malloc(sizeof(write_srv_request_t));
   if (!write_req) {
     ERROR_PRINT("Memory allocation failed for write_srv_request_t");
