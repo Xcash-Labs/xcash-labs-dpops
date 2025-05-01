@@ -108,7 +108,7 @@ void on_write(uv_write_t* req, int status) {
     uv_timer_stop(&client->timer);
   }
 
-  gettimeofday(&client->request_start_time, NULL);
+
   uv_timer_start(&client->timer, on_timeout, UV_RESPONSE_TIMEOUT, 0);
 
   int rc = uv_read_start((uv_stream_t*)req->handle, alloc_buffer, on_read);
@@ -175,15 +175,7 @@ void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
     uv_timer_stop(&client->timer);
   
     if (nread == UV_EOF) {
-      
-      struct timeval now;
-      gettimeofday(&now, NULL);
-    
-      long seconds = now.tv_sec - client->request_start_time.tv_sec;
-      long useconds = now.tv_usec - client->request_start_time.tv_usec;
-      long msec_elapsed = (seconds * 1000) + (useconds / 1000);
-    
-      DEBUG_PRINT("EOF received from %s after %ld ms", client->response->host, msec_elapsed);
+
       DEBUG_PRINT("EOF received from %s", client->response->host);
   
       if (client->response->size > 0 && client->response->data) {
