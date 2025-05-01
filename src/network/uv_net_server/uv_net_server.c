@@ -214,14 +214,10 @@ void on_client_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
     );
 
   } else if (nread == UV_EOF) {
-    DEBUG_PRINT("Client disconnected.");
+    DEBUG_PRINT("Client received UV_EOF.");
     client_data->received_reply = true;
-    check_if_ready_to_close(client_data);
     uv_read_stop(client);
-    if (!client_data->closed) {
-      client_data->closed = true;
-      uv_close((uv_handle_t *)client, on_client_close);
-    }
+    check_if_ready_to_close(client_data);
   } else if (nread < 0) {
     ERROR_PRINT("Read error: %s", uv_strerror(nread));
     uv_read_stop(client);
