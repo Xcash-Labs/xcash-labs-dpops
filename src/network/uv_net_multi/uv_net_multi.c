@@ -198,28 +198,34 @@ void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
     client->response->size += nread;
 
     DEBUG_PRINT("Total response size so far from %s: %zu", client->response->host, client->response->size);
-  //  DEBUG_PRINT("Data so far from %s:\n%.*s", client->response->host, (int)client->response->size, client->response->data);
 
     // Reset timer after receiving data
     uv_timer_stop(&client->timer);
     uv_timer_start(&client->timer, on_timeout, UV_RESPONSE_TIMEOUT, 0);
   } 
+
   else if (nread < 0) {
     uv_timer_stop(&client->timer);
-
+  
     if (nread == UV_EOF) {
       DEBUG_PRINT("EOF received from %s", client->response->host);
-      client->response->req_time_end = time(NULL);
-      client->response->status = STATUS_OK;
+  
+      if (client->response->size > 0 && client->response->data) {
+        client->response->req_time_end = time(NULL);
+        client->response->status = STATUS_OK;
+      } else {
+        WARNING_PRINT("EOF received but no data from %s", client->response->host);
+        client->response->status = STATUS_ERROR;
+      }
+  
       client->is_closing = 1;
     } else {
       ERROR_PRINT("Read error from %s: %s", client->response->host, uv_strerror(nread));
       client->response->status = STATUS_ERROR;
     }
-
+  
     safe_close(client);
   }
-
   if (buf && buf->base) {
     free(buf->base);
   }
