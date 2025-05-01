@@ -174,7 +174,53 @@ void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
   }
 }
 
+
 void on_connect(uv_connect_t* req, int status) {
+  client_t* client = (client_t*)req->data;
+
+  if (client->is_closing || status < 0) {
+    DEBUG_PRINT("Connection error %s: %s", client->response->host, uv_strerror(status));
+    client->response->status = STATUS_ERROR;
+    safe_close(client);
+    return;
+  }
+
+  DEBUG_PRINT("Successfully connected to %s", client->response->host);
+
+  // Stop the connection timeout
+  uv_timer_stop(&client->timer);
+  DEBUG_PRINT("Connect timeout timer stopped for %s", client->response->host);
+
+  // Prepare write buffer
+  uv_buf_t buf = uv_buf_init((char *)(uintptr_t)client->message, strlen(client->message));
+  client->write_req.data = client;
+
+  DEBUG_PRINT("Preparing to send message to %s, length: %zu", client->response->host, strlen(client->message));
+
+  // Start write timeout timer
+  int timer_rc = uv_timer_start(&client->timer, on_timeout, UV_WRITE_TIMEOUT, 0);
+  if (timer_rc < 0) {
+    ERROR_PRINT("Failed to start write timeout for %s: %s", client->response->host, uv_strerror(timer_rc));
+    client->response->status = STATUS_ERROR;
+    safe_close(client);
+    return;
+  }
+  DEBUG_PRINT("Write timeout timer started for %s (timeout = %d ms)", client->response->host, UV_WRITE_TIMEOUT);
+
+  // Start the actual write
+  int rc = uv_write(&client->write_req, (uv_stream_t*)&client->handle, &buf, 1, on_write);
+  if (rc < 0) {
+    ERROR_PRINT("uv_write() failed for %s: %s", client->response->host, uv_strerror(rc));
+    client->response->status = STATUS_ERROR;
+    safe_close(client);
+    return;
+  }
+
+  DEBUG_PRINT("uv_write() started to %s", client->response->host);
+}
+
+
+void on_connect_OLD(uv_connect_t* req, int status) {
   client_t* client = (client_t*)req->data;
 
   if (client->is_closing || status < 0) {
