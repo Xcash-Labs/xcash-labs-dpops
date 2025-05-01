@@ -167,31 +167,8 @@ void alloc_buffer_srv(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf)
 
 
 
-void safe_close_test(client_t* client) {
-  if (!client) return;
 
-  if (client->is_closing) {
-    DEBUG_PRINT("safe_close: already closing %s", client->response ? client->response->host : "unknown");
-    return;
-  }
 
-  client->is_closing = 1;
-
-  // Stop timer explicitly if still active
-  if (uv_is_active((uv_handle_t*)&client->timer)) {
-    uv_timer_stop(&client->timer);
-  }
-
-  // Then close it
-  if (!uv_is_closing((uv_handle_t*)&client->timer)) {
-    uv_close((uv_handle_t*)&client->timer, NULL);
-  }
-
-  // Close client stream
-  if (!uv_is_closing((uv_handle_t*)&client->handle)) {
-    uv_close((uv_handle_t*)&client->handle, on_close);
-  }
-}
 
 
 void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
@@ -205,7 +182,7 @@ void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
       if (!new_data) {
           ERROR_PRINT("Realloc failed during response read from %s", client->response->host);
           client->response->status = STATUS_ERROR;
-          safe_close_test(client);
+//          safe_close_test(client);
           free(buf->base);
           return;
       }
@@ -229,13 +206,25 @@ void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
       client->response->req_time_end = time(NULL);
       client->is_closing = 1;
 
-      safe_close_test(client);
+      if (!uv_is_closing((uv_handle_t*)&client->handle)) {
+        uv_close((uv_handle_t*)&client->handle, on_close);
+      }
+      if (!uv_is_closing((uv_handle_t*)&client->timer)) {
+          uv_close((uv_handle_t*)&client->timer, NULL);
+      }
   }
   else if (nread < 0) {
       ERROR_PRINT("Read error from %s: %s", client->response->host, uv_strerror(nread));
       client->response->status = STATUS_ERROR;
       uv_timer_stop(&client->timer);
-      safe_close_test(client);
+
+
+      if (!uv_is_closing((uv_handle_t*)&client->handle)) {
+        uv_close((uv_handle_t*)&client->handle, on_close);
+      }
+      if (!uv_is_closing((uv_handle_t*)&client->timer)) {
+          uv_close((uv_handle_t*)&client->timer, NULL); 
+      }
   }
 
   if (buf && buf->base) {
