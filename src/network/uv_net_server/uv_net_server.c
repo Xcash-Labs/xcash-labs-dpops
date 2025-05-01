@@ -172,58 +172,64 @@ void alloc_buffer_srv(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf)
 
 
 void on_client_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
-  client_t* client = (client_t*)stream->data;
+  server_client_t *client_data = (server_client_t *)client;
 
   if (nread > 0) {
-      DEBUG_PRINT("on_read() called for %s with nread = %zd", client->response->host, nread);
+      DEBUG_PRINT("on_read() called for %s with nread = %zd", client_data->response->host, nread);
 
       // Reallocate buffer to hold new data
-      char* new_data = realloc(client->response->data, client->response->size + nread);
+      char* new_data = realloc(client_data->response->data, client_data->response->size + nread);
       if (!new_data) {
-          ERROR_PRINT("Realloc failed during response read from %s", client->response->host);
-          client->response->status = STATUS_ERROR;
+          ERROR_PRINT("Realloc failed during response read from %s", client_data->response->host);
+          client_data->response->status = STATUS_ERROR;
 //          safe_close_test(client);
           free(buf->base);
           return;
       }
 
-      client->response->data = new_data;
-      memcpy(client->response->data + client->response->size, buf->base, nread);
-      client->response->size += nread;
+      client_data->response->data = new_data;
+      memcpy(client_data->response->data + client_data->response->size, buf->base, nread);
+      client_data->response->size += nread;
 
-      DEBUG_PRINT("Total response size so far from %s: %zu", client->response->host, client->response->size);
-      DEBUG_PRINT("Data so far from %s:\n%.*s", client->response->host, (int)client->response->size, client->response->data);
+      DEBUG_PRINT("Total response size so far from %s: %zu", client_data->response->host, client_data->response->size);
+      DEBUG_PRINT("Data so far from %s:\n%.*s", client_data->response->host, (int)client_data->response->size, client_data->response->data);
 
       // Extend timeout because we got data
-      uv_timer_stop(&client->timer);
-      uv_timer_start(&client->timer, on_timeout, UV_RESPONSE_TIMEOUT, 0);
+      uv_timer_stop(&client_data->timer);
+      uv_timer_start(&client_data->timer, on_timeout, UV_RESPONSE_TIMEOUT, 0);
   }
   else if (nread == UV_EOF) {
-      DEBUG_PRINT("EOF received from %s", client->response->host);
-      uv_timer_stop(&client->timer);
+      DEBUG_PRINT("EOF received from %s", client_data->response->host);
+      uv_timer_stop(&client_data->timer);
 
-      client->response->status = STATUS_OK;
-      client->response->req_time_end = time(NULL);
-      client->is_closing = 1;
+      client_data->response->status = STATUS_OK;
+      client_data->response->req_time_end = time(NULL);
+      client_data->is_closing = 1;
 
-      if (!uv_is_closing((uv_handle_t*)&client->handle)) {
-        uv_close((uv_handle_t*)&client->handle, on_close);
+      handle_srv_message(
+        client_data->response->data,
+        client_data->response->size,
+        client_data
+    );
+
+      if (!uv_is_closing((uv_handle_t*)&client_data->handle)) {
+        uv_close((uv_handle_t*)&client_data->handle, on_close);
       }
-      if (!uv_is_closing((uv_handle_t*)&client->timer)) {
-          uv_close((uv_handle_t*)&client->timer, NULL); // NULL is fine unless you need a callback
+      if (!uv_is_closing((uv_handle_t*)&client_data->timer)) {
+          uv_close((uv_handle_t*)&client_data->timer, NULL); // NULL is fine unless you need a callback
       }
   }
   else if (nread < 0) {
-      ERROR_PRINT("Read error from %s: %s", client->response->host, uv_strerror(nread));
-      client->response->status = STATUS_ERROR;
-      uv_timer_stop(&client->timer);
+      ERROR_PRINT("Read error from %s: %s", client_data->response->host, uv_strerror(nread));
+      client_data->response->status = STATUS_ERROR;
+      uv_timer_stop(&client_data->timer);
 
 
-      if (!uv_is_closing((uv_handle_t*)&client->handle)) {
-        uv_close((uv_handle_t*)&client->handle, on_close);
+      if (!uv_is_closing((uv_handle_t*)&client_data->handle)) {
+        uv_close((uv_handle_t*)&client_data->handle, on_close);
       }
-      if (!uv_is_closing((uv_handle_t*)&client->timer)) {
-          uv_close((uv_handle_t*)&client->timer, NULL); // NULL is fine unless you need a callback
+      if (!uv_is_closing((uv_handle_t*)&client_data->timer)) {
+          uv_close((uv_handle_t*)&client_data->timer, NULL); // NULL is fine unless you need a callback
       }
   }
 
