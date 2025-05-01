@@ -112,18 +112,21 @@ void on_write_old(uv_write_t* req, int status) {
 
 
 
-void delayed_shutdown_cb(uv_timer_t* timer) {
-  client_t* client = (client_t*)timer->data;
+
+
+void shutdown_idle_mul(uv_idle_t* handle) {
+  server_client_t* client = (server_client_t*)handle->data;
+
+  uv_idle_stop(handle);
+  uv_close((uv_handle_t*)handle, free);  // Clean up the idle handle
 
   uv_shutdown_t* shutdown_req = malloc(sizeof(uv_shutdown_t));
   if (shutdown_req) {
     shutdown_req->data = client;
-    uv_shutdown(shutdown_req, (uv_stream_t*)&client->handle, on_shutdown_complete_mul);
+    uv_shutdown(shutdown_req, (uv_stream_t*)&client->handle, on_shutdown_complete);
   } else {
     ERROR_PRINT("Failed to allocate uv_shutdown_t");
   }
-
-  uv_close((uv_handle_t*)timer, free); // Free timer after use
 }
 
 void on_write(uv_write_t* req, int status) {
@@ -144,7 +147,6 @@ void on_write(uv_write_t* req, int status) {
 
   uv_timer_start(&client->timer, on_timeout, UV_RESPONSE_TIMEOUT, 0);
 
-  // Start reading reply immediately
   int rc = uv_read_start((uv_stream_t*)req->handle, alloc_buffer, on_read);
   if (rc < 0) {
     ERROR_PRINT("uv_read_start failed for %s: %s", client->response->host, uv_strerror(rc));
@@ -155,16 +157,20 @@ void on_write(uv_write_t* req, int status) {
     DEBUG_PRINT("uv_read_start succeeded for %s", client->response->host);
   }
 
-  // Delay shutdown to ensure server is ready to read EOF
-  uv_timer_t* shutdown_timer = malloc(sizeof(uv_timer_t));
-  if (shutdown_timer) {
-    uv_timer_init(uv_default_loop(), shutdown_timer);
-    shutdown_timer->data = client;
-    uv_timer_start(shutdown_timer, delayed_shutdown_cb, 10, 0);  // Delay = 10ms
+  // Schedule shutdown using uv_idle to give libuv a tick before sending EOF
+  uv_idle_t* shutdown_idle = malloc(sizeof(uv_idle_t));
+  if (shutdown_idle) {
+    uv_idle_init(uv_default_loop(), shutdown_idle);
+    shutdown_idle->data = client;
+    uv_idle_start(shutdown_idle, shutdown_idle_mul);
   } else {
-    ERROR_PRINT("Failed to allocate shutdown delay timer");
+    ERROR_PRINT("Failed to allocate uv_idle_t for shutdown");
   }
 }
+
+
+
+
 
 
 

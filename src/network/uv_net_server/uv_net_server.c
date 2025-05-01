@@ -356,6 +356,23 @@ void on_write_complete_old(uv_write_t *req, int status) {
 
 
 
+
+
+// Helper for delayed shutdown
+void delayed_shutdown_cb(uv_timer_t* handle) {
+  server_client_t* client = (server_client_t*)handle->data;
+
+  uv_shutdown_t* shutdown_req = malloc(sizeof(uv_shutdown_t));
+  if (shutdown_req) {
+    shutdown_req->data = client;
+    uv_shutdown(shutdown_req, (uv_stream_t*)&client->handle, on_shutdown_complete);
+  } else {
+    ERROR_PRINT("Failed to allocate uv_shutdown_t");
+  }
+
+  uv_close((uv_handle_t*)handle, NULL);  // Free the shutdown timer
+}
+
 void on_write_complete(uv_write_t *req, int status) {
   write_srv_request_t *write_req = (write_srv_request_t *)req;
   server_client_t *client = write_req->client;
@@ -389,21 +406,9 @@ void on_write_complete(uv_write_t *req, int status) {
 
     uv_timer_init(client->handle.loop, shutdown_timer);
     shutdown_timer->data = client;
-
-    uv_timer_start(shutdown_timer, [](uv_timer_t* handle) {
-      server_client_t* client = (server_client_t*)handle->data;
-      uv_shutdown_t* shutdown_req = malloc(sizeof(uv_shutdown_t));
-      if (shutdown_req) {
-        shutdown_req->data = client;
-        uv_shutdown(shutdown_req, (uv_stream_t*)&client->handle, on_shutdown_complete);
-      } else {
-        ERROR_PRINT("Failed to allocate uv_shutdown_t");
-      }
-      uv_close((uv_handle_t*)handle, NULL); // Clean up timer
-    }, 1, 0); // 1 ms delay, one-shot
+    uv_timer_start(shutdown_timer, delayed_shutdown_cb, 1, 0);  // 1ms delay
   }
 }
-
 
 
 
