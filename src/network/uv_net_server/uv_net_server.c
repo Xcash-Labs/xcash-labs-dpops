@@ -109,42 +109,42 @@ void on_new_connection(uv_stream_t *server_handle, int status) {
     return;
   }
 
-  // Allocate and initialize server client structure
-  server_client_t *client = malloc(sizeof(server_client_t));
+  server_client_t *client = calloc(1, sizeof(server_client_t));
   if (!client) {
     ERROR_PRINT("Memory allocation failed for new client");
     return;
   }
-  memset(client, 0, sizeof(server_client_t));
 
-  // Initialize TCP handle
+  uv_tcp_t *tcp_handle = &client->handle;
 
-
-  if (uv_tcp_init(server_handle->loop, (uv_tcp_t *)&client->handle) < 0) {
-    ERROR_PRINT("Failed to initialize TCP handle for client");
+  // Initialize TCP handle for the client
+  int rc = uv_tcp_init(server_handle->loop, tcp_handle);
+  if (rc < 0) {
+    ERROR_PRINT("uv_tcp_init failed: %s", uv_strerror(rc));
     free(client);
     return;
   }
 
-  client->handle.data = client;
-  
+  // Link the client struct to the handle
+  tcp_handle->data = client;
+
   // Accept the connection
-  if (uv_accept(server_handle, (uv_stream_t *)&client->handle) == 0) {
-    get_client_ip(client);  // Get and store IP
+  rc = uv_accept(server_handle, (uv_stream_t *)tcp_handle);
+  if (rc == 0) {
+    get_client_ip(client);  // safely fill in client IP
     DEBUG_PRINT("New connection from: %s", client->client_ip);
 
-    // Start reading from the client
-    int rc = uv_read_start((uv_stream_t *)&client->handle, alloc_buffer_srv, on_client_read);
+    rc = uv_read_start((uv_stream_t *)tcp_handle, alloc_buffer_srv, on_client_read);
     if (rc < 0) {
       ERROR_PRINT("uv_read_start failed: %s", uv_strerror(rc));
-      uv_close((uv_handle_t *)&client->handle, on_client_close);
+      uv_close((uv_handle_t *)tcp_handle, on_client_close);
     }
   } else {
-    ERROR_PRINT("uv_accept failed");
-    uv_close((uv_handle_t *)&client->handle, on_client_close);
+    ERROR_PRINT("uv_accept failed: %s", uv_strerror(rc));
+    uv_close((uv_handle_t *)tcp_handle, on_client_close);
   }
-
 }
+
 
 // Allocate buffer for reading
 void alloc_buffer_srv(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf) {
