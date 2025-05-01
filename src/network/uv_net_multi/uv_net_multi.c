@@ -64,7 +64,50 @@ void alloc_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
   buf->len = suggested_size;
 }
 
+
+
+
 void on_write(uv_write_t* req, int status) {
+  client_t* client = (client_t*)req->data;
+
+  if (status < 0) {
+    ERROR_PRINT("Write error: %s", uv_strerror(status));
+    client->response->status = STATUS_ERROR;
+    safe_close(client);
+    return;
+  }
+
+  client->write_complete = 1;
+
+  // Tell the server we’re done sending
+  uv_shutdown_t* shutdown_req = malloc(sizeof(uv_shutdown_t));
+  if (shutdown_req) {
+    shutdown_req->data = client;
+    uv_shutdown(shutdown_req, (uv_stream_t*)&client->handle, NULL);
+  }
+
+  if (uv_is_active((uv_handle_t*)&client->timer)) {
+    uv_timer_stop(&client->timer);
+  }
+
+  uv_timer_start(&client->timer, on_timeout, UV_RESPONSE_TIMEOUT, 0);
+
+  int rc = uv_read_start((uv_stream_t*)req->handle, alloc_buffer, on_read);
+  if (rc < 0) {
+    ERROR_PRINT("uv_read_start failed for %s: %s", client->response->host, uv_strerror(rc));
+    client->response->status = STATUS_ERROR;
+    safe_close(client);
+  } else {
+    DEBUG_PRINT("uv_read_start succeeded for %s", client->response->host);
+  }
+}
+
+
+
+
+
+
+void on_write_old(uv_write_t* req, int status) {
   client_t* client = (client_t*)req->data;
 
   if (status < 0) {
