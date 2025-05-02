@@ -220,6 +220,28 @@ bool is_ntp_enabled(void) {
   return ntp_active;
 }
 
+void fix_pipe(int fd) {
+  if (fcntl(fd, F_GETFD) != -1 || errno != EBADF) {
+    return;
+  }
+
+  int f = open("/dev/null", fd == STDIN_FILENO ? O_RDONLY : O_WRONLY);
+  if (f == -1) {
+    FATAL_ERROR_EXIT("failed to open /dev/null for missing stdio pipe");
+    // abort();
+  }
+  if (f != fd) {
+    dup2(f, fd);
+    close(f);
+  }
+}
+
+void fix_std_pipes(void) {
+  fix_pipe(STDIN_FILENO);
+  fix_pipe(STDOUT_FILENO);
+  fix_pipe(STDERR_FILENO);
+}
+
 /*---------------------------------------------------------------------------------------------------------
 Name: main
 Description: The start point of the program
@@ -253,6 +275,9 @@ int main(int argc, char *argv[]) {
   } else {
     FATAL_ERROR_EXIT("Please enable ntp for your server");
   }
+
+  // uvlib can cause assertion errors if some of STD PIPES closed
+  fix_std_pipes();
 
   if (!(get_node_data())) {
     FATAL_ERROR_EXIT("Failed to get the nodes public wallet address");

@@ -88,7 +88,7 @@
 
 #define UV_SEND_TIMEOUT 5000
 #define UV_WRITE_TIMEOUT 2000
-#define UV_CONNECTION_TIMEOUT 10000  // was 3
+#define UV_CONNECTION_TIMEOUT 3000
 
 // ===================== Hash and Key Lengths =====================
 #define DATA_HASH_LENGTH 128
