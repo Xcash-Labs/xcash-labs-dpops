@@ -16,6 +16,7 @@ typedef struct {
     char client_ip[INET6_ADDRSTRLEN];
     bool sent_reply;
     bool received_reply;
+    bool closed;
     char *buffer;
     size_t buffer_size;
 } server_client_t;
@@ -24,7 +25,6 @@ typedef struct {
     uv_write_t req;
     uv_timer_t timer;
     char *message_copy;
-    bool closed;
     server_client_t *client;
 } write_srv_request_t;
 
