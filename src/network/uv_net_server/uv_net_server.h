@@ -24,6 +24,7 @@ typedef struct {
     uv_write_t req;
     uv_timer_t timer;
     char *message_copy;
+    bool closed;
     server_client_t *client;
 } write_srv_request_t;
 
