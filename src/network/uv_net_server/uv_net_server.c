@@ -161,6 +161,79 @@ void on_client_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
   if (nread > 0) {
     DEBUG_PRINT("Received data: %.*s", (int)nread, buf->base);
 
+    // Append incoming data to buffer
+    char *new_buffer = realloc(client_data->buffer, client_data->buffer_size + nread + 1);
+    if (!new_buffer) {
+      ERROR_PRINT("Failed to realloc read buffer");
+      goto cleanup;
+    }
+
+    client_data->buffer = new_buffer;
+    memcpy(client_data->buffer + client_data->buffer_size, buf->base, nread);
+    client_data->buffer_size += nread;
+    client_data->buffer[client_data->buffer_size] = '\0';  // Null-terminate for safety
+
+    // Check if message is complete (very basic JSON check)
+    if (client_data->buffer[client_data->buffer_size - 1] == '}') {
+      DEBUG_PRINT("Detected end of JSON message from client");
+
+      message_work_t *work_data = malloc(sizeof(message_work_t));
+      if (!work_data) {
+        ERROR_PRINT("Failed to allocate work_data");
+        goto cleanup;
+      }
+
+      work_data->client = client_data;
+      work_data->data = strndup(client_data->buffer, client_data->buffer_size);
+      work_data->data_len = client_data->buffer_size;
+
+      // Reset buffer for next message
+      free(client_data->buffer);
+      client_data->buffer = NULL;
+      client_data->buffer_size = 0;
+
+      uv_work_t *req = malloc(sizeof(uv_work_t));
+      if (!req) {
+        free(work_data->data);
+        free(work_data);
+        ERROR_PRINT("Failed to allocate uv_work_t");
+        goto cleanup;
+      }
+
+      req->data = work_data;
+      uv_queue_work(uv_default_loop(), req, handle_message_work, handle_message_after);
+    }
+
+  } else if (nread == UV_EOF) {
+    DEBUG_PRINT("Client received UV_EOF.");
+    client_data->received_reply = true;
+    uv_read_stop(client);
+    check_if_ready_to_close(client_data);
+
+  } else if (nread < 0) {
+    ERROR_PRINT("Read error: %s", uv_strerror(nread));
+    uv_read_stop(client);
+    if (!client_data->closed) {
+      client_data->closed = true;
+      uv_close((uv_handle_t *)client, on_client_close);
+    }
+  }
+
+cleanup:
+  if (buf && buf->base) {
+    free(buf->base);
+  }
+}
+
+
+
+
+void on_client_read__OLD__(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
+  server_client_t *client_data = (server_client_t *)client;
+
+  if (nread > 0) {
+    DEBUG_PRINT("Received data: %.*s", (int)nread, buf->base);
+
     message_work_t *work_data = malloc(sizeof(message_work_t));
     if (!work_data) {
       ERROR_PRINT("Failed to allocate work data");
