@@ -34,7 +34,7 @@ void on_shutdown_complete(uv_shutdown_t* req, int status) {
 }
 
 void check_if_ready_to_close(server_client_t *client) {
-  if (!client->closed && (client->sent_reply || client->write_timeout) && client->received_reply) {
+  if (!client->closed && (client->sent_reply) && client->received_reply) {
     client->closed = true;
     INFO_PRINT("Round-trip with %s complete. Closing connection.", client->client_ip);
     uv_read_stop((uv_stream_t *)&client->handle);
@@ -414,7 +414,6 @@ void on_write_timeout(uv_timer_t *timer) {
   write_srv_request_t *write_req = (write_srv_request_t *)timer->data;
 
   ERROR_PRINT("Write operation timed out");
-  write_req->client->write_timeout = true;
   if (!uv_is_closing((uv_handle_t *)&write_req->timer)) {
     uv_timer_stop(&write_req->timer);
     uv_close((uv_handle_t *)&write_req->timer, on_timer_close);
