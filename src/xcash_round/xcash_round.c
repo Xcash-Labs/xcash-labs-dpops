@@ -83,6 +83,14 @@ xcash_round_result_t process_round(void) {
     return ROUND_ERROR;
   }
 
+  size_t network_majority_count = 0;
+  xcash_node_sync_info_t* nodes_majority_list = NULL;
+  if (!initial_db_sync_check(&network_majority_count, &nodes_majority_list) || !nodes_majority_list) {
+    WARNING_PRINT("Can't sync databases with network majority");
+    free(nodes_majority_list);
+    return ROUND_ERROR;
+  }
+
   // Update online status from majority list
   INFO_STAGE_PRINT("Nodes online for block %s", current_block_height);
 
