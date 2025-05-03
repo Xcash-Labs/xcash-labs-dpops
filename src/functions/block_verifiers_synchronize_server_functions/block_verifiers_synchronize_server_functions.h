@@ -31,4 +31,6 @@ void server_received_msg_get_sync_info(server_client_t* client, const char* MESS
 //void server_receive_data_socket_block_verifiers_to_block_verifiers_delegates_database_download_file_update(server_client_t* client);
 //void server_receive_data_socket_block_verifiers_to_block_verifiers_statistics_database_sync_check_update(server_client_t* client, const char* MESSAGE);
 //void server_receive_data_socket_block_verifiers_to_block_verifiers_statistics_database_download_file_update(server_client_t* client);
+
+char* server_create_sync_msg(void);
 #endif

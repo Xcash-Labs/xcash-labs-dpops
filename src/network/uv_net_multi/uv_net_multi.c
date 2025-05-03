@@ -42,7 +42,6 @@ void safe_close(client_t* client) {
   }
 }
 
-
 void on_timeout(uv_timer_t* timer) {
   client_t* client = (client_t*)timer->data;
 
@@ -76,66 +75,11 @@ void on_write(uv_write_t* req, int status) {
 
   uv_timer_stop(&client->timer);
   client->write_complete = 1;
-  uv_timer_start(&client->timer, on_timeout, UV_RESPONSE_TIMEOUT, 0);
-  int rc = uv_read_start((uv_stream_t*)req->handle, alloc_buffer, on_read);
-  if (rc < 0) {
-    ERROR_PRINT("uv_read_start failed for %s: %s", client->response->host, uv_strerror(rc));
-    client->response->status = STATUS_ERROR;
+
+    // If you are NOT reading a response, close the connection
+    client->response->status = STATUS_OK;  // Mark as successful
     safe_close(client);
-    return;
-  } else {
-    DEBUG_PRINT("uv_read_start succeeded for %s", client->response->host);
-  }
 }
-
-void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
-  client_t* client = (client_t*)stream->data;
-  DEBUG_PRINT("on_read() called for %s with nread = %zd", client->response->host, nread);
-
-  if (nread > 0) {
-    DEBUG_PRINT("Received %zd bytes from %s", nread, client->response->host);
-
-    char* new_data = realloc(client->response->data, client->response->size + nread);
-    if (!new_data) {
-      ERROR_PRINT("Realloc failed during response read from %s", client->response->host);
-      client->response->status = STATUS_ERROR;
-      safe_close(client);
-      free(buf->base);
-      return;
-    }
-
-    client->response->data = new_data;
-    memcpy(client->response->data + client->response->size, buf->base, nread);
-    client->response->size += nread;
-
-    DEBUG_PRINT("Total response size so far from %s: %zu", client->response->host, client->response->size);
-    DEBUG_PRINT("Data so far from %s:\n%.*s", client->response->host, (int)client->response->size, client->response->data);
-
-    // Reset timer after receiving data
-    uv_timer_stop(&client->timer);
-    uv_timer_start(&client->timer, on_timeout, UV_RESPONSE_TIMEOUT, 0);
-  } 
-  else if (nread < 0) {
-    uv_timer_stop(&client->timer);
-
-    if (nread == UV_EOF) {
-      DEBUG_PRINT("EOF received from %s", client->response->host);
-      client->response->req_time_end = time(NULL);
-      client->response->status = STATUS_OK;
-      client->is_closing = 1;
-    } else {
-      ERROR_PRINT("Read error from %s: %s", client->response->host, uv_strerror(nread));
-      client->response->status = STATUS_ERROR;
-    }
-
-    safe_close(client);
-  }
-
-  if (buf && buf->base) {
-    free(buf->base);
-  }
-}
-
 
 void on_connect(uv_connect_t* req, int status) {
   client_t* client = (client_t*)req->data;
@@ -212,7 +156,16 @@ void on_resolved(uv_getaddrinfo_t* resolver, int status, struct addrinfo* res) {
   free(resolver);
 }
 
-response_t** send_multi_request(const char** hosts, int port, const char* message) {
+
+
+
+
+
+
+
+
+
+bool send_multi_request(const char** hosts, int port, const char* message) {
   int total_hosts = 0;
   while (hosts[total_hosts] != NULL) total_hosts++;
   if (total_hosts == 0) return NULL;
@@ -222,12 +175,6 @@ response_t** send_multi_request(const char** hosts, int port, const char* messag
 
   uv_loop_t* loop = uv_default_loop();
 
-  response_t** responses = calloc(total_hosts + 1, sizeof(response_t*));
-  if (!responses) {
-    ERROR_PRINT("Failed to allocate memory for responses.");
-    return NULL;
-  }
-
   for (int i = 0; i < total_hosts; i++) {
     client_t* client = calloc(1, sizeof(client_t));
     if (!client) {
@@ -236,26 +183,6 @@ response_t** send_multi_request(const char** hosts, int port, const char* messag
     }
 
     client->message = message;
-
-    client->response = calloc(1, sizeof(response_t));
-    if (!client->response) {
-      ERROR_PRINT("Failed to allocate memory for response.");
-      free(client);
-      continue;
-    }
-
-    client->response->host = strdup(hosts[i]);
-    if (!client->response->host) {
-      ERROR_PRINT("Failed to allocate memory for host string.");
-      free(client->response);
-      free(client);
-      continue;
-    }
-
-    client->response->status = STATUS_PENDING;
-    client->response->client = client;
-    client->response->req_time_start = time(NULL);
-    responses[i] = client->response;
 
     // Initialize libuv handles
     if (uv_timer_init(loop, &client->timer) < 0 ||
@@ -303,44 +230,12 @@ response_t** send_multi_request(const char** hosts, int port, const char* messag
     }
   }
 
-  // Run loop
   uv_run(loop, UV_RUN_DEFAULT);
-
-  // Finalize results
-  for (int i = 0; responses[i] != NULL; i++) {
-    if (responses[i]->status == STATUS_PENDING) {
-      responses[i]->status = STATUS_TIMEOUT;
-    }
-    DEBUG_PRINT("FINAL: Host %s status %s",
-                responses[i]->host,
-                status_to_string(responses[i]->status));
-  }
 
   int result = uv_loop_close(loop);
   if (result != 0) {
     DEBUG_PRINT("Error closing loop: %s", uv_strerror(result));
   }
 
-  for (int i = 0; responses[i] != NULL; i++) {
-    DEBUG_PRINT("Host: %s | Status: %s | Size: %zu | Time: %lds",
-                responses[i]->host,
-                status_to_string(responses[i]->status),
-                responses[i]->size,
-                responses[i]->req_time_end - responses[i]->req_time_start);
-  }
-
-  return responses;
-}
-
-void cleanup_responses(response_t** responses) {
-  int i = 0;
-  while (responses && responses[i] != NULL) {
-    free(responses[i]->host);
-    free(responses[i]->data);
-    free(responses[i]->client);
-    free(responses[i]);
-    responses[i] = NULL;
-    i++;
-  };
-  free(responses);
+  return XCASH_ok;
 }
