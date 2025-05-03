@@ -48,7 +48,7 @@ void on_timeout(uv_timer_t *timer);
 void on_write(uv_write_t *req, int status);
 void on_read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf);
 void on_connect(uv_connect_t *req, int status);
-response_t **send_multi_request(const char **hosts, int port, const char *message);
+bool **send_multi_request(const char **hosts, int port, const char *message);
 //void cleanup_responses(response_t **responses);
 
 #endif
