@@ -22,15 +22,15 @@ typedef enum {
 
 typedef struct client_t client_t;
 
-//typedef struct {
-//    char *host;
-//    char *data;
-//    size_t size;
-//    time_t req_time_start;
-//    time_t req_time_end;
-//    response_status_t status;
-//    client_t *client;
-//} response_t;
+typedef struct {
+    char *host;
+    char *data;
+    size_t size;
+    time_t req_time_start;
+    time_t req_time_end;
+    response_status_t status;
+    client_t *client;
+} response_t;
 
 struct client_t{
     uv_tcp_t handle;
@@ -39,7 +39,7 @@ struct client_t{
     uv_timer_t timer;
     int is_closing;
     int write_complete;
-//    response_t *response;
+    response_t *response;
     const char *message;
 };
 
