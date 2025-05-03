@@ -89,7 +89,8 @@ void shutdown_idle_mul(uv_idle_t* handle) {
 
 void on_write(uv_write_t* req, int status) {
   client_t* client = (client_t*)req->data;
- 
+  uv_timer_stop(&client->timer); 
+
   if (status < 0) {
     ERROR_PRINT("Write error: %s", uv_strerror(status));
     client->response->status = STATUS_ERROR;
@@ -97,7 +98,6 @@ void on_write(uv_write_t* req, int status) {
     return;
   }
 
-  uv_timer_stop(&client->timer);
   client->write_complete = 1;
   uv_timer_start(&client->timer, on_timeout, UV_RESPONSE_TIMEOUT, 0);
   int rc = uv_read_start((uv_stream_t*)req->handle, alloc_buffer, on_read);
@@ -126,7 +126,6 @@ void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
   DEBUG_PRINT("on_read() called for %s with nread = %zd", client->response->host, nread);
 
   if (nread > 0) {
-    uv_timer_stop(&client->timer);
     DEBUG_PRINT("Received %zd bytes from %s", nread, client->response->host);
 
     char* new_data = realloc(client->response->data, client->response->size + nread);
@@ -143,9 +142,10 @@ void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
     client->response->size += nread;
 
     DEBUG_PRINT("Total response size so far from %s: %zu", client->response->host, client->response->size);
-    DEBUG_PRINT("Data so far from %s:\n%.*s", client->response->host, (int)client->response->size, client->response->data);
+//    DEBUG_PRINT("Data so far from %s:\n%.*s", client->response->host, (int)client->response->size, client->response->data);
 
     // Reset timer after receiving data
+    uv_timer_stop(&client->timer);
     uv_timer_start(&client->timer, on_timeout, UV_RESPONSE_TIMEOUT, 0);
   } 
   else if (nread < 0) {
@@ -205,7 +205,6 @@ void on_connect(uv_connect_t* req, int status) {
   DEBUG_PRINT("Write timeout timer started for %s (timeout = %d ms)", client->response->host, UV_WRITE_TIMEOUT);
 
   // Start the actual write
-  client->write_complete = 0;
   int rc = uv_write(&client->write_req, (uv_stream_t*)&client->handle, &buf, 1, on_write);
   if (rc < 0) {
     ERROR_PRINT("uv_write() failed for %s: %s", client->response->host, uv_strerror(rc));
@@ -215,6 +214,61 @@ void on_connect(uv_connect_t* req, int status) {
   }
 
   DEBUG_PRINT("uv_write() started to %s", client->response->host);
+}
+
+
+void on_connect_OLD(uv_connect_t* req, int status) {
+  client_t* client = (client_t*)req->data;
+
+  if (client->is_closing || status < 0) {
+    DEBUG_PRINT("Connection error %s: %s", client->response->host, uv_strerror(status));
+    client->response->status = STATUS_ERROR;
+    safe_close(client);
+    return;
+  }
+
+  uv_timer_stop(&client->timer); // Stop connect timeout
+
+  // Prepare for write
+  uv_buf_t buf = uv_buf_init((char *)(uintptr_t)client->message, strlen(client->message));
+  client->write_req.data = client;
+
+  uv_timer_start(&client->timer, on_timeout, UV_WRITE_TIMEOUT, 0);
+
+  int rc = uv_write(&client->write_req, (uv_stream_t*)&client->handle, &buf, 1, on_write);
+  if (rc < 0) {
+    ERROR_PRINT("uv_write() failed: %s", uv_strerror(rc));
+    client->response->status = STATUS_ERROR;
+    safe_close(client);
+  }
+}
+
+int is_ip_address(const char* host) {
+  struct in_addr sa;
+  return inet_pton(AF_INET, host, &(sa.s_addr));
+}
+
+void start_connection(client_t* client, const struct sockaddr* addr) {
+  uv_tcp_connect(&client->connect_req, &client->handle, addr, on_connect);
+}
+
+void on_resolved(uv_getaddrinfo_t* resolver, int status, struct addrinfo* res) {
+  client_t* client = resolver->data;
+
+  if (status == 0 && res != NULL) {
+    if (!client->is_closing) {
+      start_connection(client, res->ai_addr);
+    }
+  } else {
+    DEBUG_PRINT("DNS resolution failed for %s: %s", client->response->host, uv_strerror(status));
+    client->response->status = STATUS_ERROR;
+  }
+
+  if (res) {
+    uv_freeaddrinfo(res);
+  }
+
+  free(resolver);
 }
 
 response_t** send_multi_request(const char** hosts, int port, const char* message) {
