@@ -198,7 +198,7 @@ bool send_message_param_list(xcash_dest_t dest, xcash_msg_t msg, response_t ***r
   free(message_data);
 
   return result;
-}
+} 
 
 bool send_message_param(xcash_dest_t dest, xcash_msg_t msg, response_t ***reply, ...) {
   bool result = false;
