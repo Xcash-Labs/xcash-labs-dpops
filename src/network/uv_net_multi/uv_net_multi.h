@@ -26,8 +26,8 @@ typedef struct {
     char *host;
     char *data;
     size_t size;
-    time_t req_time_start;
-    time_t req_time_end;
+    time_t req_time_start; // timestamp before connection start
+    time_t req_time_end; // timestamp after connection closed
     response_status_t status;
     client_t *client;
 } response_t;
@@ -38,7 +38,6 @@ struct client_t{
     uv_write_t write_req;
     uv_timer_t timer;
     int is_closing;
-    int write_complete;
     response_t *response;
     const char *message;
 };
@@ -48,7 +47,7 @@ void on_timeout(uv_timer_t *timer);
 void on_write(uv_write_t *req, int status);
 void on_read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf);
 void on_connect(uv_connect_t *req, int status);
-bool **send_multi_request(const char **hosts, int port, const char *message);
-//void cleanup_responses(response_t **responses);
+response_t **send_multi_request(const char **hosts, int port, const char *message);
+void cleanup_responses(response_t **responses);
 
 #endif
