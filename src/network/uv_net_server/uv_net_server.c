@@ -184,7 +184,7 @@ void on_client_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
     // Check if JSON message is complete
     if (trimmed_len > 0 && client_data->buffer[trimmed_len - 1] == '}') {
       DEBUG_PRINT("Detected end of JSON message from client");
-      uv_timer_stop(&client_data->timer);
+      uv_timer_stop(&write_req->timer);
       message_work_t *work_data = malloc(sizeof(message_work_t));
 
       if (!work_data) {
