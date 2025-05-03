@@ -219,6 +219,34 @@ void on_connect(uv_connect_t* req, int status) {
 
 
 
+int is_ip_address(const char* host) {
+  struct in_addr sa;
+  return inet_pton(AF_INET, host, &(sa.s_addr));
+}
+
+void start_connection(client_t* client, const struct sockaddr* addr) {
+  uv_tcp_connect(&client->connect_req, &client->handle, addr, on_connect);
+}
+
+void on_resolved(uv_getaddrinfo_t* resolver, int status, struct addrinfo* res) {
+  client_t* client = resolver->data;
+
+  if (status == 0 && res != NULL) {
+    if (!client->is_closing) {
+      start_connection(client, res->ai_addr);
+    }
+  } else {
+    DEBUG_PRINT("DNS resolution failed for %s: %s", client->response->host, uv_strerror(status));
+    client->response->status = STATUS_ERROR;
+  }
+
+  if (res) {
+    uv_freeaddrinfo(res);
+  }
+
+  free(resolver);
+}
+
 response_t** send_multi_request(const char** hosts, int port, const char* message) {
   int total_hosts = 0;
   while (hosts[total_hosts] != NULL) total_hosts++;
