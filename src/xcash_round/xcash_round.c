@@ -139,11 +139,13 @@ xcash_round_result_t process_round(void) {
 
   INFO_STAGE_PRINT("Part 3 - Create VRF Data and Send To All Block Verifiers");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 3);
-
+  
+  response_t** responses = NULL;
   char* vrf_message = NULL;
+  // This message is defines as NONRETURN and no responses are expected
   if (generate_and_request_vrf_data_msg(&vrf_message)) {
       DEBUG_PRINT("Generated VRF message: %s", vrf_message); 
-      if (xnet_send_data_multi(XNET_DELEGATES_ALL_ONLINE, vrf_message)) {
+      if (xnet_send_data_multi(XNET_DELEGATES_ALL_ONLINE, vrf_message, &responses)) {
           DEBUG_PRINT("Message sent to all online delegates.");
       } else {
           ERROR_PRINT("Failed to send VRF message.");
