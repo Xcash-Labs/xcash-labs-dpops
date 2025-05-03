@@ -205,6 +205,7 @@ void on_connect(uv_connect_t* req, int status) {
   DEBUG_PRINT("Write timeout timer started for %s (timeout = %d ms)", client->response->host, UV_WRITE_TIMEOUT);
 
   // Start the actual write
+  client->write_complete = 0;
   int rc = uv_write(&client->write_req, (uv_stream_t*)&client->handle, &buf, 1, on_write);
   if (rc < 0) {
     ERROR_PRINT("uv_write() failed for %s: %s", client->response->host, uv_strerror(rc));
@@ -215,9 +216,6 @@ void on_connect(uv_connect_t* req, int status) {
 
   DEBUG_PRINT("uv_write() started to %s", client->response->host);
 }
-
-
-
 
 int is_ip_address(const char* host) {
   struct in_addr sa;
