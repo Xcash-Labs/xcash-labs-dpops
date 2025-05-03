@@ -19,12 +19,13 @@ typedef enum XNET_DEST{
     XNET_NONE
 } xcash_dest_t;
 
-bool xnet_send_data_multi(xcash_dest_t dest, const char *message);
-bool send_message_param_list(xcash_dest_t dest, xcash_msg_t msg, const char** pair_params);
-bool send_message_param(xcash_dest_t dest, xcash_msg_t msg, ...);
-bool send_message(xcash_dest_t dest, xcash_msg_t msg);
-bool send_direct_message_param_list(const char* host, xcash_msg_t msg, const char** pair_params);
-bool send_direct_message_param(const char* host, xcash_msg_t msg, ...);
-bool send_direct_message(const char* host, xcash_msg_t msg);
+
+bool xnet_send_data_multi(xcash_dest_t dest, const char* message, response_t ***reply);
+bool send_message_param_list(xcash_dest_t dest, xcash_msg_t msg, response_t ***reply, const char** pair_params);
+bool send_message_param(xcash_dest_t dest, xcash_msg_t msg, response_t ***reply, ...);
+bool send_message(xcash_dest_t dest, xcash_msg_t msg, response_t ***reply);
+bool send_direct_message_param_list(const char* host, xcash_msg_t msg, response_t ***reply, const char** pair_params);
+bool send_direct_message_param(const char* host, xcash_msg_t msg, response_t ***reply, ...);
+bool send_direct_message(const char* host, xcash_msg_t msg, response_t ***reply);
 
 #endif // XCASH_NET_H

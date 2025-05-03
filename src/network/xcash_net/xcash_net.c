@@ -1,7 +1,31 @@
 #include "xcash_net.h"
 
+void check_responses(response_t **responses) {
+  if (!responses) {
+      return;
+  }
+
+  int i = 0;
+  while (responses[i]) {
+      if (!responses[i]->data) {
+          WARNING_PRINT("[WARNING] Response data is NULL for host '%s'. Skipping...", responses[i]->host);
+          responses[i]->status = STATUS_INCOMPLETE;
+          i++;
+          continue;
+      }
+
+      if (responses[i]->status == STATUS_OK) {
+          if (responses[i]->size == 0) {
+              responses[i]->status = STATUS_INCOMPLETE;
+              DEBUG_PRINT("[DEBUG] Returned data from host '%s' is empty. Marked as STATUS_INCOMPLETE", responses[i]->host);
+          }
+      }
+      i++;
+  }
+}
+
 // Sends a message ( with appended to a group of hosts via send_multi_request() )
-bool xnet_send_data_multi(xcash_dest_t dest, const char *message) {
+bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***reply) {
   bool result = false;
   if (!reply) {
     DEBUG_PRINT("reply parameter can't be NULL");
@@ -11,8 +35,13 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message) {
 
   // Host array placeholders
   const char **hosts = NULL;
+  response_t **responses = NULL;
 
   xcash_msg_t msg_type = get_message_type(message);
+  bool is_nonreturn = is_nonreturn_type(msg_type);
+  if (is_nonreturn) {
+      DEBUG_PRINT("Message type is_nonreturn");
+  }
 
   switch (dest) {
     case XNET_SEEDS_ALL: {
@@ -69,34 +98,34 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message) {
         ERROR_PRINT("Failed to allocate memory for delegates_hosts");
         return false;  // Handle memory allocation failure
       }
-
+      
       size_t host_index = 0;
       for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
         const char *ip = delegates_all[i].IP_address;
         const char *delegate_name = delegates_all[i].delegate_name;
-
+    
         // Null check first for safety
         if (!ip) {
-          ERROR_PRINT("IP address is NULL for delegate %s", delegate_name);
-          continue;
+            ERROR_PRINT("IP address is NULL for delegate %s", delegate_name);
+            continue;
         }
-
+    
         // Skip empty IP strings
         if (strlen(ip) == 0) {
-          continue;
+            continue;
         }
-
+    
         // Skip self by public address (assuming index `i` aligns correctly)
         if (strcmp(network_nodes[i].seed_public_address, xcash_wallet_public_address) == 0) {
-          DEBUG_PRINT("Skipping self delegate: %s (%s)", delegate_name, ip);
-          continue;
+            DEBUG_PRINT("Skipping self delegate: %s (%s)", delegate_name, ip);
+            continue;
         }
-
+    
         DEBUG_PRINT("REQ to %s : %s", delegate_name, ip);
         delegates_hosts[host_index++] = ip;
       }
-      delegates_hosts[host_index] = NULL;  // Null-terminate the array
-      hosts = delegates_hosts;             // Assign heap-allocated array to hosts
+      delegates_hosts[host_index] = NULL; // Null-terminate the array
+      hosts = delegates_hosts;            // Assign heap-allocated array to hosts
     } break;
 
     case XNET_DELEGATES_ALL_ONLINE: {
@@ -137,17 +166,26 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message) {
     return false;
   }
 
-  if (send_multi_request(hosts, XCASH_DPOPS_PORT, message)) {
+  if (is_nonreturn) {
+    DEBUG_PRINT("Non Return message.......");
+    send_multi_request(hosts, XCASH_DPOPS_PORT, message);
     free(hosts);
-    return XCASH_OK;
-  } else {
-    free(hosts);
-    return XCASH_ERROR;
+    *reply = NULL;
+    return true;
   }
+
+  responses = send_multi_request(hosts, XCASH_DPOPS_PORT, message);
+  free(hosts);
+  if (responses) {
+    check_responses(responses);
+    result = true;
+  }
+  *reply = responses;
+  return result;
 }
 
 // Wrappers for sending messages with parameter lists or variadic arguments
-bool send_message_param_list(xcash_dest_t dest, xcash_msg_t msg, const char **pair_params) {
+bool send_message_param_list(xcash_dest_t dest, xcash_msg_t msg, response_t ***reply, const char **pair_params) {
   bool result = false;
   *reply = NULL;
 
@@ -162,7 +200,7 @@ bool send_message_param_list(xcash_dest_t dest, xcash_msg_t msg, const char **pa
   return result;
 }
 
-bool send_message_param(xcash_dest_t dest, xcash_msg_t msg, ...) {
+bool send_message_param(xcash_dest_t dest, xcash_msg_t msg, response_t ***reply, ...) {
   bool result = false;
   char *message_data = NULL;
   *reply = NULL;
@@ -182,46 +220,73 @@ bool send_message_param(xcash_dest_t dest, xcash_msg_t msg, ...) {
   return result;
 }
 
-bool send_message(xcash_dest_t dest, xcash_msg_t msg) {
+bool send_message(xcash_dest_t dest, xcash_msg_t msg, response_t ***reply) {
+  bool result = false;
+  *reply = NULL;
+
   char *message_data = create_message(msg);
   if (!message_data) {
     return false;
   }
 
-  bool result = xnet_send_data_multi(dest, message_data);
+  result = xnet_send_data_multi(dest, message_data, reply);
   free(message_data);
+
   return result;
 }
 
 // Direct message sends
-bool send_direct_message_param_list(const char *host, xcash_msg_t msg, const char **pair_params) {
+bool send_direct_message_param_list(const char *host, xcash_msg_t msg, response_t ***reply, const char **pair_params) {
+  bool result = false;
+  *reply = NULL;
+
   const char *hosts[] = {host, NULL};
   char *message_data = create_message_param_list(msg, pair_params);
   if (!message_data) {
     return false;
   }
 
-  bool result = send_multi_request(hosts, XCASH_DPOPS_PORT, message_data);
+  response_t **responses = send_multi_request(hosts, XCASH_DPOPS_PORT, message_data);
   free(message_data);
+
+  if (responses) {
+    check_responses(responses);
+    result = true;
+  }
+  *reply = responses;
+
   return result;
 }
 
-bool send_direct_message_param(const char *host, xcash_msg_t msg, ...) {
+bool send_direct_message_param(const char *host, xcash_msg_t msg, response_t ***reply, ...) {
+  bool result = false;
   char *message_data = NULL;
+  *reply = NULL;
+
   const char *hosts[] = {host, NULL};
+
   va_list args;
   va_start(args, reply);
   message_data = create_message_args(msg, args);
   va_end(args);
+
   if (!message_data) {
     return false;
   }
-  bool send_multi_request(hosts, XCASH_DPOPS_PORT, message_data);
+
+  response_t **responses = send_multi_request(hosts, XCASH_DPOPS_PORT, message_data);
   free(message_data);
+
+  if (responses) {
+    check_responses(responses);
+    result = true;
+  }
+
+  *reply = responses;
   return result;
 }
 
-bool send_direct_message(const char *host, xcash_msg_t msgy) {
+bool send_direct_message(const char *host, xcash_msg_t msg, response_t ***reply) {
   *reply = NULL;
   return send_direct_message_param(host, msg, reply, NULL);
 }
