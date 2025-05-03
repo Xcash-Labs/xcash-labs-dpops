@@ -49,7 +49,7 @@ bool download_db_from_node(const char* host, xcash_dbs_t db_type, int index, cha
                            size_t result_db_data_buf_size);
 void cleanup_db_sync_results(xcash_db_sync_obj_t** sync_objs_result);
 size_t get_db_sub_count(xcash_dbs_t db_type);
-bool send_db_sync_request_to_all_seeds(xcash_dbs_t db_type, size_t start_db_index, response_t*** reply);
+bool send_db_sync_request_to_all_seeds(xcash_dbs_t db_type, size_t start_db_index);
 bool parse_nodes_sync_reply(xcash_dbs_t db_type, xcash_db_sync_obj_t*** sync_objs_result);
 bool check_db_hashes_from_seeds(xcash_dbs_t db_type, xcash_db_sync_obj_t*** sync_objs_result);
 bool update_db_from_node(const char* public_address, xcash_dbs_t db_type);
