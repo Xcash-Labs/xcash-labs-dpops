@@ -64,7 +64,7 @@ iptables -A INPUT -d 255.255.255.255 -j DROP
 # Block different attacks
 # block one computer from opening too many connections (100 simultaneous connections) if this gives trouble with post remove this or increase the limit
 # iptables -t filter -I INPUT -p tcp --syn --dport 80 -m connlimit --connlimit-above 100 --connlimit-mask 32 -j DROP
-iptables -t filter -I INPUT -p tcp --syn --dport 18283 -m connlimit --connlimit-above 100 --connlimit-mask 32 -j DROP
+iptables -t filter -I INPUT -p tcp --syn --dport 18283 -m connlimit --connlimit-above 500 --connlimit-mask 32 -j DROP
 # block port scans
 # this will lock the IP out for 1 day
 iptables -A INPUT -m recent --name portscan --rcheck --seconds 86400 -j DROP
@@ -81,12 +81,11 @@ iptables -A INPUT -p icmp -j ACCEPT
 # Accept HTTP
 # iptables -A INPUT -p tcp --dport 80 -j ACCEPT
 
- 
 # Accept XCASH
 iptables -A INPUT -p tcp --dport 18280 -j ACCEPT
 iptables -A INPUT -p tcp --dport 18281 -j ACCEPT
 iptables -A INPUT -p tcp --dport 18283 -j ACCEPT
- 
+
 # Allow ssh (allow 100 login attempts in 1 hour from the same ip, if more than ban them for 1 hour)
 iptables -A INPUT -p tcp -m tcp --dport ${SSH_PORT_NUMBER} -m state --state NEW -m recent --set --name DEFAULT --rsource
 iptables -A INPUT -p tcp -m tcp --dport ${SSH_PORT_NUMBER} -m state --state NEW -m recent --update --seconds 3600 --hitcount 100 --name DEFAULT --rsource -j DROP
