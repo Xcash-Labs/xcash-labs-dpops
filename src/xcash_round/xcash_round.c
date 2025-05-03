@@ -83,13 +83,49 @@ xcash_round_result_t process_round(void) {
     return ROUND_ERROR;
   }
 
-  size_t network_majority_count = 0;
-  xcash_node_sync_info_t* nodes_majority_list = NULL;
-  if (!initial_db_sync_check(&network_majority_count, &nodes_majority_list) || !nodes_majority_list) {
-    WARNING_PRINT("Can't sync databases with network majority");
-    free(nodes_majority_list);
-    return ROUND_ERROR;
-  }
+
+// maybe here you don't send a sync request just send sync message automically and wait for the array to populate
+// Define a struct to store network node data
+//typedef struct {
+//  char block_verifiers_name[BLOCK_VERIFIERS_TOTAL_AMOUNT][MAXIMUM_BUFFER_SIZE_DELEGATES_NAME+1]; // The block verifiers name
+//  char block_verifiers_public_address[BLOCK_VERIFIERS_TOTAL_AMOUNT][XCASH_WALLET_LENGTH+1]; // The block verifiers public address
+//  char block_verifiers_public_key[BLOCK_VERIFIERS_TOTAL_AMOUNT][VRF_PUBLIC_KEY_LENGTH+1]; // The block verifiers public key
+//  char block_verifiers_IP_address[BLOCK_VERIFIERS_TOTAL_AMOUNT][BLOCK_VERIFIERS_IP_ADDRESS_TOTAL_LENGTH+1]; // The block verifiers IP address
+//  char block_verifiers_vrf_public_key_hex[BLOCK_VERIFIERS_TOTAL_AMOUNT][VRF_PUBLIC_KEY_LENGTH + 1];
+//  char block_verifiers_random_hex[BLOCK_VERIFIERS_TOTAL_AMOUNT][VRF_RANDOMBYTES_LENGTH * 2 + 1];
+//  char block_verifiers_vrf_proof_hex[BLOCK_VERIFIERS_TOTAL_AMOUNT][VRF_PROOF_LENGTH + 1];
+//  char block_verifiers_vrf_beta_hex[BLOCK_VERIFIERS_TOTAL_AMOUNT][VRF_BETA_LENGTH + 1];
+//} block_verifiers_list_t;
+
+
+
+//const char* host = "192.0.2.123";  // Example delegate IP address
+//const char* hosts[] = { host, NULL };  // NULL-terminated host list
+//send_multi_request(hosts, 18284, message);
+//free(message);  // Free the message after sending
+
+
+//  for (int i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
+//    if (strlen(delegates_all.block_verifiers_IP_address[i]) == 0) continue;
+
+//    char message[VSMALL_BUFFER_SIZE];
+//    snprintf(message, sizeof(message),
+//             "{ \"message_settings\": \"ONLINE_PING\", \"public_address\": \"%s\" }",
+//             delegates_all.block_verifiers_public_address[i]);
+
+//    const char* host = delegates_all.block_verifiers_IP_address[i];
+//    const char* hosts[] = {host, NULL};
+
+//    send_multi_request(hosts, 18284, message);  // Pick your port
+//  }
+
+//  size_t network_majority_count = 0;
+//  xcash_node_sync_info_t* nodes_majority_list = NULL;
+//  if (!initial_db_sync_check(&network_majority_count, &nodes_majority_list) || !nodes_majority_list) {
+//    WARNING_PRINT("Can't sync databases with network majority");
+//    free(nodes_majority_list);
+//    return ROUND_ERROR;
+//  }
 
   // Update online status from majority list
   INFO_STAGE_PRINT("Nodes online for block %s", current_block_height);
@@ -139,12 +175,11 @@ xcash_round_result_t process_round(void) {
 
   INFO_STAGE_PRINT("Part 3 - Create VRF Data and Send To All Block Verifiers");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 3);
-  response_t** responses = NULL;
+
   char* vrf_message = NULL;
-  // This message is defines as NONRETURN and no responses are expected
   if (generate_and_request_vrf_data_msg(&vrf_message)) {
       DEBUG_PRINT("Generated VRF message: %s", vrf_message); 
-      if (xnet_send_data_multi(XNET_DELEGATES_ALL_ONLINE, vrf_message, &responses)) {
+      if (xnet_send_data_multi(XNET_DELEGATES_ALL_ONLINE, vrf_message)) {
           DEBUG_PRINT("Message sent to all online delegates.");
       } else {
           ERROR_PRINT("Failed to send VRF message.");

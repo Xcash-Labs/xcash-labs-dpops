@@ -42,15 +42,15 @@ typedef struct
 void show_majority_statistics(const xcash_node_sync_info_t* majority_list, size_t items_count);
 bool get_sync_nodes_majority_list_top(xcash_node_sync_info_t** majority_list_result, size_t* majority_count_result);
 bool initial_db_sync_check(size_t* majority_count, xcash_node_sync_info_t** majority_list_result);
-bool check_sync_nodes_majority_list(response_t** replies, xcash_node_sync_info_t** majority_list_result,
+bool check_sync_nodes_majority_list(xcash_node_sync_info_t** majority_list_result,
                                     size_t* majority_count_result, bool by_top_block_height);
 bool get_node_sync_info(xcash_node_sync_info_t* sync_info);
 bool download_db_from_node(const char* host, xcash_dbs_t db_type, int index, char* result_db_data_buf,
                            size_t result_db_data_buf_size);
 void cleanup_db_sync_results(xcash_db_sync_obj_t** sync_objs_result);
 size_t get_db_sub_count(xcash_dbs_t db_type);
-bool send_db_sync_request_to_all_seeds(xcash_dbs_t db_type, size_t start_db_index, response_t*** reply);
-bool parse_nodes_sync_reply(response_t** replies, xcash_dbs_t db_type, xcash_db_sync_obj_t*** sync_objs_result);
+bool send_db_sync_request_to_all_seeds(xcash_dbs_t db_type, size_t start_db_index);
+bool parse_nodes_sync_reply(xcash_dbs_t db_type, xcash_db_sync_obj_t*** sync_objs_result);
 bool check_db_hashes_from_seeds(xcash_dbs_t db_type, xcash_db_sync_obj_t*** sync_objs_result);
 bool update_db_from_node(const char* public_address, xcash_dbs_t db_type);
 bool fill_delegates_from_db(void);

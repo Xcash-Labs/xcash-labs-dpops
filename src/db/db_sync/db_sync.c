@@ -55,7 +55,7 @@ bool send_db_sync_request_from_host(const char* sync_source_host, xcash_dbs_t db
     }
 
     bool send_result =
-        send_direct_message_param_list(sync_source_host, xcash_db_sync_messages[db_type], reply, param_list);
+        send_direct_message_param_list(sync_source_host, xcash_db_sync_messages[db_type], param_list);
 
     // cleanup
     free(param_list);
@@ -83,10 +83,8 @@ bool get_sync_nodes_majority_list_top(xcash_node_sync_info_t** majority_list_res
     *majority_list_result = NULL;
     *majority_count_result = 0;
 
-    response_t** replies = NULL;
-
     // Send message to get sync info from all nodes
-    if (!send_message(XNET_DELEGATES_ALL, XMSG_XCASH_GET_SYNC_INFO, &replies)) {
+    if (!send_message(XNET_DELEGATES_ALL, XMSG_XCASH_GET_SYNC_INFO)) {
         ERROR_PRINT("Failed to get sync info from all nodes");
         cleanup_responses(replies);
         return XCASH_ERROR;
@@ -861,9 +859,6 @@ bool send_db_sync_request_to_all_seeds(xcash_dbs_t db_type, size_t start_db_inde
             ;
         }
 
-        // TODO fix message format
-        // fuck! stupid format!
-        // this part is for field names
         if (i > 0) {
             snprintf(collection_prefixes[i], DB_COLLECTION_NAME_SIZE, "%s_data_hash_%ld", collection_names[db_type], i);
         } else {
@@ -887,7 +882,7 @@ bool send_db_sync_request_to_all_seeds(xcash_dbs_t db_type, size_t start_db_inde
     }
 
     bool send_result =
-        send_message_param_list(XNET_SEEDS_ALL_ONLINE, xcash_db_sync_messages[db_type], reply, param_list);
+        send_message_param_list(XNET_SEEDS_ALL_ONLINE, xcash_db_sync_messages[db_type], param_list);
 
     // cleanup
     free(param_list);
@@ -991,7 +986,7 @@ bool check_db_hashes_from_seeds(xcash_dbs_t db_type, xcash_db_sync_obj_t ***sync
         return false;
     }
 
-    bool send_result = send_message_param(XNET_SEEDS_ALL_ONLINE, xcash_db_sync_messages[db_type], &replies, "data_hash",
+    bool send_result = send_message_param(XNET_SEEDS_ALL_ONLINE, xcash_db_sync_messages[db_type], "data_hash",
                                           hash_buffer, NULL);
 
     if (send_result) {
@@ -1191,7 +1186,7 @@ bool parse_node_list_data(const char* message_data) {
 bool get_nodes_from_seed(void) {
     bool result = false;
     response_t** reply;
-    bool send_result = send_message(XNET_SEEDS_ALL_ONLINE, XMSG_NODE_TO_NETWORK_DATA_NODES_GET_PREVIOUS_CURRENT_NEXT_BLOCK_VERIFIERS_LIST, &reply);
+    bool send_result = send_message(XNET_SEEDS_ALL_ONLINE, XMSG_NODE_TO_NETWORK_DATA_NODES_GET_PREVIOUS_CURRENT_NEXT_BLOCK_VERIFIERS_LIST);
     if (send_result && reply) {
         for (size_t i = 0; reply[i]!=NULL; i++)
         {
@@ -1314,7 +1309,7 @@ bool get_sync_seeds_majority_list(xcash_node_sync_info_t** majority_list_result,
 
 
     response_t** replies =  NULL;
-    bool send_result = send_message(XNET_SEEDS_ALL, XMSG_XCASH_GET_SYNC_INFO, &replies);
+    bool send_result = send_message(XNET_SEEDS_ALL, XMSG_XCASH_GET_SYNC_INFO);
     if (!send_result) {
         ERROR_PRINT("Can't get sync info from all delegates");
         cleanup_responses(replies);
@@ -1343,7 +1338,7 @@ bool get_sync_nodes_majority_list(xcash_node_sync_info_t** majority_list_result,
     *majority_count_result = 0;
 
     response_t** replies =  NULL;
-    bool send_result = send_message(XNET_DELEGATES_ALL, XMSG_XCASH_GET_SYNC_INFO, &replies);
+    bool send_result = send_message(XNET_DELEGATES_ALL, XMSG_XCASH_GET_SYNC_INFO);
     if (!send_result) {
         ERROR_PRINT("Can't get sync info from all nodes");
         cleanup_responses(replies);
@@ -1387,7 +1382,7 @@ bool check_time_sync_to_seeds(void) {
     INFO_STAGE_PRINT("Checking node time comparing to seed nodes");
 
     bool send_result = send_message(
-        XNET_SEEDS_ALL, XMSG_BLOCK_VERIFIERS_TO_NETWORK_DATA_NODE_BLOCK_VERIFIERS_CURRENT_TIME, &replies);
+        XNET_SEEDS_ALL, XMSG_BLOCK_VERIFIERS_TO_NETWORK_DATA_NODE_BLOCK_VERIFIERS_CURRENT_TIME);
 
     bool all_nodes_offline = true;
 
