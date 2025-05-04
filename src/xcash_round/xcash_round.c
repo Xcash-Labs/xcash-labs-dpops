@@ -131,14 +131,14 @@ xcash_round_result_t process_round(void) {
   }
 
   if (nodes_majority_count < BLOCK_VERIFIERS_VALID_AMOUNT) {
-    INFO_PRINT_STATUS_FAIL("Failed to reach the minimum number of online nodes: [%ld/%d]", nodes_majority_count, BLOCK_VERIFIERS_VALID_AMOUNT);
+    INFO_PRINT_STATUS_FAIL("Failed to reach the minimum number of online nodes: [%d/%d]", nodes_majority_count, BLOCK_VERIFIERS_VALID_AMOUNT);
     return ROUND_SKIP;
   }
 
   int required_majority = (int)ceil(total_delegates * MAJORITY_PERCENT);
 
   if (nodes_majority_count < required_majority) {
-      INFO_PRINT_STATUS_FAIL("Data majority not reached. Online Nodes: [%ld/%d]", nodes_majority_count, required_majority);
+      INFO_PRINT_STATUS_FAIL("Data majority not reached. Online Nodes: [%d/%d]", nodes_majority_count, required_majority);
       return ROUND_SKIP;
   }
   
