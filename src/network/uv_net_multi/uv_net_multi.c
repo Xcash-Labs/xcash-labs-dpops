@@ -56,7 +56,7 @@ void on_write(uv_write_t* req, int status) {
   safe_close(client);
 }
 
-void on_connect(uv_connect_t* req, int status) {
+void on_connect_nodbug(uv_connect_t* req, int status) {
   client_t* client = (client_t*)req->data;
   if (client->is_closing || status < 0) {
     // Handle connection error
@@ -73,6 +73,45 @@ void on_connect(uv_connect_t* req, int status) {
   uv_buf_t buf = uv_buf_init((char*)(uintptr_t)client->message, strlen(client->message));
   uv_write(&client->write_req, (uv_stream_t*)&client->handle, &buf, 1, on_write);
 }
+
+void on_connect(uv_connect_t* req, int status) {
+  client_t* client = (client_t*)req->data;
+
+  if (client->is_closing || status < 0) {
+    DEBUG_PRINT("Connection error to %s: %s",
+                client->response ? client->response->host : "unknown",
+                uv_strerror(status));
+    client->response->status = STATUS_ERROR;
+    safe_close(client);
+    return;
+  }
+
+  DEBUG_PRINT("Successfully connected to %s", client->response->host);
+
+  // Stop connection timeout timer
+  uv_timer_stop(&client->timer);
+  DEBUG_PRINT("Connection timeout timer stopped for %s", client->response->host);
+
+  // Start the timer to wait for write operation
+  uv_timer_start(&client->timer, on_timeout, UV_WRITE_TIMEOUT, 0);
+  DEBUG_PRINT("Write timeout timer started for %s (timeout = %d ms)", client->response->host, UV_WRITE_TIMEOUT);
+
+  // Write the message to the server
+  uv_buf_t buf = uv_buf_init((char*)(uintptr_t)client->message, strlen(client->message));
+  int rc = uv_write(&client->write_req, (uv_stream_t*)&client->handle, &buf, 1, on_write);
+  if (rc < 0) {
+    ERROR_PRINT("uv_write() failed for %s: %s", client->response->host, uv_strerror(rc));
+    client->response->status = STATUS_ERROR;
+    safe_close(client);
+    return;
+  }
+
+  DEBUG_PRINT("uv_write() initiated to %s", client->response->host);
+}
+
+
+
+
 
 int is_ip_address(const char* host) {
   struct in_addr sa;
