@@ -33,10 +33,14 @@ void on_timeout(uv_timer_t* timer) {
 
   // If response already completed, skip timeout
   if (client->response->status == STATUS_OK || client->is_closing) {
+    DEBUG_PRINT("Timeout triggered, but client %s is already closing or response OK", 
+                client->response ? client->response->host : "unknown");
     return;
   }
 
-  ERROR_PRINT("Write operation timed out");
+  ERROR_PRINT("Write operation timed out for %s", 
+              client->response ? client->response->host : "unknown");
+
   client->response->status = STATUS_TIMEOUT;
   safe_close(client);
 }
@@ -50,18 +54,27 @@ void alloc_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
 
 void on_write(uv_write_t* req, int status) {
   client_t* client = (client_t*)req->data;
+
   if (status < 0) {
-    // Handle write error
+    ERROR_PRINT("Write error to %s: %s",
+                client->response ? client->response->host : "unknown",
+                uv_strerror(status));
     client->response->status = STATUS_ERROR;
     safe_close(client);
     return;
   }
 
-  // stop write timeout timer
+  DEBUG_PRINT("Write completed successfully to %s",
+              client->response ? client->response->host : "unknown");
+
+  // Stop write timeout timer
   uv_timer_stop(&client->timer);
+  DEBUG_PRINT("Write timeout timer stopped for %s",
+              client->response ? client->response->host : "unknown");
+
   safe_close(client);
-  return;
 }
+
 
 void on_connect(uv_connect_t* req, int status) {
   client_t* client = (client_t*)req->data;
