@@ -60,6 +60,7 @@ int select_block_producer_from_vrf(void) {
  *                                ROUND_ERROR on critical errors.
  */
 xcash_round_result_t process_round(void) {
+
   // Get the current block height Then Sync the databases and build the majority list
   INFO_STAGE_PRINT("Part 1 - Get Current Block Height and Previous Block Hash");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 1);
@@ -75,6 +76,11 @@ xcash_round_result_t process_round(void) {
     return ROUND_ERROR;
   }
 
+
+
+// last, current, and next delegtes load in fill_delegates_from_db - clean up
+
+
   INFO_STAGE_PRINT("Part 2 - Initial Network Block Verifiers Sync");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 2);
   // Update with fresh delegates list
@@ -83,14 +89,61 @@ xcash_round_result_t process_round(void) {
     return ROUND_ERROR;
   }
 
-  size_t network_majority_count = 0;
-  xcash_node_sync_info_t* nodes_majority_list = NULL;
-  if (!initial_db_sync_check(&network_majority_count, &nodes_majority_list) || !nodes_majority_list) {
-    WARNING_PRINT("Can't sync databases with network majority");
-    free(nodes_majority_list);
-    return ROUND_ERROR;
+  response_t** responses = NULL;
+  char* sync_message = NULL;
+
+  // Build sync message and send to all Delegates then wait for replies
+  if (create_sync_msg(&sync_message)) {
+    DEBUG_PRINT("Generated SYNC message: %s", sync_message);
+
+    if (xnet_send_data_multi(XNET_DELEGATES_ALL, sync_message, &responses)) {
+      DEBUG_PRINT("Message sent to all delegates.");
+      free(sync_message);
+      cleanup_responses(responses);
+    } else {
+      ERROR_PRINT("Failed to send SYNC message.");
+      free(sync_message);
+      cleanup_responses(responses);
+      return ROUND_SKIP;
+    }
+  } else {
+    ERROR_PRINT("Failed to generate SYNC message");
+    free(sync_message);  // safe even if NULL
+    return ROUND_SKIP;
   }
 
+  INFO_STAGE_PRINT("Waiting for Delegates to sync...");
+  if (sync_block_verifiers_minutes_and_seconds(0, 20) == XCASH_ERROR)
+      return ROUND_SKIP;
+
+  int total_delegates = 0;
+  for (size_t x = 0; x < max_delegates; x++) {
+    if (strlen(delegates_array[x].public_address) > 0) {
+      total_delegates++;
+    }
+  }
+
+  int nodes_majority_count = 0;
+  for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
+    if (strcmp(delegates_all[i].online_status_ck, "true") == 0) {
+      count++;
+    }
+  }
+
+  if (nodes_majority_count < BLOCK_VERIFIERS_VALID_AMOUNT) {
+    INFO_PRINT_STATUS_FAIL("Failed to reach the minimum number of online nodes: [%ld/%d]", nodes_majority_count, BLOCK_VERIFIERS_VALID_AMOUNT);
+    return ROUND_SKIP;
+  }
+
+  int required_majority = (int)ceil(total_delegates * MAJORITY_PERCENT);
+
+  if (nodes_majority_count < required_majority) {
+      INFO_PRINT_STATUS_FAIL("Data majority not reached. Online Nodes: [%ld/%d]", nodes_majority_count, required_majority);
+      return ROUND_SKIP;
+  }
+  
+  INFO_PRINT_STATUS_OK("Data majority reached. Online Nodes: [%ld/%d]", nodes_majority_count, required_majority);
+  
   // Update online status from majority list
   INFO_STAGE_PRINT("Nodes online for block %s", current_block_height);
 
@@ -107,6 +160,18 @@ xcash_round_result_t process_round(void) {
       }
     }
   }
+
+
+
+
+
+
+
+
+
+
+  return ROUND_SKIP;
+
 
   free(nodes_majority_list);  // Clean up the majority list after use
 
@@ -133,9 +198,8 @@ xcash_round_result_t process_round(void) {
   pthread_mutex_unlock(&majority_vote_lock);
 
   // Sync start
-  if (sync_block_verifiers_minutes_and_seconds(0, 30) == XCASH_ERROR)
+  if (sync_block_verifiers_minutes_and_seconds(1, 0) == XCASH_ERROR)
       return ROUND_SKIP;
-
 
   INFO_STAGE_PRINT("Part 3 - Create VRF Data and Send To All Block Verifiers");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 3);

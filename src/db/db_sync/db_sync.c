@@ -74,6 +74,10 @@ void show_majority_statistics(const xcash_node_sync_info_t* majority_list, size_
 }
 
 
+
+
+
+
 bool get_sync_nodes_majority_list_top(xcash_node_sync_info_t** majority_list_result, size_t* majority_count_result) {
     if (!majority_list_result || !majority_count_result) {
         ERROR_PRINT("Invalid argument: NULL pointer passed to get_sync_nodes_majority_list_top");
@@ -675,17 +679,7 @@ bool check_sync_nodes_majority_list_old(response_t** replies, xcash_node_sync_in
             continue;
         }
 
-        // Parse database hashes
-        bool parse_error = false;
-        for (size_t db_i = 0; db_i < DATABASE_TOTAL; db_i++) {
-            sprintf(record_name, "data_hash_%s", collection_names[db_i]);
-            if (parse_json_data(replies[i]->data, record_name, current_sync_state->db_hashes[db_i], sizeof(current_sync_state->db_hashes[db_i])) == 0) {
-                ERROR_PRINT("Can't parse '%s' reply from %s", record_name, replies[i]->host);
-                parse_error = true;
-                break;
-            }
-        }
-        if (parse_error) continue;
+
 
         sync_state_index++;
     }
@@ -1030,9 +1024,6 @@ bool check_db_has_majority(xcash_dbs_t db_type, xcash_db_sync_obj_t **sync_objs)
 bool get_nodes_from_db(void) {
     delegates_t* delegates = (delegates_t*)calloc(MAXIMUM_AMOUNT_OF_DELEGATES, sizeof(delegates_t));
     size_t total_delegates = 0;
-
-
-    // TODO probably, if the db is brand new, we should fill at least the nodes information
 
     if (read_organize_delegates(delegates, &total_delegates) != XCASH_OK) {
         ERROR_PRINT("Could not organize the delegates");

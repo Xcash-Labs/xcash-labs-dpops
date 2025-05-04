@@ -24,7 +24,7 @@ void check_responses(response_t **responses) {
   }
 }
 
-// Sends a message ( with appended to a group of hosts via send_multi_request() )
+// Sends a message to designated hosts
 bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***reply) {
   bool result = false;
   if (!reply) {
@@ -36,12 +36,6 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
   // Host array placeholders
   const char **hosts = NULL;
   response_t **responses = NULL;
-
-  xcash_msg_t msg_type = get_message_type(message);
-  bool is_nonreturn = is_nonreturn_type(msg_type);
-  if (is_nonreturn) {
-      DEBUG_PRINT("Message type is_nonreturn");
-  }
 
   switch (dest) {
     case XNET_SEEDS_ALL: {
@@ -164,14 +158,6 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
   if (!hosts) {
     ERROR_PRINT("Host array is NULL or not initialized properly.");
     return false;
-  }
-
-  if (is_nonreturn) {
-    DEBUG_PRINT("Non Return message.......");
-    send_multi_request(hosts, XCASH_DPOPS_PORT, message);
-    free(hosts);
-    *reply = NULL;
-    return true;
   }
 
   responses = send_multi_request(hosts, XCASH_DPOPS_PORT, message);

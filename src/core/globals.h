@@ -15,7 +15,14 @@ Global Variables
 extern int log_level;  // Log level for display log messages
 extern bool is_seed_node;   // True if node is a seed node - network_data_node_settings is same as seed node, removed
 extern int network_data_nodes_amount; // Number of network data nodes
+
 extern delegates_t delegates_all[BLOCK_VERIFIERS_TOTAL_AMOUNT];
+
+
+
+
+
+
 extern char xcash_wallet_public_address[XCASH_PUBLIC_ADDR_LENGTH + 1]; // xCash wallet public address
 extern char current_block_height[BLOCK_HEIGHT_LENGTH + 1]; // The current block height
 extern char previous_block_hash[BLOCK_HASH_LENGTH + 1]; // The previous block hash

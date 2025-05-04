@@ -31,13 +31,14 @@ typedef struct  {
     char delegate_fee[11];
     char server_specs[1025];
     char block_verifier_score[10];
-    char online_status[10];
+    char online_status[11];
     char block_verifier_total_rounds[10];
     char block_verifier_online_total_rounds[10];
     char block_verifier_online_percentage[10];
     char block_producer_total_rounds[10];
     char block_producer_block_heights[BUFFER_SIZE_BLOCK_HEIGHTS_DATA];
     char public_key[VRF_PUBLIC_KEY_LENGTH+1];
+    char online_status_ck[11];
 } delegates_t; 
 
 // database struct

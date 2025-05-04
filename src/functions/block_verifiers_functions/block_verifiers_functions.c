@@ -292,4 +292,34 @@ bool generate_and_request_vrf_data_msg(char** message)
       NULL);
 
   return XCASH_OK;
-}
+} 
+
+char* create_sync_msg(void)
+{
+    DEBUG_PRINT("Generating %s message", "XCASH_GET_SYNC_INFO");
+
+    // Only two key-value pairs + NULL terminator
+    const int PARAM_COUNT = 3;
+    const char **param_list = calloc(PARAM_COUNT * 2, sizeof(char *));  // key-value pairs
+
+    if (!param_list) {
+        ERROR_PRINT("Memory allocation failed for param_list");
+        return NULL;
+    }
+
+    int param_index = 0;
+    param_list[param_index++] = "block_height";
+    param_list[param_index++] = current_block_height;
+
+    param_list[param_index++] = "public_address";
+    param_list[param_index++] = xcash_wallet_public_address;
+
+    param_list[param_index] = NULL;  // NULL terminate
+
+    // Create the message
+    char* message_data = create_message_param_list(XMSG_XCASH_GET_SYNC_INFO, param_list);
+
+    free(param_list);  // Clean up the key-value list
+
+    return message_data;  // May return NULL if creation failed
+} 

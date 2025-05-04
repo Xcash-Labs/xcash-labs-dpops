@@ -5,6 +5,10 @@ int log_level = 0;
 bool is_seed_node = false;
 int network_data_nodes_amount = 0;
 delegates_t delegates_all[BLOCK_VERIFIERS_TOTAL_AMOUNT] = {0};
+
+
+
+
 char xcash_wallet_public_address[XCASH_PUBLIC_ADDR_LENGTH + 1] = {0};
 char current_block_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
 char previous_block_hash[BLOCK_HASH_LENGTH + 1] = {0};
@@ -138,6 +142,10 @@ void init_globals(void) {
   size_t count = 0;
   srand(time(NULL));
   memset(delegates_all, 0, sizeof(delegates_all));
+ 
+
+
+  
   memset(data,0,sizeof(data));
   memset(current_block_height,0,sizeof(current_block_height));
 

@@ -285,21 +285,9 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
   //    break;
 
     case XMSG_XCASH_GET_SYNC_INFO:
-//      if (server_limit_IP_addresses(1, client->client_ip) == 1) {
-//        server_received_msg_get_sync_info(client, data);
-//        server_limit_IP_addresses(0, client->client_ip);
-//      }
       if (server_limit_IP_addresses(1, client->client_ip) == 1) {
-        DEBUG_PRINT("IP %s passed limit check", client->client_ip);
-    
         server_received_msg_get_sync_info(client, data);
-    
-        DEBUG_PRINT("Finished handling sync info for IP %s", client->client_ip);
-    
         server_limit_IP_addresses(0, client->client_ip);
-        DEBUG_PRINT("IP %s removed from active list", client->client_ip);
-      } else {
-        DEBUG_PRINT("IP %s blocked due to rate limiting", client->client_ip);
       }
       break;
 

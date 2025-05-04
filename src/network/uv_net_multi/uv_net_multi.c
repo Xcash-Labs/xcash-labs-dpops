@@ -59,61 +59,8 @@ void on_write(uv_write_t* req, int status) {
 
   // stop write timeout timer
   uv_timer_stop(&client->timer);
-
-  // Restart the read response timeout timer after successfully writing
-  uv_timer_start(&client->timer, on_timeout, UV_RESPONSE_TIMEOUT, 0);
-
-  // Start reading from the server
-  int rc = uv_read_start((uv_stream_t*)req->handle, alloc_buffer, on_read);
-  if (rc < 0) {
-    ERROR_PRINT("uv_read_start failed: %s", uv_strerror(rc));
-    client->response->status = STATUS_ERROR;
-    safe_close(client);
-  }
-}
-
-void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
-  client_t* client = (client_t*)stream->data;
-
-  if (nread > 0) {
-    DEBUG_PRINT("Received %zd bytes from %s", nread, client->response->host);
-
-    char* new_data = realloc(client->response->data, client->response->size + nread);
-    if (!new_data) {
-      ERROR_PRINT("Realloc failed during response read from %s", client->response->host);
-      client->response->status = STATUS_ERROR;
-      safe_close(client);
-      free(buf->base);
-      return;
-    }
-
-    client->response->data = new_data;
-    memcpy(client->response->data + client->response->size, buf->base, nread);
-    client->response->size += nread;
-
-    DEBUG_PRINT("Total response size so far from %s: %zu", client->response->host, client->response->size);
-
-    // Reset timer after receiving data
-    uv_timer_stop(&client->timer);
-    uv_timer_start(&client->timer, on_timeout, UV_RESPONSE_TIMEOUT, 0);
-  } 
-  else if (nread < 0) {
-    uv_timer_stop(&client->timer);
-
-    if (nread == UV_EOF) {
-      DEBUG_PRINT("EOF received from %s", client->response->host);
-      client->response->status = STATUS_OK;
-    } else {
-      ERROR_PRINT("Read error from %s: %s", client->response->host, uv_strerror(nread));
-      client->response->status = STATUS_ERROR;
-    }
-
-    safe_close(client);
-  }
-
-  if (buf && buf->base) {
-    free(buf->base);
-  }
+  safe_close(client);
+  return;
 }
 
 void on_connect(uv_connect_t* req, int status) {
@@ -220,13 +167,6 @@ response_t** send_multi_request(const char** hosts, int port, const char* messag
   for (int i = 0; responses[i] != NULL; i++) {
     DEBUG_PRINT("FINAL: Host %s status %s", responses[i]->host, status_to_string(responses[i]->status));
   }  
-
-  // Fallback: mark any unresolved clients as timed out
-  for (int i = 0; responses[i] != NULL; i++) {
-    if (responses[i]->status == STATUS_PENDING) {
-      responses[i]->status = STATUS_TIMEOUT;
-    }
-  }
 
   int result = uv_loop_close(loop);
   if (result != 0) {

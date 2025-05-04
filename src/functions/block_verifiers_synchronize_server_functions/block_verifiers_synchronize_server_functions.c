@@ -51,82 +51,42 @@ cleanup:
 
 void server_received_msg_get_sync_info(server_client_t *client, const char *MESSAGE)
 {
-    (void)MESSAGE;
-    DEBUG_PRINT("received %s, %s", __func__, "XCASH_GET_SYNC_INFO");
+ 
+    char parse_block_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
+    char parsed_address[XCASH_WALLET_LENGTH + 1] = {0};
 
-    // Only two key-value pairs + NULL terminator
-    const int PARAM_COUNT = 3;
-    const char **param_list = calloc(PARAM_COUNT * 2, sizeof(char *));  // key-value pairs
+    DEBUG_PRINT("Received %s, %s", __func__, "XCASH_GET_SYNC_INFO");
 
-    if (!param_list) {
-        ERROR_PRINT("Memory allocation failed for param_list");
+    // Parse the public address
+    if (parse_json_data(MESSAGE, "public_address", parsed_address, sizeof(parsed_address)) == 0) {
+        ERROR_PRINT("Can't parse 'public_address' from %s", client->client_ip);
         return;
     }
 
-    int param_index = 0;
-    param_list[param_index++] = "block_height";
-    param_list[param_index++] = current_block_height;
-
-    param_list[param_index++] = "public_address";
-    param_list[param_index++] = xcash_wallet_public_address;
-
-    param_list[param_index] = NULL;  // NULL terminate
-
-    char* message_data = create_message_param_list(XMSG_XCASH_GET_SYNC_INFO, param_list);
-    free(param_list);  // Free after usage
-
-    if (message_data) {
-        send_data_uv(client, message_data);
-        free(message_data);
-    }
-}
-
-
-
-
-
-
-
-
-// Delete routine above
-
-
-void server_send_sync_info(server_client_t *client)
-{
-    // Only two key-value pairs + NULL terminator
-    const int PARAM_COUNT = 3;
-    const char **param_list = calloc(PARAM_COUNT * 2, sizeof(char *));  // key-value pairs
-
-    if (!param_list) {
-        ERROR_PRINT("Memory allocation failed for param_list");
+    // Parse the block height
+    if (parse_json_data(MESSAGE, "block_height", parse_block_height, sizeof(parse_block_height)) == 0) {
+        ERROR_PRINT("Can't parse 'block_height' from %s", client->client_ip);
         return;
     }
 
-    int param_index = 0;
-    param_list[param_index++] = "block_height";
-    param_list[param_index++] = current_block_height;
+    DEBUG_PRINT("Parsed public_address: %s, remote block_height: %zu", parsed_address, parsed_block_height);
 
-    param_list[param_index++] = "public_address";
-    param_list[param_index++] = xcash_wallet_public_address;
+    // Update delegate's online_status_ck to "true"
+    bool found = false;
+    for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
+        if (strcmp(delegates_all[i].public_address, parsed_address) == 0) {
+            strncpy(delegates_all[i].online_status_ck, "true", sizeof(delegates_all[i].online_status_ck));
+            delegates_all[i].online_status_ck[sizeof(delegates_all[i].online_status_ck) - 1] = '\0';  // Ensure null-termination
+            found = true;
+            DEBUG_PRINT("Marked delegate %s as online (ck)", parsed_address);
+            break;
+        }
+    }
 
-    param_list[param_index] = NULL;  // NULL terminate
-
-    char* message_data = create_message_param_list(XMSG_XCASH_GET_SYNC_INFO, param_list);
-    free(param_list);  // Free after usage
-
-    if (message_data) {
-        send_data_uv(client, message_data);
-        free(message_data);
+    if (!found) {
+        DEBUG_PRINT("Delegate with address %s not found in delegates_all[]", parsed_address);
     }
 }
-
-
-
-
-
-
-
-
 
 
 void server_received_msg_get_block_producers(server_client_t *client, const char *MESSAGE)

@@ -129,7 +129,8 @@
 #define DATABASE_EMPTY_STRING "empty_database_collection"
 #define TOTAL_RESERVE_PROOFS_DATABASES 50
 #define ID_MAX_SIZE 256
-#define NUM_FIELDS 18
+#define NUM_FIELDS 19
+#define NUM_DB_FIELDS 18
 
 // ===================== General Settings =====================
 #define BITS_IN_BYTE 8
@@ -160,6 +161,7 @@
 #define SUBMIT_NETWORK_BLOCK_TIME_SECONDS 25 // The time to submit the network block
 #define NETWORK_NODE_0 "xcashseeds_us" // Network node 0
 #define PRODUCER_REF_COUNT 1  // Main + 0 backups for now
+#define MAJORITY_PERCENT 0.70
 
 // ===================== Constants =====================
 #define ALPHANUM_STRING "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"

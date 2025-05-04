@@ -19,9 +19,10 @@ size_t delegate_field_sizes[NUM_FIELDS] = {sizeof(temp_instance.public_address),
                                            sizeof(temp_instance.block_verifier_online_percentage),
                                            sizeof(temp_instance.block_producer_total_rounds),
                                            sizeof(temp_instance.block_producer_block_heights),
-                                           sizeof(temp_instance.public_key)};
+                                           sizeof(temp_instance.public_key),
+                                           sizeof(temp_instance.online_status_ck)};
 
-const char* delegate_keys[NUM_FIELDS] = {
+const char* delegate_keys[NUM_DB_FIELDS] = {
     "public_address",
     "total_vote_count",
     "IP_address",
@@ -132,6 +133,10 @@ int read_organize_delegates(delegates_t* delegates, size_t* delegates_count_resu
                     }
                 }
             }
+
+            strncpy(delegates[delegate_index].online_status_ck, "PENDING", sizeof(delegates[delegate_index].online_status_ck));
+            delegates[delegate_index].online_status_ck[sizeof(delegates[delegate_index].online_status_ck) - 1] = '\0';
+
             delegate_index++;
         }
     }
