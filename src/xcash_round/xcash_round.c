@@ -133,10 +133,10 @@ xcash_round_result_t process_round(void) {
       strcpy(current_block_verifiers_list.block_verifiers_public_address[j], delegates_all[i].public_address);
       strcpy(current_block_verifiers_list.block_verifiers_public_key[j], delegates_all[i].public_key);
       strcpy(current_block_verifiers_list.block_verifiers_IP_address[j], delegates_all[i].IP_address);
+      nodes_majority_count++;
       j++;
     }
   }
-  nodes_majority_count = j;
   pthread_mutex_unlock(&majority_vote_lock);
 
   if (nodes_majority_count < BLOCK_VERIFIERS_VALID_AMOUNT) {
@@ -161,7 +161,7 @@ xcash_round_result_t process_round(void) {
 
 
 
-  
+
   // Sync start
   if (sync_block_verifiers_minutes_and_seconds(1, 0) == XCASH_ERROR)
       return ROUND_SKIP;
