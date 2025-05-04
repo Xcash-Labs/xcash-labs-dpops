@@ -89,7 +89,7 @@ xcash_round_result_t process_round(void) {
     return ROUND_ERROR;
   }
 
-  response_t** responses = NULL;
+  responses = NULL;
   char* sync_message = NULL;
 
   // Build sync message and send to all Delegates then wait for replies
