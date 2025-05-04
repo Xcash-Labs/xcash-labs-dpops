@@ -117,8 +117,8 @@ xcash_round_result_t process_round(void) {
       return ROUND_SKIP;
 
   int total_delegates = 0;
-  for (size_t x = 0; x < max_delegates; x++) {
-    if (strlen(delegates_array[x].public_address) > 0) {
+  for (size_t x = 0; x < BLOCK_VERIFIERS_TOTAL_AMOUNT; x++) {
+    if (strlen(ddelegates_all[x].public_address) > 0) {
       total_delegates++;
     }
   }
@@ -126,7 +126,7 @@ xcash_round_result_t process_round(void) {
   int nodes_majority_count = 0;
   for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
     if (strcmp(delegates_all[i].online_status_ck, "true") == 0) {
-      count++;
+      nodes_majority_count++;
     }
   }
 
