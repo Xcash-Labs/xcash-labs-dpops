@@ -118,7 +118,7 @@ xcash_round_result_t process_round(void) {
 
   int total_delegates = 0;
   for (size_t x = 0; x < BLOCK_VERIFIERS_TOTAL_AMOUNT; x++) {
-    if (strlen(ddelegates_all[x].public_address) > 0) {
+    if (strlen(delegates_all[x].public_address) > 0) {
       total_delegates++;
     }
   }
