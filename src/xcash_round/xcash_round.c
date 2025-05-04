@@ -138,7 +138,7 @@ xcash_round_result_t process_round(void) {
     }
   }
   pthread_mutex_unlock(&majority_vote_lock);
-  INFO_PRINT("Received sync info from %d delegates", nodes_majority_count);
+  DEBUG_PRINT("Received sync info from %d delegates", nodes_majority_count);
 
   if (nodes_majority_count < BLOCK_VERIFIERS_VALID_AMOUNT) {
     INFO_PRINT_STATUS_FAIL("Failed to reach the minimum number of online nodes: [%d/%d]", nodes_majority_count, BLOCK_VERIFIERS_VALID_AMOUNT);
