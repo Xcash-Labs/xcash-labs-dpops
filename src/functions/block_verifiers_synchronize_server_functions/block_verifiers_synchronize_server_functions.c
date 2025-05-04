@@ -69,7 +69,7 @@ void server_received_msg_get_sync_info(server_client_t *client, const char *MESS
         return;
     }
 
-    DEBUG_PRINT("Parsed public_address: %s, remote block_height: %zu", parsed_address, parse_block_height);
+    DEBUG_PRINT("Parsed public_address: %s, remote block_height: %s", parsed_address, parse_block_height);
 
     // Update delegate's online_status_ck to "true"
     bool found = false;
