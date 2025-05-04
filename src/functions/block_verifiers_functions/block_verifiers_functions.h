@@ -32,4 +32,5 @@ int sync_block_verifiers_minutes_and_seconds(const int MINUTES, const int SECOND
 
 bool create_sync_msg(char** message);
 
+
 #endif
