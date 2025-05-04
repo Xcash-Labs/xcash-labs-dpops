@@ -126,6 +126,7 @@ xcash_round_result_t process_round(void) {
   int nodes_majority_count = 0;
   for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
     if (strcmp(delegates_all[i].online_status_ck, "true") == 0) {
+      INFO_PRINT_STATUS_OK("Node: " BLUE_TEXT("%-30s"), delegates_all[i].delegate_name);
       nodes_majority_count++;
     }
   }
@@ -147,35 +148,7 @@ xcash_round_result_t process_round(void) {
   // Update online status from majority list
   INFO_STAGE_PRINT("Nodes online for block %s", current_block_height);
 
-  // do I need to update the db status of a delegate here?????????? wait until after round
-
-  for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT && strlen(delegates_all[i].public_address) > 0; i++) {
-    strcpy(delegates_all[i].online_status, "false");
-
-    for (size_t j = 0; j < network_majority_count; j++) {
-      if (strcmp(delegates_all[i].public_address, nodes_majority_list[j].public_address) == 0) {
-        strcpy(delegates_all[i].online_status, "true");
-        INFO_PRINT_STATUS_OK("Node: " BLUE_TEXT("%-30s"), delegates_all[i].delegate_name);
-        break;
-      }
-    }
-  }
-
-
-
-
-
-
-
-
-
-
-  return ROUND_SKIP;
-
-
-  free(nodes_majority_list);  // Clean up the majority list after use
-
-  // need to update this for prodction needs to be 75% response ????
+  // do I need to update the db status of a delegate in db here?????????? wait until after round
 
   // Check if we have enough nodes for block production
   if (network_majority_count < BLOCK_VERIFIERS_VALID_AMOUNT) {
@@ -183,18 +156,21 @@ xcash_round_result_t process_round(void) {
     return ROUND_SKIP;
   }
 
-  INFO_PRINT_STATUS_OK("Nodes majority: [%ld/%d]", network_majority_count, BLOCK_VERIFIERS_VALID_AMOUNT);
+// combine count above
 
   // Fill block verifiers list with proven online nodes
   pthread_mutex_lock(&majority_vote_lock);
   memset(&current_block_verifiers_list, 0, sizeof(current_block_verifiers_list));
   for (size_t i = 0, j = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
-    strcpy(current_block_verifiers_list.block_verifiers_name[j], delegates_all[i].delegate_name);
-    strcpy(current_block_verifiers_list.block_verifiers_public_address[j], delegates_all[i].public_address);
-    strcpy(current_block_verifiers_list.block_verifiers_public_key[j], delegates_all[i].public_key);
-    strcpy(current_block_verifiers_list.block_verifiers_IP_address[j], delegates_all[i].IP_address);
-    j++;
+    if (strcmp(delegates_all[i].online_status_ck, "true") == 0) {
+      strcpy(current_block_verifiers_list.block_verifiers_name[j], delegates_all[i].delegate_name);
+      strcpy(current_block_verifiers_list.block_verifiers_public_address[j], delegates_all[i].public_address);
+      strcpy(current_block_verifiers_list.block_verifiers_public_key[j], delegates_all[i].public_key);
+      strcpy(current_block_verifiers_list.block_verifiers_IP_address[j], delegates_all[i].IP_address);
+      j++;
+    }
   }
+
   pthread_mutex_unlock(&majority_vote_lock);
 
   // Sync start
