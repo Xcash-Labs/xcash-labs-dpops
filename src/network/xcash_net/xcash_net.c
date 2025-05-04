@@ -137,8 +137,11 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
   }
 
 
+  // -------------------------------------------------------------------------------------------------
 
-  // remove responses at a later time and change to bool and return status
+  // remove responses at a later time and change to bool and return status - this is in multiple spots
+
+  // -------------------------------------------------------------------------------------------------
 
   responses = send_multi_request(hosts, XCASH_DPOPS_PORT, message);
   free(hosts);
@@ -215,7 +218,6 @@ bool send_direct_message_param_list(const char *host, xcash_msg_t msg, response_
   free(message_data);
 
   if (responses) {
-    check_responses(responses);
     result = true;
   }
   *reply = responses;
@@ -243,7 +245,6 @@ bool send_direct_message_param(const char *host, xcash_msg_t msg, response_t ***
   free(message_data);
 
   if (responses) {
-    check_responses(responses);
     result = true;
   }
 
