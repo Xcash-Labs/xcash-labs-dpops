@@ -1,29 +1,5 @@
 #include "xcash_net.h"
 
-void check_responses(response_t **responses) {
-  if (!responses) {
-      return;
-  }
-
-  int i = 0;
-  while (responses[i]) {
-      if (!responses[i]->data) {
-          WARNING_PRINT("[WARNING] Response data is NULL for host '%s'. Skipping...", responses[i]->host);
-          responses[i]->status = STATUS_INCOMPLETE;
-          i++;
-          continue;
-      }
-
-      if (responses[i]->status == STATUS_OK) {
-          if (responses[i]->size == 0) {
-              responses[i]->status = STATUS_INCOMPLETE;
-              DEBUG_PRINT("[DEBUG] Returned data from host '%s' is empty. Marked as STATUS_INCOMPLETE", responses[i]->host);
-          }
-      }
-      i++;
-  }
-}
-
 // Sends a message to designated hosts
 bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***reply) {
   bool result = false;
@@ -160,10 +136,13 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
     return false;
   }
 
+
+
+  // remove responses at a later time and change to bool and return status
+
   responses = send_multi_request(hosts, XCASH_DPOPS_PORT, message);
   free(hosts);
   if (responses) {
-    check_responses(responses);
     result = true;
   }
   *reply = responses;
