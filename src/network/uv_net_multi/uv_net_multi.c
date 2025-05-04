@@ -1,15 +1,5 @@
 #include "uv_net_multi.h"
 
-const char* status_to_string(int status) {
-  switch (status) {
-    case STATUS_OK: return "OK";
-    case STATUS_ERROR: return "ERROR";
-    case STATUS_TIMEOUT: return "TIMEOUT";
-    case STATUS_PENDING: return "PENDING";
-    default: return "UNKNOWN";
-  }
-}
-
 void on_close(uv_handle_t* handle) {
   client_t* client = (client_t*)handle->data;
   DEBUG_PRINT("on_close() triggered for %s", client->response->host);
@@ -54,7 +44,6 @@ void alloc_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
 
 void on_write(uv_write_t* req, int status) {
   client_t* client = (client_t*)req->data;
-
   if (status < 0) {
     ERROR_PRINT("Write error to %s: %s",
                 client->response ? client->response->host : "unknown",
@@ -63,18 +52,9 @@ void on_write(uv_write_t* req, int status) {
     safe_close(client);
     return;
   }
-
-  DEBUG_PRINT("Write completed successfully to %s",
-              client->response ? client->response->host : "unknown");
-
-  // Stop write timeout timer
   uv_timer_stop(&client->timer);
-  DEBUG_PRINT("Write timeout timer stopped for %s",
-              client->response ? client->response->host : "unknown");
-
   safe_close(client);
 }
-
 
 void on_connect(uv_connect_t* req, int status) {
   client_t* client = (client_t*)req->data;
@@ -177,21 +157,10 @@ response_t** send_multi_request(const char** hosts, int port, const char* messag
   }
 
   uv_run(loop, UV_RUN_DEFAULT);
-  for (int i = 0; responses[i] != NULL; i++) {
-    DEBUG_PRINT("FINAL: Host %s status %s", responses[i]->host, status_to_string(responses[i]->status));
-  }  
 
   int result = uv_loop_close(loop);
   if (result != 0) {
     DEBUG_PRINT("Error closing loop: %s\n", uv_strerror(result));
-  }
-
-  for (int i = 0; responses[i] != NULL; i++) {
-    DEBUG_PRINT("Host: %s | Status: %s | Size: %zu | Time: %lds",
-                responses[i]->host,
-                status_to_string(responses[i]->status),
-                responses[i]->size,
-                responses[i]->req_time_end - responses[i]->req_time_start);
   }
 
   return responses;
