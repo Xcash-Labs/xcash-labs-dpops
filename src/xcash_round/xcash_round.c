@@ -142,7 +142,7 @@ xcash_round_result_t process_round(void) {
       return ROUND_SKIP;
   }
   
-  INFO_PRINT_STATUS_OK("Data majority reached. Online Nodes: [%ld/%d]", nodes_majority_count, required_majority);
+  INFO_PRINT_STATUS_OK("Data majority reached. Online Nodes: [%d/%d]", nodes_majority_count, required_majority);
   
   // Update online status from majority list
   INFO_STAGE_PRINT("Nodes online for block %s", current_block_height);
