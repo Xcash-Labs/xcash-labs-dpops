@@ -144,7 +144,7 @@ xcash_round_result_t process_round(void) {
     return ROUND_SKIP;
   }
 
-  int required_majority = (int)ceil(total_delegates * MAJORITY_PERCENT);
+  int required_majority = (total_delegates * MAJORITY_PERCENT + 99) / 100;
 
   if (nodes_majority_count < required_majority) {
       INFO_PRINT_STATUS_FAIL("Data majority not reached. Online Nodes: [%d/%d]", nodes_majority_count, required_majority);

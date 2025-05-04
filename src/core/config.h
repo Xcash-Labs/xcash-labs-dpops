@@ -161,7 +161,7 @@
 #define SUBMIT_NETWORK_BLOCK_TIME_SECONDS 25 // The time to submit the network block
 #define NETWORK_NODE_0 "xcashseeds_us" // Network node 0
 #define PRODUCER_REF_COUNT 1  // Main + 0 backups for now
-#define MAJORITY_PERCENT 0.70
+#define MAJORITY_PERCENT 70
 
 // ===================== Constants =====================
 #define ALPHANUM_STRING "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
