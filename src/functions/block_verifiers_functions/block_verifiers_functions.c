@@ -144,6 +144,45 @@ int block_verifiers_create_block(void) {
   return ROUND_OK;
 }
 
+
+
+int sync_block_verifiers_minutes_and_seconds(const int MINUTES, const int SECONDS)
+{
+  if (MINUTES >= BLOCK_TIME || SECONDS >= 60) {
+    ERROR_PRINT("Invalid sync time: MINUTES must be < BLOCK_TIME and SECONDS < 60");
+    return XCASH_ERROR;
+  }
+
+  time_t now = time(NULL);
+  if (now == ((time_t)-1)) {
+    ERROR_PRINT("Failed to get current time");
+    return XCASH_ERROR;
+  }
+
+  size_t seconds_per_block = BLOCK_TIME * 60;
+  size_t target_seconds = MINUTES * 60 + SECONDS;
+
+  while (1) {
+    now = time(NULL);
+    size_t seconds_within_block = now % seconds_per_block;
+
+    if (seconds_within_block >= target_seconds) {
+      break;
+    }
+
+    size_t remaining = target_seconds - seconds_within_block;
+    DEBUG_PRINT("Waiting %zu more seconds to sync...", remaining);
+    sleep(1);  // Sleep in short increments
+  }
+
+  DEBUG_PRINT("Reached sync point");
+  return XCASH_OK;
+}
+
+
+
+
+
 /*---------------------------------------------------------------------------------------------------------
 Name: sync_block_verifiers_minutes_and_seconds
 Description: Syncs the block verifiers to a specific minute and second
@@ -151,7 +190,7 @@ Parameters:
   minutes - The minutes
   seconds - The seconds
 ---------------------------------------------------------------------------------------------------------*/
-int sync_block_verifiers_minutes_and_seconds(const int MINUTES, const int SECONDS)
+int sync_block_verifiers_minutes_and_seconds_old(const int MINUTES, const int SECONDS)
 {
   if (MINUTES >= BLOCK_TIME || SECONDS >= 60) {
     ERROR_PRINT("Invalid sync time: MINUTES must be < BLOCK_TIME and SECONDS < 60");
