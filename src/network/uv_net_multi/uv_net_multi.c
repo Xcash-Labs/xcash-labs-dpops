@@ -68,7 +68,7 @@ void on_write(uv_write_t* req, int status) {
     return;
   }
   uv_timer_stop(&client->timer);
-  uv_shutdown(shutdown_req, (uv_stream_t*)&client->handle, on_shutdown);
+  uv_shutdown_t* shutdown_req = malloc(sizeof(uv_shutdown_t));
   if (!shutdown_req) {
     ERROR_PRINT("Failed to allocate uv_shutdown_t for %s",
                 client->response ? client->response->host : "unknown");
@@ -76,7 +76,7 @@ void on_write(uv_write_t* req, int status) {
     return;
   }
   shutdown_req->data = client;
-  int rc = uv_shutdown(shutdown_req, (uv_stream_t*)&client->tcp, on_shutdown);
+  int rc = uv_shutdown(shutdown_req, (uv_stream_t*)&client->handle, on_shutdown);
   if (rc < 0) {
     ERROR_PRINT("uv_shutdown() failed for %s: %s",
                 client->response ? client->response->host : "unknown",
