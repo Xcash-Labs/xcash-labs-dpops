@@ -92,12 +92,11 @@ xcash_round_result_t process_round(void) {
   int total_delegates = 0;
   for (size_t x = 0; x < BLOCK_VERIFIERS_TOTAL_AMOUNT; x++) {
     if (strlen(delegates_all[x].public_address) > 0) {
-      DEBUG_PRINT("Delegate: %s", elegates_all[x].public_address);
+      DEBUG_PRINT("Delegate: %s", delegates_all[x].public_address);
       total_delegates++;
     }
   }
   DEBUG_PRINT("Found %d active delegates out of %d total slots", total_delegates, BLOCK_VERIFIERS_TOTAL_AMOUNT);
-
 
   response_t** responses = NULL;
   char* sync_message = NULL;
@@ -126,13 +125,6 @@ xcash_round_result_t process_round(void) {
   if (sync_block_verifiers_minutes_and_seconds(0, 20) == XCASH_ERROR)
       return ROUND_SKIP;
 
-
-
-
-
-
-
-
   // Fill block verifiers list with proven online nodes
   int nodes_majority_count = 0;
   pthread_mutex_lock(&majority_vote_lock);
@@ -148,7 +140,7 @@ xcash_round_result_t process_round(void) {
     }
   }
   pthread_mutex_unlock(&majority_vote_lock);
-  DEBUG_PRINT("Received sync info from %d delegates", nodes_majority_count);
+  INFO_PRINT("Received sync info from %d delegates", nodes_majority_count);
 
   if (nodes_majority_count < BLOCK_VERIFIERS_VALID_AMOUNT) {
     INFO_PRINT_STATUS_FAIL("Failed to reach the minimum number of online nodes: [%d/%d]", nodes_majority_count, BLOCK_VERIFIERS_VALID_AMOUNT);
