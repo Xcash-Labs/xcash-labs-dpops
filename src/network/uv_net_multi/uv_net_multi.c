@@ -42,9 +42,18 @@ void alloc_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
   buf->len = suggested_size;
 }
 
-void delayed_close_cb(uv_timer_t* handle) {
-  client_t* client = (client_t*)handle->data;
-  safe_close(client);
+//void delayed_close_cb(uv_timer_t* handle) {
+//  client_t* client = (client_t*)handle->data;
+//  safe_close(client);
+//}
+
+//  client->timer.data = client; 
+//  uv_timer_start(&client->timer, delayed_close_cb, 5000, 0); //
+
+void on_shutdown(uv_shutdown_t* req, int status) {
+  client_t* client = (client_t*)req->data;
+  free(req);  // Don't forget to free the shutdown request
+  safe_close(client);  // Now safe to fully close
 }
 
 void on_write(uv_write_t* req, int status) {
@@ -58,8 +67,22 @@ void on_write(uv_write_t* req, int status) {
     return;
   }
   uv_timer_stop(&client->timer);
-  client->timer.data = client; 
-  uv_timer_start(&client->timer, delayed_close_cb, 5000, 0); //
+  uv_shutdown_t* shutdown_req = malloc(sizeof(uv_shutdown_t));
+  if (!shutdown_req) {
+    ERROR_PRINT("Failed to allocate uv_shutdown_t for %s",
+                client->response ? client->response->host : "unknown");
+    safe_close(client);
+    return;
+  }
+  shutdown_req->data = client;
+  int rc = uv_shutdown(shutdown_req, (uv_stream_t*)&client->tcp, on_shutdown);
+  if (rc < 0) {
+    ERROR_PRINT("uv_shutdown() failed for %s: %s",
+                client->response ? client->response->host : "unknown",
+                uv_strerror(rc));
+    free(shutdown_req);
+    safe_close(client);
+  }
 }
 
 void on_connect(uv_connect_t* req, int status) {
