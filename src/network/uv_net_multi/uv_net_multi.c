@@ -76,6 +76,9 @@ void on_write(uv_write_t* req, int status) {
     return;
   }
   shutdown_req->data = client;
+  DEBUG_PRINT("Waiting for clean shutdown");
+
+  
   int rc = uv_shutdown(shutdown_req, (uv_stream_t*)&client->handle, on_shutdown);
   if (rc < 0) {
     ERROR_PRINT("uv_shutdown() failed for %s: %s",
