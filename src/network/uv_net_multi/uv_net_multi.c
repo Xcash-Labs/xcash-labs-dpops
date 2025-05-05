@@ -51,6 +51,7 @@ void alloc_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
 //  uv_timer_start(&client->timer, delayed_close_cb, 5000, 0); //
 
 void on_shutdown(uv_shutdown_t* req, int status) {
+  (void)status; 
   client_t* client = (client_t*)req->data;
   free(req);  // Don't forget to free the shutdown request
   safe_close(client);  // Now safe to fully close
@@ -67,7 +68,7 @@ void on_write(uv_write_t* req, int status) {
     return;
   }
   uv_timer_stop(&client->timer);
-  uv_shutdown_t* shutdown_req = malloc(sizeof(uv_shutdown_t));
+  uv_shutdown(shutdown_req, (uv_stream_t*)&client->handle, on_shutdown);
   if (!shutdown_req) {
     ERROR_PRINT("Failed to allocate uv_shutdown_t for %s",
                 client->response ? client->response->host : "unknown");
