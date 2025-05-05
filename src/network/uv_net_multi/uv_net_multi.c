@@ -42,6 +42,11 @@ void alloc_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
   buf->len = suggested_size;
 }
 
+void delayed_close_cb(uv_timer_t* handle) {
+  client_t* client = (client_t*)handle->data;
+  safe_close(client);
+}
+
 void on_write(uv_write_t* req, int status) {
   client_t* client = (client_t*)req->data;
   if (status < 0) {
@@ -53,7 +58,8 @@ void on_write(uv_write_t* req, int status) {
     return;
   }
   uv_timer_stop(&client->timer);
-  safe_close(client);
+  client->timer.data = client; 
+  uv_timer_start(&client->timer, delayed_close_cb, 1000, 0); //
 }
 
 void on_connect(uv_connect_t* req, int status) {
