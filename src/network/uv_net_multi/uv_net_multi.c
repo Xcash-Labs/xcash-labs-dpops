@@ -59,7 +59,7 @@ void on_write(uv_write_t* req, int status) {
   }
   uv_timer_stop(&client->timer);
   client->timer.data = client; 
-  uv_timer_start(&client->timer, delayed_close_cb, 2000, 0); //
+  uv_timer_start(&client->timer, delayed_close_cb, 5000, 0); //
 }
 
 void on_connect(uv_connect_t* req, int status) {
