@@ -215,8 +215,7 @@ void on_client_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
     DEBUG_PRINT("Client received UV_EOF.");
     client_data->received_reply = true;
     uv_read_stop(client);
-    check_if_ready_to_close(client_data);
-
+//    check_if_ready_to_close(client_data);
   } else if (nread < 0) {
     ERROR_PRINT("Read error: %s", uv_strerror(nread));
     uv_read_stop(client);
