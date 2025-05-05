@@ -89,6 +89,16 @@ xcash_round_result_t process_round(void) {
     return ROUND_ERROR;
   }
 
+  int total_delegates = 0;
+  for (size_t x = 0; x < BLOCK_VERIFIERS_TOTAL_AMOUNT; x++) {
+    if (strlen(delegates_all[x].public_address) > 0) {
+      DEBUG_PRINT("Delegate: %s", elegates_all[x].public_address);
+      total_delegates++;
+    }
+  }
+  DEBUG_PRINT("Found %d active delegates out of %d total slots", total_delegates, BLOCK_VERIFIERS_TOTAL_AMOUNT);
+
+
   response_t** responses = NULL;
   char* sync_message = NULL;
 
@@ -116,12 +126,12 @@ xcash_round_result_t process_round(void) {
   if (sync_block_verifiers_minutes_and_seconds(0, 20) == XCASH_ERROR)
       return ROUND_SKIP;
 
-  int total_delegates = 0;
-  for (size_t x = 0; x < BLOCK_VERIFIERS_TOTAL_AMOUNT; x++) {
-    if (strlen(delegates_all[x].public_address) > 0) {
-      total_delegates++;
-    }
-  }
+
+
+
+
+
+
 
   // Fill block verifiers list with proven online nodes
   int nodes_majority_count = 0;
