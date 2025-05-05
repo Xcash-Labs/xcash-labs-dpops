@@ -58,6 +58,8 @@ void on_timer_close(uv_handle_t *handle) {
 
 void handle_message_work(uv_work_t *req) {
     message_work_t *work = (message_work_t *)req->data;
+    DEBUG_PRINT("Full payload from %s:\n%s", 
+      work->client->client_ip, work->data);
     handle_srv_message(work->data, work->data_len, work->client);
 }
 
