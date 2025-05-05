@@ -143,7 +143,7 @@ void* send_multi_request_thread(void* arg) {
   uv_loop_t loop;
   uv_loop_init(&loop);
 
-  args->results = send_multi_request_thread(args->hosts, args->port, args->message, &loop);
+  args->results = send_multi_request_internal(args->hosts, args->port, args->message, &loop);
 
   uv_run(&loop, UV_RUN_DEFAULT);
   uv_loop_close(&loop);
@@ -152,7 +152,7 @@ void* send_multi_request_thread(void* arg) {
   return NULL;
 }
 
-response_t** send_multi_request_thread(const char** hosts, int port, const char* message, uv_loop_t* loop) {
+response_t** send_multi_request_internal(const char** hosts, int port, const char* message, uv_loop_t* loop) {
   int total_hosts = 0;
   while (hosts[total_hosts] != NULL) total_hosts++;
   if (total_hosts == 0) return NULL;
