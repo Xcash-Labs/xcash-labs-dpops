@@ -42,6 +42,13 @@ struct client_t{
     const char *message;
 };
 
+typedef struct {
+    const char** hosts;
+    int port;
+    const char* message;
+    response_t** results;  // output
+  } multi_request_args_t;
+
 void on_close(uv_handle_t * handle);
 void on_timeout(uv_timer_t *timer);
 void on_write(uv_write_t *req, int status);
