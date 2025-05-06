@@ -65,7 +65,7 @@ extern pthread_mutex_t update_current_block_height_lock;
 extern pthread_mutex_t hash_mutex;
 extern pthread_mutex_t majority_vote_lock;
 
-atomic_bool delegates_loaded = false;
+extern atomic_bool delegates_loaded;
 
 extern NetworkNode network_nodes[];
 

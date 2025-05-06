@@ -40,6 +40,8 @@ pthread_mutex_t update_current_block_height_lock;
 pthread_mutex_t hash_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t majority_vote_lock = PTHREAD_MUTEX_INITIALIZER;
 
+atomic_bool delegates_loaded = false;
+
 //const char* collection_names[XCASH_DB_COUNT] = {"delegates", "statistics", "reserve_proofs", "reserve_bytes"};
 const char* collection_names[XCASH_DB_COUNT] = {"delegates", "statistics"};
 bool cleanup_db_before_upsert = false;  // delete db before put content. make sure we have exact copy during initial db syncing
