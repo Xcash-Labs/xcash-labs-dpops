@@ -63,17 +63,32 @@ void handle_message_work(uv_work_t *req) {
     handle_srv_message(work->data, work->data_len, work->client);
 }
 
+
+void on_server_shutdown_mul(uv_shutdown_t* req, int status) {
+  void(status);
+  server_client_t* client = (server_client_t*)req->data;
+  free(req);
+  check_if_ready_to_close(client);
+}
+
 void handle_message_after(uv_work_t *req, int status) {
-    (void)status;
-    message_work_t *work = (message_work_t *)req->data;
-    DEBUG_PRINT("Finished background message processing from %s", work->client->client_ip);
+  (void)status;
+  message_work_t *work = (message_work_t *)req->data;
+  DEBUG_PRINT("Finished background message processing from %s", work->client->client_ip);
+  work->client->received_reply = true;
 
-    work->client->received_reply = true;
-    check_if_ready_to_close(work->client);
+  uv_shutdown_t *shutdown_req = malloc(sizeof(uv_shutdown_t));
+  if (shutdown_req) {
+    shutdown_req->data = work->client;
+    uv_shutdown(shutdown_req, (uv_stream_t *)&work->client->handle, on_server_shutdown_mul);
+  } else {
+    ERROR_PRINT("Failed to allocate shutdown request");
+    check_if_ready_to_close(work->client);  // fallback to immediate close
+  }
 
-    free(work->data);
-    free(work);
-    free(req);
+  free(work->data);
+  free(work);
+  free(req);
 }
 
 void get_client_ip(server_client_t *client) {
@@ -217,7 +232,7 @@ void on_client_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
     DEBUG_PRINT("Client received UV_EOF.");
     client_data->received_reply = true;
     uv_read_stop(client);
-//    check_if_ready_to_close(client_data);
+    check_if_ready_to_close(client_data);
   } else if (nread < 0) {
     ERROR_PRINT("Read error: %s", uv_strerror(nread));
     uv_read_stop(client);
