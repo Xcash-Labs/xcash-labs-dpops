@@ -113,14 +113,14 @@ void handle_message_after(uv_work_t *req, int status) {
 
 
 
-void on_server_shutdown_mul_old(uv_shutdown_t* req, int status) {
+void on_server_shutdown_mul(uv_shutdown_t* req, int status) {
   (void)status;
   server_client_t* client = (server_client_t*)req->data;
   free(req);
   check_if_ready_to_close(client);
 }
 
-void handle_message_after(uv_work_t *req, int status) {
+void handle_message_after_old(uv_work_t *req, int status) {
   (void)status;
   message_work_t *work = (message_work_t *)req->data;
   
