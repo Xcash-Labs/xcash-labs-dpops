@@ -254,7 +254,14 @@ void on_client_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
       }
 
       req->data = work_data;
-      uv_queue_work(uv_default_loop(), req, handle_message_work, handle_message_after);
+      int rc = uv_queue_work(uv_default_loop(), req, handle_message_work, handle_message_after);
+      if (rc != 0) {
+        ERROR_PRINT("uv_queue_work failed: %s", uv_strerror(rc));
+        // You should free 'req' and any associated data if queuing failed
+        free(work->data);
+        free(work);
+        free(req);
+      }
     }
   } else if (nread == UV_EOF) {
     DEBUG_PRINT("Client received UV_EOF.");
