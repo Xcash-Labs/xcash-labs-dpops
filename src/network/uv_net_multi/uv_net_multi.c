@@ -108,7 +108,14 @@ int is_ip_address(const char* host) {
 }
 
 void start_connection(client_t* client, const struct sockaddr* addr) {
-  uv_tcp_connect(&client->connect_req, &client->handle, addr, on_connect);
+  int rc = uv_tcp_connect(&client->connect_req, &client->handle, addr, on_connect);
+  if (rc < 0) {
+    ERROR_PRINT("uv_tcp_connect failed for %s: %s", 
+                client->response ? client->response->host : "unknown", 
+                uv_strerror(rc));
+    client->response->status = STATUS_ERROR;
+    safe_close(client);
+  }
 }
 
 void on_resolved(uv_getaddrinfo_t* resolver, int status, struct addrinfo* res) {
@@ -117,10 +124,13 @@ void on_resolved(uv_getaddrinfo_t* resolver, int status, struct addrinfo* res) {
   if (status == 0 && res != NULL) {
     if (!client->is_closing) {
       start_connection(client, res->ai_addr);
+    } else {
+      DEBUG_PRINT("On_resolved failed to call start_connection");
     }
   } else {
     DEBUG_PRINT("DNS resolution failed for %s: %s", client->response->host, uv_strerror(status));
     client->response->status = STATUS_ERROR;
+    safe_close(client);
   }
 
   if (res) {
@@ -170,7 +180,7 @@ response_t** send_multi_request_internal(const char** hosts, int port, const cha
 
 
 
-    
+
     client->response = calloc(1, sizeof(response_t));
     client->response->host = strdup(hosts[i]);
     client->response->status = STATUS_PENDING;
