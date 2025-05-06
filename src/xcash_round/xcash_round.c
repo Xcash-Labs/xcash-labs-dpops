@@ -92,21 +92,21 @@ xcash_round_result_t process_round(void) {
   int total_delegates = 0;
   for (size_t x = 0; x < BLOCK_VERIFIERS_TOTAL_AMOUNT; x++) {
     if (strlen(delegates_all[x].public_address) > 0) {
-      DEBUG_PRINT("Delegate: %s", delegates_all[x].public_address);
+//      DEBUG_PRINT("Delegate: %s", delegates_all[x].public_address);
       total_delegates++;
     }
   }
-  DEBUG_PRINT("Found %d active delegates out of %d total slots", total_delegates, BLOCK_VERIFIERS_TOTAL_AMOUNT);
+//  DEBUG_PRINT("Found %d active delegates out of %d total slots", total_delegates, BLOCK_VERIFIERS_TOTAL_AMOUNT);
 
   response_t** responses = NULL;
   char* sync_message = NULL;
 
   // Build sync message and send to all Delegates then wait for replies
   if (create_sync_msg(&sync_message)) {
-    DEBUG_PRINT("Generated SYNC message: %s", sync_message);
+//    DEBUG_PRINT("Generated SYNC message: %s", sync_message);
 
     if (xnet_send_data_multi(XNET_DELEGATES_ALL, sync_message, &responses)) {
-      DEBUG_PRINT("Message sent to all delegates.");
+//      DEBUG_PRINT("Message sent to all delegates.");
       free(sync_message);
       cleanup_responses(responses);
     } else {

@@ -65,7 +65,7 @@ void handle_message_work(uv_work_t *req) {
 
 
 void on_server_shutdown_mul(uv_shutdown_t* req, int status) {
-  (void)status; 
+  (void)status;
   server_client_t* client = (server_client_t*)req->data;
   free(req);
   check_if_ready_to_close(client);
