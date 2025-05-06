@@ -200,7 +200,7 @@ void alloc_buffer_srv(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf)
   buf->len = buffer_size;
 }
 
-void on_client_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
+void on_client_read_old(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
   server_client_t *client_data = (server_client_t *)client;
 
   if (nread > 0) {
@@ -258,8 +258,8 @@ void on_client_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
       if (rc != 0) {
         ERROR_PRINT("uv_queue_work failed: %s", uv_strerror(rc));
         // You should free 'req' and any associated data if queuing failed
-        free(work->data);
-        free(work);
+//        free(work->data);
+//        free(work);
         free(req);
       }
     }
@@ -282,6 +282,115 @@ cleanup:
     free(buf->base);
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+void on_client_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
+  server_client_t *client_data = (server_client_t *)client;
+
+  if (nread > 0) {
+    DEBUG_PRINT("Received data: %.*s", (int)nread, buf->base);
+
+    // Append incoming data to buffer
+    char *new_buffer = realloc(client_data->buffer, client_data->buffer_size + nread + 1);
+    if (!new_buffer) {
+      ERROR_PRINT("Failed to realloc read buffer");
+      goto cleanup;
+    }
+
+    client_data->buffer = new_buffer;
+    memcpy(client_data->buffer + client_data->buffer_size, buf->base, nread);
+    client_data->buffer_size += nread;
+    client_data->buffer[client_data->buffer_size] = '\0';
+
+    // Trim trailing whitespace and check for JSON end
+    size_t trimmed_len = client_data->buffer_size;
+    while (trimmed_len > 0 &&
+           (client_data->buffer[trimmed_len - 1] == '\n' ||
+            client_data->buffer[trimmed_len - 1] == '\r' ||
+            client_data->buffer[trimmed_len - 1] == ' ')) {
+      trimmed_len--;
+    }
+
+    if (trimmed_len > 0 && client_data->buffer[trimmed_len - 1] == '}') {
+      DEBUG_PRINT("Detected end of JSON message from client");
+
+      message_work_t *work_data = malloc(sizeof(message_work_t));
+      if (!work_data) {
+        ERROR_PRINT("Failed to allocate work_data");
+        free(client_data->buffer);
+        client_data->buffer = NULL;
+        client_data->buffer_size = 0;
+        goto cleanup;
+      }
+
+      uv_work_t *req = malloc(sizeof(uv_work_t));
+      if (!req) {
+        ERROR_PRINT("Failed to allocate uv_work_t");
+        free(work_data);
+        free(client_data->buffer);
+        client_data->buffer = NULL;
+        client_data->buffer_size = 0;
+        goto cleanup;
+      }
+
+      work_data->client = client_data;
+      work_data->data = strndup(client_data->buffer, client_data->buffer_size);
+      work_data->data_len = client_data->buffer_size;
+      req->data = work_data;
+
+      free(client_data->buffer);
+      client_data->buffer = NULL;
+      client_data->buffer_size = 0;
+
+      int rc = uv_queue_work(uv_default_loop(), req, handle_message_work, handle_message_after);
+      if (rc != 0) {
+        ERROR_PRINT("uv_queue_work failed: %s", uv_strerror(rc));
+        free(work_data->data);
+        free(work_data);
+        free(req);
+      }
+    }
+  } else if (nread == UV_EOF) {
+    DEBUG_PRINT("Client received UV_EOF.");
+    client_data->received_reply = true;
+    uv_read_stop(client);
+    check_if_ready_to_close(client_data);
+  } else if (nread < 0) {
+    ERROR_PRINT("Read error: %s", uv_strerror(nread));
+    uv_read_stop(client);
+    if (!client_data->closed) {
+      client_data->closed = true;
+      uv_close((uv_handle_t *)client, on_client_close);
+    }
+  }
+
+cleanup:
+  if (buf && buf->base) {
+    free(buf->base);
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // Thread-safe shutdown callback
 void on_shutdown_signal(uv_async_t *async) {
