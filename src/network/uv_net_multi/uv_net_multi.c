@@ -146,12 +146,12 @@ void on_resolved(uv_getaddrinfo_t* resolver, int status, struct addrinfo* res) {
 
 
 
-
+/*
 void* send_multi_request_thread(void* arg) {
   multi_request_args_t* args = (multi_request_args_t*)arg;
 
   uv_loop_t loop;
-  uv_loop_init(&loop);
+//  uv_loop_init(&loop);
 
   args->results = send_multi_request_internal(args->hosts, args->port, args->message, &loop);
 
@@ -230,6 +230,7 @@ response_t** send_multi_request(const char** hosts, int port, const char* messag
 }
 
 
+*/
 
 
 
@@ -241,8 +242,7 @@ response_t** send_multi_request(const char** hosts, int port, const char* messag
 
 
 
-
-response_t** send_multi_request_old(const char** hosts, int port, const char* message) {
+response_t** send_multi_request(const char** hosts, int port, const char* message) {
   // count the number of hosts
   int total_hosts = 0;
   while (hosts[total_hosts] != NULL) total_hosts++;
