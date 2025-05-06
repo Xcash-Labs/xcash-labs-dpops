@@ -5,6 +5,7 @@
 #include <mongoc/mongoc.h>
 #include "crypto_vrf.h"
 #include <pthread.h>
+#include <stdatomic.h>
 #include "config.h"
 #include "macro_functions.h"
 #include "structures.h"
@@ -63,6 +64,8 @@ extern pthread_mutex_t database_data_IP_address_lock;
 extern pthread_mutex_t update_current_block_height_lock;
 extern pthread_mutex_t hash_mutex;
 extern pthread_mutex_t majority_vote_lock;
+
+atomic_bool delegates_loaded = false;
 
 extern NetworkNode network_nodes[];
 
