@@ -166,6 +166,11 @@ response_t** send_multi_request_internal(const char** hosts, int port, const cha
   for (int i = 0; i < total_hosts; i++) {
     client_t* client = calloc(1, sizeof(client_t));
     client->message = message;
+    DEBUG_PRINT("MESSAGE=%s", client->message);
+
+
+
+    
     client->response = calloc(1, sizeof(response_t));
     client->response->host = strdup(hosts[i]);
     client->response->status = STATUS_PENDING;
@@ -254,9 +259,6 @@ response_t** send_multi_request_old(const char** hosts, int port, const char* me
     // Initialize each client structure
     client_t* client = calloc(1, sizeof(client_t));
     client->message = message;
-    DEBUG_PRINT("MESSAGE=%s", client->message);
-
-    
     client->response = (response_t*)calloc(1, sizeof(response_t));
     client->response->host = strdup(hosts[i]);
     client->response->status = STATUS_PENDING;
