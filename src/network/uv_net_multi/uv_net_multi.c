@@ -302,7 +302,6 @@ response_t** send_multi_request(const char** hosts, int port, const char* messag
   if (result != 0) {
     DEBUG_PRINT("Error closing loop: %s\n", uv_strerror(result));
   }
-  free(loop);
   return responses;
 }
 
