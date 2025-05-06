@@ -73,6 +73,20 @@ void server_received_msg_get_sync_info(server_client_t *client, const char *MESS
 
     // Update delegate's online_status_ck to "true"
     bool found = false;
+
+    // Wait for delegates to load
+    const int max_wait_ms = 1000;     // 1 second
+    const int sleep_step_us = 10000;  // 10 milliseconds
+    int waited_ms = 0;
+
+    while (!atomic_load(&delegates_loaded)) {
+        if (waited_ms >= max_wait_ms) {
+            continue;
+        }
+        usleep(sleep_step_us);
+        waited_ms += sleep_step_us / 1000;
+    }
+
     for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
         if (strcmp(delegates_all[i].public_address, parsed_address) == 0) {
             strncpy(delegates_all[i].online_status_ck, "true", sizeof(delegates_all[i].online_status_ck));
