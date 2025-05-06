@@ -330,8 +330,14 @@ void stop_tcp_server() {
     INFO_PRINT("Waiting for handles to close...");
     uv_run(&loop, UV_RUN_NOWAIT);
     usleep(500000);  // Sleep 500ms to give time for handles to close
+
+
+    INFO_PRINT("Waiting for handles to close 2222...");
+
+
   }
   uv_stop(&loop);
+  INFO_PRINT("Waiting for handles to close...3333");
   if (uv_loop_close(&loop) != 0) {
     ERROR_PRINT("Failed to close the event loop. Some handles are still open.");
   } else {
