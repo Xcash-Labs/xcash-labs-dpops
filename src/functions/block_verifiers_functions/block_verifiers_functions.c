@@ -295,8 +295,6 @@ bool generate_and_request_vrf_data_msg(char** message)
 }
 
 bool create_sync_msg(char** message) {
-  DEBUG_PRINT("Generating %s message", "XCASH_GET_SYNC_INFO");
-
   // Only two key-value pairs + NULL terminator
   const int PARAM_COUNT = 3;
   const char** param_list = calloc(PARAM_COUNT * 2, sizeof(char*));  // key-value pairs
