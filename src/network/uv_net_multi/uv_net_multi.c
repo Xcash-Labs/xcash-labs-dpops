@@ -157,7 +157,6 @@ void* send_multi_request_thread(void* arg) {
 
   uv_run(&loop, UV_RUN_DEFAULT);
   uv_loop_close(&loop);
-  free(&loop);
   free(args);  
 
   return NULL;
@@ -303,7 +302,7 @@ response_t** send_multi_request_old(const char** hosts, int port, const char* me
   if (result != 0) {
     DEBUG_PRINT("Error closing loop: %s\n", uv_strerror(result));
   }
-
+  free(loop);
   return responses;
 }
 
