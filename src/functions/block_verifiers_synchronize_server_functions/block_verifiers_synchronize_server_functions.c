@@ -83,7 +83,7 @@ void server_received_msg_get_sync_info(server_client_t *client, const char *MESS
     DEBUG_PRINT("Parsed public_address: %s, remote block_height: %s", parsed_address, parse_block_height);
 
     // Wait for delegates table to load before searching
-    if (!&delegates_loaded)
+    if (!delegates_loaded)
         wait_for_atomic_bool();
     }
 
