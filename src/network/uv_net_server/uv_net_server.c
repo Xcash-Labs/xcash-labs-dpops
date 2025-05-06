@@ -65,7 +65,11 @@ void handle_message_work(uv_work_t *req) {
 }
 
 
-void on_server_shutdown_mul(uv_shutdown_t* req, int status) {
+
+
+void handle_message_after(uv_work_t *req, int status) {
+  message_work_t *work = (message_work_t *)req->data;
+
   if (status != 0) {
     ERROR_PRINT("Background work failed with status %d for %s", status,
                 work && work->client ? work->client->client_ip : "unknown");
@@ -78,10 +82,39 @@ void on_server_shutdown_mul(uv_shutdown_t* req, int status) {
     free(req);
     return;
   }
-  
+
+  DEBUG_PRINT("Finished background message processing from %s", work->client->client_ip);
+
+  if (work->data && work->data_len > 0) {
+    DEBUG_PRINT("Transaction from %s (length: %zu):\n%s", 
+                work->client->client_ip, 
+                work->data_len, 
+                work->data);
+  } else {
+    DEBUG_PRINT("No transaction data from %s", work->client->client_ip);
+  }
+
+  work->client->received_reply = true;
+
+  uv_shutdown_t *shutdown_req = malloc(sizeof(uv_shutdown_t));
+  if (shutdown_req) {
+    DEBUG_PRINT("Initiating shutdown for %s", work->client->client_ip);
+    shutdown_req->data = work->client;
+    uv_shutdown(shutdown_req, (uv_stream_t *)&work->client->handle, on_server_shutdown_mul);
+  } else {
+    ERROR_PRINT("Failed to allocate shutdown request for %s", work->client->client_ip);
+    check_if_ready_to_close(work->client);  // fallback to immediate close
+  }
+
+  free(work->data);
+  free(work);
+  free(req);
+}
 
 
 
+void on_server_shutdown_mul_old(uv_shutdown_t* req, int status) {
+  (void)status;
   server_client_t* client = (server_client_t*)req->data;
   free(req);
   check_if_ready_to_close(client);
