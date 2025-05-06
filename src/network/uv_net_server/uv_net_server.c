@@ -315,7 +315,7 @@ void close_callback(uv_handle_t *handle, void *arg) {
 
   if (!uv_is_closing(handle)) {
     DEBUG_PRINT("Closing handle: type=%d, address=%p", handle->type, (void*)handle);
-    handle->data = NULL;  // prevent use-after-free elsewhere
+    handle->data = NULL;
     uv_close(handle, NULL);
   }
 }
@@ -325,19 +325,13 @@ void stop_tcp_server() {
   // Walk through all handles and close them
   uv_walk(&loop, close_callback, NULL);
   // Wait for handles to close
-  int attempts = 7;  // Max attempts to wait for cleanup
+  int attempts = 7;
   while (uv_loop_alive(&loop) && attempts-- > 0) {
     INFO_PRINT("Waiting for handles to close...");
     uv_run(&loop, UV_RUN_NOWAIT);
     usleep(500000);  // Sleep 500ms to give time for handles to close
-
-
-    INFO_PRINT("Waiting for handles to close 2222...");
-
-
   }
   uv_stop(&loop);
-  INFO_PRINT("Waiting for handles to close...3333");
   if (uv_loop_close(&loop) != 0) {
     ERROR_PRINT("Failed to close the event loop. Some handles are still open.");
   } else {

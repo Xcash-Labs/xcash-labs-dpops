@@ -315,9 +315,9 @@ int main(int argc, char *argv[]) {
     FATAL_ERROR("Failed server initialization."); 
   }
 
-  stop_tcp_server();
-  shutdown_database();
-  INFO_PRINT("Database closed");
-  cleanup_data_structures();
+  //stop_tcp_server();
+  //shutdown_database();
+  //INFO_PRINT("Database closed");
+  //cleanup_data_structures();
   return 0;
 }
