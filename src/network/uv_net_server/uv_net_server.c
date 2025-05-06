@@ -65,52 +65,6 @@ void handle_message_work(uv_work_t *req) {
 }
 
 
-
-
-void handle_message_after(uv_work_t *req, int status) {
-  message_work_t *work = (message_work_t *)req->data;
-
-  if (status != 0) {
-    ERROR_PRINT("Background work failed with status %d for %s", status,
-                work && work->client ? work->client->client_ip : "unknown");
-    if (work && work->client) {
-      work->client->received_reply = true;
-      check_if_ready_to_close(work->client);
-    }
-    free(work ? work->data : NULL);
-    free(work);
-    free(req);
-    return;
-  }
-
-  DEBUG_PRINT("Finished background message processing from %s", work->client->client_ip);
-
-  if (work->data && work->data_len > 0) {
-    DEBUG_PRINT("Transaction from %s (length: %zu):\n%s", 
-                work->client->client_ip, 
-                work->data_len, 
-                work->data);
-  } else {
-    DEBUG_PRINT("No transaction data from %s", work->client->client_ip);
-  }
-
-  work->client->received_reply = true;
-
-  uv_shutdown_t *shutdown_req = malloc(sizeof(uv_shutdown_t));
-  if (shutdown_req) {
-    DEBUG_PRINT("Initiating shutdown for %s", work->client->client_ip);
-    shutdown_req->data = work->client;
-    uv_shutdown(shutdown_req, (uv_stream_t *)&work->client->handle, on_server_shutdown_mul);
-  } else {
-    ERROR_PRINT("Failed to allocate shutdown request for %s", work->client->client_ip);
-    check_if_ready_to_close(work->client);  // fallback to immediate close
-  }
-
-  free(work->data);
-  free(work);
-  free(req);
-}
-
 void on_server_shutdown_mul(uv_shutdown_t* req, int status) {
   (void)status;
   server_client_t* client = (server_client_t*)req->data;
@@ -118,7 +72,7 @@ void on_server_shutdown_mul(uv_shutdown_t* req, int status) {
   check_if_ready_to_close(client);
 }
 
-void handle_message_after_old(uv_work_t *req, int status) {
+void handle_message_after(uv_work_t *req, int status) {
   (void)status;
   message_work_t *work = (message_work_t *)req->data;
   
@@ -287,7 +241,6 @@ void on_client_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
       }
 
       req->data = work_data;
-      DEBUG_PRINT("Queuing background work from %s", work_data->client->client_ip);
       uv_queue_work(uv_default_loop(), req, handle_message_work, handle_message_after);
     }
   } else if (nread == UV_EOF) {
