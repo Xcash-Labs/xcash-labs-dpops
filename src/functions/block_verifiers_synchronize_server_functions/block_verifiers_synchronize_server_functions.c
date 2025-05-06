@@ -104,62 +104,6 @@ void server_received_msg_get_sync_info(server_client_t *client, const char *MESS
     }
 }
 
-
-
-static inline void wait_for_atomic_bool(void) {
-    const int max_wait_ms = 1000;  // 1 second
-    int waited_ms = 0;
-    while (!atomic_load(&delegates_loaded)) {
-      if (waited_ms >= max_wait_ms) {
-        break;
-      }
-      usleep(10000);  // 10 milliseconds
-      waited_ms += sleep_step_us / 1000;
-    }
-  }
-
-void server_received_msg_get_sync_info(server_client_t *client, const char *MESSAGE)
-{
- 
-    char parse_block_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
-    char parsed_address[XCASH_WALLET_LENGTH + 1] = {0};
-
-    DEBUG_PRINT("Received %s, %s", __func__, "XCASH_GET_SYNC_INFO");
-
-    // Parse the public address
-    if (parse_json_data(MESSAGE, "public_address", parsed_address, sizeof(parsed_address)) == 0) {
-        ERROR_PRINT("Can't parse 'public_address' from %s", client->client_ip);
-        return;
-    }
-
-    // Parse the block height
-    if (parse_json_data(MESSAGE, "block_height", parse_block_height, sizeof(parse_block_height)) == 0) {
-        ERROR_PRINT("Can't parse 'block_height' from %s", client->client_ip);
-        return;
-    }
-
-    DEBUG_PRINT("Parsed public_address: %s, remote block_height: %s", parsed_address, parse_block_height);
-
-    // Wait for delegates to load
-    bool found = false;
-    for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
-        if (i = 0 ) {
-            wait_for_atomic_bool();
-        }
-        if (strcmp(delegates_all[i].public_address, parsed_address) == 0) {
-            strncpy(delegates_all[i].online_status_ck, "true", sizeof(delegates_all[i].online_status_ck));
-            delegates_all[i].online_status_ck[sizeof(delegates_all[i].online_status_ck) - 1] = '\0';  // Ensure null-termination
-            found = true;
-            DEBUG_PRINT("Marked delegate %s as online (ck)", parsed_address);
-            break;
-        }
-    }
-
-    if (!found) {
-        DEBUG_PRINT("Delegate with address %s not found in delegates_all[]", parsed_address);
-    }
-}
-
 void server_received_msg_get_block_producers(server_client_t *client, const char *MESSAGE)
 {
     (void)MESSAGE;
