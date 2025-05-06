@@ -73,9 +73,21 @@ void on_server_shutdown_mul(uv_shutdown_t* req, int status) {
 }
 
 void handle_message_after(uv_work_t *req, int status) {
-  (void)status;
   message_work_t *work = (message_work_t *)req->data;
-  
+
+  if (status != 0) {
+    ERROR_PRINT("Background work failed with status %d for %s", status,
+                work && work->client ? work->client->client_ip : "unknown");
+    if (work && work->client) {
+      work->client->received_reply = true;
+      check_if_ready_to_close(work->client);
+    }
+    free(work ? work->data : NULL);
+    free(work);
+    free(req);
+    return;
+  }
+
   DEBUG_PRINT("Finished background message processing from %s", work->client->client_ip);
 
   if (work->data && work->data_len > 0) {
@@ -103,6 +115,7 @@ void handle_message_after(uv_work_t *req, int status) {
   free(work);
   free(req);
 }
+
 
 
 
