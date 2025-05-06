@@ -21,15 +21,15 @@ void on_client_close(uv_handle_t *handle) {
   }
 }
 
-void on_shutdown_complete(uv_shutdown_t* req, int status) {
+void on_shutdown_complete(uv_shutdown_t *req, int status) {
   (void)status;
-  server_client_t* client = (server_client_t*)req->handle->data;
+  server_client_t *client = (server_client_t *)req->handle->data;
   DEBUG_PRINT("Shutdown complete for %s", client->client_ip);
-  uv_close((uv_handle_t*)&client->handle, on_client_close);
-  free(req); // shutdown_req was malloc'd
+  uv_close((uv_handle_t *)&client->handle, on_client_close);
+  free(req);  // shutdown_req was malloc'd
 
-  if (client && !uv_is_closing((uv_handle_t*)&client->handle)) {
-    uv_close((uv_handle_t*)&client->handle, on_client_close);
+  if (client && !uv_is_closing((uv_handle_t *)&client->handle)) {
+    uv_close((uv_handle_t *)&client->handle, on_client_close);
   }
 }
 
@@ -52,22 +52,21 @@ void on_timer_close(uv_handle_t *handle) {
       write_req->message_copy = NULL;
     }
     free(write_req);
-    handle->data = NULL; // prevent accidental reuse
+    handle->data = NULL;  // prevent accidental reuse
   }
 }
 
 void handle_message_work(uv_work_t *req) {
-    message_work_t *work = (message_work_t *)req->data;
-    DEBUG_PRINT("Full payload from %s:\n%s", 
-      work->client->client_ip, work->data);
-    fflush(stderr);
-    handle_srv_message(work->data, work->data_len, work->client);
+  message_work_t *work = (message_work_t *)req->data;
+  DEBUG_PRINT("Full payload from %s:\n%s",
+              work->client->client_ip, work->data);
+  fflush(stderr);
+  handle_srv_message(work->data, work->data_len, work->client);
 }
 
-
-void on_server_shutdown_mul(uv_shutdown_t* req, int status) {
+void on_server_shutdown_mul(uv_shutdown_t *req, int status) {
   (void)status;
-  server_client_t* client = (server_client_t*)req->data;
+  server_client_t *client = (server_client_t *)req->data;
   free(req);
   check_if_ready_to_close(client);
 }
@@ -91,9 +90,9 @@ void handle_message_after(uv_work_t *req, int status) {
   DEBUG_PRINT("Finished background message processing from %s", work->client->client_ip);
 
   if (work->data && work->data_len > 0) {
-    DEBUG_PRINT("Transaction from %s (length: %zu):\n%s", 
-                work->client->client_ip, 
-                work->data_len, 
+    DEBUG_PRINT("Transaction from %s (length: %zu):\n%s",
+                work->client->client_ip,
+                work->data_len,
                 work->data);
   } else {
     DEBUG_PRINT("No transaction data from %s", work->client->client_ip);
@@ -115,9 +114,6 @@ void handle_message_after(uv_work_t *req, int status) {
   free(work);
   free(req);
 }
-
-
-
 
 void get_client_ip(server_client_t *client) {
   struct sockaddr_storage addr;
@@ -199,99 +195,6 @@ void alloc_buffer_srv(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf)
 
   buf->len = buffer_size;
 }
-
-void on_client_read_old(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
-  server_client_t *client_data = (server_client_t *)client;
-
-  if (nread > 0) {
-    DEBUG_PRINT("Received data: %.*s", (int)nread, buf->base);
-
-    // Append incoming data to buffer
-    char *new_buffer = realloc(client_data->buffer, client_data->buffer_size + nread + 1);
-    if (!new_buffer) {
-      ERROR_PRINT("Failed to realloc read buffer");
-      goto cleanup;
-    }
-
-    client_data->buffer = new_buffer;
-    memcpy(client_data->buffer + client_data->buffer_size, buf->base, nread);
-    client_data->buffer_size += nread;
-    client_data->buffer[client_data->buffer_size] = '\0';  // Null-terminate for safety
-
-    // Trim trailing whitespace and check if message ends in '}'
-    size_t trimmed_len = client_data->buffer_size;
-    while (trimmed_len > 0 &&
-       (client_data->buffer[trimmed_len - 1] == '\n' ||
-        client_data->buffer[trimmed_len - 1] == '\r' ||
-        client_data->buffer[trimmed_len - 1] == ' ')) {
-      trimmed_len--;
-    }
-    // Check if JSON message is complete
-    if (trimmed_len > 0 && client_data->buffer[trimmed_len - 1] == '}') {
-      DEBUG_PRINT("Detected end of JSON message from client");
-      message_work_t *work_data = malloc(sizeof(message_work_t));
-
-      if (!work_data) {
-        ERROR_PRINT("Failed to allocate work_data");
-        goto cleanup;
-      }
-
-      work_data->client = client_data;
-      work_data->data = strndup(client_data->buffer, client_data->buffer_size);
-      work_data->data_len = client_data->buffer_size;
-
-      // Reset buffer for next message
-      free(client_data->buffer);
-      client_data->buffer = NULL;
-      client_data->buffer_size = 0;
-
-      uv_work_t *req = malloc(sizeof(uv_work_t));
-      if (!req) {
-        free(work_data->data);
-        free(work_data);
-        ERROR_PRINT("Failed to allocate uv_work_t");
-        goto cleanup;
-      }
-
-      req->data = work_data;
-      int rc = uv_queue_work(uv_default_loop(), req, handle_message_work, handle_message_after);
-      if (rc != 0) {
-        ERROR_PRINT("uv_queue_work failed: %s", uv_strerror(rc));
-        // You should free 'req' and any associated data if queuing failed
-//        free(work->data);
-//        free(work);
-        free(req);
-      }
-    }
-  } else if (nread == UV_EOF) {
-    DEBUG_PRINT("Client received UV_EOF.");
-    client_data->received_reply = true;
-    uv_read_stop(client);
-    check_if_ready_to_close(client_data);
-  } else if (nread < 0) {
-    ERROR_PRINT("Read error: %s", uv_strerror(nread));
-    uv_read_stop(client);
-    if (!client_data->closed) {
-      client_data->closed = true;
-      uv_close((uv_handle_t *)client, on_client_close);
-    }
-  }
-
-cleanup:
-  if (buf && buf->base) {
-    free(buf->base);
-  }
-}
-
-
-
-
-
-
-
-
-
-
 
 void on_client_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
   server_client_t *client_data = (server_client_t *)client;
@@ -379,19 +282,6 @@ cleanup:
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 // Thread-safe shutdown callback
 void on_shutdown_signal(uv_async_t *async) {
   DEBUG_PRINT("Shutting down UV event loop...");
@@ -458,7 +348,7 @@ void close_callback(uv_handle_t *handle, void *arg) {
   }
 
   if (!uv_is_closing(handle)) {
-    DEBUG_PRINT("Closing handle: type=%d, address=%p", handle->type, (void*)handle);
+    DEBUG_PRINT("Closing handle: type=%d, address=%p", handle->type, (void *)handle);
     handle->data = NULL;
     uv_close(handle, NULL);
   }
@@ -526,7 +416,7 @@ void on_write_timeout(uv_timer_t *timer) {
   if (!uv_is_closing((uv_handle_t *)&write_req->timer)) {
     uv_timer_stop(&write_req->timer);
     uv_close((uv_handle_t *)&write_req->timer, on_timer_close);
-  } 
+  }
 }
 
 void send_data_uv(server_client_t *client, const char *message) {
@@ -540,7 +430,7 @@ void send_data_uv(server_client_t *client, const char *message) {
     length = MAXIMUM_BUFFER_SIZE - 1;  // Truncate safely
     DEBUG_PRINT("Message length truncated to %zu", length);
   }
-  
+
   DEBUG_PRINT("Preparing to send message to %s", client->client_ip);
   write_srv_request_t *write_req = malloc(sizeof(write_srv_request_t));
   if (!write_req) {
