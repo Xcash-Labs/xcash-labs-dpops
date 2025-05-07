@@ -84,12 +84,6 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
             continue;
         }
     
-        // Skip self by public address (assuming index `i` aligns correctly)
-        if (strcmp(network_nodes[i].seed_public_address, xcash_wallet_public_address) == 0) {
-            DEBUG_PRINT("Skipping self delegate: %s (%s)", delegate_name, ip);
-            continue;
-        }
-    
         DEBUG_PRINT("REQ to %s : %s", delegate_name, ip);
         delegates_hosts[host_index++] = ip;
       }

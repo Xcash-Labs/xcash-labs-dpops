@@ -84,8 +84,8 @@ MONGOC_DRIVER_URL="https://github.com/mongodb/mongo-c-driver/releases/download/$
 ##MONGOC_DRIVER_URL="https://github.com/mongodb/mongo-c-driver/releases/download/${MONGOC_DRIVER_LATEST_VERSION:15}/${MONGOC_DRIVER_LATEST_VERSION}.tar.gz"
 MONGOC_DRIVER_DIR=""
 MONGOC_DRIVER_CURRENT_VERSION=""
-# XCASH_DPOPS_PACKAGES="build-essential cmake pkg-config libboost-all-dev libssl-dev libzmq3-dev libunbound-dev libsodium-dev libminiupnpc-dev libunwind8-dev liblzma-dev libreadline6-dev libldns-dev libexpat1-dev libgtest-dev doxygen graphviz libpcsclite-dev git screen p7zip-full moreutils wget iptables libuv1-dev jq curl iproute2 libjansson-dev libcurl4-openssl-dev libcjson-dev"
-XCASH_DPOPS_PACKAGES="build-essential cmake pkg-config libssl-dev libzmq3-dev libunbound-dev libsodium-dev libunwind8-dev liblzma-dev libreadline6-dev libexpat1-dev qttools5-dev-tools libhidapi-dev libusb-1.0-0-dev libprotobuf-dev protobuf-compiler libudev-dev libboost-chrono-dev libboost-date-time-dev libboost-filesystem-dev libboost-locale-dev libboost-program-options-dev libboost-regex-dev libboost-serialization-dev libboost-system-dev libboost-thread-dev python3 ccache doxygen graphviz git curl autoconf libtool gperf p7zip-full libzmq5 libgtest-dev curl libcurl4-openssl-dev libcjson-dev libuv1-dev"
+# XCASH_DPOPS_PACKAGES="build-essential cmake pkg-config libboost-all-dev libssl-dev libzmq3-dev libunbound-dev libsodium-dev libminiupnpc-dev libunwind8-dev liblzma-dev libreadline6-dev libldns-dev libexpat1-dev libgtest-dev doxygen graphviz libpcsclite-dev git screen p7zip-full moreutils wget iptables jq curl iproute2 libjansson-dev libcurl4-openssl-dev libcjson-dev"
+XCASH_DPOPS_PACKAGES="build-essential cmake pkg-config libssl-dev libzmq3-dev libunbound-dev libsodium-dev libunwind8-dev liblzma-dev libreadline6-dev libexpat1-dev qttools5-dev-tools libhidapi-dev libusb-1.0-0-dev libprotobuf-dev protobuf-compiler libudev-dev libboost-chrono-dev libboost-date-time-dev libboost-filesystem-dev libboost-locale-dev libboost-program-options-dev libboost-regex-dev libboost-serialization-dev libboost-system-dev libboost-thread-dev python3 ccache doxygen graphviz git curl autoconf libtool gperf p7zip-full libzmq5 libgtest-dev curl libcurl4-openssl-dev libcjson-dev"
 CURRENT_XCASH_WALLET_INFORMATION=""
 PUBLIC_ADDRESS=""
 
@@ -865,6 +865,24 @@ function create_systemd_service_files()
   echo
 }
 
+
+function install_libuv()
+{
+  echo -ne "${COLOR_PRINT_YELLOW}Installing libuv${END_COLOR_PRINT}"
+  cd "${XCASH_DPOPS_INSTALLATION_DIR}"
+  wget https://dist.libuv.org/dist/v1.51.0/libuv-v1.51.0.tar.gz &>/dev/null
+  mkdir libuv && tar -xf libuv-v1.51.0.tar.gz --strip-components=1 -C libuv &>/dev/null
+  sudo rm -rf libuv-v1.51.0.tar.gz &>/dev/null
+  cd libuv
+  sh autogen.sh &>/dev/null
+  ./configure &>/dev/null
+  make &>/dev/null
+  sudo make install &>/dev/null
+  sudo ldconfig &>/dev/null
+  echo -ne "\r${COLOR_PRINT_GREEN}Installing libuv${END_COLOR_PRINT}"
+  echo
+}
+
 #function build_libssl11()
 #{
 #  echo -ne "${COLOR_PRINT_YELLOW}Installing Libssl1.1${END_COLOR_PRINT}"
@@ -1025,6 +1043,7 @@ function install_xcash_dpops()
   install_mongodb_tools
   install_mongodb_mongosh
   install_mongoc_driver
+  install_libuv
   download_xcash_dpops
   build_xcash_dpops
 
