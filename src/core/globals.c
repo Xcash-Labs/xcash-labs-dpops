@@ -57,6 +57,8 @@ NetworkNode network_nodes[] = {
      "d6d46ef68fb24e13a307bce08e3b31ecdd6601776f5e136bf1be7f5dcfff45c7",0},
     {"XCA1b6Sg5QVBX4jrctQ9SVUcHFqpaGST6bqtFpyoQadTX8SaDs92xR8iec3VfaXKzhYijFiMfwoM4TuYRgy6NXzn5titJnWbra", "seeds.xcashseeds.uk",
      "63232aa1b020a772945bf50ce96db9a04242583118b5a43952f0aaf9ecf7cfbb",0},
+     {"XCA1YfTaE1EUJ2cn63ifPjjFYNvoJ4rhUAamj9qqPzp19zd5qwSmWBtPLsop5StXRsZ6bshYp6pcG5BPPrfLfN3q4ALapSU2fu", "seeds.xcashseeds.cc",
+      "0abbaa6644e747447f71bb024d6df74c98f53b2bb9f5361e4638673b3a3479c2",0},
     // Sentinel value (empty entry to mark the end)
     {NULL, NULL, NULL, 0}};
 
