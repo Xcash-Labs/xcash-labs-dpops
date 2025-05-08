@@ -54,11 +54,13 @@ block_verifiers_list_t next_block_verifiers_list;
 
 NetworkNode network_nodes[] = {
     {"XCA1T1uxPiS8oprWpaCrUiiFcQB3KEriiUVqeeqnVtiKakSZmrZhoXKGbzqn4wj3EXY4JFPdJHqGr7iRHVxF4yyE28NvzLQgZf", "seeds.xcashseeds.us",
-     "d6d46ef68fb24e13a307bce08e3b31ecdd6601776f5e136bf1be7f5dcfff45c7",0},
+      "d6d46ef68fb24e13a307bce08e3b31ecdd6601776f5e136bf1be7f5dcfff45c7",0},
     {"XCA1b6Sg5QVBX4jrctQ9SVUcHFqpaGST6bqtFpyoQadTX8SaDs92xR8iec3VfaXKzhYijFiMfwoM4TuYRgy6NXzn5titJnWbra", "seeds.xcashseeds.uk",
-     "63232aa1b020a772945bf50ce96db9a04242583118b5a43952f0aaf9ecf7cfbb",0},
-     {"XCA1YfTaE1EUJ2cn63ifPjjFYNvoJ4rhUAamj9qqPzp19zd5qwSmWBtPLsop5StXRsZ6bshYp6pcG5BPPrfLfN3q4ALapSU2fu", "seeds.xcashseeds.cc",
+      "63232aa1b020a772945bf50ce96db9a04242583118b5a43952f0aaf9ecf7cfbb",0},
+    {"XCA1YfTaE1EUJ2cn63ifPjjFYNvoJ4rhUAamj9qqPzp19zd5qwSmWBtPLsop5StXRsZ6bshYp6pcG5BPPrfLfN3q4ALapSU2fu", "seeds.xcashseeds.cc",
       "0abbaa6644e747447f71bb024d6df74c98f53b2bb9f5361e4638673b3a3479c2",0},
+    {"XCA1aQciNagSNaMftRCShnMMkQRH4vDN9LiH7VurtS1pWwmPcWkeKEX8anGQkaUnceWBJKiEmYCZZEtrYYAd1GMLAPF11FS6Nu", "seeds.xcashseeds.me",
+      "e735f2dea3a1894936088c0423e565634deb7b0cf74412debc5dbc36766dfeaf",0},
     // Sentinel value (empty entry to mark the end)
     {NULL, NULL, NULL, 0}};
 
