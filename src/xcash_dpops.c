@@ -112,69 +112,12 @@ void cleanup_data_structures(void) {
 
   pthread_mutex_destroy(&hash_mutex);
 
-  free(server_limit_IP_address_list);
+  //free(server_limit_IP_address_list);
   free(server_limit_public_address_list);
 
-  // initialize the blockchain_data struct
-  free(blockchain_data.network_version_data);
-  free(blockchain_data.timestamp_data);
-  free(blockchain_data.previous_block_hash_data);
-  free(blockchain_data.nonce_data);
-  free(blockchain_data.block_reward_transaction_version_data);
-  free(blockchain_data.unlock_block_data);
-  free(blockchain_data.block_reward_input_data);
-  free(blockchain_data.vin_type_data);
-  free(blockchain_data.block_height_data);
-  free(blockchain_data.block_reward_output_data);
-  free(blockchain_data.block_reward_data);
-  free(blockchain_data.stealth_address_output_tag_data);
-  free(blockchain_data.stealth_address_output_data);
-  free(blockchain_data.extra_bytes_size_data);
-  free(blockchain_data.transaction_public_key_tag_data);
-  free(blockchain_data.transaction_public_key_data);
-  free(blockchain_data.extra_nonce_tag_data);
-  free(blockchain_data.reserve_bytes_size_data);
-  free(blockchain_data.blockchain_reserve_bytes.block_producer_delegates_name_data);
-  free(blockchain_data.blockchain_reserve_bytes.block_producer_delegates_name);
-  free(blockchain_data.blockchain_reserve_bytes.block_producer_public_address_data);
-  free(blockchain_data.blockchain_reserve_bytes.block_producer_public_address);
-  free(blockchain_data.blockchain_reserve_bytes.block_producer_node_backup_count_data);
-  free(blockchain_data.blockchain_reserve_bytes.block_producer_node_backup_count);
-  free(blockchain_data.blockchain_reserve_bytes.block_producer_backup_nodes_names_data);
-  free(blockchain_data.blockchain_reserve_bytes.block_producer_backup_nodes_names);
-  free(blockchain_data.blockchain_reserve_bytes.vrf_secret_key_data);
-  free(blockchain_data.blockchain_reserve_bytes.vrf_secret_key);
-  free(blockchain_data.blockchain_reserve_bytes.vrf_public_key_data);
-  free(blockchain_data.blockchain_reserve_bytes.vrf_public_key);
-  free(blockchain_data.blockchain_reserve_bytes.vrf_alpha_string_data);
-  free(blockchain_data.blockchain_reserve_bytes.vrf_alpha_string);
-  free(blockchain_data.blockchain_reserve_bytes.vrf_proof_data);
-  free(blockchain_data.blockchain_reserve_bytes.vrf_proof);
-  free(blockchain_data.blockchain_reserve_bytes.vrf_beta_string_data);
-  free(blockchain_data.blockchain_reserve_bytes.vrf_beta_string);
-  free(blockchain_data.blockchain_reserve_bytes.vrf_data_round);
-  free(blockchain_data.blockchain_reserve_bytes.vrf_data);
-  free(blockchain_data.blockchain_reserve_bytes.previous_block_hash_data);
-
-  for (count = 0; count < BLOCK_VERIFIERS_TOTAL_AMOUNT; count++) {
-    free(blockchain_data.blockchain_reserve_bytes.next_block_verifiers_public_address_data[count]);
-    free(blockchain_data.blockchain_reserve_bytes.next_block_verifiers_public_address[count]);
-    free(blockchain_data.blockchain_reserve_bytes.block_validation_node_signature_data[count]);
-    free(blockchain_data.blockchain_reserve_bytes.block_validation_node_signature[count]);
-    free(blockchain_data.blockchain_reserve_bytes.block_verifiers_vrf_secret_key_data[count]);
-    free(blockchain_data.blockchain_reserve_bytes.block_verifiers_vrf_secret_key[count]);
-    free(blockchain_data.blockchain_reserve_bytes.block_verifiers_vrf_public_key_data[count]);
-    free(blockchain_data.blockchain_reserve_bytes.block_verifiers_vrf_public_key[count]);
-    free(blockchain_data.blockchain_reserve_bytes.block_verifiers_random_data[count]);
-    free(blockchain_data.blockchain_reserve_bytes.block_verifiers_random_data_text[count]);
-  }
-  free(blockchain_data.ringct_version_data);
-  free(blockchain_data.transaction_amount_data);
-
-  for (count = 0; count < MAXIMUM_TRANSACATIONS_PER_BLOCK; count++) {
-    free(blockchain_data.transactions[count]);
-  }
-  fprintf(stderr, "Daemon shutting down...\n");
+  // free the blockchain_data struct
+  // free(blockchain_data.network_version_data);
+  // free anything that needs freeing...
 
   return;
 }
@@ -318,6 +261,6 @@ int main(int argc, char *argv[]) {
   stop_tcp_server();
   shutdown_database();
   INFO_PRINT("Database closed");
-  //cleanup_data_structures();
+  cleanup_data_structures();
   return 0;
 }
