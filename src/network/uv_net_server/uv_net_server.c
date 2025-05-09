@@ -357,12 +357,10 @@ void close_callback(uv_handle_t *handle, void *arg) {
   (void)arg;
 
   if (!handle) {
-      ERROR_PRINT("close_callback() called with NULL handle");
       return;
   }
 
   if (!uv_is_closing(handle)) {
-      DEBUG_PRINT("Closing handle: type=%d, address=%p", handle->type, (void *)handle);
       uv_close(handle, on_handle_closed);  // safer than NULL
   }
 }
