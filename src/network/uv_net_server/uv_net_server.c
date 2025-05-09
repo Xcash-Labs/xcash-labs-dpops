@@ -346,6 +346,10 @@ bool start_tcp_server(int port) {
 
 void on_handle_closed(uv_handle_t* handle) {
   if (!handle) return;
+
+  DEBUG_PRINT("Handle fully closed: type=%d, address=%p", handle->type, (void *)handle);
+
+  // DO NOT free client here if it's already handled elsewhere
   handle->data = NULL;
 }
 
@@ -358,7 +362,8 @@ void close_callback(uv_handle_t *handle, void *arg) {
   }
 
   if (!uv_is_closing(handle)) {
-      uv_close(handle, on_handle_closed);
+      DEBUG_PRINT("Closing handle: type=%d, address=%p", handle->type, (void *)handle);
+      uv_close(handle, on_handle_closed);  // safer than NULL
   }
 }
 
@@ -377,6 +382,8 @@ void stop_tcp_server() {
   uv_stop(&loop);
   if (uv_loop_close(&loop) != 0) {
     ERROR_PRINT("Failed to close the event loop. Some handles are still open.");
+  } else {
+    INFO_PRINT("Event loop closed successfully.");
   }
 }
 
