@@ -86,7 +86,6 @@ Name: cleanup_data_structure
 Description: Clean up before ending
 ---------------------------------------------------------------------------------------------------------*/
 void cleanup_data_structures(void) {
-  DEBUG_PRINT("End of cleanup.....");
   pthread_rwlock_destroy(&rwlock);
   pthread_rwlock_destroy(&rwlock_reserve_proofs);
   pthread_mutex_destroy(&lock);
@@ -260,6 +259,6 @@ int main(int argc, char *argv[]) {
   stop_tcp_server();
   shutdown_database();
   INFO_PRINT("Database closed");
-  cleanup_data_structures();
+//  cleanup_data_structures();
   return 0;
 }
