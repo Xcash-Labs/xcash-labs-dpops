@@ -40,7 +40,7 @@ typedef struct
 } xcash_db_sync_prehash_t;
 
 
-bool hash_delegates_collection(mongoc_client_t *client, char *out_hash_hex);
+bool hash_delegates_collection(char *out_hash_hex);
 
 
 
