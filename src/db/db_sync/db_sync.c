@@ -1,5 +1,80 @@
 #include "db_sync.h"
 
+bool hash_delegates_collection(char *out_hash_hex)
+{
+    if (!out_hash_hex || !database_client_thread_pool) return XCASH_ERROR;
+
+    mongoc_client_t *client = mongoc_client_pool_pop(database_client_thread_pool);
+    if (!client) return XCASH_ERROR;
+
+    mongoc_collection_t *collection = NULL;
+    mongoc_cursor_t *cursor = NULL;
+    bson_t *query = NULL;
+    bson_t *opts = NULL;
+    EVP_MD_CTX *ctx = NULL;
+    const bson_t *doc = NULL;
+    bool result = XCASH_ERROR;
+
+    // Step 1: Access collection
+    collection = mongoc_client_get_collection(client, DATABASE_NAME, DB_COLLECTION_DELEGATES);
+    if (!collection) goto cleanup;
+
+    // Step 2: Build query and sort options
+    query = bson_new();
+    opts = BCON_NEW("sort", "{", "_id", BCON_INT32(1), "}");
+    if (!query || !opts) goto cleanup;
+
+    // Step 3: Create cursor
+    cursor = mongoc_collection_find_with_opts(collection, query, opts, NULL);
+    if (!cursor) goto cleanup;
+
+    // Step 4: Initialize hash
+    ctx = EVP_MD_CTX_new();
+    if (!ctx || EVP_DigestInit_ex(ctx, EVP_md5(), NULL) != 1) goto cleanup;
+
+    // Step 5: Feed documents into hash
+    while (mongoc_cursor_next(cursor, &doc)) {
+        char *json = bson_as_canonical_extended_json(doc, NULL);
+        if (json) {
+            EVP_DigestUpdate(ctx, json, strlen(json));
+            bson_free(json);
+        }
+    }
+
+    // Step 6: Finalize
+    unsigned char hash_bin[MD5_DIGEST_LENGTH];
+    if (EVP_DigestFinal_ex(ctx, hash_bin, NULL) != 1) goto cleanup;
+
+    bin_to_hex(hash_bin, MD5_DIGEST_LENGTH, out_hash_hex);
+    result = XCASH_OK;
+
+cleanup:
+    if (ctx) EVP_MD_CTX_free(ctx);
+    if (cursor) mongoc_cursor_destroy(cursor);
+    if (opts) bson_destroy(opts);
+    if (query) bson_destroy(query);
+    if (collection) mongoc_collection_destroy(collection);
+    if (client) mongoc_client_pool_push(database_client_thread_pool, client);
+
+    return result;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 bool send_db_sync_request_from_host(const char* sync_source_host, xcash_dbs_t db_type, size_t start_db_index, response_t*** reply) {
     size_t dbs_count = get_db_sub_count(db_type);
 
@@ -540,6 +615,8 @@ bool check_sync_nodes_majority_list(response_t** replies, xcash_node_sync_info_t
 
     // char parse_buffer[DATA_HASH_LENGTH + 1] = {0}; no longer used
     // char record_name[DB_COLLECTION_NAME_SIZE] = {0}; no longer used
+
+ 
 
     char parse_buffer[DATA_HASH_LENGTH + 1] = {0};
     size_t sync_state_index = 0;

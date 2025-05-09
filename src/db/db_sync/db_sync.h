@@ -39,6 +39,11 @@ typedef struct
 
 } xcash_db_sync_prehash_t;
 
+
+bool hash_delegates_collection(mongoc_client_t *client, char *out_hash_hex);
+
+
+
 void show_majority_statistics(const xcash_node_sync_info_t* majority_list, size_t items_count);
 bool get_sync_nodes_majority_list_top(xcash_node_sync_info_t** majority_list_result, size_t* majority_count_result);
 bool initial_db_sync_check(size_t* majority_count, xcash_node_sync_info_t** majority_list_result);

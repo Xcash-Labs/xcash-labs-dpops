@@ -67,6 +67,7 @@ void server_received_msg_get_sync_info(server_client_t *client, const char *MESS
 {
     char parse_block_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
     char parsed_address[XCASH_WALLET_LENGTH + 1] = {0};
+    char parsed_delegates_hash[MD5_HASH_SIZE + 1] = {0};
 
     DEBUG_PRINT("Received %s, %s", __func__, "XCASH_GET_SYNC_INFO");
 
@@ -80,7 +81,13 @@ void server_received_msg_get_sync_info(server_client_t *client, const char *MESS
         return;
     }
 
-    DEBUG_PRINT("Parsed public_address: %s, remote block_height: %s", parsed_address, parse_block_height);
+    if (parse_json_data(MESSAGE, "delegates_hash", parse_delegates_hash, sizeof(parsed_delegates_hash)) == 0) {
+        ERROR_PRINT("Can't parse 'delegates_hash' from %s", client->client_ip);
+        return;
+    }
+
+    DEBUG_PRINT("Parsed remote public_address: %s, block_height: %s, delegates_hash: %s", parsed_address, parse_block_height, 
+        parsed_delegates_hash);
 
     // Wait for delegates table to load before searching
     if (!atomic_load(&delegates_loaded)) {
@@ -91,6 +98,24 @@ void server_received_msg_get_sync_info(server_client_t *client, const char *MESS
 
     for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
         if (strcmp(delegates_all[i].public_address, parsed_address) == 0) {
+            // Compare block heights
+            char local_block_height_str[32];
+            snprintf(local_block_height_str, sizeof(local_block_height_str), "%llu", current_block_height);
+    
+            if (strcmp(parse_block_height, local_block_height_str) != 0) {
+                DEBUG_PRINT("Block height mismatch for %s: remote=%s, local=%s",
+                            parsed_address, parse_block_height, local_block_height_str);
+                break;
+            }
+    
+            // Compare delegate list hash
+            if (strcmp(parsed_delegates_hash, delegates_hash) != 0) {
+                DEBUG_PRINT("Delegates hash mismatch for %s: remote=%s, local=%s",
+                            parsed_address, parsed_delegates_hash, delegates_hash);
+                break;
+            }
+    
+            // All checks passed — mark online
             strncpy(delegates_all[i].online_status_ck, "true", sizeof(delegates_all[i].online_status_ck));
             delegates_all[i].online_status_ck[sizeof(delegates_all[i].online_status_ck) - 1] = '\0';
             found = true;
@@ -98,11 +123,18 @@ void server_received_msg_get_sync_info(server_client_t *client, const char *MESS
             break;
         }
     }
-
+    
     if (!found) {
         DEBUG_PRINT("Delegate with address %s not found in delegates_all[]", parsed_address);
     }
 }
+
+
+
+
+
+
+
 
 void server_received_msg_get_block_producers(server_client_t *client, const char *MESSAGE)
 {

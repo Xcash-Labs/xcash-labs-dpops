@@ -295,8 +295,8 @@ bool generate_and_request_vrf_data_msg(char** message)
 }
 
 bool create_sync_msg(char** message) {
-  // Only two key-value pairs + NULL terminator
-  const int PARAM_COUNT = 3;
+  // Only three key-value pairs + NULL terminator
+  const int PARAM_COUNT = 4;
   const char** param_list = calloc(PARAM_COUNT * 2, sizeof(char*));  // key-value pairs
 
   if (!param_list) {
@@ -310,6 +310,9 @@ bool create_sync_msg(char** message) {
 
   param_list[param_index++] = "public_address";
   param_list[param_index++] = xcash_wallet_public_address;
+
+  param_list[param_index++] = "delegates_db_hash";
+  param_list[param_index++] = delegates_hash;
 
   param_list[param_index] = NULL;  // NULL terminate
 

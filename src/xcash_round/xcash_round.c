@@ -56,7 +56,7 @@ int select_block_producer_from_vrf(void) {
  * and uses `current_round_part` for identification and message signing context.
  *
  * @return xcash_round_result_t - ROUND_OK if block was created and broadcast successfully,
- *                                ROUND_SKIP if round was skipped due to node majority failure or not selected as producer,
+ *                                ROUND_SKIP if round was skipped due to node majority failure,
  *                                ROUND_ERROR on critical errors.
  */
 xcash_round_result_t process_round(void) {
@@ -67,8 +67,8 @@ xcash_round_result_t process_round(void) {
   // Update with fresh delegates list
   delegates_loaded = false;
   if (!fill_delegates_from_db()) {
-    DEBUG_PRINT("Can't read delegates list from DB");
-    return ROUND_ERROR;
+    ERROR_PRINT("Can't read delegates list from DB");
+    return ROUND_ERROR_RD;
   }
   delegates_loaded = true; 
 
@@ -81,17 +81,24 @@ xcash_round_result_t process_round(void) {
   DEBUG_PRINT("Found %d active delegates out of %d total slots", total_delegates, BLOCK_VERIFIERS_TOTAL_AMOUNT);
 
   // Get the current block height Then Sync the databases and build the majority list
-  INFO_STAGE_PRINT("Part 2 - Get Current Block Height and Previous Block Hash");
+  INFO_STAGE_PRINT("Part 2 - Get Current Block Height, Previous Block Hash, and Delegates Hash");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 2);
   if (get_current_block_height(current_block_height) != XCASH_OK) {
     ERROR_PRINT("Can't get current block height");
-    return ROUND_ERROR;
+    return ROUND_RETRY;
   }
 
   // Get the previous block hash
   memset(previous_block_hash, 0, BLOCK_HASH_LENGTH);
   if (get_previous_block_hash(previous_block_hash) != XCASH_OK) {
     ERROR_PRINT("Can't get previous block hash");
+    return ROUND_RETRY;
+  }
+
+  // Get hash for delegates collection
+  delegates_hash = {0};
+  if(!hash_delegates_collection(delegates_hash)) {
+    ERROR_PRINT("Failed to create delegates MD5 hash");
     return ROUND_ERROR;
   }
 
@@ -108,18 +115,22 @@ xcash_round_result_t process_round(void) {
       ERROR_PRINT("Failed to send SYNC message.");
       free(sync_message);
       cleanup_responses(responses);
-      return ROUND_SKIP;
+      return ROUND_ERROR;
     }
   } else {
     ERROR_PRINT("Failed to generate SYNC message");
     free(sync_message);  // safe even if NULL
-    return ROUND_SKIP;
+    return ROUND_ERROR;
   }
 
   INFO_STAGE_PRINT("Waiting for Delegates to sync...");
-  if (sync_block_verifiers_minutes_and_seconds(0, 20) == XCASH_ERROR)
-      return ROUND_SKIP;
+  if (sync_block_verifiers_minutes_and_seconds(0, 25) == XCASH_ERROR) {
+    INFO_PRINT("Failed to sync Delegates in the aloted time");
+    return ROUND_ERROR;
+  }
 
+  INFO_STAGE_PRINT("Part 4 - Checking Block Verifiers Majority and Minimum Online Requirement");
+  snprintf(current_round_part, sizeof(current_round_part), "%d", 4);
   // Fill block verifiers list with proven online nodes
   int nodes_majority_count = 0;
   pthread_mutex_lock(&majority_vote_lock);
@@ -135,10 +146,10 @@ xcash_round_result_t process_round(void) {
     }
   }
   pthread_mutex_unlock(&majority_vote_lock);
-  INFO_PRINT("Received sync info from %d delegates", nodes_majority_count);
+  DEBUG_PRINT("Received sync info from %d delegates", nodes_majority_count);
 
   if (nodes_majority_count < BLOCK_VERIFIERS_VALID_AMOUNT) {
-    INFO_PRINT_STATUS_FAIL("Failed to reach the minimum number of online nodes: [%d/%d]", nodes_majority_count, BLOCK_VERIFIERS_VALID_AMOUNT);
+    INFO_PRINT_STATUS_FAIL("Failed to reach the required number of online nodes: [%d/%d]", nodes_majority_count, BLOCK_VERIFIERS_VALID_AMOUNT);
     return ROUND_SKIP;
   }
 
@@ -151,21 +162,8 @@ xcash_round_result_t process_round(void) {
   
   INFO_PRINT_STATUS_OK("Data majority reached. Online Nodes: [%d/%d]", nodes_majority_count, required_majority);
   
-  // Update online status from majority list
-  INFO_STAGE_PRINT("Nodes online for block %s", current_block_height);
-
-  // do I need to update the db status of a delegate in db here?????????? wait until after round and only do by seed nodes?
-
-
-
-
-
-  // Sync start
-  if (sync_block_verifiers_minutes_and_seconds(1, 0) == XCASH_ERROR)
-      return ROUND_SKIP;
-
-  INFO_STAGE_PRINT("Part 3 - Create VRF Data and Send To All Block Verifiers");
-  snprintf(current_round_part, sizeof(current_round_part), "%d", 3);
+  INFO_STAGE_PRINT("Part 5 - Create VRF Data and Send To All Block Verifiers");
+  snprintf(current_round_part, sizeof(current_round_part), "%d", 5);
   
   responses = NULL;
   char* vrf_message = NULL;
@@ -187,11 +185,13 @@ xcash_round_result_t process_round(void) {
   }
 
   // Sync start
-  if (sync_block_verifiers_minutes_and_seconds(1, 0) == XCASH_ERROR)
-      return ROUND_SKIP;
+  if (sync_block_verifiers_minutes_and_seconds(0, 30) == XCASH_ERROR) {
+    INFO_PRINT("Failed to sync VRF data in the aloted time");
+    return ROUND_ERROR;
+  }
 
-  INFO_STAGE_PRINT("Part 4 - Select Block Creator From VRF Data");
-  snprintf(current_round_part, sizeof(current_round_part), "%d", 4);
+  INFO_STAGE_PRINT("Part 6 - Select Block Creator From VRF Data");
+  snprintf(current_round_part, sizeof(current_round_part), "%d", 6);
 
   // PoS bootstrapping block
   int producer_indx = -1;
@@ -225,6 +225,8 @@ xcash_round_result_t process_round(void) {
   int block_creation_result = block_verifiers_create_block();
 
   return (xcash_round_result_t)block_creation_result;
+
+
 }
 
 /*---------------------------------------------------------------------------------------------------------
@@ -250,6 +252,7 @@ void start_block_production(void) {
   struct timeval current_time;
   xcash_round_result_t round_result = ROUND_OK;
   bool current_block_healthy = false;
+  bool retried = false;
 
   // Wait for node to be fully synced
   while (!current_block_healthy) {
@@ -285,20 +288,33 @@ void start_block_production(void) {
       continue;
     }
 
-    bool round_created = false;
-
     // Standard block production
+    bool round_created = false;
     round_result = process_round();
+
     if (round_result == ROUND_OK) {
       round_created = true;
-    } else if (round_result == ROUND_RETRY) {
-      INFO_PRINT("Round retry. Waiting before trying ...");
-      sleep(10);  // Allow 2 retries max within 25s window
-      continue;
     } else {
       round_created = false;
-    }
 
+      if (round_result == ROUND_ERROR) {
+        if (strcmp(online_status, online_status_ck) != 0) {
+          // Strings are different need to update nodes online status
+        }
+      } else if (round_result == ROUND_ERROR_RD {
+        if (strcmp(online_status, online_status_ck) != 0) {
+          // Strings are different need to update nodes online status
+        }
+        // need to add code to sync the delegates collection
+
+      } else if (round_result == ROUND_RETRY) {
+        retried = true;
+        INFO_PRINT("Round retry. Waiting before trying ...");
+        sleep(3);  
+        continue;
+      }
+    }
+    
     if (round_created) {
       INFO_PRINT_STATUS_OK("Block %s created successfully", current_block_height);
     } else {
