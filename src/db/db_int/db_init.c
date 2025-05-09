@@ -5,7 +5,6 @@ bool initialize_database(void){
 }
 
 void shutdown_database(void){
-    usleep(5000000);  // 1 second
     shutdown_mongo_database(&database_client_thread_pool);
 }
 
