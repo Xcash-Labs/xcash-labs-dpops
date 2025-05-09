@@ -295,7 +295,7 @@ void start_block_production(void) {
     } else {
       round_created = false;
 
-      if (round_result == ROUND_ERROR || round_result == ROUND_ERROR_RD)
+      if (round_result == ROUND_ERROR || round_result == ROUND_ERROR_RD) {
         for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
           if (strcmp(delegates_all[i].public_address, xcash_wallet_public_address) == 0) {
             // Found current delegate
