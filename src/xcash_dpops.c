@@ -86,6 +86,7 @@ Name: cleanup_data_structure
 Description: Clean up before ending
 ---------------------------------------------------------------------------------------------------------*/
 void cleanup_data_structures(void) {
+  DEBUG_PRINT("End of cleanup.....");
   pthread_rwlock_destroy(&rwlock);
   pthread_rwlock_destroy(&rwlock_reserve_proofs);
   pthread_mutex_destroy(&lock);
@@ -117,7 +118,6 @@ void cleanup_data_structures(void) {
   // free the blockchain_data struct
   // free(blockchain_data.network_version_data);
   // free anything that needs freeing...
-  DEBUG_PRINT("End of cleanup.....");
   return;
 }
 
