@@ -313,9 +313,11 @@ void start_block_production(void) {
           }
         }
       } else if (round_result == ROUND_RETRY) {
-        retried = true;
-        INFO_PRINT("Round retry. Waiting before trying ...");
-        sleep(3);  
+        if (!retried) {
+          retried = true;
+          INFO_PRINT("Retring the Round...");
+          sleep(3);  
+        }
         continue;
       }
     }
