@@ -112,12 +112,12 @@ void cleanup_data_structures(void) {
   pthread_mutex_destroy(&hash_mutex);
 
   //free(server_limit_IP_address_list);
-  free(server_limit_public_address_list);
+  //free(server_limit_public_address_list);
 
   // free the blockchain_data struct
   // free(blockchain_data.network_version_data);
   // free anything that needs freeing...
-
+  DEBUG_PRINT("End of cleanup.....");
   return;
 }
 
