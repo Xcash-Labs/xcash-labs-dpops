@@ -100,7 +100,7 @@ void server_received_msg_get_sync_info(server_client_t *client, const char *MESS
         if (strcmp(delegates_all[i].public_address, parsed_address) == 0) {
             // Compare block heights
             char local_block_height_str[32];
-            snprintf(local_block_height_str, sizeof(local_block_height_str), "%llu", current_block_height);
+            snprintf(local_block_height_str, sizeof(local_block_height_str), "%s", current_block_height);
     
             if (strcmp(parse_block_height, local_block_height_str) != 0) {
                 DEBUG_PRINT("Block height mismatch for %s: remote=%s, local=%s",
