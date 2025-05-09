@@ -98,7 +98,6 @@ void cleanup_data_structures(void) {
   pthread_mutex_destroy(&update_current_block_height_lock);
   pthread_mutex_destroy(&hash_mutex);
 
-  size_t count;
   pthread_mutex_destroy(&lock);
   pthread_mutex_destroy(&database_lock);
   pthread_mutex_destroy(&verify_network_block_lock);
