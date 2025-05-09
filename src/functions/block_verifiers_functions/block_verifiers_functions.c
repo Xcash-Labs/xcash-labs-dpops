@@ -81,57 +81,54 @@ Return: 0 if an error has occured, 1 if successfull
 int block_verifiers_create_block(void) {
   char data[BUFFER_SIZE] = {0};
 
-  // Sync start
-  INFO_STAGE_PRINT("Waiting for block synchronization start time...");
-  if (sync_block_verifiers_minutes_and_seconds(1, 10) == XCASH_ERROR)
-      return ROUND_SKIP;
-
   // Confirm block height hasn't drifted (this node may be behind the network)
-  INFO_STAGE_PRINT("Part 5 - Confirm block height hasn't drifted");
-  snprintf(current_round_part, sizeof(current_round_part), "%d", 5);
+  INFO_STAGE_PRINT("Part 7 - Confirm block height hasn't drifted");
+  snprintf(current_round_part, sizeof(current_round_part), "%d", 7);
   if (get_current_block_height(data) == 1 && strncmp(current_block_height, data, BUFFER_SIZE) != 0) {
       WARNING_PRINT("Your block height is not synced correctly, waiting for next round");
-      return ROUND_NEXT;
+      return ROUND_ERROR;
   }
+
+
+// will need to get consence vote befor adding nodes
+
 
   char block_blob[BUFFER_SIZE] = {0};
   // Only the block producer completes the following steps, producer_refs is an array in case we decide to add 
   // backup producers in the future
   if (strcmp(producer_refs[0].public_address, xcash_wallet_public_address) == 0) {
 
-    // Part 3 - Create block template
-    INFO_STAGE_PRINT("Part 6 - Create block template");
-    snprintf(current_round_part, sizeof(current_round_part), "%d", 6);
+    // Create block template
+    INFO_STAGE_PRINT("Part 8 - Create block template");
+    snprintf(current_round_part, sizeof(current_round_part), "%d", 8);
     if (get_block_template(block_blob, BUFFER_SIZE) == 0) {
-      return ROUND_NEXT;
+      return ROUND_ERROR;
     }
 
-    if (sync_block_verifiers_minutes_and_seconds(1, 20) == XCASH_ERROR)
-      return ROUND_SKIP;
     if (strncmp(block_blob, "", 1) == 0) {
       WARNING_PRINT("Did not receive block template");
-      return ROUND_NEXT;
+      return ROUND_ERROR;
     }
 
-    // Part 7 - Create block template
-    INFO_STAGE_PRINT("Part 7 - Add VRF Data And Sign Block Blob");
-    snprintf(current_round_part, sizeof(current_round_part), "%d", 7);
+    // Create block template
+    INFO_STAGE_PRINT("Part 9 - Add VRF Data And Sign Block Blob");
+    snprintf(current_round_part, sizeof(current_round_part), "%d", 9);
     if(!add_vrf_extra_and_sign(block_blob)) {
-      return ROUND_NEXT;
+      return ROUND_ERROR;
     }
 
-    if (sync_block_verifiers_minutes_and_seconds(1, 40) == XCASH_ERROR)
-    return ROUND_SKIP;
-
-    // Part 5 - Submit block
+    // Part 10 - Submit block
     if (!submit_block_template(block_blob)) {
-      return ROUND_NEXT;
+      return ROUND_ERROR;
     }
 
     INFO_PRINT_STATUS_OK("Block signature sent");
 
 
   }
+
+
+// sync .........
 
   // Final step - Update DB
   INFO_STAGE_PRINT("Part 9 - Update DB");

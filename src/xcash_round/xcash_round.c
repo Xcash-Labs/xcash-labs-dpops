@@ -225,8 +225,6 @@ xcash_round_result_t process_round(void) {
   int block_creation_result = block_verifiers_create_block();
 
   return (xcash_round_result_t)block_creation_result;
-
-
 }
 
 /*---------------------------------------------------------------------------------------------------------
@@ -297,16 +295,23 @@ void start_block_production(void) {
     } else {
       round_created = false;
 
-      if (round_result == ROUND_ERROR) {
-        if (strcmp(online_status, online_status_ck) != 0) {
-          // Strings are different need to update nodes online status
+      if (round_result == ROUND_ERROR || round_result == ROUND_ERROR_RD)
+        for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
+          if (strcmp(delegates_all[i].public_address, xcash_wallet_public_address) == 0) {
+            // Found current delegate
+            if (strcmp(delegates_all[i].online_status, delegates_all[i].online_status_ck) != 0) {
+              DEBUG_PRINT("Online status mismatch, updating...");
+              strncpy(delegates_all[i].online_status, delegates_all[i].online_status_ck,
+                      sizeof(delegates_all[i].online_status));
+              delegates_all[i].online_status[sizeof(delegates_all[i].online_status) - 1] = '\0';
+              // update collection later
+              if (round_result == ROUND_ERROR_RD) {
+                // need to add code to sync the delegates collection
+              }
+            }
+            break;
+          }
         }
-      } else if (round_result == ROUND_ERROR_RD {
-        if (strcmp(online_status, online_status_ck) != 0) {
-          // Strings are different need to update nodes online status
-        }
-        // need to add code to sync the delegates collection
-
       } else if (round_result == ROUND_RETRY) {
         retried = true;
         INFO_PRINT("Round retry. Waiting before trying ...");
