@@ -344,12 +344,6 @@ bool start_tcp_server(int port) {
   return XCASH_OK;
 }
 
-void on_handle_closed_old(uv_handle_t* handle) {
-  DEBUG_PRINT("Handle fully closed: type=%d, address=%p", handle->type, (void *)handle);
-  handle->data = NULL;
-}
-
-
 void on_handle_closed(uv_handle_t* handle) {
   if (!handle) return;
 
@@ -375,7 +369,7 @@ void close_callback(uv_handle_t *handle, void *arg) {
 
   if (!uv_is_closing(handle)) {
       DEBUG_PRINT("Closing handle: type=%d, address=%p", handle->type, (void *)handle);
-      uv_close(handle, on_handle_closed);  // safer than NULL
+//      uv_close(handle, on_handle_closed);  // safer than NULL
   }
 }
 
