@@ -5,6 +5,7 @@ bool initialize_database(void){
 }
 
 void shutdown_database(void){
+    usleep(3000000);  // 1 second
     shutdown_mongo_database(&database_client_thread_pool);
 }
 
@@ -31,6 +32,7 @@ bool initialize_mongo_database(const char *mongo_uri, mongoc_client_pool_t **db_
 }
 
 void shutdown_mongo_database(mongoc_client_pool_t **db_client_thread_pool) {
+    DEBUG_PRINT("Shuting down..........");
     if (*db_client_thread_pool) {
         mongoc_client_pool_destroy(*db_client_thread_pool);
         *db_client_thread_pool = NULL;
