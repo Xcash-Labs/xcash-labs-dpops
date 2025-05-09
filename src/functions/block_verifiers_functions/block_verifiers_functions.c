@@ -308,7 +308,7 @@ bool create_sync_msg(char** message) {
   param_list[param_index++] = "public_address";
   param_list[param_index++] = xcash_wallet_public_address;
 
-  param_list[param_index++] = "delegates_db_hash";
+  param_list[param_index++] = "delegates_hash";
   param_list[param_index++] = delegates_hash;
 
   param_list[param_index] = NULL;  // NULL terminate
