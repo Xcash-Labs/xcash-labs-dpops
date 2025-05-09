@@ -41,6 +41,11 @@ bool hash_delegates_collection(char *out_hash_hex)
         }
     }
 
+    if (mongoc_cursor_error(cursor, NULL)) {
+        ERROR_PRINT("Cursor error occurred during delegate hashing.");
+        goto cleanup;
+    }
+
     // Step 6: Finalize
     unsigned char hash_bin[MD5_DIGEST_LENGTH];
     if (EVP_DigestFinal_ex(ctx, hash_bin, NULL) != 1) goto cleanup;
