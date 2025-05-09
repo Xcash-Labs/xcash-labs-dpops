@@ -257,8 +257,8 @@ int main(int argc, char *argv[]) {
   }
 
   stop_tcp_server();
-  shutdown_database();
-  INFO_PRINT("Database closed");
+//  shutdown_database();
+//  INFO_PRINT("Database closed");
 //  cleanup_data_structures();
   return 0;
 }
