@@ -355,21 +355,10 @@ void on_handle_closed(uv_handle_t* handle) {
 
   DEBUG_PRINT("Handle fully closed: type=%d, address=%p", handle->type, (void *)handle);
 
-  // Check if handle->data is a known type we allocated
-  if (handle->type == UV_TCP && handle->data) {
-    server_client_t *client = (server_client_t *)handle->data;
-
-    if (client->buffer) {
-      free(client->buffer);
-      client->buffer = NULL;
-    }
-
-    DEBUG_PRINT("Freeing server_client_t at %p (ip: %s)", (void *)client, client->client_ip);
-    free(client);
-  }
-
+  // DO NOT free client here if it's already handled elsewhere
   handle->data = NULL;
 }
+
 
 
 
