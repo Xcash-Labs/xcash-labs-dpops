@@ -81,7 +81,7 @@ void server_received_msg_get_sync_info(server_client_t *client, const char *MESS
         return;
     }
 
-    if (parse_json_data(MESSAGE, "delegates_hash", parse_delegates_hash, sizeof(parsed_delegates_hash)) == 0) {
+    if (parse_json_data(MESSAGE, "delegates_hash", parsed_delegates_hash, sizeof(parsed_delegates_hash)) == 0) {
         ERROR_PRINT("Can't parse 'delegates_hash' from %s", client->client_ip);
         return;
     }
