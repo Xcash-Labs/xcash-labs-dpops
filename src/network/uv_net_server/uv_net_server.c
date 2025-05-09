@@ -384,6 +384,7 @@ void stop_tcp_server() {
  //   uv_run(&loop, UV_RUN_NOWAIT);
  //   usleep(500000);  // Sleep 500ms to give time for handles to close
  // }
+  usleep(1000000);  // 3,000,000 microseconds = 1 second
   uv_stop(&loop);
   if (uv_loop_close(&loop) != 0) {
     ERROR_PRINT("Failed to close the event loop. Some handles are still open.");
