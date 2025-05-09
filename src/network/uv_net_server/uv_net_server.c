@@ -339,18 +339,23 @@ bool start_tcp_server(int port) {
   return XCASH_OK;
 }
 
+void on_handle_closed(uv_handle_t* handle) {
+  DEBUG_PRINT("Handle fully closed: type=%d, address=%p", handle->type, (void *)handle);
+  // Free associated memory if needed
+  handle->data = NULL;
+}
+
 void close_callback(uv_handle_t *handle, void *arg) {
   (void)arg;
 
   if (!handle) {
-    ERROR_PRINT("close_callback() called with NULL handle");
-    return;
+      ERROR_PRINT("close_callback() called with NULL handle");
+      return;
   }
 
   if (!uv_is_closing(handle)) {
-    DEBUG_PRINT("Closing handle: type=%d, address=%p", handle->type, (void *)handle);
-    handle->data = NULL;
-    uv_close(handle, NULL);
+      DEBUG_PRINT("Closing handle: type=%d, address=%p", handle->type, (void *)handle);
+      uv_close(handle, on_handle_closed);  // safer than NULL
   }
 }
 
@@ -359,7 +364,7 @@ void stop_tcp_server() {
   // Walk through all handles and close them
   uv_walk(&loop, close_callback, NULL);
   // Wait for handles to close
-  int attempts = 7;
+  int attempts = 10;
   while (uv_loop_alive(&loop) && attempts-- > 0) {
     INFO_PRINT("Waiting for handles to close...");
     uv_run(&loop, UV_RUN_NOWAIT);
