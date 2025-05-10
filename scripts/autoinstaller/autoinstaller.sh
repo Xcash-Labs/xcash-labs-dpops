@@ -1319,9 +1319,8 @@ function update_xcash()
 function update_xcash_old()
 {
   echo -ne "${COLOR_PRINT_YELLOW}Updating X-CASH (This Might Take A While)${END_COLOR_PRINT}"
-  cd "${XCASH_DIR}"
+  cd "${XCASH_DPOPS_INSTALLATION_DIR}"
   pwd
-
 }
 
 function update_xcash_dpops()
