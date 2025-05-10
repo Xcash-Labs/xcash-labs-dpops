@@ -1316,9 +1316,10 @@ function update_xcash()
 {
   echo -ne "${COLOR_PRINT_YELLOW}Updating X-CASH (This Might Take A While)${END_COLOR_PRINT}"
   echo "XCASH_DIR is set to: $XCASH_DIR"
+  
   if [ ! -d "$XCASH_DIR" ]; then
     cd "${XCASH_DPOPS_INSTALLATION_DIR}"
-    git pull --quiet "${XCASH_URL}"
+    git clone --quiet "${XCASH_URL}"
   fi
   cd "${XCASH_DIR}"
   data=$([ $(git rev-parse HEAD) = $(git ls-remote $(git rev-parse --abbrev-ref @{u} | sed 's/\// /g') | cut -f1) ] && echo "1" || echo "0")
