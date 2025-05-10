@@ -2594,4 +2594,4 @@ elif [ "$INSTALLATION_TYPE_SETTINGS" -eq "19" ]; then
   install_firewall_script_shared_delegates
 elif [ "$INSTALLATION_TYPE_SETTINGS" -eq "20" ]; then
   backup
-fi
+fi 
