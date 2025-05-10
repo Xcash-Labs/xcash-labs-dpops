@@ -1311,7 +1311,7 @@ function set_installation_dir_owner()
 
 function update_xcash()
 {
-  echo -ne "${COLOR_PRINT_YELLOW}Updating X-CASH $XCASH_DIR (This Might Take A While)${END_COLOR_PRINT}"
+  echo -ne "${COLOR_PRINT_YELLOW}Updating X-CASH XXX $XCASH_DIR (This Might Take A While)${END_COLOR_PRINT}"
 
   if [ ! -d "$XCASH_DIR" ]; then
     cd "${XCASH_DPOPS_INSTALLATION_DIR}"
