@@ -1312,8 +1312,7 @@ function set_installation_dir_owner()
 
 function update_xcash()
 {
-#  echo -ne "${COLOR_PRINT_YELLOW}Updating X-CASH (This Might Take A While)${END_COLOR_PRINT}"
-#  echo "XCASH_DPOPS_INSTALLATION_DIR is: ${XCASH_DPOPS_INSTALLATION_DIR}"
+
 }
 
 function update_xcash_old()
