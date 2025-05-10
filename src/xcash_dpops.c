@@ -127,10 +127,9 @@ Description: Shuts program down on signal
 void sigint_handler(int sig_num) {
   sig_requests++;
   DEBUG_PRINT("Termination signal %d received [%d] times. Shutting down...", sig_num, sig_requests);
-  stop_tcp_server();
-  INFO_PRINT("Shutting down database engine");
-  cleanup_data_structures();
   shutdown_db();
+  stop_tcp_server();
+  cleanup_data_structures();
   exit(0);
 }
 
@@ -238,15 +237,15 @@ int main(int argc, char *argv[]) {
       FATAL_ERROR_EXIT("Failed to set UV_THREADPOOL_SIZE.");
   }
 
-  if (!initialize_database()) {
-    FATAL_ERROR_EXIT("Can't open mongo database");
-  }
-
   signal(SIGINT, sigint_handler);
 
   if (!start_tcp_server(XCASH_DPOPS_PORT)) {
-    shutdown_db();
     FATAL_ERROR_EXIT("Failed to start TCP server.");
+  }
+
+  if (!initialize_database()) {
+    stop_tcp_server();
+    FATAL_ERROR_EXIT("Can't open mongo database");
   }
 
   if (init_processing(&arg_config)) {;
@@ -256,10 +255,8 @@ int main(int argc, char *argv[]) {
     FATAL_ERROR("Failed server initialization."); 
   }
 
-
   shutdown_db();
   stop_tcp_server();
-  DEBUG_PRINT("DB Shutdown successfully");
   cleanup_data_structures();
   return 0;
 }
