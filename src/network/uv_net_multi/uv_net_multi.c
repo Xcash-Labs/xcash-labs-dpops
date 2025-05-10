@@ -28,7 +28,7 @@ void on_timeout(uv_timer_t* timer) {
     return;
   }
 
-  ERROR_PRINT("Write operation timed out for %s", 
+  WARNING_PRINT("Write operation timed out for %s", 
               client->response ? client->response->host : "unknown");
 
   client->response->status = STATUS_TIMEOUT;
@@ -41,14 +41,6 @@ void alloc_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
   buf->base = (char*)malloc(suggested_size);
   buf->len = suggested_size;
 }
-
-//void delayed_close_cb(uv_timer_t* handle) {
-//  client_t* client = (client_t*)handle->data;
-//  safe_close(client);
-//}
-
-//  client->timer.data = client; 
-//  uv_timer_start(&client->timer, delayed_close_cb, 5000, 0); //
 
 void on_shutdown(uv_shutdown_t* req, int status) {
   (void)status; 
@@ -139,108 +131,6 @@ void on_resolved(uv_getaddrinfo_t* resolver, int status, struct addrinfo* res) {
 
   free(resolver);
 }
-
-
-
-
-
-
-
-/*
-void* send_multi_request_thread(void* arg) {
-  multi_request_args_t* args = (multi_request_args_t*)arg;
-
-  uv_loop_t loop;
-//  uv_loop_init(&loop);
-
-  args->results = send_multi_request_internal(args->hosts, args->port, args->message, &loop);
-
-  uv_run(&loop, UV_RUN_DEFAULT);
-  uv_loop_close(&loop);
-  free(args);  
-
-  return NULL;
-}
-
-response_t** send_multi_request_internal(const char** hosts, int port, const char* message, uv_loop_t* loop) {
-  int total_hosts = 0;
-  while (hosts[total_hosts] != NULL) total_hosts++;
-  if (total_hosts == 0) return NULL;
-
-  char port_str[6];
-  sprintf(port_str, "%d", port);
-
-  response_t** responses = calloc(total_hosts + 1, sizeof(response_t*));
-  if (!responses) return NULL;
-
-  for (int i = 0; i < total_hosts; i++) {
-    client_t* client = calloc(1, sizeof(client_t));
-    client->message = message;
-    client->response = calloc(1, sizeof(response_t));
-    client->response->host = strdup(hosts[i]);
-    client->response->status = STATUS_PENDING;
-    client->response->client = client;
-    client->response->req_time_start = time(NULL);
-    responses[i] = client->response;
-
-    uv_timer_init(loop, &client->timer);
-    client->timer.data = client;
-
-    uv_timer_start(&client->timer, on_timeout, UV_CONNECTION_TIMEOUT, 0);
-
-    uv_tcp_init(loop, &client->handle);
-    client->handle.data = client;
-    client->connect_req.data = client;
-    client->write_req.data = client;
-
-    if (is_ip_address(hosts[i])) {
-      struct sockaddr_in dest;
-      uv_ip4_addr(hosts[i], port, &dest);
-      start_connection(client, (const struct sockaddr*)&dest);
-    } else {
-      uv_getaddrinfo_t* resolver = malloc(sizeof(uv_getaddrinfo_t));
-      struct addrinfo hints = {0};
-      hints.ai_family = PF_INET;
-      hints.ai_socktype = SOCK_STREAM;
-      resolver->data = client;
-      uv_getaddrinfo(loop, resolver, on_resolved, hosts[i], port_str, &hints);
-    }
-  }
-
-  return responses;
-}
-
-
-response_t** send_multi_request(const char** hosts, int port, const char* message) {
-  multi_request_args_t* args = malloc(sizeof(multi_request_args_t));
-  args->hosts = hosts;
-  args->port = port;
-  args->message = message;
-  args->results = NULL;
-
-  pthread_t tid;
-  if (pthread_create(&tid, NULL, send_multi_request_thread, args) != 0) {
-    ERROR_PRINT("Failed to create thread for send_multi_request");
-    free(args);
-    return NULL;
-  }
-
-  pthread_join(tid, NULL);
-  return args->results;
-}
-
-
-*/
-
-
-
-
-
-
-
-
-
-
 
 response_t** send_multi_request(const char** hosts, int port, const char* message) {
   // count the number of hosts
