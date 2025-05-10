@@ -1325,6 +1325,10 @@ function update_xcash()
   git reset --hard HEAD --quiet
   git pull --quiet
   echo "Building X-CASH..."
+  if ! command -v cmake &> /dev/null; then
+    echo "CMake is not installed. Installing..."
+    sudo apt install -y cmake /dev/null 
+  fi
   make clean && make release -j"${CPU_THREADS}"
   echo -ne "\r${COLOR_PRINT_GREEN}Updating X-CASH (This Might Take A While)${END_COLOR_PRINT}"
   echo
