@@ -256,10 +256,8 @@ int main(int argc, char *argv[]) {
     FATAL_ERROR("Failed server initialization."); 
   }
 
-  stop_tcp_server();
-  usleep(5000000);  // 5 second
-
-  //shutdown_db();
+  //stop_tcp_server();
+  shutdown_db();
   //cleanup_data_structures();
   return 0;
 }
