@@ -264,6 +264,6 @@ int main(int argc, char *argv[]) {
     shutdown_database();
   }
   INFO_PRINT("Database closed");
-  cleanup_data_structures();
+  //cleanup_data_structures();
   return 0;
 }
