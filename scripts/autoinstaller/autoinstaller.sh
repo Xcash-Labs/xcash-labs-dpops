@@ -1305,7 +1305,6 @@ function update_packages()
 
 function set_installation_dir_owner()
 {
-# this hosed my install once, need to look at
 #  sudo chown -R "$USER":"$USER" ${XCASH_DPOPS_INSTALLATION_DIR} 2&> /dev/null || true
 #  sudo chown -R "$USER":"$USER" ${XCASH_BLOCKCHAIN_INSTALLATION_DIR} 2&> /dev/null || true
 }
@@ -1315,7 +1314,7 @@ function update_xcash()
   echo -ne "${COLOR_PRINT_YELLOW}Updating X-CASH (This Might Take A While)${END_COLOR_PRINT}"
   if [ ! -d "$XCASH_DIR" ]; then
     cd "${XCASH_DPOPS_INSTALLATION_DIR}"
-    git pull --quiet "${XCASH_URL}"
+    git clone --quiet "${XCASH_URL}"
   fi
   cd "${XCASH_DIR}"
   data=$([ $(git rev-parse HEAD) = $(git ls-remote $(git rev-parse --abbrev-ref @{u} | sed 's/\// /g') | cut -f1) ] && echo "1" || echo "0")
