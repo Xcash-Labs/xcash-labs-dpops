@@ -1313,10 +1313,6 @@ function set_installation_dir_owner()
 function update_xcash()
 {
   echo -ne "${COLOR_PRINT_YELLOW}Updating X-CASH (This Might Take A While)${END_COLOR_PRINT}"
-#  cd "${XCASH_DPOPS_INSTALLATION_DIR}xcash-core/
-
-  echo "XCASH_DIR is: $XCASH_DIR"
-
   if [ ! -d "$XCASH_DIR/.git" ]; then
     cd "${XCASH_DPOPS_INSTALLATION_DIR}"
     git clone "${XCASH_URL}" "$XCASH_DIR"
