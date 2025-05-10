@@ -258,6 +258,7 @@ int main(int argc, char *argv[]) {
 
   //stop_tcp_server();
   shutdown_db();
-  //cleanup_data_structures();
+  DEBUG_PRINT("DB Shutdown successfully");
+  cleanup_data_structures();
   return 0;
 }
