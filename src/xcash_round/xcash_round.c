@@ -254,8 +254,8 @@ void start_block_production(void) {
 
   // Wait for node to be fully synced
   while (!current_block_healthy) {
-//    if (is_blockchain_synced()) {
-    if (get_current_block_height(current_block_height) == XCASH_OK) {
+    if (is_blockchain_synced()) {
+//    if (get_current_block_height(current_block_height) == XCASH_OK) {
       current_block_healthy = true;
     } else {
       WARNING_PRINT("Node is still syncing. Waiting for recovery...");
@@ -270,12 +270,8 @@ void start_block_production(void) {
     size_t minute_within_block = (current_time.tv_sec / 60) % BLOCK_TIME;
 
     // Skip production if outside initial window
-    if (seconds_within_block > 25) {
-      if (round_result != ROUND_OK && seconds_within_block > 280) {
-        WARNING_PRINT("Last round failed. Refreshing DB from top...");
-        init_db_from_top();  // --------------------------------------------------------------------?????
-        round_result = ROUND_OK;
-      } else if (seconds_within_block % 10 == 0) {
+    if (seconds_within_block > 5) {
+      if (seconds_within_block % 10 == 0) {
         // only print every 10 seconds
         INFO_PRINT("Block %s — Next round starts in [%ld:%02ld]",
                    current_block_height,
@@ -304,9 +300,14 @@ void start_block_production(void) {
               strncpy(delegates_all[i].online_status, delegates_all[i].online_status_ck,
                       sizeof(delegates_all[i].online_status));
               delegates_all[i].online_status[sizeof(delegates_all[i].online_status) - 1] = '\0';
-              // update collection later
+
+              // update online status in collection later
+
               if (round_result == ROUND_ERROR_RD) {
+
                 // need to add code to sync the delegates collection
+                //        init_db_from_top();  // --------------------------------------------------------------------?????
+
               }
             }
             break;
