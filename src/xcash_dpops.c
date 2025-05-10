@@ -245,7 +245,7 @@ int main(int argc, char *argv[]) {
   signal(SIGINT, sigint_handler);
 
   if (!start_tcp_server(XCASH_DPOPS_PORT)) {
-    shutdown_database();
+    shutdown_db();
     FATAL_ERROR_EXIT("Failed to start TCP server.");
   }
 
