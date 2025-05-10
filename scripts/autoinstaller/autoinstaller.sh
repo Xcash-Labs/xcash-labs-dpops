@@ -1305,7 +1305,7 @@ function update_packages()
 
 function set_installation_dir_owner()
 {
-# this hosed my install once, need
+# this hosed my install once, need to look at
 #  sudo chown -R "$USER":"$USER" ${XCASH_DPOPS_INSTALLATION_DIR} 2&> /dev/null || true
 #  sudo chown -R "$USER":"$USER" ${XCASH_BLOCKCHAIN_INSTALLATION_DIR} 2&> /dev/null || true
 }
