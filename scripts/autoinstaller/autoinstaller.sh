@@ -1312,36 +1312,9 @@ function set_installation_dir_owner()
 
 function update_xcash()
 {
-  echo -ne "${COLOR_PRINT_YELLOW}Updating X-CASH (This Might Take A While)${END_COLOR_PRINT}"
-  echo "XCASH_DPOPS_INSTALLATION_DIR is: ${XCASH_DPOPS_INSTALLATION_DIR}"
+  cd "${XCASH_DPOPS_INSTALLATION_DIR}"
+  pwd
 
-  
-}
-
-function update_xcash_old()
-{
-  echo -ne "${COLOR_PRINT_YELLOW}Updating X-CASH (This Might Take A While)${END_COLOR_PRINT}"
-  if [ ! -d "$XCASH_DIR" ]; then
-    cd "${XCASH_DPOPS_INSTALLATION_DIR}"
-    git clone --quiet "${XCASH_URL}"
-  fi
-  cd "${XCASH_DIR}"
-  data=$([ $(git rev-parse HEAD) = $(git ls-remote $(git rev-parse --abbrev-ref @{u} | sed 's/\// /g') | cut -f1) ] && echo "1" || echo "0")
-  if [ "$data" == "0" ]; then
-    git reset --hard HEAD --quiet
-    git pull --quiet
-    if [ "$RAM_CPU_RATIO" -ge "$RAM_CPU_RATIO_ALL_CPU_THREADS" ]; then
-      echo "y" | make clean &>/dev/null
-      make release -j "${CPU_THREADS}" &>/dev/null
-    else
-      echo "y" | make clean &>/dev/null
-      if [ "$RAM_CPU_RATIO" -eq 0 ]; then
-          make release &>/dev/null
-      else
-          make release -j $((CPU_THREADS / 2)) &>/dev/null
-      fi
-    fi 
-  fi
   echo -ne "\r${COLOR_PRINT_GREEN}Updating X-CASH (This Might Take A While)${END_COLOR_PRINT}"
   echo
 }
