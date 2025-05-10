@@ -130,7 +130,7 @@ void sigint_handler(int sig_num) {
   stop_tcp_server();
   INFO_PRINT("Shutting down database engine");
   cleanup_data_structures();
-  shutdown_database();
+  shutdown_db();
   exit(0);
 }
 
@@ -260,7 +260,7 @@ int main(int argc, char *argv[]) {
   INFO_PRINT("Database........");
   usleep(5000000);  // 5 second
 
-  shutdown_database_now();
+  shutdown_db();
 
   INFO_PRINT("Database closed");
   //cleanup_data_structures();
