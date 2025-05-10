@@ -256,8 +256,9 @@ int main(int argc, char *argv[]) {
     FATAL_ERROR("Failed server initialization."); 
   }
 
-  //stop_tcp_server();
+
   shutdown_db();
+  stop_tcp_server();
   DEBUG_PRINT("DB Shutdown successfully");
   cleanup_data_structures();
   return 0;
