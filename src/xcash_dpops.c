@@ -14,7 +14,7 @@ BRIGHT_WHITE_TEXT("General Options:\n")
 "\n"
 BRIGHT_WHITE_TEXT("Debug Options:\n")
 "  --log-level                             The log-level displays log messages based on the level passed:\n"
-"                                          Critial - 0, Error - 1, Warning - 2, Info - 3, Debug - 4"\n"
+"                                          Critial - 0, Error - 1, Warning - 2, Info - 3, Debug - 4\n"
 "\n"
 BRIGHT_WHITE_TEXT("Advanced Options:\n")
 "  --total-threads THREADS                 Sets the UV_THREADPOOL_SIZE environment variable that controls the.\n"
