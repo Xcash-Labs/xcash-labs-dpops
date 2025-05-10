@@ -4,7 +4,7 @@ bool initialize_database(void){
     return initialize_mongo_database(DATABASE_CONNECTION, &database_client_thread_pool);
 }
 
-void shutdown_database(void){
+void shutdown_db(void){
     DEBUG_PRINT("Shuting down.........2");
 //    shutdown_mongo_database(&database_client_thread_pool);
 }
