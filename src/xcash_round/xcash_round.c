@@ -254,8 +254,8 @@ void start_block_production(void) {
 
   // Wait for node to be fully synced
   while (!current_block_healthy) {
-//    if (is_blockchain_synced()) {
-    if (get_current_block_height(current_block_height) == XCASH_OK) {
+    if (is_blockchain_synced()) {
+//    if (get_current_block_height(current_block_height) == XCASH_OK) {
       current_block_healthy = true;
     } else {
       WARNING_PRINT("Node is still syncing. Waiting for recovery...");
@@ -329,6 +329,6 @@ void start_block_production(void) {
       INFO_PRINT_STATUS_FAIL("Block %s was not created", current_block_height);
     }
 
-    break;  // TEMP: exit after one round (for testing)
+//    break;  // TEMP: exit after one round (for testing)
   }
 }
