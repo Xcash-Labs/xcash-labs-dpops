@@ -260,9 +260,7 @@ int main(int argc, char *argv[]) {
   INFO_PRINT("Database........");
   usleep(5000000);  // 5 second
 
-  shutdown_db();
-
-  INFO_PRINT("Database closed");
+  //shutdown_db();
   //cleanup_data_structures();
   return 0;
 }
