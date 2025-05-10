@@ -1243,11 +1243,11 @@ function get_installation_directory()
   XCASH_DPOPS_INSTALLATION_DIR=$(sudo find / -path /sys -prune -o -path /proc -prune -o -path /dev -prune -o -path /var -prune -o -type d -name "$MAIN_INSTALL_DIRECTORY" -print)/
   XCASH_BLOCKCHAIN_INSTALLATION_DIR=$(sudo find / -path /sys -prune -o -path /proc -prune -o -path /dev -prune -o -path /var -prune -o -type d -name ".X-CASH" -print)/
   WALLET_PASSWORD=$(cat /lib/systemd/system/xcash-rpc-wallet.service | awk '/password/ {print $5}')
-  XCASH_DIR=${XCASH_DPOPS_INSTALLATION_DIR}xcash-core/
+  XCASH_DIR=${XCASH_DPOPS_INSTALLATION_DIR}xcash-labs-core/
   XCASH_WALLET_DIR=${XCASH_DPOPS_INSTALLATION_DIR}xcash-wallets/
   XCASH_SYSTEMPID_DIR=${XCASH_DPOPS_INSTALLATION_DIR}systemdpid/
   XCASH_LOGS_DIR=${XCASH_DPOPS_INSTALLATION_DIR}logs/
-  XCASH_DPOPS_DIR=${XCASH_DPOPS_INSTALLATION_DIR}xcash-dpops/
+  XCASH_DPOPS_DIR=${XCASH_DPOPS_INSTALLATION_DIR}xcash-labs-dpops/
   XCASH_DPOPS_SHARED_DELEGATE_FOLDER_DIR=${XCASH_DPOPS_DIR}delegates-pool-website/
   SHARED_DELEGATES_WEBSITE_DIR=${XCASH_DPOPS_INSTALLATION_DIR}delegates-pool-website/
   NODEJS_DIR=$(sudo find / -path /sys -prune -o -path /proc -prune -o -path /dev -prune -o -path /var -prune -o -path "*/$MAIN_INSTALL_DIRECTORY/*" -type d -name "$NODEJS_LATEST_VERSION" -print)/
@@ -1313,7 +1313,7 @@ function set_installation_dir_owner()
 function update_xcash()
 {
   echo -ne "${COLOR_PRINT_YELLOW}Updating X-CASH (This Might Take A While)${END_COLOR_PRINT}"
-//  cd "${XCASH_DPOPS_INSTALLATION_DIR}xcash-core/
+#  cd "${XCASH_DPOPS_INSTALLATION_DIR}xcash-core/
 
   echo "XCASH_DIR is: $XCASH_DIR"
 
@@ -1748,7 +1748,7 @@ function quick_update()
   echo
 
   XCASH_DPOPS_INSTALLATION_DIR=$(sudo find / -path /sys -prune -o -path /proc -prune -o -path /dev -prune -o -path /var -prune -o -type d -name "$MAIN_INSTALL_DIRECTORY" -print)/
-  XCASH_DPOPS_DIR=${XCASH_DPOPS_INSTALLATION_DIR}xcash-dpops/
+  XCASH_DPOPS_DIR=${XCASH_DPOPS_INSTALLATION_DIR}xcash-labs-dpops/
 
   update_xcash_dpops
 
@@ -1871,7 +1871,7 @@ function install_node()
   get_ssh_port
 
   # Update global variables
-  XCASH_DIR=${XCASH_DPOPS_INSTALLATION_DIR}xcash-core/
+  XCASH_DIR=${XCASH_DPOPS_INSTALLATION_DIR}xcash-labs-core/
   XCASH_SYSTEMPID_DIR=${XCASH_DPOPS_INSTALLATION_DIR}systemdpid/
   XCASH_LOGS_DIR=${XCASH_DPOPS_INSTALLATION_DIR}logs/
 
@@ -1968,7 +1968,7 @@ function update_node()
   echo
 
   # Update global variables
-  XCASH_DIR=${XCASH_DPOPS_INSTALLATION_DIR}xcash-core/
+  XCASH_DIR=${XCASH_DPOPS_INSTALLATION_DIR}xcash-labs-core/
 
   # Stop the systemd service files
   sudo systemctl stop xcash-daemon
