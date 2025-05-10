@@ -257,7 +257,6 @@ int main(int argc, char *argv[]) {
   }
 
   stop_tcp_server();
-  INFO_PRINT("Database........");
   usleep(5000000);  // 5 second
 
   //shutdown_db();
