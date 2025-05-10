@@ -1334,7 +1334,7 @@ function update_xcash()
       fi
     fi 
   fi
-  echo -ne "\r${COLOR_PRINT_GREEN}Updating X-CASH (This Might Take A While)${END_COLOR_PRINT}"
+  echo -ne "\r${COLOR_PRINT_GREEN}Updating $XCASH_DIR X-CASH (This Might Take A While)${END_COLOR_PRINT}"
   echo
 }
 
