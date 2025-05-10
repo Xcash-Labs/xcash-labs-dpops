@@ -14,7 +14,7 @@ BRIGHT_WHITE_TEXT("General Options:\n")
 "\n"
 BRIGHT_WHITE_TEXT("Debug Options:\n")
 "  --log-level                             The log-level displays log messages based on the level passed:\n"
-"                                          Critial - 0, Info - 1, Warning - 2, Error - 3, Debug - 4\n"
+"                                          Critial - 0, Error - 1, Warning - 2, Info - 3, Debug - 4"\n"
 "\n"
 BRIGHT_WHITE_TEXT("Advanced Options:\n")
 "  --total-threads THREADS                 Sets the UV_THREADPOOL_SIZE environment variable that controls the.\n"
@@ -194,6 +194,7 @@ int main(int argc, char *argv[]) {
   arg_config_t arg_config = {0};
   init_globals();
   setenv("ARGP_HELP_FMT", "rmargin=120", 1);
+
   if (argc == 1) {
     FATAL_ERROR_EXIT("No arguments entered. Try `xcash-dpops --help'");
   }
@@ -237,6 +238,15 @@ int main(int argc, char *argv[]) {
       FATAL_ERROR_EXIT("Failed to set UV_THREADPOOL_SIZE.");
   }
 
+
+    //     Critial - 0, Error - 1, Warning - 2, Info - 3, Debug - 4"
+  ERROR_PRINT("TESTING ERROR PRINT");
+  WARNING_PRINT("TESTING WARNING PRINT");
+  INFO_PRINT("TESTING INFO PRINT");
+  DEBUG_PRINT("TESTING DEBUG PRINT");
+
+  return 0;
+
   signal(SIGINT, sigint_handler);
 
   if (!start_tcp_server(XCASH_DPOPS_PORT)) {
@@ -256,6 +266,7 @@ int main(int argc, char *argv[]) {
   }
 
   shutdown_db();
+  INFO_PRINT("Database shutdown successfully");
   stop_tcp_server();
   cleanup_data_structures();
   return 0;
