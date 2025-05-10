@@ -1305,14 +1305,13 @@ function update_packages()
 
 function set_installation_dir_owner()
 {
-#  sudo chown -R "$USER":"$USER" ${XCASH_DPOPS_INSTALLATION_DIR} 2&> /dev/null || true
-#  sudo chown -R "$USER":"$USER" ${XCASH_BLOCKCHAIN_INSTALLATION_DIR} 2&> /dev/null || true
+  sudo chown -R "$USER":"$USER" ${XCASH_DPOPS_INSTALLATION_DIR} 2&> /dev/null || true
+  sudo chown -R "$USER":"$USER" ${XCASH_BLOCKCHAIN_INSTALLATION_DIR} 2&> /dev/null || true
 }
 
 function update_xcash()
 {
-  echo -ne "${COLOR_PRINT_YELLOW}Updating X-CASH XXX $XCASH_DIR (This Might Take A While)${END_COLOR_PRINT}"
-
+  echo -ne "${COLOR_PRINT_YELLOW}Updating X-CASH (This Might Take A While)${END_COLOR_PRINT}"
   if [ ! -d "$XCASH_DIR" ]; then
     cd "${XCASH_DPOPS_INSTALLATION_DIR}"
     git clone --quiet "${XCASH_URL}"
@@ -1334,7 +1333,7 @@ function update_xcash()
       fi
     fi 
   fi
-  echo -ne "\r${COLOR_PRINT_GREEN}Updating X-CASH Complete${END_COLOR_PRINT}"
+  echo -ne "\r${COLOR_PRINT_GREEN}Updating X-CASH (This Might Take A While)${END_COLOR_PRINT}"
   echo
 }
 
