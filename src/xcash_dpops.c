@@ -259,10 +259,9 @@ int main(int argc, char *argv[]) {
   stop_tcp_server();
   INFO_PRINT("Database........");
   usleep(5000000);  // 5 second
-  if (database_client_thread_pool != NULL) {
-    INFO_PRINT("Database........");
-    shutdown_database();
-  }
+
+  shutdown_database();
+
   INFO_PRINT("Database closed");
   //cleanup_data_structures();
   return 0;
