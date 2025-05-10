@@ -238,15 +238,6 @@ int main(int argc, char *argv[]) {
       FATAL_ERROR_EXIT("Failed to set UV_THREADPOOL_SIZE.");
   }
 
-
-    //     Critial - 0, Error - 1, Warning - 2, Info - 3, Debug - 4"
-  ERROR_PRINT("TESTING ERROR PRINT");
-  WARNING_PRINT("TESTING WARNING PRINT");
-  INFO_PRINT("TESTING INFO PRINT");
-  DEBUG_PRINT("TESTING DEBUG PRINT");
-
-  return 0;
-
   signal(SIGINT, sigint_handler);
 
   if (!start_tcp_server(XCASH_DPOPS_PORT)) {

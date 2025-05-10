@@ -21,9 +21,6 @@
 #define LOG_LEVEL_WARNING 2
 #define LOG_LEVEL_ERROR 1
 #define LOG_LEVEL_CRITICAL 0
-
-    //     Critial - 0, Error - 1, Warning - 2, Info - 3, Debug - 4"
-
 #define DEBUG_PRINT(fmt, ...) do { \
     if (log_level >= LOG_LEVEL_DEBUG) { \
         time_t raw_time = time(NULL); \
