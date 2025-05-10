@@ -5,8 +5,7 @@ bool initialize_database(void){
 }
 
 void shutdown_db(void){
-    DEBUG_PRINT("Shuting down.........2");
-//    shutdown_mongo_database(&database_client_thread_pool);
+    shutdown_mongo_database(&database_client_thread_pool);
 }
 
 bool initialize_mongo_database(const char *mongo_uri, mongoc_client_pool_t **db_client_thread_pool) {
@@ -32,7 +31,6 @@ bool initialize_mongo_database(const char *mongo_uri, mongoc_client_pool_t **db_
 }
 
 void shutdown_mongo_database(mongoc_client_pool_t **db_client_thread_pool) {
-    DEBUG_PRINT("Shuting down.........2");
     if (*db_client_thread_pool) {
         mongoc_client_pool_destroy(*db_client_thread_pool);
         *db_client_thread_pool = NULL;
