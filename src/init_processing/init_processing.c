@@ -154,8 +154,7 @@ void print_starter_state(const arg_config_t *arg_config)
       "|__/  |__/\\_______/\\_______|_______/|__/  |__|__|________/\\_______/\\________/\\______/\n"
       "\n";
   fputs(xcash_tech_header, stderr);
-  fprintf(stderr, "Daemon startup successful...\n");
-
+  fprintf(stderr, "Daemon startup successful and is busy processing requests...\n");
   #define xcash_tech_status_fmt \
   "%s (%s)\n\n"\
   "Address:\t%s\n"\
@@ -170,7 +169,7 @@ void print_starter_state(const arg_config_t *arg_config)
   "Total threads:\t\%d\n"\
   "Log level:\t\%d\n"
   
-  INFO_PRINT(xcash_tech_status_fmt,
+  fprintf(xcash_tech_status_fmt,
     XCASH_DPOPS_CURRENT_VERSION, "~Lazarus",
     arg_config->block_verifiers_secret_key,
     is_seed_node ? "SEED NODE" : "DELEGATE NODE",

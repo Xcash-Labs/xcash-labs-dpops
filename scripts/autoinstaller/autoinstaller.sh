@@ -1305,7 +1305,6 @@ function update_packages()
 
 function set_installation_dir_owner()
 {
-  echo "Nothing here..."
 #  sudo chown -R "$USER":"$USER" ${XCASH_DPOPS_INSTALLATION_DIR} 2&> /dev/null || true
 #  sudo chown -R "$USER":"$USER" ${XCASH_BLOCKCHAIN_INSTALLATION_DIR} 2&> /dev/null || true
 }
@@ -1320,7 +1319,6 @@ function update_xcash()
   cd "$XCASH_DIR"
   git reset --hard HEAD --quiet
   git pull --quiet
-  echo "Building X-CASH..."
   if ! command -v cmake &> /dev/null; then
     echo "CMake is not installed. Installing..."
     sudo apt install -y cmake /dev/null 
@@ -1348,7 +1346,6 @@ function update_xcash_dpops()
   cd "$XCASH_DPOPS_DIR"
   git reset --hard HEAD --quiet
   git pull --quiet
-  echo "Building xcash-dpops..."
   make clean &>/dev/null
   if [ "$RAM_CPU_RATIO" -ge "$RAM_CPU_RATIO_ALL_CPU_THREADS" ]; then
     make release -j"${CPU_THREADS}" &>/dev/null

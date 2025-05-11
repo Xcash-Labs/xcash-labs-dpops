@@ -130,6 +130,7 @@ void sigint_handler(int sig_num) {
   shutdown_db();
   stop_tcp_server();
   cleanup_data_structures();
+  fprintf(stderr, "Daemon is shutting down...\n");
   exit(0);
 }
 
