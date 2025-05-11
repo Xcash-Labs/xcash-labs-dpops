@@ -154,7 +154,10 @@ void print_starter_state(const arg_config_t *arg_config)
       "|__/  |__/\\_______/\\_______|_______/|__/  |__|__|________/\\_______/\\________/\\______/\n"
       "\n";
   fputs(xcash_tech_header, stderr);
-  fprintf(stderr, "Daemon startup successful and is busy processing requests...\n");
+  time_t now = time(NULL);
+  char time_str[64];
+  strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M:%S", localtime(&now));
+  fprintf(stderr, "[%s] Daemon startup successful and is busy processing requests...\n", time_str);
   fprintf(stderr,
           "%s (%s)\n\n"
           "Address:\t%s\n"
