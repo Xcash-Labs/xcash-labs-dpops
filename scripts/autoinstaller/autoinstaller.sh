@@ -1334,7 +1334,7 @@ function update_xcash()
       make release -j $((CPU_THREADS / 2)) &>/dev/null
     fi
   fi
-  echo -ne "\r${COLOR_PRINT_GREEN}Updating X-CASH Complete${END_COLOR_PRINT}"
+  echo -ne "\r${COLOR_PRINT_GREEN}Updating X-CASH Complete                ${END_COLOR_PRINT}"
   echo
 }
 
@@ -1358,7 +1358,7 @@ function update_xcash_dpops()
       make release -j $((CPU_THREADS / 2)) &>/dev/null
     fi
   fi
-  echo -ne "\r${COLOR_PRINT_GREEN}Updating xcash-dpops Complete${END_COLOR_PRINT}"
+  echo -ne "\r${COLOR_PRINT_GREEN}Updating xcash-dpops Complete              ${END_COLOR_PRINT}"
   echo
 }
 
