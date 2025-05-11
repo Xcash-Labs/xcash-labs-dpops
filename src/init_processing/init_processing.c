@@ -155,27 +155,24 @@ void print_starter_state(const arg_config_t *arg_config)
       "\n";
   fputs(xcash_tech_header, stderr);
   fprintf(stderr, "Daemon startup successful and is busy processing requests...\n");
-  #define xcash_tech_status_fmt \
-  "%s (%s)\n\n"\
-  "Address:\t%s\n"\
-  "\n"\
-  "Node Type:\t%s\n"\
-  "\n"\
-  "Services:\n"\
-  "Daemon:\t\t%s:%d\n"\
-  "DPoPS:\t\t%s:%d\n"\
-  "Wallet:\t\t%s:%d\n"\
-  "MongoDB:\t%s\n"\
-  "Total threads:\t\%d\n"\
-  "Log level:\t\%d\n"
-  
-  fprintf(xcash_tech_status_fmt,
-    XCASH_DPOPS_CURRENT_VERSION, "~Lazarus",
-    arg_config->block_verifiers_secret_key,
-    is_seed_node ? "SEED NODE" : "DELEGATE NODE",
-    XCASH_DAEMON_IP, XCASH_DAEMON_PORT,
-    XCASH_DPOPS_IP, XCASH_DPOPS_PORT,
-    XCASH_WALLET_IP, XCASH_WALLET_PORT,
-    DATABASE_CONNECTION, total_threads, log_level
-  );
+  fprintf(stderr,
+          "%s (%s)\n\n"
+          "Address:\t%s\n"
+          "\n"
+          "Node Type:\t%s\n"
+          "\n"
+          "Services:\n"
+          "Daemon:\t\t%s:%d\n"
+          "DPoPS:\t\t%s:%d\n"
+          "Wallet:\t\t%s:%d\n"
+          "MongoDB:\t%s\n"
+          "Total threads:\t%d\n"
+          "Log level:\t%d\n",
+          XCASH_DPOPS_CURRENT_VERSION, "~Lazarus",
+          arg_config->block_verifiers_secret_key,
+          is_seed_node ? "SEED NODE" : "DELEGATE NODE",
+          XCASH_DAEMON_IP, XCASH_DAEMON_PORT,
+          XCASH_DPOPS_IP, XCASH_DPOPS_PORT,
+          XCASH_WALLET_IP, XCASH_WALLET_PORT,
+          DATABASE_CONNECTION, total_threads, log_level);
 }
