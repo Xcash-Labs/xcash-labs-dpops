@@ -140,6 +140,8 @@
 #define SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS 3
 #define INVALID_RESERVE_PROOFS_SETTINGS 3
 
+#define RETRY_SECONDS 2                              // replace INVALID_RESERVE_PROOFS_SETTINGS
+
 // ===================== XCASH DPOPS =====================
 #define BLOCK_VERIFIERS_TOTAL_AMOUNT 100
 #define BLOCK_VERIFIERS_AMOUNT 50

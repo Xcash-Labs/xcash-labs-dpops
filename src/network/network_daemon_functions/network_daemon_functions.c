@@ -10,49 +10,48 @@ Return:
   true if the blockchain is synced, false otherwise.
 ---------------------------------------------------------------------------------------------------------*/
 bool is_blockchain_synced(void) {
-  const char *HTTP_HEADERS[] = {"Content-Type: application/json", "Accept: application/json"};
-  const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0]);
-  const char *RPC_ENDPOINT = "/get_info";
+    const char *HTTP_HEADERS[] = {"Content-Type: application/json", "Accept: application/json"};
+    const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0]);
+    const char *RPC_ENDPOINT = "/get_info";
 
-  char response[SMALL_BUFFER_SIZE] = {0};
-  char synced_flag[16] = {0};
-  char height_str[BLOCK_HEIGHT_LENGTH] = {0};
-  char target_height_str[BLOCK_HEIGHT_LENGTH] = {0};
+    char response[SMALL_BUFFER_SIZE] = {0};
+    char synced_flag[16] = {0};
+    char status_flag[16] = {0};
+    char offline_flag[16] = {0};
 
-  for (int attempt = 0; attempt < 2; ++attempt) {
-      if (send_http_request(response, XCASH_DAEMON_IP, RPC_ENDPOINT, XCASH_DAEMON_PORT,
-                            "GET", HTTP_HEADERS, HTTP_HEADERS_LENGTH, NULL,
-                            SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) == XCASH_OK &&
-          parse_json_data(response, "synchronized", synced_flag, sizeof(synced_flag)) != 0 &&
-          parse_json_data(response, "height", height_str, sizeof(height_str)) != 0 &&
-          parse_json_data(response, "target_height", target_height_str, sizeof(target_height_str)) != 0) {
+    for (int attempt = 0; attempt < 2; ++attempt) {
+        if (send_http_request(response, XCASH_DAEMON_IP, RPC_ENDPOINT, XCASH_DAEMON_PORT,
+                              "GET", HTTP_HEADERS, HTTP_HEADERS_LENGTH, NULL,
+                              SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) == XCASH_OK &&
+            parse_json_data(response, "synchronized", synced_flag, sizeof(synced_flag)) != 0 &&
+            parse_json_data(response, "status", status_flag, sizeof(status_flag)) != 0 &&
+            parse_json_data(response, "offline", offline_flag, sizeof(offline_flag)) != 0) {
 
-          long height = strtol(height_str, NULL, 10);
-          long target_height = strtol(target_height_str, NULL, 10);
+            if (strcmp(synced_flag, "true") == 0 &&
+                strcmp(status_flag, "OK") == 0 &&
+                strcmp(offline_flag, "false") == 0) {
+                return true;
+            }
 
-          // Synced if daemon says it's synced AND height == target height
-          if (strcmp(synced_flag, "true") == 0 && height == target_height) {
-              return true;
-          }
+            DEBUG_PRINT("Daemon not yet synced or status not OK: synchronized=%s, status=%s, offline=%s", synced_flag, status_flag, offline_flag);
+            return false;
+        }
 
-          DEBUG_PRINT("Daemon not yet synced: height=%ld target_height=%ld", height, target_height);
-          return false;
-      }
+        memset(response, 0, sizeof(response));
+        memset(synced_flag, 0, sizeof(synced_flag));
+        memset(status_flag, 0, sizeof(status_flag));
+        memset(offline_flag, 0, sizeof(offline_flag));
 
-      memset(response, 0, sizeof(response));
-      memset(synced_flag, 0, sizeof(synced_flag));
-      memset(height_str, 0, sizeof(height_str));
-      memset(target_height_str, 0, sizeof(target_height_str));
+        if (attempt == 0) {
+            WARNING_PRINT("Retrying blockchain sync check...");
+            sleep(RETRY_SECONDS);
+        }
+    }
 
-      if (attempt == 0) {
-          WARNING_PRINT("Retrying blockchain sync check...");
-          sleep(INVALID_RESERVE_PROOFS_SETTINGS);
-      }
-  }
-
-  ERROR_PRINT("Could not determine blockchain sync status.");
-  return false;
+    ERROR_PRINT("Could not determine blockchain sync status.");
+    return false;
 }
+
 
 /*---------------------------------------------------------------------------------------------------------
 Name: get_current_block_height
