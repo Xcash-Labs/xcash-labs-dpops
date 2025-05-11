@@ -329,6 +329,6 @@ void start_block_production(void) {
       INFO_PRINT_STATUS_FAIL("Block %s was not created", current_block_height);
     }
 
-    break;  // TEMP: exit after one round (for testing)
+//    break;  // TEMP: exit after one round (for testing)
   }
 }
