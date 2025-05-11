@@ -1325,36 +1325,41 @@ function update_xcash()
     echo "CMake is not installed. Installing..."
     sudo apt install -y cmake /dev/null 
   fi
-  make clean && make release -j"${CPU_THREADS}"
-  echo -ne "\r${COLOR_PRINT_GREEN}Updating X-CASH (This Might Take A While)${END_COLOR_PRINT}"
+  if [ "$RAM_CPU_RATIO" -ge "$RAM_CPU_RATIO_ALL_CPU_THREADS" ]; then
+    make release -j"${CPU_THREADS}" &>/dev/null
+  else
+    if [ "$RAM_CPU_RATIO" -eq 0 ]; then
+      make release &>/dev/null
+    else
+      make release -j $((CPU_THREADS / 2)) &>/dev/null
+    fi
+  fi
+  echo -ne "\r${COLOR_PRINT_GREEN}Updating X-CASH Complete${END_COLOR_PRINT}"
   echo
 }
 
 function update_xcash_dpops()
 {
-  echo -ne "${COLOR_PRINT_YELLOW}Updating xcash-dpops${END_COLOR_PRINT}"
-  if [ ! -d "$XCASH_DPOPS_DIR" ]; then
+  echo -ne "${COLOR_PRINT_YELLOW}Updating xcash-dpops (This Might Take A While)${END_COLOR_PRINT}"
+  if [ ! -d "$XCASH_DPOPS_DIR/.git" ]; then
     cd "${XCASH_DPOPS_INSTALLATION_DIR}"
-    git clone --quiet "${XCASH_DPOPS_URL}"
+    git clone "${XCASH_DPOPS_URL}" "$XCASH_DPOPS_DIR"
   fi
-  cd "${XCASH_DPOPS_DIR}"
-  data=$([ $(git rev-parse HEAD) = $(git ls-remote $(git rev-parse --abbrev-ref @{u} | sed 's/\// /g') | cut -f1) ] && echo "1" || echo "0")
-  if [ "$data" == "0" ]; then
-    git reset --hard HEAD --quiet
-    git pull --quiet
-    if [ "$RAM_CPU_RATIO" -ge "$RAM_CPU_RATIO_ALL_CPU_THREADS" ]; then
-      echo "y" | make clean &>/dev/null
-      make release -j "${CPU_THREADS}" &>/dev/null
+  cd "$XCASH_DPOPS_DIR"
+  git reset --hard HEAD --quiet
+  git pull --quiet
+  echo "Building xcash-dpops..."
+  make clean &>/dev/null
+  if [ "$RAM_CPU_RATIO" -ge "$RAM_CPU_RATIO_ALL_CPU_THREADS" ]; then
+    make release -j"${CPU_THREADS}" &>/dev/null
+  else
+    if [ "$RAM_CPU_RATIO" -eq 0 ]; then
+      make release &>/dev/null
     else
-      echo "y" | make clean &>/dev/null
-      if [ "$RAM_CPU_RATIO" -eq 0 ]; then
-          make release &>/dev/null
-      else
-          make release -j $((CPU_THREADS / 2)) &>/dev/null
-      fi
+      make release -j $((CPU_THREADS / 2)) &>/dev/null
     fi
   fi
-  echo -ne "\r${COLOR_PRINT_GREEN}Updating xcash-dpops${END_COLOR_PRINT}"
+  echo -ne "\r${COLOR_PRINT_GREEN}Updating xcash-dpops Complete${END_COLOR_PRINT}"
   echo
 }
 
