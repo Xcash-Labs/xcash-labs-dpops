@@ -81,11 +81,6 @@ void on_write(uv_write_t* req, int status) {
   }
 }
 
-
-
-
-
-
 void on_connect(uv_connect_t* req, int status) {
   client_t* client = (client_t*)req->data;
   if (client->is_closing || status < 0) {
@@ -140,7 +135,7 @@ void on_resolved(uv_getaddrinfo_t* resolver, int status, struct addrinfo* res) {
   free(resolver);
 }
 
-response_t** send_multi_request(const char** hosts, int port, const char* message) {
+response_t** send_multi_request_old(const char** hosts, int port, const char* message) {
   // count the number of hosts
   int total_hosts = 0;
   while (hosts[total_hosts] != NULL) total_hosts++;
@@ -203,7 +198,7 @@ response_t** send_multi_request(const char** hosts, int port, const char* messag
   return responses;
 }
 
-void cleanup_responses(response_t** responses) {
+void cleanup_responses_old(response_t** responses) {
   int i = 0;
   while (responses && responses[i] != NULL) {
     free(responses[i]->host);
@@ -215,3 +210,135 @@ void cleanup_responses(response_t** responses) {
   };
   free(responses);
 }
+
+
+response_t** send_multi_request(const char** hosts, int port, const char* message) {
+  // Count the number of hosts
+  int total_hosts = 0;
+  while (hosts[total_hosts] != NULL) total_hosts++;
+  if (total_hosts == 0)
+    return NULL;
+
+  // Convert port to string for DNS resolution
+  char port_str[6];  // max 65535 + null terminator
+  snprintf(port_str, sizeof(port_str), "%d", port);
+
+  // Create a custom libuv loop
+  uv_loop_t* loop = malloc(sizeof(uv_loop_t));
+  if (!loop || uv_loop_init(loop) != 0) {
+    ERROR_PRINT("Failed to initialize custom event loop.");
+    free(loop);
+    return NULL;
+  }
+
+  // Allocate the response array
+  response_t** responses = calloc(total_hosts + 1, sizeof(response_t*));
+  if (!responses) {
+    ERROR_PRINT("Failed to allocate memory for responses.");
+    uv_loop_close(loop);
+    free(loop);
+    return NULL;
+  }
+
+  for (int i = 0; i < total_hosts; i++) {
+    client_t* client = calloc(1, sizeof(client_t));
+    if (!client) continue;
+
+    client->message = message;
+    client->response = calloc(1, sizeof(response_t));
+    if (!client->response) {
+      free(client);
+      continue;
+    }
+
+    client->response->host = strdup(hosts[i]);
+    client->response->status = STATUS_PENDING;
+    client->response->client = client;
+    client->response->req_time_start = time(NULL);
+    responses[i] = client->response;
+
+    uv_timer_init(loop, &client->timer);
+    client->timer.data = client;
+    uv_timer_start(&client->timer, on_timeout, UV_CONNECTION_TIMEOUT, 0);
+
+    uv_tcp_init(loop, &client->handle);
+    client->handle.data = client;
+    client->connect_req.data = client;
+    client->write_req.data = client;
+
+    if (is_ip_address(hosts[i])) {
+      struct sockaddr_in dest;
+      uv_ip4_addr(hosts[i], port, &dest);
+      start_connection(client, (const struct sockaddr*)&dest);
+    } else {
+      uv_getaddrinfo_t* resolver = malloc(sizeof(uv_getaddrinfo_t));
+      if (!resolver) {
+        ERROR_PRINT("Failed to allocate uv_getaddrinfo_t for %s", hosts[i]);
+        continue;
+      }
+
+      struct addrinfo hints;
+      memset(&hints, 0, sizeof(hints));
+      hints.ai_family = PF_INET;
+      hints.ai_socktype = SOCK_STREAM;
+
+      resolver->data = client;
+      uv_getaddrinfo(loop, resolver, on_resolved, hosts[i], port_str, &hints);
+    }
+  }
+
+  // Run the custom loop
+  uv_run(loop, UV_RUN_DEFAULT);
+
+  // Clean up the loop
+  int result = uv_loop_close(loop);
+  if (result != 0) {
+    DEBUG_PRINT("Error closing loop: %s", uv_strerror(result));
+  }
+  free(loop);
+
+  return responses;
+}
+
+
+
+
+
+
+void cleanup_responses(response_t** responses) {
+  if (!responses) return;
+
+  int i = 0;
+  while (responses[i] != NULL) {
+    response_t* response = responses[i];
+    client_t* client = response->client;
+
+    if (client) {
+      // Ensure timer is closed
+      if (!uv_is_closing((uv_handle_t*)&client->timer)) {
+        uv_close((uv_handle_t*)&client->timer, NULL);
+      }
+
+      // Ensure TCP handle is closed
+      if (!uv_is_closing((uv_handle_t*)&client->handle)) {
+        uv_close((uv_handle_t*)&client->handle, NULL);
+      }
+
+      // If you allocated any additional buffers (e.g., message copies), free them here
+      // if (client->message_allocated) free(client->message);
+
+      free(client);
+    }
+
+    free(response->host);
+    free(response->data);  // optional: only if `data` was used and malloc'd
+    free(response);
+
+    responses[i] = NULL;
+    i++;
+  }
+
+  free(responses);
+}
+
+
