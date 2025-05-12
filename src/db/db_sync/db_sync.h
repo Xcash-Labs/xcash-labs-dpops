@@ -9,7 +9,7 @@
 #include "db_helpers.h"
 #include "db_operations.h"
 #include "node_functions.h"
-#include "uv_net_multi.h"
+#include "net_multi.h"
 #include "xcash_net.h"
 #include "xcash_delegates.h"
 
