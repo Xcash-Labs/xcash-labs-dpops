@@ -30,12 +30,14 @@ response_t** send_multi_request(const char** hosts, int port, const char* messag
 
     if (getaddrinfo(host, port_str, &hints, &res) != 0) {
       response->status = STATUS_ERROR;
+      ERROR_PRINT("DNS resolution failed for host: %s", host);
       continue;
     }
 
     int sock = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
     if (sock < 0) {
       response->status = STATUS_ERROR;
+      ERROR_PRINT("Socket creation failed for host: %s", host);
       freeaddrinfo(res);
       continue;
     }
@@ -52,6 +54,7 @@ response_t** send_multi_request(const char** hosts, int port, const char* messag
     int sel = select(sock + 1, NULL, &writefds, NULL, &tv);
     if (sel <= 0) {
       response->status = STATUS_TIMEOUT;
+      WARNING_PRINT("Connection timeout to host: %s", host);
       close(sock);
       freeaddrinfo(res);
       continue;
@@ -63,6 +66,7 @@ response_t** send_multi_request(const char** hosts, int port, const char* messag
     ssize_t sent = send(sock, message, strlen(message), 0);
     if (sent < 0) {
       response->status = STATUS_ERROR;
+      ERROR_PRINT("Send failed to host: %s", host);
     } else {
       response->status = STATUS_OK;
     }
