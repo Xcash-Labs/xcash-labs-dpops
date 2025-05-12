@@ -15,7 +15,7 @@
 #include "structures.h"
 #include "VRF_functions.h"
 #include "xcash_round.h"
-#include "uv_net_server.h"
+#include "net_server.h"
 #include "node_functions.h"
 #include "init_processing.h"
 

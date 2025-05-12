@@ -12,7 +12,7 @@
 #include "globals.h"
 #include "macro_functions.h"
 #include "structures.h"
-#include "uv_net_server.h"
+#include "net_server.h"
 #include "server_functions.h"
 #include "network_security_functions.h"
 #include "block_verifiers_synchronize_server_functions.h"

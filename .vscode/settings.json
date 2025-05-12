@@ -27,6 +27,8 @@
         "block_verifiers_functions.h": "c",
         "block_verifiers_update_functions.h": "c",
         "string_functions.h": "c",
-        "memory": "c"
+        "memory": "c",
+        "node_functions.h": "c",
+        "server_functions.h": "c"
     }
 }
