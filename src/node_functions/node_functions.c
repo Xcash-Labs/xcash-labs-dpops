@@ -18,8 +18,7 @@ bool get_node_data(void) {
   char filter_json[VSMALL_BUFFER_SIZE];
   snprintf(filter_json, sizeof(filter_json),
            "{ \"public_address\": \"%s\" }", xcash_wallet_public_address);
-    DEBUG_PRINT("Delegate Public Address: %s\n", xcash_wallet_public_address);   
-  if (read_document_field_from_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, filter_json, "public_key", vrf_public_key) == XCASH_OK) {
+     if (read_document_field_from_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, filter_json, "public_key", vrf_public_key) == XCASH_OK) {
     DEBUG_PRINT("Delegate Public Key: %s\n", vrf_public_key);
   } else {
      FATAL_ERROR_EXIT("Failed to read public_key from db for delegate");

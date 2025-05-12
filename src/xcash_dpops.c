@@ -177,12 +177,6 @@ void fix_pipe(int fd) {
   }
 }
 
-void fix_std_pipes(void) {
-  fix_pipe(STDIN_FILENO);
-  fix_pipe(STDOUT_FILENO);
-  fix_pipe(STDERR_FILENO);
-}
-
 /*---------------------------------------------------------------------------------------------------------
 Name: main
 Description: The start point of the program
@@ -218,13 +212,6 @@ int main(int argc, char *argv[]) {
     FATAL_ERROR_EXIT("Please enable ntp for your server");
   }
 
-  // uvlib can cause assertion errors if some of STD PIPES closed
-  fix_std_pipes();
-
-  if (!(get_node_data())) {
-    FATAL_ERROR_EXIT("Failed to get the nodes public wallet address");
-  }
-
   if (!arg_config.block_verifiers_secret_key || strlen(arg_config.block_verifiers_secret_key) != VRF_SECRET_KEY_LENGTH) {
     FATAL_ERROR_EXIT("The --block-verifiers-secret-key is mandatory and should be %d characters long!", VRF_SECRET_KEY_LENGTH);
   }
@@ -250,6 +237,10 @@ int main(int argc, char *argv[]) {
   if (!initialize_database()) {
     stop_tcp_server();
     FATAL_ERROR_EXIT("Can't open mongo database");
+  }
+
+  if (!(get_node_data())) {
+    FATAL_ERROR_EXIT("Failed to get the nodes public wallet address");
   }
 
   if (init_processing(&arg_config)) {;
