@@ -83,7 +83,7 @@ void* handle_client(void* client_socket_ptr) {
 
     char buffer[SMALL_BUFFER_SIZE];
 
-    while (1) {
+    while (atomic_load(&server_running)) {
         ssize_t bytes = recv(client_socket, buffer, sizeof(buffer) - 1, 0);
         if (bytes <= 0) {
             break;  // Client disconnected or error
@@ -100,7 +100,7 @@ void* handle_client(void* client_socket_ptr) {
 void stop_tcp_server(void) {
     if (!atomic_load(&server_running)) return;
 
-    printf("🛑 Stopping TCP server...\n");
+    printf("Stopping TCP server...\n");
 
     atomic_store(&server_running, false);
 
@@ -112,5 +112,5 @@ void stop_tcp_server(void) {
 
     pthread_join(server_thread, NULL);
 
-    printf("✅ TCP server stopped.\n");
+    printf("TCP server stopped.\n");
 }
