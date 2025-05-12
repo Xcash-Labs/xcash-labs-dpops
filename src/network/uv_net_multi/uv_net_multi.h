@@ -1,13 +1,18 @@
 #ifndef UV_NET_MULTI_H
 #define UV_NET_MULTI_H
 
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <string.h>
-#include <stdlib.h>
 #include <stdio.h>
-#include <uv.h>
+#include <stdlib.h>
+#include <string.h>
 #include <time.h>
+#include <unistd.h>
+#include <errno.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <sys/time.h>
+#include <fcntl.h>
 #include "config.h"
 #include "globals.h"
 #include "macro_functions.h" 
@@ -20,27 +25,15 @@ typedef enum {
     STATUS_INCOMPLETE,
 } response_status_t;
 
-typedef struct client_t client_t;
-
 typedef struct {
-    char *host;
-    char *data;
-    size_t size;
-    time_t req_time_start; // timestamp before connection start
-    time_t req_time_end; // timestamp after connection closed
-    response_status_t status;
-    client_t *client;
+  char* host;
+  char* data; // will be NULL since no response expected
+  time_t req_time_start;
+  time_t req_time_end;
+  response_status_t status;
+  void* client; // optional, will be NULL
 } response_t;
 
-struct client_t{
-    uv_tcp_t handle;
-    uv_connect_t connect_req;
-    uv_write_t write_req;
-    uv_timer_t timer;
-    int is_closing;
-    response_t *response;
-    const char *message;
-};
 
 typedef struct {
     const char** hosts;

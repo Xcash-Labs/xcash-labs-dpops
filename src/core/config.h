@@ -90,6 +90,10 @@
 #define UV_WRITE_TIMEOUT 4000
 #define UV_CONNECTION_TIMEOUT 4000
 
+
+#define CONNECT_TIMEOUT_SEC 3
+
+
 // ===================== Hash and Key Lengths =====================
 #define DATA_HASH_LENGTH 128
 #define XCASH_PUBLIC_ADDR_LENGTH 98
