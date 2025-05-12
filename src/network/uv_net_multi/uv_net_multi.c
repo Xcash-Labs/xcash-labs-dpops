@@ -223,9 +223,9 @@ response_t** send_multi_request(const char** hosts, int port, const char* messag
 
 //  int result = uv_loop_close(loop);
   
-  if (result != 0) {
-    DEBUG_PRINT("Error closing loop: %s\n", uv_strerror(result));
-  }
+//  if (result != 0) {
+//    DEBUG_PRINT("Error closing loop: %s\n", uv_strerror(result));
+//  }
   return responses;
 }
 
