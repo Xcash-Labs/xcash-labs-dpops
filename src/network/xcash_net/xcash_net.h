@@ -9,7 +9,7 @@
 #include "config.h"
 #include "globals.h"
 #include "network_functions.h"
-#include "uv_net_multi.h"
+#include "net_multi.h"
 
 typedef enum XNET_DEST{
     XNET_SEEDS_ALL,
