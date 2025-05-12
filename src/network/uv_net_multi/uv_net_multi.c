@@ -135,6 +135,7 @@ void on_resolved(uv_getaddrinfo_t* resolver, int status, struct addrinfo* res) {
 
 
 void close_all_handles(uv_handle_t* handle, void* arg) {
+  (void)arg;
   if (!uv_is_closing(handle)) {
     DEBUG_PRINT("Force-closing handle of type: %s", uv_handle_type_name(uv_handle_get_type(handle)));
     uv_close(handle, NULL);
