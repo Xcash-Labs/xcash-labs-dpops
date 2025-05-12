@@ -46,7 +46,7 @@ void on_write(uv_write_t* req, int status) {
     uv_timer_stop(&client->timer);
 
     // Restart the read response timeout timer after successfully writing
-    uv_timer_start(&client->timer, on_timeout, RESPONSE_TIMEOUT, 0);
+    uv_timer_start(&client->timer, on_timeout, UV_RESPONSE_TIMEOUT, 0);
 
     // Start reading from the server
     uv_read_start((uv_stream_t*)req->handle, alloc_buffer, on_read);
@@ -63,7 +63,7 @@ void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
         // extend timeout_if_data_received
         if (client->response->size > 0) {
             uv_timer_stop(&client->timer);
-            uv_timer_start(&client->timer, on_timeout, RESPONSE_TIMEOUT, 0);
+            uv_timer_start(&client->timer, on_timeout, UV_RESPONSE_TIMEOUT, 0);
         }
 
     } else if (nread < 0) {
@@ -161,7 +161,7 @@ response_t** send_multi_request(const char **hosts, int port, const char* messag
         client->timer.data = client;
         
         // Start the connection timeout timer
-        uv_timer_start(&client->timer, on_timeout, CONNECTION_TIMEOUT, 0);
+        uv_timer_start(&client->timer, on_timeout, UV_CONNECTION_TIMEOUT, 0);
 
         uv_tcp_init(loop, &client->handle);
         client->handle.data = client;
