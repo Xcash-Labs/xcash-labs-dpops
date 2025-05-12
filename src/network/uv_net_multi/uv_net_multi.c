@@ -132,48 +132,6 @@ void on_resolved(uv_getaddrinfo_t* resolver, int status, struct addrinfo* res) {
   free(resolver);
 }
 
-
-
-void close_all_handles(uv_handle_t* handle, void* arg) {
-  (void)arg;
-  if (!uv_is_closing(handle)) {
-    DEBUG_PRINT("Force-closing handle of type: %s", uv_handle_type_name(uv_handle_get_type(handle)));
-    uv_close(handle, NULL);
-  }
-}
-
-
-
-
-
-
-
-void final_free_idle(uv_handle_t* handle) {
-  free(handle);  // now it is safe to free
-}
-
-void on_idle_cleanup(uv_idle_t* handle) {
-  uv_loop_t* loop = handle->loop;
-
-  uv_idle_stop(handle);
-
-  // Don't free(handle) yet — instead close it, and free in callback
-  uv_close((uv_handle_t*)handle, final_free_idle);  // cleanup safe
-
-  uv_walk(loop, close_all_handles, NULL);
-  uv_run(loop, UV_RUN_DEFAULT);  // let all uv_close() callbacks finish
-
-  int rc = uv_loop_close(loop);
-  if (rc != 0) {
-    DEBUG_PRINT("uv_loop_close failed: %s", uv_strerror(rc));
-  } else {
-    DEBUG_PRINT("uv_loop_close succeeded.");
-  }
-}
-
-
-
-
 response_t** send_multi_request(const char** hosts, int port, const char* message) {
   // count the number of hosts
   int total_hosts = 0;
@@ -228,19 +186,12 @@ response_t** send_multi_request(const char** hosts, int port, const char* messag
     }
   }
 
-
-
-  uv_idle_t* idle = malloc(sizeof(uv_idle_t));
-  uv_idle_init(loop, idle);
-  uv_idle_start(idle, on_idle_cleanup);  // Schedule cleanup
-
   uv_run(loop, UV_RUN_DEFAULT);
 
-//  int result = uv_loop_close(loop);
-  
-//  if (result != 0) {
-//    DEBUG_PRINT("Error closing loop: %s\n", uv_strerror(result));
-//  }
+  int result = uv_loop_close(loop);
+  if (result != 0) {
+    DEBUG_PRINT("Error closing loop: %s\n", uv_strerror(result));
+  }
   return responses;
 }
 
