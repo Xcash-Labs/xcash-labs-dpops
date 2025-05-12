@@ -12,6 +12,15 @@
 #include "globals.h"
 #include "macro_functions.h"
 
+typedef struct {
+    uv_tcp_t handle;
+    char client_ip[INET6_ADDRSTRLEN];
+    bool sent_reply;
+    bool received_reply;
+    bool closed;
+    char *buffer;
+    size_t buffer_size;
+} server_client_t;
 
  
 #include "xcash_message.h"
