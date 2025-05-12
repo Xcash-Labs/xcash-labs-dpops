@@ -46,7 +46,7 @@ int start_tcp_server(int port) {
 void* server_thread_loop(void* arg) {
     (void)arg;
 
-    while (1) {
+    while (atomic_load(&server_running)) {
         struct sockaddr_in client_addr;
         socklen_t client_len = sizeof(client_addr);
 
@@ -83,7 +83,7 @@ void* handle_client(void* client_socket_ptr) {
 
     char buffer[SMALL_BUFFER_SIZE];
 
-    while (atomic_load(&server_running)) {
+    while (1) {
         ssize_t bytes = recv(client_socket, buffer, sizeof(buffer) - 1, 0);
         if (bytes <= 0) {
             break;  // Client disconnected or error
