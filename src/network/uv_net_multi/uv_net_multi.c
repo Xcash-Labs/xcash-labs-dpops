@@ -118,12 +118,6 @@ void on_resolved(uv_getaddrinfo_t* resolver, int status, struct addrinfo* res) {
       start_connection(client, res->ai_addr);
     } else {
       DEBUG_PRINT("On_resolved failed to call start_connection");
-
-      DEBUG_PRINT("Client details — IP: %s, Port: %d, Host: %s",
-              client->IP_address ? client->IP_address : "N/A",
-              client->port,
-              client->response && client->response->host ? client->response->host : "N/A");
-
     }
   } else {
     DEBUG_PRINT("DNS resolution failed for %s: %s", client->response->host, uv_strerror(status));
