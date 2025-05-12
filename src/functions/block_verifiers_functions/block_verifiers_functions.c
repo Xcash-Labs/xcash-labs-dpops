@@ -205,7 +205,7 @@ bool generate_and_request_vrf_data_msg(char** message)
   unsigned char random_buf_bin[VRF_RANDOMBYTES_LENGTH] = {0};
   unsigned char alpha_input_bin[VRF_RANDOMBYTES_LENGTH * 2] = {0};
   unsigned char sk_bin[crypto_vrf_SECRETKEYBYTES] = {0};
-  unsigned char pk_bin[crypto_vrf_PUBLICKEYBYTES] = {0};
+//  unsigned char pk_bin[crypto_vrf_PUBLICKEYBYTES] = {0};
   unsigned char vrf_proof[crypto_vrf_PROOFBYTES] = {0};
   unsigned char vrf_beta[crypto_vrf_OUTPUTBYTES] = {0};
   unsigned char previous_block_hash_bin[BLOCK_HASH_LENGTH / 2] = {0};
@@ -238,10 +238,11 @@ bool generate_and_request_vrf_data_msg(char** message)
 DEBUG_PRINT("Validating VRF public key...");
 if (crypto_vrf_is_valid_key(secret_key_data) != 1) {    //  was pk_bin
   ERROR_PRINT("Public key failed validation");
-  DEBUG_PRINT("Public key (hex): %s", secret_key);
+  DEBUG_PRINT("Public key (hex): %s", secret_key);      //pk hex
   return XCASH_ERROR;
 }
 DEBUG_PRINT("VRF public key is valid.");
+  DEBUG_PRINT("Public key: %s", vrf_public_key);
 
 
 /*
@@ -287,7 +288,7 @@ DEBUG_PRINT("VRF public key is valid.");
     ERROR_PRINT("Failed to convert VRF proof to beta");
     return XCASH_ERROR;
   }
-/*
+
   // Convert proof, beta, and random buffer to hex
   for (i = 0, offset = 0; i < crypto_vrf_PROOFBYTES; i++, offset += 2)
     snprintf(vrf_proof_hex + offset, 3, "%02x", vrf_proof[i]);
@@ -321,7 +322,7 @@ DEBUG_PRINT("VRF public key is valid.");
       "vrf_beta", vrf_beta_hex,
       "block-height", current_block_height,
       NULL);
-*/
+
   return XCASH_OK;
 }
 
