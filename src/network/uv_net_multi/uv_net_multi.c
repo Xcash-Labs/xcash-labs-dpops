@@ -142,14 +142,26 @@ void close_all_handles(uv_handle_t* handle, void* arg) {
   }
 }
 
+
+
+
+
+
+
+void final_free_idle(uv_handle_t* handle) {
+  free(handle);  // now it is safe to free
+}
+
 void on_idle_cleanup(uv_idle_t* handle) {
   uv_loop_t* loop = handle->loop;
 
   uv_idle_stop(handle);
-  free(handle);
+
+  // Don't free(handle) yet — instead close it, and free in callback
+  uv_close((uv_handle_t*)handle, final_free_idle);  // cleanup safe
 
   uv_walk(loop, close_all_handles, NULL);
-  uv_run(loop, UV_RUN_DEFAULT);  // Let the close callbacks run
+  uv_run(loop, UV_RUN_DEFAULT);  // let all uv_close() callbacks finish
 
   int rc = uv_loop_close(loop);
   if (rc != 0) {
@@ -158,6 +170,9 @@ void on_idle_cleanup(uv_idle_t* handle) {
     DEBUG_PRINT("uv_loop_close succeeded.");
   }
 }
+
+
+
 
 response_t** send_multi_request(const char** hosts, int port, const char* message) {
   // count the number of hosts
