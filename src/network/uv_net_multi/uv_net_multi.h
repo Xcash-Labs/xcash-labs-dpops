@@ -7,6 +7,7 @@
 #include <string.h>
 #include <time.h>
 #include "config.h"
+#include "globals.h"
 #include "macro_functions.h"
 
 
