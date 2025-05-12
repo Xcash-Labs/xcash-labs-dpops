@@ -1,7 +1,7 @@
 #ifndef BLOCK_VERIFIERS_SYNCHRONIZE_SERVER_FUNCTIONS_H_   /* Include guard */
 #define BLOCK_VERIFIERS_SYNCHRONIZE_SERVER_FUNCTIONS_H_
 
-#include "uv_net_server.h"
+#include "net_server.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
