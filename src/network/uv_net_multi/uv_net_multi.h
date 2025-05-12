@@ -1,16 +1,16 @@
-#ifndef UV_NET_H
-#define UV_NET_H
+#ifndef UV_NET_MULTI_H
+#define UV_NET_MULTI_H
 
-#include <uv.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <uv.h>
 #include <time.h>
 #include "config.h"
 #include "globals.h"
-#include "macro_functions.h"
-
-
+#include "macro_functions.h" 
 
 typedef enum {
     STATUS_ERROR,
@@ -19,7 +19,6 @@ typedef enum {
     STATUS_TIMEOUT,
     STATUS_INCOMPLETE,
 } response_status_t;
-
 
 typedef struct client_t client_t;
 
@@ -33,7 +32,6 @@ typedef struct {
     client_t *client;
 } response_t;
 
-
 struct client_t{
     uv_tcp_t handle;
     uv_connect_t connect_req;
@@ -44,18 +42,20 @@ struct client_t{
     const char *message;
 };
 
+typedef struct {
+    const char** hosts;
+    int port;
+    const char* message;
+    response_t** results;  // output
+  } multi_request_args_t;
+
 void on_close(uv_handle_t * handle);
-
 void on_timeout(uv_timer_t *timer);
-
 void on_write(uv_write_t *req, int status);
-
-void on_read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf);
-
 void on_connect(uv_connect_t *req, int status);
-
 response_t **send_multi_request(const char **hosts, int port, const char *message);
-
 void cleanup_responses(response_t **responses);
+void* send_multi_request_thread(void* arg);
+response_t** send_multi_request_internal(const char** hosts, int port, const char* message, uv_loop_t* loop);
 
-#endif // UV_NET_H
+#endif
