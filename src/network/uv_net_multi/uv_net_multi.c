@@ -8,9 +8,11 @@ void on_close(uv_handle_t* handle) {
 
 void safe_close(client_t* client) {
   if (client->is_closing) return;
+
   client->is_closing = 1;
 
   if (!uv_is_closing((uv_handle_t*)&client->timer)) {
+    uv_timer_stop(&client->timer);
     uv_close((uv_handle_t*)&client->timer, NULL);
   }
   if (!uv_is_closing((uv_handle_t*)&client->handle)) {
@@ -21,7 +23,6 @@ void safe_close(client_t* client) {
 void on_timeout(uv_timer_t* timer) {
   client_t* client = (client_t*)timer->data;
 
-  // If response already completed, skip timeout
   if (client->response->status == STATUS_OK || client->is_closing) {
     DEBUG_PRINT("Timeout triggered, but client %s is already closing or response OK", 
                 client->response ? client->response->host : "unknown");
@@ -35,12 +36,12 @@ void on_timeout(uv_timer_t* timer) {
   safe_close(client);
 }
 
-void alloc_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
-  (void)handle;
-  suggested_size = TRANSFER_BUFFER_SIZE;
-  buf->base = (char*)malloc(suggested_size);
-  buf->len = suggested_size;
-}
+//void alloc_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
+//  (void)handle;
+//  suggested_size = TRANSFER_BUFFER_SIZE;
+//  buf->base = (char*)malloc(suggested_size);
+//  buf->len = suggested_size;
+//}
 
 void on_shutdown(uv_shutdown_t* req, int status) {
   (void)status; 
@@ -49,9 +50,11 @@ void on_shutdown(uv_shutdown_t* req, int status) {
   safe_close(client);  
 }
 
+
 void on_write(uv_write_t* req, int status) {
   client_t* client = (client_t*)req->data;
-  if (status < 0) {
+//  if (status < 0) {
+  if (client->is_closing || status < 0) {
     ERROR_PRINT("Write error to %s: %s",
                 client->response ? client->response->host : "unknown",
                 uv_strerror(status));
@@ -78,10 +81,14 @@ void on_write(uv_write_t* req, int status) {
   }
 }
 
+
+
+
+
+
 void on_connect(uv_connect_t* req, int status) {
   client_t* client = (client_t*)req->data;
   if (client->is_closing || status < 0) {
-    // Handle connection error
     DEBUG_PRINT("Connection error %s: %s", client->response->host, uv_strerror(status));
     client->response->status = STATUS_ERROR;
     safe_close(client);
@@ -90,9 +97,9 @@ void on_connect(uv_connect_t* req, int status) {
   uv_timer_stop(&client->timer);
   uv_timer_start(&client->timer, on_timeout, UV_WRITE_TIMEOUT, 0);
   uv_buf_t buf = uv_buf_init((char*)(uintptr_t)client->message, strlen(client->message));
-//  DEBUG_PRINT("Sending message to %s: %s", client->response->host, client->message);
   uv_write(&client->write_req, (uv_stream_t*)&client->handle, &buf, 1, on_write);
 }
+
 
 int is_ip_address(const char* host) {
   struct in_addr sa;
