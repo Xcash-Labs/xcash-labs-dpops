@@ -1,5 +1,5 @@
-#ifndef UV_NET_SERVER_H
-#define UV_NET_SERVER_H
+#ifndef UV_SERVER_H
+#define UV_SERVER_H
 
 #include <stdio.h>
 #include <stdlib.h>
