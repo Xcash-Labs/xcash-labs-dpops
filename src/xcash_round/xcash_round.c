@@ -296,7 +296,7 @@ void start_block_production(void) {
           if (strcmp(delegates_all[i].public_address, xcash_wallet_public_address) == 0) {
             // Found current delegate
             if (strcmp(delegates_all[i].online_status, delegates_all[i].online_status_ck) != 0) {
-              DEBUG_PRINT("Online status mismatch, updating...");
+              DEBUG_PRINT("Updating Online status...");
               strncpy(delegates_all[i].online_status, delegates_all[i].online_status_ck,
                       sizeof(delegates_all[i].online_status));
               delegates_all[i].online_status[sizeof(delegates_all[i].online_status) - 1] = '\0';

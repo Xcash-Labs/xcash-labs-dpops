@@ -3,7 +3,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-//#include <string.h>
 #include <sodium/randombytes.h>
 #include <pthread.h>
 #include "config.h"

@@ -13,8 +13,11 @@ char xcash_wallet_public_address[XCASH_PUBLIC_ADDR_LENGTH + 1] = {0};
 char current_block_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
 char previous_block_hash[BLOCK_HASH_LENGTH + 1] = {0};
 
-unsigned char secret_key_data[crypto_vrf_SECRETKEYBYTES + 1] = {0};
-char secret_key[VRF_SECRET_KEY_LENGTH + 1] = {0};
+
+unsigned char secret_key_data[crypto_vrf_SECRETKEYBYTES] = {0};
+char secret_key[VRF_SECRET_KEY_LENGTH +1] = {0};
+
+
 char vrf_public_key[VRF_PUBLIC_KEY_LENGTH + 1] = {0};
 
 char current_round_part[2] = "1";
