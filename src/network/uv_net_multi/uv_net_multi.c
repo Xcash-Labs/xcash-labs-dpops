@@ -118,6 +118,12 @@ void on_resolved(uv_getaddrinfo_t* resolver, int status, struct addrinfo* res) {
       start_connection(client, res->ai_addr);
     } else {
       DEBUG_PRINT("On_resolved failed to call start_connection");
+
+      DEBUG_PRINT("Client details — IP: %s, Port: %d, Host: %s",
+              client->IP_address ? client->IP_address : "N/A",
+              client->port,
+              client->response && client->response->host ? client->response->host : "N/A");
+
     }
   } else {
     DEBUG_PRINT("DNS resolution failed for %s: %s", client->response->host, uv_strerror(status));
@@ -186,9 +192,18 @@ response_t** send_multi_request(const char** hosts, int port, const char* messag
     }
   }
 
+
+  uv_walk(loop, [](uv_handle_t* handle, void* arg) {
+  if (!uv_is_closing(handle)) {
+    DEBUG_PRINT("Force-closing handle: %s", uv_handle_type_name(uv_handle_get_type(handle)));
+    uv_close(handle, NULL);
+  }
+  }, NULL);
+
   uv_run(loop, UV_RUN_DEFAULT);
 
   int result = uv_loop_close(loop);
+  
   if (result != 0) {
     DEBUG_PRINT("Error closing loop: %s\n", uv_strerror(result));
   }
