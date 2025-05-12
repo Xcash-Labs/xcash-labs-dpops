@@ -238,7 +238,7 @@ bool generate_and_request_vrf_data_msg(char** message)
 DEBUG_PRINT("Validating VRF public key...");
 if (crypto_vrf_is_valid_key(secret_key_data) != 1) {    //  was pk_bin
   ERROR_PRINT("Public key failed validation");
-  DEBUG_PRINT("Public key (hex): %s", secre);
+  DEBUG_PRINT("Public key (hex): %s", secret_key);
   return XCASH_ERROR;
 }
 DEBUG_PRINT("VRF public key is valid.");
