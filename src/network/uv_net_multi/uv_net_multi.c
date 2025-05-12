@@ -188,10 +188,10 @@ response_t** send_multi_request(const char** hosts, int port, const char* messag
 
   uv_run(loop, UV_RUN_DEFAULT);
 
-  int result = uv_loop_close(loop);
-  if (result != 0) {
-    DEBUG_PRINT("Error closing loop: %s\n", uv_strerror(result));
-  }
+//  int result = uv_loop_close(loop);
+//  if (result != 0) {
+//    DEBUG_PRINT("Error closing loop: %s\n", uv_strerror(result));
+//  }
   return responses;
 }
 
