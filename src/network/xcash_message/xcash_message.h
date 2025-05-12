@@ -19,7 +19,7 @@
 #include "block_verifiers_server_functions.h"
 
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
-
+ 
 bool is_unsigned_type(xcash_msg_t msg);
 bool is_walletsign_type(xcash_msg_t msg);
 bool is_nonreturn_type(xcash_msg_t msg);
