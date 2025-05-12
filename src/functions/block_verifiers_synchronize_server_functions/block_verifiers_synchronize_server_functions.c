@@ -171,7 +171,7 @@ void server_received_msg_get_block_producers(server_client_t *client, const char
     // Serialize and send
     char *message_data = cJSON_PrintUnformatted(reply_json);
     if (message_data) {
-        send_data_uv(client, message_data);  // Sends + appends SOCKET_END_STRING internally
+//        send_data_uv(client, message_data);  // Sends + appends SOCKET_END_STRING internally
         free(message_data);
     } else {
         ERROR_PRINT("Failed to serialize producer JSON");
