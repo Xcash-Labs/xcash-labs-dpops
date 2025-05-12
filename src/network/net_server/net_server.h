@@ -1,5 +1,5 @@
-#ifndef UV_SERVER_H
-#define UV_SERVER_H
+#ifndef NET_SERVER_H
+#define NET_SERVER_H
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,12 +13,8 @@
 #include "macro_functions.h"
 
 typedef struct {
-    char client_ip[INET6_ADDRSTRLEN];
-    bool sent_reply;
-    bool received_reply;
-    bool closed;
-    char *buffer;
-    size_t buffer_size;
+    int socket_fd;
+    char client_ip[INET_ADDRSTRLEN];
 } server_client_t;
 
  
