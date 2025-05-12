@@ -1,10 +1,27 @@
 #include "uv_net_multi.h"
 
-void on_close(uv_handle_t* handle) {
+static int active_requests = 0;
+
+void on_close_old(uv_handle_t* handle) {
   client_t* client = (client_t*)handle->data;
   DEBUG_PRINT("on_close() triggered for %s", client->response->host);
   client->response->req_time_end = time(NULL);
 }
+
+void on_close(uv_handle_t* handle) {
+  client_t* client = (client_t*)handle->data;
+  DEBUG_PRINT("on_close() triggered for %s", client->response->host);
+  client->response->req_time_end = time(NULL);
+
+  if (--active_requests == 0) {
+    DEBUG_PRINT("All delegates processed. Stopping event loop.");
+    uv_stop(handle->loop);
+  }
+}
+
+
+
+
 
 void safe_close(client_t* client) {
   if (client->is_closing) return;
@@ -110,7 +127,7 @@ void start_connection(client_t* client, const struct sockaddr* addr) {
   }
 }
 
-void on_resolved(uv_getaddrinfo_t* resolver, int status, struct addrinfo* res) {
+void on_resolved_old(uv_getaddrinfo_t* resolver, int status, struct addrinfo* res) {
   client_t* client = resolver->data;
 
   if (status == 0 && res != NULL) {
@@ -132,7 +149,36 @@ void on_resolved(uv_getaddrinfo_t* resolver, int status, struct addrinfo* res) {
   free(resolver);
 }
 
-response_t** send_multi_request(const char** hosts, int port, const char* message) {
+
+
+
+
+void on_resolved(uv_getaddrinfo_t* resolver, int status, struct addrinfo* res) {
+  client_t* client = resolver->data;
+
+  if (status == 0 && res != NULL && !client->is_closing) {
+    start_connection(client, res->ai_addr);
+    uv_timer_start(&client->timer, on_timeout, UV_CONNECTION_TIMEOUT, 0);
+  } else {
+    DEBUG_PRINT("DNS resolution failed for %s: %s", client->response->host, uv_strerror(status));
+    client->response->status = STATUS_ERROR;
+    safe_close(client);
+  }
+
+  if (res) uv_freeaddrinfo(res);
+  free(resolver);
+}
+
+
+
+
+
+
+
+
+
+
+response_t** send_multi_request_old(const char** hosts, int port, const char* message) {
   // count the number of hosts
   int total_hosts = 0;
   while (hosts[total_hosts] != NULL) total_hosts++;
@@ -188,12 +234,88 @@ response_t** send_multi_request(const char** hosts, int port, const char* messag
 
   uv_run(loop, UV_RUN_DEFAULT);
 
-//  int result = uv_loop_close(loop);
-//  if (result != 0) {
-//    DEBUG_PRINT("Error closing loop: %s\n", uv_strerror(result));
-//  }
+  int result = uv_loop_close(loop);
+  if (result != 0) {
+    DEBUG_PRINT("Error closing loop: %s\n", uv_strerror(result));
+  }
   return responses;
 }
+
+
+
+
+
+
+response_t** send_multi_request(const char** hosts, int port, const char* message) {
+  int total_hosts = 0;
+  while (hosts[total_hosts] != NULL) total_hosts++;
+  if (total_hosts == 0)
+    return NULL;
+
+  active_requests = total_hosts;
+
+  char port_str[6];
+  snprintf(port_str, sizeof(port_str), "%d", port);
+
+  uv_loop_t* loop = uv_default_loop();  // or use custom if needed
+
+  response_t** responses = calloc(total_hosts + 1, sizeof(response_t*));
+  if (!responses) {
+    ERROR_PRINT("Failed to allocate memory for responses.");
+    return NULL;
+  }
+
+  for (int i = 0; i < total_hosts; i++) {
+    client_t* client = calloc(1, sizeof(client_t));
+    if (!client) continue;
+
+    client->message = message;
+    client->response = calloc(1, sizeof(response_t));
+    client->response->host = strdup(hosts[i]);
+    client->response->status = STATUS_PENDING;
+    client->response->client = client;
+    client->response->req_time_start = time(NULL);
+    responses[i] = client->response;
+
+    uv_tcp_init(loop, &client->handle);
+    uv_timer_init(loop, &client->timer);
+    client->handle.data = client;
+    client->timer.data = client;
+    client->connect_req.data = client;
+    client->write_req.data = client;
+
+    if (is_ip_address(hosts[i])) {
+      struct sockaddr_in dest;
+      uv_ip4_addr(hosts[i], port, &dest);
+      uv_timer_start(&client->timer, on_timeout, UV_CONNECTION_TIMEOUT, 0);
+      start_connection(client, (const struct sockaddr*)&dest);
+    } else {
+      uv_getaddrinfo_t* resolver = malloc(sizeof(uv_getaddrinfo_t));
+      if (!resolver) {
+        ERROR_PRINT("Failed to alloc resolver for %s", hosts[i]);
+        continue;
+      }
+
+      struct addrinfo hints;
+      memset(&hints, 0, sizeof(hints));
+      hints.ai_family = PF_INET;
+      hints.ai_socktype = SOCK_STREAM;
+
+      resolver->data = client;
+
+      uv_getaddrinfo(loop, resolver, on_resolved, hosts[i], port_str, &hints);
+      // timer will be started in on_resolved
+    }
+  }
+
+  uv_run(loop, UV_RUN_DEFAULT);
+  return responses;
+}
+
+
+
+
+
 
 void cleanup_responses(response_t** responses) {
   int i = 0;
