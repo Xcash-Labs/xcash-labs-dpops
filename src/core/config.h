@@ -93,6 +93,7 @@
 
 #define CONNECT_TIMEOUT_SEC 3
 
+#define MAX_CONNECTIONS 100
 
 // ===================== Hash and Key Lengths =====================
 #define DATA_HASH_LENGTH 128

@@ -69,6 +69,11 @@ extern pthread_mutex_t majority_vote_lock;
 
 extern atomic_bool delegates_loaded;
 
+extern pthread_t server_thread;
+
+
+
+
 extern NetworkNode network_nodes[];
 
 extern char* server_limit_IP_address_list; // holds all of the IP addresses that are currently running on the server.

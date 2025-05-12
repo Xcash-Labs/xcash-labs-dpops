@@ -128,7 +128,7 @@ void sigint_handler(int sig_num) {
   sig_requests++;
   DEBUG_PRINT("Termination signal %d received [%d] times. Shutting down...", sig_num, sig_requests);
   shutdown_db();
-  stop_tcp_server();
+//  stop_tcp_server();
   cleanup_data_structures();
   fprintf(stderr, "Daemon is shutting down...\n");
   exit(0);
@@ -241,7 +241,9 @@ int main(int argc, char *argv[]) {
 
   signal(SIGINT, sigint_handler);
 
-  if (!start_tcp_server(XCASH_DPOPS_PORT)) {
+  if (start_tcp_server(XCASH_DPOPS_PORT)) {
+    pthread_join(server_thread, NULL);
+  } else {
     FATAL_ERROR_EXIT("Failed to start TCP server.");
   }
 
