@@ -68,6 +68,7 @@ extern pthread_mutex_t hash_mutex;
 extern pthread_mutex_t majority_vote_lock;
 
 extern atomic_bool delegates_loaded;
+extern atomic_bool server_running; 
 
 extern pthread_t server_thread;
 

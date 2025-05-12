@@ -46,6 +46,7 @@ pthread_mutex_t hash_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t majority_vote_lock = PTHREAD_MUTEX_INITIALIZER;
 
 atomic_bool delegates_loaded = false;
+atomic_bool server_running = true; 
 
 pthread_t server_thread;
 

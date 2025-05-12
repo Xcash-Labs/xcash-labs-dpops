@@ -27,5 +27,6 @@ typedef struct {
 void* server_thread_loop(void* arg);
 void* handle_client(void* client_socket_ptr);
 int start_tcp_server(int port);
+void stop_tcp_server(void);
 
 #endif

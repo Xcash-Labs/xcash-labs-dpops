@@ -128,7 +128,7 @@ void sigint_handler(int sig_num) {
   sig_requests++;
   DEBUG_PRINT("Termination signal %d received [%d] times. Shutting down...", sig_num, sig_requests);
   shutdown_db();
-//  stop_tcp_server();
+  stop_tcp_server();
   cleanup_data_structures();
   fprintf(stderr, "Daemon is shutting down...\n");
   exit(0);

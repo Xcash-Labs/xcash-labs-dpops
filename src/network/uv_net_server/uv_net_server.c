@@ -96,3 +96,21 @@ void* handle_client(void* client_socket_ptr) {
     close(client_socket);
     return NULL;
 }
+
+void stop_tcp_server(void) {
+    if (!atomic_load(&server_running)) return;
+
+    printf("🛑 Stopping TCP server...\n");
+
+    atomic_store(&server_running, false);
+
+    // Close the listening socket to unblock accept()
+    if (server_fd >= 0) {
+        close(server_fd);
+        server_fd = -1;
+    }
+
+    pthread_join(server_thread, NULL);
+
+    printf("✅ TCP server stopped.\n");
+}
