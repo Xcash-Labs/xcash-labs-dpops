@@ -1,5 +1,5 @@
-#ifndef UV_NET_MULTI_H
-#define UV_NET_MULTI_H
+#ifndef NET_MULTI_H
+#define NET_MULTI_H
 
 #include <stdio.h>
 #include <stdlib.h>

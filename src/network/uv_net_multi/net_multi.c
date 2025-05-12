@@ -1,4 +1,4 @@
-#include "uv_net_multi.h"
+#include "net_multi.h"
 
 response_t** send_multi_request(const char** hosts, int port, const char* message) {
   int total_hosts = 0;
