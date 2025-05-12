@@ -107,6 +107,7 @@ int is_ip_address(const char* host) {
 }
 
 void start_connection(client_t* client, const struct sockaddr* addr) {
+  DEBUG_PRINT("Attempting connection to %s", client->response ? client->response->host : "unknown");
   int rc = uv_tcp_connect(&client->connect_req, &client->handle, addr, on_connect);
   if (rc < 0) {
     ERROR_PRINT("uv_tcp_connect failed for %s: %s", 
