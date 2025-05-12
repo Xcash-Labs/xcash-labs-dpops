@@ -144,9 +144,11 @@ xcash_round_result_t process_round(void) {
       strcpy(current_block_verifiers_list.block_verifiers_public_address[j], delegates_all[i].public_address);
       strcpy(current_block_verifiers_list.block_verifiers_public_key[j], delegates_all[i].public_key);
       strcpy(current_block_verifiers_list.block_verifiers_IP_address[j], delegates_all[i].IP_address);
-      INFO_PRINT_STATUS_OK("Delegate: %s, Online Status: %s", delegates_all[i].delegate_name, delegates_all[i].online_status_ck);
+      INFO_PRINT_STATUS_OK("Delegate: %s, Online Status: ", delegates_all[i].delegate_name);
       nodes_majority_count++;
       j++;
+    } else {
+      INFO_PRINT_STATUS_OK("Delegate: %s, Online Status: ", delegates_all[i].delegate_name);
     }
   }
   pthread_mutex_unlock(&majority_vote_lock);
