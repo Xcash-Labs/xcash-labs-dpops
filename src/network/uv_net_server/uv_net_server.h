@@ -12,28 +12,7 @@
 #include "globals.h"
 #include "macro_functions.h"
 
-typedef struct {
-    uv_tcp_t handle;
-    char client_ip[INET6_ADDRSTRLEN];
-    bool sent_reply;
-    bool received_reply;
-    bool closed;
-    char *buffer;
-    size_t buffer_size;
-} server_client_t;
 
-typedef struct {
-    uv_write_t req;
-    uv_timer_t timer;
-    char *message_copy;
-    server_client_t *client;
-} write_srv_request_t;
-
-typedef struct {
-    server_client_t *client;
-    char *data;
-    size_t data_len;
-} message_work_t;
  
 #include "xcash_message.h"
 
