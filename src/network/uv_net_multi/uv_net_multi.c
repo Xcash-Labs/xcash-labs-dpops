@@ -142,6 +142,22 @@ void close_all_handles(uv_handle_t* handle, void* arg) {
   }
 }
 
+void on_idle_cleanup(uv_idle_t* handle) {
+  uv_loop_t* loop = handle->loop;
+
+  uv_idle_stop(handle);
+  free(handle);
+
+  uv_walk(loop, close_all_handles, NULL);
+  uv_run(loop, UV_RUN_DEFAULT);  // Let the close callbacks run
+
+  int rc = uv_loop_close(loop);
+  if (rc != 0) {
+    DEBUG_PRINT("uv_loop_close failed: %s", uv_strerror(rc));
+  } else {
+    DEBUG_PRINT("uv_loop_close succeeded.");
+  }
+}
 
 response_t** send_multi_request(const char** hosts, int port, const char* message) {
   // count the number of hosts
@@ -198,11 +214,14 @@ response_t** send_multi_request(const char** hosts, int port, const char* messag
   }
 
 
-  uv_walk(loop, close_all_handles, NULL);
+
+  uv_idle_t* idle = malloc(sizeof(uv_idle_t));
+  uv_idle_init(loop, idle);
+  uv_idle_start(idle, on_idle_cleanup);  // Schedule cleanup
 
   uv_run(loop, UV_RUN_DEFAULT);
 
-  int result = uv_loop_close(loop);
+//  int result = uv_loop_close(loop);
   
   if (result != 0) {
     DEBUG_PRINT("Error closing loop: %s\n", uv_strerror(result));
