@@ -129,6 +129,9 @@ xcash_round_result_t process_round(void) {
     return ROUND_ERROR;
   }
 
+
+
+
   INFO_STAGE_PRINT("Part 4 - Checking Block Verifiers Majority and Minimum Online Requirement");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 4);
   // Fill block verifiers list with proven online nodes
@@ -141,6 +144,7 @@ xcash_round_result_t process_round(void) {
       strcpy(current_block_verifiers_list.block_verifiers_public_address[j], delegates_all[i].public_address);
       strcpy(current_block_verifiers_list.block_verifiers_public_key[j], delegates_all[i].public_key);
       strcpy(current_block_verifiers_list.block_verifiers_IP_address[j], delegates_all[i].IP_address);
+      INFO_PRINT("Delegate: %s, Online Status: %s", delegates_all[i].public_address, delegates_all[i].online_status_ck);
       nodes_majority_count++;
       j++;
     }
@@ -161,6 +165,8 @@ xcash_round_result_t process_round(void) {
   }
   
   INFO_PRINT_STATUS_OK("Data majority reached. Online Nodes: [%d/%d]", nodes_majority_count, required_majority);
+
+
   
   INFO_STAGE_PRINT("Part 5 - Create VRF Data and Send To All Block Verifiers");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 5);
