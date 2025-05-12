@@ -287,7 +287,7 @@ DEBUG_PRINT("VRF public key is valid.");
     ERROR_PRINT("Failed to convert VRF proof to beta");
     return XCASH_ERROR;
   }
-
+/*
   // Convert proof, beta, and random buffer to hex
   for (i = 0, offset = 0; i < crypto_vrf_PROOFBYTES; i++, offset += 2)
     snprintf(vrf_proof_hex + offset, 3, "%02x", vrf_proof[i]);
@@ -321,7 +321,7 @@ DEBUG_PRINT("VRF public key is valid.");
       "vrf_beta", vrf_beta_hex,
       "block-height", current_block_height,
       NULL);
-
+*/
   return XCASH_OK;
 }
 
