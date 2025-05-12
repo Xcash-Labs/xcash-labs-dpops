@@ -264,6 +264,7 @@ DEBUG_PRINT("VRF public key is valid.");
 
 */
 
+
   // Generate random binary string
   randombytes_buf(random_buf_bin, VRF_RANDOMBYTES_LENGTH);
 
