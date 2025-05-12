@@ -42,13 +42,8 @@ typedef struct {
     response_t** results;  // output
   } multi_request_args_t;
 
-void on_close(uv_handle_t * handle);
-void on_timeout(uv_timer_t *timer);
-void on_write(uv_write_t *req, int status);
-void on_connect(uv_connect_t *req, int status);
+
 response_t **send_multi_request(const char **hosts, int port, const char *message);
 void cleanup_responses(response_t **responses);
-void* send_multi_request_thread(void* arg);
-response_t** send_multi_request_internal(const char** hosts, int port, const char* message, uv_loop_t* loop);
 
 #endif
