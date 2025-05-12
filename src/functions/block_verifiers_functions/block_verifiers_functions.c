@@ -242,7 +242,7 @@ if (crypto_vrf_is_valid_key(secret_key_data) != 1) {    //  was pk_bin
   return XCASH_ERROR;
 }
 DEBUG_PRINT("VRF public key is valid.");
-  DEBUG_PRINT("Public key: %s", vrf_public_key);
+  DEBUG_PRINT("VRF Public key: %s", vrf_public_key);
 
 
 /*
