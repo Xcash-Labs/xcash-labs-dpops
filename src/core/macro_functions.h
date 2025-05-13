@@ -31,7 +31,15 @@
         fprintf(stderr, "  --> TRACE: %s:%d, %s()\n\n", __FILE__, __LINE__, __func__); \
     } \
 } while (0)
-#define INFO_PRINT(fmt, ...) do { if (log_level >= LOG_LEVEL_INFO) { fprintf(stderr, BRIGHT_WHITE_TEXT("INFO: ") fmt "\n", ##__VA_ARGS__); } } while (0)
+#define INFO_PRINT(fmt, ...) do { \
+    if (log_level >= LOG_LEVEL_INFO) { \
+        time_t raw_time = time(NULL); \
+        struct tm *tm_info = localtime(&raw_time); \
+        char time_buf[20]; \
+        strftime(time_buf, sizeof(time_buf), "%Y-%m-%d %H:%M:%S", tm_info); \
+        fprintf(stderr, "\033[1;37m[%s] INFO: " fmt "\033[0m\n", time_buf, ##__VA_ARGS__); \
+    } \
+} while (0)
 #define WARNING_PRINT(fmt, ...) do { if (log_level >= LOG_LEVEL_WARNING) { fprintf(stderr, ORANGE_TEXT("WARNING: ") fmt "\n", ##__VA_ARGS__); } } while (0)
 #define ERROR_PRINT(fmt, ...) do { if (log_level >= LOG_LEVEL_ERROR) { fprintf(stderr, RED_TEXT("ERROR: ") fmt "\n", ##__VA_ARGS__); } } while (0)
 #define FATAL_ERROR_EXIT(fmt, ...) do { if (log_level >= LOG_LEVEL_CRITICAL) { fprintf(stderr, "\033[1;31mFATAL: " fmt "\033[0m\n", ##__VA_ARGS__); exit(1); } } while (0)
