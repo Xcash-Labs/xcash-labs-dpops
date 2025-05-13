@@ -83,47 +83,6 @@ void* server_thread_loop(void* arg) {
   return NULL;
 }
 
-void* handle_client__OLD__(void* client_socket_ptr) {
-  int client_socket = *(int*)client_socket_ptr;
-  free(client_socket_ptr);
-
-  char buffer[SMALL_BUFFER_SIZE];
-
-  server_client_t client = {
-    .socket_fd = client_socket
-  };
-
-  // Get IP address
-  struct sockaddr_in addr;
-  socklen_t addr_len = sizeof(addr);
-  if (getpeername(client_socket, (struct sockaddr*)&addr, &addr_len) == 0) {
-    inet_ntop(AF_INET, &addr.sin_addr, client.client_ip, sizeof(client.client_ip));
-  } else {
-    strncpy(client.client_ip, "unknown", sizeof(client.client_ip));
-  }
-
-  while (1) {
-    ssize_t bytes = recv(client_socket, buffer, sizeof(buffer) - 1, 0);
-    if (bytes <= 0) {
-      break;  // Client disconnected or error
-    }
-
-    buffer[bytes] = '\0';
-    printf("[TCP] Messaged Received: %s\n", buffer);
-
-    handle_srv_message(buffer, bytes, &client);
-
-  }
-
-  close(client_socket);
-  return NULL;
-}
-
-
-
-
-
-
 void* handle_client(void* client_socket_ptr) {
   int client_socket = *(int*)client_socket_ptr;
   free(client_socket_ptr);
