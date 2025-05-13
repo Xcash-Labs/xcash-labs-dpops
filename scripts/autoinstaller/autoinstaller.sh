@@ -1350,12 +1350,12 @@ function update_xcash_dpops()
   git pull --quiet
   make clean &>/dev/null
   if [ "$RAM_CPU_RATIO" -ge "$RAM_CPU_RATIO_ALL_CPU_THREADS" ]; then
-    make release -j"${CPU_THREADS}" &>/dev/null
+    make -j"${CPU_THREADS}" &>/dev/null
   else
     if [ "$RAM_CPU_RATIO" -eq 0 ]; then
-      make release &>/dev/null
+      make &>/dev/null
     else
-      make release -j $((CPU_THREADS / 2)) &>/dev/null
+      make -j $((CPU_THREADS / 2)) &>/dev/null
     fi
   fi
   echo -ne "\r${COLOR_PRINT_GREEN}Updating xcash-dpops Complete                 ${END_COLOR_PRINT}"

@@ -10,6 +10,7 @@
 #include <openssl/evp.h>
 #include <openssl/md5.h> 
 #include <unistd.h>
+#include <zlib.h>
 #include "config.h"
 #include "globals.h"
 #include "macro_functions.h"
@@ -23,5 +24,7 @@ size_t string_count(const char* DATA, const char* STRING);
 void bin_to_hex(const unsigned char *bin_data, int data_size, char *buf);
 void md5_hex(const char * src, char * dest);
 void string_replace_limit(char *data, const size_t DATA_TOTAL_LENGTH, const char* STR1, const char* STR2, const int COUNT);
+int compress_gzip_with_prefix(const unsigned char* input, size_t input_len, unsigned char** output, size_t* output_len);
+int decompress_gzip_with_prefix(const unsigned char* input, size_t input_len, unsigned char** output, size_t* output_len)''
 
 #endif

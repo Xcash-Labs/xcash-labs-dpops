@@ -96,6 +96,11 @@ void server_received_msg_get_sync_info(server_client_t *client, const char *MESS
 
     bool found = false;
 
+    if (!parsed_address || strlen(parsed_address) < 5 || parsed_address[0] != 'X') {
+      WARNING_PRINT("Invalid or missing delegate address: '%s'", parsed_address ? parsed_address : "NULL");
+      return;
+    }
+
     for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
         if (strcmp(delegates_all[i].public_address, parsed_address) == 0) {
 
