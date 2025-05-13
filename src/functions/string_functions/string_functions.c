@@ -427,8 +427,13 @@ bool decompress_gzip_with_prefix(const unsigned char* input, size_t input_len,
     if (!input || !output || !output_len || input_len < 2) return XCASH_ERROR;
 
     if (input[0] != 0x01) {
-        ERROR_PRINT("Invalid compression prefix: %02x", input[0]);
-        return XCASH_ERROR;
+        // No compression: treat as plain text
+        *output = malloc(input_len);
+        if (!*output) return XCASH_ERROR;
+
+        memcpy(*output, input, input_len);
+        *output_len = input_len;
+        return XCASH_OK;
     }
 
     // Strip prefix and decompress
