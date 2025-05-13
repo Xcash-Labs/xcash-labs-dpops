@@ -129,9 +129,6 @@ xcash_round_result_t process_round(void) {
     return ROUND_ERROR;
   }
 
-
-
-
   INFO_STAGE_PRINT("Part 4 - Checking Block Verifiers Majority and Minimum Online Requirement");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 4);
   // Fill block verifiers list with proven online nodes
@@ -206,7 +203,7 @@ xcash_round_result_t process_round(void) {
   // PoS bootstrapping block
   int producer_indx = -1;
   if (strtoull(current_block_height, NULL, 10) == XCASH_PROOF_OF_STAKE_BLOCK_HEIGHT) {
-    INFO_PRINT("Creating first DPOPS block.");
+    INFO_PRINT("Seednode 0 will Create first DPOPS block.");
     producer_indx = 0;
   } else {
     producer_indx = select_block_producer_from_vrf();
