@@ -95,7 +95,7 @@ void server_received_msg_get_sync_info(server_client_t *client, const char *MESS
     }
 
     if (strlen(parsed_address) < 5 || parsed_address[0] != 'X') {
-        WARNING_PRINT("Invalid or missing delegate address: '%s'", parsed_address);
+        INDO_PRINT("Invalid or missing delegate address: '%s'", parsed_address);
       return;
     }
 
@@ -103,14 +103,14 @@ void server_received_msg_get_sync_info(server_client_t *client, const char *MESS
         if (strcmp(delegates_all[i].public_address, parsed_address) == 0) {
 
             if (strcmp(parse_block_height, current_block_height) != 0) {
-                DEBUG_PRINT("Block height mismatch for %s: remote=%s, local=%s",
+                INFO_PRINT("Block height mismatch for %s: remote=%s, local=%s",
                             parsed_address, parse_block_height, current_block_height);
                 break;
             }
     
             // Compare delegate list hash
             if (strcmp(parsed_delegates_hash, delegates_hash) != 0) {
-                DEBUG_PRINT("Delegates hash mismatch for %s: remote=%s, local=%s",
+                INFO_PRINT("Delegates hash mismatch for %s: remote=%s, local=%s",
                             parsed_address, parsed_delegates_hash, delegates_hash);
                 break;
             }
@@ -118,7 +118,7 @@ void server_received_msg_get_sync_info(server_client_t *client, const char *MESS
             // All checks passed — mark online
             strncpy(delegates_all[i].online_status_ck, "true", sizeof(delegates_all[i].online_status_ck));
             delegates_all[i].online_status_ck[sizeof(delegates_all[i].online_status_ck) - 1] = '\0';
-            DEBUG_PRINT("Marked delegate %s as online (ck)", parsed_address);
+            INFO_PRINT("Marked delegate %s as online (ck)", parsed_address);
             break;
         }
     }

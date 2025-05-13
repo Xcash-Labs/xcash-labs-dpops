@@ -104,37 +104,6 @@ void* handle_client(void* client_socket_ptr) {
 
   char buffer[SMALL_BUFFER_SIZE];
 
-while (1) {
-  ssize_t bytes = recv(client_socket, buffer, sizeof(buffer) - 1, 0);
-
-  if (bytes <= 0) {
-    if (errno == EAGAIN || errno == EWOULDBLOCK) {
-      WARNING_PRINT("recv() timed out from %s", client.client_ip);
-    } else {
-      DEBUG_PRINT("recv() failed or client disconnected: %s", client.client_ip);
-    }
-    break;
-  }
-
-  buffer[bytes] = '\0';
-
-  unsigned char* decompressed = NULL;
-  size_t decompressed_len = 0;
-
-  if (!decompress_gzip_with_prefix((const unsigned char*)buffer, (size_t)bytes, &decompressed, &decompressed_len)) {
-    WARNING_PRINT("Failed to decompress message from %s", client.client_ip);
-    continue;
-  }
-
-  INFO_PRINT("[TCP] Message from %s: %.*s", client.client_ip, (int)decompressed_len, decompressed);
-  handle_srv_message((char*)decompressed, decompressed_len, &client);
-  free(decompressed);
-}
-
-
-
-
-/*
   while (1) {
     ssize_t bytes = recv(client_socket, buffer, sizeof(buffer) - 1, 0);
 
@@ -148,15 +117,26 @@ while (1) {
     }
 
     buffer[bytes] = '\0';
-    printf("[TCP] Message Received from %s: %s\n", client.client_ip, buffer);
 
-    handle_srv_message(buffer, (size_t)bytes, &client);
+    unsigned char* decompressed = NULL;
+    size_t decompressed_len = 0;
+
+    if (!decompress_gzip_with_prefix((const unsigned char*)buffer, (size_t)bytes, &decompressed, &decompressed_len)) {
+      WARNING_PRINT("Failed to decompress message from %s", client.client_ip);
+      continue;
+    }
+
+
+
+
+
+
+
+    
+    INFO_PRINT("[TCP] Message from %s: %.*s", client.client_ip, (int)decompressed_len, decompressed);
+    handle_srv_message((char*)decompressed, decompressed_len, &client);
+    free(decompressed);
   }
-*/
-
-
-
-
 
   close(client_socket);
   return NULL;
