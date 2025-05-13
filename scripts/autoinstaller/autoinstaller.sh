@@ -1325,15 +1325,8 @@ function update_xcash()
     echo "CMake is not installed. Installing..."
     sudo apt install -y cmake /dev/null 
   fi
-  if [ "$RAM_CPU_RATIO" -ge "$RAM_CPU_RATIO_ALL_CPU_THREADS" ]; then
-    make release -j"${CPU_THREADS}" &>/dev/null
-  else
-    if [ "$RAM_CPU_RATIO" -eq 0 ]; then
-      make release &>/dev/null
-    else
-      make release -j $((CPU_THREADS / 2)) &>/dev/null
-    fi
-  fi
+  make clean &>/dev/null
+  make release &>/dev/null
   echo -ne "\r${COLOR_PRINT_GREEN}Updating X-CASH Complete                     ${END_COLOR_PRINT}"
   echo
 }
@@ -1348,8 +1341,12 @@ function update_xcash_dpops()
   cd "$XCASH_DPOPS_DIR"
   git reset --hard HEAD --quiet
   git pull --quiet
+  if ! command -v cmake &> /dev/null; then
+    echo "CMake is not installed. Installing..."
+    sudo apt install -y cmake /dev/null 
+  fi
   make clean &>/dev/null
-  make
+  make release
   echo -ne "\r${COLOR_PRINT_GREEN}Updating xcash-dpops Complete                 ${END_COLOR_PRINT}"
   echo
 }
