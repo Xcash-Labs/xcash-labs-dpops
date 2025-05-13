@@ -20,6 +20,7 @@ bool get_node_data(void) {
              "{ \"public_address\": \"%s\" }", xcash_wallet_public_address);
     if (read_document_field_from_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, filter_json, "public_key", vrf_public_key) == XCASH_OK) {
       DEBUG_PRINT("Delegate Public Key: %s\n", vrf_public_key);
+            INFO_PRINT_STATUS_OK("Wallet Public Address: %s\n", xcash_wallet_public_address);
     } else {
       FATAL_ERROR_EXIT("Failed to read public_key from db for delegate");
     }
