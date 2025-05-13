@@ -297,14 +297,7 @@ bool generate_and_request_vrf_data_msg(char** message)
       "block-height", current_block_height,
       NULL);
 
-
-
-
-
-
-
-
-  return XCASH_ERROR;
+  return XCASH_OK;
 }
 
 bool create_sync_msg(char** message) {
