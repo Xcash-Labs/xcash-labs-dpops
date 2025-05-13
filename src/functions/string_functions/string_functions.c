@@ -402,11 +402,11 @@ void string_replace_limit(char *data, const size_t DATA_TOTAL_LENGTH, const char
 
 bool compress_gzip_with_prefix(const unsigned char* input, size_t input_len,
                               unsigned char** output, size_t* output_len) {
-    if (!input || !output || !output_len) return false;
+    if (!input || !output || !output_len) return XCASH_ERROR;
 
     uLongf bound = compressBound(input_len);
     *output = malloc(bound + 1);  // +1 for the prefix
-    if (!*output) return false;
+    if (!*output) return XCASH_ERROR;
 
     (*output)[0] = 0x01;  // Prefix to signal gzip
 
@@ -415,11 +415,11 @@ bool compress_gzip_with_prefix(const unsigned char* input, size_t input_len,
         free(*output);
         *output = NULL;
         *output_len = 0;
-        return false;
+        return XCASH_ERROR;
     }
 
     *output_len = bound + 1;
-    return true;
+    return XCASH_OK;
 }
 
 bool decompress_gzip_with_prefix(const unsigned char* input, size_t input_len,

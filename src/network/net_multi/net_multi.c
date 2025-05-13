@@ -80,7 +80,7 @@ response_t** send_multi_request(const char** hosts, int port, const char* messag
       ERROR_PRINT("fcntl(F_SETFL) failed while restoring blocking mode");
     }
 
-    char* compressed_message = NULL;
+    unsigned char* compressed_message = NULL;
     size_t compressed_length = 0;
     if(!(compress_gzip_with_prefix(message, strlen(message), &compressed_message, &compressed_length))) {
       response->status = STATUS_ERROR;
