@@ -242,7 +242,7 @@ if (crypto_vrf_is_valid_key(secret_key_data) != 1) {    //  was pk_bin
   return XCASH_ERROR;
 }
 DEBUG_PRINT("VRF public key is valid.");
-  DEBUG_PRINT("VRF Public key: %s", vrf_public_key);
+
 
 
 /*
@@ -268,6 +268,9 @@ DEBUG_PRINT("VRF public key is valid.");
 
   // Generate random binary string
   randombytes_buf(random_buf_bin, VRF_RANDOMBYTES_LENGTH);
+
+  DEBUG_PRINT("MADE IT HERE.......");
+
 
   // Form the alpha input = previous_block_hash || random_buf
   if (!hex_to_byte_array(previous_block_hash, previous_block_hash_bin, VRF_RANDOMBYTES_LENGTH)) {
