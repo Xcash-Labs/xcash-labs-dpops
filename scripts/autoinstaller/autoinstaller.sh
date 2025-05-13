@@ -1346,7 +1346,7 @@ function update_xcash_dpops()
     sudo apt install -y cmake /dev/null 
   fi
   make clean &>/dev/null
-  make release
+  make
   echo -ne "\r${COLOR_PRINT_GREEN}Updating xcash-dpops Complete                 ${END_COLOR_PRINT}"
   echo
 }
