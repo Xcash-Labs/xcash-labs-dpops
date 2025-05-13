@@ -142,6 +142,7 @@ Description: Print program start header.
 ---------------------------------------------------------------------------------------------------------*/
 void print_starter_state(const arg_config_t *arg_config)
 {
+  (void) arg_config;
   static const char xcash_tech_header[] =
       "\n"
       " /$$   /$$                           /$$        / $$              / $$                    \n"
@@ -172,7 +173,7 @@ void print_starter_state(const arg_config_t *arg_config)
           "Total threads:\t%d\n"
           "Log level:\t%d\n",
           XCASH_DPOPS_CURRENT_VERSION, "~Lazarus",
-            xcash_wallet_public_address,
+          xcash_wallet_public_address,
           is_seed_node ? "SEED NODE" : "DELEGATE NODE",
           XCASH_DAEMON_IP, XCASH_DAEMON_PORT,
           XCASH_DPOPS_IP, XCASH_DPOPS_PORT,
