@@ -94,10 +94,8 @@ void server_received_msg_get_sync_info(server_client_t *client, const char *MESS
         wait_for_atomic_bool();
     }
 
-    bool found = false;
-
     if (strlen(parsed_address) < 5 || parsed_address[0] != 'X') {
-      WARNING_PRINT("Invalid or missing delegate address: '%s'", parsed_address ? parsed_address : "NULL");
+        WARNING_PRINT("Invalid or missing delegate address: '%s'", parsed_address);
       return;
     }
 
@@ -120,23 +118,12 @@ void server_received_msg_get_sync_info(server_client_t *client, const char *MESS
             // All checks passed — mark online
             strncpy(delegates_all[i].online_status_ck, "true", sizeof(delegates_all[i].online_status_ck));
             delegates_all[i].online_status_ck[sizeof(delegates_all[i].online_status_ck) - 1] = '\0';
-            found = true;
             DEBUG_PRINT("Marked delegate %s as online (ck)", parsed_address);
             break;
         }
     }
     
-    if (!found) {
-        DEBUG_PRINT("Delegate with address %s not found in delegates_all[]", parsed_address);
-    }
 }
-
-
-
-
-
-
-
 
 void server_received_msg_get_block_producers(server_client_t *client, const char *MESSAGE)
 {
