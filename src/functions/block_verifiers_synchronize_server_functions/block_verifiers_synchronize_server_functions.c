@@ -122,7 +122,7 @@ void server_received_msg_get_sync_info(server_client_t *client, const char *MESS
             break;
         }
     }
-    
+    return;
 }
 
 void server_received_msg_get_block_producers(server_client_t *client, const char *MESSAGE)
