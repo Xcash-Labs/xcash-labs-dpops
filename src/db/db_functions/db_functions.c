@@ -185,7 +185,7 @@ int check_if_database_collection_exist(const char* DATABASE, const char* COLLECT
 }
 
 // Function to read a document from collection
-int read_document_from_collection__OLD__(const char* DATABASE, const char* COLLECTION, const char* DATA, char* result) {
+int read_document_from_collection(const char* DATABASE, const char* COLLECTION, const char* DATA, char* result) {
   const bson_t* current_document;
   mongoc_client_t* database_client_thread = get_temporary_connection();
   if (!database_client_thread) return XCASH_ERROR;
@@ -218,66 +218,8 @@ int read_document_from_collection__OLD__(const char* DATABASE, const char* COLLE
   return XCASH_OK;
 }
 
-
-int read_document_field_from_collection(const char* DATABASE, const char* COLLECTION, const char* DATA, const char* FIELD_NAME,
-  char* result, size_t result_size) {
-    if (!DATABASE || !COLLECTION || !DATA || !FIELD_NAME || !result || result_size == 0) {
-        fprintf(stderr, "Invalid input parameters.\n");
-        return XCASH_ERROR;
-    }
-
-    const bson_t* current_document;
-    mongoc_client_t* db_client = get_temporary_connection();
-    if (!db_client) return XCASH_ERROR;
-
-    mongoc_collection_t* collection = mongoc_client_get_collection(db_client, DATABASE, COLLECTION);
-    if (!check_if_database_collection_exist(DATABASE, COLLECTION)) {
-        free_resources(NULL, NULL, collection, db_client);
-        return XCASH_ERROR;
-    }
-
-    bson_error_t error;
-    bson_t* query = create_bson_document(DATA, &error);
-    if (!query) {
-        handle_error("Invalid JSON format", NULL, NULL, collection, db_client);
-        return XCASH_ERROR;
-    }
-
-    mongoc_cursor_t* cursor = mongoc_collection_find_with_opts(collection, query, NULL, NULL);
-    int found = 0;
-
-    while (mongoc_cursor_next(cursor, &current_document)) {
-        bson_iter_t iter;
-        if (bson_iter_init_find(&iter, current_document, FIELD_NAME)) {
-            const char* value = bson_iter_utf8(&iter, NULL);
-            if (value && strlen(value) < result_size) {
-                strncpy(result, value, result_size - 1);
-                result[result_size - 1] = '\0';
-                found = 1;
-                break;
-            } else {
-                fprintf(stderr, "Field '%s' value too large for buffer.\n", FIELD_NAME);
-                break;
-            }
-        }
-    }
-
-    mongoc_cursor_destroy(cursor);
-    bson_destroy(query);
-    free_resources(NULL, NULL, collection, db_client);
-
-    if (!found) {
-        ERROR_PRINT("Field '%s' not found in document.", FIELD_NAME);
-        return XCASH_ERROR;
-    }
-
-    return XCASH_OK;
-}
-
-
-
 // Function to read a specific field from a document
-int read_document_field_from_collection(const char* DATABASE, const char* COLLECTION, const char* DATA, const char* FIELD_NAME, char* result) {
+int read_document_field_from_collection__OLD(const char* DATABASE, const char* COLLECTION, const char* DATA, const char* FIELD_NAME, char* result) {
   if (!DATABASE || !COLLECTION || !DATA || !FIELD_NAME || !result) {  // NULL checks
       fprintf(stderr, "Invalid input parameters.\n");
       return XCASH_ERROR;
@@ -341,6 +283,66 @@ int read_document_field_from_collection(const char* DATABASE, const char* COLLEC
   free_resources(document, NULL, collection, database_client_thread);
   return XCASH_OK;
 }
+
+
+
+int read_document_field_from_collection(const char* DATABASE, const char* COLLECTION, const char* DATA, const char* FIELD_NAME, char* result) {
+  if (!DATABASE || !COLLECTION || !DATA || !FIELD_NAME || !result) {
+    fprintf(stderr, "Invalid input parameters.\n");
+    return XCASH_ERROR;
+  }
+
+  const bson_t* current_document;
+  mongoc_client_t* database_client_thread = get_temporary_connection();
+  if (!database_client_thread) return XCASH_ERROR;
+
+  mongoc_collection_t* collection = mongoc_client_get_collection(database_client_thread, DATABASE, COLLECTION);
+  if (!check_if_database_collection_exist(DATABASE, COLLECTION)) {
+    free_resources(NULL, NULL, collection, database_client_thread);
+    return XCASH_ERROR;
+  }
+
+  bson_error_t error;
+  bson_t* document = create_bson_document(DATA, &error);
+  if (!document) {
+    handle_error("Invalid JSON format", NULL, NULL, collection, database_client_thread);
+    return XCASH_ERROR;
+  }
+
+  mongoc_cursor_t* document_settings = mongoc_collection_find_with_opts(collection, document, NULL, NULL);
+  int found = 0;
+
+  while (mongoc_cursor_next(document_settings, &current_document)) {
+    bson_iter_t iter;
+    if (bson_iter_init_find(&iter, current_document, FIELD_NAME)) {
+      const char* value = bson_iter_utf8(&iter, NULL);
+      if (value) {
+        // Write into result safely (fallback to 1024)
+        size_t max_len = 1024;
+        strncpy(result, value, max_len - 1);
+        result[max_len - 1] = '\0';
+        found = 1;
+        break;
+      }
+    }
+  }
+
+  mongoc_cursor_destroy(document_settings);
+  bson_destroy(document);
+  free_resources(NULL, NULL, collection, database_client_thread);
+
+  if (!found) {
+    ERROR_PRINT("Field '%s' not found in document.", FIELD_NAME);
+    return XCASH_ERROR;
+  }
+
+  return XCASH_OK;
+}
+
+
+
+
+
 
 // Function to parse JSON data
 int database_document_parse_json_data(const char* DATA, struct database_document_fields* result) {
