@@ -82,7 +82,7 @@ response_t** send_multi_request(const char** hosts, int port, const char* messag
 
     unsigned char* compressed_message = NULL;
     size_t compressed_length = 0;
-    if(!(compress_gzip_with_prefix(message, strlen(message), &compressed_message, &compressed_length))) {
+    if (!compress_gzip_with_prefix((const unsigned char *)message, strlen(message), &compressed_message, &compressed_length)) {
       response->status = STATUS_ERROR;
       ERROR_PRINT("Failed to compress message with gzip and add prefix");
       close(sock);
