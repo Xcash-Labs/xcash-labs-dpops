@@ -243,9 +243,6 @@ bool generate_and_request_vrf_data_msg(char** message)
     return XCASH_ERROR;
   }
 
-  DEBUG_PRINT("MADE IT HERE.......");
-
-
   // Form the alpha input = previous_block_hash || random_buf
   if (!hex_to_byte_array(previous_block_hash, previous_block_hash_bin, VRF_RANDOMBYTES_LENGTH)) {
     ERROR_PRINT("Failed to decode previous block hash");
@@ -300,7 +297,14 @@ bool generate_and_request_vrf_data_msg(char** message)
       "block-height", current_block_height,
       NULL);
 
-  return XCASH_OK;
+
+
+
+
+
+
+
+  return XCASH_ERROR;
 }
 
 bool create_sync_msg(char** message) {
