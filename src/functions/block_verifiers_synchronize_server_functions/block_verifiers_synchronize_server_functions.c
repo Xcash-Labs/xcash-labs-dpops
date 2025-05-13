@@ -95,7 +95,7 @@ void server_received_msg_get_sync_info(server_client_t *client, const char *MESS
     }
 
     if (strlen(parsed_address) < 5 || parsed_address[0] != 'X') {
-        INDO_PRINT("Invalid or missing delegate address: '%s'", parsed_address);
+        INFO_PRINT("Invalid or missing delegate address: '%s'", parsed_address);
       return;
     }
 
