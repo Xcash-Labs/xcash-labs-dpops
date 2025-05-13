@@ -400,13 +400,13 @@ void string_replace_limit(char *data, const size_t DATA_TOTAL_LENGTH, const char
   free(buf);
 }
 
-int compress_gzip_with_prefix(const unsigned char* input, size_t input_len,
+bool compress_gzip_with_prefix(const unsigned char* input, size_t input_len,
                               unsigned char** output, size_t* output_len) {
-    if (!input || !output || !output_len) return 0;
+    if (!input || !output || !output_len) return XCASH_ERROR;
 
     uLongf bound = compressBound(input_len);
     *output = malloc(bound + 1);  // +1 for the prefix
-    if (!*output) return 0;
+    if (!*output) return XCASH_ERROR;
 
     (*output)[0] = 0x01;  // Prefix to signal gzip
 
@@ -415,20 +415,20 @@ int compress_gzip_with_prefix(const unsigned char* input, size_t input_len,
         free(*output);
         *output = NULL;
         *output_len = 0;
-        return 0;
+        return XCASH_ERROR;
     }
 
     *output_len = bound + 1;
-    return 1;
+    return XCASH_OK;
 }
 
-int decompress_gzip_with_prefix(const unsigned char* input, size_t input_len,
+bool decompress_gzip_with_prefix(const unsigned char* input, size_t input_len,
                                 unsigned char** output, size_t* output_len) {
-    if (!input || !output || !output_len || input_len < 2) return 0;
+    if (!input || !output || !output_len || input_len < 2) return XCASH_ERROR;
 
     if (input[0] != 0x01) {
         ERROR_PRINT("Invalid compression prefix: %02x", input[0]);
-        return 0;
+        return XCASH_ERROR;
     }
 
     // Strip prefix and decompress
@@ -438,26 +438,26 @@ int decompress_gzip_with_prefix(const unsigned char* input, size_t input_len,
     for (int i = 0; i < 5; ++i) {
         free(*output);
         *output = malloc(alloc_size);
-        if (!*output) return 0;
+        if (!*output) return XCASH_ERROR;
 
         uLongf actual_len = alloc_size;
         int result = uncompress(*output, &actual_len, input + 1, input_len - 1);
 
         if (result == Z_OK) {
             *output_len = actual_len;
-            return 1;
+            return XCASH_OK;
         } else if (result == Z_BUF_ERROR) {
             alloc_size *= 2;
         } else {
             free(*output);
             *output = NULL;
             *output_len = 0;
-            return 0;
+            return XCASH_ERROR;
         }
     }
 
     free(*output);
     *output = NULL;
     *output_len = 0;
-    return 0;
+    return XCASH_ERROR;
 }

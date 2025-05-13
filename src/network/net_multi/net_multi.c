@@ -80,7 +80,18 @@ response_t** send_multi_request(const char** hosts, int port, const char* messag
       ERROR_PRINT("fcntl(F_SETFL) failed while restoring blocking mode");
     }
 
-    ssize_t sent = send(sock, message, strlen(message), 0);
+    char* compressed_message = NULL;
+    size_t compressed_length = 0;
+    if(!(compress_gzip_with_prefix(message, strlen(message), &compressed_message, &compressed_length))) {
+      response->status = STATUS_ERROR;
+      ERROR_PRINT("Failed to compress message with gzip and add prefix");
+      close(sock);
+      freeaddrinfo(res);
+      continue;
+    }
+
+    ssize_t sent = send(sock, compressed_message, compressed_length, 0);
+    free(compressed_message);
     if (sent < 0) {
       response->status = STATUS_ERROR;
       ERROR_PRINT("Send failed to host: %s", host);

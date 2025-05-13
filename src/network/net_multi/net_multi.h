@@ -16,6 +16,7 @@
 #include "config.h"
 #include "globals.h"
 #include "macro_functions.h" 
+#include "string_functions.h"
 
 typedef enum {
     STATUS_ERROR,
