@@ -178,6 +178,18 @@ int sync_block_verifiers_minutes_and_seconds(const int MINUTES, const int SECOND
 }
 
 /*---------------------------------------------------------------------------------------------------------
+Generate random binary string
+---------------------------------------------------------------------------------------------------------*/
+int get_random_bytes(unsigned char *buf, size_t len) {
+    ssize_t ret = getrandom(buf, len, 0);
+    if (ret < 0 || (size_t)ret != len) {
+        ERROR_PRINT("getrandom() failed: %s", strerror(errno));
+        return XCASH_ERROR;
+    }
+    return XCASH_OK;
+}
+
+/*---------------------------------------------------------------------------------------------------------
 Name: block_verifiers_create_VRF_secret_key_and_VRF_public_key
 Description:
   Generates a new VRF key pair (public and secret key) and a random alpha string to be used for verifiable 
@@ -219,24 +231,17 @@ bool generate_and_request_vrf_data_msg(char** message)
     return XCASH_ERROR;
   }
 
-// secret_key_data - bin
-// secret_key - hex
-
-
-
   // Validate the VRF public key
-  DEBUG_PRINT("Validating public key...");
   if (crypto_vrf_is_valid_key(pk_bin) != 1) {
     ERROR_PRINT("Public key failed validation");
-    DEBUG_PRINT("Public key (hex): %s", vrf_public_key);
     return XCASH_ERROR;
   }
-  DEBUG_PRINT("VRF public key is valid.");
-
-  DEBUG_PRINT("MADE IT HERE.......");
 
   // Generate random binary string
-  randombytes_buf(random_buf_bin, VRF_RANDOMBYTES_LENGTH);
+  if (!get_random_bytes(random_buf_bin, VRF_RANDOMBYTES_LENGTH)) {
+    FATAL_ERROR_EXIT("Failed to generate VRF alpha input");
+    return XCASH_ERROR;
+  }
 
   DEBUG_PRINT("MADE IT HERE.......");
 
