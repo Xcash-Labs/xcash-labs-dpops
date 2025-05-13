@@ -152,17 +152,15 @@ while (1) {
 
     handle_srv_message(buffer, (size_t)bytes, &client);
   }
-
-  close(client_socket);
-  return NULL;
-}
 */
 
 
 
 
 
-
+  close(client_socket);
+  return NULL;
+}
 
 void stop_tcp_server(void) {
   if (!atomic_load(&server_running)) return;
