@@ -160,7 +160,7 @@ void print_starter_state(const arg_config_t *arg_config)
   fprintf(stderr, "[%s] Daemon startup successful and is busy processing requests...\n", time_str);
   fprintf(stderr,
           "%s (%s)\n\n"
-          "Address:\t%s\n"
+          "Wallet Public Address:\t%s\n"
           "\n"
           "Node Type:\t%s\n"
           "\n"
@@ -172,7 +172,7 @@ void print_starter_state(const arg_config_t *arg_config)
           "Total threads:\t%d\n"
           "Log level:\t%d\n",
           XCASH_DPOPS_CURRENT_VERSION, "~Lazarus",
-          arg_config->block_verifiers_secret_key,
+            xcash_wallet_public_address,
           is_seed_node ? "SEED NODE" : "DELEGATE NODE",
           XCASH_DAEMON_IP, XCASH_DAEMON_PORT,
           XCASH_DPOPS_IP, XCASH_DPOPS_PORT,
