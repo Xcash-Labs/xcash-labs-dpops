@@ -205,7 +205,7 @@ bool generate_and_request_vrf_data_msg(char** message)
   unsigned char random_buf_bin[VRF_RANDOMBYTES_LENGTH] = {0};
   unsigned char alpha_input_bin[VRF_RANDOMBYTES_LENGTH * 2] = {0};
   unsigned char sk_bin[crypto_vrf_SECRETKEYBYTES] = {0};
-//  unsigned char pk_bin[crypto_vrf_PUBLICKEYBYTES] = {0};
+  unsigned char pk_bin[crypto_vrf_PUBLICKEYBYTES] = {0};
   unsigned char vrf_proof[crypto_vrf_PROOFBYTES] = {0};
   unsigned char vrf_beta[crypto_vrf_OUTPUTBYTES] = {0};
   unsigned char previous_block_hash_bin[BLOCK_HASH_LENGTH / 2] = {0};
@@ -214,57 +214,26 @@ bool generate_and_request_vrf_data_msg(char** message)
   char random_buf_hex[(VRF_RANDOMBYTES_LENGTH * 2) + 1] = {0};
   size_t i, offset;
 
-
-
-// Convert stored hex keys to binary
-//DEBUG_PRINT("Converting secret key from hex to binary...");
-//if (!hex_to_byte_array(secret_key, sk_bin, sizeof(sk_bin))) {
-//  ERROR_PRINT("Invalid hex format for secret key");
-//  DEBUG_PRINT("Provided secret key (hex): %s", secret_key);
-//  return XCASH_ERROR;
-//}
-//DEBUG_PRINT("Secret key successfully converted to binary.");
-
-// Convert public key from hex to binary
-//DEBUG_PRINT("Converting public key from hex to binary...");
-//if (!hex_to_byte_array(vrf_public_key, pk_bin, sizeof(pk_bin))) {
-//  ERROR_PRINT("Invalid hex format for public key");
-//  DEBUG_PRINT("Provided public key (hex): %s", vrf_public_key);
-//  return XCASH_ERROR;
-//}
-//DEBUG_PRINT("Public key successfully converted to binary.");
-
-// Validate the public key
-DEBUG_PRINT("Validating VRF public key...");
-if (crypto_vrf_is_valid_key(secret_key_data) != 1) {    //  was pk_bin
-  ERROR_PRINT("Public key failed validation");
-  DEBUG_PRINT("Public key (hex): %s", secret_key);      //pk hex
-  return XCASH_ERROR;
-}
-DEBUG_PRINT("VRF public key is valid.");
-
-
-
-/*
-  // Convert stored hex keys to binary
-  if (!hex_to_byte_array(secret_key, sk_bin, sizeof(sk_bin))) {
-    ERROR_PRINT("Invalid hex format for secret key");
-    return XCASH_ERROR;
-  }
-
   if (!hex_to_byte_array(vrf_public_key, pk_bin, sizeof(pk_bin))) {
     ERROR_PRINT("Invalid hex format for public key");
     return XCASH_ERROR;
   }
 
-  // Validate the public key
+// secret_key_data - bin
+// secret_key - hex
+
+
+
+  // Validate the VRF public key
+  DEBUG_PRINT("Validating public key...");
   if (crypto_vrf_is_valid_key(pk_bin) != 1) {
     ERROR_PRINT("Public key failed validation");
+    DEBUG_PRINT("Public key (hex): %s", vrf_public_key;
     return XCASH_ERROR;
   }
+  DEBUG_PRINT("VRF public key is valid.");
 
-*/
-
+  DEBUG_PRINT("MADE IT HERE.......");
 
   // Generate random binary string
   randombytes_buf(random_buf_bin, VRF_RANDOMBYTES_LENGTH);
