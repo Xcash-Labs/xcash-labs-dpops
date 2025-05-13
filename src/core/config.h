@@ -92,7 +92,7 @@
 
 
 #define CONNECT_TIMEOUT_SEC 5
-
+#define RECEIVE_TIMEOUT_SEC 5
 
 
 // ===================== Hash and Key Lengths =====================

@@ -27,6 +27,7 @@ response_t** send_multi_request(const char** hosts, int port, const char* messag
     struct addrinfo hints = {0}, *res = NULL;
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
+    hints.ai_flags = AI_NUMERICSERV;
 
     if (getaddrinfo(host, port_str, &hints, &res) != 0) {
       response->status = STATUS_ERROR;
@@ -60,8 +61,24 @@ response_t** send_multi_request(const char** hosts, int port, const char* messag
       continue;
     }
 
+    int err = 0;
+    socklen_t len = sizeof(err);
+    if (getsockopt(sock, SOL_SOCKET, SO_ERROR, &err, &len) < 0 || err != 0) {
+      response->status = STATUS_ERROR;
+      ERROR_PRINT("Connect failed to host: %s (errno: %d)", host, err);
+      close(sock);
+      freeaddrinfo(res);
+      continue;
+    }
+
     // Restore blocking mode before sending
-    fcntl(sock, F_SETFL, 0);
+    // fcntl(sock, F_SETFL, 0);
+    int old_flags = fcntl(sock, F_GETFL, 0);
+    if (old_flags == -1) {
+      ERROR_PRINT("fcntl(F_GETFL) failed on socket");
+    } else if (fcntl(sock, F_SETFL, old_flags & ~O_NONBLOCK) == -1) {
+      ERROR_PRINT("fcntl(F_SETFL) failed while restoring blocking mode");
+    }
 
     ssize_t sent = send(sock, message, strlen(message), 0);
     if (sent < 0) {
@@ -72,6 +89,11 @@ response_t** send_multi_request(const char** hosts, int port, const char* messag
     }
 
     response->req_time_end = time(NULL);
+    DEBUG_PRINT("Host: %s | Status: %s | Time: %lds",
+           host,
+           response->status == STATUS_OK ? "OK" :
+           response->status == STATUS_TIMEOUT ? "TIMEOUT" : "ERROR",
+           response->req_time_end - response->req_time_start);
     close(sock);
     freeaddrinfo(res);
   }

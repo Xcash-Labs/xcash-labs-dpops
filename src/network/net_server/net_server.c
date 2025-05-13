@@ -83,7 +83,7 @@ void* server_thread_loop(void* arg) {
   return NULL;
 }
 
-void* handle_client(void* client_socket_ptr) {
+void* handle_client__OLD__(void* client_socket_ptr) {
   int client_socket = *(int*)client_socket_ptr;
   free(client_socket_ptr);
 
@@ -118,6 +118,61 @@ void* handle_client(void* client_socket_ptr) {
   close(client_socket);
   return NULL;
 }
+
+
+
+
+
+
+void* handle_client(void* client_socket_ptr) {
+  int client_socket = *(int*)client_socket_ptr;
+  free(client_socket_ptr);
+
+  server_client_t client = { .socket_fd = client_socket };
+
+  // Set receive timeout (5 seconds)
+  struct timeval recv_timeout = {RECEIVE_TIMEOUT_SEC, 0};
+  setsockopt(client_socket, SOL_SOCKET, SO_RCVTIMEO, &recv_timeout, sizeof(recv_timeout));
+
+  // Get client IP
+  struct sockaddr_in addr;
+  socklen_t addr_len = sizeof(addr);
+  if (getpeername(client_socket, (struct sockaddr*)&addr, &addr_len) == 0) {
+    inet_ntop(AF_INET, &addr.sin_addr, client.client_ip, sizeof(client.client_ip));
+  } else {
+    strncpy(client.client_ip, "unknown", sizeof(client.client_ip));
+  }
+
+  char buffer[SMALL_BUFFER_SIZE];
+
+  while (1) {
+    ssize_t bytes = recv(client_socket, buffer, sizeof(buffer) - 1, 0);
+
+    if (bytes <= 0) {
+      if (errno == EAGAIN || errno == EWOULDBLOCK) {
+        WARNING_PRINT("recv() timed out from %s", client.client_ip);
+      } else {
+        DEBUG_PRINT("recv() failed or client disconnected: %s", client.client_ip);
+      }
+      break;
+    }
+
+    buffer[bytes] = '\0';
+    printf("[TCP] Message Received from %s: %s\n", client.client_ip, buffer);
+
+    handle_srv_message(buffer, (size_t)bytes, &client);
+  }
+
+  close(client_socket);
+  return NULL;
+}
+
+
+
+
+
+
+
 
 void stop_tcp_server(void) {
   if (!atomic_load(&server_running)) return;
