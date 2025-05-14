@@ -139,7 +139,7 @@ for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     continue;  // Skip uninitialized entries
   }
 
-  DEBUG_PRINT("Delegate: %s, Public Address: %s, Online: %s",
+  INFO_PRINT("Delegate: %s, Public Address: %s, Online: %s",
               delegates_all[i].delegate_name,
               delegates_all[i].public_address,
               strcmp(delegates_all[i].online_status, "true") == 0 ? "YES" : "NO");
