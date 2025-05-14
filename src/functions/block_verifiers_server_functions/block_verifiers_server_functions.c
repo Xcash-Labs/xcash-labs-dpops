@@ -43,18 +43,54 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
       INFO_PRINT("Skipping VRF data: current block_height [%s] does not match expected [%s]", current_block_height, block_height);
       return; 
   }
-  
+
   pthread_mutex_lock(&majority_vote_lock);
   for (count = 0; count < BLOCK_VERIFIERS_AMOUNT; count++) {
     if (strncmp(current_block_verifiers_list.block_verifiers_public_address[count], public_address, XCASH_WALLET_LENGTH) == 0 &&
-    strncmp(current_block_verifiers_list.block_verifiers_vrf_public_key_hex[count], "", 1) == 0 &&
+        strncmp(current_block_verifiers_list.block_verifiers_vrf_public_key_hex[count], "", 1) == 0 &&
         strncmp(current_block_verifiers_list.block_verifiers_random_hex[count], "", 1) == 0 &&
         strncmp(current_block_verifiers_list.block_verifiers_vrf_proof_hex[count], "", 1) == 0 &&
         strncmp(current_block_verifiers_list.block_verifiers_vrf_beta_hex[count], "", 1) == 0) {
-          memcpy(current_block_verifiers_list.block_verifiers_vrf_public_key_hex[count], vrf_public_key, VRF_PUBLIC_KEY_LENGTH+1);
-          memcpy(current_block_verifiers_list.block_verifiers_random_hex[count], random_buf_hex, VRF_RANDOMBYTES_LENGTH * 2 + 1);
-          memcpy(current_block_verifiers_list.block_verifiers_vrf_proof_hex[count], vrf_proof_hex, VRF_PROOF_LENGTH + 1); 
-          memcpy(current_block_verifiers_list.block_verifiers_vrf_beta_hex[count], vrf_beta_hex, VRF_BETA_LENGTH + 1);
+
+      unsigned char random_buf_bin[VRF_RANDOMBYTES_LENGTH] = {0};
+      unsigned char alpha_input_bin[VRF_RANDOMBYTES_LENGTH * 2] = {0};
+      unsigned char pk_bin[crypto_vrf_PUBLICKEYBYTES] = {0};
+      unsigned char vrf_proof[crypto_vrf_PROOFBYTES] = {0};
+      unsigned char vrf_beta[crypto_vrf_OUTPUTBYTES] = {0};
+      unsigned char previous_block_hash_bin[BLOCK_HASH_LENGTH / 2] = {0};
+
+      if (!hex_to_byte_array(vrf_public_key_data, pk_bin, sizeof(pk_bin)) ||
+
+        !hex_to_byte_array(vrf_proof_hex, vrf_proof, sizeof(vrf_proof)) ||
+        !hex_to_byte_array(vrf_beta_hex, vrf_beta, sizeof(vrf_beta)) ||
+        !hex_to_byte_array(random_buf_hex, random_buf_bin, sizeof(random_buf_bin)) ||
+        !hex_to_byte_array(previous_block_hash, previous_block_hash_bin, sizeof(previous_block_hash_bin))) {
+
+          ERROR_PRINT("Failed to decode one or more fields in VRF message from %s", public_address);
+          break;
+      }
+
+      // Form alpha input = previous_block_hash || random_buf
+      memcpy(alpha_input_bin, previous_block_hash_bin, VRF_RANDOMBYTES_LENGTH);
+      memcpy(alpha_input_bin + VRF_RANDOMBYTES_LENGTH, random_buf_bin, VRF_RANDOMBYTES_LENGTH);
+
+      // Verify VRF proof
+      unsigned char computed_beta[crypto_vrf_OUTPUTBYTES];
+      if (crypto_vrf_verify(computed_beta, pk_bin, vrf_proof, alpha_input_bin, sizeof(alpha_input_bin)) != 0) {
+        ERROR_PRINT("VRF proof failed verification from %s", public_address);
+        break;
+      }
+
+      if (memcmp(computed_beta, vrf_beta, sizeof(vrf_beta)) != 0) {
+        WARNING_PRINT("VRF beta mismatch from %s", public_address);
+        break;
+      }
+
+      memcpy(current_block_verifiers_list.block_verifiers_vrf_public_key_hex[count], vrf_public_key_data, VRF_PUBLIC_KEY_LENGTH+1);
+      memcpy(current_block_verifiers_list.block_verifiers_random_hex[count], random_buf_hex, VRF_RANDOMBYTES_LENGTH * 2 + 1);
+      memcpy(current_block_verifiers_list.block_verifiers_vrf_proof_hex[count], vrf_proof_hex, VRF_PROOF_LENGTH + 1); 
+      memcpy(current_block_verifiers_list.block_verifiers_vrf_beta_hex[count], vrf_beta_hex, VRF_BETA_LENGTH + 1);
+
       break;
     }
   }

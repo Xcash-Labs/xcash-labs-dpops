@@ -300,8 +300,9 @@ bool generate_and_request_vrf_data_msg(char** message)
       NULL);
 
 
+/*
+For validation
 unsigned char computed_beta[crypto_vrf_OUTPUTBYTES];
-
 if (crypto_vrf_verify(computed_beta, pk_bin, vrf_proof, alpha_input_bin, 64) != 0) {
     printf("VRF proof verification failed.\n");
 } else {
@@ -311,7 +312,7 @@ if (crypto_vrf_verify(computed_beta, pk_bin, vrf_proof, alpha_input_bin, 64) != 
         printf("❌ VRF proof is valid but beta does NOT match.\n");
     }
 }
-
+*/
 
 
   return XCASH_OK;
