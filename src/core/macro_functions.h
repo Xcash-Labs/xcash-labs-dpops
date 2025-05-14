@@ -123,21 +123,10 @@
     } \
 } while (0)
 
-#define HOST_OK_PRINT(host, fmt, ...) do { \
-    time_t raw_time = time(NULL); \
-    struct tm *tm_info = localtime(&raw_time); \
-    char time_buf[20]; \
-    strftime(time_buf, sizeof(time_buf), "%Y-%m-%d %H:%M:%S", tm_info); \
-    fprintf(stderr, BRIGHT_WHITE_TEXT("[%s] ") BLUE_TEXT("%s ") fmt "\t[" GREEN_TEXT("OK") "]\n", time_buf, host, ##__VA_ARGS__); \
-} while (0)
 
-#define HOST_FAIL_PRINT(host, fmt, ...) do { \
-    time_t raw_time = time(NULL); \
-    struct tm *tm_info = localtime(&raw_time); \
-    char time_buf[20]; \
-    strftime(time_buf, sizeof(time_buf), "%Y-%m-%d %H:%M:%S", tm_info); \
-    fprintf(stderr, BRIGHT_WHITE_TEXT("[%s] ") BLUE_TEXT("%s ") fmt "\t[" RED_TEXT("X") "]\n", time_buf, host, ##__VA_ARGS__); \
-} while (0)
+
+#define HOST_OK_STATUS(host, fmt, ...) BLUE_TEXT(host)" "fmt"\t["GREEN_TEXT("OK")"]"
+#define HOST_FALSE_STATUS(host, fmt, ...) BLUE_TEXT(host)" "fmt"\t["RED_TEXT("X")"]"
 
 /*
 #define WARNING_PRINT(fmt, ...) do { if (log_level >= LOG_LEVEL_WARNING) { fprintf(stderr, ORANGE_TEXT("WARNING: ") fmt "\n", ##__VA_ARGS__); } } while (0)
@@ -147,8 +136,7 @@
 #define INFO_PRINT_STATUS_OK(fmt, ...) do { if (log_level >= LOG_LEVEL_INFO) { fprintf(stderr, BRIGHT_WHITE_TEXT("INFO: ") fmt INFO_STATUS_OK "\n", ##__VA_ARGS__); } } while (0)
 #define INFO_STAGE_PRINT(fmt, ...) do { if (log_level >= LOG_LEVEL_INFO) { fprintf(stderr, BRIGHT_WHITE_TEXT("\n\nINFO: ") LIGHT_BLUE_TEXT(fmt) "\n", ##__VA_ARGS__); } } while (0)
 #define INFO_PRINT_STATUS_FAIL(fmt, ...) do { if (log_level >= LOG_LEVEL_INFO) { fprintf(stderr, BRIGHT_WHITE_TEXT("INFO: ") fmt INFO_STATUS_FAIL "\n", ##__VA_ARGS__); } } while (0)
-#define HOST_OK_STATUS(host, fmt, ...) BLUE_TEXT(host)" "fmt"\t["GREEN_TEXT("OK")"]"
-#define HOST_FALSE_STATUS(host, fmt, ...) BLUE_TEXT(host)" "fmt"\t["RED_TEXT("X")"]"
+
 */
 
 
