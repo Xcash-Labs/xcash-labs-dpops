@@ -300,7 +300,7 @@ bool generate_and_request_vrf_data_msg(char** message)
 
 unsigned char computed_beta[64];
 
-if (crypto_vrf_verify(computed_beta, pk_bin, V, alpha_input_bin, 32) != 0) {
+if (crypto_vrf_verify(computed_beta, pk_bin, vrf_proof, alpha_input_bin, 32) != 0) {
     printf("VRF proof verification failed.\n");
 } else {
     if (memcmp(computed_beta, vrf_beta, 64) == 0) {
