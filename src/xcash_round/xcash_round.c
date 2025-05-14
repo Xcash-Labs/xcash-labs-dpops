@@ -142,8 +142,8 @@ for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
   INFO_PRINT("Delegate: %s, Public Address: %s, Online: %s",
               delegates_all[i].delegate_name,
               delegates_all[i].public_address,
-              strcmp(delegates_all[i].online_status, "true") == 0 ? "YES" : "NO");
-}
+              delegates_all[i].online_status);
+  }
 
 
 
