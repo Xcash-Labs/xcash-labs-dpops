@@ -86,7 +86,7 @@ void server_received_msg_get_sync_info(server_client_t *client, const char *MESS
       wait_seconds++;
     }
     if (current_block_height[0] == '\0') {
-      ERROR_PRINT("Timed out waiting for current_block_height in server_received_msg_get_sync_info);
+      ERROR_PRINT("Timed out waiting for current_block_height in server_received_msg_get_sync_info");
     }
 
     for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
