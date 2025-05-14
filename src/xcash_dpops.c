@@ -17,9 +17,6 @@ BRIGHT_WHITE_TEXT("Debug Options:\n")
 "                                          Critial - 0, Error - 1, Warning - 2, Info - 3, Debug - 4\n"
 "\n"
 BRIGHT_WHITE_TEXT("Advanced Options:\n")
-"  --total-threads THREADS                 Sets the UV_THREADPOOL_SIZE environment variable that controls the.\n"
-"                                          number of worker threads in the libuv thread pool (default is 4).\n"
-"\n"
 "  --generate-key                          Generate public/private key for block verifiers.\n"
 "\n"
 "  --init-db-from-seeds                    Sync current node data from seeds. Needed only during installation\n"
@@ -33,7 +30,6 @@ static struct argp_option options[] = {
   {"help", 'h', 0, 0, "List all valid parameters.", 0},
   {"block-verifiers-secret-key", 'k', "SECRET_KEY", 0, "Set the block verifier's secret key", 0},
   {"log-level", OPTION_LOG_LEVEL, "LOG_LEVEL", 0, "Displays log messages based on the level passed.", 0},
-  {"total-threads", OPTION_TOTAL_THREADS, "THREADS", 0, "Set total threads (Default: based on server threads).", 0},
   {"generate-key", OPTION_GENERATE_KEY, 0, 0, "Generate public/private key for block verifiers.", 0},
   {"init-db-from-seeds", OPTION_INIT_DB_FROM_SEEDS, 0, 0, "Sync current node data from seeds. Needed only during installation process", 0},
   {"init-db-from-top", OPTION_INIT_DB_FROM_TOP, 0, 0, "Sync current node data from top block_height nodes.", 0},
@@ -63,9 +59,6 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
     break;
   case OPTION_GENERATE_KEY:
     create_key = true;
-    break;
-  case OPTION_TOTAL_THREADS:
-    arguments->total_threads = atoi(arg);
     break;
   case OPTION_INIT_DB_FROM_SEEDS:
     arguments->init_db_from_seeds = true;
@@ -220,10 +213,6 @@ int main(int argc, char *argv[]) {
   secret_key[sizeof(secret_key) - 1] = '\0';
   if (!(hex_to_byte_array(secret_key, secret_key_data, sizeof(secret_key_data)))) {
     FATAL_ERROR_EXIT("Failed to convert the block-verifiers-secret-key to a byte array: %s", arg_config.block_verifiers_secret_key);
-  }
-
-  if (!configure_uv_threadpool(&arg_config)) {
-      FATAL_ERROR_EXIT("Failed to set UV_THREADPOOL_SIZE.");
   }
 
   signal(SIGINT, sigint_handler);

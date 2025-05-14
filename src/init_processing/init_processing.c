@@ -1,47 +1,5 @@
 #include "init_processing.h"
 
-static int total_threads = 0;
-
-/*---------------------------------------------------------------------------------------------------------
-Name: configure_uv_threadpool
-Description: Sets the UV_THREADPOOL_SIZE environment variable. Default is the system default of 4 and 
-setting it 2–4 times the number of CPU cores can improve performance.
----------------------------------------------------------------------------------------------------------*/
-bool configure_uv_threadpool(const arg_config_t *arg_config) {
-  int wsthreads = get_nprocs();
-  if (wsthreads < 1) {
-    WARNING_PRINT("Failed to get CPU core count. Defaulting to system default of 4 threads.");
-    total_threads = 4;
-    return XCASH_OK;
-  }
-
-  if (arg_config->total_threads == 0) {
-    total_threads = wsthreads * 2;
-  } else if (arg_config->total_threads >= (wsthreads*2)) {
-    total_threads = wsthreads * 2;
-    WARNING_PRINT("Limiting UV_THREADPOOL_SIZE to %d", total_threads);
-  } else {
-    total_threads = arg_config->total_threads;
-  }
-
-  if (total_threads > MAX_THREADS) {
-    total_threads = MAX_THREADS;
-    WARNING_PRINT("Capping UV_THREADPOOL_SIZE to %d", MAX_THREADS);
-  }
-
-  char threadpool_size[10];
-  snprintf(threadpool_size, sizeof(threadpool_size), "%d", total_threads);
-
-  if (setenv("UV_THREADPOOL_SIZE", threadpool_size, 1) != 0) {
-    ERROR_PRINT("Failed to set UV_THREADPOOL_SIZE");
-    return XCASH_ERROR;
-  } else {
-    DEBUG_PRINT("UV_THREADPOOL_SIZE set to %s", threadpool_size);
-  }
-
-  return XCASH_OK;
-}
-
 /*---------------------------------------------------------------------------------------------------------
 Name: init_processing
 Description: Initialize globals and print program start header.
@@ -158,7 +116,6 @@ void print_starter_state(const arg_config_t *arg_config)
   time_t now = time(NULL);
   char time_str[64];
   strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M:%S", localtime(&now));
-  fprintf(stderr, "[%s] Daemon startup successful and is busy processing requests...\n", time_str);
   fprintf(stderr,
           "%s (%s)\n\n"
           "Wallet Public Address:\t%s\n"
@@ -170,7 +127,6 @@ void print_starter_state(const arg_config_t *arg_config)
           "DPoPS:\t\t%s:%d\n"
           "Wallet:\t\t%s:%d\n"
           "MongoDB:\t%s\n"
-          "Total threads:\t%d\n"
           "Log level:\t%d\n",
           XCASH_DPOPS_CURRENT_VERSION, "~Lazarus",
           xcash_wallet_public_address,
@@ -178,5 +134,7 @@ void print_starter_state(const arg_config_t *arg_config)
           XCASH_DAEMON_IP, XCASH_DAEMON_PORT,
           XCASH_DPOPS_IP, XCASH_DPOPS_PORT,
           XCASH_WALLET_IP, XCASH_WALLET_PORT,
-          DATABASE_CONNECTION, total_threads, log_level);
+          DATABASE_CONNECTION, log_level);
+
+  fprintf(stderr, "[%s] Daemon startup successful and is busy processing requests...\n", time_str);
 }
