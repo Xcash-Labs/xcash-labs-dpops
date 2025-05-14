@@ -55,17 +55,17 @@ struct database_multiple_documents_fields {
     char* value[MAXIMUM_DATABASE_COLLECTION_DOCUMENTS][TOTAL_DELEGATES_DATABASE_FIELDS+1]; // The value
 };
 
-// ---- why is this 100 and not 50
+// ---- changed this to 50 for now.............
 typedef struct {
-    char block_verifiers_name[BLOCK_VERIFIERS_TOTAL_AMOUNT][MAXIMUM_BUFFER_SIZE_DELEGATES_NAME+1]; // The block verifiers name
-    char block_verifiers_public_address[BLOCK_VERIFIERS_TOTAL_AMOUNT][XCASH_WALLET_LENGTH+1]; // The block verifiers public address
-    char block_verifiers_public_key[BLOCK_VERIFIERS_TOTAL_AMOUNT][VRF_PUBLIC_KEY_LENGTH+1]; // The block verifiers public key
-    char block_verifiers_IP_address[BLOCK_VERIFIERS_TOTAL_AMOUNT][BLOCK_VERIFIERS_IP_ADDRESS_TOTAL_LENGTH+1]; // The block verifiers IP address
-    char block_verifiers_vrf_public_key_hex[BLOCK_VERIFIERS_TOTAL_AMOUNT][VRF_PUBLIC_KEY_LENGTH + 1];
-    char block_verifiers_random_hex[BLOCK_VERIFIERS_TOTAL_AMOUNT][VRF_RANDOMBYTES_LENGTH * 2 + 1];
-    char block_verifiers_vrf_proof_hex[BLOCK_VERIFIERS_TOTAL_AMOUNT][VRF_PROOF_LENGTH + 1];
-    char block_verifiers_vrf_beta_hex[BLOCK_VERIFIERS_TOTAL_AMOUNT][VRF_BETA_LENGTH + 1];
-    char block_verifier_delegates_db_hash[BLOCK_VERIFIERS_TOTAL_AMOUNT][MD5_HASH_SIZE + 1];
+    char block_verifiers_name[BLOCK_VERIFIERS_AMOUNT][MAXIMUM_BUFFER_SIZE_DELEGATES_NAME+1]; // The block verifiers name
+    char block_verifiers_public_address[BLOCK_VERIFIERS_AMOUNT][XCASH_WALLET_LENGTH+1]; // The block verifiers public address
+    char block_verifiers_public_key[BLOCK_VERIFIERS_AMOUNT][VRF_PUBLIC_KEY_LENGTH+1]; // The block verifiers public key
+    char block_verifiers_IP_address[BLOCK_VERIFIERS_AMOUNT][BLOCK_VERIFIERS_IP_ADDRESS_TOTAL_LENGTH+1]; // The block verifiers IP address
+    char block_verifiers_vrf_public_key_hex[BLOCK_VERIFIERS_AMOUNT][VRF_PUBLIC_KEY_LENGTH + 1];
+    char block_verifiers_random_hex[BLOCK_VERIFIERS_AMOUNT][VRF_RANDOMBYTES_LENGTH * 2 + 1];
+    char block_verifiers_vrf_proof_hex[BLOCK_VERIFIERS_AMOUNT][VRF_PROOF_LENGTH + 1];
+    char block_verifiers_vrf_beta_hex[BLOCK_VERIFIERS_AMOUNT][VRF_BETA_LENGTH + 1];
+    char block_verifier_delegates_db_hash[BLOCK_VERIFIERS_AMOUNT][MD5_HASH_SIZE + 1];
 } block_verifiers_list_t;
 
 

@@ -92,30 +92,31 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
     } break;
 
     case XNET_DELEGATES_ALL_ONLINE: {
+      INFO_PRINT("XNET_DELEGATES_ALL_ONLINE.....");
+
       const char **delegates_online_hosts = malloc((BLOCK_VERIFIERS_TOTAL_AMOUNT + 1) * sizeof(char *));
       if (!delegates_online_hosts) {
         ERROR_PRINT("Failed to allocate memory for delegates_online_hosts");
-        return false;  // Handle memory allocation failure
+        return false;
       }
 
       size_t host_index = 0;
       for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
-        bool is_online = (strcmp(delegates_all[i].online_status, "true") == 0);
-        bool has_ip = (strlen(delegates_all[i].IP_address) != 0);
-        bool not_self = (strcmp(delegates_all[i].public_address, xcash_wallet_public_address) != 0);
+        bool not_self = strcmp(current_block_verifiers_list.block_verifiers_public_address[i], xcash_wallet_public_address) != 0;
 
-        if (is_online && has_ip && not_self) {
-          if (!delegates_all[i].IP_address) {  // Check for NULL IP address
-            ERROR_PRINT("IP address is NULL for delegate %s", delegates_all[i].delegate_name);
-            continue;  // Skip to next delegate
+        if (not_self) {
+          if (current_block_verifiers_list.block_verifiers_IP_address[i][0] == '\0') {
+            ERROR_PRINT("IP address is NULL or empty for delegate %s", current_block_verifiers_list.block_verifiers_name[i]);
+            continue;
           }
 
-          DEBUG_PRINT("Online delegate: %s (%s)", delegates_all[i].delegate_name, delegates_all[i].IP_address);
-          delegates_online_hosts[host_index++] = delegates_all[i].IP_address;  // Direct assignment
+          INFO_PRINT("Online delegate: %s (%s)", current_block_verifiers_list.block_verifiers_name[i], current_block_verifiers_list.block_verifiers_IP_address[i]);
+          delegates_online_hosts[host_index++] = current_block_verifiers_list.block_verifiers_IP_address[i];
         }
       }
-      delegates_online_hosts[host_index] = NULL;  // Null-terminate the array
-      hosts = delegates_online_hosts;             // Assign heap-allocated array to hosts
+
+      delegates_online_hosts[host_index] = NULL;
+      hosts = delegates_online_hosts;
     } break;
 
     default: {

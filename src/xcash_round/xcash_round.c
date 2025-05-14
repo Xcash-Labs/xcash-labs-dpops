@@ -60,17 +60,6 @@ int select_block_producer_from_vrf(void) {
  *                                ROUND_ERROR on critical errors.
  */
 xcash_round_result_t process_round(void) {
-  // last, current, and next delegtes load in fill_delegates_from_db - clean up not needed --------------------
-  //  INFO_STAGE_PRINT("Part 1 - Initial Network Block Verifiers Sync");
-  //  snprintf(current_round_part, sizeof(current_round_part), "%d", 1);
-  // Update with fresh delegates list
-  //  if (!fill_delegates_from_db()) {
-  //   ERROR_PRINT("Can't read delegates list from DB");
-  //    return ROUND_ERROR_RD;
-  //  }
-
-  //  delegates_loaded = true; // This is set back to false that the end of the round
-
   // Get the current block height
   INFO_STAGE_PRINT("Part 1 - Get Current Block Height");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 2);
@@ -204,7 +193,7 @@ xcash_round_result_t process_round(void) {
   }
 
   // Sync start
-  if (sync_block_verifiers_minutes_and_seconds(0, 30) == XCASH_ERROR) {
+  if (sync_block_verifiers_minutes_and_seconds(0, 40) == XCASH_ERROR) {
     INFO_PRINT("Failed to sync VRF data in the aloted time");
     return ROUND_ERROR;
   }
@@ -293,6 +282,9 @@ void start_block_production(void) {
   }
 
   // set up delegates for round
+
+  // last, current, and next delegtes load in fill_delegates_from_db - clean up not needed --------------------
+
   if (!fill_delegates_from_db()) {
     ERROR_PRINT("Failed to load and organize delegates from DB");
     // maybe sync the delegates collection and try again... Then fatal
