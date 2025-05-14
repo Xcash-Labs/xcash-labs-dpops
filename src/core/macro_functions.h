@@ -123,23 +123,8 @@
     } \
 } while (0)
 
-
-
 #define HOST_OK_STATUS(host, fmt, ...) BLUE_TEXT(host)" "fmt"\t["GREEN_TEXT("OK")"]"
 #define HOST_FALSE_STATUS(host, fmt, ...) BLUE_TEXT(host)" "fmt"\t["RED_TEXT("X")"]"
-
-/*
-#define WARNING_PRINT(fmt, ...) do { if (log_level >= LOG_LEVEL_WARNING) { fprintf(stderr, ORANGE_TEXT("WARNING: ") fmt "\n", ##__VA_ARGS__); } } while (0)
-#define ERROR_PRINT(fmt, ...) do { if (log_level >= LOG_LEVEL_ERROR) { fprintf(stderr, RED_TEXT("ERROR: ") fmt "\n", ##__VA_ARGS__); } } while (0)
-#define FATAL_ERROR_EXIT(fmt, ...) do { if (log_level >= LOG_LEVEL_CRITICAL) { fprintf(stderr, "\033[1;31mFATAL: " fmt "\033[0m\n", ##__VA_ARGS__); exit(1); } } while (0)
-#define FATAL_ERROR(fmt, ...) do { if (log_level >= LOG_LEVEL_CRITICAL) { fprintf(stderr, "\033[1;31mFATAL: " fmt "\033[0m\n", ##__VA_ARGS__); } } while (0)
-#define INFO_PRINT_STATUS_OK(fmt, ...) do { if (log_level >= LOG_LEVEL_INFO) { fprintf(stderr, BRIGHT_WHITE_TEXT("INFO: ") fmt INFO_STATUS_OK "\n", ##__VA_ARGS__); } } while (0)
-#define INFO_STAGE_PRINT(fmt, ...) do { if (log_level >= LOG_LEVEL_INFO) { fprintf(stderr, BRIGHT_WHITE_TEXT("\n\nINFO: ") LIGHT_BLUE_TEXT(fmt) "\n", ##__VA_ARGS__); } } while (0)
-#define INFO_PRINT_STATUS_FAIL(fmt, ...) do { if (log_level >= LOG_LEVEL_INFO) { fprintf(stderr, BRIGHT_WHITE_TEXT("INFO: ") fmt INFO_STATUS_FAIL "\n", ##__VA_ARGS__); } } while (0)
-
-*/
-
-
 
 #define COLOR_PRINT(string, color)                            \
     do                                                        \
