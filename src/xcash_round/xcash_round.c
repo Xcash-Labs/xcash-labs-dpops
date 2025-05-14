@@ -60,17 +60,15 @@ int select_block_producer_from_vrf(void) {
  *                                ROUND_ERROR on critical errors.
  */
 xcash_round_result_t process_round(void) {
-
 // last, current, and next delegtes load in fill_delegates_from_db - clean up not needed --------------------
   INFO_STAGE_PRINT("Part 1 - Initial Network Block Verifiers Sync");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 1);
   // Update with fresh delegates list
-  delegates_loaded = false;
   if (!fill_delegates_from_db()) {
     ERROR_PRINT("Can't read delegates list from DB");
     return ROUND_ERROR_RD;
   }
-  delegates_loaded = true; 
+  delegates_loaded = true; // This is set back to false that the end of the round
 
   int total_delegates = 0;
   for (size_t x = 0; x < BLOCK_VERIFIERS_TOTAL_AMOUNT; x++) {
@@ -237,6 +235,9 @@ xcash_round_result_t process_round(void) {
 
   INFO_STAGE_PRINT("Starting block production for block %s", current_block_height);
   int block_creation_result = block_verifiers_create_block();
+
+  // Get ready for next round
+  delegates_loaded = false;
 
   return (xcash_round_result_t)block_creation_result;
 }
