@@ -181,8 +181,6 @@ xcash_round_result_t process_round(void) {
 
   INFO_PRINT_STATUS_OK("Data majority reached. Online Nodes: [%d/%d]", nodes_majority_count, required_majority);
 
-  return ROUND_SKIP;
-
   INFO_STAGE_PRINT("Part 5 - Create VRF Data and Send To All Block Verifiers");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 5);
 
@@ -204,6 +202,8 @@ xcash_round_result_t process_round(void) {
     }
     return ROUND_ERROR;
   }
+
+  return ROUND_SKIP;
 
   // Sync start
   if (sync_block_verifiers_minutes_and_seconds(0, 30) == XCASH_ERROR) {
