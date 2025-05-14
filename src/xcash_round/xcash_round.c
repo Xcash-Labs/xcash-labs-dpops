@@ -79,6 +79,7 @@ xcash_round_result_t process_round(void) {
     ERROR_PRINT("Can't get current block height");
     return ROUND_RETRY;
   }
+  INFO_PRINT("Creating Block: %s", current_block_height);
 
   INFO_STAGE_PRINT("Part 2 - Check Delegates Data, Get Previous Block Hash, and Delegates Hash");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 2);
@@ -266,6 +267,7 @@ for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
       INFO_PRINT_STATUS_FAIL("Block %s was not created", current_block_height);
     }
 
+  // Set to blank so we start fresh at top of round
   current_block_height[0] = '\0';
   
   return (xcash_round_result_t)block_creation_result;
@@ -322,8 +324,7 @@ void start_block_production(void) {
     if (seconds_within_block > 5) {
       if (seconds_within_block % 10 == 0) {
         // only print every 10 seconds
-        INFO_PRINT("Block %s — Next round starts in [%ld:%02ld]",
-                   current_block_height,
+        INFO_PRINT("Next round starts in [%ld:%02ld]",
                    BLOCK_TIME - 1 - minute_within_block,
                    59 - (current_time.tv_sec % 60));
       }
