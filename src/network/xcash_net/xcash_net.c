@@ -106,7 +106,6 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
 
         if (not_self) {
           if (current_block_verifiers_list.block_verifiers_IP_address[i][0] == '\0') {
-            ERROR_PRINT("IP address is NULL or empty for delegate %s", current_block_verifiers_list.block_verifiers_name[i]);
             continue;
           }
 
@@ -137,6 +136,7 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
 
   // -------------------------------------------------------------------------------------------------
 
+  INFO_PRINT("Sending: %s", message);
   responses = send_multi_request(hosts, XCASH_DPOPS_PORT, message);
   free(hosts);
   if (responses) {
