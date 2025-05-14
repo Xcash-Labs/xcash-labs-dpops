@@ -68,27 +68,25 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
         ERROR_PRINT("Failed to allocate memory for delegates_hosts");
         return false;  // Handle memory allocation failure
       }
-      
+
       size_t host_index = 0;
       for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
         const char *ip = delegates_all[i].IP_address;
         const char *delegate_name = delegates_all[i].delegate_name;
 
         if (!ip) {
-            ERROR_PRINT("IP address is NULL for delegate %s", delegate_name);
-            continue;
+          continue;
         }
-    
-        // Skip empty IP strings
+
         if (strlen(ip) == 0) {
-            continue;
+          continue;
         }
-    
+
         DEBUG_PRINT("REQ to %s : %s", delegate_name, ip);
         delegates_hosts[host_index++] = ip;
       }
-      delegates_hosts[host_index] = NULL; // Null-terminate the array
-      hosts = delegates_hosts;            // Assign heap-allocated array to hosts
+      delegates_hosts[host_index] = NULL;  // Null-terminate the array
+      hosts = delegates_hosts;             // Assign heap-allocated array to hosts
     } break;
 
     case XNET_DELEGATES_ALL_ONLINE: {
@@ -102,13 +100,16 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
 
       size_t host_index = 0;
       for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
-
         bool not_self = strcmp(current_block_verifiers_list.block_verifiers_public_address[i], xcash_wallet_public_address) != 0;
+        const char *ip = current_block_verifiers_list.block_verifiers_IP_address[i];
 
-        INFO_PRINT("Checking not_self");
+        if (not_self) {
 
-      if (not_self) {
-          if (current_block_verifiers_list.block_verifiers_IP_address[i][0] == '\0') {
+          if (!ip) {
+            continue;
+          }
+
+          if (strlen(ip) == 0) {
             continue;
           }
 
@@ -131,7 +132,6 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
     ERROR_PRINT("Host array is NULL or not initialized properly.");
     return false;
   }
-
 
   // -------------------------------------------------------------------------------------------------
 
