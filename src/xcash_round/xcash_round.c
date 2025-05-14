@@ -132,6 +132,21 @@ xcash_round_result_t process_round(void) {
   // Fill block verifiers list with proven online nodes
   int nodes_majority_count = 0;
   pthread_mutex_lock(&majority_vote_lock);
+
+
+for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
+  if (strlen(delegates_all[i].delegate_name) == 0) {
+    continue;  // Skip uninitialized entries
+  }
+
+  DEBUG_PRINT("Delegate: %s, Public Address: %s, Online: %s",
+              delegates_all[i].delegate_name,
+              delegates_all[i].public_address,
+              strcmp(delegates_all[i].online_status, "true") == 0 ? "YES" : "NO");
+}
+
+
+
   memset(&current_block_verifiers_list, 0, sizeof(current_block_verifiers_list));
   for (size_t i = 0, j = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     if (delegates_all[i].public_address != NULL && delegates_all[i].public_address[0] != '\0') {
