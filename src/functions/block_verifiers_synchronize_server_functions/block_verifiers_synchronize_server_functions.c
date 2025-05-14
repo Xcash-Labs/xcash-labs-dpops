@@ -49,22 +49,6 @@ cleanup:
   return result;
 }
 
-/*
-static inline void wait_for_atomic_bool(void) {
-    const int max_wait_ms = 1000;  // 1 second
-    const int sleep_step_us = 10000;  // 10 milliseconds
-    int waited_ms = 0;
-
-    while (!atomic_load(&delegates_loaded)) {
-        if (waited_ms >= max_wait_ms) {
-            break;
-        }
-        usleep(sleep_step_us);
-        waited_ms += sleep_step_us / 1000;
-    }
-}
-*/
-
 void server_received_msg_get_sync_info(server_client_t *client, const char *MESSAGE)
 {
     char parse_block_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
@@ -91,14 +75,18 @@ void server_received_msg_get_sync_info(server_client_t *client, const char *MESS
     DEBUG_PRINT("Parsed remote public_address: %s, block_height: %s, delegates_hash: %s", parsed_address, parse_block_height, 
         parsed_delegates_hash);
 
-    // Wait for delegates table to load before searching
-//    if (!atomic_load(&delegates_loaded)) {
-//        wait_for_atomic_bool();
-//    }
-
     if (strlen(parsed_address) < 5 || parsed_address[0] != 'X') {
         INFO_PRINT("Invalid or missing delegate address: '%s'", parsed_address);
       return;
+    }
+
+    int wait_seconds = 0;
+    while (current_block_height[0] == '\0' && wait_seconds < 3) {
+      sleep(1);
+      wait_seconds++;
+    }
+    if (current_block_height[0] == '\0') {
+      ERROR_PRINT("Timed out waiting for current_block_height in server_received_msg_get_sync_info);
     }
 
     for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {

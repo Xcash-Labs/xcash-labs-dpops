@@ -79,7 +79,6 @@ xcash_round_result_t process_round(void) {
     ERROR_PRINT("Can't get current block height");
     return ROUND_RETRY;
   }
-  sleep(1);  // incase some nodes sending messages early
 
   INFO_STAGE_PRINT("Part 2 - Check Delegates Data, Get Previous Block Hash, and Delegates Hash");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 2);
@@ -261,11 +260,14 @@ for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
   INFO_STAGE_PRINT("Starting block production for block %s", current_block_height);
   int block_creation_result = block_verifiers_create_block();
 
-  // Get ready for next round
-//  delegates_loaded = false;
+    if (block_creation_result == ROUND_OK) {
+      INFO_PRINT_STATUS_OK("Block %s created successfully", current_block_height);
+    } else {
+      INFO_PRINT_STATUS_FAIL("Block %s was not created", current_block_height);
+    }
 
-
-
+  current_block_height[0] = '\0';
+  
   return (xcash_round_result_t)block_creation_result;
 }
 
@@ -374,13 +376,5 @@ void start_block_production(void) {
         continue;
       }
     }
-    
-    if (round_created) {
-      INFO_PRINT_STATUS_OK("Block %s created successfully", current_block_height);
-    } else {
-      INFO_PRINT_STATUS_FAIL("Block %s was not created", current_block_height);
-    }
-
-//    break;  // TEMP: exit after one round (for testing)
   }
 }
