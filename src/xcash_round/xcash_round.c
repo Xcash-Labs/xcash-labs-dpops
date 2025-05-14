@@ -72,6 +72,17 @@ xcash_round_result_t process_round(void) {
 //  delegates_loaded = true; // This is set back to false that the end of the round
   
 
+  // Get the current block height
+  INFO_STAGE_PRINT("Part 1 - Get Current Block Height");
+  snprintf(current_round_part, sizeof(current_round_part), "%d", 2);
+  if (get_current_block_height(current_block_height) != XCASH_OK) {
+    ERROR_PRINT("Can't get current block height");
+    return ROUND_RETRY;
+  }
+  sleep(1);  // incase some nodes sending messages early
+
+  INFO_STAGE_PRINT("Part 2 - Check Delegates Data, Get Previous Block Hash, and Delegates Hash");
+  snprintf(current_round_part, sizeof(current_round_part), "%d", 2);
   // delegates_all is loaded prior to start of round due to node timing issues
   int total_delegates = 0;
   for (size_t x = 0; x < BLOCK_VERIFIERS_TOTAL_AMOUNT; x++) {
@@ -79,15 +90,11 @@ xcash_round_result_t process_round(void) {
       total_delegates++;
     }
   }
-  DEBUG_PRINT("Found %d active delegates out of %d total slots", total_delegates, BLOCK_VERIFIERS_TOTAL_AMOUNT);
-
-  // Get the current block height Then Sync the databases and build the majority list
-  INFO_STAGE_PRINT("Part 2 - Get Current Block Height, Previous Block Hash, and Delegates Hash");
-  snprintf(current_round_part, sizeof(current_round_part), "%d", 2);
-  if (get_current_block_height(current_block_height) != XCASH_OK) {
-    ERROR_PRINT("Can't get current block height");
+  if (total_delegates == 0) {
+    ERROR_PRINT("Can't get previous block hash");
     return ROUND_RETRY;
   }
+  DEBUG_PRINT("Found %d active delegates out of %d total slots", total_delegates, BLOCK_VERIFIERS_TOTAL_AMOUNT);
 
   // Get the previous block hash
   memset(previous_block_hash, 0, BLOCK_HASH_LENGTH);
