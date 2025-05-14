@@ -102,9 +102,12 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
 
       size_t host_index = 0;
       for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
+
         bool not_self = strcmp(current_block_verifiers_list.block_verifiers_public_address[i], xcash_wallet_public_address) != 0;
 
-        if (not_self) {
+        INFO_PRINT("Checking not_self");
+
+      if (not_self) {
           if (current_block_verifiers_list.block_verifiers_IP_address[i][0] == '\0') {
             continue;
           }
