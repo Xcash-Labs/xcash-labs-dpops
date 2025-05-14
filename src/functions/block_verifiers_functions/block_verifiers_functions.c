@@ -276,17 +276,23 @@ bool generate_and_request_vrf_data_msg(char** message)
 
   unsigned char computed_beta[crypto_vrf_OUTPUTBYTES];
   if (crypto_vrf_verify(computed_beta, pk_bin, vrf_proof, alpha_input_bin, 64) != 0) {
-    ERROR_PRINT("Failed to verify the VRF proof for this node");
+    DEBUG_PRINT("Failed to verify the VRF proof for this node");
     return XCASH_ERROR;
   } else {
     if (memcmp(computed_beta, vrf_beta, 64) != 0) {
-      ERROR_PRINT("Failed to match the computed VRF beta for this node");
+      DEBUG_PRINT("Failed to match the computed VRF beta for this node");
       return XCASH_ERROR;
     }
   }
 
   // Save current block_verifiers data into structure
   pthread_mutex_lock(&majority_vote_lock);
+
+  INFO_PRINT("Comparing addresses: list[%zu] = %s, wallet = %s",
+            i,
+            current_block_verifiers_list.block_verifiers_public_address[i],
+            xcash_wallet_public_address);
+
   for (i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     if (strncmp(current_block_verifiers_list.block_verifiers_public_address[i], xcash_wallet_public_address, XCASH_WALLET_LENGTH) == 0) {
       memcpy(current_block_verifiers_list.block_verifiers_public_address[i], xcash_wallet_public_address, XCASH_WALLET_LENGTH+1);

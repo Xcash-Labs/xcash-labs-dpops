@@ -129,14 +129,8 @@ xcash_round_result_t process_round(void) {
   snprintf(current_round_part, sizeof(current_round_part), "%d", 4);
   // Fill block verifiers list with proven online nodes
   int nodes_majority_count = 0;
+
   pthread_mutex_lock(&majority_vote_lock);
-
-  for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
-    if (strlen(delegates_all[i].delegate_name) == 0) {
-      continue;  // Skip uninitialized entries
-    }
-  }
-
   memset(&current_block_verifiers_list, 0, sizeof(current_block_verifiers_list));
   for (size_t i = 0, j = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     if (delegates_all[i].public_address != NULL && delegates_all[i].public_address[0] != '\0') {
@@ -154,7 +148,6 @@ xcash_round_result_t process_round(void) {
     }
   }
   pthread_mutex_unlock(&majority_vote_lock);
-  DEBUG_PRINT("Received sync info from %d delegates", nodes_majority_count);
 
   if (nodes_majority_count < BLOCK_VERIFIERS_VALID_AMOUNT) {
     INFO_PRINT_STATUS_FAIL("Failed to reach the required number of online nodes: [%d/%d]", nodes_majority_count, BLOCK_VERIFIERS_VALID_AMOUNT);

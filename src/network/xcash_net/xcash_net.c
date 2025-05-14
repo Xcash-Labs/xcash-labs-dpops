@@ -139,7 +139,6 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
 
   // -------------------------------------------------------------------------------------------------
 
-  INFO_PRINT("Sending: %s", message);
   responses = send_multi_request(hosts, XCASH_DPOPS_PORT, message);
   free(hosts);
   if (responses) {
