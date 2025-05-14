@@ -142,7 +142,7 @@ for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
   INFO_PRINT("Delegate: %s, Public Address: %s, Online: %s",
               delegates_all[i].delegate_name,
               delegates_all[i].public_address,
-              delegates_all[i].online_status);
+              delegates_all[i].online_status_ck);
   }
 
 
