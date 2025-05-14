@@ -146,11 +146,6 @@ xcash_round_result_t process_round(void) {
     if (strlen(delegates_all[i].delegate_name) == 0) {
       continue;  // Skip uninitialized entries
     }
-
-    INFO_PRINT("Delegate: %s, Public Address: %s, Online: %s",
-               delegates_all[i].delegate_name,
-               delegates_all[i].public_address,
-               delegates_all[i].online_status_ck);
   }
 
   memset(&current_block_verifiers_list, 0, sizeof(current_block_verifiers_list));
