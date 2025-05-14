@@ -110,8 +110,6 @@ void* handle_client(void* client_socket_ptr) {
     if (bytes <= 0) {
       if (errno == EAGAIN || errno == EWOULDBLOCK) {
         WARNING_PRINT("recv() timed out from %s", client.client_ip);
-      } else {
-        DEBUG_PRINT("recv() failed or client disconnected: %s", client.client_ip);
       }
       break;
     }
@@ -128,11 +126,7 @@ void* handle_client(void* client_socket_ptr) {
 
 
 
-
-
-
-
-    
+  
     INFO_PRINT("[TCP] Message from %s: %.*s", client.client_ip, (int)decompressed_len, decompressed);
     handle_srv_message((char*)decompressed, decompressed_len, &client);
     free(decompressed);
