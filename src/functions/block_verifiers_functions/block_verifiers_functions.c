@@ -216,7 +216,9 @@ bool generate_and_request_vrf_data_msg(char** message)
 {
   unsigned char random_buf_bin[VRF_RANDOMBYTES_LENGTH] = {0};
   unsigned char alpha_input_bin[VRF_RANDOMBYTES_LENGTH * 2] = {0};
-  unsigned char sk_bin[crypto_vrf_SECRETKEYBYTES] = {0};
+//  unsigned char sk_bin[crypto_vrf_SECRETKEYBYTES] = {0};
+
+
   unsigned char pk_bin[crypto_vrf_PUBLICKEYBYTES] = {0};
   unsigned char vrf_proof[crypto_vrf_PROOFBYTES] = {0};
   unsigned char vrf_beta[crypto_vrf_OUTPUTBYTES] = {0};
@@ -252,7 +254,7 @@ bool generate_and_request_vrf_data_msg(char** message)
   memcpy(alpha_input_bin + VRF_RANDOMBYTES_LENGTH, random_buf_bin, VRF_RANDOMBYTES_LENGTH);
 
   // Generate VRF proof
-  if (crypto_vrf_prove(vrf_proof, sk_bin, alpha_input_bin, sizeof(alpha_input_bin)) != 0) {
+  if (crypto_vrf_prove(vrf_proof, secret_key_data, alpha_input_bin, sizeof(alpha_input_bin)) != 0) {
     ERROR_PRINT("Failed to generate VRF proof");
     return XCASH_ERROR;
   }
