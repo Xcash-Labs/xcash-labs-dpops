@@ -61,15 +61,18 @@ int select_block_producer_from_vrf(void) {
  */
 xcash_round_result_t process_round(void) {
 // last, current, and next delegtes load in fill_delegates_from_db - clean up not needed --------------------
-  INFO_STAGE_PRINT("Part 1 - Initial Network Block Verifiers Sync");
-  snprintf(current_round_part, sizeof(current_round_part), "%d", 1);
+//  INFO_STAGE_PRINT("Part 1 - Initial Network Block Verifiers Sync");
+//  snprintf(current_round_part, sizeof(current_round_part), "%d", 1);
   // Update with fresh delegates list
-  if (!fill_delegates_from_db()) {
-    ERROR_PRINT("Can't read delegates list from DB");
-    return ROUND_ERROR_RD;
-  }
-  delegates_loaded = true; // This is set back to false that the end of the round
+//  if (!fill_delegates_from_db()) {
+ //   ERROR_PRINT("Can't read delegates list from DB");
+//    return ROUND_ERROR_RD;
+//  }
 
+//  delegates_loaded = true; // This is set back to false that the end of the round
+  
+
+  // delegates_all is loaded prior to start of round due to node timing issues
   int total_delegates = 0;
   for (size_t x = 0; x < BLOCK_VERIFIERS_TOTAL_AMOUNT; x++) {
     if (strlen(delegates_all[x].public_address) > 0) {
@@ -252,7 +255,9 @@ for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
   int block_creation_result = block_verifiers_create_block();
 
   // Get ready for next round
-  delegates_loaded = false;
+//  delegates_loaded = false;
+
+
 
   return (xcash_round_result_t)block_creation_result;
 }
@@ -293,6 +298,12 @@ void start_block_production(void) {
     }
   }
 
+  // set up delegates for round
+  if (!fill_delegates_from_db()) {
+    ERROR_PRINT("Failed to load and organize delegates from DB");
+    // maybe sync the delegates collection and try again... Then fatal
+  }
+
   // Start production loop
   while (true) {
     gettimeofday(&current_time, NULL);
@@ -312,7 +323,6 @@ void start_block_production(void) {
       continue;
     }
 
-    // Standard block production
     bool round_created = false;
     round_result = process_round();
 
@@ -320,6 +330,12 @@ void start_block_production(void) {
       round_created = true;
     } else {
       round_created = false;
+
+      // set up delegates for next round
+      if (!fill_delegates_from_db()) {
+        ERROR_PRINT("Round completed successfully but failed to load and organize delegates for next round");
+        // need to add code to sync the delegates collection amd maybe retry???
+      }
 
       if (round_result == ROUND_ERROR || round_result == ROUND_ERROR_RD) {
         for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {

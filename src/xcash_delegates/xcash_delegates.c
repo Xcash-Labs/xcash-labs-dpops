@@ -96,6 +96,8 @@ int read_organize_delegates(delegates_t* delegates, size_t* delegates_count_resu
         WARNING_PRINT("delegates db has only %d delegates", delegates_count);
     }
 
+    memset(delegates, 0, sizeof(delegates_t) * MAXIMUM_AMOUNT_OF_DELEGATES);
+
     bson_iter_t iter;
     int delegate_index = 0;
     if (bson_iter_init(&iter, delegates_db_data)) {
@@ -142,8 +144,8 @@ int read_organize_delegates(delegates_t* delegates, size_t* delegates_count_resu
     }
 
     bson_destroy(delegates_db_data);
-    qsort(delegates, delegates_count, sizeof(delegates_t), compare_delegates);
-    *delegates_count_result = delegates_count;
+    qsort(delegates, delegate_index, sizeof(delegates_t), compare_delegates);
+    *delegates_count_result = delegate_index;
 
     return XCASH_OK;
 }

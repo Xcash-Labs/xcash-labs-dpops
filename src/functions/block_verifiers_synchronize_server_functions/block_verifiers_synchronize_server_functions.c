@@ -49,6 +49,7 @@ cleanup:
   return result;
 }
 
+/*
 static inline void wait_for_atomic_bool(void) {
     const int max_wait_ms = 1000;  // 1 second
     const int sleep_step_us = 10000;  // 10 milliseconds
@@ -62,6 +63,7 @@ static inline void wait_for_atomic_bool(void) {
         waited_ms += sleep_step_us / 1000;
     }
 }
+*/
 
 void server_received_msg_get_sync_info(server_client_t *client, const char *MESSAGE)
 {
@@ -90,9 +92,9 @@ void server_received_msg_get_sync_info(server_client_t *client, const char *MESS
         parsed_delegates_hash);
 
     // Wait for delegates table to load before searching
-    if (!atomic_load(&delegates_loaded)) {
-        wait_for_atomic_bool();
-    }
+//    if (!atomic_load(&delegates_loaded)) {
+//        wait_for_atomic_bool();
+//    }
 
     if (strlen(parsed_address) < 5 || parsed_address[0] != 'X') {
         INFO_PRINT("Invalid or missing delegate address: '%s'", parsed_address);
