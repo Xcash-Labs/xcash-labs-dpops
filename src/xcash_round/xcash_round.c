@@ -60,24 +60,23 @@ int select_block_producer_from_vrf(void) {
  *                                ROUND_ERROR on critical errors.
  */
 xcash_round_result_t process_round(void) {
-// last, current, and next delegtes load in fill_delegates_from_db - clean up not needed --------------------
-//  INFO_STAGE_PRINT("Part 1 - Initial Network Block Verifiers Sync");
-//  snprintf(current_round_part, sizeof(current_round_part), "%d", 1);
+  // last, current, and next delegtes load in fill_delegates_from_db - clean up not needed --------------------
+  //  INFO_STAGE_PRINT("Part 1 - Initial Network Block Verifiers Sync");
+  //  snprintf(current_round_part, sizeof(current_round_part), "%d", 1);
   // Update with fresh delegates list
-//  if (!fill_delegates_from_db()) {
- //   ERROR_PRINT("Can't read delegates list from DB");
-//    return ROUND_ERROR_RD;
-//  }
+  //  if (!fill_delegates_from_db()) {
+  //   ERROR_PRINT("Can't read delegates list from DB");
+  //    return ROUND_ERROR_RD;
+  //  }
 
-//  delegates_loaded = true; // This is set back to false that the end of the round
-  
+  //  delegates_loaded = true; // This is set back to false that the end of the round
 
   // Get the current block height
   INFO_STAGE_PRINT("Part 1 - Get Current Block Height");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 2);
   if (get_current_block_height(current_block_height) != XCASH_OK) {
     ERROR_PRINT("Can't get current block height");
-    return ROUND_RETRY;
+    return ROUND_SKIP;
   }
   INFO_PRINT("Creating Block: %s", current_block_height);
 
@@ -92,7 +91,7 @@ xcash_round_result_t process_round(void) {
   }
   if (total_delegates == 0) {
     ERROR_PRINT("Can't get previous block hash");
-    return ROUND_RETRY;
+    return ROUND_SKIP;
   }
   DEBUG_PRINT("Found %d active delegates out of %d total slots", total_delegates, BLOCK_VERIFIERS_TOTAL_AMOUNT);
 
@@ -100,12 +99,12 @@ xcash_round_result_t process_round(void) {
   memset(previous_block_hash, 0, BLOCK_HASH_LENGTH);
   if (get_previous_block_hash(previous_block_hash) != XCASH_OK) {
     ERROR_PRINT("Can't get previous block hash");
-    return ROUND_RETRY;
+    return ROUND_SKIP;
   }
 
   // Get hash for delegates collection
   memset(delegates_hash, 0, sizeof(delegates_hash));
-  if(!hash_delegates_collection(delegates_hash)) {
+  if (!hash_delegates_collection(delegates_hash)) {
     ERROR_PRINT("Failed to create delegates MD5 hash");
     return ROUND_ERROR;
   }
@@ -143,19 +142,16 @@ xcash_round_result_t process_round(void) {
   int nodes_majority_count = 0;
   pthread_mutex_lock(&majority_vote_lock);
 
+  for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
+    if (strlen(delegates_all[i].delegate_name) == 0) {
+      continue;  // Skip uninitialized entries
+    }
 
-for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
-  if (strlen(delegates_all[i].delegate_name) == 0) {
-    continue;  // Skip uninitialized entries
+    INFO_PRINT("Delegate: %s, Public Address: %s, Online: %s",
+               delegates_all[i].delegate_name,
+               delegates_all[i].public_address,
+               delegates_all[i].online_status_ck);
   }
-
-  INFO_PRINT("Delegate: %s, Public Address: %s, Online: %s",
-              delegates_all[i].delegate_name,
-              delegates_all[i].public_address,
-              delegates_all[i].online_status_ck);
-  }
-
-
 
   memset(&current_block_verifiers_list, 0, sizeof(current_block_verifiers_list));
   for (size_t i = 0, j = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
@@ -184,41 +180,34 @@ for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
   int required_majority = (total_delegates * MAJORITY_PERCENT + 99) / 100;
 
   if (nodes_majority_count < required_majority) {
-      INFO_PRINT_STATUS_FAIL("Data majority not reached. Online Nodes: [%d/%d]", nodes_majority_count, required_majority);
-      return ROUND_SKIP;
+    INFO_PRINT_STATUS_FAIL("Data majority not reached. Online Nodes: [%d/%d]", nodes_majority_count, required_majority);
+    return ROUND_SKIP;
   }
-  
+
   INFO_PRINT_STATUS_OK("Data majority reached. Online Nodes: [%d/%d]", nodes_majority_count, required_majority);
 
-
-
-
-  
   return ROUND_SKIP;
 
-
-
-  
   INFO_STAGE_PRINT("Part 5 - Create VRF Data and Send To All Block Verifiers");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 5);
-  
+
   responses = NULL;
   char* vrf_message = NULL;
   // This message is defines as NONRETURN and no responses are expected
   if (generate_and_request_vrf_data_msg(&vrf_message)) {
-      DEBUG_PRINT("Generated VRF message: %s", vrf_message); 
-      if (xnet_send_data_multi(XNET_DELEGATES_ALL_ONLINE, vrf_message, &responses)) {
-          DEBUG_PRINT("Message sent to all online delegates.");
-      } else {
-          ERROR_PRINT("Failed to send VRF message.");
-      }
-      free(vrf_message);
+    DEBUG_PRINT("Generated VRF message: %s", vrf_message);
+    if (xnet_send_data_multi(XNET_DELEGATES_ALL_ONLINE, vrf_message, &responses)) {
+      DEBUG_PRINT("Message sent to all online delegates.");
+    } else {
+      ERROR_PRINT("Failed to send VRF message.");
+    }
+    free(vrf_message);
   } else {
-      ERROR_PRINT("Failed to generate VRF keys and message");
-      if (vrf_message != NULL) {
-        free(vrf_message);
-      }
-      return ROUND_ERROR;
+    ERROR_PRINT("Failed to generate VRF keys and message");
+    if (vrf_message != NULL) {
+      free(vrf_message);
+    }
+    return ROUND_ERROR;
   }
 
   // Sync start
@@ -261,15 +250,15 @@ for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
   INFO_STAGE_PRINT("Starting block production for block %s", current_block_height);
   int block_creation_result = block_verifiers_create_block();
 
-    if (block_creation_result == ROUND_OK) {
-      INFO_PRINT_STATUS_OK("Block %s created successfully", current_block_height);
-    } else {
-      INFO_PRINT_STATUS_FAIL("Block %s was not created", current_block_height);
-    }
+  if (block_creation_result == ROUND_OK) {
+    INFO_PRINT_STATUS_OK("Block %s created successfully", current_block_height);
+  } else {
+    INFO_PRINT_STATUS_FAIL("Block %s was not created", current_block_height);
+  }
 
   // Set to blank so we start fresh at top of round
   current_block_height[0] = '\0';
-  
+
   return (xcash_round_result_t)block_creation_result;
 }
 
@@ -332,50 +321,34 @@ void start_block_production(void) {
       continue;
     }
 
-    bool round_created = false;
     round_result = process_round();
 
-    if (round_result == ROUND_OK) {
-      round_created = true;
-    } else {
-      round_created = false;
+    if (round_result != ROUND_OK) {
+      for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
+        if (strcmp(delegates_all[i].public_address, xcash_wallet_public_address) == 0) {
+          // Found current delegate
+          if (strcmp(delegates_all[i].online_status, delegates_all[i].online_status_ck) != 0) {
+            DEBUG_PRINT("Updating Online status...");
+            strncpy(delegates_all[i].online_status, delegates_all[i].online_status_ck,
+                    sizeof(delegates_all[i].online_status));
+            delegates_all[i].online_status[sizeof(delegates_all[i].online_status) - 1] = '\0';
 
-      // set up delegates for next round
-      if (!fill_delegates_from_db()) {
-        ERROR_PRINT("Round completed successfully but failed to load and organize delegates for next round");
-        // need to add code to sync the delegates collection amd maybe retry???
-      }
+            // update online status in collection later
 
-      if (round_result == ROUND_ERROR || round_result == ROUND_ERROR_RD) {
-        for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
-          if (strcmp(delegates_all[i].public_address, xcash_wallet_public_address) == 0) {
-            // Found current delegate
-            if (strcmp(delegates_all[i].online_status, delegates_all[i].online_status_ck) != 0) {
-              DEBUG_PRINT("Updating Online status...");
-              strncpy(delegates_all[i].online_status, delegates_all[i].online_status_ck,
-                      sizeof(delegates_all[i].online_status));
-              delegates_all[i].online_status[sizeof(delegates_all[i].online_status) - 1] = '\0';
-
-              // update online status in collection later
-
-              if (round_result == ROUND_ERROR_RD) {
-
-                // need to add code to sync the delegates collection
-                //        init_db_from_top();  // --------------------------------------------------------------------?????
-
-              }
+            if (round_result == ROUND_ERROR_RD) {
+              // need to add code to sync the delegates collection
+              //        init_db_from_top();  // --------------------------------------------------------------------?????
             }
-            break;
           }
+          break;
         }
-      } else if (round_result == ROUND_RETRY) {
-        if (!retried) {
-          retried = true;
-          INFO_PRINT("Retring the Round...");
-          sleep(3);  
-        }
-        continue;
       }
+    }
+    
+    // set up delegates for next round
+    if (!fill_delegates_from_db()) {
+      ERROR_PRINT("Failed to load and organize delegates for next round");
+      // need to add code to sync the delegates collection amd maybe retry???
     }
   }
 }

@@ -39,8 +39,7 @@ typedef enum {
     ROUND_ERROR, // some system fault occurred. mostly communication errors or other non-fatal error.
     ROUND_OK, //all the procedures finished successfully
     ROUND_SKIP, // wait till next round
-    ROUND_RETRY,
-    ROUND_ERROR_RD,
+    ROUND_ERROR_RD, // Error reading the Delegates, refresh delegates data
 } xcash_round_result_t;
 
 bool select_block_producers(void);
