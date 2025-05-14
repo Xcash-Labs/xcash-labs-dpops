@@ -203,6 +203,7 @@ xcash_round_result_t process_round(void) {
     return ROUND_ERROR;
   }
 
+  
   return ROUND_SKIP;
 
   // Sync start
