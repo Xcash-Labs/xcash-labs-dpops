@@ -988,27 +988,6 @@ bool get_nodes_from_db(void) {
   return true;
 }
 
-bool fill_delegates_from_db__new___(void) {
-  delegates_t delegates[MAXIMUM_AMOUNT_OF_DELEGATES] = {0};
-  size_t total_delegates = 0;
-
-  if (read_organize_delegates(delegates, &total_delegates) != XCASH_OK) {
-    ERROR_PRINT("Could not organize the delegates");
-    return false;
-  }
-
-  total_delegates = total_delegates > BLOCK_VERIFIERS_TOTAL_AMOUNT ? BLOCK_VERIFIERS_TOTAL_AMOUNT : total_delegates;
-
-  for (size_t i = 0; i < total_delegates; i++) {
-    delegates_all[i] = delegates[i];
-  }
-  for (size_t i = total_delegates; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
-    memset(&delegates_all[i], 0, sizeof(delegates_t));
-  }
-
-  return true;
-}
-
 bool fill_delegates_from_db(void) {
   delegates_t *delegates = (delegates_t *)calloc(MAXIMUM_AMOUNT_OF_DELEGATES, sizeof(delegates_t));
   size_t total_delegates = 0;

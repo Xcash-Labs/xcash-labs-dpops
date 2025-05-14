@@ -5,53 +5,53 @@ Name: is_blockchain_synced
 Description:
   Checks whether the local xcashd daemon is fully synced with the network.
   It validates both the "synchronized" flag and that height == target_height.
-
+Parameters:
+  result - The string where you want the current block height to be saved t
 Return:
   true if the blockchain is synced, false otherwise.
 ---------------------------------------------------------------------------------------------------------*/
 bool is_blockchain_synced(void) {
-    const char *HTTP_HEADERS[] = {"Content-Type: application/json", "Accept: application/json"};
-    const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0]);
-    const char *RPC_ENDPOINT = "/get_info";
+  const char* HTTP_HEADERS[] = {"Content-Type: application/json", "Accept: application/json"};
+  const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0]);
+  const char* RPC_ENDPOINT = "/get_info";
 
-    char response[SMALL_BUFFER_SIZE] = {0};
-    char synced_flag[16] = {0};
-    char status_flag[16] = {0};
-    char offline_flag[16] = {0};
+  char response[SMALL_BUFFER_SIZE] = {0};
+  char synced_flag[16] = {0};
+  char status_flag[16] = {0};
+  char offline_flag[16] = {0};
 
-    for (int attempt = 0; attempt < 2; ++attempt) {
-        if (send_http_request(response, XCASH_DAEMON_IP, RPC_ENDPOINT, XCASH_DAEMON_PORT,
-                              "GET", HTTP_HEADERS, HTTP_HEADERS_LENGTH, NULL,
-                              SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) == XCASH_OK &&
-            parse_json_data(response, "synchronized", synced_flag, sizeof(synced_flag)) != 0 &&
-            parse_json_data(response, "status", status_flag, sizeof(status_flag)) != 0 &&
-            parse_json_data(response, "offline", offline_flag, sizeof(offline_flag)) != 0) {
+  // Retry mechanism
+  for (int attempt = 0; attempt < 2; ++attempt) {
+    if (send_http_request(response, XCASH_DAEMON_IP, RPC_ENDPOINT, XCASH_DAEMON_PORT,
+                          "GET", HTTP_HEADERS, HTTP_HEADERS_LENGTH, NULL,
+                          SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) == XCASH_OK &&
+        parse_json_data(response, "synchronized", synced_flag, sizeof(synced_flag)) != 0 &&
+        parse_json_data(response, "status", status_flag, sizeof(status_flag)) != 0 &&
+        parse_json_data(response, "offline", offline_flag, sizeof(offline_flag)) != 0) {
+      if (strcmp(synced_flag, "true") == 0 &&
+          strcmp(status_flag, "OK") == 0 &&
+          strcmp(offline_flag, "false") == 0) {
+        return true;
+      }
 
-            if (strcmp(synced_flag, "true") == 0 &&
-                strcmp(status_flag, "OK") == 0 &&
-                strcmp(offline_flag, "false") == 0) {
-                return true;
-            }
-
-            DEBUG_PRINT("Daemon not yet synced or status not OK: synchronized=%s, status=%s, offline=%s", synced_flag, status_flag, offline_flag);
-            return false;
-        }
-
-        memset(response, 0, sizeof(response));
-        memset(synced_flag, 0, sizeof(synced_flag));
-        memset(status_flag, 0, sizeof(status_flag));
-        memset(offline_flag, 0, sizeof(offline_flag));
-
-        if (attempt == 0) {
-            WARNING_PRINT("Retrying blockchain sync check...");
-            sleep(RETRY_SECONDS);
-        }
+      DEBUG_PRINT("Daemon not yet synced or status not OK: synchronized=%s, status=%s, offline=%s", synced_flag, status_flag, offline_flag);
+      return false;
     }
 
-    ERROR_PRINT("Could not determine blockchain sync status.");
-    return false;
-}
+    memset(response, 0, sizeof(response));
+    memset(synced_flag, 0, sizeof(synced_flag));
+    memset(status_flag, 0, sizeof(status_flag));
+    memset(offline_flag, 0, sizeof(offline_flag));
 
+    if (attempt == 0) {
+      WARNING_PRINT("Retrying blockchain sync check...");
+      sleep(RETRY_SECONDS);
+    }
+  }
+
+  ERROR_PRINT("Could not determine blockchain sync status.");
+  return false;
+}
 
 /*---------------------------------------------------------------------------------------------------------
 Name: get_current_block_height
@@ -90,7 +90,7 @@ int get_current_block_height(char *result) {
         // Sleep only if this is not the last attempt
         if (attempt == 0) {
             WARNING_PRINT("Retrying to fetch of block height...");
-            sleep(INVALID_RESERVE_PROOFS_SETTINGS);
+            sleep(RETRY_SECONDS);
         }
     }
 
@@ -136,7 +136,7 @@ int get_previous_block_hash(char *result)
         if (attempt == 0)
         {
             WARNING_PRINT("Retrying to fetch previous block hash...");
-            sleep(INVALID_RESERVE_PROOFS_SETTINGS);
+            sleep(RETRY_SECONDS);
         }
     }
 
@@ -191,7 +191,7 @@ int get_block_template(char* result, size_t result_size)
     // On failure, sleep and retry
     if (attempt + 1 < retry_attempts) 
     {
-      sleep(INVALID_RESERVE_PROOFS_SETTINGS);
+      sleep(RETRY_SECONDS);
     }
   }
 
