@@ -288,12 +288,15 @@ bool generate_and_request_vrf_data_msg(char** message)
   // Save current block_verifiers data into structure
   pthread_mutex_lock(&majority_vote_lock);
 
+
+
+  for (i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
+
   INFO_PRINT("Comparing addresses: list[%zu] = %s, wallet = %s",
             i,
             current_block_verifiers_list.block_verifiers_public_address[i],
             xcash_wallet_public_address);
 
-  for (i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     if (strncmp(current_block_verifiers_list.block_verifiers_public_address[i], xcash_wallet_public_address, XCASH_WALLET_LENGTH) == 0) {
       memcpy(current_block_verifiers_list.block_verifiers_public_address[i], xcash_wallet_public_address, XCASH_WALLET_LENGTH+1);
       memcpy(current_block_verifiers_list.block_verifiers_vrf_public_key_hex[i], vrf_public_key, VRF_PUBLIC_KEY_LENGTH+1);
