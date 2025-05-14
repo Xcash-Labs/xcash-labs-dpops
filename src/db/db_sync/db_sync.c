@@ -997,7 +997,7 @@ bool fill_delegates_from_db(void) {
     return false;
   }
 
-  total_delegates = MIN(total_delegates, BLOCK_VERIFIERS_TOTAL_AMOUNT);
+  total_delegates = total_delegates > BLOCK_VERIFIERS_TOTAL_AMOUNT ? BLOCK_VERIFIERS_TOTAL_AMOUNT : total_delegates;
 
   for (size_t i = 0; i < total_delegates; i++) {
     delegates_all[i] = delegates[i];
@@ -1008,11 +1008,6 @@ bool fill_delegates_from_db(void) {
 
   return true;
 }
-
-
-
-
-
 
 bool fill_delegates_from_db__OLD__(void) {
   delegates_t *delegates = (delegates_t *)calloc(MAXIMUM_AMOUNT_OF_DELEGATES, sizeof(delegates_t));
