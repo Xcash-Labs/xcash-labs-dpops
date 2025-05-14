@@ -131,7 +131,7 @@ xcash_round_result_t process_round(void) {
   }
 
   INFO_STAGE_PRINT("Waiting for Delegates to sync...");
-  if (sync_block_verifiers_minutes_and_seconds(0, 25) == XCASH_ERROR) {
+  if (sync_block_verifiers_minutes_and_seconds(0, 15) == XCASH_ERROR) {
     INFO_PRINT("Failed to sync Delegates in the aloted time");
     return ROUND_ERROR;
   }
@@ -203,14 +203,14 @@ xcash_round_result_t process_round(void) {
     return ROUND_ERROR;
   }
 
-  
-  return ROUND_SKIP;
-
   // Sync start
   if (sync_block_verifiers_minutes_and_seconds(0, 30) == XCASH_ERROR) {
     INFO_PRINT("Failed to sync VRF data in the aloted time");
     return ROUND_ERROR;
   }
+
+
+  return ROUND_SKIP;
 
   INFO_STAGE_PRINT("Part 6 - Select Block Creator From VRF Data");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 6);
