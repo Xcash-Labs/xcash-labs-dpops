@@ -274,6 +274,7 @@ bool generate_and_request_vrf_data_msg(char** message)
       snprintf(random_buf_hex + offset, 3, "%02x",random_buf_bin[i]);
   }
 
+  unsigned char computed_beta[crypto_vrf_OUTPUTBYTES];
   if (crypto_vrf_verify(computed_beta, pk_bin, vrf_proof, alpha_input_bin, 64) != 0) {
     ERROR_PRINT("Failed to verify the VRF proof for this node");
     return XCASH_ERROR;
@@ -283,8 +284,8 @@ bool generate_and_request_vrf_data_msg(char** message)
       return XCASH_ERROR;
     }
   }
-  
-  // Save to this block_verifiers index in struct (for signature tracking)
+
+  // Save current block_verifiers data into structure
   pthread_mutex_lock(&majority_vote_lock);
   for (i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     if (strncmp(current_block_verifiers_list.block_verifiers_public_address[i], xcash_wallet_public_address, XCASH_WALLET_LENGTH) == 0) {
@@ -298,10 +299,6 @@ bool generate_and_request_vrf_data_msg(char** message)
   }
   pthread_mutex_unlock(&majority_vote_lock);
 
-
-
-
-
   // Compose outbound message (JSON)
   *message = create_message_param(
       XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_VRF_DATA,
@@ -313,7 +310,7 @@ bool generate_and_request_vrf_data_msg(char** message)
       "block-height", current_block_height,
       NULL);
 
-      return XCASH_OK;
+    return XCASH_OK;
 }
 
 bool create_sync_msg(char** message) {
