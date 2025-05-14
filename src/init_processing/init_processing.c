@@ -136,5 +136,5 @@ void print_starter_state(const arg_config_t *arg_config)
           XCASH_WALLET_IP, XCASH_WALLET_PORT,
           DATABASE_CONNECTION, log_level);
 
-  fprintf(stderr, "[%s] Daemon startup successful and is busy processing requests...\n", time_str);
+  fprintf(stderr, "[%s] Daemon startup successful and is busy processing requests...\n\n", time_str);
 }
