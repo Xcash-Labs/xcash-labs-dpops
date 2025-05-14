@@ -285,7 +285,6 @@ void start_block_production(void) {
   struct timeval current_time;
   xcash_round_result_t round_result = ROUND_OK;
   bool current_block_healthy = false;
-  bool retried = false;
 
   // Wait for node to be fully synced
   while (!current_block_healthy) {
@@ -344,7 +343,7 @@ void start_block_production(void) {
         }
       }
     }
-    
+
     // set up delegates for next round
     if (!fill_delegates_from_db()) {
       ERROR_PRINT("Failed to load and organize delegates for next round");
