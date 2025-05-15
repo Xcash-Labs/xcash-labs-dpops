@@ -18,6 +18,16 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
 
   DEBUG_PRINT("received %s, %s", __func__, MESSAGE);
 
+
+  int wait_seconds = 0;
+  while (atomic_load(&wait_for_vrf_init) && wait_seconds < DELAY_EARLY_TRANSACTIONS_MAX) {
+    sleep(1);
+    wait_seconds++;
+  }
+  if (atomic_load(&wait_for_vrf_init)) {
+    ERROR_PRINT("Timed out waiting for vrf init in server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data");
+  }
+
   // parse the message
   if (parse_json_data(MESSAGE, "public_address", public_address, sizeof(public_address)) == XCASH_ERROR || 
     parse_json_data(MESSAGE, "vrf_public_key", vrf_public_key_data, sizeof(vrf_public_key_data)) == XCASH_ERROR ||

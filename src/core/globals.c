@@ -42,7 +42,11 @@ pthread_mutex_t update_current_block_height_lock;
 pthread_mutex_t hash_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t majority_vrf_lock = PTHREAD_MUTEX_INITIALIZER;
 
-atomic_bool server_running = true; 
+
+atomic_bool server_running = true;
+
+atomic_bool wait_for_vrf_init = true;
+atomic_bool wait_for_block_height_init = true;
 
 pthread_t server_thread;
 

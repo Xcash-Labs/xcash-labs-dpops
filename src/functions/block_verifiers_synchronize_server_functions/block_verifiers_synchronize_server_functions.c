@@ -81,15 +81,13 @@ void server_received_msg_get_sync_info(server_client_t *client, const char *MESS
     }
 
     int wait_seconds = 0;
-    while (current_block_height[0] == '\0' && wait_seconds < 3) {
+    while (current_block_height[0] == '\0' && wait_seconds < DELAY_EARLY_TRANSACTIONS_MAX) {
       sleep(1);
       wait_seconds++;
     }
     if (current_block_height[0] == '\0') {
       ERROR_PRINT("Timed out waiting for current_block_height in server_received_msg_get_sync_info");
     }
-
-    DEBUG_PRINT("HERE.......");
 
     for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
         if (strcmp(delegates_all[i].public_address, parsed_address) == 0) {

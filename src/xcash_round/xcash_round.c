@@ -65,13 +65,14 @@ int select_block_producer_from_vrf(void) {
  */
 xcash_round_result_t process_round(void) {
   // Get the current block height
+  INFO_PRINT("Creating Block: %s", current_block_height);
   INFO_STAGE_PRINT("Part 1 - Get Current Block Height");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 2);
   if (get_current_block_height(current_block_height) != XCASH_OK) {
     ERROR_PRINT("Can't get current block height");
     return ROUND_SKIP;
   }
-  INFO_PRINT("Creating Block: %s", current_block_height);
+  atomic_store(&wait_for_block_height_init, false);
 
   INFO_STAGE_PRINT("Part 2 - Check Delegates Data, Get Previous Block Hash, and Delegates Hash");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 2);
@@ -152,6 +153,7 @@ xcash_round_result_t process_round(void) {
     }
   }
   pthread_mutex_unlock(&majority_vrf_lock);
+  atomic_store(&wait_for_vrf_init, false);
 
   if (nodes_majority_count < BLOCK_VERIFIERS_VALID_AMOUNT) {
     INFO_PRINT_STATUS_FAIL("Failed to reach the required number of online nodes: [%d/%d]", nodes_majority_count, BLOCK_VERIFIERS_VALID_AMOUNT);
@@ -172,7 +174,6 @@ xcash_round_result_t process_round(void) {
 
   responses = NULL;
   char* vrf_message = NULL;
-  // This message is defines as NONRETURN and no responses are expected
   if (generate_and_request_vrf_data_msg(&vrf_message)) {
     DEBUG_PRINT("Generated VRF message: %s", vrf_message);
     if (xnet_send_data_multi(XNET_DELEGATES_ALL_ONLINE, vrf_message, &responses)) {
@@ -268,9 +269,6 @@ for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     INFO_PRINT_STATUS_FAIL("Block %s was not created", current_block_height);
   }
 
-  // Set to blank so we start fresh at top of round
-  current_block_height[0] = '\0';
-
   return (xcash_round_result_t)block_creation_result;
 }
 
@@ -336,6 +334,10 @@ void start_block_production(void) {
     }
 
     round_result = process_round();
+    // set these up for next round
+    current_block_height[0] = '\0';
+    atomic_store(&wait_for_vrf_init, true);
+    atomic_store(&wait_for_block_height_init, true);
 
     if (round_result != ROUND_OK) {
       for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {

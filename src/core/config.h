@@ -146,6 +146,7 @@
 #define INVALID_RESERVE_PROOFS_SETTINGS 3
 
 #define RETRY_SECONDS 2                              // replace INVALID_RESERVE_PROOFS_SETTINGS
+#define DELAY_EARLY_TRANSACTIONS_MAX 3
 
 // ===================== XCASH DPOPS =====================
 #define BLOCK_VERIFIERS_TOTAL_AMOUNT 100

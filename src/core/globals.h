@@ -67,8 +67,10 @@ extern pthread_mutex_t update_current_block_height_lock;
 extern pthread_mutex_t hash_mutex;
 extern pthread_mutex_t majority_vrf_lock;
 
-extern atomic_bool delegates_loaded;
+
 extern atomic_bool server_running; 
+extern atomic_bool wait_for_vrf_init;
+extern atomic_bool wait_for_block_height_init;
 
 extern pthread_t server_thread;
 
