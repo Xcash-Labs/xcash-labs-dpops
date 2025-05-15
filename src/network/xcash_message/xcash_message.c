@@ -474,6 +474,12 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
 
     case XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_VRF_DATA:
     if (server_limit_IP_addresses(1, client->client_ip) == 1) {
+
+
+
+      INFO_PRINT("Recieved: %s", data);
+
+
       server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(data);
       server_limit_IP_addresses(3, client->client_ip);
     }
