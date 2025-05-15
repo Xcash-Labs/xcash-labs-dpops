@@ -193,7 +193,7 @@ xcash_round_result_t process_round(void) {
 
 for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     if (current_block_verifiers_list.block_verifiers_public_address[i][0] != '\0') {
-        DEBUG_PRINT(
+        INFO_PRINT(
           "\n--- Block Verifier [%zu] ---\n"
           "  Name:             %s\n"
           "  Public Address:   %s\n"
