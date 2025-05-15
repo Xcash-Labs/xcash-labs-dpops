@@ -100,7 +100,7 @@ response_t** send_multi_request(const char** hosts, int port, const char* messag
     }
 
     response->req_time_end = time(NULL);
-    DEBUG_PRINT("Host: %s | Status: %s | Time: %lds",
+    INFO_PRINT("Host: %s | Status: %s | Time: %lds",
            host,
            response->status == STATUS_OK ? "OK" :
            response->status == STATUS_TIMEOUT ? "TIMEOUT" : "ERROR",
