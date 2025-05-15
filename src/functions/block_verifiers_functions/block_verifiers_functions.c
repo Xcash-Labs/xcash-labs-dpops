@@ -148,37 +148,6 @@ Parameters:
   minutes - The minutes
   seconds - The seconds
 ---------------------------------------------------------------------------------------------------------*/
-int sync_block_verifiers_minutes_and_seconds__OLD__(const int MINUTES, const int SECONDS)
-{
-  if (MINUTES >= BLOCK_TIME || SECONDS >= 60) {
-    ERROR_PRINT("Invalid sync time: MINUTES must be < BLOCK_TIME and SECONDS < 60");
-    return XCASH_ERROR;
-  }
-
-  time_t now = time(NULL);
-  if (now == ((time_t)-1)) {
-    ERROR_PRINT("Failed to get current time");
-    return XCASH_ERROR;
-  }
-
-  size_t seconds_per_block = BLOCK_TIME * 60;
-  size_t seconds_within_block = now % seconds_per_block;
-  size_t target_seconds = MINUTES * 60 + SECONDS;
-
-  if (seconds_within_block >= target_seconds) {
-    WARNING_PRINT("Missed sync point by %zu seconds", seconds_within_block - target_seconds);
-    return XCASH_ERROR;
-  }
-
-  size_t sleep_seconds = target_seconds - seconds_within_block;
-  INFO_PRINT("Sleeping for %zu seconds to sync to target time...", sleep_seconds);
-  sleep(sleep_seconds);
-
-  return XCASH_OK;
-}
-
-
-
 int sync_block_verifiers_minutes_and_seconds(const int MINUTES, const int SECONDS)
 {
   if (MINUTES >= BLOCK_TIME || SECONDS >= 60) {
@@ -219,8 +188,6 @@ int sync_block_verifiers_minutes_and_seconds(const int MINUTES, const int SECOND
 
   return XCASH_OK;
 }
-
-
 
 /*---------------------------------------------------------------------------------------------------------
 Name: block_verifiers_create_VRF_secret_key_and_VRF_public_key
