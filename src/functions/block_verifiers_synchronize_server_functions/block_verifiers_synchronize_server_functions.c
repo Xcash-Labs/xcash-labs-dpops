@@ -89,6 +89,8 @@ void server_received_msg_get_sync_info(server_client_t *client, const char *MESS
       ERROR_PRINT("Timed out waiting for current_block_height in server_received_msg_get_sync_info");
     }
 
+    DEBUG_PRINT("HERE.......");
+
     for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
         if (strcmp(delegates_all[i].public_address, parsed_address) == 0) {
 
