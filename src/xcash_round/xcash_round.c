@@ -19,10 +19,14 @@ int select_block_producer_from_vrf(void) {
   pthread_mutex_lock(&majority_vrf_lock);
   for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     // Skip if no beta submitted or is a seed node
-    if (strncmp(current_block_verifiers_list.block_verifiers_vrf_beta_hex[i], "", 1) == 0 ||
-        is_seed_address(current_block_verifiers_list.block_verifiers_public_address[i])) {
+
+    if (strlen(current_block_verifiers_list.block_verifiers_vrf_beta_hex[i]) != VRF_BETA_LENGTH) {
       continue;
     }
+
+//    if (is_seed_address(current_block_verifiers_list.block_verifiers_public_address[i])) {
+//      continue;
+//    }
 
     if (selected_index == -1 ||
         strcmp(current_block_verifiers_list.block_verifiers_vrf_beta_hex[i], lowest_beta) < 0) {
@@ -219,7 +223,7 @@ for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
 }
 
 
-    return ROUND_SKIP;
+
 
 
   INFO_STAGE_PRINT("Part 6 - Select Block Creator From VRF Data");
@@ -233,6 +237,8 @@ for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
   } else {
     producer_indx = select_block_producer_from_vrf();
   }
+
+    return ROUND_SKIP;
 
   if (producer_indx < 0) {
     INFO_STAGE_PRINT("Block Producer not selected, skipping round");
