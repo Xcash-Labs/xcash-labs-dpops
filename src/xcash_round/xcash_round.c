@@ -191,6 +191,37 @@ xcash_round_result_t process_round(void) {
     return ROUND_ERROR;
   }
 
+for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
+    if (current_block_verifiers_list.block_verifiers_public_address[i][0] != '\0') {
+        DEBUG_PRINT(
+          "\n--- Block Verifier [%zu] ---\n"
+          "  Name:             %s\n"
+          "  Public Address:   %s\n"
+          "  Public Key:       %s\n"
+          "  IP Address:       %s\n"
+          "  VRF Public Key:   %s\n"
+          "  Random Hex:       %s\n"
+          "  VRF Proof Hex:    %s\n"
+          "  VRF Beta Hex:     %s\n"
+          "  Delegates DB Hash:%s\n",
+          i,
+          current_block_verifiers_list.block_verifiers_name[i],
+          current_block_verifiers_list.block_verifiers_public_address[i],
+          current_block_verifiers_list.block_verifiers_public_key[i],
+          current_block_verifiers_list.block_verifiers_IP_address[i],
+          current_block_verifiers_list.block_verifiers_vrf_public_key_hex[i],
+          current_block_verifiers_list.block_verifiers_random_hex[i],
+          current_block_verifiers_list.block_verifiers_vrf_proof_hex[i],
+          current_block_verifiers_list.block_verifiers_vrf_beta_hex[i],
+          current_block_verifiers_list.block_verifier_delegates_db_hash[i]
+        );
+    }
+}
+
+
+    return ROUND_SKIP;
+
+
   INFO_STAGE_PRINT("Part 6 - Select Block Creator From VRF Data");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 6);
 
