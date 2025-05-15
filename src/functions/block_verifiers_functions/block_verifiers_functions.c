@@ -148,7 +148,7 @@ Parameters:
   minutes - The minutes
   seconds - The seconds
 ---------------------------------------------------------------------------------------------------------*/
-int sync_block_verifiers_minutes_and_seconds(const int MINUTES, const int SECONDS)
+int sync_block_verifiers_minutes_and_seconds__OLD__(const int MINUTES, const int SECONDS)
 {
   if (MINUTES >= BLOCK_TIME || SECONDS >= 60) {
     ERROR_PRINT("Invalid sync time: MINUTES must be < BLOCK_TIME and SECONDS < 60");
@@ -171,23 +171,56 @@ int sync_block_verifiers_minutes_and_seconds(const int MINUTES, const int SECOND
   }
 
   size_t sleep_seconds = target_seconds - seconds_within_block;
-  DEBUG_PRINT("Sleeping for %zu seconds to sync to target time...", sleep_seconds);
+  INFO_PRINT("Sleeping for %zu seconds to sync to target time...", sleep_seconds);
   sleep(sleep_seconds);
 
   return XCASH_OK;
 }
 
-/*---------------------------------------------------------------------------------------------------------
-Generate random binary string
----------------------------------------------------------------------------------------------------------*/
-int get_random_bytes(unsigned char *buf, size_t len) {
-    ssize_t ret = getrandom(buf, len, 0);
-    if (ret < 0 || (size_t)ret != len) {
-        ERROR_PRINT("getrandom() failed: %s", strerror(errno));
-        return XCASH_ERROR;
-    }
-    return XCASH_OK;
+
+
+int sync_block_verifiers_minutes_and_seconds(const int MINUTES, const int SECONDS)
+{
+  if (MINUTES >= BLOCK_TIME || SECONDS >= 60) {
+    ERROR_PRINT("Invalid sync time: MINUTES must be < BLOCK_TIME and SECONDS < 60");
+    return XCASH_ERROR;
+  }
+
+  struct timespec now_ts;
+  if (clock_gettime(CLOCK_REALTIME, &now_ts) != 0) {
+    ERROR_PRINT("Failed to get high-resolution time");
+    return XCASH_ERROR;
+  }
+
+  time_t now_sec = now_ts.tv_sec;
+  long now_nsec = now_ts.tv_nsec;
+
+  size_t seconds_per_block = BLOCK_TIME * 60;
+  size_t seconds_within_block = now_sec % seconds_per_block;
+  double target_seconds = (double)(MINUTES * 60 + SECONDS);
+  double current_time_in_block = (double)seconds_within_block + (now_nsec / 1e9);
+  double sleep_seconds = target_seconds - current_time_in_block;
+
+  if (sleep_seconds <= 0) {
+    WARNING_PRINT("Missed sync point by %.3f seconds", -sleep_seconds);
+    return XCASH_ERROR;
+  }
+
+  struct timespec req = {
+    .tv_sec = (time_t)sleep_seconds,
+    .tv_nsec = (long)((sleep_seconds - (time_t)sleep_seconds) * 1e9)
+  };
+
+  INFO_PRINT("Sleeping for %.3f seconds to sync to target time...", sleep_seconds);
+  if (nanosleep(&req, NULL) != 0) {
+    ERROR_PRINT("nanosleep interrupted: %s", strerror(errno));
+    return XCASH_ERROR;
+  }
+
+  return XCASH_OK;
 }
+
+
 
 /*---------------------------------------------------------------------------------------------------------
 Name: block_verifiers_create_VRF_secret_key_and_VRF_public_key

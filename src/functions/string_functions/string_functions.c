@@ -466,3 +466,15 @@ bool decompress_gzip_with_prefix(const unsigned char* input, size_t input_len,
     *output_len = 0;
     return XCASH_ERROR;
 }
+
+/*---------------------------------------------------------------------------------------------------------
+Generate random binary string
+---------------------------------------------------------------------------------------------------------*/
+int get_random_bytes(unsigned char *buf, size_t len) {
+    ssize_t ret = getrandom(buf, len, 0);
+    if (ret < 0 || (size_t)ret != len) {
+        ERROR_PRINT("getrandom() failed: %s", strerror(errno));
+        return XCASH_ERROR;
+    }
+    return XCASH_OK;
+}
