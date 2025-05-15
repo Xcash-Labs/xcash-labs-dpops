@@ -6,6 +6,9 @@
 #include <sodium/randombytes.h>
 #include <pthread.h>
 #include "config.h"
+#include <time.h>
+#include <unistd.h>
+#include <errno.h>
 #include "globals.h"
 #include "macro_functions.h"
 #include "VRF_functions.h"
