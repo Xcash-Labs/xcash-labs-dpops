@@ -239,8 +239,6 @@ for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     producer_indx = select_block_producer_from_vrf();
   }
 
-    return ROUND_SKIP;
-
   if (producer_indx < 0) {
     INFO_STAGE_PRINT("Block Producer not selected, skipping round");
     return ROUND_SKIP;
@@ -259,6 +257,8 @@ for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
 
     pthread_mutex_unlock(&majority_vrf_lock);
   }
+
+    return ROUND_SKIP;
 
   INFO_STAGE_PRINT("Starting block production for block %s", current_block_height);
   int block_creation_result = block_verifiers_create_block();
