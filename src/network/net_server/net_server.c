@@ -124,7 +124,7 @@ void* handle_client(void* client_socket_ptr) {
       continue;
     }
 
-    DEBUG_PRINT("[TCP] Message from %s: %.*s", client.client_ip, (int)decompressed_len, decompressed);
+    INFO_PRINT("[TCP] Message from %s: %.*s", client.client_ip, (int)decompressed_len, decompressed);
     handle_srv_message((char*)decompressed, decompressed_len, &client);
     free(decompressed);
   }
