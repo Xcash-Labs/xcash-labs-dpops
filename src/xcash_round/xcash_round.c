@@ -223,10 +223,6 @@ for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     }
 }
 
-
-
-
-
   INFO_STAGE_PRINT("Part 6 - Select Block Creator From VRF Data");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 6);
 
@@ -244,9 +240,6 @@ for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     return ROUND_SKIP;
   } else {
     pthread_mutex_lock(&majority_vrf_lock);
-
-    INFO_PRINT("Startting...");
-
     // For now there is only one block producer and no backups
     memset(&producer_refs, 0, sizeof(producer_refs));
     // Populate the reference list with the selected producer
@@ -257,7 +250,6 @@ for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     strcpy(producer_refs[0].vrf_proof_hex, current_block_verifiers_list.block_verifiers_vrf_proof_hex[producer_indx]);
     strcpy(producer_refs[0].vrf_beta_hex, current_block_verifiers_list.block_verifiers_vrf_beta_hex[producer_indx]);
     pthread_mutex_unlock(&majority_vrf_lock);
-    INFO_PRINT("Ending...");
   }
 INFO_PRINT(
   "Producer Info:\n"
@@ -274,8 +266,6 @@ INFO_PRINT(
   producer_refs[0].vrf_proof_hex,
   producer_refs[0].vrf_beta_hex
 );
-
-    return ROUND_SKIP;
 
   INFO_STAGE_PRINT("Starting block production for block %s", current_block_height);
   int block_creation_result = block_verifiers_create_block();
