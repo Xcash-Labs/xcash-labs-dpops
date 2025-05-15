@@ -191,9 +191,6 @@ xcash_round_result_t process_round(void) {
     return ROUND_ERROR;
   }
 
-
-  return ROUND_SKIP;
-
   INFO_STAGE_PRINT("Part 6 - Select Block Creator From VRF Data");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 6);
 
