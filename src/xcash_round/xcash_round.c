@@ -245,6 +245,8 @@ for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
   } else {
     pthread_mutex_lock(&majority_vrf_lock);
 
+    INFO_PRINT("Starttin...");
+
     // For now there is only one block producer and no backups
     memset(&producer_refs, 0, sizeof(producer_refs));
     // Populate the reference list with the selected producer
@@ -254,9 +256,24 @@ for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     strcpy(producer_refs[0].random_buf_hex, current_block_verifiers_list.block_verifiers_random_hex[producer_indx]);
     strcpy(producer_refs[0].vrf_proof_hex, current_block_verifiers_list.block_verifiers_vrf_proof_hex[producer_indx]);
     strcpy(producer_refs[0].vrf_beta_hex, current_block_verifiers_list.block_verifiers_vrf_beta_hex[producer_indx]);
-
     pthread_mutex_unlock(&majority_vrf_lock);
+    INFO_PRINT("Ending...");
   }
+DEBUG_PRINT(
+  "Producer Info:\n"
+  "  Address     : %s\n"
+  "  IP          : %s\n"
+  "  VRF PubKey  : %s\n"
+  "  Random Hex  : %s\n"
+  "  VRF Proof   : %s\n"
+  "  VRF Beta    : %s",
+  producer_refs[0].public_address,
+  producer_refs[0].IP_address,
+  producer_refs[0].vrf_public_key,
+  producer_refs[0].random_buf_hex,
+  producer_refs[0].vrf_proof_hex,
+  producer_refs[0].vrf_beta_hex
+);
 
     return ROUND_SKIP;
 
