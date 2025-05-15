@@ -245,7 +245,7 @@ for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
   } else {
     pthread_mutex_lock(&majority_vrf_lock);
 
-    INFO_PRINT("Starttin...");
+    INFO_PRINT("Startting...");
 
     // For now there is only one block producer and no backups
     memset(&producer_refs, 0, sizeof(producer_refs));
@@ -259,7 +259,7 @@ for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     pthread_mutex_unlock(&majority_vrf_lock);
     INFO_PRINT("Ending...");
   }
-DEBUG_PRINT(
+INFO_PRINT(
   "Producer Info:\n"
   "  Address     : %s\n"
   "  IP          : %s\n"
