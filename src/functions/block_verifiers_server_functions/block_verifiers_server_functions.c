@@ -19,21 +19,12 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
   DEBUG_PRINT("received %s, %s", __func__, MESSAGE);
 
   // parse the message
-  if (
-    parse_json_data(MESSAGE, "public_address", public_address, sizeof(public_address)) == 0 ||
-    strlen(public_address) != XCASH_WALLET_LENGTH ||
-    strncmp(public_address, XCASH_WALLET_PREFIX, sizeof(XCASH_WALLET_PREFIX) - 1) != 0 ||  
-    parse_json_data(MESSAGE, "vrf_public_key", vrf_public_key_data, sizeof(vrf_public_key_data)) == 0 ||
-    strlen(vrf_public_key_data) != VRF_PUBLIC_KEY_LENGTH ||
-    parse_json_data(MESSAGE, "random_data", random_buf_hex, sizeof(random_buf_hex)) == 0 ||
-    strlen(random_buf_hex) != RANDOM_STRING_LENGTH ||
-    parse_json_data(MESSAGE, "vrf_proof", vrf_proof_hex, sizeof(vrf_proof_hex)) == 0 ||
-    strlen(vrf_proof_hex) != VRF_PROOF_LENGTH ||
-    parse_json_data(MESSAGE, "vrf_beta", vrf_beta_hex, sizeof(vrf_beta_hex)) == 0 ||
-    strlen(vrf_beta_hex) != VRF_BETA_LENGTH ||
-    parse_json_data(MESSAGE, "block-height", block_height, sizeof(block_height)) == 0 ||
-    strlen(block_height) < 3 // basic sanity check
-  )
+  if (parse_json_data(MESSAGE, "public_address", public_address, sizeof(public_address)) == XCASH_ERROR || 
+    parse_json_data(MESSAGE, "vrf_public_key", vrf_public_key_data, sizeof(vrf_public_key_data)) == XCASH_ERROR ||
+    parse_json_data(MESSAGE, "random_data", random_buf_hex, sizeof(random_buf_hex)) == XCASH_ERROR ||
+    parse_json_data(MESSAGE, "vrf_proof", vrf_proof_hex, sizeof(vrf_proof_hex)) == XCASH_ERROR ||
+    parse_json_data(MESSAGE, "vrf_beta", vrf_beta_hex, sizeof(vrf_beta_hex)) == XCASH_ERROR ||
+    parse_json_data(MESSAGE, "block-height", block_height, sizeof(block_height)) == XCASH_ERROR)
   {
     ERROR_PRINT("Could not parse the block_verifiers_to_block_verifiers_vrf_data");
     return;
