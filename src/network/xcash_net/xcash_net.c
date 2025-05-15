@@ -90,8 +90,6 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
     } break;
 
     case XNET_DELEGATES_ALL_ONLINE: {
-      INFO_PRINT("XNET_DELEGATES_ALL_ONLINE.....");
-
       const char **delegates_online_hosts = malloc((BLOCK_VERIFIERS_TOTAL_AMOUNT + 1) * sizeof(char *));
       if (!delegates_online_hosts) {
         ERROR_PRINT("Failed to allocate memory for delegates_online_hosts");
@@ -113,7 +111,7 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
             continue;
           }
 
-          INFO_PRINT("Online delegate: %s (%s)", current_block_verifiers_list.block_verifiers_name[i], current_block_verifiers_list.block_verifiers_IP_address[i]);
+          DEBUG_PRINT("Online delegate: %s (%s)", current_block_verifiers_list.block_verifiers_name[i], current_block_verifiers_list.block_verifiers_IP_address[i]);
           delegates_online_hosts[host_index++] = current_block_verifiers_list.block_verifiers_IP_address[i];
         }
       }
