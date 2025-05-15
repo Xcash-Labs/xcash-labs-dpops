@@ -16,7 +16,7 @@ int select_block_producer_from_vrf(void) {
   int selected_index = -1;
   char lowest_beta[VRF_BETA_LENGTH + 1] = {0};
 
-  pthread_mutex_lock(&majority_vote_lock);
+  pthread_mutex_lock(&majority_vrf_lock);
   for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     // Skip if no beta submitted or is a seed node
     if (strncmp(current_block_verifiers_list.block_verifiers_vrf_beta_hex[i], "", 1) == 0 ||
@@ -30,7 +30,7 @@ int select_block_producer_from_vrf(void) {
       strncpy(lowest_beta, current_block_verifiers_list.block_verifiers_vrf_beta_hex[i], VRF_BETA_LENGTH);
     }
   }
-  pthread_mutex_unlock(&majority_vote_lock);
+  pthread_mutex_unlock(&majority_vrf_lock);
 
   if (selected_index != -1) {
     INFO_PRINT("Selected block producer: %s",
@@ -130,7 +130,7 @@ xcash_round_result_t process_round(void) {
   // Fill block verifiers list with proven online nodes
   int nodes_majority_count = 0;
 
-  pthread_mutex_lock(&majority_vote_lock);
+  pthread_mutex_lock(&majority_vrf_lock);
   memset(&current_block_verifiers_list, 0, sizeof(current_block_verifiers_list));
   for (size_t i = 0, j = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     if (delegates_all[i].public_address != NULL && delegates_all[i].public_address[0] != '\0') {
@@ -147,7 +147,7 @@ xcash_round_result_t process_round(void) {
       }
     }
   }
-  pthread_mutex_unlock(&majority_vote_lock);
+  pthread_mutex_unlock(&majority_vrf_lock);
 
   if (nodes_majority_count < BLOCK_VERIFIERS_VALID_AMOUNT) {
     INFO_PRINT_STATUS_FAIL("Failed to reach the required number of online nodes: [%d/%d]", nodes_majority_count, BLOCK_VERIFIERS_VALID_AMOUNT);
@@ -210,7 +210,7 @@ xcash_round_result_t process_round(void) {
     INFO_STAGE_PRINT("Block Producer not selected, skipping round");
     return ROUND_SKIP;
   } else {
-    pthread_mutex_lock(&majority_vote_lock);
+    pthread_mutex_lock(&majority_vrf_lock);
 
     // For now there is only one block producer and no backups
     memset(&producer_refs, 0, sizeof(producer_refs));
@@ -222,7 +222,7 @@ xcash_round_result_t process_round(void) {
     strcpy(producer_refs[0].vrf_proof_hex, current_block_verifiers_list.block_verifiers_vrf_proof_hex[producer_indx]);
     strcpy(producer_refs[0].vrf_beta_hex, current_block_verifiers_list.block_verifiers_vrf_beta_hex[producer_indx]);
 
-    pthread_mutex_unlock(&majority_vote_lock);
+    pthread_mutex_unlock(&majority_vrf_lock);
   }
 
   INFO_STAGE_PRINT("Starting block production for block %s", current_block_height);

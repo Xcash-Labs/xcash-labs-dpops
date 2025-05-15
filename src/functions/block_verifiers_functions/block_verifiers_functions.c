@@ -286,7 +286,7 @@ bool generate_and_request_vrf_data_msg(char** message)
   }
 
   // Save current block_verifiers data into structure
-  pthread_mutex_lock(&majority_vote_lock);
+  pthread_mutex_lock(&majority_vrf_lock);
 
 
 
@@ -300,7 +300,7 @@ bool generate_and_request_vrf_data_msg(char** message)
       break;
     }
   }
-  pthread_mutex_unlock(&majority_vote_lock);
+  pthread_mutex_unlock(&majority_vrf_lock);
 
   // Compose outbound message (JSON)
   *message = create_message_param(

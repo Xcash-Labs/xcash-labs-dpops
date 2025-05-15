@@ -44,7 +44,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
       return; 
   }
 
-  pthread_mutex_lock(&majority_vote_lock);
+  pthread_mutex_lock(&majority_vrf_lock);
   for (count = 0; count < BLOCK_VERIFIERS_AMOUNT; count++) {
     if (strncmp(current_block_verifiers_list.block_verifiers_public_address[count], public_address, XCASH_WALLET_LENGTH) == 0 &&
         strncmp(current_block_verifiers_list.block_verifiers_vrf_public_key_hex[count], "", 1) == 0 &&
@@ -94,7 +94,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
       break;
     }
   }
-  pthread_mutex_unlock(&majority_vote_lock);
+  pthread_mutex_unlock(&majority_vrf_lock);
 
   return;
 }

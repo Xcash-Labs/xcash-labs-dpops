@@ -40,7 +40,7 @@ pthread_mutex_t invalid_reserve_proof_lock;
 pthread_mutex_t database_data_IP_address_lock;
 pthread_mutex_t update_current_block_height_lock;
 pthread_mutex_t hash_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t majority_vote_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t majority_vrf_lock = PTHREAD_MUTEX_INITIALIZER;
 
 atomic_bool server_running = true; 
 
