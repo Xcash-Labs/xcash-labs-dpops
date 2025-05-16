@@ -20,13 +20,6 @@ bool add_vrf_extra_and_sign(char* block_blob_hex)
   // Get reserved_offset from previous RPC call or define statically
   size_t reserved_offset = 320;
   
-  // Validate offset doesn't overflow
-  if ((pos - reserved_offset) > 250) {
-    ERROR_PRINT("VRF data exceeds reserved space: used %zu bytes, allowed 250", pos - reserved_offset);
-    free(block_blob_bin);
-    return false;
-  }
-
   // Patch in the VRF extra fields at the reserved_offset
   size_t pos = reserved_offset;
   block_blob_bin[pos++] = 0x70;  // VRF proof tag
@@ -52,6 +45,13 @@ bool add_vrf_extra_and_sign(char* block_blob_hex)
 
   block_blob_bin[pos++] = 0x74;  // Signature tag
   pos += hex_to_byte_array(signature_hex, block_blob_bin + pos, XCASH_SIGN_DATA_LENGTH / 2);
+
+  // Validate offset doesn't overflow
+  if ((pos - reserved_offset) > BLOCK_RESERVED_SIZE ) {
+    ERROR_PRINT("VRF data exceeds reserved space: used %zu bytes, allowed 250", pos - reserved_offset);
+    free(block_blob_bin);
+    return false;
+  }
 
   // Re-encode the full blob to hex for submission
   bytes_to_hex(block_blob_bin, blob_len, block_blob_hex, BUFFER_SIZE);
