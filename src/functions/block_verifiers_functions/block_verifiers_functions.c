@@ -21,8 +21,8 @@ bool add_vrf_extra_and_sign(char* block_blob_hex)
   size_t reserved_offset = 320;
   
   // Validate offset doesn't overflow
-  if (reserved_offset + 256 > BUFFER_SIZE) {
-    ERROR_PRINT("Reserved offset too close to end of block blob");
+  if ((pos - reserved_offset) > 250) {
+    ERROR_PRINT("VRF data exceeds reserved space: used %zu bytes, allowed 250", pos - reserved_offset);
     free(block_blob_bin);
     return false;
   }

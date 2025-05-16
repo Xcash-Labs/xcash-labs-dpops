@@ -865,24 +865,6 @@ function create_systemd_service_files()
   echo
 }
 
-
-function install_libuv()
-{
-  echo -ne "${COLOR_PRINT_YELLOW}Installing libuv${END_COLOR_PRINT}"
-  cd "${XCASH_DPOPS_INSTALLATION_DIR}"
-  wget https://dist.libuv.org/dist/v1.51.0/libuv-v1.51.0.tar.gz &>/dev/null
-  mkdir libuv && tar -xf libuv-v1.51.0.tar.gz --strip-components=1 -C libuv &>/dev/null
-  sudo rm -rf libuv-v1.51.0.tar.gz &>/dev/null
-  cd libuv
-  sh autogen.sh &>/dev/null
-  ./configure &>/dev/null
-  make &>/dev/null
-  sudo make install &>/dev/null
-  sudo ldconfig &>/dev/null
-  echo -ne "\r${COLOR_PRINT_GREEN}Installing libuv${END_COLOR_PRINT}"
-  echo
-}
-
 #function build_libssl11()
 #{
 #  echo -ne "${COLOR_PRINT_YELLOW}Installing Libssl1.1${END_COLOR_PRINT}"
@@ -1043,7 +1025,6 @@ function install_xcash_dpops()
   install_mongodb_tools
   install_mongodb_mongosh
   install_mongoc_driver
-  install_libuv
   download_xcash_dpops
   build_xcash_dpops
 
