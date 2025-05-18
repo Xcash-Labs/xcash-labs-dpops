@@ -105,7 +105,7 @@ bool add_vrf_extra_and_sign(char* block_blob_hex)
   size_t tag_05_len = proof_len + beta_len;
 
   if ((pos + 2 + tag_05_len) > blob_len) goto overflow;
-  block_blob_bin[pos++] = TX_EXTRA_TAG_VRF_SIGNATURE_TAG1; // 0x05
+  block_blob_bin[pos++] = TX_EXTRA_VRF_SIGNATURE_TAG1; // 0x05
   block_blob_bin[pos++] = tag_05_len;
   pos += hex_to_byte_array(producer_refs[0].vrf_proof_hex, block_blob_bin + pos, proof_len);
   pos += hex_to_byte_array(producer_refs[0].vrf_beta_hex, block_blob_bin + pos, beta_len);
@@ -124,7 +124,7 @@ bool add_vrf_extra_and_sign(char* block_blob_hex)
   size_t tag_06_len = pubkey_len + signature_len;
 
   if ((pos + 2 + tag_06_len) > blob_len) goto overflow;
-  block_blob_bin[pos++] = TX_EXTRA_TAG_VRF_SIGNATURE_TAG2; // 0x06
+  block_blob_bin[pos++] = TX_EXTRA_VRF_SIGNATURE_TAG2; // 0x06
   block_blob_bin[pos++] = tag_06_len;
   pos += hex_to_byte_array(producer_refs[0].vrf_public_key, block_blob_bin + pos, pubkey_len);
   pos += hex_to_byte_array(signature_hex, block_blob_bin + pos, signature_len);
