@@ -188,7 +188,7 @@ bool sign_block_blob(const char* block_blob_hex, char* signature_out, size_t sig
     return false;
   }
 
-  return parse_json_data(response, "signature", signature_out, sig_out_len);
+  return parse_json_data(response, "result.signature", signature_out, sig_out_len);
 }
 
 /*---------------------------------------------------------------------------------------------------------
