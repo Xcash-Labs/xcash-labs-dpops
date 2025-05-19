@@ -61,26 +61,6 @@ bool add_vrf_extra_and_sign__OLD__(char* block_blob_hex)
 }
 
 
-/*
-Tag 0x05 — 112 bytes total
-VRF proof = 80 bytes
-
-VRF beta = 32 bytes
-
-Tag + length = 2 bytes
-→ Total: 2 + 80 + 32 = 114 bytes
-
-Tag 0x06 — 96 bytes total
-VRF pubkey = 32 bytes
-
-Signature = 64 bytes
-
-Tag + length = 2 bytes
-→ Total: 2 + 32 + 64 = 98 bytes
-*/
-
-
-
 bool add_vrf_extra_and_sign(char* block_blob_hex)
 {
   unsigned char* block_blob_bin = calloc(1, BUFFER_SIZE);
@@ -99,45 +79,47 @@ bool add_vrf_extra_and_sign(char* block_blob_hex)
   size_t reserved_offset = 125;
   size_t pos = reserved_offset;
 
-  // ========== TAG 0x05: VRF Proof + Beta ==========
-  size_t proof_len = VRF_PROOF_LENGTH / 2;
-  size_t beta_len = VRF_BETA_LENGTH / 2;
-  size_t tag_05_len = proof_len + beta_len;
+  // Construct the VRF blob
+  uint8_t vrf_blob[VRF_BLOB_TOTAL_SIZE] = {0};
+  size_t vrf_pos = 0;
 
-  if ((pos + 2 + tag_05_len) > blob_len) goto overflow;
-  block_blob_bin[pos++] = TX_EXTRA_VRF_SIGNATURE_TAG1; // 0x05
-  block_blob_bin[pos++] = tag_05_len;
-  pos += hex_to_byte_array(producer_refs[0].vrf_proof_hex, block_blob_bin + pos, proof_len);
-  pos += hex_to_byte_array(producer_refs[0].vrf_beta_hex, block_blob_bin + pos, beta_len);
+  vrf_pos += hex_to_byte_array(producer_refs[0].vrf_proof_hex, vrf_blob + vrf_pos, VRF_PROOF_LENGTH / 2);
+  vrf_pos += hex_to_byte_array(producer_refs[0].vrf_beta_hex, vrf_blob + vrf_pos, VRF_BETA_LENGTH / 2);
+  vrf_pos += hex_to_byte_array(producer_refs[0].vrf_public_key, vrf_blob + vrf_pos, VRF_PUBLIC_KEY_LENGTH / 2);
+  vrf_pos += hex_to_byte_array(producer_refs[0].public_address, vrf_blob + vrf_pos, XCASH_WALLET_LENGTH / 2);
 
-  // ========== Sign the original block blob (before inserting tag 0x06) ==========
+  // Sign the original block blob (before patching)
   char signature_hex[XCASH_SIGN_DATA_LENGTH + 1] = {0};
   if (!sign_block_blob(block_blob_hex, signature_hex, sizeof(signature_hex))) {
     ERROR_PRINT("Failed to sign block blob");
     free(block_blob_bin);
     return false;
   }
+  DEBUG_PRINT("Block Blob Signature: %s", signature_hex);
 
-  // ========== TAG 0x06: VRF PubKey + Signature ==========
-  size_t pubkey_len = VRF_PUBLIC_KEY_LENGTH / 2;
-  size_t signature_len = XCASH_SIGN_DATA_LENGTH / 2;
-  size_t tag_06_len = pubkey_len + signature_len;
+  vrf_pos += hex_to_byte_array(signature_hex, vrf_blob + vrf_pos, XCASH_SIGN_DATA_LENGTH / 2);
 
-  if ((pos + 2 + tag_06_len) > blob_len) goto overflow;
-  block_blob_bin[pos++] = TX_EXTRA_VRF_SIGNATURE_TAG2; // 0x06
-  block_blob_bin[pos++] = tag_06_len;
-  pos += hex_to_byte_array(producer_refs[0].vrf_public_key, block_blob_bin + pos, pubkey_len);
-  pos += hex_to_byte_array(signature_hex, block_blob_bin + pos, signature_len);
+  if (vrf_pos != 208) {
+    ERROR_PRINT("VRF blob constructed with incorrect size: %zu bytes", vrf_pos);
+    free(block_blob_bin);
+    return false;
+  }
 
-  // ========== Re-encode final blob ==========
+  block_blob_bin[pos++] = TX_EXTRA_VRF_SIGNATURE_TAG;
+  block_blob_bin[pos++] = 208;  // length of VRF blob (must match vrf_pos)
+  memcpy(block_blob_bin + pos, vrf_blob, 208);
+  pos += 208;
+
+  if ((pos - reserved_offset) > BLOCK_RESERVED_SIZE) {
+    ERROR_PRINT("VRF data exceeds reserved space: used %zu bytes, allowed %d", pos - reserved_offset, BLOCK_RESERVED_SIZE);
+    free(block_blob_bin);
+    return false;
+  }
+
   bytes_to_hex(block_blob_bin, blob_len, block_blob_hex, BUFFER_SIZE);
+
   free(block_blob_bin);
   return true;
-
-overflow:
-  ERROR_PRINT("Exceeded allowed blob length while inserting VRF data");
-  free(block_blob_bin);
-  return false;
 }
 
 
