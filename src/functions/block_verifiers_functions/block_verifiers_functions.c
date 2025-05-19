@@ -157,34 +157,19 @@ bool add_vrf_extra_and_sign(char* block_blob_hex)
     return false;
   }
 
-  If(!bytes_to_hex(block_blob_bin, blob_len, block_blob_hex, BUFFER_SIZE)) {
-    ERROR_PRINT("Error converting block_blob to hex");
+  bytes_to_hex(block_blob_bin, blob_len, block_blob_hex, BUFFER_SIZE);
+
+  if (strlen(block_blob_hex) != blob_len * 2) {
+    ERROR_PRINT("Hex conversion mismatch: expected %zu, got %zu", blob_len * 2, strlen(block_blob_hex));
     free(block_blob_bin);
     return false;
   }
 
-DEBUG_PRINT("Final block_blob_hex (length: %zu):", strlen(block_blob_hex));
-DEBUG_PRINT("%s", block_blob_hex);
+  DEBUG_PRINT("Final block_blob_hex (length: %zu):", strlen(block_blob_hex));
+  DEBUG_PRINT("%s", block_blob_hex);
 
   free(block_blob_bin);
   return true;
-}
-
-
-
-
-
-// Helper function: Restart logic if alone verifier
-int check_restart_if_alone(size_t count) {
-  if (count <= 1) {
-      for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
-          if (strncmp(current_block_verifiers_list.block_verifiers_public_address[i], xcash_wallet_public_address, XCASH_WALLET_LENGTH) == 0) {
-              WARNING_PRINT("Restarting, could not process any other block verifiers data");
-              return 1;
-          }
-      }
-  }
-  return 0;
 }
 
 /*---------------------------------------------------------------------------------------------------------
