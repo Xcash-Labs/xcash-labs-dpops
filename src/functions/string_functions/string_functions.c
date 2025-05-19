@@ -506,25 +506,24 @@ bool base58_decode(const char* input, uint8_t* output, size_t max_output_len, si
   if (!input || !output || !decoded_len || max_output_len == 0)
     return false;
 
-  uint8_t tmp[max_output_len];
-  memset(tmp, 0, max_output_len);
+  uint8_t tmp[128] = {0};
 
   for (i = 0; i < input_len; i++) {
     int val = base58_char_to_value(input[i]);
     if (val < 0) {
-      fprintf(stderr, "[ERROR] Invalid Base58 char: '%c'\n", input[i]);
+      ERROR_PRINT("Invalid Base58 char: '%c'", input[i]);
       return false;
     }
 
     int carry = val;
-    for (j = max_output_len; j-- > 0;) {
+    for (j = VSMALL_BUFFER_SIZE; j-- > 0;) {
       carry += 58 * tmp[j];
       tmp[j] = carry % 256;
       carry /= 256;
     }
 
     if (carry != 0) {
-      fprintf(stderr, "[ERROR] Base58 overflow\n");
+      ERROR_PRINT("Base58 overflow");
       return false;
     }
   }
@@ -537,13 +536,13 @@ bool base58_decode(const char* input, uint8_t* output, size_t max_output_len, si
 
   // Find start of non-zero data in tmp
   size_t start = 0;
-  while (start < max_output_len && tmp[start] == 0) {
+  while (start < VSMALL_BUFFER_SIZE && tmp[start] == 0) {
     start++;
   }
 
-  size_t decoded_size = max_output_len - start;
+  size_t decoded_size = VSMALL_BUFFER_SIZE - start;
   if (leading_zeros + decoded_size > max_output_len) {
-    fprintf(stderr, "[ERROR] Output buffer too small\n");
+    ERROR_PRINT("Output buffer too small (required %zu, available %zu)", leading_zeros + decoded_size, max_output_len);
     return false;
   }
 
