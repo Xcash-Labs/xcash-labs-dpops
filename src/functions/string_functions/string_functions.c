@@ -502,11 +502,12 @@ int base58_char_to_value(char c) {
 bool base58_decode(const char* input, uint8_t* output, size_t max_output_len, size_t* decoded_len) {
   size_t input_len = strlen(input);
   size_t i, j;
+  size_t base58_tmp_size = 128;
 
   if (!input || !output || !decoded_len || max_output_len == 0)
     return false;
 
-  uint8_t tmp[128] = {0};
+  uint8_t tmp[base58_tmp_size] = {0};
 
   for (i = 0; i < input_len; i++) {
     int val = base58_char_to_value(input[i]);
@@ -516,7 +517,7 @@ bool base58_decode(const char* input, uint8_t* output, size_t max_output_len, si
     }
 
     int carry = val;
-    for (j = VSMALL_BUFFER_SIZE; j-- > 0;) {
+    for (j = base58_tmp_size; j-- > 0;) {
       carry += 58 * tmp[j];
       tmp[j] = carry % 256;
       carry /= 256;
@@ -536,11 +537,11 @@ bool base58_decode(const char* input, uint8_t* output, size_t max_output_len, si
 
   // Find start of non-zero data in tmp
   size_t start = 0;
-  while (start < VSMALL_BUFFER_SIZE && tmp[start] == 0) {
+  while (start < base58_tmp_size && tmp[start] == 0) {
     start++;
   }
 
-  size_t decoded_size = VSMALL_BUFFER_SIZE - start;
+  size_t decoded_size = base58_tmp_size - start;
   if (leading_zeros + decoded_size > max_output_len) {
     ERROR_PRINT("Output buffer too small (required %zu, available %zu)", leading_zeros + decoded_size, max_output_len);
     return false;
