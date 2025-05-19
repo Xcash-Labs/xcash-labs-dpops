@@ -481,8 +481,9 @@ int get_random_bytes(unsigned char *buf, size_t len) {
     return XCASH_OK;
 }
 
+
 /*---------------------------------------------------------------------------------------------------------
-base58 helper
+base58 helper function
 ---------------------------------------------------------------------------------------------------------*/
 int base58_char_to_value(char c) {
   const char* p = strchr(BASE58_ALPHABET, c);
@@ -490,16 +491,21 @@ int base58_char_to_value(char c) {
 }
 
 /*---------------------------------------------------------------------------------------------------------
-Convert base58 to binary
----------------------------------------------------------------------------------------------------------*/
-int base58_decode(const char* input, uint8_t* output, size_t max_output_len) {
+ * @brief Decodes a Base58-encoded string into binary.
+ *
+ * @param input            Null-terminated Base58 string.
+ * @param output           Output buffer to receive binary result.
+ * @param max_output_len   Maximum size of output buffer.
+ * @param decoded_len      Pointer to store number of bytes written.
+ * @return true on success, false on failure.
+ ---------------------------------------------------------------------------------------------------------*/
+bool base58_decode(const char* input, uint8_t* output, size_t max_output_len, size_t* decoded_len) {
   size_t input_len = strlen(input);
   size_t i, j;
 
-  if (max_output_len == 0 || !output)
-    return -1;
+  if (!input || !output || !decoded_len || max_output_len == 0)
+    return false;
 
-  // Initialize all output bytes to 0
   uint8_t tmp[max_output_len];
   memset(tmp, 0, max_output_len);
 
@@ -507,7 +513,7 @@ int base58_decode(const char* input, uint8_t* output, size_t max_output_len) {
     int val = base58_char_to_value(input[i]);
     if (val < 0) {
       fprintf(stderr, "[ERROR] Invalid Base58 char: '%c'\n", input[i]);
-      return -1;
+      return false;
     }
 
     int carry = val;
@@ -519,17 +525,17 @@ int base58_decode(const char* input, uint8_t* output, size_t max_output_len) {
 
     if (carry != 0) {
       fprintf(stderr, "[ERROR] Base58 overflow\n");
-      return -1;
+      return false;
     }
   }
 
-  // Count leading '1's = leading zeros
+  // Handle leading '1's (Base58 zero bytes)
   size_t leading_zeros = 0;
   for (i = 0; i < input_len && input[i] == '1'; i++) {
     output[leading_zeros++] = 0;
   }
 
-  // Copy decoded data
+  // Find start of non-zero data in tmp
   size_t start = 0;
   while (start < max_output_len && tmp[start] == 0) {
     start++;
@@ -538,9 +544,11 @@ int base58_decode(const char* input, uint8_t* output, size_t max_output_len) {
   size_t decoded_size = max_output_len - start;
   if (leading_zeros + decoded_size > max_output_len) {
     fprintf(stderr, "[ERROR] Output buffer too small\n");
-    return -1;
+    return false;
   }
 
   memcpy(output + leading_zeros, tmp + start, decoded_size);
-  return (int)(leading_zeros + decoded_size); // total bytes written
+  *decoded_len = leading_zeros + decoded_size;
+
+  return true;
 }

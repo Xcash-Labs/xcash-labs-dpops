@@ -60,6 +60,37 @@ bool add_vrf_extra_and_sign__OLD__(char* block_blob_hex)
   return true;
 }
 
+/*---------------------------------------------------------------------------------------------------------
+ * @brief Injects VRF-related data into the reserved section of a Monero-style blocktemplate blob
+ *        and signs the original block blob using the producer's private key.
+ *
+ * This function performs the following steps:
+ * 1. Converts the input hex-encoded `block_blob_hex` into binary.
+ * 2. Constructs a 208-byte VRF blob consisting of:
+ *    - VRF proof (80 bytes, hex string)
+ *    - VRF beta  (32 bytes, hex string)
+ *    - VRF public key (32 bytes, hex string)
+ *    - Base58-decoded public address (32 bytes from spend key or hash)
+ *    - Signature of the original block blob (64 bytes, hex string)
+ * 3. Writes the VRF blob into `block_blob_bin` at the reserved offset, with a custom tag (0x07)
+ *    and length prefix (1-byte varint).
+ * 4. Converts the modified binary blob back into hex and stores it in `block_blob_hex`.
+ *
+ * vrf_blob Layout (208 Bytes)
+ *  Field	      Bytes   Description
+ *  vrf_proof	  80	    Hex-decoded 80-byte VRF proof (e.g. from libsodium)
+ *  vrf_beta	  32	    Hex-decoded 32-byte beta (VRF hash output)
+ *  vrf_pubkey  32	    Hex-decoded 32-byte VRF public key
+ *  signature	  64	    Hex-decoded 64-byte signature
+ * 
+ * @param block_blob_hex The input and output hex-encoded blocktemplate blob.
+ *                       Must contain reserved space as defined by get_block_template (e.g. 220 bytes).
+ * @return true on success, false if any step fails (conversion, signing, or overflow).
+ *
+ * @note This function expects `producer_refs[0]` to be populated with all required hex strings.
+ * @note Ensure the get_block_template reserve_size is at least 210–220 bytes to fit the full VRF blob.
+ * @note The signature is calculated on the original (unpatched) block_blob_hex for consensus correctness.
+---------------------------------------------------------------------------------------------------------*/
 
 bool add_vrf_extra_and_sign(char* block_blob_hex)
 {
@@ -86,18 +117,28 @@ bool add_vrf_extra_and_sign(char* block_blob_hex)
   vrf_pos += hex_to_byte_array(producer_refs[0].vrf_proof_hex, vrf_blob + vrf_pos, VRF_PROOF_LENGTH / 2);
   vrf_pos += hex_to_byte_array(producer_refs[0].vrf_beta_hex, vrf_blob + vrf_pos, VRF_BETA_LENGTH / 2);
   vrf_pos += hex_to_byte_array(producer_refs[0].vrf_public_key, vrf_blob + vrf_pos, VRF_PUBLIC_KEY_LENGTH / 2);
-  vrf_pos += hex_to_byte_array(producer_refs[0].public_address, vrf_blob + vrf_pos, XCASH_WALLET_LENGTH / 2);
 
   // Sign the original block blob (before patching)
-  char signature_hex[XCASH_SIGN_DATA_LENGTH + 1] = {0};
-  if (!sign_block_blob(block_blob_hex, signature_hex, sizeof(signature_hex))) {
+  char blob_signature[XCASH_SIGN_DATA_LENGTH + 1] = {0};
+  if (!sign_block_blob(block_blob_hex, blob_signature, sizeof(blob_signature))) {
     ERROR_PRINT("Failed to sign block blob");
     free(block_blob_bin);
     return false;
   }
-  DEBUG_PRINT("Block Blob Signature: %s", signature_hex);
+  DEBUG_PRINT("Block Blob Signature: %s", blob_signature);
 
-  vrf_pos += hex_to_byte_array(signature_hex, vrf_blob + vrf_pos, XCASH_SIGN_DATA_LENGTH / 2);
+  const char* base58_part = blob_signature + 5; // skip "SigV2"
+  uint8_t sig_bytes[64] = {0};
+  size_t sig_len = 0;
+
+  if (!base58_decode(base58_part, sig_bytes, sizeof(sig_bytes), &sig_len) || sig_len != 64) {
+    ERROR_PRINT("Invalid signature found durning base58_decode");
+    free(block_blob_bin);
+    return false;
+  }
+
+  memcpy(vrf_blob + vrf_pos, sig_bytes, 64);
+  vrf_pos += 64;
 
   if (vrf_pos != 208) {
     ERROR_PRINT("VRF blob constructed with incorrect size: %zu bytes", vrf_pos);
@@ -116,7 +157,14 @@ bool add_vrf_extra_and_sign(char* block_blob_hex)
     return false;
   }
 
-  bytes_to_hex(block_blob_bin, blob_len, block_blob_hex, BUFFER_SIZE);
+  If(!bytes_to_hex(block_blob_bin, blob_len, block_blob_hex, BUFFER_SIZE)) {
+    ERROR_PRINT("Error converting block_blob to hex");
+    free(block_blob_bin);
+    return false;
+  }
+
+DEBUG_PRINT("Final block_blob_hex (length: %zu):", strlen(block_blob_hex));
+DEBUG_PRINT("%s", block_blob_hex);
 
   free(block_blob_bin);
   return true;
