@@ -545,3 +545,4 @@ bool base58_decode(const char* input, uint8_t* output, size_t max_output_len, si
     ERROR_PRINT("Output buffer too small (required %zu, available %zu)", leading_zeros + decoded_size, max_output_len);
     return false;
   }
+}
