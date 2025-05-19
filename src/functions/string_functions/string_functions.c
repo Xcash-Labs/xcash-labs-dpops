@@ -1,5 +1,7 @@
 #include "string_functions.h"
 
+static const char* BASE58_ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+
 /*---------------------------------------------------------------------------------------------------------
 /// @brief Converts a hexadecimal string to a byte array.
 /// @param hex_string The input hex string.
@@ -477,4 +479,68 @@ int get_random_bytes(unsigned char *buf, size_t len) {
         return XCASH_ERROR;
     }
     return XCASH_OK;
+}
+
+/*---------------------------------------------------------------------------------------------------------
+base58 helper
+---------------------------------------------------------------------------------------------------------*/
+int base58_char_to_value(char c) {
+  const char* p = strchr(BASE58_ALPHABET, c);
+  return p ? (int)(p - BASE58_ALPHABET) : -1;
+}
+
+/*---------------------------------------------------------------------------------------------------------
+Convert base58 to binary
+---------------------------------------------------------------------------------------------------------*/
+int base58_decode(const char* input, uint8_t* output, size_t max_output_len) {
+  size_t input_len = strlen(input);
+  size_t i, j;
+
+  if (max_output_len == 0 || !output)
+    return -1;
+
+  // Initialize all output bytes to 0
+  uint8_t tmp[max_output_len];
+  memset(tmp, 0, max_output_len);
+
+  for (i = 0; i < input_len; i++) {
+    int val = base58_char_to_value(input[i]);
+    if (val < 0) {
+      fprintf(stderr, "[ERROR] Invalid Base58 char: '%c'\n", input[i]);
+      return -1;
+    }
+
+    int carry = val;
+    for (j = max_output_len; j-- > 0;) {
+      carry += 58 * tmp[j];
+      tmp[j] = carry % 256;
+      carry /= 256;
+    }
+
+    if (carry != 0) {
+      fprintf(stderr, "[ERROR] Base58 overflow\n");
+      return -1;
+    }
+  }
+
+  // Count leading '1's = leading zeros
+  size_t leading_zeros = 0;
+  for (i = 0; i < input_len && input[i] == '1'; i++) {
+    output[leading_zeros++] = 0;
+  }
+
+  // Copy decoded data
+  size_t start = 0;
+  while (start < max_output_len && tmp[start] == 0) {
+    start++;
+  }
+
+  size_t decoded_size = max_output_len - start;
+  if (leading_zeros + decoded_size > max_output_len) {
+    fprintf(stderr, "[ERROR] Output buffer too small\n");
+    return -1;
+  }
+
+  memcpy(output + leading_zeros, tmp + start, decoded_size);
+  return (int)(leading_zeros + decoded_size); // total bytes written
 }
