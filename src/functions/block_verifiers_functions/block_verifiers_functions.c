@@ -91,7 +91,6 @@ bool add_vrf_extra_and_sign__OLD__(char* block_blob_hex)
  * @note Ensure the get_block_template reserve_size is at least 210–220 bytes to fit the full VRF blob.
  * @note The signature is calculated on the original (unpatched) block_blob_hex for consensus correctness.
 ---------------------------------------------------------------------------------------------------------*/
-
 bool add_vrf_extra_and_sign(char* block_blob_hex)
 {
   unsigned char* block_blob_bin = calloc(1, BUFFER_SIZE);
@@ -128,11 +127,23 @@ bool add_vrf_extra_and_sign(char* block_blob_hex)
   DEBUG_PRINT("Block Blob Signature: %s", blob_signature);
 
   const char* base58_part = blob_signature + 5; // skip "SigV2"
-  uint8_t sig_bytes[64] = {0};
+  uint8_t sig_bytes[65] = {0};
   size_t sig_len = 0;
 
-  if (!base58_decode(base58_part, sig_bytes, sizeof(sig_bytes), &sig_len) || sig_len != 64) {
-    ERROR_PRINT("Invalid signature found durning base58_decode");
+  if (!base58_decode(base58_part, sig_bytes, sizeof(sig_bytes), &sig_len)) {
+    ERROR_PRINT("Base58 decode failed");
+    free(block_blob_bin);
+    return false;
+  }
+
+  if (sig_len == 65 && sig_bytes[0] == 0x00) {
+    WARNING_PRINT("Normalizing 65-byte signature (stripping leading 0x00)");
+    memmove(sig_bytes, sig_bytes + 1, 64);
+    sig_len = 64;
+  }
+
+  if (sig_len != 64) {
+    ERROR_PRINT("Signature must be exactly 64 bytes after normalization");
     free(block_blob_bin);
     return false;
   }

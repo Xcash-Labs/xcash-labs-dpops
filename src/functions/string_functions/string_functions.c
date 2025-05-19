@@ -545,4 +545,14 @@ bool base58_decode(const char* input, uint8_t* output, size_t max_output_len, si
     ERROR_PRINT("Output buffer too small (required %zu, available %zu)", leading_zeros + decoded_size, max_output_len);
     return false;
   }
+
+  memcpy(output + leading_zeros, tmp + start, decoded_size);
+  *decoded_len = leading_zeros + decoded_size;
+
+  // Warn if decoded to 65 bytes with leading zero
+  if (*decoded_len == 65 && output[0] == 0x00) {
+    WARNING_PRINT("Decoded Base58 result is 65 bytes with leading 0x00 — likely a signature. Caller must normalize if needed.");
+  }
+
+  return true;
 }
