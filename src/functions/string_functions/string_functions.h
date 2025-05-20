@@ -27,6 +27,6 @@ void string_replace_limit(char *data, const size_t DATA_TOTAL_LENGTH, const char
 bool compress_gzip_with_prefix(const unsigned char* input, size_t input_len, unsigned char** output, size_t* output_len);
 bool decompress_gzip_with_prefix(const unsigned char* input, size_t input_len, unsigned char** output, size_t* output_len);
 int get_random_bytes(unsigned char *buf, size_t len);
-//bool base58_decode(const char* input, uint8_t* output, size_t max_output_len, size_t* decoded_len);
-int base58_decode(const char *base58, uint8_t *decoded, size_t *decoded_len);
+bool base58_decode(const char* input, uint8_t* output, size_t max_output_len, size_t* decoded_len);
+char* base58_encode(const uint8_t* input, size_t input_len);
 #endif
