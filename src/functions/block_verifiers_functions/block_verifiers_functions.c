@@ -60,26 +60,6 @@ bool add_vrf_extra_and_sign__OLD__(char* block_blob_hex)
   return true;
 }
 
-bool sign_block_blob(const char* block_blob_hex, char* signature_out, size_t sig_out_len) {
-  char request_json[BUFFER_SIZE + 256];
-  char response[BUFFER_SIZE];
-
-  snprintf(request_json, sizeof(request_json),
-    "{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"sign\",\"params\":{\"data\":\"%s\"}}",
-    block_blob_hex
-  );
-
-  const char* headers[] = { "Content-Type: application/json", "Accept: application/json" };
-  if (send_http_request(response, XCASH_WALLET_IP, "/json_rpc", XCASH_WALLET_PORT,
-                        "POST", headers, 2, request_json, SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) <= 0) {
-    return false;
-  }
-
-  return parse_json_data(response, "result.signature", signature_out, sig_out_len);
-}
-
-
-
 /*---------------------------------------------------------------------------------------------------------
  * @brief Injects VRF-related data into the reserved section of a Monero-style blocktemplate blob
  *        and signs the original block blob using the producer's private key.

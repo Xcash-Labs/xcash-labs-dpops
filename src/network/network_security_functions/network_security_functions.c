@@ -166,12 +166,6 @@ Parameters:
 Returns:
   true  - If the signing process succeeds and the signature is extracted successfully.
   false - If the HTTP request fails, the response is invalid, or the signature cannot be parsed.
-
-Usage Example:
-  char signature[XCASH_SIGN_DATA_LENGTH + 1] = {0};
-  if (!sign_block_blob(block_blob_hex, signature, sizeof(signature))) {
-    ERROR_PRINT("Failed to sign the block blob.");
-  }
 -----------------------------------------------------------------------------------------------------------*/
 bool sign_block_blob(const char* block_blob_hex, char* signature_out, size_t sig_out_len) {
   char request_json[BUFFER_SIZE + 256];
