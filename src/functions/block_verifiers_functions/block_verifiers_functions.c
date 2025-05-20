@@ -130,12 +130,11 @@ bool add_vrf_extra_and_sign(char* block_blob_hex)
   uint8_t sig_bytes[65] = {0};
   size_t sig_len = 0;
 
-if (!base58_decode(base58_part, sig_bytes, &sig_len)) {
+  if (!base58_decode(base58_part, sig_bytes, sizeof(sig_bytes), &sig_len)) {
     ERROR_PRINT("Base58 decode failed");
     free(block_blob_bin);
     return false;
-}
-
+  }
 
 DEBUG_PRINT("Base58 decode successful. Decoded signature length: %zu", sig_len);
 DEBUG_PRINT("First byte of signature: 0x%02X", sig_bytes[0]);
@@ -150,11 +149,7 @@ if (encoded) {
 }
 return false;
 
-//  if (!base58_decode(base58_part, sig_bytes, sizeof(sig_bytes), &sig_len)) {
-//    ERROR_PRINT("Base58 decode failed");
-//    free(block_blob_bin);
-//    return false;
-//  }
+
 
   if (sig_len == 65 && sig_bytes[0] == 0x00) {
     WARNING_PRINT("Normalizing 65-byte signature (stripping leading 0x00)");
