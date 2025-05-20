@@ -137,7 +137,7 @@ if (!base58_decode(base58_part, sig_bytes, &sig_len)) {
 }
 
 DEBUG_PRINT("Base58 decode successful. Decoded signature length: %zu", sig_len);
-
+DEBUG_PRINT("First byte of signature: 0x%02X", sig_bytes[0]);
 
 return false;
 
