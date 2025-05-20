@@ -499,7 +499,8 @@ int base58_char_to_value(char c) {
  * @param decoded_len      Pointer to store number of bytes written.
  * @return true on success, false on failure.
  ---------------------------------------------------------------------------------------------------------*/
-bool base58_decode__OLD__(const char* input, uint8_t* output, size_t max_output_len, size_t* decoded_len) {
+/*
+ bool base58_decode__OLD__(const char* input, uint8_t* output, size_t max_output_len, size_t* decoded_len) {
   size_t input_len = strlen(input);
   size_t i, j;
 
@@ -631,4 +632,39 @@ bool base58_decode(const char* input, uint8_t* output, size_t max_output_len, si
   }
 
   return true;
+}
+*/
+
+
+
+int base58_decode(const char *base58, uint8_t *decoded, size_t *decoded_len) {
+    size_t input_len = strlen(base58); // Length of the input Base58 string
+    size_t output_len = 0;            // Length of the decoded output
+    memset(decoded, 0, *decoded_len); // Initialize the output buffer with zeros
+
+    for (size_t i = 0; i < input_len; i++) {
+        const char *p = strchr(BASE58_ALPHABET, base58[i]); // Find character in Base58 alphabet
+        if (!p) return XCASH_ERROR; // Return 0 if the character is invalid
+        int carry = p - BASE58_ALPHABET; // Get the numeric value of the character
+
+        for (size_t j = 0; j < output_len; j++) {
+            carry += decoded[j] * 58;  // Multiply by 58 and add the carry
+            decoded[j] = carry & 0xFF; // Store the least significant byte
+            carry >>= 8;               // Carry the overflow to the next byte
+        }
+
+        while (carry) { // Append carry bytes if necessary
+            decoded[output_len++] = carry & 0xFF;
+            carry >>= 8;
+        }
+    }
+
+    for (size_t i = 0; i < output_len / 2; i++) { // Reverse byte order
+        uint8_t temp = decoded[i];
+        decoded[i] = decoded[output_len - 1 - i];
+        decoded[output_len - 1 - i] = temp;
+    }
+
+    *decoded_len = output_len; // Set the output length
+    return XCASH_OK;                  // Return success
 }
