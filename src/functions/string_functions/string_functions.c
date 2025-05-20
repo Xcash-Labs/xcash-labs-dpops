@@ -668,3 +668,60 @@ int base58_decode(const char *base58, uint8_t *decoded, size_t *decoded_len) {
     *decoded_len = output_len; // Set the output length
     return XCASH_OK;                  // Return success
 }
+
+
+
+char* base58_encode(const uint8_t* input, size_t input_len) {
+    if (!input || input_len == 0) return NULL;
+
+    // Base58 encoding output (worst case: log(256)/log(58) ≈ 1.37)
+    size_t encoded_size = input_len * 138 / 100 + 2;
+    char* encoded = calloc(encoded_size, 1);
+    if (!encoded) return NULL;
+
+    // Temporary array for encoding
+    uint8_t* tmp = calloc(input_len * 2, 1);
+    if (!tmp) {
+        free(encoded);
+        return NULL;
+    }
+    memcpy(tmp, input, input_len);
+
+    size_t zero_count = 0;
+    while (zero_count < input_len && input[zero_count] == 0) {
+        zero_count++;
+    }
+
+    size_t j = encoded_size;
+    size_t start_at = zero_count;
+    while (start_at < input_len) {
+        int carry = tmp[start_at];
+        size_t k = encoded_size;
+
+        while (carry || k > j) {
+            carry += 256 * tmp[k - 1];
+            tmp[k - 1] = carry % 58;
+            carry /= 58;
+            k--;
+        }
+        j = k;
+        start_at++;
+    }
+
+    // Leading '1's for leading 0 bytes
+    size_t leading_zeros = 0;
+    for (size_t i = 0; i < input_len && input[i] == 0; i++) {
+        encoded[leading_zeros++] = '1';
+    }
+
+    // Convert remainders to characters
+    for (size_t i = j; i < encoded_size; i++) {
+        encoded[leading_zeros++] = BASE58_ALPHABET[tmp[i]];
+    }
+    encoded[leading_zeros] = '\0';
+
+    free(tmp);
+    return encoded;
+}
+
+

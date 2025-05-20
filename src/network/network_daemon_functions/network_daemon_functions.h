@@ -19,5 +19,5 @@ int get_current_block_height(char *result);
 int get_previous_block_hash(char *result);
 bool is_blockchain_synced(void);
 //int get_previous_block_information(char *block_hash, char *block_reward, char *block_date_and_time);
-
+char* base58_encode(const uint8_t* input, size_t input_len);
 #endif
