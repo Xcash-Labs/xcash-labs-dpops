@@ -60,6 +60,26 @@ bool add_vrf_extra_and_sign__OLD__(char* block_blob_hex)
   return true;
 }
 
+bool sign_block_blob(const char* block_blob_hex, char* signature_out, size_t sig_out_len) {
+  char request_json[BUFFER_SIZE + 256];
+  char response[BUFFER_SIZE];
+
+  snprintf(request_json, sizeof(request_json),
+    "{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"sign\",\"params\":{\"data\":\"%s\"}}",
+    block_blob_hex
+  );
+
+  const char* headers[] = { "Content-Type: application/json", "Accept: application/json" };
+  if (send_http_request(response, XCASH_WALLET_IP, "/json_rpc", XCASH_WALLET_PORT,
+                        "POST", headers, 2, request_json, SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) <= 0) {
+    return false;
+  }
+
+  return parse_json_data(response, "result.signature", signature_out, sig_out_len);
+}
+
+
+
 /*---------------------------------------------------------------------------------------------------------
  * @brief Injects VRF-related data into the reserved section of a Monero-style blocktemplate blob
  *        and signs the original block blob using the producer's private key.
@@ -130,7 +150,6 @@ bool add_vrf_extra_and_sign(char* block_blob_hex)
   uint8_t sig_bytes[65] = {0};
   size_t sig_len = 0;
 
-  /*
   if (!base58_decode(base58_part, sig_bytes, sizeof(sig_bytes), &sig_len)) {
     ERROR_PRINT("Base58 decode failed");
     free(block_blob_bin);
@@ -148,47 +167,6 @@ bool add_vrf_extra_and_sign(char* block_blob_hex)
     free(block_blob_bin);
     return false;
   }
-
-*/  
-  
-
-
-
-
-
-if (!base58_decode(base58_part, sig_bytes, sizeof(sig_bytes), &sig_len)) {
-  ERROR_PRINT("Base58 decode failed");
-  free(block_blob_bin);
-  return false;
-}
-
-DEBUG_PRINT("Base58-decoded signature length: %zu", sig_len);
-DEBUG_PRINT("First 4 bytes of signature: %02X %02X %02X %02X",
-            sig_bytes[0], sig_bytes[1], sig_bytes[2], sig_bytes[3]);
-
-if (sig_len == 65 && sig_bytes[0] == 0x00) {
-  WARNING_PRINT("Normalizing 65-byte signature (stripping leading 0x00)");
-  memmove(sig_bytes, sig_bytes + 1, 64);
-  sig_len = 64;
-}
-
-if (sig_len != 64) {
-  ERROR_PRINT("Signature must be exactly 64 bytes after normalization (got %zu)", sig_len);
-  DEBUG_PRINT("Full decoded signature (hex):");
-  for (size_t i = 0; i < sig_len && i < 65; i++) {
-    fprintf(stderr, "%02X%s", sig_bytes[i], (i + 1) % 16 == 0 ? "\n" : " ");
-  }
-  fprintf(stderr, "\n");
-
-  free(block_blob_bin);
-  return false;
-}
-
-DEBUG_PRINT("Signature is valid length (64 bytes). Appending to vrf_blob.");
-
-
-
-
 
   memcpy(vrf_blob + vrf_pos, sig_bytes, 64);
   vrf_pos += 64;
