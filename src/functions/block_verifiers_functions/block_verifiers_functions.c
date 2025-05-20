@@ -136,10 +136,11 @@ if (!base58_decode(base58_part, sig_bytes, &sig_len)) {
     return false;
 }
 
-char* encoded = base58_encode(sig_bytes, sizeof(sig_len));
 
 DEBUG_PRINT("Base58 decode successful. Decoded signature length: %zu", sig_len);
 DEBUG_PRINT("First byte of signature: 0x%02X", sig_bytes[0]);
+
+char* encoded = base58_encode(sig_bytes, sizeof(sig_len));
 DEBUG_PRINT("decoded string: %s", encoded);
 
 return false;
