@@ -136,24 +136,11 @@ if (!base58_decode(base58_part, sig_bytes, &sig_len)) {
     return false;
 }
 
-
-DEBUG_PRINT("Base58 decode successful. Decoded signature length: %zu", sig_len);
-DEBUG_PRINT("First byte of signature: 0x%02X", sig_bytes[0]);
-
-char* encoded = base58_encode(sig_bytes, sig_len);
-if (encoded) {
-    DEBUG_PRINT("Encoded Base58 string: %s", encoded);
-    free(encoded); // Don't forget to free the memory
-} else {
-    ERROR_PRINT("Base58 encoding failed.");
-}
-return false;
-
-//  if (!base58_decode(base58_part, sig_bytes, sizeof(sig_bytes), &sig_len)) {
-//    ERROR_PRINT("Base58 decode failed");
-//    free(block_blob_bin);
-//    return false;
-//  }
+  if (!base58_decode(base58_part, sig_bytes, sizeof(sig_bytes), &sig_len)) {
+    ERROR_PRINT("Base58 decode failed");
+    free(block_blob_bin);
+    return false;
+  }
 
   if (sig_len == 65 && sig_bytes[0] == 0x00) {
     WARNING_PRINT("Normalizing 65-byte signature (stripping leading 0x00)");
