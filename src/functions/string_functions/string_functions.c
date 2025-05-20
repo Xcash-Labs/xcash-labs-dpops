@@ -499,7 +499,7 @@ int base58_char_to_value(char c) {
  * @param decoded_len      Pointer to store number of bytes written.
  * @return true on success, false on failure.
  ---------------------------------------------------------------------------------------------------------*/
-bool base58_decode(const char* input, uint8_t* output, size_t max_output_len, size_t* decoded_len) {
+bool base58_decode__OLD__(const char* input, uint8_t* output, size_t max_output_len, size_t* decoded_len) {
   size_t input_len = strlen(input);
   size_t i, j;
 
@@ -546,12 +546,86 @@ bool base58_decode(const char* input, uint8_t* output, size_t max_output_len, si
     return false;
   }
 
-  for (size_t k = 0; k < decoded_size; k++) {
-    output[leading_zeros + k] = tmp[start + decoded_size - 1 - k];
-  }
+  memcpy(output + leading_zeros, tmp + start, decoded_size);
   *decoded_len = leading_zeros + decoded_size;
 
   // Warn if decoded to 65 bytes with leading zero
+  if (*decoded_len == 65 && output[0] == 0x00) {
+    WARNING_PRINT("Decoded Base58 result is 65 bytes with leading 0x00 — likely a signature. Caller must normalize if needed.");
+  }
+
+  return true;
+}
+
+bool base58_decode(const char* input, uint8_t* output, size_t max_output_len, size_t* decoded_len) {
+  if (!input || !output || !decoded_len || max_output_len == 0) {
+    ERROR_PRINT("Invalid arguments to base58_decode");
+    return false;
+  }
+
+  size_t input_len = strlen(input);
+  size_t i, j;
+
+  DEBUG_PRINT("Starting Base58 decode: input='%s', length=%zu", input, input_len);
+
+  uint8_t tmp[BASE58_TMP_SIZE] = {0};
+
+  for (i = 0; i < input_len; i++) {
+    int val = base58_char_to_value(input[i]);
+    if (val < 0) {
+      ERROR_PRINT("Invalid Base58 char: '%c' at position %zu", input[i], i);
+      return false;
+    }
+
+    int carry = val;
+    for (j = BASE58_TMP_SIZE; j-- > 0;) {
+      carry += 58 * tmp[j];
+      tmp[j] = carry % 256;
+      carry /= 256;
+    }
+
+    if (carry != 0) {
+      ERROR_PRINT("Base58 overflow at input index %zu (char='%c')", i, input[i]);
+      return false;
+    }
+  }
+
+  // Handle leading '1's (Base58 zero bytes)
+  size_t leading_zeros = 0;
+  for (i = 0; i < input_len && input[i] == '1'; i++) {
+    output[leading_zeros++] = 0;
+  }
+
+  DEBUG_PRINT("Leading Base58 zeros: %zu", leading_zeros);
+
+  // Find start of non-zero data in tmp
+  size_t start = 0;
+  while (start < BASE58_TMP_SIZE && tmp[start] == 0) {
+    start++;
+  }
+
+  size_t decoded_size = BASE58_TMP_SIZE - start;
+  size_t total_size = leading_zeros + decoded_size;
+
+  DEBUG_PRINT("Decoded non-zero data starts at tmp[%zu]", start);
+  DEBUG_PRINT("Decoded size (excluding leading zeros): %zu", decoded_size);
+
+  if (total_size > max_output_len) {
+    ERROR_PRINT("Output buffer too small (required %zu, available %zu)", total_size, max_output_len);
+    return false;
+  }
+
+  for (size_t k = 0; k < decoded_size; k++) {
+   output[leading_zeros + k] = tmp[start + decoded_size - 1 - k];
+  }
+  *decoded_len = total_size;
+
+  DEBUG_PRINT("Final decoded size: %zu", *decoded_len);
+  DEBUG_PRINT("Decoded data (hex):");
+  for (i = 0; i < *decoded_len; i++) {
+    DEBUG_PRINT("  [%02zu]: 0x%02X", i, output[i]);
+  }
+
   if (*decoded_len == 65 && output[0] == 0x00) {
     WARNING_PRINT("Decoded Base58 result is 65 bytes with leading 0x00 — likely a signature. Caller must normalize if needed.");
   }
