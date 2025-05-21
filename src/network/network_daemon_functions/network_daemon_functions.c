@@ -232,7 +232,7 @@ bool submit_block_template(const char* DATA)
   // Send HTTP request
   if (send_http_request(response, XCASH_DAEMON_IP, RPC_ENDPOINT, XCASH_DAEMON_PORT,
                         "POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH,
-                        request_json, SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) > 0)
+                        request_json, BLOCK_TIMEOUT_SECONDS) > 0)
   {
     // Check if there's an error in the response
     if (parse_json_data(response, "error.message", result, sizeof(result)) == 1) {
