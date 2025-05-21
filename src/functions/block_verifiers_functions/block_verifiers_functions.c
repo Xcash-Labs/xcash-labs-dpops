@@ -167,6 +167,7 @@ bool add_vrf_extra_and_sign(char* block_blob_hex)
     free(block_blob_bin);
     return false;
   }
+  
 
   block_blob_bin[pos++] = TX_EXTRA_VRF_SIGNATURE_TAG;
   block_blob_bin[pos++] = 208;  // length of VRF blob (must match vrf_pos)
