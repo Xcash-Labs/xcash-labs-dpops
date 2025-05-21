@@ -220,8 +220,8 @@ bool submit_block_template(const char* DATA)
   const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0]);
   const char* RPC_ENDPOINT = "/json_rpc";
 
-  char request_json[BUFFER_SIZE] = {0};
-  char response[BUFFER_SIZE] = {0};
+  char request_json[SMALL_BUFFER_SIZE] = {0};
+  char response[SMALL_BUFFER_SIZE] = {0};
   char result[256] = {0};
 
   // Format JSON-RPC message to submit block
