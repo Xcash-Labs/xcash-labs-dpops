@@ -113,9 +113,26 @@ bool add_vrf_extra_and_sign(char* block_blob_hex)
   uint8_t vrf_blob[VRF_BLOB_TOTAL_SIZE] = {0};
   size_t vrf_pos = 0;
 
-  vrf_pos += hex_to_byte_array(producer_refs[0].vrf_proof_hex, vrf_blob + vrf_pos, VRF_PROOF_LENGTH / 2);
-  vrf_pos += hex_to_byte_array(producer_refs[0].vrf_beta_hex, vrf_blob + vrf_pos, VRF_BETA_LENGTH / 2);
-  vrf_pos += hex_to_byte_array(producer_refs[0].vrf_public_key, vrf_blob + vrf_pos, VRF_PUBLIC_KEY_LENGTH / 2);
+  if (!hex_to_byte_array(producer_refs[0].vrf_proof_hex, vrf_blob + vrf_pos, VRF_PROOF_LENGTH / 2)) {
+    ERROR_PRINT("Failed to decode VRF proof hex");
+    free(block_blob_bin);
+    return false;
+  }
+  vrf_pos += (VRF_PROOF_LENGTH / 2);
+
+  if (!hex_to_byte_array(producer_refs[0].vrf_beta_hex, vrf_blob + vrf_pos, VRF_BETA_LENGTH / 2)) {
+    ERROR_PRINT("Failed to decode VRF beta hex");
+    free(block_blob_bin);
+    return false;
+  }
+  vrf_pos += VRF_BETA_LENGTH / 2;
+
+  if (!hex_to_byte_array(producer_refs[0].vrf_public_key, vrf_blob + vrf_pos, VRF_PUBLIC_KEY_LENGTH / 2)) {
+    ERROR_PRINT("Failed to decode VRF public key hex");
+    free(block_blob_bin);
+    return false;
+  }
+  vrf_pos += VRF_PUBLIC_KEY_LENGTH / 2;
 
   // Sign the original block blob (before patching)
   char blob_signature[XCASH_SIGN_DATA_LENGTH + 1] = {0};
