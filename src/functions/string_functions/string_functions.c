@@ -1,7 +1,5 @@
 #include "string_functions.h"
 
-static const char* BASE58_ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
-
 /*---------------------------------------------------------------------------------------------------------
 /// @brief Converts a hexadecimal string to a byte array.
 /// @param hex_string The input hex string.
