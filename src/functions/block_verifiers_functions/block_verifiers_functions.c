@@ -112,28 +112,28 @@ bool add_vrf_extra_and_sign(char* block_blob_hex)
   // Construct the VRF blob
   uint8_t vrf_blob[VRF_BLOB_TOTAL_SIZE] = {0};
   size_t vrf_pos = 0;
-
+DEBUG_PRINT("VRF proof decoded, vrf_pos now at: %zu", vrf_pos);
   if (!hex_to_byte_array(producer_refs[0].vrf_proof_hex, vrf_blob + vrf_pos, VRF_PROOF_LENGTH / 2)) {
     ERROR_PRINT("Failed to decode VRF proof hex");
     free(block_blob_bin);
     return false;
   }
   vrf_pos += (VRF_PROOF_LENGTH / 2);
-
+DEBUG_PRINT("VRF proof decoded, vrf_pos now at: %zu", vrf_pos);
   if (!hex_to_byte_array(producer_refs[0].vrf_beta_hex, vrf_blob + vrf_pos, VRF_BETA_LENGTH / 2)) {
     ERROR_PRINT("Failed to decode VRF beta hex");
     free(block_blob_bin);
     return false;
   }
   vrf_pos += VRF_BETA_LENGTH / 2;
-
+DEBUG_PRINT("VRF proof decoded, vrf_pos now at: %zu", vrf_pos);
   if (!hex_to_byte_array(producer_refs[0].vrf_public_key, vrf_blob + vrf_pos, VRF_PUBLIC_KEY_LENGTH / 2)) {
     ERROR_PRINT("Failed to decode VRF public key hex");
     free(block_blob_bin);
     return false;
   }
   vrf_pos += VRF_PUBLIC_KEY_LENGTH / 2;
-
+DEBUG_PRINT("VRF proof decoded, vrf_pos now at: %zu", vrf_pos);
   // Sign the original block blob (before patching)
   char blob_signature[XCASH_SIGN_DATA_LENGTH + 1] = {0};
   if (!sign_block_blob(block_blob_hex, blob_signature, sizeof(blob_signature))) {
@@ -161,6 +161,7 @@ bool add_vrf_extra_and_sign(char* block_blob_hex)
 
   memcpy(vrf_blob + vrf_pos, sig_bytes, 64);
   vrf_pos += 64;
+  DEBUG_PRINT("VRF proof decoded, vrf_pos now at: %zu", vrf_pos);
 
   if (vrf_pos != 208) {
     ERROR_PRINT("VRF blob constructed with incorrect size: %zu bytes", vrf_pos);
