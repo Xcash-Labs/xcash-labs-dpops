@@ -126,39 +126,18 @@ bool add_vrf_extra_and_sign(char* block_blob_hex)
   }
   DEBUG_PRINT("Block Blob Signature: %s", blob_signature);
 
-  const char* base58_part = blob_signature + 5; // skip "SigV2"
-  uint8_t sig_bytes[65] = {0};
+  const char* base64_part = blob_signature + 5; // skip "SigV2"
+  uint8_t sig_bytes[64] = {0};
   size_t sig_len = 0;
 
-  if (!base58_decode(base58_part, sig_bytes, sizeof(sig_bytes), &sig_len)) {
-    ERROR_PRINT("Base58 decode failed");
+  if (!base64_decode(base64_part, sig_bytes, sizeof(sig_bytes), &sig_len)) {
+    ERROR_PRINT("Base64 decode failed");
     free(block_blob_bin);
     return false;
   }
 
-DEBUG_PRINT("Base58 decode successful. Decoded signature length: %zu", sig_len);
-DEBUG_PRINT("First byte of signature: 0x%02X", sig_bytes[0]);
-
-char* encoded = base58_encode(sig_bytes, sig_len);
-if (encoded) {
-    DEBUG_PRINT("Encoded Base58 string: %s", encoded);
-    free(encoded); // Don't forget to free the memory
-} else {
-    ERROR_PRINT("Base58 encoding failed.");
-    free(encoded);
-}
-return false;
-
-
-
-  if (sig_len == 65 && sig_bytes[0] == 0x00) {
-    WARNING_PRINT("Normalizing 65-byte signature (stripping leading 0x00)");
-    memmove(sig_bytes, sig_bytes + 1, 64);
-    sig_len = 64;
-  }
-
   if (sig_len != 64) {
-    ERROR_PRINT("Signature must be exactly 64 bytes after normalization");
+    ERROR_PRINT("Decoded signature must be exactly 64 bytes");
     free(block_blob_bin);
     return false;
   }

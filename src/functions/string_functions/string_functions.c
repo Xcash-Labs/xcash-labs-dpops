@@ -481,134 +481,30 @@ int get_random_bytes(unsigned char *buf, size_t len) {
     return XCASH_OK;
 }
 
-
 /*---------------------------------------------------------------------------------------------------------
-base58 helper function
+ * @brief Decode a Base64-encoded string using OpenSSL.
+ * 
+ * @param input         Null-terminated Base64 input string.
+ * @param output        Output buffer for binary result.
+ * @param max_output    Maximum size of output buffer.
+ * @param decoded_len   Pointer to receive number of decoded bytes.
+ * @return true on success, false on error.
 ---------------------------------------------------------------------------------------------------------*/
-int base58_char_to_value(char c) {
-  const char* p = strchr(BASE58_ALPHABET, c);
-  return p ? (int)(p - BASE58_ALPHABET) : -1;
-}
+bool base64_decode(const char* input, uint8_t* output, size_t max_output, size_t* decoded_len) {
+    if (!input || !output || !decoded_len || max_output == 0) return false;
 
-/*---------------------------------------------------------------------------------------------------------
- * @brief Decodes a Base58-encoded string into binary.
- *
- * @param input            Null-terminated Base58 string.
- * @param output           Output buffer to receive binary result.
- * @param max_output_len   Maximum size of output buffer.
- * @param decoded_len      Pointer to store number of bytes written.
- * @return true on success, false on failure.
- ---------------------------------------------------------------------------------------------------------*/
- bool base58_decode(const char* input, uint8_t* output, size_t max_output_len, size_t* decoded_len) {
-  size_t input_len = strlen(input);
-  size_t i, j;
+    BIO *b64 = BIO_new(BIO_f_base64());
+    BIO *bmem = BIO_new_mem_buf(input, -1);
+    if (!b64 || !bmem) return false;
 
-  if (!input || !output || !decoded_len || max_output_len == 0)
-    return false;
+    BIO_push(b64, bmem);
+    BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL);
 
-  uint8_t tmp[BASE58_TMP_SIZE] = {0};
+    int len = BIO_read(b64, output, max_output);
+    BIO_free_all(b64);
 
-  for (i = 0; i < input_len; i++) {
-    int val = base58_char_to_value(input[i]);
-    if (val < 0) {
-      ERROR_PRINT("Invalid Base58 char: '%c'", input[i]);
-      return false;
-    }
+    if (len <= 0 || (size_t)len > max_output) return false;
 
-    int carry = val;
-    for (j = BASE58_TMP_SIZE; j-- > 0;) {
-      carry += 58 * tmp[j];
-      tmp[j] = carry % 256;
-      carry /= 256;
-    }
-
-    if (carry != 0) {
-      ERROR_PRINT("Base58 overflow");
-      return false;
-    }
-  }
-
-  // Handle leading '1's (Base58 zero bytes)
-  size_t leading_zeros = 0;
-  for (i = 0; i < input_len && input[i] == '1'; i++) {
-    output[leading_zeros++] = 0;
-  }
-
-  // Find start of non-zero data in tmp
-  size_t start = 0;
-  while (start < BASE58_TMP_SIZE && tmp[start] == 0) {
-    start++;
-  }
-
-  size_t decoded_size = BASE58_TMP_SIZE - start;
-  if (leading_zeros + decoded_size > max_output_len) {
-    ERROR_PRINT("Output buffer too small (required %zu, available %zu)", leading_zeros + decoded_size, max_output_len);
-    return false;
-  }
-
-  memcpy(output + leading_zeros, tmp + start, decoded_size);
-  *decoded_len = leading_zeros + decoded_size;
-
-  // Warn if decoded to 65 bytes with leading zero
-  if (*decoded_len == 65 && output[0] == 0x00) {
-    WARNING_PRINT("Decoded Base58 result is 65 bytes with leading 0x00 — likely a signature. Caller must normalize if needed.");
-  }
-
-  return true;
-}
-
-
-
-
-char* base58_encode(const uint8_t* input, size_t input_len) {
-    if (!input || input_len == 0) return NULL;
-
-    // Base58 encoding output (worst case: log(256)/log(58) ≈ 1.37)
-    size_t encoded_size = input_len * 138 / 100 + 2;
-    char* encoded = calloc(encoded_size, 1);
-    if (!encoded) return NULL;
-
-    // Temporary array for encoding
-    uint8_t* tmp = calloc(input_len * 2, 1);
-    if (!tmp) {
-        free(encoded);
-        return NULL;
-    }
-    memcpy(tmp, input, input_len);
-
-    size_t zero_count = 0;
-    while (zero_count < input_len && input[zero_count] == 0) {
-        zero_count++;
-    }
-
-    size_t j = encoded_size;
-    size_t start_at = zero_count;
-    while (start_at < input_len) {
-        int carry = tmp[start_at];
-        size_t k = encoded_size;
-
-        while (carry || k > j) {
-            carry += 256 * tmp[k - 1];
-            tmp[k - 1] = carry % 58;
-            carry /= 58;
-            k--;
-        }
-        j = k;
-        start_at++;
-    }
-
-    // Leading '1's for leading 0 bytes
-    size_t leading_zeros = 0;
-    for (size_t i = 0; i < input_len && input[i] == 0; i++) {
-        encoded[leading_zeros++] = '1';
-    }
-
-    // Convert remainders to characters
-    for (size_t i = j; i < encoded_size; i++) {
-        encoded[leading_zeros++] = BASE58_ALPHABET[tmp[i]];
-    }
-    encoded[leading_zeros] = '\0';
-
-    free(tmp);
-    return encoded;
+    *decoded_len = (size_t)len;
+    return true;
 }
