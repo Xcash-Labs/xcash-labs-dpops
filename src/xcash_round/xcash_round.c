@@ -207,8 +207,7 @@ for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
           "  VRF Public Key:   %s\n"
           "  Random Hex:       %s\n"
           "  VRF Proof Hex:    %s\n"
-          "  VRF Beta Hex:     %s\n"
-          "  Delegates DB Hash:%s\n",
+          "  VRF Beta Hex:     %s\n",
           i,
           current_block_verifiers_list.block_verifiers_name[i],
           current_block_verifiers_list.block_verifiers_public_address[i],
@@ -217,8 +216,7 @@ for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
           current_block_verifiers_list.block_verifiers_vrf_public_key_hex[i],
           current_block_verifiers_list.block_verifiers_random_hex[i],
           current_block_verifiers_list.block_verifiers_vrf_proof_hex[i],
-          current_block_verifiers_list.block_verifiers_vrf_beta_hex[i],
-          current_block_verifiers_list.block_verifier_delegates_db_hash[i]
+          current_block_verifiers_list.block_verifiers_vrf_beta_hex[i]
         );
     }
 }
@@ -343,6 +341,7 @@ void start_block_production(void) {
     round_result = process_round();
     // set these up for next round
     current_block_height[0] = '\0';
+    delegate_db_hash_mismatch = 0;
     atomic_store(&wait_for_vrf_init, true);
     atomic_store(&wait_for_block_height_init, true);
 
@@ -358,7 +357,7 @@ void start_block_production(void) {
 
             // update online status in collection later
 
-            if (round_result == ROUND_ERROR_RD) {
+            if (delegate_db_hash_mismatch > 1) {
               // need to add code to sync the delegates collection
               //        init_db_from_top();  // --------------------------------------------------------------------?????
             }

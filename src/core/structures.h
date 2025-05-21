@@ -65,7 +65,6 @@ typedef struct {
     char block_verifiers_random_hex[BLOCK_VERIFIERS_AMOUNT][VRF_RANDOMBYTES_LENGTH * 2 + 1];
     char block_verifiers_vrf_proof_hex[BLOCK_VERIFIERS_AMOUNT][VRF_PROOF_LENGTH + 1];
     char block_verifiers_vrf_beta_hex[BLOCK_VERIFIERS_AMOUNT][VRF_BETA_LENGTH + 1];
-    char block_verifier_delegates_db_hash[BLOCK_VERIFIERS_AMOUNT][MD5_HASH_SIZE + 1];
 } block_verifiers_list_t;
 
 
