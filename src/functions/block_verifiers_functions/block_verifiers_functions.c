@@ -1,85 +1,20 @@
 #include "block_verifiers_functions.h"
 
-bool add_vrf_extra_and_sign__OLD__(char* block_blob_hex)
-{
-  // Allocate working buffer for binary blob
-  unsigned char* block_blob_bin = calloc(1, BUFFER_SIZE);
-  if (!block_blob_bin) {
-    ERROR_PRINT("Memory allocation failed for block_blob_bin");
-    return false;
-  }
-
-  // Convert hex blob to binary
-  size_t blob_len = strlen(block_blob_hex) / 2;
-  if (!hex_to_byte_array(block_blob_hex, block_blob_bin, blob_len)) {
-    ERROR_PRINT("Failed to convert block_blob_hex to binary");
-    free(block_blob_bin);
-    return false;
-  }
-
-  // Get reserved_offset from previous RPC call or define statically
-  size_t reserved_offset = 125;
-  
-  // Patch in the VRF extra fields at the reserved_offset
-  size_t pos = reserved_offset;
-  block_blob_bin[pos++] = 0x70;  // VRF proof tag
-  pos += hex_to_byte_array(producer_refs[0].vrf_proof_hex, block_blob_bin + pos, VRF_PROOF_LENGTH / 2);
-
-  block_blob_bin[pos++] = 0x71;  // VRF beta tag
-  pos += hex_to_byte_array(producer_refs[0].vrf_beta_hex, block_blob_bin + pos, VRF_BETA_LENGTH / 2);
-
-  block_blob_bin[pos++] = 0x73;  // VRF public key tag
-  pos += hex_to_byte_array(producer_refs[0].vrf_public_key, block_blob_bin + pos, VRF_PUBLIC_KEY_LENGTH / 2);
-
-  block_blob_bin[pos++] = 0x72;  // Public address tag
-  pos += hex_to_byte_array(producer_refs[0].public_address, block_blob_bin + pos, XCASH_WALLET_LENGTH / 2);
-
-  // Sign the full blob using Wallet RPC
-  char signature_hex[XCASH_SIGN_DATA_LENGTH + 1] = {0};
-  if (!sign_block_blob(block_blob_hex, signature_hex, sizeof(signature_hex))) {
-    ERROR_PRINT("Failed to sign block blob");
-    free(block_blob_bin);
-    return false;
-  }
-  DEBUG_PRINT("Block Blob Signature: %s", signature_hex);
-
-  block_blob_bin[pos++] = 0x74;  // Signature tag
-  pos += hex_to_byte_array(signature_hex, block_blob_bin + pos, XCASH_SIGN_DATA_LENGTH / 2);
-
-  // Validate offset doesn't overflow
-  if ((pos - reserved_offset) > BLOCK_RESERVED_SIZE ) {
-    ERROR_PRINT("VRF data exceeds reserved space: used %zu bytes, allowed 250", pos - reserved_offset);
-    free(block_blob_bin);
-    return false;
-  }
-
-  // Re-encode the full blob to hex for submission
-  bytes_to_hex(block_blob_bin, blob_len, block_blob_hex, BUFFER_SIZE);
-
-  free(block_blob_bin);
-  return true;
-}
-
 /*---------------------------------------------------------------------------------------------------------
  * @brief Injects VRF-related data into the reserved section of a Monero-style blocktemplate blob
  *        and signs the original block blob using the producer's private key.
  *
  * This function performs the following steps:
  * 1. Converts the input hex-encoded `block_blob_hex` into binary.
- * 2. Constructs a 208-byte VRF blob consisting of:
- *    - VRF proof (80 bytes, hex string)
- *    - VRF beta  (32 bytes, hex string)
- *    - VRF public key (32 bytes, hex string)
- *    - Base58-decoded public address (32 bytes from spend key or hash)
- *    - Signature of the original block blob (64 bytes, hex string)
+ * 2. Constructs a 208-byte VRF blob
  * 3. Writes the VRF blob into `block_blob_bin` at the reserved offset, with a custom tag (0x07)
  *    and length prefix (1-byte varint).
  * 4. Converts the modified binary blob back into hex and stores it in `block_blob_hex`.
  *
- * vrf_blob Layout (208 Bytes)
+ * vrf_blob Layout (240 Bytes)
  *  Field	      Bytes   Description
  *  vrf_proof	  80	    Hex-decoded 80-byte VRF proof (e.g. from libsodium)
- *  vrf_beta	  32	    Hex-decoded 32-byte beta (VRF hash output)
+ *  vrf_beta	  64	    Hex-decoded 32-byte beta (VRF hash output)
  *  vrf_pubkey  32	    Hex-decoded 32-byte VRF public key
  *  signature	  64	    Hex-decoded 64-byte signature
  * 
@@ -163,7 +98,7 @@ DEBUG_PRINT("VRF proof decoded, vrf_pos now at: %zu", vrf_pos);
   vrf_pos += 64;
   DEBUG_PRINT("VRF proof decoded, vrf_pos now at: %zu", vrf_pos);
 
-  if (vrf_pos != 208) {
+  if (vrf_pos != 240) {
     ERROR_PRINT("VRF blob constructed with incorrect size: %zu bytes", vrf_pos);
     free(block_blob_bin);
     return false;
