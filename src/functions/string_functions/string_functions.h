@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <openssl/bio.h>
+#include <openssl/evp.h>
 #include <cjson/cJSON.h>
 #include <sys/random.h>
 #include <openssl/evp.h>
