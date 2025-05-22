@@ -91,18 +91,6 @@ void cleanup_data_structures(void) {
   pthread_mutex_destroy(&update_current_block_height_lock);
   pthread_mutex_destroy(&hash_mutex);
 
-  pthread_mutex_destroy(&lock);
-  pthread_mutex_destroy(&database_lock);
-  pthread_mutex_destroy(&verify_network_block_lock);
-  pthread_mutex_destroy(&vote_lock);
-  pthread_mutex_destroy(&add_reserve_proof_lock);
-  pthread_mutex_destroy(&invalid_reserve_proof_lock);
-  pthread_mutex_destroy(&database_data_IP_address_lock);
-  pthread_mutex_destroy(&update_current_block_height_lock);
-  pthread_rwlock_destroy(&rwlock_reserve_proofs);
-  pthread_rwlock_destroy(&rwlock);
-
-  pthread_mutex_destroy(&hash_mutex);
 
   //free(server_limit_IP_address_list);
   //free(server_limit_public_address_list);
