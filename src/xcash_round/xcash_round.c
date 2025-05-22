@@ -70,7 +70,7 @@ xcash_round_result_t process_round(void) {
   snprintf(current_round_part, sizeof(current_round_part), "%d", 2);
   if (get_current_block_height(current_block_height) != XCASH_OK) {
     ERROR_PRINT("Can't get current block height");
-    return ROUND_SKIP;
+    return ROUND_ERROR;
   }
   atomic_store(&wait_for_block_height_init, false);
 
@@ -85,7 +85,7 @@ xcash_round_result_t process_round(void) {
   }
   if (total_delegates == 0) {
     ERROR_PRINT("Can't get previous block hash");
-    return ROUND_SKIP;
+    return ROUND_ERROR;
   }
   DEBUG_PRINT("Found %d active delegates out of %d total slots", total_delegates, BLOCK_VERIFIERS_TOTAL_AMOUNT);
 
@@ -126,8 +126,8 @@ xcash_round_result_t process_round(void) {
 
   INFO_STAGE_PRINT("Waiting for Delegates to sync...");
   if (sync_block_verifiers_minutes_and_seconds(0, 15) == XCASH_ERROR) {
-    INFO_PRINT("Failed to sync Delegates in the aloted time");
-    return ROUND_ERROR;
+    INFO_PRINT("Failed to sync Delegates in the aloted time, skipping round");
+    return ROUND_SKIP;
   }
 
   INFO_STAGE_PRINT("Part 4 - Checking Block Verifiers Majority and Minimum Online Requirement");
@@ -180,8 +180,9 @@ xcash_round_result_t process_round(void) {
       DEBUG_PRINT("Message sent to all online delegates.");
     } else {
       ERROR_PRINT("Failed to send VRF message.");
+      free(vrf_message);
+      return ROUND_ERROR;
     }
-    free(vrf_message);
   } else {
     ERROR_PRINT("Failed to generate VRF keys and message");
     if (vrf_message != NULL) {
@@ -191,9 +192,9 @@ xcash_round_result_t process_round(void) {
   }
 
   // Sync start
-  if (sync_block_verifiers_minutes_and_seconds(0, 40) == XCASH_ERROR) {
-    INFO_PRINT("Failed to sync VRF data in the aloted time");
-    return ROUND_ERROR;
+  if (sync_block_verifiers_minutes_and_seconds(0, 30) == XCASH_ERROR) {
+    INFO_PRINT("Failed to sync VRF data in the aloted time, skipping roung");
+    return ROUND_SKIP;
   }
 
 for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
@@ -235,7 +236,7 @@ for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
 
   if (producer_indx < 0) {
     INFO_STAGE_PRINT("Block Producer not selected, skipping round");
-    return ROUND_SKIP;
+    return ROUND_ERROR;
   } else {
     pthread_mutex_lock(&majority_vrf_lock);
     // For now there is only one block producer and no backups
@@ -369,8 +370,7 @@ void start_block_production(void) {
 
     // set up delegates for next round
     if (!fill_delegates_from_db()) {
-      ERROR_PRINT("Failed to load and organize delegates for next round");
-      // need to add code to sync the delegates collection amd maybe retry???
+      FATAL_ERROR_EXIT("Failed to load and organize delegates for next round");
     }
   }
 }
