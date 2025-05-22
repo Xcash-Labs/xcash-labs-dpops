@@ -145,7 +145,7 @@ xcash_round_result_t process_round(void) {
         strcpy(current_block_verifiers_list.block_verifiers_public_address[j], delegates_all[i].public_address);
         strcpy(current_block_verifiers_list.block_verifiers_public_key[j], delegates_all[i].public_key);
         strcpy(current_block_verifiers_list.block_verifiers_IP_address[j], delegates_all[i].IP_address);
-        current_block_verifiers_list.block_verifiers_vote_total = 0;
+        current_block_verifiers_list.block_verifiers_vote_total[j] = 0;
         INFO_PRINT_STATUS_OK("Delegate: %s, Online Status: ", delegates_all[i].delegate_name);
         nodes_majority_count++;
         j++;
@@ -270,7 +270,7 @@ for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
   }
 
 
-  return round_error;
+  return ROUND_ERROR;
 
 
 
