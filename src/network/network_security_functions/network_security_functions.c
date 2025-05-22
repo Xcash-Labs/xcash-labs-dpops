@@ -92,7 +92,7 @@ int sign_data(char *message)
     );
 
     // Escape string for JSON-RPC
-    char escaped_data_to_sign[MEDIUM_BUFFER_SIZE] = {0};
+    char escaped_data_to_sign[MEDIUM_BUFFER_SIZE - 64] = {0};
     escape_json_string(data_to_sign, escaped_data_to_sign, sizeof(escaped_data_to_sign));  // you define
 
     // Send signing request
@@ -103,7 +103,7 @@ int sign_data(char *message)
 
     if (send_http_request(response, MEDIUM_BUFFER_SIZE, XCASH_WALLET_IP, "/json_rpc", XCASH_WALLET_PORT,
                           "POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH,
-                          rpc_payload, SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) <= 0 ||
+                          rpc_payload, HTTP_TIMEOUT_SETTINGS) <= 0 ||
         !parse_json_data(response, "signature", result, MEDIUM_BUFFER_SIZE)) {
         return handle_error("sign_data", "Wallet signature failed.", result, rpc_payload);
     }
