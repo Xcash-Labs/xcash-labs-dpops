@@ -117,8 +117,7 @@ void server_receive_data_socket_node_to_node_majority(const char* MESSAGE)
 
     // Parse public address
     if (parse_json_data(MESSAGE, "public_address", public_address, sizeof(public_address)) == 0) {
-        log_error("Can't parse public_address %s, %s", __func__, MESSAGE);
-        ERROR_PRINT("Could not parse public address");
+        ERROR_PRINT("Can't parse public_address");
         return;
     }
 
@@ -137,6 +136,14 @@ void server_receive_data_socket_node_to_node_majority(const char* MESSAGE)
 
     pthread_mutex_lock(&majority_vote_lock);
 
+
+
+
+
+
+
+
+/*
     for (int receiver_index = 0; receiver_index < BLOCK_VERIFIERS_AMOUNT; receiver_index++) {
         snprintf(key_buffer, sizeof(key_buffer), "vote_data_%d", receiver_index + 1);
 
@@ -148,6 +155,7 @@ void server_receive_data_socket_node_to_node_majority(const char* MESSAGE)
             return;
         }
     }
-
+*/
     pthread_mutex_unlock(&majority_vote_lock);
+    return;
 }
