@@ -24,6 +24,7 @@ int select_block_producer_from_vrf(void) {
       continue;
     }
 
+//    Include seed nodes in block production for now
 //    if (is_seed_address(current_block_verifiers_list.block_verifiers_public_address[i])) {
 //      continue;
 //    }

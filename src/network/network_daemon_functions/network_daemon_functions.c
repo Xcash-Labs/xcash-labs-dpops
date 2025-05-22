@@ -22,7 +22,7 @@ bool is_blockchain_synced(void) {
 
   // Retry mechanism
   for (int attempt = 0; attempt < 2; ++attempt) {
-    if (send_http_request(response, XCASH_DAEMON_IP, RPC_ENDPOINT, XCASH_DAEMON_PORT,
+    if (send_http_request(response, SMALL_BUFFER_SIZE, XCASH_DAEMON_IP, RPC_ENDPOINT, XCASH_DAEMON_PORT,
                           "GET", HTTP_HEADERS, HTTP_HEADERS_LENGTH, NULL,
                           SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) == XCASH_OK &&
         parse_json_data(response, "synchronized", synced_flag, sizeof(synced_flag)) != 0 &&
@@ -76,7 +76,7 @@ int get_current_block_height(char *result) {
 
     // Retry mechanism
     for (int attempt = 0; attempt < 2; ++attempt) {
-        if (send_http_request(response_data, XCASH_DAEMON_IP, "/json_rpc", XCASH_DAEMON_PORT,
+        if (send_http_request(response_data, SMALL_BUFFER_SIZE, XCASH_DAEMON_IP, "/json_rpc", XCASH_DAEMON_PORT,
                               "POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH, request_payload,
                               SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) == XCASH_OK &&
             parse_json_data(response_data, "result.count", result, SMALL_BUFFER_SIZE) != 0) {
@@ -123,7 +123,7 @@ int get_previous_block_hash(char *result)
     // Function to send request and parse result
     for (int attempt = 0; attempt < 2; attempt++)
     {
-        if (send_http_request(data, XCASH_DAEMON_IP, "/json_rpc", XCASH_DAEMON_PORT, "POST",
+        if (send_http_request(data, SMALL_BUFFER_SIZE, XCASH_DAEMON_IP, "/json_rpc", XCASH_DAEMON_PORT, "POST",
                               HTTP_HEADERS, HTTP_HEADERS_LENGTH, REQUEST_PAYLOAD,
                               SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) > 0 &&
             parse_json_data(data, "result.block_header.hash", result, BLOCK_HASH_LENGTH+1
@@ -163,7 +163,7 @@ int get_block_template(char* result, size_t result_size)
   const char* JSON_REQUEST_SUFFIX = "\",\"reserve_size\":245}"; 
 
   // Variables
-  char message[VSMALL_BUFFER_SIZE] = {0};
+  char message[SMALL_BUFFER_SIZE] = {0};
   char* response = (char*)calloc(SMALL_BUFFER_SIZE, sizeof(char));
   int retry_attempts = 2;
 
@@ -175,13 +175,14 @@ int get_block_template(char* result, size_t result_size)
   for (int attempt = 0; attempt < retry_attempts; attempt++) 
   {
     // Clear response buffer before each use
-    memset(response, 0, BUFFER_SIZE);
+    memset(response, 0, SMALL_BUFFER_SIZE);
 
     // Compose JSON request
     snprintf(message, sizeof(message), "%s%s%s", JSON_REQUEST_PREFIX, xcash_wallet_public_address, JSON_REQUEST_SUFFIX);
 
     // Send HTTP request
-    if (send_http_request(response, XCASH_DAEMON_IP, RPC_ENDPOINT, XCASH_DAEMON_PORT, RPC_METHOD, HTTP_HEADERS, HTTP_HEADERS_LENGTH, message, SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) > 0 &&
+    if (send_http_request(response, SMALL_BUFFER_SIZE, XCASH_DAEMON_IP, RPC_ENDPOINT, XCASH_DAEMON_PORT, RPC_METHOD, HTTP_HEADERS, HTTP_HEADERS_LENGTH, message,
+      SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) > 0 &&
         parse_json_data(response, "result.blocktemplate_blob", result, result_size) == 1)
     {
       free(response);
@@ -230,7 +231,7 @@ bool submit_block_template(const char* DATA)
            DATA);
 
   // Send HTTP request
-  if (send_http_request(response, XCASH_DAEMON_IP, RPC_ENDPOINT, XCASH_DAEMON_PORT,
+  if (send_http_request(response, SMALL_BUFFER_SIZE, XCASH_DAEMON_IP, RPC_ENDPOINT, XCASH_DAEMON_PORT,
                         "POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH,
                         request_json, BLOCK_TIMEOUT_SECONDS) > 0)
   {

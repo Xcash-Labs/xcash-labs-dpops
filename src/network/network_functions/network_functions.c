@@ -63,7 +63,7 @@ Parameters:
   DATA_TIMEOUT_SETTINGS - The timeout settings for reading the data
 Return: 0 if an error has occured, 1 if successfull
 ---------------------------------------------------------------------------------------------------------*/
-int send_http_request(char *result, const char *host, const char *url, int port,
+int send_http_request(char *result, size_t return_buffer_size, const char *host, const char *url, int port,
                       const char *method, const char **headers, size_t headers_length,
                       const char *data, int timeout)
 {
@@ -147,7 +147,13 @@ int send_http_request(char *result, const char *host, const char *url, int port,
 
     size_t response_len = strlen(response.data);
     DEBUG_PRINT("Response length: %zu", response_len);
-    if (response_len >= SMALL_BUFFER_SIZE)
+
+    if (!result || return_buffer_size == 0) {
+        ERROR_PRINT("Invalid result buffer");
+        return XCASH_ERROR;
+    }
+
+    if (response_len >= return_buffer_size)
     {
         ERROR_PRINT("Response data too large (%zu bytes)", response_len);
         free(response.data);
@@ -158,8 +164,8 @@ int send_http_request(char *result, const char *host, const char *url, int port,
     }
 
     // Copy the response to result buffer
-    strncpy(result, response.data, SMALL_BUFFER_SIZE - 1);
-    result[SMALL_BUFFER_SIZE - 1] = '\0'; // Ensure null termination
+    strncpy(result, response.data, return_buffer_size - 1);
+    result[return_buffer_size - 1] = '\0'; // Ensure null termination
 
     // Cleanup
     free(response.data);

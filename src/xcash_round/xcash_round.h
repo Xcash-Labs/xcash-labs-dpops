@@ -43,7 +43,6 @@ typedef enum {
     ROUND_SKIP, // wait till next round
 } xcash_round_result_t;
 
-bool select_block_producers(void);
 xcash_round_result_t process_round(void);
 void start_block_production(void);
 

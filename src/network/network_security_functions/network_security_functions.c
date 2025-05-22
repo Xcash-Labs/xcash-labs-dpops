@@ -28,6 +28,7 @@ void safe_memcpy(char *dest, const char *src, size_t length)
   }
 }
 
+// Helper function
 int extract_data_between_delimiters(const char *message, int delimiter_index, char *output, size_t output_size) {
   int count = 0;
   const char *start = message;
@@ -59,96 +60,87 @@ Return: 0 if an error has occured, 1 if successfull
 ---------------------------------------------------------------------------------------------------------*/
 int sign_data(char *message)
 {
-  const char *HTTP_HEADERS[] = {"Content-Type: application/json", "Accept: application/json"}; 
-  const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0]);
-  const size_t MAXIMUM_AMOUNT = MAXIMUM_BUFFER_SIZE * 2;
+    const char *HTTP_HEADERS[] = {"Content-Type: application/json", "Accept: application/json"};
+    const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0]);
 
-  char *result = calloc(MAXIMUM_AMOUNT, sizeof(char));
-  char *string = calloc(MAXIMUM_AMOUNT, sizeof(char));
-  if (!result || !string) {
-    FATAL_ERROR_EXIT("sign_data: Memory allocation failed.");
-  }
-
-  char random_data[RANDOM_STRING_LENGTH + 1] = {0};
-  char data[BUFFER_SIZE] = {0};
-
-  if (!random_string(random_data, RANDOM_STRING_LENGTH)) {
-    return handle_error("sign_data", "Failed to generate random data.", result, string);
-  }
-
-  // Ensure previous_block_hash is set
-  if (pthread_rwlock_tryrdlock(&rwlock) != 0) {
-    return handle_error("sign_data", "Failed to acquire read lock.", result, string);
-  }
-
-  if (strlen(previous_block_hash) == 0) {
-    char temp_hash[BLOCK_HASH_LENGTH + 1] = {0};
-    pthread_rwlock_unlock(&rwlock);
-    if (!get_previous_block_hash(temp_hash)) {
-      return handle_error("sign_data", "Previous block hash missing.", result, string);
+    char *rpc_payload = calloc(MEDIUM_BUFFER_SIZE, sizeof(char));
+    char *result = calloc(MEDIUM_BUFFER_SIZE, sizeof(char));
+    if (!result || !rpc_payload) {
+        FATAL_ERROR_EXIT("sign_data: Memory allocation failed.");
     }
-    pthread_rwlock_wrlock(&rwlock);
-    strncpy(previous_block_hash, temp_hash, BLOCK_HASH_LENGTH);
-    pthread_rwlock_unlock(&rwlock);
-  } else {
-    pthread_rwlock_unlock(&rwlock);
-  }
 
-  // Compose JSON payload
-  snprintf(result, MAXIMUM_AMOUNT,
-    "%s"
-    "\"public_address\": \"%s\",\r\n"
-    "\"previous_block_hash\": \"%s\",\r\n"
-    "\"current_round_part\": \"%s\",\r\n"
-    "\"data\": \"%.*s\"\r\n"
-    "}",
-    message,
-    xcash_wallet_public_address,
-    previous_block_hash,
-    current_round_part,
-    RANDOM_STRING_LENGTH, random_data
-  );
+    char random_data[RANDOM_STRING_LENGTH + 1] = {0};
+    char data_to_sign[MEDIUM_BUFFER_SIZE] = {0};
+    char response[MEDIUM_BUFFER_SIZE] = {0};
 
-  string_replace(result, MAXIMUM_AMOUNT, "\"", "\\\"");
+    if (!random_string(random_data, RANDOM_STRING_LENGTH)) {
+        return handle_error("sign_data", "Failed to generate random data.", result, rpc_payload);
+    }
 
-  // Build JSON-RPC request to wallet RPC for signing
-  snprintf(string, MAXIMUM_AMOUNT,
-    "{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"sign\",\"params\":{\"data\":\"%s\"}}",
-    result
-  );
-  memset(result, 0, MAXIMUM_AMOUNT);
+    // Compose message to be signed
+    snprintf(data_to_sign, sizeof(data_to_sign),
+        "{"
+        "\"public_address\":\"%s\","
+        "\"previous_block_hash\":\"%s\","
+        "\"current_round_part\":\"%s\","
+        "\"data\":\"%s\""
+        "}",
+        xcash_wallet_public_address,
+        previous_block_hash,
+        current_round_part,
+        random_data
+    );
 
-  if (send_http_request(data, XCASH_WALLET_IP, "/json_rpc", XCASH_WALLET_PORT,
-                        "POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH,
-                        string, SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) <= 0 ||
-      !parse_json_data(data, "signature", result, MAXIMUM_AMOUNT)) {
-    return handle_error("sign_data", "Wallet signature failed.", result, string);
-  }
+    // Escape string for JSON-RPC
+    char escaped_data_to_sign[MEDIUM_BUFFER_SIZE] = {0};
+    escape_json_string(data_to_sign, escaped_data_to_sign, sizeof(escaped_data_to_sign));  // you define
 
-  if (strlen(result) != XCASH_SIGN_DATA_LENGTH ||
-      strncmp(result, XCASH_SIGN_DATA_PREFIX, sizeof(XCASH_SIGN_DATA_PREFIX) - 1) != 0) {
-    return handle_error("sign_data", "Invalid wallet signature format.", result, string);
-  }
+    // Send signing request
+    snprintf(rpc_payload, MEDIUM_BUFFER_SIZE,
+        "{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"sign\",\"params\":{\"data\":\"%s\"}}",
+        escaped_data_to_sign
+    );
 
-  pthread_rwlock_rdlock(&rwlock);
-  snprintf(message + strlen(message) - 1, MAXIMUM_AMOUNT - strlen(message),
-    "\"public_address\": \"%s\",\r\n"
-    "\"previous_block_hash\": \"%s\",\r\n"
-    "\"current_round_part\": \"%s\",\r\n"
-    "\"data\": \"%.*s\",\r\n"
-    "\"XCASH_DPOPS_signature\": \"%s\"\r\n}",
-    xcash_wallet_public_address,
-    previous_block_hash,
-    current_round_part,
-    RANDOM_STRING_LENGTH, random_data,
-    result
-  );
-  pthread_rwlock_unlock(&rwlock);
+    if (send_http_request(response, MEDIUM_BUFFER_SIZE, XCASH_WALLET_IP, "/json_rpc", XCASH_WALLET_PORT,
+                          "POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH,
+                          rpc_payload, SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) <= 0 ||
+        !parse_json_data(response, "signature", result, MEDIUM_BUFFER_SIZE)) {
+        return handle_error("sign_data", "Wallet signature failed.", result, rpc_payload);
+    }
 
-  free(result);
-  free(string);
-  return XCASH_OK;
+    if (strlen(result) != XCASH_SIGN_DATA_LENGTH ||
+        strncmp(result, XCASH_SIGN_DATA_PREFIX, sizeof(XCASH_SIGN_DATA_PREFIX) - 1) != 0) {
+        return handle_error("sign_data", "Invalid wallet signature format.", result, rpc_payload);
+    }
+
+    // Final signed message
+    snprintf(message, MEDIUM_BUFFER_SIZE,
+        "{"
+        "\"public_address\":\"%s\","
+        "\"previous_block_hash\":\"%s\","
+        "\"current_round_part\":\"%s\","
+        "\"data\":\"%s\","
+        "\"XCASH_DPOPS_signature\":\"%s\""
+        "}",
+        xcash_wallet_public_address,
+        previous_hash,
+        current_round_part,
+        random_data,
+        result
+    );
+
+    free(result);
+    free(rpc_payload);
+    return XCASH_OK;
 }
+
+
+
+
+
+
+
+
 
 /*-----------------------------------------------------------------------------------------------------------
 Name: sign_block_blob
@@ -169,7 +161,7 @@ Returns:
 -----------------------------------------------------------------------------------------------------------*/
 bool sign_block_blob(const char* block_blob_hex, char* signature_out, size_t sig_out_len) {
   char request_json[BUFFER_SIZE + 256];
-  char response[BUFFER_SIZE];
+  char response[SMALL_BUFFER_SIZE];
 
   snprintf(request_json, sizeof(request_json),
     "{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"sign\",\"params\":{\"data\":\"%s\"}}",
@@ -177,8 +169,8 @@ bool sign_block_blob(const char* block_blob_hex, char* signature_out, size_t sig
   );
 
   const char* headers[] = { "Content-Type: application/json", "Accept: application/json" };
-  if (send_http_request(response, XCASH_WALLET_IP, "/json_rpc", XCASH_WALLET_PORT,
-                        "POST", headers, 2, request_json, SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) <= 0) {
+  if (send_http_request(response, SMALL_BUFFER_SIZE, "/json_rpc", XCASH_WALLET_PORT,
+                        "POST", headers, 2, request_json, HTTP_TIMEOUT_SETTINGS) <= 0) {
     return false;
   }
 
@@ -358,7 +350,7 @@ int verify_data(const char *MESSAGE, const int VERIFY_CURRENT_ROUND_PART_SETTING
       "{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"verify\",\"params\":{\"data\":\"%s\",\"address\":\"%s\",\"signature\":\"%s\"}}",
       result, public_address, XCASH_DPOPS_signature);
 
-    if (send_http_request(result, XCASH_WALLET_IP, "/json_rpc", XCASH_WALLET_PORT,
+    if (send_http_request(result, MAXIMUM_AMOUNT, XCASH_WALLET_IP, "/json_rpc", XCASH_WALLET_PORT,
                           "POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH, string,
                           SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) <= 0 ||
         !parse_json_data(result, "good", data, sizeof(data)) ||

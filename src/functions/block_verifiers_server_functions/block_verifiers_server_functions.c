@@ -99,3 +99,55 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
 
   return;
 }
+
+/*---------------------------------------------------------------------------------------------------------
+Name: server_receive_data_socket_node_to_node_majority
+Description: Runs the code when the server receives the NODES_TO_NODES_VOTE_MAJORITY_RESULTS message
+Parameters:
+  MESSAGE - The message
+---------------------------------------------------------------------------------------------------------*/
+void server_receive_data_socket_node_to_node_majority(const char* MESSAGE)
+{
+    // Variables
+    char key_buffer[32]; // Sufficient for "vote_data_" + max index
+    char public_address[XCASH_WALLET_LENGTH + 1] = {0};
+    int sender_index = -1;
+
+    DEBUG_PRINT("Received %s, %s", __func__, MESSAGE);
+
+    // Parse public address
+    if (parse_json_data(MESSAGE, "public_address", public_address, sizeof(public_address)) == 0) {
+        log_error("Can't parse public_address %s, %s", __func__, MESSAGE);
+        ERROR_PRINT("Could not parse public address");
+        return;
+    }
+
+    // Find the verifier index
+    for (int i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
+        if (strncmp(current_block_verifiers_list.block_verifiers_public_address[i], public_address, XCASH_WALLET_LENGTH) == 0) {
+            sender_index = i;
+            break;
+        }
+    }
+
+    if (sender_index == -1) {
+        ERROR_PRINT("Unknown verifier address: %s", public_address);
+        return;
+    }
+
+    pthread_mutex_lock(&majority_vote_lock);
+
+    for (int receiver_index = 0; receiver_index < BLOCK_VERIFIERS_AMOUNT; receiver_index++) {
+        snprintf(key_buffer, sizeof(key_buffer), "vote_data_%d", receiver_index + 1);
+
+        if (parse_json_data(MESSAGE, key_buffer,
+                            current_block_verifiers_majority_vote.data[sender_index][receiver_index],
+                            sizeof(current_block_verifiers_majority_vote.data[sender_index][receiver_index])) == 0) {
+            ERROR_PRINT("Could not parse vote_data_%d from %s", receiver_index + 1, public_address);
+            pthread_mutex_unlock(&majority_vote_lock);
+            return;
+        }
+    }
+
+    pthread_mutex_unlock(&majority_vote_lock);
+}

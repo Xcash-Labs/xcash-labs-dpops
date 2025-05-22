@@ -370,6 +370,19 @@ bool generate_and_request_vrf_data_msg(char** message)
     return XCASH_OK;
 }
 
+/**
+ * @brief Creates a JSON-formatted synchronization message containing the current node's
+ *        block height, public address, and delegates table hash.
+ *
+ * This message is used during the network sync process, typically when a node wants to 
+ * compare its blockchain state and delegates table with others in the network.
+ *
+ * @param[out] message A pointer to a dynamically allocated JSON string. The caller is 
+ *                     responsible for freeing the memory.
+ *
+ * @return true (XCASH_OK) on success, or false (XCASH_ERROR) if memory allocation fails.
+ *
+ *  */
 bool create_sync_msg(char** message) {
   // Only three key-value pairs + NULL terminator
   const int PARAM_COUNT = 4;
@@ -398,4 +411,92 @@ bool create_sync_msg(char** message) {
   free(param_list);  // Clean up the key-value list
 
   return XCASH_OK;
+}
+
+/*
+-----------------------------------------------------------------------------------------------------------
+Name: block_verifiers_create_vote_majority_results
+Description: The block verifiers will create the vote majority results
+Parameters:
+  result - The result
+  SETTINGS - The data settings
+-----------------------------------------------------------------------------------------------------------
+*/
+
+void block_verifiers_create_vote_majority_results(char *result, const int SETTINGS)
+{
+  // variables
+  int count;
+  int count2;
+
+  memset(result,0,strlen(result));
+
+
+  // FIXME potentially concurency problem when server already receives data but we didn't finish preparing
+
+  // reset the current_block_verifiers_majority_vote
+  // for (count = 0; count < BLOCK_VERIFIERS_AMOUNT; count++)
+  // {
+  //   for (count2 = 0; count2 < BLOCK_VERIFIERS_AMOUNT; count2++)
+  //   {
+  //     memset(current_block_verifiers_majority_vote.data[count][count2],0,sizeof(current_block_verifiers_majority_vote.data[count][count2]));
+  //   }
+  // }
+
+  // create the message
+  memcpy(result,"{\r\n \"message_settings\": \"NODES_TO_NODES_VOTE_MAJORITY_RESULTS\",\r\n ",66);
+  for (count = 0; count < BLOCK_VERIFIERS_AMOUNT; count++)
+  {
+    memcpy(result+strlen(result),"\"vote_data_",11);
+    snprintf(result+strlen(result),MAXIMUM_NUMBER_SIZE,"%d",count+1);
+    memcpy(result+strlen(result),"\": \"",4);
+
+    // create the data
+    if (SETTINGS == 0)
+    {
+        if (strlen(VRF_data.block_verifiers_vrf_secret_key_data[count]) == VRF_SECRET_KEY_LENGTH &&
+            strlen(VRF_data.block_verifiers_vrf_public_key_data[count]) == VRF_PUBLIC_KEY_LENGTH &&
+            strlen(VRF_data.block_verifiers_random_data[count]) == RANDOM_STRING_LENGTH) {
+            memcpy(result + strlen(result), VRF_data.block_verifiers_vrf_secret_key_data[count], VRF_SECRET_KEY_LENGTH);
+            memcpy(result + strlen(result), VRF_data.block_verifiers_vrf_public_key_data[count], VRF_PUBLIC_KEY_LENGTH);
+            memcpy(result + strlen(result), VRF_data.block_verifiers_random_data[count], RANDOM_STRING_LENGTH);
+        } else {
+            // the block verifier did not send any data
+            memcpy(result + strlen(result), BLOCK_VERIFIER_MAJORITY_VRF_DATA_TEMPLATE,
+                   sizeof(BLOCK_VERIFIER_MAJORITY_VRF_DATA_TEMPLATE) - 1);
+        }
+    }
+    else
+    {
+      if (strlen(VRF_data.block_blob_signature[count]) == VRF_PROOF_LENGTH+VRF_BETA_LENGTH)
+      {
+        memcpy(result+strlen(result),VRF_data.block_blob_signature[count],VRF_PROOF_LENGTH+VRF_BETA_LENGTH);
+      }
+      else
+      {
+        // the block verifier did not send any data
+        memcpy(result+strlen(result),BLOCK_VERIFIER_MAJORITY_BLOCK_VERIFIERS_SIGNATURE_TEMPLATE,sizeof(BLOCK_VERIFIER_MAJORITY_BLOCK_VERIFIERS_SIGNATURE_TEMPLATE)-1);
+      }      
+    }
+    memcpy(result+strlen(result),"\",\r\n ",5);
+  }
+  memcpy(result+strlen(result)-1,"}",1);
+
+  // add your own data to the current block verifiers majority vote
+  for (count = 0; count < BLOCK_VERIFIERS_AMOUNT; count++)
+  {
+    if (strncmp(current_block_verifiers_list.block_verifiers_public_address[count],xcash_wallet_public_address,XCASH_WALLET_LENGTH) == 0)
+    {
+      break;
+    }
+  }
+
+  for (count2 = 0; count2 < BLOCK_VERIFIERS_AMOUNT; count2++)
+  {
+    memcpy(current_block_verifiers_majority_vote.data[count][count2]+strlen(current_block_verifiers_majority_vote.data[count][count2]),VRF_data.block_verifiers_vrf_secret_key_data[count2],VRF_SECRET_KEY_LENGTH);
+    memcpy(current_block_verifiers_majority_vote.data[count][count2]+strlen(current_block_verifiers_majority_vote.data[count][count2]),VRF_data.block_verifiers_vrf_public_key_data[count2],VRF_PUBLIC_KEY_LENGTH);
+    memcpy(current_block_verifiers_majority_vote.data[count][count2]+strlen(current_block_verifiers_majority_vote.data[count][count2]),VRF_data.block_verifiers_random_data[count2],RANDOM_STRING_LENGTH);
+  }
+
+  return;
 }
