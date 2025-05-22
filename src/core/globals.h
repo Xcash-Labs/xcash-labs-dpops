@@ -60,7 +60,7 @@ extern pthread_rwlock_t rwlock_reserve_proofs;
 extern pthread_mutex_t lock;
 extern pthread_mutex_t database_lock;
 extern pthread_mutex_t verify_network_block_lock;
-extern pthread_mutex_t vote_lock;
+extern pthread_mutex_t majority_vote_lock;
 extern pthread_mutex_t add_reserve_proof_lock;
 extern pthread_mutex_t invalid_reserve_proof_lock;
 extern pthread_mutex_t database_data_IP_address_lock;

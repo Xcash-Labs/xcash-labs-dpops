@@ -35,7 +35,7 @@ pthread_rwlock_t rwlock_reserve_proofs;
 pthread_mutex_t lock;
 pthread_mutex_t database_lock;
 pthread_mutex_t verify_network_block_lock;
-pthread_mutex_t vote_lock;
+pthread_mutex_t majority_vote_lock;
 pthread_mutex_t add_reserve_proof_lock;
 pthread_mutex_t invalid_reserve_proof_lock;
 pthread_mutex_t database_data_IP_address_lock;
