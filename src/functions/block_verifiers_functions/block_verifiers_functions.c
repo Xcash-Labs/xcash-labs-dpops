@@ -164,13 +164,15 @@ int block_verifiers_create_block(void) {
     }
 
     // Create block template
-    INFO_STAGE_PRINT("Part 10 - Add VRF Data And Sign Block Blob");
+    INFO_STAGE_PRINT("Part 10 - Add VRF Data and Sign Block Blob");
     snprintf(current_round_part, sizeof(current_round_part), "%d", 10);
     if(!add_vrf_extra_and_sign(block_blob)) {
       return ROUND_ERROR;
     }
 
     // Part 10 - Submit block
+    INFO_STAGE_PRINT("Part 11 - Submit the Block");
+    snprintf(current_round_part, sizeof(current_round_part), "%d", 11);
     if (!submit_block_template(block_blob)) {
       return ROUND_ERROR;
     }
