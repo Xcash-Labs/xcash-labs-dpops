@@ -122,7 +122,7 @@ int sign_data(char *message)
 
     memset(result, 0, MEDIUM_BUFFER_SIZE);
 
-    if (send_http_request(data, XCASH_WALLET_IP, "/json_rpc", XCASH_WALLET_PORT,
+    if (send_http_request(data, MEDIUM_BUFFER_SIZE, XCASH_WALLET_IP, "/json_rpc", XCASH_WALLET_PORT,
                           "POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH,
                           string, SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) <= 0 ||
         !parse_json_data(data, "signature", result, MEDIUM_BUFFER_SIZE)) {
