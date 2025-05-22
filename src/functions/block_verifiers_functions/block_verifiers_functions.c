@@ -445,7 +445,6 @@ bool block_verifiers_create_vote_majority_result(char **message)
         "vrf_random",         producer_refs[0].random_buf_hex,
         NULL
     };
-
     *message = create_message_param_list(XMSG_NODES_TO_NODES_VOTE_MAJORITY_RESULTS, params);
     return (*message != NULL);
 }

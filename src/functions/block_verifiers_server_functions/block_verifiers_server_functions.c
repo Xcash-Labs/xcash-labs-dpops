@@ -106,56 +106,33 @@ Description: Runs the code when the server receives the NODES_TO_NODES_VOTE_MAJO
 Parameters:
   MESSAGE - The message
 ---------------------------------------------------------------------------------------------------------*/
-void server_receive_data_socket_node_to_node_majority(const char* MESSAGE)
-{
-    // Variables
-    char key_buffer[32]; // Sufficient for "vote_data_" + max index
-    char public_address[XCASH_WALLET_LENGTH + 1] = {0};
-    int sender_index = -1;
+void server_receive_data_socket_node_to_node_majority(const char* MESSAGE) {
+  char public_address[XCASH_WALLET_LENGTH + 1] = {0};
+  char public_address_producer[XCASH_WALLET_LENGTH + 1] = {0};
+  char vrf_public_key_data[VRF_PUBLIC_KEY_LENGTH + 1] = {0};
+  char vrf_proof_hex[VRF_PROOF_LENGTH + 1] = {0};
+  char vrf_beta_hex[VRF_BETA_LENGTH + 1] = {0};
+  char random_buf_hex[(VRF_RANDOMBYTES_LENGTH * 2) + 1] = {0};
+  char block_height[BLOCK_HEIGHT_LENGTH] = {0};
 
-    DEBUG_PRINT("Received %s, %s", __func__, MESSAGE);
+  DEBUG_PRINT("received %s, %s", __func__, MESSAGE);
 
-    // Parse public address
-    if (parse_json_data(MESSAGE, "public_address", public_address, sizeof(public_address)) == 0) {
-        ERROR_PRINT("Can't parse public_address");
-        return;
-    }
-
-    // Find the verifier index
-    for (int i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
-        if (strncmp(current_block_verifiers_list.block_verifiers_public_address[i], public_address, XCASH_WALLET_LENGTH) == 0) {
-            sender_index = i;
-            break;
-        }
-    }
-
-    if (sender_index == -1) {
-        ERROR_PRINT("Unknown verifier address: %s", public_address);
-        return;
-    }
-
-    pthread_mutex_lock(&majority_vote_lock);
-
-
-
-
-
-
-
-
-/*
-    for (int receiver_index = 0; receiver_index < BLOCK_VERIFIERS_AMOUNT; receiver_index++) {
-        snprintf(key_buffer, sizeof(key_buffer), "vote_data_%d", receiver_index + 1);
-
-        if (parse_json_data(MESSAGE, key_buffer,
-                            current_block_verifiers_majority_vote.data[sender_index][receiver_index],
-                            sizeof(current_block_verifiers_majority_vote.data[sender_index][receiver_index])) == 0) {
-            ERROR_PRINT("Could not parse vote_data_%d from %s", receiver_index + 1, public_address);
-            pthread_mutex_unlock(&majority_vote_lock);
-            return;
-        }
-    }
-*/
-    pthread_mutex_unlock(&majority_vote_lock);
+  // parse the message
+  if (parse_json_data(MESSAGE, "public_address", public_address, sizeof(public_address)) == XCASH_ERROR ||
+      parse_json_data(MESSAGE, "proposed_producer", vrf_public_key_data, sizeof(vrf_public_key_data)) == XCASH_ERROR ||
+      parse_json_data(MESSAGE, "vrf_public_key", vrf_public_key_data, sizeof(vrf_public_key_data)) == XCASH_ERROR ||
+      parse_json_data(MESSAGE, "random_data", random_buf_hex, sizeof(random_buf_hex)) == XCASH_ERROR ||
+      parse_json_data(MESSAGE, "vrf_proof", vrf_proof_hex, sizeof(vrf_proof_hex)) == XCASH_ERROR ||
+      parse_json_data(MESSAGE, "vrf_beta", vrf_beta_hex, sizeof(vrf_beta_hex)) == XCASH_ERROR ||
+      parse_json_data(MESSAGE, "block-height", block_height, sizeof(block_height)) == XCASH_ERROR) {
+    ERROR_PRINT("Could not parse the block_verifiers_to_block_verifiers_vrf_data");
     return;
+  }
+
+  pthread_mutex_lock(&majority_vote_lock);
+
+  // code here
+
+  pthread_mutex_unlock(&majority_vote_lock);
+  return;
 }

@@ -63,81 +63,97 @@ int sign_data(char *message)
     const char *HTTP_HEADERS[] = {"Content-Type: application/json", "Accept: application/json"};
     const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0]);
 
-    char *rpc_payload = calloc(MEDIUM_BUFFER_SIZE, sizeof(char));
     char *result = calloc(MEDIUM_BUFFER_SIZE, sizeof(char));
-    if (!result || !rpc_payload) {
+    char *string = calloc(MEDIUM_BUFFER_SIZE, sizeof(char));
+    if (!result || !string) {
         FATAL_ERROR_EXIT("sign_data: Memory allocation failed.");
     }
 
     char random_data[RANDOM_STRING_LENGTH + 1] = {0};
-    char data_to_sign[MEDIUM_BUFFER_SIZE] = {0};
-    char response[MEDIUM_BUFFER_SIZE] = {0};
+    char data[BUFFER_SIZE] = {0};
 
     if (!random_string(random_data, RANDOM_STRING_LENGTH)) {
-        return handle_error("sign_data", "Failed to generate random data.", result, rpc_payload);
+        return handle_error("sign_data", "Failed to generate random data.", result, string);
     }
 
-    // Compose message to be signed
-    snprintf(data_to_sign, sizeof(data_to_sign),
-        "{"
-        "\"public_address\":\"%s\","
-        "\"previous_block_hash\":\"%s\","
-        "\"current_round_part\":\"%s\","
-        "\"data\":\"%s\""
+    // Ensure previous_block_hash is set
+    if (pthread_rwlock_tryrdlock(&rwlock) != 0) {
+        return handle_error("sign_data", "Failed to acquire read lock.", result, string);
+    }
+
+    if (strlen(previous_block_hash) == 0) {
+        pthread_rwlock_unlock(&rwlock);
+        char temp_hash[BLOCK_HASH_LENGTH + 1] = {0};
+        if (!get_previous_block_hash(temp_hash)) {
+            return handle_error("sign_data", "Previous block hash missing.", result, string);
+        }
+        pthread_rwlock_wrlock(&rwlock);
+        strncpy(previous_block_hash, temp_hash, BLOCK_HASH_LENGTH);
+        pthread_rwlock_unlock(&rwlock);
+    } else {
+        pthread_rwlock_unlock(&rwlock);
+    }
+
+    // Compose JSON payload to sign (based on message, plus required metadata)
+    
+    //                            lets assume public_address is already in the messages
+    snprintf(result, MEDIUM_BUFFER_SIZE,
+        "%.*s,"
+//        "\"v_public_address\":\"%s\","
+        "\"v_previous_block_hash\":\"%s\","
+        "\"v_current_round_part\":\"%s\","
+        "\"v_data\":\"%.*s\""
         "}",
-        xcash_wallet_public_address,
+        (int)(strlen(message) - 1),  // strip final '}'
+        message,
+//        xcash_wallet_public_address,
         previous_block_hash,
         current_round_part,
-        random_data
+        RANDOM_STRING_LENGTH, random_data
     );
 
-    // Escape string for JSON-RPC
-    char escaped_data_to_sign[MEDIUM_BUFFER_SIZE - 64] = {0};
-    escape_json_string(data_to_sign, escaped_data_to_sign, sizeof(escaped_data_to_sign));  // you define
+    // Escape for JSON-RPC request
+    string_replace(result, MEDIUM_BUFFER_SIZE, "\"", "\\\"");
 
-    // Send signing request
-    snprintf(rpc_payload, MEDIUM_BUFFER_SIZE,
+    snprintf(string, MEDIUM_BUFFER_SIZE,
         "{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"sign\",\"params\":{\"data\":\"%s\"}}",
-        escaped_data_to_sign
+        result
     );
 
-    if (send_http_request(response, MEDIUM_BUFFER_SIZE, XCASH_WALLET_IP, "/json_rpc", XCASH_WALLET_PORT,
+    memset(result, 0, MEDIUM_BUFFER_SIZE);
+
+    if (send_http_request(data, XCASH_WALLET_IP, "/json_rpc", XCASH_WALLET_PORT,
                           "POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH,
-                          rpc_payload, HTTP_TIMEOUT_SETTINGS) <= 0 ||
-        !parse_json_data(response, "signature", result, MEDIUM_BUFFER_SIZE)) {
-        return handle_error("sign_data", "Wallet signature failed.", result, rpc_payload);
+                          string, SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) <= 0 ||
+        !parse_json_data(data, "signature", result, MEDIUM_BUFFER_SIZE)) {
+        return handle_error("sign_data", "Wallet signature failed.", result, string);
     }
 
     if (strlen(result) != XCASH_SIGN_DATA_LENGTH ||
         strncmp(result, XCASH_SIGN_DATA_PREFIX, sizeof(XCASH_SIGN_DATA_PREFIX) - 1) != 0) {
-        return handle_error("sign_data", "Invalid wallet signature format.", result, rpc_payload);
+        return handle_error("sign_data", "Invalid wallet signature format.", result, string);
     }
 
-    // Final signed message
-    snprintf(message, MEDIUM_BUFFER_SIZE,
-        "{"
-        "\"public_address\":\"%s\","
-        "\"previous_block_hash\":\"%s\","
-        "\"current_round_part\":\"%s\","
-        "\"data\":\"%s\","
-        "\"XCASH_DPOPS_signature\":\"%s\""
-        "}",
-        xcash_wallet_public_address,
+    // Add final fields and signature to original message
+    pthread_rwlock_rdlock(&rwlock);
+    snprintf(message + strlen(message) - 1, MEDIUM_BUFFER_SIZE - strlen(message),
+//        ",\"public_address\":\"%s\""
+        ",\"previous_block_hash\":\"%s\""
+        ",\"current_round_part\":\"%s\""
+        ",\"data\":\"%.*s\""
+        ",\"XCASH_DPOPS_signature\":\"%s\"}",
+//        xcash_wallet_public_address,
         previous_block_hash,
         current_round_part,
-        random_data,
+        RANDOM_STRING_LENGTH, random_data,
         result
     );
+    pthread_rwlock_unlock(&rwlock);
 
     free(result);
-    free(rpc_payload);
+    free(string);
     return XCASH_OK;
 }
-
-
-
-
-
 
 
 
