@@ -119,7 +119,7 @@ void server_receive_data_socket_node_to_node_majority(const char* MESSAGE) {
 
   // parse the message
   if (parse_json_data(MESSAGE, "public_address", public_address, sizeof(public_address)) == XCASH_ERROR ||
-      parse_json_data(MESSAGE, "proposed_producer", vrf_public_key_data, sizeof(vrf_public_key_data)) == XCASH_ERROR ||
+      parse_json_data(MESSAGE, "proposed_producer", public_address_producer, sizeof(public_address_producer)) == XCASH_ERROR ||
       parse_json_data(MESSAGE, "vrf_public_key", vrf_public_key_data, sizeof(vrf_public_key_data)) == XCASH_ERROR ||
       parse_json_data(MESSAGE, "random_data", random_buf_hex, sizeof(random_buf_hex)) == XCASH_ERROR ||
       parse_json_data(MESSAGE, "vrf_proof", vrf_proof_hex, sizeof(vrf_proof_hex)) == XCASH_ERROR ||
