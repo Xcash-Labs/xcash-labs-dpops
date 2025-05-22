@@ -123,7 +123,7 @@ int sign_data(char *message)
         "\"XCASH_DPOPS_signature\":\"%s\""
         "}",
         xcash_wallet_public_address,
-        previous_hash,
+        previous_block_hash,
         current_round_part,
         random_data,
         result
@@ -169,7 +169,7 @@ bool sign_block_blob(const char* block_blob_hex, char* signature_out, size_t sig
   );
 
   const char* headers[] = { "Content-Type: application/json", "Accept: application/json" };
-  if (send_http_request(response, SMALL_BUFFER_SIZE, "/json_rpc", XCASH_WALLET_PORT,
+  if (send_http_request(response, SMALL_BUFFER_SIZE, XCASH_WALLET_IP, "/json_rpc", XCASH_WALLET_PORT,
                         "POST", headers, 2, request_json, HTTP_TIMEOUT_SETTINGS) <= 0) {
     return false;
   }
