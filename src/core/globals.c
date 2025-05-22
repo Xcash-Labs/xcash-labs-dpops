@@ -18,7 +18,7 @@ char secret_key[VRF_SECRET_KEY_LENGTH +1] = {0};
 
 char vrf_public_key[VRF_PUBLIC_KEY_LENGTH + 1] = {0};
 
-char current_round_part[2] = "1";
+char current_round_part[3] = "1";
 char delegates_hash[MD5_HASH_SIZE + 1] = {0};
 
 int main_network_data_node_create_block = 0;
