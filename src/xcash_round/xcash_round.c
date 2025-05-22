@@ -145,6 +145,7 @@ xcash_round_result_t process_round(void) {
         strcpy(current_block_verifiers_list.block_verifiers_public_address[j], delegates_all[i].public_address);
         strcpy(current_block_verifiers_list.block_verifiers_public_key[j], delegates_all[i].public_key);
         strcpy(current_block_verifiers_list.block_verifiers_IP_address[j], delegates_all[i].IP_address);
+        current_block_verifiers_list.block_verifiers_vote_total = 0;
         INFO_PRINT_STATUS_OK("Delegate: %s, Online Status: ", delegates_all[i].delegate_name);
         nodes_majority_count++;
         j++;
@@ -176,12 +177,13 @@ xcash_round_result_t process_round(void) {
   responses = NULL;
   char* vrf_message = NULL;
   if (generate_and_request_vrf_data_msg(&vrf_message)) {
-    DEBUG_PRINT("Generated VRF message: %s", vrf_message);
     if (xnet_send_data_multi(XNET_DELEGATES_ALL_ONLINE, vrf_message, &responses)) {
-      DEBUG_PRINT("Message sent to all online delegates.");
+      free(vrf_message);
+      cleanup_responses(responses);
     } else {
       ERROR_PRINT("Failed to send VRF message.");
       free(vrf_message);
+      cleanup_responses(responses);
       return ROUND_ERROR;
     }
   } else {
@@ -238,7 +240,43 @@ for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
   if (producer_indx < 0) {
     INFO_STAGE_PRINT("Block Producer not selected, skipping round");
     return ROUND_ERROR;
+  }
+  
+  INFO_STAGE_PRINT("Part 7 - Wait for Block Creator Confirmation by Consensus Vote");
+  snprintf(current_round_part, sizeof(current_round_part), "%d", 7);
+  
+  pthread_mutex_lock(&majority_vote_lock);
+  current_block_verifiers_list.block_verifiers_vote_total[producer_indx] += 1;
+  pthread_mutex_unlock(&majority_vote_lock);
+
+  responses = NULL;
+  char* vote_message = NULL;
+  if (block_verifiers_create_vote_majority_result(&vote_message)) {
+    if (xnet_send_data_multi(XNET_DELEGATES_ALL_ONLINE, vote_message, &responses)) {
+      free(vote_message);
+      cleanup_responses(responses);
+    } else {
+      ERROR_PRINT("Failed to send VRF message.");
+      free(vote_message);
+      cleanup_responses(responses);
+      return ROUND_ERROR;
+    }
   } else {
+    ERROR_PRINT("Failed to generate VRF keys and message");
+    if (vote_message != NULL) {
+      free(vote_message);
+    }
+    return ROUND_ERROR;
+  }
+
+
+  retrun round_error;
+
+
+
+
+
+  if (producer_indx > 0) {
     pthread_mutex_lock(&majority_vrf_lock);
     // For now there is only one block producer and no backups
     memset(&producer_refs, 0, sizeof(producer_refs));
@@ -251,21 +289,28 @@ for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     strcpy(producer_refs[0].vrf_beta_hex, current_block_verifiers_list.block_verifiers_vrf_beta_hex[producer_indx]);
     pthread_mutex_unlock(&majority_vrf_lock);
   }
-INFO_PRINT(
-  "Producer Info:\n"
-  "  Address     : %s\n"
-  "  IP          : %s\n"
-  "  VRF PubKey  : %s\n"
-  "  Random Hex  : %s\n"
-  "  VRF Proof   : %s\n"
-  "  VRF Beta    : %s",
-  producer_refs[0].public_address,
-  producer_refs[0].IP_address,
-  producer_refs[0].vrf_public_key,
-  producer_refs[0].random_buf_hex,
-  producer_refs[0].vrf_proof_hex,
-  producer_refs[0].vrf_beta_hex
-);
+  atomic_store(&wait_for_vote_init, false);
+
+  INFO_PRINT(
+      "Producer Info:\n"
+      "  Address     : %s\n"
+      "  IP          : %s\n"
+      "  VRF PubKey  : %s\n"
+      "  Random Hex  : %s\n"
+      "  VRF Proof   : %s\n"
+      "  VRF Beta    : %s",
+      producer_refs[0].public_address,
+      producer_refs[0].IP_address,
+      producer_refs[0].vrf_public_key,
+      producer_refs[0].random_buf_hex,
+      producer_refs[0].vrf_proof_hex,
+      producer_refs[0].vrf_beta_hex);
+
+  // Sync start
+  if (sync_block_verifiers_minutes_and_seconds(0, 45) == XCASH_ERROR) {
+    INFO_PRINT("Failed to Confirm Block Creator in the aloted time, skipping roung");
+    return ROUND_SKIP;
+  }
 
   INFO_STAGE_PRINT("Starting block production for block %s", current_block_height);
   int block_creation_result = block_verifiers_create_block();
@@ -346,6 +391,7 @@ void start_block_production(void) {
     delegate_db_hash_mismatch = 0;
     atomic_store(&wait_for_vrf_init, true);
     atomic_store(&wait_for_block_height_init, true);
+    atomic_store(&wait_for_vote_init, true);
 
     if (round_result != ROUND_OK) {
       for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {

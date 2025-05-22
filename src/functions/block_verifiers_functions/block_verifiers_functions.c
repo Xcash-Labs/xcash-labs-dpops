@@ -139,16 +139,12 @@ int block_verifiers_create_block(void) {
   char data[BUFFER_SIZE] = {0};
 
   // Confirm block height hasn't drifted (this node may be behind the network)
-  INFO_STAGE_PRINT("Part 7 - Confirm block height hasn't drifted");
-  snprintf(current_round_part, sizeof(current_round_part), "%d", 7);
+  INFO_STAGE_PRINT("Part 8 - Confirm block height hasn't drifted");
+  snprintf(current_round_part, sizeof(current_round_part), "%d", 8);
   if (get_current_block_height(data) == 1 && strncmp(current_block_height, data, BUFFER_SIZE) != 0) {
       WARNING_PRINT("Your block height is not synced correctly, waiting for next round");
       return ROUND_ERROR;
   }
-
-
-// will need to get consence vote befor adding nodes
-
 
   char block_blob[BUFFER_SIZE] = {0};
   // Only the block producer completes the following steps, producer_refs is an array in case we decide to add 
@@ -156,8 +152,8 @@ int block_verifiers_create_block(void) {
   if (strcmp(producer_refs[0].public_address, xcash_wallet_public_address) == 0) {
 
     // Create block template
-    INFO_STAGE_PRINT("Part 8 - Create block template");
-    snprintf(current_round_part, sizeof(current_round_part), "%d", 8);
+    INFO_STAGE_PRINT("Part 9 - Create block template");
+    snprintf(current_round_part, sizeof(current_round_part), "%d", 9);
     if (get_block_template(block_blob, BUFFER_SIZE) == 0) {
       return ROUND_ERROR;
     }
@@ -168,8 +164,8 @@ int block_verifiers_create_block(void) {
     }
 
     // Create block template
-    INFO_STAGE_PRINT("Part 9 - Add VRF Data And Sign Block Blob");
-    snprintf(current_round_part, sizeof(current_round_part), "%d", 9);
+    INFO_STAGE_PRINT("Part 10 - Add VRF Data And Sign Block Blob");
+    snprintf(current_round_part, sizeof(current_round_part), "%d", 10);
     if(!add_vrf_extra_and_sign(block_blob)) {
       return ROUND_ERROR;
     }
@@ -184,11 +180,9 @@ int block_verifiers_create_block(void) {
 
   }
 
-
-// sync .........
-
   // Final step - Update DB
-  INFO_STAGE_PRINT("Part 9 - Update DB");
+  INFO_STAGE_PRINT("Part 11 - Update DB");
+  snprintf(current_round_part, sizeof(current_round_part), "%d", 11);
     // update status, database (reserve_bytes and node online status)...
 
     // how do other database get updated?  wait they all know the winning block producer
@@ -351,6 +345,7 @@ bool generate_and_request_vrf_data_msg(char** message)
       memcpy(current_block_verifiers_list.block_verifiers_random_hex[i], random_buf_hex, VRF_RANDOMBYTES_LENGTH * 2 + 1);
       memcpy(current_block_verifiers_list.block_verifiers_vrf_proof_hex[i], vrf_proof_hex, VRF_PROOF_LENGTH + 1); 
       memcpy(current_block_verifiers_list.block_verifiers_vrf_beta_hex[i], vrf_beta_hex, VRF_BETA_LENGTH + 1);
+      current_block_verifiers_list.block_verifiers_vote_total[i] = 0;
       break;
     }
   }
@@ -434,7 +429,6 @@ bool block_verifiers_create_vote_majority_result(char **message)
         return false;
     }
 
-    // Prepare key-value list
     const char *params[] = {
         "public_address",     xcash_wallet_public_address,
         "proposed_producer",  producer_refs[0].public_address,

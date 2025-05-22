@@ -48,6 +48,7 @@ atomic_bool server_running = true;
 
 atomic_bool wait_for_vrf_init = true;
 atomic_bool wait_for_block_height_init = true;
+atomic_bool wait_for_vote_init = true;
 
 pthread_t server_thread;
 
@@ -60,7 +61,12 @@ bool cleanup_db_before_upsert = false;  // delete db before put content. make su
 
 block_verifiers_list_t previous_block_verifiers_list;
 
+
+
 block_verifiers_list_t current_block_verifiers_list;
+
+
+
 
 block_verifiers_list_t next_block_verifiers_list;
 

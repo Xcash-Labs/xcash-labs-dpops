@@ -129,17 +129,37 @@ void server_receive_data_socket_node_to_node_majority(const char* MESSAGE) {
     return;
   }
 
+  int wait_seconds = 0;
+  while (atomic_load(&wait_for_vote_init) && wait_seconds < DELAY_EARLY_TRANSACTIONS_MAX) {
+    sleep(1);
+    wait_seconds++;
+  }
+  if (atomic_load(&wait_for_vote_init)) {
+    ERROR_PRINT("Timed out waiting for vote init in server_receive_data_socket_node_to_node_majority");
+  }
+
+  INFO_PRINT("Parsed public_address: %s", public_address);
+  INFO_PRINT("Parsed proposed_producer: %s", public_address_producer);
+  INFO_PRINT("Parsed vrf_public_key: %s", vrf_public_key_data);
+  INFO_PRINT("Parsed random_data: %s", random_buf_hex);
+  INFO_PRINT("Parsed vrf_proof: %s", vrf_proof_hex);
+  INFO_PRINT("Parsed vrf_beta: %s", vrf_beta_hex);
+  INFO_PRINT("Parsed block_height: %s", block_height);
+
   pthread_mutex_lock(&majority_vote_lock);
 
-INFO_PRINT("Parsed public_address: %s", public_address);
-INFO_PRINT("Parsed proposed_producer: %s", public_address_producer);
-INFO_PRINT("Parsed vrf_public_key: %s", vrf_public_key_data);
-INFO_PRINT("Parsed random_data: %s", random_buf_hex);
-INFO_PRINT("Parsed vrf_proof: %s", vrf_proof_hex);
-INFO_PRINT("Parsed vrf_beta: %s", vrf_beta_hex);
-INFO_PRINT("Parsed block_height: %s", block_height);
 
+// need to verify more info..... later
+
+  for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
+    if (strncmp(current_block_verifiers_list.block_verifiers_public_address[i], public_address, XCASH_WALLET_LENGTH) == 0) {
+      current_block_verifiers_list.block_verifiers_vote_total[i] += 1;
+      INFO_PRINT("Adding 1 to: %s", current_block_verifiers_list.block_verifiers_public_address[i]);
+      break;  // Optional: stop after first match
+    }
+  }
 
   pthread_mutex_unlock(&majority_vote_lock);
+
   return;
 }

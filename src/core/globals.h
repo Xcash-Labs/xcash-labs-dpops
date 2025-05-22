@@ -72,6 +72,7 @@ extern pthread_mutex_t majority_vrf_lock;
 extern atomic_bool server_running; 
 extern atomic_bool wait_for_vrf_init;
 extern atomic_bool wait_for_block_height_init;
+extern atomic_bool wait_for_vote_init;
 
 extern pthread_t server_thread;
 
