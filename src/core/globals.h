@@ -34,7 +34,7 @@ extern char secret_key[VRF_SECRET_KEY_LENGTH +1]; // Holds the secret key text f
 
 extern char vrf_public_key[VRF_PUBLIC_KEY_LENGTH + 1]; 
 
-extern char current_round_part[2]; // The current round part (1-4)
+extern char current_round_part[3]; // The current round part
 extern char delegates_hash[MD5_HASH_SIZE + 1];
 
 
