@@ -270,7 +270,7 @@ for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
   }
 
 
-  retrun round_error;
+  return round_error;
 
 
 
