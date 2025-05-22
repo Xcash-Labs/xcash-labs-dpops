@@ -150,6 +150,8 @@ int sign_data(char *message)
     );
     pthread_rwlock_unlock(&rwlock);
 
+INFO_PRINT("Signed message: %s", message);
+
     free(result);
     free(string);
     return XCASH_OK;

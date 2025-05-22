@@ -131,7 +131,14 @@ void server_receive_data_socket_node_to_node_majority(const char* MESSAGE) {
 
   pthread_mutex_lock(&majority_vote_lock);
 
-  // code here
+INFO_PRINT("Parsed public_address: %s", public_address);
+INFO_PRINT("Parsed proposed_producer: %s", public_address_producer);
+INFO_PRINT("Parsed vrf_public_key: %s", vrf_public_key_data);
+INFO_PRINT("Parsed random_data: %s", random_buf_hex);
+INFO_PRINT("Parsed vrf_proof: %s", vrf_proof_hex);
+INFO_PRINT("Parsed vrf_beta: %s", vrf_beta_hex);
+INFO_PRINT("Parsed block_height: %s", block_height);
+
 
   pthread_mutex_unlock(&majority_vote_lock);
   return;
