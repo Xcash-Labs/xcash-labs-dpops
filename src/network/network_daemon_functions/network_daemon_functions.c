@@ -164,7 +164,7 @@ int get_block_template(char* result, size_t result_size)
 
   // Variables
   char message[VSMALL_BUFFER_SIZE] = {0};
-  char* response = (char*)calloc(BUFFER_SIZE, sizeof(char));
+  char* response = (char*)calloc(SMALL_BUFFER_SIZE, sizeof(char));
   int retry_attempts = 2;
 
   if (!response) {
