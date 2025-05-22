@@ -669,7 +669,8 @@ bool check_sync_nodes_majority_list(response_t **replies, xcash_node_sync_info_t
 }
 
 
-// The is part of what is needed jed
+// jed - updated to sync db tables
+
 
 bool download_db_from_node(const char *host, xcash_dbs_t db_type, int db_file_index, char *result_db_data_buf,
                            size_t result_db_data_buf_size) {
@@ -682,6 +683,13 @@ bool download_db_from_node(const char *host, xcash_dbs_t db_type, int db_file_in
     case XCASH_DB_DELEGATES:
     case XCASH_DB_STATISTICS:
       send_result = send_direct_message(host, xcash_db_download_messages[db_type], &reply);
+      break;
+    case XCASH_DB_RESERVE_PROOFS:
+    case XCASH_DB_RESERVE_BYTES:
+      snprintf(database_collection_name, DB_COLLECTION_NAME_SIZE, "%s_%d", collection_names[db_type],
+               db_file_index);
+      send_result = send_direct_message_param(host, xcash_db_download_messages[db_type], &reply, "file",
+                                              database_collection_name, NULL);
       break;
     default:
       break;
