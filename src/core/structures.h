@@ -245,4 +245,9 @@ typedef enum {
     XMSG_NONE = XMSG_MESSAGES_COUNT
 } xcash_msg_t;
 
+typedef enum {
+    LIMIT_REMOVE = 0,  // Remove from limiter list
+    LIMIT_CHECK = 1    // Enforce limit (check & add)
+} limit_action_t;
+
 #endif

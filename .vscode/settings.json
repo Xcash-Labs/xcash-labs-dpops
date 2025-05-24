@@ -29,6 +29,9 @@
         "string_functions.h": "c",
         "memory": "c",
         "node_functions.h": "c",
-        "server_functions.h": "c"
+        "server_functions.h": "c",
+        "cstddef": "c",
+        "limits": "c",
+        "system_error": "c"
     }
 }

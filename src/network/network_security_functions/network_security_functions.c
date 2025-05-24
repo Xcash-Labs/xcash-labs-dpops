@@ -135,66 +135,64 @@ bool sign_block_blob(const char* block_blob_hex, char* signature_out, size_t sig
 ---------------------------------------------------------------------------------------------------------*/
 int verify_data(const char *message)
 {
-    const char *HTTP_HEADERS[] = {"Content-Type: application/json", "Accept: application/json"};
-    const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0]);
+  const char *HTTP_HEADERS[] = {"Content-Type: application/json", "Accept: application/json"};
+  const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0]);
 
-    char signature[XCASH_SIGN_DATA_LENGTH + 1] = {0};
-    char public_address[XCASH_WALLET_LENGTH + 1] = {0};
-    char current_round_part[16] = {0};
-    char random_data[RANDOM_STRING_LENGTH + 1] = {0};
-    char vprevious_block_hash[BLOCK_HASH_LENGTH + 1] = {0};
-    char raw_data[MEDIUM_BUFFER_SIZE] = {0};
+  char signature[XCASH_SIGN_DATA_LENGTH + 1] = {0};
+  char public_address[XCASH_WALLET_LENGTH + 1] = {0};
+  char current_round_part[16] = {0};
+  char random_data[RANDOM_STRING_LENGTH + 1] = {0};
+  char vprevious_block_hash[BLOCK_HASH_LENGTH + 1] = {0};
+  char raw_data[MEDIUM_BUFFER_SIZE] = {0};
 
-    char request[MEDIUM_BUFFER_SIZE * 2] = {0};
-    char response[MEDIUM_BUFFER_SIZE] = {0};
+  char request[MEDIUM_BUFFER_SIZE * 2] = {0};
+  char response[MEDIUM_BUFFER_SIZE] = {0};
 
-    // Extract all required fields
-    if (parse_json_data(message, "XCASH_DPOPS_signature", signature, sizeof(signature)) != 1 ||
-        parse_json_data(message, "v_public_address", public_address, sizeof(public_address)) != 1 ||
-        parse_json_data(message, "v_previous_block_hash", vprevious_block_hash, sizeof(vprevious_block_hash)) != 1 ||
-        parse_json_data(message, "v_current_round_part", current_round_part, sizeof(current_round_part)) != 1 ||
-        parse_json_data(message, "v_random_data", random_data, sizeof(random_data)) != 1) {
-        ERROR_PRINT("verify_data: Failed to parse one or more required fields.");
-        return XCASH_ERROR;
-    }
-
-    // Rebuild original signed message
-    snprintf(raw_data, sizeof(raw_data),
-        "{"
-        "\"v_public_address\":\"%s\","
-        "\"v_previous_block_hash\":\"%s\","
-        "\"v_current_round_part\":\"%s\","
-        "\"v_random_data\":\"%s\""
-        "}",
-        public_address,
-        vprevious_block_hash,
-        current_round_part,
-        random_data
-    );
-
-    // Prepare wallet verify request
-    snprintf(request, sizeof(request),
-        "{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"verify\",\"params\":{"
-        "\"data\":\"%s\","
-        "\"address\":\"%s\","
-        "\"signature\":\"%s\"}}",
-        raw_data, public_address, signature
-    );
-
-    if (send_http_request(response, sizeof(response), XCASH_WALLET_IP, "/json_rpc", XCASH_WALLET_PORT,
-                          "POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH,
-                          request, SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) <= 0) {
-        ERROR_PRINT("verify_data: HTTP request failed");
-        return XCASH_ERROR;
-    }
-
-    // Parse response
-    char result[8] = {0};
-    if (parse_json_data(response, "verified", result, sizeof(result)) == 1 && strcmp(result, "true") == 0) {
-        INFO_PRINT("Signature verified");
-        return XCASH_OK;
-    }
-
-    ERROR_PRINT("Signature verification failed");
+  // Extract all required fields
+  if (parse_json_data(message, "XCASH_DPOPS_signature", signature, sizeof(signature)) != 1 ||
+      parse_json_data(message, "v_public_address", public_address, sizeof(public_address)) != 1 ||
+      parse_json_data(message, "v_previous_block_hash", vprevious_block_hash, sizeof(vprevious_block_hash)) != 1 ||
+      parse_json_data(message, "v_current_round_part", current_round_part, sizeof(current_round_part)) != 1 ||
+      parse_json_data(message, "v_random_data", random_data, sizeof(random_data)) != 1) {
+    ERROR_PRINT("verify_data: Failed to parse one or more required fields.");
     return XCASH_ERROR;
+  }
+
+  // Rebuild original signed message
+  snprintf(raw_data, sizeof(raw_data),
+           "{"
+           "\"v_public_address\":\"%s\","
+           "\"v_previous_block_hash\":\"%s\","
+           "\"v_current_round_part\":\"%s\","
+           "\"v_random_data\":\"%s\""
+           "}",
+           public_address,
+           vprevious_block_hash,
+           current_round_part,
+           random_data);
+
+  // Prepare wallet verify request
+  snprintf(request, sizeof(request),
+           "{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"verify\",\"params\":{"
+           "\"data\":\"%s\","
+           "\"address\":\"%s\","
+           "\"signature\":\"%s\"}}",
+           raw_data, public_address, signature);
+
+  if (send_http_request(response, sizeof(response), XCASH_WALLET_IP, "/json_rpc", XCASH_WALLET_PORT,
+                        "POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH,
+                        request, SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) <= 0) {
+    ERROR_PRINT("verify_data: HTTP request failed");
+    return XCASH_ERROR;
+  }
+
+  // Parse response
+  char result[8] = {0};
+  if (parse_json_data(response, "verified", result, sizeof(result)) == 1 && strcmp(result, "true") == 0) {
+    INFO_PRINT("Signature verified");
+    return XCASH_OK;
+  }
+
+  ERROR_PRINT("Signature verification failed");
+  return XCASH_ERROR;
 }
