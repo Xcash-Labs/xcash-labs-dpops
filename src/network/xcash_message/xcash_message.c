@@ -239,13 +239,6 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
       }
       break;
 
- //   case XMSG_XCASH_GET_BLOCK_PRODUCERS:
- //     if (server_limit_IP_addresses(1, client->client_ip) == 1) {
- //       server_received_msg_get_block_producers(client, data);
- //       server_limit_IP_addresses(0, client->client_ip);
- //     }
- //     break;
-
     case XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_VRF_DATA:
       if (server_limit_IP_addresses(LIMIT_CHECK, client->client_ip) == 1) {
         server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(data);
@@ -255,7 +248,7 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
 
     case XMSG_NODES_TO_NODES_VOTE_MAJORITY_RESULTS:
       if (server_limit_public_addresses(LIMIT_CHECK, data) == 1) {
-        server_receive_data_socket_node_to_node_majority(data);
+        server_receive_data_socket_node_to_node_vote_majority(data);
         server_limit_public_addresses(LIMIT_REMOVE, data);
       }
      break;

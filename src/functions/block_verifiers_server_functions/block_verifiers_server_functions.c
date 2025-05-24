@@ -101,12 +101,12 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
 }
 
 /*---------------------------------------------------------------------------------------------------------
-Name: server_receive_data_socket_node_to_node_majority
+Name: server_receive_data_socket_node_to_node_vote_majority
 Description: Runs the code when the server receives the NODES_TO_NODES_VOTE_MAJORITY_RESULTS message
 Parameters:
   MESSAGE - The message
 ---------------------------------------------------------------------------------------------------------*/
-void server_receive_data_socket_node_to_node_majority(const char* MESSAGE) {
+void server_receive_data_socket_node_to_node_vote_majority(const char* MESSAGE) {
   char public_address[XCASH_WALLET_LENGTH + 1] = {0};
   char public_address_producer[XCASH_WALLET_LENGTH + 1] = {0};
   char vrf_public_key_data[VRF_PUBLIC_KEY_LENGTH + 1] = {0};
@@ -121,7 +121,7 @@ void server_receive_data_socket_node_to_node_majority(const char* MESSAGE) {
   if (parse_json_data(MESSAGE, "public_address", public_address, sizeof(public_address)) == XCASH_ERROR ||
       parse_json_data(MESSAGE, "proposed_producer", public_address_producer, sizeof(public_address_producer)) == XCASH_ERROR ||
       parse_json_data(MESSAGE, "vrf_public_key", vrf_public_key_data, sizeof(vrf_public_key_data)) == XCASH_ERROR ||
-      parse_json_data(MESSAGE, "random_data", random_buf_hex, sizeof(random_buf_hex)) == XCASH_ERROR ||
+      parse_json_data(MESSAGE, "vrf_random", random_buf_hex, sizeof(random_buf_hex)) == XCASH_ERROR ||
       parse_json_data(MESSAGE, "vrf_proof", vrf_proof_hex, sizeof(vrf_proof_hex)) == XCASH_ERROR ||
       parse_json_data(MESSAGE, "vrf_beta", vrf_beta_hex, sizeof(vrf_beta_hex)) == XCASH_ERROR ||
       parse_json_data(MESSAGE, "block-height", block_height, sizeof(block_height)) == XCASH_ERROR) {
@@ -135,7 +135,7 @@ void server_receive_data_socket_node_to_node_majority(const char* MESSAGE) {
     wait_seconds++;
   }
   if (atomic_load(&wait_for_vote_init)) {
-    ERROR_PRINT("Timed out waiting for vote init in server_receive_data_socket_node_to_node_majority");
+    ERROR_PRINT("Timed out waiting for vote init in server_receive_data_socket_node_to_node_vote_majority");
   }
 
   INFO_PRINT("Parsed public_address: %s", public_address);
