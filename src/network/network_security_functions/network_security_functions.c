@@ -139,10 +139,10 @@ int verify_data(const char *message)
   const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0]);
 
   char signature[XCASH_SIGN_DATA_LENGTH + 1] = {0};
-  char public_address[XCASH_WALLET_LENGTH + 1] = {0};
-  char current_round_part[16] = {0};
+  char ck_public_address[XCASH_WALLET_LENGTH + 1] = {0};
+  char ck_round_part[3] = {0};
   char random_data[RANDOM_STRING_LENGTH + 1] = {0};
-  char vprevious_block_hash[BLOCK_HASH_LENGTH + 1] = {0};
+  char ck_previous_block_hash[BLOCK_HASH_LENGTH + 1] = {0};
   char raw_data[MEDIUM_BUFFER_SIZE] = {0};
 
   char request[MEDIUM_BUFFER_SIZE * 2] = {0};
@@ -150,9 +150,9 @@ int verify_data(const char *message)
 
   // Extract all required fields
   if (parse_json_data(message, "XCASH_DPOPS_signature", signature, sizeof(signature)) != 1 ||
-      parse_json_data(message, "v_public_address", public_address, sizeof(public_address)) != 1 ||
-      parse_json_data(message, "v_previous_block_hash", vprevious_block_hash, sizeof(vprevious_block_hash)) != 1 ||
-      parse_json_data(message, "v_current_round_part", current_round_part, sizeof(current_round_part)) != 1 ||
+      parse_json_data(message, "v_public_address", ck_public_address, sizeof(ck_public_address)) != 1 ||
+      parse_json_data(message, "v_previous_block_hash", ck_previous_block_hash, sizeof(ck_previous_block_hash)) != 1 ||
+      parse_json_data(message, "v_current_round_part", ck_round_part, sizeof(ck_round_part)) != 1 ||
       parse_json_data(message, "v_random_data", random_data, sizeof(random_data)) != 1) {
     ERROR_PRINT("verify_data: Failed to parse one or more required fields.");
     return XCASH_ERROR;
@@ -166,9 +166,9 @@ int verify_data(const char *message)
            "\"v_current_round_part\":\"%s\","
            "\"v_random_data\":\"%s\""
            "}",
-           public_address,
-           vprevious_block_hash,
-           current_round_part,
+           ck_public_address,
+           ck_previous_block_hash,
+           ck_round_part,
            random_data);
 
   // Prepare wallet verify request
@@ -177,7 +177,7 @@ int verify_data(const char *message)
            "\"data\":\"%s\","
            "\"address\":\"%s\","
            "\"signature\":\"%s\"}}",
-           raw_data, public_address, signature);
+           raw_data, ck_public_address, signature);
 
   if (send_http_request(response, sizeof(response), XCASH_WALLET_IP, "/json_rpc", XCASH_WALLET_PORT,
                         "POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH,
