@@ -417,28 +417,27 @@ Parameters:
   result - The result
   SETTINGS - The data settings
 ---------------------------------------------------------------------------------------------------------*/
-bool block_verifiers_create_vote_majority_result(char **message)
+bool block_verifiers_create_vote_majority_result(char **message, int producer_indx)
 {
     if (!message)
         return false;
 
-    if (strlen(producer_refs[0].public_address) == 0 ||
-      strlen(producer_refs[0].vrf_beta_hex) == 0 ||
-      strlen(producer_refs[0].vrf_proof_hex) == 0 ||
-      strlen(producer_refs[0].vrf_public_key) == 0 ||
-      strlen(producer_refs[0].random_buf_hex) == 0) {
+    if(strlen(current_block_verifiers_list.block_verifiers_vrf_public_key_hex[i]) == 0 ||
+      strlen(current_block_verifiers_list.block_verifiers_random_hex[i]) == 0
+      strlen(current_block_verifiers_list.block_verifiers_vrf_proof_hex[i]) == 0
+      strlen(current_block_verifiers_list.block_verifiers_vrf_beta_hex[i]) == 0) {
         ERROR_PRINT("Missing VRF data for producer");
         return false;
     }
 
     const char *params[] = {
         "public_address",     xcash_wallet_public_address,
-        "proposed_producer",  producer_refs[0].public_address,
+        "proposed_producer",  current_block_verifiers_list.block_verifiers_public_address[producer_indx],
         "block_height",       current_block_height,
-        "vrf_beta",           producer_refs[0].vrf_beta_hex,
-        "vrf_proof",          producer_refs[0].vrf_proof_hex,
-        "vrf_public_key",     producer_refs[0].vrf_public_key,
-        "vrf_random",         producer_refs[0].random_buf_hex,
+        "vrf_beta",           current_block_verifiers_list.block_verifiers_vrf_beta_hex[producer_indx],
+        "vrf_proof",          current_block_verifiers_list.block_verifiers_vrf_proof_hex[producer_indx],
+        "vrf_public_key",     current_block_verifiers_list.block_verifiers_vrf_public_key_hex[producer_indx],
+        "vrf_random",         current_block_verifiers_list.block_verifiers_random_hex[producer_indx],
         NULL
     };
     *message = create_message_param_list(XMSG_NODES_TO_NODES_VOTE_MAJORITY_RESULTS, params);
