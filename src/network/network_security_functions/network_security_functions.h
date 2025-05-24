@@ -18,10 +18,8 @@
 #include "node_functions.h"
 
 int handle_error(const char *function_name, const char *message, char *result, char *string);
-bool is_valid_message_type(const char *message_settings, const char *valid_types[], size_t valid_types_count);
-void safe_memcpy(char *dest, const char *src, size_t length);
 int sign_data(char *message);
 bool sign_block_blob(const char* block_blob_hex, char* signature_out, size_t sig_out_len);
-int validate_data(const char* MESSAGE);
-int verify_data(const char* MESSAGE, const int VERIFY_CURRENT_ROUND_PART_BACKUP_NODE_SETTINGS);
+int verify_data(const char* MESSAGE);
+
 #endif

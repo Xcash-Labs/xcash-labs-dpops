@@ -8,38 +8,6 @@ const xcash_msg_t WALLET_SIGN_MESSAGES[] = {
     XMSG_NONE};
 const size_t WALLET_SIGN_MESSAGES_COUNT = ARRAY_SIZE(WALLET_SIGN_MESSAGES) - 1;
 
-const xcash_msg_t UNSIGNED_MESSAGES[] = {
-    XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_ONLINE_STATUS,
-    XMSG_NODES_TO_NODES_VOTE_MAJORITY_RESULTS,
-    XMSG_GET_CURRENT_BLOCK_HEIGHT,
-    XMSG_XCASH_GET_SYNC_INFO,
-    XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_VRF_DATA,
-    XMSG_NONE};
-const size_t UNSIGNED_MESSAGES_COUNT = ARRAY_SIZE(UNSIGNED_MESSAGES) - 1;
-
-const xcash_msg_t NONRETURN_MESSAGES[] = {
-    XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_ONLINE_STATUS,
-    XMSG_NETWORK_DATA_NODES_TO_NETWORK_DATA_NODES_DATABASE_SYNC_CHECK,
-    XMSG_SEND_CURRENT_BLOCK_HEIGHT,
-    XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_VRF_DATA,
-    XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_BLOCK_BLOB_SIGNATURE,
-    XMSG_NODES_TO_NODES_VOTE_RESULTS,
-    XMSG_NODES_TO_NODES_VOTE_MAJORITY_RESULTS,
-    XMSG_MAIN_NODES_TO_NODES_PART_4_OF_ROUND_CREATE_NEW_BLOCK,
-    XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_INVALID_RESERVE_PROOFS,
-    XMSG_MAIN_NETWORK_DATA_NODE_TO_BLOCK_VERIFIERS_START_BLOCK,
-    XMSG_NONE};
-const size_t NONRETURN_MESSAGES_COUNT = ARRAY_SIZE(NONRETURN_MESSAGES) - 1;
-
-// Checks if a message is unsigned
-bool is_unsigned_type(xcash_msg_t msg) {
-  for (size_t i = 0; i < UNSIGNED_MESSAGES_COUNT; i++) {
-    if (msg == UNSIGNED_MESSAGES[i]) {
-      return true;
-    }
-  }
-  return false;
-}
 
 // Checks if a message requires wallet signature
 bool is_walletsign_type(xcash_msg_t msg) {
@@ -51,26 +19,9 @@ bool is_walletsign_type(xcash_msg_t msg) {
   return false;
 }
 
-// Checks if a message does not require a return (nonblocking)
-bool is_nonreturn_type(xcash_msg_t msg) {
-  for (size_t i = 0; i < NONRETURN_MESSAGES_COUNT; i++) {
-    if (msg == NONRETURN_MESSAGES[i]) {
-      return true;
-    }
-  }
-  return false;
-}
-
-// Sign a message in message_buf using local node's private key
-bool sign_message(char* message_buf, size_t message_buf_size) {
-  (void)message_buf_size;               // Currently unused
-  int result = sign_data(message_buf);  // sign_data presumably modifies message_buf
-  return (result == 1);
-}
-
 // Sign a message in message_buf using wallet's private key
 bool sign_message_by_wallet(char* message_buf, size_t message_buf_size) {
-  (void)message_buf_size;  // Currently unused
+  (void)message_buf_size;
   int result = sign_data(message_buf);
   return (result == 1);
 }
@@ -99,8 +50,8 @@ char* create_message_param_list(xcash_msg_t msg, const char** pair_params) {
   strncat(message_buf, "\r\n}\r\n", sizeof(message_buf) - strlen(message_buf) - 1);
 
   // If message is signed
-  if (!is_unsigned_type(msg)) {
-    if (!sign_message(message_buf, sizeof(message_buf))) {
+  if (is_walletsign_type(msg)) {
+    if (!sign_message_by_wallet(message_buf, sizeof(message_buf))) {
       ERROR_PRINT("Failed to sign message: %s", xcash_net_messages[msg]);
       return NULL;
     }
