@@ -212,6 +212,7 @@ for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
           "  Random Hex:       %s\n"
           "  VRF Proof Hex:    %s\n"
           "  VRF Beta Hex:     %s\n",
+          "  VRF Vote count:   %s\n",
           i,
           current_block_verifiers_list.block_verifiers_name[i],
           current_block_verifiers_list.block_verifiers_public_address[i],
@@ -281,20 +282,32 @@ for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
 
   // need to tally up votes
 
-  INFO_PRINT(
-      "Producer Info:\n"
-      "  Address     : %s\n"
-      "  IP          : %s\n"
-      "  VRF PubKey  : %s\n"
-      "  Random Hex  : %s\n"
-      "  VRF Proof   : %s\n"
-      "  VRF Beta    : %s",
-      producer_refs[0].public_address,
-      producer_refs[0].IP_address,
-      producer_refs[0].vrf_public_key,
-      producer_refs[0].random_buf_hex,
-      producer_refs[0].vrf_proof_hex,
-      producer_refs[0].vrf_beta_hex);
+  for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
+    if (current_block_verifiers_list.block_verifiers_public_address[i][0] != '\0') {
+      INFO_PRINT(
+          "\n--- Block Verifier [%zu] ---\n"
+          "  Name:             %s\n"
+          "  Public Address:   %s\n"
+          "  Public Key:       %s\n"
+          "  IP Address:       %s\n"
+          "  VRF Public Key:   %s\n"
+          "  Random Hex:       %s\n"
+          "  VRF Proof Hex:    %s\n"
+          "  VRF Beta Hex:     %s\n",
+          "  VRF Vote count:   %s\n",
+          i,
+          current_block_verifiers_list.block_verifiers_name[i],
+          current_block_verifiers_list.block_verifiers_public_address[i],
+          current_block_verifiers_list.block_verifiers_public_key[i],
+          current_block_verifiers_list.block_verifiers_IP_address[i],
+          current_block_verifiers_list.block_verifiers_vrf_public_key_hex[i],
+          current_block_verifiers_list.block_verifiers_random_hex[i],
+          current_block_verifiers_list.block_verifiers_vrf_proof_hex[i],
+          current_block_verifiers_list.block_verifiers_vrf_beta_hex[i],
+          current_block_verifiers_list.block_verifiers_vote_total[i]);
+    }
+  }
+
 
   if (producer_indx > 0) {
     pthread_mutex_lock(&majority_vrf_lock);
@@ -311,7 +324,20 @@ for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
   }
 
 
-
+  INFO_PRINT(
+      "Producer Info:\n"
+      "  Address     : %s\n"
+      "  IP          : %s\n"
+      "  VRF PubKey  : %s\n"
+      "  Random Hex  : %s\n"
+      "  VRF Proof   : %s\n"
+      "  VRF Beta    : %s",
+      producer_refs[0].public_address,
+      producer_refs[0].IP_address,
+      producer_refs[0].vrf_public_key,
+      producer_refs[0].random_buf_hex,
+      producer_refs[0].vrf_proof_hex,
+      producer_refs[0].vrf_beta_hex);
 
 
   INFO_STAGE_PRINT("Starting block production for block %s", current_block_height);
