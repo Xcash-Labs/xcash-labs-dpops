@@ -269,13 +269,6 @@ for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     return ROUND_ERROR;
   }
 
-
-  return ROUND_ERROR;
-
-
-
-
-
   if (producer_indx > 0) {
     pthread_mutex_lock(&majority_vrf_lock);
     // For now there is only one block producer and no backups
