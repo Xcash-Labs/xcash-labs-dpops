@@ -116,6 +116,7 @@ void server_received_msg_get_sync_info(server_client_t *client, const char *MESS
     return;
 }
 
+/*
 void server_received_msg_get_block_producers(server_client_t *client, const char *MESSAGE)
 {
     (void)MESSAGE;
@@ -162,3 +163,4 @@ void server_received_msg_get_block_producers(server_client_t *client, const char
 
     cJSON_Delete(reply_json);  // Cleanup
 }
+*/

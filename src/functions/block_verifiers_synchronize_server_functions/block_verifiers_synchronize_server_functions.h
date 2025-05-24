@@ -14,7 +14,7 @@
 #include "xcash_message.h"
 
 //void server_received_msg_get_block_hash(server_client_t* client, const char* MESSAGE);
-void server_received_msg_get_block_producers(server_client_t* client, const char* MESSAGE);
+//void server_received_msg_get_block_producers(server_client_t* client, const char* MESSAGE);
 void server_received_msg_get_sync_info(server_client_t* client, const char* MESSAGE);
 //void server_receive_data_socket_get_current_block_height(const char* CLIENT_IP_ADDRESS);   //  ???????????
 //void server_receive_data_socket_send_current_block_height(const char* MESSAGE);
