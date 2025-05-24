@@ -124,7 +124,7 @@ void server_receive_data_socket_node_to_node_vote_majority(const char* MESSAGE) 
       parse_json_data(MESSAGE, "vrf_random", random_buf_hex, sizeof(random_buf_hex)) == XCASH_ERROR ||
       parse_json_data(MESSAGE, "vrf_proof", vrf_proof_hex, sizeof(vrf_proof_hex)) == XCASH_ERROR ||
       parse_json_data(MESSAGE, "vrf_beta", vrf_beta_hex, sizeof(vrf_beta_hex)) == XCASH_ERROR ||
-      parse_json_data(MESSAGE, "block-height", block_height, sizeof(block_height)) == XCASH_ERROR) {
+      parse_json_data(MESSAGE, "block_height", block_height, sizeof(block_height)) == XCASH_ERROR) {
     ERROR_PRINT("Could not parse the block_verifiers_to_block_verifiers_vrf_data");
     return;
   }
