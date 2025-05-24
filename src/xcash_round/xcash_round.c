@@ -220,7 +220,8 @@ for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
           current_block_verifiers_list.block_verifiers_vrf_public_key_hex[i],
           current_block_verifiers_list.block_verifiers_random_hex[i],
           current_block_verifiers_list.block_verifiers_vrf_proof_hex[i],
-          current_block_verifiers_list.block_verifiers_vrf_beta_hex[i]
+          current_block_verifiers_list.block_verifiers_vrf_beta_hex[i],
+          current_block_verifiers_list.block_verifiers_vote_total[i]
         );
     }
 }
@@ -269,20 +270,16 @@ for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     return ROUND_ERROR;
   }
 
-  if (producer_indx > 0) {
-    pthread_mutex_lock(&majority_vrf_lock);
-    // For now there is only one block producer and no backups
-    memset(&producer_refs, 0, sizeof(producer_refs));
-    // Populate the reference list with the selected producer
-    strcpy(producer_refs[0].public_address, current_block_verifiers_list.block_verifiers_public_address[producer_indx]);
-    strcpy(producer_refs[0].IP_address, current_block_verifiers_list.block_verifiers_IP_address[producer_indx]);
-    strcpy(producer_refs[0].vrf_public_key, current_block_verifiers_list.block_verifiers_vrf_public_key_hex[producer_indx]);
-    strcpy(producer_refs[0].random_buf_hex, current_block_verifiers_list.block_verifiers_random_hex[producer_indx]);
-    strcpy(producer_refs[0].vrf_proof_hex, current_block_verifiers_list.block_verifiers_vrf_proof_hex[producer_indx]);
-    strcpy(producer_refs[0].vrf_beta_hex, current_block_verifiers_list.block_verifiers_vrf_beta_hex[producer_indx]);
-    pthread_mutex_unlock(&majority_vrf_lock);
+  // Sync start
+  if (sync_block_verifiers_minutes_and_seconds(0, 45) == XCASH_ERROR) {
+    INFO_PRINT("Failed to Confirm Block Creator in the aloted time, skipping roung");
+    return ROUND_SKIP;
   }
   atomic_store(&wait_for_vote_init, false);
+
+
+
+  // need to tally up votes
 
   INFO_PRINT(
       "Producer Info:\n"
@@ -299,11 +296,23 @@ for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
       producer_refs[0].vrf_proof_hex,
       producer_refs[0].vrf_beta_hex);
 
-  // Sync start
-  if (sync_block_verifiers_minutes_and_seconds(0, 45) == XCASH_ERROR) {
-    INFO_PRINT("Failed to Confirm Block Creator in the aloted time, skipping roung");
-    return ROUND_SKIP;
+  if (producer_indx > 0) {
+    pthread_mutex_lock(&majority_vrf_lock);
+    // For now there is only one block producer and no backups
+    memset(&producer_refs, 0, sizeof(producer_refs));
+    // Populate the reference list with the selected producer
+    strcpy(producer_refs[0].public_address, current_block_verifiers_list.block_verifiers_public_address[producer_indx]);
+    strcpy(producer_refs[0].IP_address, current_block_verifiers_list.block_verifiers_IP_address[producer_indx]);
+    strcpy(producer_refs[0].vrf_public_key, current_block_verifiers_list.block_verifiers_vrf_public_key_hex[producer_indx]);
+    strcpy(producer_refs[0].random_buf_hex, current_block_verifiers_list.block_verifiers_random_hex[producer_indx]);
+    strcpy(producer_refs[0].vrf_proof_hex, current_block_verifiers_list.block_verifiers_vrf_proof_hex[producer_indx]);
+    strcpy(producer_refs[0].vrf_beta_hex, current_block_verifiers_list.block_verifiers_vrf_beta_hex[producer_indx]);
+    pthread_mutex_unlock(&majority_vrf_lock);
   }
+
+
+
+
 
   INFO_STAGE_PRINT("Starting block production for block %s", current_block_height);
   int block_creation_result = block_verifiers_create_block();
