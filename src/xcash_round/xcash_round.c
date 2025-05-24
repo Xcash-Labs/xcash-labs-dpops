@@ -251,7 +251,7 @@ for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
 
   responses = NULL;
   char* vote_message = NULL;
-  if (block_verifiers_create_vote_majority_result(&vote_message)) {
+  if (block_verifiers_create_vote_majority_result(&vote_message, producer_indx)) {
     if (xnet_send_data_multi(XNET_DELEGATES_ALL_ONLINE, vote_message, &responses)) {
       free(vote_message);
       cleanup_responses(responses);
