@@ -11,11 +11,7 @@
 #include "string_functions.h"
 #include "network_security_functions.h"
 
-/*
------------------------------------------------------------------------------------------------------------
-Function prototypes
------------------------------------------------------------------------------------------------------------
-*/
-int server_limit_IP_addresses(const int SETTINGS, const char* IP_ADDRESS);
-int server_limit_public_addresses(const int SETTINGS, const char* MESSAGE);
+int server_limit_IP_addresses(limit_action_t action, const char* IP_ADDRESS);
+int server_limit_public_addresses(limit_action_t action, const char* MESSAGE);
+
 #endif
