@@ -422,10 +422,10 @@ bool block_verifiers_create_vote_majority_result(char **message, int producer_in
     if (!message)
         return false;
 
-    if(strlen(current_block_verifiers_list.block_verifiers_vrf_public_key_hex[i]) == 0 ||
-      strlen(current_block_verifiers_list.block_verifiers_random_hex[i]) == 0
-      strlen(current_block_verifiers_list.block_verifiers_vrf_proof_hex[i]) == 0
-      strlen(current_block_verifiers_list.block_verifiers_vrf_beta_hex[i]) == 0) {
+    if(strlen(current_block_verifiers_list.block_verifiers_vrf_public_key_hex[producer_indx]) == 0 ||
+      strlen(current_block_verifiers_list.block_verifiers_random_hex[producer_indx]) == 0
+      strlen(current_block_verifiers_list.block_verifiers_vrf_proof_hex[producer_indx]) == 0
+      strlen(current_block_verifiers_list.block_verifiers_vrf_beta_hex[producer_indx]) == 0) {
         ERROR_PRINT("Missing VRF data for producer");
         return false;
     }
