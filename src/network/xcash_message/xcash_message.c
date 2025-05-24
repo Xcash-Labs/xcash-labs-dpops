@@ -477,12 +477,10 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
     if (server_limit_IP_addresses(1, client->client_ip) == 1) {
 
 
-
-      INFO_PRINT("Recieved: %s", data);
-
-
       server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(data);
       server_limit_IP_addresses(3, client->client_ip);
+
+
     }
     break;
 
@@ -496,7 +494,7 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
     case XMSG_NODES_TO_NODES_VOTE_MAJORITY_RESULTS:
       if (server_limit_public_addresses(1, data) == 1) {
         server_receive_data_socket_node_to_node_majority(data);
-        server_limit_public_addresses(3, data);
+//        server_limit_public_addresses(3, data);
       }
      break;
 
