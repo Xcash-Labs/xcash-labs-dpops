@@ -211,7 +211,7 @@ for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
           "  VRF Public Key:   %s\n"
           "  Random Hex:       %s\n"
           "  VRF Proof Hex:    %s\n"
-          "  VRF Beta Hex:     %s\n",
+          "  VRF Beta Hex:     %s\n"
           "  VRF Vote count:   %d\n",
           i,
           current_block_verifiers_list.block_verifiers_name[i],
@@ -293,7 +293,7 @@ for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
           "  VRF Public Key:   %s\n"
           "  Random Hex:       %s\n"
           "  VRF Proof Hex:    %s\n"
-          "  VRF Beta Hex:     %s\n",
+          "  VRF Beta Hex:     %s\n"
           "  VRF Vote count:   %d\n",
           i,
           current_block_verifiers_list.block_verifiers_name[i],
