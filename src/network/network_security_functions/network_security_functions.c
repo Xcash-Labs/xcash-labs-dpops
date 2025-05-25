@@ -168,7 +168,7 @@ int verify_data(const char *message)
   }
 
   char escaped[MEDIUM_BUFFER_SIZE] = {0};
-  strncpy(escaped, message, MEDIUM_BUFFER_SIZE);
+  strncpy(escaped, raw_data, MEDIUM_BUFFER_SIZE);
   string_replace(escaped, MEDIUM_BUFFER_SIZE, "\"", "\\\"");
 
 
