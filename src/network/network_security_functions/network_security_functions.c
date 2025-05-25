@@ -149,8 +149,7 @@ int verify_data(const char *message)
   if (parse_json_data(message, "XCASH_DPOPS_signature", signature, sizeof(signature)) != 1 ||
       parse_json_data(message, "public_address", ck_public_address, sizeof(ck_public_address)) != 1 ||
       parse_json_data(message, "v_previous_block_hash", ck_previous_block_hash, sizeof(ck_previous_block_hash)) != 1 ||
-      parse_json_data(message, "v_current_round_part", ck_round_part, sizeof(ck_round_part)) != 1 ||
-      parse_json_data(message, "v_random_data", random_data, sizeof(random_data)) != 1) {
+      parse_json_data(message, "v_current_round_part", ck_round_part, sizeof(ck_round_part)) != 1) {
     ERROR_PRINT("verify_data: Failed to parse one or more required fields.");
     return XCASH_ERROR;
   }
@@ -160,6 +159,11 @@ int verify_data(const char *message)
     return XCASH_ERROR;
   }
 
+  if (strcmp(previous_block_hash, ck_previous_block_hash) != 0) {
+    ERROR_PRINT("Failed Signature Verification, previous block hash is not valid);
+    return XCASH_ERROR;
+  }
+  
   strncpy(raw_data, message, sizeof(raw_data));
 
   char *sig_pos = strstr(raw_data, ",\"XCASH_DPOPS_signature\"");
