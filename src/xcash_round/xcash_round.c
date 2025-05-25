@@ -415,12 +415,12 @@ void start_block_production(void) {
       continue;
     }
 
-    round_result = process_round();
-    // set these up for next round
     current_block_height[0] = '\0';
     delegate_db_hash_mismatch = 0;
     atomic_store(&wait_for_vrf_init, true);
     atomic_store(&wait_for_block_height_init, true);
+
+    round_result = process_round();
 
     if (round_result != ROUND_OK) {
       for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
