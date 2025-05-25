@@ -60,7 +60,7 @@ int sign_data(char *message)
     if (send_http_request(response, MEDIUM_BUFFER_SIZE, XCASH_WALLET_IP, "/json_rpc", XCASH_WALLET_PORT,
                           "POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH,
                           request, SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) <= 0 ||
-        !parse_json_data(response, "result .signature", signature, MEDIUM_BUFFER_SIZE)) {
+        !parse_json_data(response, "result.signature", signature, MEDIUM_BUFFER_SIZE)) {
         return handle_error("sign_data", "Wallet signature failed", signature, payload, request);
     }
 
