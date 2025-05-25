@@ -142,7 +142,7 @@ int verify_data(const char *message)
   char ck_previous_block_hash[BLOCK_HASH_LENGTH + 1] = {0};
   char raw_data[MEDIUM_BUFFER_SIZE] = {0};
 
-  char request[MEDIUM_BUFFER_SIZE * 2] = {0};
+  char request[MEDIUM_BUFFER_SIZE * 3] = {0};
   char response[MEDIUM_BUFFER_SIZE] = {0};
 
   // Extract all required fields
