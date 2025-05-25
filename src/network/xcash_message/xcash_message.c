@@ -17,11 +17,11 @@ bool is_walletsign_type(xcash_msg_t msg) {
 }
 
 // Sign a message in message_buf using wallet's private key
-bool sign_message_by_wallet(char* message_buf, size_t message_buf_size) {
-  (void)message_buf_size;
-  int result = sign_data(message_buf);
-  return (result == 1);
-}
+//bool sign_message_by_wallet(char* message_buf, size_t message_buf_size) {
+//  (void)message_buf_size;
+//  int result = sign_data(message_buf);
+//  return (result == 1);
+//}
 
 // Create a message with key-value parameters
 char* create_message_param_list(xcash_msg_t msg, const char** pair_params) {
@@ -46,9 +46,12 @@ char* create_message_param_list(xcash_msg_t msg, const char** pair_params) {
 
   strncat(message_buf, "\r\n}", sizeof(message_buf) - strlen(message_buf) - 1);
 
-  // If message is signed
+  // Check if message is signed
+
+  INFO_PRINT("Message: %s", xcash_net_messages[msg]);
+  
   if (is_walletsign_type(msg)) {
-    if (!sign_message_by_wallet(message_buf, sizeof(message_buf))) {
+    if (sign_message(message_buf) != XCASH_OK) {
       ERROR_PRINT("Failed to sign message: %s", xcash_net_messages[msg]);
       return NULL;
     }
