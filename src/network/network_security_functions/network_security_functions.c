@@ -1,13 +1,14 @@
 #include "network_security_functions.h"
 
 // Helper function for error handling
-int handle_error(const char *function_name, const char *message, char *result, char *string)
+int handle_error(const char *function_name, const char *message, char *buf1, char *buf2, char *buf3)
 {
   ERROR_PRINT("%s: %s", function_name, message);
-  free(result);
-  free(string);
+  if (buf1) free(buf1);
+  if (buf2) free(buf2);
+  if (buf3) free(buf3);
   return XCASH_ERROR;
-} 
+}
 
 /*---------------------------------------------------------------------------------------------------------
 Name: sign_data
@@ -33,22 +34,18 @@ int sign_data(char *message)
 
     // Generate random data
     if (!random_string(random_data, RANDOM_STRING_LENGTH)) {
-        return handle_error("sign_data", "Failed to generate random data", signature, payload);
+        return handle_error("sign_data", "Failed to generate random data", signature, payload, request);
     }
 
     // Step 1: Build the full JSON message to be signed
-    snprintf(message, MEDIUM_BUFFER_SIZE,
-        "{"
-        "\"v_public_address\":\"%s\","
-        "\"v_previous_block_hash\":\"%s\","
-        "\"v_current_round_part\":\"%s\","
-        "\"v_random_data\":\"%.*s\""
-        "}",
-        xcash_wallet_public_address,
-        previous_block_hash,
-        current_round_part,
-        RANDOM_STRING_LENGTH, random_data
-    );
+    snprintf(message + strlen(message) - 1, MEDIUM_BUFFER_SIZE - strlen(message),
+      ",\"v_previous_block_hash\":\"%s\","
+      "\"v_current_round_part\":\"%s\","
+      "\"v_random_data\":\"%.*s\""
+      "}",
+      previous_block_hash,
+      current_round_part,
+      RANDOM_STRING_LENGTH, random_data);
 
     // Step 2: Escape the message for the JSON-RPC request
     strncpy(payload, message, MEDIUM_BUFFER_SIZE);
@@ -64,12 +61,12 @@ int sign_data(char *message)
                           "POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH,
                           request, SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) <= 0 ||
         !parse_json_data(response, "signature", signature, MEDIUM_BUFFER_SIZE)) {
-        return handle_error("sign_data", "Wallet signature failed", signature, payload);
+        return handle_error("sign_data", "Wallet signature failed", signature, payload, request));
     }
 
     if (strlen(signature) != XCASH_SIGN_DATA_LENGTH ||
         strncmp(signature, XCASH_SIGN_DATA_PREFIX, sizeof(XCASH_SIGN_DATA_PREFIX) - 1) != 0) {
-        return handle_error("sign_data", "Invalid wallet signature format", signature, payload);
+        return handle_error("sign_data", "Invalid wallet signature format", signature, payload, request));
     }
 
     // Step 4: Append the signature to the original message
@@ -150,7 +147,7 @@ int verify_data(const char *message)
 
   // Extract all required fields
   if (parse_json_data(message, "XCASH_DPOPS_signature", signature, sizeof(signature)) != 1 ||
-      parse_json_data(message, "v_public_address", ck_public_address, sizeof(ck_public_address)) != 1 ||
+      parse_json_data(message, "public_address", ck_public_address, sizeof(ck_public_address)) != 1 ||
       parse_json_data(message, "v_previous_block_hash", ck_previous_block_hash, sizeof(ck_previous_block_hash)) != 1 ||
       parse_json_data(message, "v_current_round_part", ck_round_part, sizeof(ck_round_part)) != 1 ||
       parse_json_data(message, "v_random_data", random_data, sizeof(random_data)) != 1) {
@@ -161,12 +158,10 @@ int verify_data(const char *message)
   // Rebuild original signed message
   snprintf(raw_data, sizeof(raw_data),
            "{"
-           "\"v_public_address\":\"%s\","
            "\"v_previous_block_hash\":\"%s\","
            "\"v_current_round_part\":\"%s\","
            "\"v_random_data\":\"%s\""
            "}",
-           ck_public_address,
            ck_previous_block_hash,
            ck_round_part,
            random_data);

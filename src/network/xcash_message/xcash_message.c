@@ -39,7 +39,7 @@ char* create_message_param_list(xcash_msg_t msg, const char** pair_params) {
     const char* param_key = pair_params[current_pair_index++];
     const char* param_value = pair_params[current_pair_index++];
     if (!param_value) {
-      DEBUG_PRINT("Mismatched param key/value for message %s", xcash_net_messages[msg]);
+      ERROR_PRINT("Mismatched param key/value for message %s", xcash_net_messages[msg]);
       break;
     }
     snprintf(message_buf + message_offset, sizeof(message_buf) - message_offset,
@@ -47,7 +47,7 @@ char* create_message_param_list(xcash_msg_t msg, const char** pair_params) {
     message_offset = (int)strlen(message_buf);
   }
 
-  strncat(message_buf, "\r\n}\r\n", sizeof(message_buf) - strlen(message_buf) - 1);
+  strncat(message_buf, "\r\n}", sizeof(message_buf) - strlen(message_buf) - 1);
 
   // If message is signed
   if (is_walletsign_type(msg)) {
@@ -97,7 +97,8 @@ char* create_message_args(xcash_msg_t msg, va_list args) {
   if (!message) {
     free(param_list);
     return NULL;
-}
+  }
+
   free(param_list);
   return message;
 }
@@ -197,7 +198,6 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
   char trans_type[128] = {0};
 
   if (strstr(data, "{") && strstr(data, "}")) {
-    DEBUG_PRINT("Received JSON message");
   
     cJSON *json_obj = cJSON_Parse(data);
     if (!json_obj) {
@@ -219,8 +219,6 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
     ERROR_PRINT("Message does not match the expected format");
     return;
   }
-
-  DEBUG_PRINT("Transaction Type: %s", trans_type);
 
   xcash_msg_t msg_type = get_message_type(trans_type);
 
