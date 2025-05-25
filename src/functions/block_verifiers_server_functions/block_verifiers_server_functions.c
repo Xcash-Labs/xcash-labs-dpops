@@ -41,7 +41,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
   }
 
   if (strcmp(block_height, current_block_height) != 0) {
-      INFO_PRINT("Skipping VRF data: current block_height [%s] does not match expected [%s]", current_block_height, block_height);
+      ERROR_PRINT("Skipping VRF data: current block_height [%s] does not match expected [%s]", current_block_height, block_height);
       return; 
   }
 
@@ -128,14 +128,6 @@ void server_receive_data_socket_node_to_node_vote_majority(const char* MESSAGE) 
     ERROR_PRINT("Could not parse the block_verifiers_to_block_verifiers_vrf_data");
     return;
   }
-
-  INFO_PRINT("Parsed public_address: %s", public_address);
-  INFO_PRINT("Parsed proposed_producer: %s", public_address_producer);
-  INFO_PRINT("Parsed vrf_public_key: %s", vrf_public_key_data);
-  INFO_PRINT("Parsed random_data: %s", random_buf_hex);
-  INFO_PRINT("Parsed vrf_proof: %s", vrf_proof_hex);
-  INFO_PRINT("Parsed vrf_beta: %s", vrf_beta_hex);
-  INFO_PRINT("Parsed block_height: %s", block_height);
 
   for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     if (strcmp(public_address, current_block_verifiers_list.block_verifiers_public_address[i]) == 0) {
