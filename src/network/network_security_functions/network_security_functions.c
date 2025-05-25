@@ -167,7 +167,10 @@ int verify_data(const char *message)
   }
 
   char escaped[MEDIUM_BUFFER_SIZE * 2] = {0};
-  //escape_json_string(raw_data, escaped, sizeof(escaped));
+
+  INFO_PRINT("Request 1: %s", request);
+
+  escape_json_string(raw_data, escaped, sizeof(escaped));
 
   // Prepare wallet verify request
   snprintf(request, sizeof(request),
