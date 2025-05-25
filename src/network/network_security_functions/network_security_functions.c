@@ -66,7 +66,7 @@ int sign_data(char *message)
 
     if (strlen(signature) != XCASH_SIGN_DATA_LENGTH ||
         strncmp(signature, XCASH_SIGN_DATA_PREFIX, sizeof(XCASH_SIGN_DATA_PREFIX) - 1) != 0) {
-        return handle_error("sign_data", "Invalid wallet signature format", signature, payload, request));
+        return handle_error("sign_data", "Invalid wallet signature format", signature, payload, request);
     }
 
     // Step 4: Append the signature to the original message
