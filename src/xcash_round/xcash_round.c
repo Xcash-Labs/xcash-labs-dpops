@@ -295,7 +295,7 @@ for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
           "  VRF Proof Hex:    %s\n"
           "  VRF Beta Hex:     %s\n"
           "  VRF Vote count:   %d\n"
-          "  Voted:            %zu\n",
+          "  Voted:            %u\n",
           i,
           current_block_verifiers_list.block_verifiers_name[i],
           current_block_verifiers_list.block_verifiers_public_address[i],
