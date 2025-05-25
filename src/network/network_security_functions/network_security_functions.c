@@ -155,8 +155,8 @@ int verify_data(const char *message)
     return XCASH_ERROR;
   }
 
-  if (current_round_part != ck_round_part) {
-    ERROR_PRINT("Failed Signature Verification, round part timing issue.");
+  if (strcmp(current_round_part, ck_round_part) != 0) {
+    ERROR_PRINT("Failed Signature Verification, round part timing issue: current round %s - message round %s.". current_round_part, ck_round_part);
     return XCASH_ERROR;
   }
 
