@@ -137,16 +137,6 @@ void server_receive_data_socket_node_to_node_vote_majority(const char* MESSAGE) 
   INFO_PRINT("Parsed vrf_beta: %s", vrf_beta_hex);
   INFO_PRINT("Parsed block_height: %s", block_height);
 
-          current_block_verifiers_list.block_verifiers_name[i],
-          current_block_verifiers_list.block_verifiers_public_address[i],
-          current_block_verifiers_list.block_verifiers_public_key[i],
-          current_block_verifiers_list.block_verifiers_IP_address[i],
-          current_block_verifiers_list.block_verifiers_vrf_public_key_hex[i],
-          current_block_verifiers_list.block_verifiers_random_hex[i],
-          current_block_verifiers_list.block_verifiers_vrf_proof_hex[i],
-          current_block_verifiers_list.block_verifiers_vrf_beta_hex[i],
-          current_block_verifiers_list.block_verifiers_vote_total[i]
-
   for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     if (strcmp(public_address, current_block_verifiers_list.block_verifiers_public_address[i]) == 0) {
       // Found matching public address, now compare all other fields
