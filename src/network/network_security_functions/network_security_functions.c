@@ -61,7 +61,7 @@ int sign_data(char *message)
                           "POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH,
                           request, SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) <= 0 ||
         !parse_json_data(response, "signature", signature, MEDIUM_BUFFER_SIZE)) {
-        return handle_error("sign_data", "Wallet signature failed", signature, payload, request));
+        return handle_error("sign_data", "Wallet signature failed", signature, payload, request);
     }
 
     if (strlen(signature) != XCASH_SIGN_DATA_LENGTH ||
