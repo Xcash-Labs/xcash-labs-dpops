@@ -1,10 +1,10 @@
 #include "xcash_message.h"
 
 const xcash_msg_t WALLET_SIGN_MESSAGES[] = {
+    XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_VRF_DATA,
     XMSG_NODES_TO_NODES_VOTE_MAJORITY_RESULTS,
     XMSG_NONE};
 const size_t WALLET_SIGN_MESSAGES_COUNT = ARRAY_SIZE(WALLET_SIGN_MESSAGES) - 1;
-
 
 // Checks if a message requires wallet signature
 bool is_walletsign_type(xcash_msg_t msg) {

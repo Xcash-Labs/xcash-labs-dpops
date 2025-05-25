@@ -185,8 +185,6 @@ int verify_data(const char *message)
            "\"signature\":\"%s\"}}",
            escaped, ck_public_address, signature);
 
-  INFO_PRINT("Request: %s", request);
-
   if (send_http_request(response, sizeof(response), XCASH_WALLET_IP, "/json_rpc", XCASH_WALLET_PORT,
                         "POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH,
                         request, SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) <= 0) {
@@ -197,7 +195,6 @@ int verify_data(const char *message)
   // Parse response
   char result[8] = {0};
   if (parse_json_data(response, "result.good", result, sizeof(result)) == 1 && strcmp(result, "true") == 0) {
-    INFO_PRINT("Signature verified");
     return XCASH_OK;
   }
 
