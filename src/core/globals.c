@@ -48,7 +48,6 @@ atomic_bool server_running = true;
 
 atomic_bool wait_for_vrf_init = true;
 atomic_bool wait_for_block_height_init = true;
-atomic_bool wait_for_vote_init = true;
 
 pthread_t server_thread;
 

@@ -129,15 +129,6 @@ void server_receive_data_socket_node_to_node_vote_majority(const char* MESSAGE) 
     return;
   }
 
-  int wait_seconds = 0;
-  while (atomic_load(&wait_for_vote_init) && wait_seconds < DELAY_EARLY_TRANSACTIONS_MAX) {
-    sleep(1);
-    wait_seconds++;
-  }
-  if (atomic_load(&wait_for_vote_init)) {
-    ERROR_PRINT("Timed out waiting for vote init in server_receive_data_socket_node_to_node_vote_majority");
-  }
-
   INFO_PRINT("Parsed public_address: %s", public_address);
   INFO_PRINT("Parsed proposed_producer: %s", public_address_producer);
   INFO_PRINT("Parsed vrf_public_key: %s", vrf_public_key_data);

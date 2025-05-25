@@ -255,7 +255,7 @@ for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
   char* vote_message = NULL;
   if (block_verifiers_create_vote_majority_result(&vote_message, producer_indx)) {
 
-    INFO_PRINT("Vote message:\n%s", vote_message);
+    INFO_PRINT("Vote message:%s", vote_message);
 
     if (xnet_send_data_multi(XNET_DELEGATES_ALL_ONLINE, vote_message, &responses)) {
       free(vote_message);
@@ -279,7 +279,6 @@ for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     INFO_PRINT("Failed to Confirm Block Creator in the aloted time, skipping roung");
     return ROUND_SKIP;
   }
-  atomic_store(&wait_for_vote_init, false);
 
 
 
@@ -422,7 +421,6 @@ void start_block_production(void) {
     delegate_db_hash_mismatch = 0;
     atomic_store(&wait_for_vrf_init, true);
     atomic_store(&wait_for_block_height_init, true);
-    atomic_store(&wait_for_vote_init, true);
 
     if (round_result != ROUND_OK) {
       for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
