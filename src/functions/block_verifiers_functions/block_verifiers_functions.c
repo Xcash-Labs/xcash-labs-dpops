@@ -186,8 +186,8 @@ int block_verifiers_create_block(void) {
   }
 
   // Final step - Update DB
-  INFO_STAGE_PRINT("Part 11 - Update DB");
-  snprintf(current_round_part, sizeof(current_round_part), "%d", 11);
+  INFO_STAGE_PRINT("Part 12 - Update DB");
+  snprintf(current_round_part, sizeof(current_round_part), "%d", 12);
     // update status, database (reserve_bytes and node online status)...
 
     // how do other database get updated?  wait they all know the winning block producer
