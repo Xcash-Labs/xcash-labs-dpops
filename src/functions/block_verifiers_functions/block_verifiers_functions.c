@@ -170,9 +170,6 @@ int block_verifiers_create_block(void) {
       return ROUND_ERROR;
     }
 
-
-      return ROUND_ERROR;
-
     // Part 10 - Submit block
     INFO_STAGE_PRINT("Part 11 - Submit the Block");
     snprintf(current_round_part, sizeof(current_round_part), "%d", 11);
