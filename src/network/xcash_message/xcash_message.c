@@ -51,7 +51,7 @@ char* create_message_param_list(xcash_msg_t msg, const char** pair_params) {
   INFO_PRINT("Message: %s", xcash_net_messages[msg]);
   
   if (is_walletsign_type(msg)) {
-    if (sign_message(message_buf) != XCASH_OK) {
+    if (sign_data(message_buf) != XCASH_OK) {
       ERROR_PRINT("Failed to sign message: %s", xcash_net_messages[msg]);
       return NULL;
     }
