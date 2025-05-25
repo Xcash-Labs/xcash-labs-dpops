@@ -105,8 +105,8 @@
 #define UV_CONNECTION_TIMEOUT 4000
 
 
-#define CONNECT_TIMEOUT_SEC 5
-#define RECEIVE_TIMEOUT_SEC 5
+#define CONNECT_TIMEOUT_SEC 3
+#define RECEIVE_TIMEOUT_SEC 3
 
 
 // ===================== Hash and Key Lengths =====================
