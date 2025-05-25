@@ -236,13 +236,11 @@ bool submit_block_template(const char* DATA)
                         request_json, BLOCK_TIMEOUT_SECONDS) > 0)
   {
     // Check if there's an error in the response
-    if (parse_json_data(response, "error.message", result, sizeof(result)) == 1) {
-      DEBUG_PRINT("Block submission returned error: %s", result);
-      return XCASH_ERROR;
+    if (parse_json_data(response, "result.status", result, sizeof(result)) == 1) {
+      if (strcmp(result, "OK") == 0) {
+        return XCASH_OK;
+      }
     }
-
-    DEBUG_PRINT("Block submitted successfully.");
-    return XCASH_OK;
   }
 
   ERROR_PRINT("Could not submit the block template.");

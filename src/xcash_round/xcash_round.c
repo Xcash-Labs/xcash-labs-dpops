@@ -66,7 +66,6 @@ int select_block_producer_from_vrf(void) {
  */
 xcash_round_result_t process_round(void) {
   // Get the current block height
-  INFO_PRINT("Creating Block: %s", current_block_height);
   INFO_STAGE_PRINT("Part 1 - Get Current Block Height");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 2);
   if (get_current_block_height(current_block_height) != XCASH_OK) {
@@ -74,6 +73,7 @@ xcash_round_result_t process_round(void) {
     return ROUND_ERROR;
   }
   atomic_store(&wait_for_block_height_init, false);
+  INFO_STAGE_PRINT("Attempting To Create Block: %s", current_block_height);
 
   INFO_STAGE_PRINT("Part 2 - Check Delegates Data, Get Previous Block Hash, and Delegates Hash");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 2);
@@ -419,13 +419,13 @@ void start_block_production(void) {
     }
   }
 
-  // set up delegates for round
 
   // last, current, and next delegtes load in fill_delegates_from_db - clean up not needed --------------------
 
+
+  // set up delegates for round
   if (!fill_delegates_from_db()) {
-    ERROR_PRINT("Failed to load and organize delegates from DB");
-    // maybe sync the delegates collection and try again... Then fatal
+    FATAL_ERROR_EXIT("Failed to load and organize delegates for starting round, Possible problem with Mongodb");
   }
 
   // Start production loop
