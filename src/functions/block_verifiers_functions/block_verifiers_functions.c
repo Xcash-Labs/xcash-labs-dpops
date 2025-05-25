@@ -177,9 +177,7 @@ int block_verifiers_create_block(void) {
       return ROUND_ERROR;
     }
 
-    INFO_PRINT_STATUS_OK("Block signature sent");
-
-
+    INFO_PRINT_STATUS_OK("Block signature sent ");
   }
 
   // Final step - Update DB
@@ -188,8 +186,6 @@ int block_verifiers_create_block(void) {
     // update status, database (reserve_bytes and node online status)...
 
     // how do other database get updated?  wait they all know the winning block producer
-
-      return ROUND_ERROR;
 
   return ROUND_OK;
 }

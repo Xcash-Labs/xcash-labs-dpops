@@ -377,10 +377,11 @@ for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
   int block_creation_result = block_verifiers_create_block();
 
   if (block_creation_result == ROUND_OK) {
-    INFO_PRINT_STATUS_OK("Block %s created successfully", current_block_height);
+    INFO_PRINT_STATUS_OK("Round Successfully Completed For Block %s", current_block_height);
   } else {
-    INFO_PRINT_STATUS_FAIL("Block %s was not created", current_block_height);
+    INFO_PRINT("Round skipped by delegate or block round %s was unsuccessful.", current_block_height);
   }
+  INFO_PRINT(" ");
 
   return (xcash_round_result_t)block_creation_result;
 }
