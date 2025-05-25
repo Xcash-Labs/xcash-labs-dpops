@@ -324,12 +324,12 @@ for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
       max_votes);
   } else {
     ERROR_PRINT("No votes recorded");
-    ROUND_ERROR
+    return ROUND_ERROR;
   }
 
   if (max_index != producer_indx) {
     ERROR_PRINT("Producer selected by this delegate does not match consensus");
-    ROUND_ERROR
+    return ROUND_ERROR;
   }
 
   if (producer_indx > 0) {
