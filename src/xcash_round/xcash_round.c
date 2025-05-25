@@ -250,6 +250,7 @@ for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
   
   pthread_mutex_lock(&majority_vote_lock);
   current_block_verifiers_list.block_verifiers_vote_total[producer_indx] += 1;
+  current_block_verifiers_list.block_verifiers_voted[producer_indx] = 1;
   pthread_mutex_unlock(&majority_vote_lock);
 
   responses = NULL;
@@ -277,10 +278,6 @@ for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     INFO_PRINT("Failed to Confirm Block Creator in the aloted time, skipping roung");
     return ROUND_SKIP;
   }
-
-
-
-  // need to tally up votes
 
   for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     if (current_block_verifiers_list.block_verifiers_public_address[i][0] != '\0') {
@@ -326,9 +323,14 @@ for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
       current_block_verifiers_list.block_verifiers_public_address[max_index],
       max_votes);
   } else {
-    WARNING_PRINT("No votes recorded");
+    ERROR_PRINT("No votes recorded");
+    ROUND_ERROR
   }
 
+  if (max_index != producer_indx) {
+    ERROR_PRINT("Producer selected by this delegate does not match consensus");
+    ROUND_ERROR
+  }
 
   if (producer_indx > 0) {
     pthread_mutex_lock(&majority_vrf_lock);

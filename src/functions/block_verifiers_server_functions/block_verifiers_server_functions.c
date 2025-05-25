@@ -140,7 +140,9 @@ void server_receive_data_socket_node_to_node_vote_majority(const char* MESSAGE) 
   for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     if (strcmp(public_address, current_block_verifiers_list.block_verifiers_public_address[i]) == 0) {
       if (current_block_verifiers_list.block_verifiers_voted[i] == 0) {
+        pthread_mutex_lock(&majority_vote_lock);
         current_block_verifiers_list.block_verifiers_voted[i] = 1;
+        pthread_mutex_unlock(&majority_vote_lock);
       } else {
         WARNING_PRINT("Verifier %s, has already voted and can not vote again", public_address);
         return;
