@@ -143,7 +143,7 @@ void server_receive_data_socket_node_to_node_vote_majority(const char* MESSAGE) 
 // need to verify more info..... later
 
   for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
-    if (strncmp(current_block_verifiers_list.block_verifiers_public_address[i], public_address, XCASH_WALLET_LENGTH) == 0) {
+    if (strncmp(current_block_verifiers_list.block_verifiers_public_address[i], public_address_producer, XCASH_WALLET_LENGTH) == 0) {
       current_block_verifiers_list.block_verifiers_vote_total[i] += 1;
       INFO_PRINT("Adding 1 to: %s", current_block_verifiers_list.block_verifiers_public_address[i]);
       break;  // Optional: stop after first match
