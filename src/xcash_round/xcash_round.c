@@ -251,7 +251,7 @@ for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
   pthread_mutex_lock(&majority_vote_lock);
   current_block_verifiers_list.block_verifiers_vote_total[producer_indx] += 1;
   for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
-    if (strcmp(public_address, current_block_verifiers_list.block_verifiers_public_address[i]) == 0) {
+    if (strcmp(xcash_wallet_public_address, current_block_verifiers_list.block_verifiers_public_address[i]) == 0) {
       current_block_verifiers_list.block_verifiers_voted[i] = 1;
       break;
     }
