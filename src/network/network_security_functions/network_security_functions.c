@@ -148,11 +148,15 @@ int verify_data(const char *message)
   // Extract all required fields
   if (parse_json_data(message, "XCASH_DPOPS_signature", signature, sizeof(signature)) != 1 ||
       parse_json_data(message, "public_address", ck_public_address, sizeof(ck_public_address)) != 1 ||
-
       parse_json_data(message, "v_previous_block_hash", ck_previous_block_hash, sizeof(ck_previous_block_hash)) != 1 ||
       parse_json_data(message, "v_current_round_part", ck_round_part, sizeof(ck_round_part)) != 1 ||
       parse_json_data(message, "v_random_data", random_data, sizeof(random_data)) != 1) {
     ERROR_PRINT("verify_data: Failed to parse one or more required fields.");
+    return XCASH_ERROR;
+  }
+
+  if (current_round_part != ck_round_part) {
+    ERROR_PRINT("Failed Signature Verification, round part timing issue.");
     return XCASH_ERROR;
   }
 
@@ -170,12 +174,6 @@ int verify_data(const char *message)
   char escaped[MEDIUM_BUFFER_SIZE] = {0};
   strncpy(escaped, raw_data, MEDIUM_BUFFER_SIZE);
   string_replace(escaped, MEDIUM_BUFFER_SIZE, "\"", "\\\"");
-
-
-
-//  escape_json_string(raw_data, escaped, sizeof(escaped));
-
-  INFO_PRINT("Request: %s", escaped);
 
   // Prepare wallet verify request
   snprintf(request, sizeof(request),
@@ -196,7 +194,7 @@ int verify_data(const char *message)
 
   // Parse response
   char result[8] = {0};
-  if (parse_json_data(response, "verified", result, sizeof(result)) == 1 && strcmp(result, "true") == 0) {
+  if (parse_json_data(response, "result.good", result, sizeof(result)) == 1 && strcmp(result, "true") == 0) {
     INFO_PRINT("Signature verified");
     return XCASH_OK;
   }

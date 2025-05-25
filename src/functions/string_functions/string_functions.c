@@ -506,18 +506,3 @@ bool base64_decode(const char* input, uint8_t* output, size_t max_output, size_t
     *decoded_len = (size_t)len;
     return true;
 }
-
-void escape_json_string(const char *input, char *output, size_t output_size)
-{
-    size_t j = 0;
-    for (size_t i = 0; input[i] != '\0'; ++i) {
-        if ((input[i] == '\"' || input[i] == '\\')) {
-            if (j + 2 >= output_size) break; // Leave room for escape + char
-            output[j++] = '\\';
-        } else {
-            if (j + 1 >= output_size) break; // Leave room for just one char
-        }
-        output[j++] = input[i];
-    }
-    output[j] = '\0';
-}
