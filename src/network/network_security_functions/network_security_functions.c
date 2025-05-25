@@ -174,6 +174,8 @@ int verify_data(const char *message)
            "\"signature\":\"%s\"}}",
            raw_data, ck_public_address, signature);
 
+  INFO_PRINT("Request: %s", request);
+
   if (send_http_request(response, sizeof(response), XCASH_WALLET_IP, "/json_rpc", XCASH_WALLET_PORT,
                         "POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH,
                         request, SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) <= 0) {
@@ -188,6 +190,6 @@ int verify_data(const char *message)
     return XCASH_OK;
   }
 
-  ERROR_PRINT("Signature verification failed");
+  WARNING_PRINT("Signature verification failed for transaction");
   return XCASH_ERROR;
 }
