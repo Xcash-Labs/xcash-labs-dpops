@@ -160,14 +160,20 @@ int verify_data(const char *message)
 
   char *sig_pos = strstr(raw_data, ",\"XCASH_DPOPS_signature\"");
   if (sig_pos) {
-    *sig_pos = '\0';  // truncate the signature field
+    *sig_pos = '}';         // Replace start of signature field with closing brace
+    *(sig_pos + 1) = '\0';  // Null-terminate the string
   } else {
     ERROR_PRINT("Signature field not found.");
     return XCASH_ERROR;
   }
 
-  char escaped[MEDIUM_BUFFER_SIZE * 2] = {0};
-  escape_json_string(raw_data, escaped, sizeof(escaped));
+  char escaped[MEDIUM_BUFFER_SIZE] = {0};
+  strncpy(escaped, message, MEDIUM_BUFFER_SIZE);
+  string_replace(escaped, MEDIUM_BUFFER_SIZE, "\"", "\\\"")
+
+
+
+//  escape_json_string(raw_data, escaped, sizeof(escaped));
 
   INFO_PRINT("Request: %s", escaped);
 
