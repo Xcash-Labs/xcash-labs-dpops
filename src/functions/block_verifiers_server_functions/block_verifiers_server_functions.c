@@ -139,44 +139,48 @@ void server_receive_data_socket_node_to_node_vote_majority(const char* MESSAGE) 
 
   for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     if (strcmp(public_address, current_block_verifiers_list.block_verifiers_public_address[i]) == 0) {
-      // Found matching public address, now compare all other fields
-      if (strcmp(vrf_public_key_data, current_block_verifiers_list.block_verifiers_vrf_public_key_hex[i]) != 0) {
-        ERROR_PRINT("Mismatch in vrf_public_key for verifier %s", public_address);
-        return;
-      }
-
-      if (strcmp(random_buf_hex, current_block_verifiers_list.block_verifiers_random_hex[i]) != 0) {
-        ERROR_PRINT("Mismatch in random_data for verifier %s", public_address);
-        return;
-      }
-
-      if (strcmp(vrf_proof_hex, current_block_verifiers_list.block_verifiers_vrf_proof_hex[i]) != 0) {
-        ERROR_PRINT("Mismatch in vrf_proof for verifier %s", public_address);
-        return;
-      }
-
-      if (strcmp(vrf_beta_hex, current_block_verifiers_list.block_verifiers_vrf_beta_hex[i]) != 0) {
-        ERROR_PRINT("Mismatch in vrf_beta for verifier %s", public_address);
-        return;
-      }
-
-      if (strcmp(block_height, current_block_height) != 0) {
-        ERROR_PRINT("Mismatch in block height for verifier %s", public_address);
+      if (current_block_verifiers_list.block_verifiers_voted[i] == 0) {
+        current_block_verifiers_list.block_verifiers_voted[i] = 1;
+      } else {
+        WARNING_PRINT("Verifier %s, has already voted and can not vote again", public_address);
         return;
       }
     }
   }
 
-  pthread_mutex_lock(&majority_vote_lock);
+  if (strcmp(block_height, current_block_height) != 0) {
+    ERROR_PRINT("Mismatch in block height for verifier %s", public_address);
+    return;
+  }
 
   for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
-    if (strncmp(current_block_verifiers_list.block_verifiers_public_address[i], public_address_producer, XCASH_WALLET_LENGTH) == 0) {
-      current_block_verifiers_list.block_verifiers_vote_total[i] += 1;
-      break;
+    if (strcmp(public_address_producer, current_block_verifiers_list.block_verifiers_public_address[i]) != 0) {
+      continue;
     }
+
+    if (strcmp(vrf_public_key_data, current_block_verifiers_list.block_verifiers_vrf_public_key_hex[i]) != 0) {
+      ERROR_PRINT("Mismatch in vrf_public_key for verifier %s", public_address_producer);
+      return;
+    }
+
+    if (strcmp(random_buf_hex, current_block_verifiers_list.block_verifiers_random_hex[i]) != 0) {
+      ERROR_PRINT("Mismatch in random_data for verifier %s", public_address_producer);
+      return;
+    }
+
+    if (strcmp(vrf_proof_hex, current_block_verifiers_list.block_verifiers_vrf_proof_hex[i]) != 0) {
+      ERROR_PRINT("Mismatch in vrf_proof for verifier %s", public_address_producer);
+      return;
+    }
+
+    if (strcmp(vrf_beta_hex, current_block_verifiers_list.block_verifiers_vrf_beta_hex[i]) != 0) {
+      ERROR_PRINT("Mismatch in vrf_beta for verifier %s", public_address_producer);
+      return;
+    }
+
+    pthread_mutex_lock(&majority_vote_lock);
+    current_block_verifiers_list.block_verifiers_vote_total[i] += 1;
+    pthread_mutex_unlock(&majority_vote_lock);
+    return;
   }
-
-  pthread_mutex_unlock(&majority_vote_lock);
-
-  return;
 }

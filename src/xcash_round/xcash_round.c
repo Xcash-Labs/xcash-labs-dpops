@@ -146,6 +146,7 @@ xcash_round_result_t process_round(void) {
         strcpy(current_block_verifiers_list.block_verifiers_public_key[j], delegates_all[i].public_key);
         strcpy(current_block_verifiers_list.block_verifiers_IP_address[j], delegates_all[i].IP_address);
         current_block_verifiers_list.block_verifiers_vote_total[j] = 0;
+        current_block_verifiers_list.block_verifiers_voted[j] = 0;
         INFO_PRINT_STATUS_OK("Delegate: %s, Online Status: ", delegates_all[i].delegate_name);
         nodes_majority_count++;
         j++;
@@ -294,6 +295,7 @@ for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
           "  VRF Proof Hex:    %s\n"
           "  VRF Beta Hex:     %s\n"
           "  VRF Vote count:   %d\n",
+          "  Voted:            %d\n",
           i,
           current_block_verifiers_list.block_verifiers_name[i],
           current_block_verifiers_list.block_verifiers_public_address[i],
@@ -303,8 +305,28 @@ for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
           current_block_verifiers_list.block_verifiers_random_hex[i],
           current_block_verifiers_list.block_verifiers_vrf_proof_hex[i],
           current_block_verifiers_list.block_verifiers_vrf_beta_hex[i],
-          current_block_verifiers_list.block_verifiers_vote_total[i]);
+          current_block_verifiers_list.block_verifiers_vote_total[i],
+          current_block_verifiers_list.block_verifiers_voted[i]);
     }
+  }
+
+  int max_index = -1;
+  int max_votes = -1;
+
+  for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
+    int votes = current_block_verifiers_list.block_verifiers_vote_total[i];
+    if (votes > max_votes) {
+      max_votes = votes;
+      max_index = (int)i;
+    }
+  }
+
+  if (max_index != -1) {
+    INFO_PRINT("Most voted verifier: %s with %d votes",
+      current_block_verifiers_list.block_verifiers_public_address[max_index],
+      max_votes);
+  } else {
+    WARNING_PRINT("No votes recorded");
   }
 
 
