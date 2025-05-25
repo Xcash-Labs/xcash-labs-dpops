@@ -332,7 +332,12 @@ for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     return ROUND_ERROR;
   }
 
-  if (producer_indx > 0) {
+  if (max_votes < required_majority) {
+    INFO_PRINT_STATUS_FAIL("Data majority not reached. Online Nodes: [%d/%d]", max_votes, required_majority);
+    return ROUND_SKIP;
+  }
+
+  if (producer_indx >= 0) {
     pthread_mutex_lock(&majority_vrf_lock);
     // For now there is only one block producer and no backups
     memset(&producer_refs, 0, sizeof(producer_refs));
