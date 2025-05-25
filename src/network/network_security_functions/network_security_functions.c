@@ -168,7 +168,7 @@ int verify_data(const char *message)
 
   char escaped[MEDIUM_BUFFER_SIZE * 2] = {0};
 
-  INFO_PRINT("Request 1: %s", request);
+  INFO_PRINT("Request 1: %s", raw_data);
 
   escape_json_string(raw_data, escaped, sizeof(escaped));
 
