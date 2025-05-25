@@ -510,9 +510,8 @@ bool base64_decode(const char* input, uint8_t* output, size_t max_output, size_t
 void escape_json_string(const char *input, char *output, size_t output_size)
 {
     size_t j = 0;
-    for (size_t i = 0; input[i] != '\0' && j + 2 < output_size; ++i) {
-        if (input[i] == '\"' || input[i] == '\\') {
-            if (j + 2 >= output_size) break;
+    for (size_t i = 0; input[i] != '\0' && j + 1 < output_size; ++i) {
+        if ((input[i] == '\"' || input[i] == '\\') && j + 2 < output_size) {
             output[j++] = '\\';
         }
         output[j++] = input[i];

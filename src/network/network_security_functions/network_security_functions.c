@@ -148,6 +148,7 @@ int verify_data(const char *message)
   // Extract all required fields
   if (parse_json_data(message, "XCASH_DPOPS_signature", signature, sizeof(signature)) != 1 ||
       parse_json_data(message, "public_address", ck_public_address, sizeof(ck_public_address)) != 1 ||
+
       parse_json_data(message, "v_previous_block_hash", ck_previous_block_hash, sizeof(ck_previous_block_hash)) != 1 ||
       parse_json_data(message, "v_current_round_part", ck_round_part, sizeof(ck_round_part)) != 1 ||
       parse_json_data(message, "v_random_data", random_data, sizeof(random_data)) != 1) {
@@ -155,16 +156,18 @@ int verify_data(const char *message)
     return XCASH_ERROR;
   }
 
-  // Rebuild original signed message
-  snprintf(raw_data, sizeof(raw_data),
-           "{"
-           "\"v_previous_block_hash\":\"%s\","
-           "\"v_current_round_part\":\"%s\","
-           "\"v_random_data\":\"%s\""
-           "}",
-           ck_previous_block_hash,
-           ck_round_part,
-           random_data);
+  strncpy(raw_data, message, sizeof(raw_data));
+
+  char *sig_pos = strstr(raw_data, ",\"XCASH_DPOPS_signature\"");
+  if (sig_pos) {
+    *sig_pos = '\0';  // truncate the signature field
+  } else {
+    ERROR_PRINT("Signature field not found.");
+    return XCASH_ERROR;
+  }
+
+  char escaped[MEDIUM_BUFFER_SIZE * 2] = {0};
+  escape_json_string(raw_data, escaped, sizeof(escaped));
 
   // Prepare wallet verify request
   snprintf(request, sizeof(request),
@@ -172,7 +175,7 @@ int verify_data(const char *message)
            "\"data\":\"%s\","
            "\"address\":\"%s\","
            "\"signature\":\"%s\"}}",
-           raw_data, ck_public_address, signature);
+           escaped, ck_public_address, signature);
 
   INFO_PRINT("Request: %s", request);
 
