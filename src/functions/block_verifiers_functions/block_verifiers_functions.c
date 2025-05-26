@@ -149,6 +149,7 @@ int block_verifiers_create_block(void) {
   char block_blob[BUFFER_SIZE] = {0};
   // Only the block producer completes the following steps, producer_refs is an array in case we decide to add 
   // backup producers in the future
+  INFO_PRINT("Parts 9 thru 11 are only perfomed by the block producer");
   if (strcmp(producer_refs[0].public_address, xcash_wallet_public_address) == 0) {
 
     // Create block template
@@ -170,7 +171,7 @@ int block_verifiers_create_block(void) {
       return ROUND_ERROR;
     }
 
-    // Part 10 - Submit block
+    // Part 11 - Submit block
     INFO_STAGE_PRINT("Part 11 - Submit the Block");
     snprintf(current_round_part, sizeof(current_round_part), "%d", 11);
     if (!submit_block_template(block_blob)) {
