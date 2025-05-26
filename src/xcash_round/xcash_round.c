@@ -325,7 +325,7 @@ for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
 
   if (max_index != -1) {
     INFO_PRINT("Most voted verifier: %s with %d votes",
-      current_block_verifiers_list.block_verifiers_public_name[max_index],
+      current_block_verifiers_list.block_verifiers_name[max_index],
       max_votes);
   } else {
     ERROR_PRINT("No votes recorded");
