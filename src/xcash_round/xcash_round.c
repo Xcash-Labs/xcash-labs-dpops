@@ -39,7 +39,7 @@ int select_block_producer_from_vrf(void) {
 
   if (selected_index != -1) {
     INFO_PRINT("Selected block producer: %s",
-               current_block_verifiers_list.block_verifiers_public_address[selected_index]);
+               current_block_verifiers_list.block_verifiers_name[selected_index]);
   } else {
     ERROR_PRINT("No valid block producer could be selected.");
   }
@@ -325,7 +325,7 @@ for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
 
   if (max_index != -1) {
     INFO_PRINT("Most voted verifier: %s with %d votes",
-      current_block_verifiers_list.block_verifiers_public_address[max_index],
+      current_block_verifiers_list.block_verifiers_public_name[max_index],
       max_votes);
   } else {
     ERROR_PRINT("No votes recorded");
@@ -381,7 +381,6 @@ for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
   } else {
     INFO_PRINT("Round skipped by delegate or block round %s was unsuccessful.", current_block_height);
   }
-  INFO_PRINT(" ");
 
   return (xcash_round_result_t)block_creation_result;
 }
