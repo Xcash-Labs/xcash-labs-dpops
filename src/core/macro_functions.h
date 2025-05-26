@@ -113,15 +113,7 @@
     } \
 } while (0)
 
-//#define INFO_PRINT_STATUS_FAIL(fmt, ...) do { \
-//    if (log_level >= LOG_LEVEL_INFO) { \
-//        time_t raw_time = time(NULL); \
-//        struct tm *tm_info = localtime(&raw_time); \
-//        char time_buf[20]; \
-//        strftime(time_buf, sizeof(time_buf), "%Y-%m-%d %H:%M:%S", tm_info); \
-//        fprintf(stderr, BRIGHT_WHITE_TEXT("[%s] INFO: " fmt INFO_STATUS_FAIL "\n"), time_buf, ##__VA_ARGS__); \
-//    } \
-//} while (0)
+
 
 #define HOST_OK_STATUS(host, fmt, ...) BLUE_TEXT(host)" "fmt"\t["GREEN_TEXT("OK")"]"
 #define HOST_FALSE_STATUS(host, fmt, ...) BLUE_TEXT(host)" "fmt"\t["RED_TEXT("X")"]"
