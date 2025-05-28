@@ -133,6 +133,28 @@ void* handle_client(void* client_socket_ptr) {
   return NULL;
 }
 
+int send_data(server_client_t* client, const unsigned char* data, size_t length) {
+  if (!client) {
+    ERROR_PRINT("send_data failed: client is NULL");
+    return XCASH_ERROR;
+  }
+
+  if (client->socket_fd < 0) {
+    ERROR_PRINT("send_data failed: invalid socket_fd (%d) for client %s", client->socket_fd, client->client_ip);
+    return XCASH_ERROR;
+  }
+
+  ssize_t sent = send(client->socket_fd, data, length, MSG_NOSIGNAL);
+
+  if (sent < 0) {
+    ERROR_PRINT("Failed to send data to %s. Message: %.100s", client->client_ip, data);
+    return XCASH_ERROR;
+  }
+
+  DEBUG_PRINT("Sent %zd bytes to %s. Message: %.100s", sent, client->client_ip, data);
+  return XCASH_OK;
+}
+
 void stop_tcp_server(void) {
   if (!atomic_load(&server_running)) return;
 

@@ -42,6 +42,7 @@ bool init_processing(const arg_config_t *arg_config) {
         if (*p == '.') *p = '_';
       }
 
+      time_t registration_time = time(NULL);
       snprintf(json_buffer, sizeof(json_buffer),
                "{"
                "\"public_address\":\"%s\","
@@ -61,14 +62,16 @@ bool init_processing(const arg_config_t *arg_config) {
                "\"block_verifier_online_percentage\":\"0\","
                "\"block_producer_total_rounds\":\"0\","
                "\"block_producer_block_heights\":\"%d\","
-               "\"public_key\":\"%s\""
+               "\"public_key\":\"%s\","
+               "\"registration_timestamp\":\"%ld\""
                "}",
                network_nodes[i].seed_public_address,
                network_nodes[i].ip_address,
                delegate_name,
                network_nodes[i].ip_address,
                XCASH_PROOF_OF_STAKE_BLOCK_HEIGHT,
-               network_nodes[i].seed_public_key);
+               network_nodes[i].seed_public_key,
+               registration_time);
 
       if (insert_document_into_collection_json(DATABASE_NAME, "delegates", json_buffer) != XCASH_OK) {
         ERROR_PRINT("Failed to insert delegate document during initialization. IP: %s", network_nodes[i].ip_address);

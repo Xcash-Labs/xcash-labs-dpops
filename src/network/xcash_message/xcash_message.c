@@ -184,29 +184,44 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
   }
 
   DEBUG_PRINT("Processing message from client IP: %s", client->client_ip);
-
   char trans_type[128] = {0};
 
   if (strstr(data, "{") && strstr(data, "}")) {
-  
-    cJSON *json_obj = cJSON_Parse(data);
+    // JSON message
+    cJSON* json_obj = cJSON_Parse(data);
     if (!json_obj) {
       ERROR_PRINT("Invalid message received, JSON parsing error in handle_srv_message: %s", cJSON_GetErrorPtr());
       return;
     }
-  
-    cJSON *settings_obj = cJSON_GetObjectItemCaseSensitive(json_obj, "message_settings");
+
+    cJSON* settings_obj = cJSON_GetObjectItemCaseSensitive(json_obj, "message_settings");
     if (!cJSON_IsString(settings_obj) || (settings_obj->valuestring == NULL)) {
       ERROR_PRINT("Invalid message received, missing or invalid message_settings");
       cJSON_Delete(json_obj);
       return;
     }
-  
+
     snprintf(trans_type, sizeof(trans_type), "%s", settings_obj->valuestring);
     cJSON_Delete(json_obj);
 
+  } else if (string_count(data, "|") >= 1) {
+    
+    const char* delimiter = strchr(data, '|');
+    if (!delimiter || delimiter == data) {
+      ERROR_PRINT("Pipe-delimited message missing command type");
+      return;
+    }
+
+    size_t type_len = delimiter - data;
+    if (type_len >= sizeof(trans_type)) {
+      ERROR_PRINT("Command type too long");
+      return;
+    }
+
+    strncpy(trans_type, data, type_len);
+    trans_type[type_len] = '\0';  // Null-terminate
   } else {
-    ERROR_PRINT("Message does not match the expected format");
+    ERROR_PRINT("Message does not match expected JSON or pipe-delimited format");
     return;
   }
 
