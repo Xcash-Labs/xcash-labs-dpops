@@ -42,7 +42,8 @@ const char* delegate_keys[NUM_DB_FIELDS] = {
     "block_producer_total_rounds",
     "block_producer_block_heights",
     "public_key",
-    "registration_timestamp"};
+    "registration_timestamp",
+};
 
 // Helper function to get the position of a delegate in the network_data_nodes_list
 int get_network_data_node_position(const char* public_address) {
@@ -101,6 +102,8 @@ int read_organize_delegates(delegates_t* delegates, size_t* delegates_count_resu
 
   bson_iter_t iter;
   int delegate_index = 0;
+  time_t now = time(NULL);
+
   if (bson_iter_init(&iter, delegates_db_data)) {
     while (delegate_index < MAXIMUM_AMOUNT_OF_DELEGATES && bson_iter_next(&iter)) {
       bson_t record;
@@ -111,12 +114,8 @@ int read_organize_delegates(delegates_t* delegates, size_t* delegates_count_resu
       bson_init_static(&record, data, len);
 
       bson_iter_t record_iter;
-
+      bool skip_delegate = false;
       if (bson_iter_init(&record_iter, &record)) {
-        bool skip_delegate = false;
-        time_t now = time(NULL);
-        time_t reg_time = 0;
-
         while (bson_iter_next(&record_iter)) {
           const char* db_key = bson_iter_key(&record_iter);
           char* current_delegate = (char*)&delegates[delegate_index];
@@ -126,10 +125,9 @@ int read_organize_delegates(delegates_t* delegates, size_t* delegates_count_resu
             if (strcmp(db_key, delegate_keys[field_index]) == 0) {
               const char* value = bson_iter_utf8(&record_iter, NULL);
 
-              // Extract registration timestamp separately for logic
               if (strcmp(db_key, "registration_timestamp") == 0) {
-                reg_time = strtoull(value, NULL, 10);  // assuming timestamp is stored as a string
-                if (now - reg_time < 300) {  // less than 5 minutes ago
+                time_t reg_time = strtoull(value, NULL, 10);
+                if (now - reg_time < 300) {
                   skip_delegate = true;
                 }
               }
@@ -148,22 +146,22 @@ int read_organize_delegates(delegates_t* delegates, size_t* delegates_count_resu
             return XCASH_ERROR;
           }
         }
-
-        if (skip_delegate) {
-          continue;  // skip this delegate
-        }
-
-        strncpy(delegates[delegate_index].online_status_ck, "PENDING", sizeof(delegates[delegate_index].online_status_ck));
-        delegates[delegate_index].online_status_ck[sizeof(delegates[delegate_index].online_status_ck) - 1] = '\0';
-
-        delegate_index++;
       }
 
-      bson_destroy(delegates_db_data);
-      qsort(delegates, delegate_index, sizeof(delegates_t), compare_delegates);
-      *delegates_count_result = delegate_index;
+      if (skip_delegate) {
+        continue;  // skip this recently registered delegate
+      }
 
-      return XCASH_OK;
+      strncpy(delegates[delegate_index].online_status_ck, "PENDING", sizeof(delegates[delegate_index].online_status_ck));
+      delegates[delegate_index].online_status_ck[sizeof(delegates[delegate_index].online_status_ck) - 1] = '\0';
+
+      delegate_index++;
     }
   }
+
+  bson_destroy(delegates_db_data);
+  qsort(delegates, delegate_index, sizeof(delegates_t), compare_delegates);
+  *delegates_count_result = delegate_index;
+
+  return XCASH_OK;
 }
