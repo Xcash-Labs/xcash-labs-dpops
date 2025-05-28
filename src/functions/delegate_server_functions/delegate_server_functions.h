@@ -1,7 +1,16 @@
 #ifndef DELEGATE_SERVER_FUNCTIONS_H_
 #define DELEGATE_SERVER_FUNCTIONS_H_
 
+#include "config.h"
 #include "globals.h"
+#include "macro_functions.h"
+// #include "structures.h"
+#include "db_functions.h"
+#include "xcash_delegates.h"
+
+
+
+
 #include "macro_functions.h"
 #include "db_functions.h"
 #include "xcash_delegates.h"
