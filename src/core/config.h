@@ -90,6 +90,7 @@
 
 #define MAXIMUM_BUFFER_SIZE 52428800
 
+#define DELEGATE_NAME_LENGTH 500
 
 #define MAXIMUM_NUMBER_SIZE 25
 #define MAXIMUM_BUFFER_SIZE_DELEGATES_NAME 100
@@ -148,19 +149,19 @@
 #define DATABASE_EMPTY_STRING "empty_database_collection"
 #define TOTAL_RESERVE_PROOFS_DATABASES 50
 #define ID_MAX_SIZE 256
-#define NUM_FIELDS 19
-#define NUM_DB_FIELDS 18
+#define NUM_FIELDS 20
+#define NUM_DB_FIELDS 19
 
 // ===================== General Settings =====================
 #define BITS_IN_BYTE 8
 #define BLOCK_TIME 2
 #define BLOCK_TIME_SEC (BLOCK_TIME*60)
-#define BLOCKS_PER_DAY_FIVE_MINUTE_BLOCK_TIME 288
+#define BLOCKS_PER_DAY_FIVE_MINUTE_BLOCK_TIME 288              //   ???????????
 #define SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS 3
 #define INVALID_RESERVE_PROOFS_SETTINGS 3
 
 #define RETRY_SECONDS 3                              // replace INVALID_RESERVE_PROOFS_SETTINGS
-#define BLOCK_TIMEOUT_SECONDS 5 
+#define BLOCK_TIMEOUT_SECONDS 10 
 #define HTTP_TIMEOUT_SETTINGS 3                     // replace SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS
 
 

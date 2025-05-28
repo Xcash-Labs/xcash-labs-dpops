@@ -239,7 +239,14 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
         server_receive_data_socket_node_to_node_vote_majority(data);
         server_limit_public_addresses(LIMIT_REMOVE, data);
       }
-     break;
+      break;
+
+    case XMSG_NODES_TO_BLOCK_VERIFIERS_REGISTER_DELEGATE:
+      if (server_limit_public_addresses(LIMIT_CHECK, data) == 1) {
+        server_receive_data_socket_nodes_to_block_verifiers_register_delegates(client, data);
+        server_limit_public_addresses(LIMIT_REMOVE, data);
+      }
+      break;
 
     default:
       ERROR_PRINT("Unknown message type received: %s", data);

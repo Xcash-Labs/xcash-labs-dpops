@@ -126,7 +126,7 @@ xcash_round_result_t process_round(void) {
   }
 
   INFO_STAGE_PRINT("Waiting for Delegates to sync...");
-  if (sync_block_verifiers_minutes_and_seconds(0, 15) == XCASH_ERROR) {
+  if (sync_block_verifiers_minutes_and_seconds(0, 30) == XCASH_ERROR) {
     INFO_PRINT("Failed to sync Delegates in the aloted time, skipping round");
     return ROUND_SKIP;
   }
@@ -196,7 +196,7 @@ xcash_round_result_t process_round(void) {
   }
 
   // Sync start
-  if (sync_block_verifiers_minutes_and_seconds(0, 30) == XCASH_ERROR) {
+  if (sync_block_verifiers_minutes_and_seconds(1, 00) == XCASH_ERROR) {
     INFO_PRINT("Failed to sync VRF data in the aloted time, skipping roung");
     return ROUND_SKIP;
   }
@@ -252,7 +252,7 @@ xcash_round_result_t process_round(void) {
   }
 
   // Sync start
-  if (sync_block_verifiers_minutes_and_seconds(0, 45) == XCASH_ERROR) {
+  if (sync_block_verifiers_minutes_and_seconds(1, 30) == XCASH_ERROR) {
     INFO_PRINT("Failed to Confirm Block Creator in the aloted time, skipping roung");
     return ROUND_SKIP;
   }
@@ -364,7 +364,7 @@ void start_block_production(void) {
   // last, current, and next delegtes load in fill_delegates_from_db - clean up not needed --------------------
 
 
-  // set up delegates for round
+  // set up delegates for first round
   if (!fill_delegates_from_db()) {
     FATAL_ERROR_EXIT("Failed to load and organize delegates for starting round, Possible problem with Mongodb");
   }
