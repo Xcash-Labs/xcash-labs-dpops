@@ -54,8 +54,12 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
   size_t data_size = 0;
 
   #define SERVER_RECEIVE_DATA_SOCKET_NODES_TO_BLOCK_VERIFIERS_REGISTER_DELEGATE_ERROR(settings) \
+  do { \
     send_data(client, (unsigned char*)settings, strlen(settings)); \
-    return;
+    return; \
+  } while (0)
+
+
 
   if (count_all_documents_in_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES) >= (MAXIMUM_AMOUNT_OF_DELEGATES - 1))
   {
