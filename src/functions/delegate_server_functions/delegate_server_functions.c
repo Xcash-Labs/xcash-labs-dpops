@@ -9,35 +9,28 @@ Return: 0 if the delegate name is not valid, 1 if the delegate name is valid
 ---------------------------------------------------------------------------------------------------------*/
 int check_for_valid_delegate_name(const char* DELEGATE_NAME)
 {
-  const size_t DELEGATE_NAME_LENGTH = strlen(DELEGATE_NAME);
   #define VALID_DATA "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._-"
 
+  size_t length = strlen(DELEGATE_NAME);
+
   // Check name length bounds
-  if (DELEGATE_NAME_LENGTH > MAXIMUM_BUFFER_SIZE_DELEGATES_NAME ||
-      DELEGATE_NAME_LENGTH < MINIMUM_BUFFER_SIZE_DELEGATES_NAME)
+  if (length > MAXIMUM_BUFFER_SIZE_DELEGATES_NAME ||
+      length < MINIMUM_BUFFER_SIZE_DELEGATES_NAME)
   {
-    return 0;
+    WARNING_PRINT("Attempt to register a delegate whose name is either too short or too long");
+    return XCASH_ERROR;
   }
 
   // Validate all characters
-  for (size_t i = 0; i < DELEGATE_NAME_LENGTH; i++)
+  for (size_t i = 0; i < length; i++)
   {
-    bool is_valid = false;
-    for (size_t j = 0; j < sizeof(VALID_DATA) - 1; j++)
+    if (strchr(VALID_DATA, DELEGATE_NAME[i]) == NULL)
     {
-      if (DELEGATE_NAME[i] == VALID_DATA[j])
-      {
-        is_valid = true;
-        break;
-      }
-    }
-    if (!is_valid)
-    {
-      return 0;
+      return XCASH_ERROR;
     }
   }
 
-  return 1;
+  return XCASH_OK;
   #undef VALID_DATA
 }
 
@@ -51,7 +44,7 @@ Parameters:
 void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(const server_client_t* client, const char* MESSAGE)
 {
   char data[SMALL_BUFFER_SIZE] = {0};
-  char delegate_name[DELEGATE_NAME_LENGTH] = {0};
+  char delegate_name[MAXIMUM_BUFFER_SIZE_DELEGATES_NAME] = {0};
   char delegate_public_address[XCASH_WALLET_LENGTH + 1] = {0};
   char delegate_public_key[VRF_PUBLIC_KEY_LENGTH + 1] = {0};
   unsigned char delegate_public_key_data[crypto_vrf_PUBLICKEYBYTES + 1] = {0};
