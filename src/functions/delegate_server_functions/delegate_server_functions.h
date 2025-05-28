@@ -4,7 +4,7 @@
 #include "config.h"
 #include "globals.h"
 #include "macro_functions.h"
-// #include "structures.h"
+#include "structures.h"
 #include "db_functions.h"
 #include "xcash_delegates.h"
 
