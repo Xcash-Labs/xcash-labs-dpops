@@ -57,7 +57,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(cons
     send_data(client, (unsigned char*)settings, strlen(settings)); \
     return;
 
-  if (count_all_documents_in_collection(database_name, DB_COLLECTION_DELEGATES) >= (MAXIMUM_AMOUNT_OF_DELEGATES - 1))
+  if (count_all_documents_in_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES) >= (MAXIMUM_AMOUNT_OF_DELEGATES - 1))
   {
     SERVER_RECEIVE_DATA_SOCKET_NODES_TO_BLOCK_VERIFIERS_REGISTER_DELEGATE_ERROR("The maximum amount of delegates has been registered}");
   }
@@ -100,25 +100,25 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(cons
   }
 
   snprintf(data, sizeof(data), "{\"public_address\":\"%s\"}", delegate_public_address);
-  if (count_documents_in_collection(database_name, DB_COLLECTION_DELEGATES, data) != 0)
+  if (count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, data) != 0)
   {
     SERVER_RECEIVE_DATA_SOCKET_NODES_TO_BLOCK_VERIFIERS_REGISTER_DELEGATE_ERROR("The delegates public address is already registered}");
   }
 
   snprintf(data, sizeof(data), "{\"IP_address\":\"%s\"}", delegates_IP_address);
-  if (count_documents_in_collection(database_name, DB_COLLECTION_DELEGATES, data) != 0)
+  if (count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, data) != 0)
   {
     SERVER_RECEIVE_DATA_SOCKET_NODES_TO_BLOCK_VERIFIERS_REGISTER_DELEGATE_ERROR("The delegates IP address is already registered}");
   }
 
   snprintf(data, sizeof(data), "{\"public_key\":\"%s\"}", delegate_public_key);
-  if (count_documents_in_collection(database_name, DB_COLLECTION_DELEGATES, data) != 0)
+  if (count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, data) != 0)
   {
     SERVER_RECEIVE_DATA_SOCKET_NODES_TO_BLOCK_VERIFIERS_REGISTER_DELEGATE_ERROR("The delegates public key is already registered}");
   }
 
   snprintf(data, sizeof(data), "{\"delegate_name\":\"%s\"}", delegate_name);
-  if (count_documents_in_collection(database_name, DB_COLLECTION_DELEGATES, data) != 0)
+  if (count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, data) != 0)
   {
     SERVER_RECEIVE_DATA_SOCKET_NODES_TO_BLOCK_VERIFIERS_REGISTER_DELEGATE_ERROR("The delegates name is already registered}");
   }
@@ -134,7 +134,7 @@ snprintf(data, sizeof(data),
   "\"registration_timestamp\":\"%ld\"}",
   delegate_public_address, delegates_IP_address, delegate_name, delegate_public_key, registration_time);
 
-  if (insert_document_into_collection_json(database_name, DB_COLLECTION_DELEGATES, data) == 0)
+  if (insert_document_into_collection_json(DATABASE_NAME, DB_COLLECTION_DELEGATES, data) == 0)
   {
     SERVER_RECEIVE_DATA_SOCKET_NODES_TO_BLOCK_VERIFIERS_REGISTER_DELEGATE_ERROR("The delegate could not be added to the database}");
   }
