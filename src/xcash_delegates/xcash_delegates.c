@@ -151,7 +151,7 @@ int read_organize_delegates(delegates_t* delegates, size_t* delegates_count_resu
       if (skip_delegate) {
         continue;  // skip this recently registered delegate
       }
- 
+
       strncpy(delegates[delegate_index].online_status_ck, "PENDING", sizeof(delegates[delegate_index].online_status_ck));
       delegates[delegate_index].online_status_ck[sizeof(delegates[delegate_index].online_status_ck) - 1] = '\0';
 
