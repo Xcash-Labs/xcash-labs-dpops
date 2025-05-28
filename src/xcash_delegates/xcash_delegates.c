@@ -165,3 +165,5 @@ int read_organize_delegates(delegates_t* delegates, size_t* delegates_count_resu
 
       return XCASH_OK;
     }
+  }
+}
