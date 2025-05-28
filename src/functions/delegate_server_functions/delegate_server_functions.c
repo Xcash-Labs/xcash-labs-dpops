@@ -41,7 +41,7 @@ Parameters:
   CLIENT_SOCKET - The socket to send data to
   MESSAGE - The message
 ---------------------------------------------------------------------------------------------------------*/
-void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(const server_client_t* client, const char* MESSAGE)
+void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(server_client_t* client, const char* MESSAGE)
 {
   char data[SMALL_BUFFER_SIZE] = {0};
   char delegate_name[MAXIMUM_BUFFER_SIZE_DELEGATES_NAME] = {0};
