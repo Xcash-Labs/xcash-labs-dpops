@@ -228,6 +228,8 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
     return;
   }
  
+  DEBUG_PRINT("Transaction Type: %s", trans_type);
+
   xcash_msg_t msg_type = get_message_type(trans_type);
 
   if (is_walletsign_type(msg_type)) {
