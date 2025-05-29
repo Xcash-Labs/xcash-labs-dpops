@@ -21,7 +21,6 @@ char vrf_public_key[VRF_PUBLIC_KEY_LENGTH + 1] = {0};
 char current_round_part[3] = "1";
 char delegates_hash[MD5_HASH_SIZE + 1] = {0};
 
-int main_network_data_node_create_block = 0;
 char delegates_error_list[(MAXIMUM_BUFFER_SIZE_DELEGATES_NAME * 100) + 5000];     // not sure if this is used    
 struct current_block_verifiers_majority_vote current_block_verifiers_majority_vote;
 
@@ -55,7 +54,7 @@ pthread_t server_thread;
 const char* collection_names[XCASH_DB_COUNT] = {"delegates", "statistics"};
 bool cleanup_db_before_upsert = false;  // delete db before put content. make sure we have exact copy during initial db syncing
 
-block_verifiers_list_t previous_block_verifiers_list;
+//block_verifiers_list_t previous_block_verifiers_list;
 
 
 
@@ -64,7 +63,7 @@ block_verifiers_list_t current_block_verifiers_list;
 
 
 
-block_verifiers_list_t next_block_verifiers_list;
+//block_verifiers_list_t next_block_verifiers_list;
 
 NetworkNode network_nodes[] = {
     {"XCA1T1uxPiS8oprWpaCrUiiFcQB3KEriiUVqeeqnVtiKakSZmrZhoXKGbzqn4wj3EXY4JFPdJHqGr7iRHVxF4yyE28NvzLQgZf", "seeds.xcashseeds.us",

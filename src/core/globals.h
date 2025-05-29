@@ -39,13 +39,11 @@ extern char delegates_hash[MD5_HASH_SIZE + 1];
 
 
 extern struct main_nodes_list main_nodes_list; // The list of main nodes public address and IP address
-extern block_verifiers_list_t previous_block_verifiers_list; // The list of block verifiers name, public address and IP address for the previous round
+//extern block_verifiers_list_t previous_block_verifiers_list; // The list of block verifiers name, public address and IP address for the previous round
 extern block_verifiers_list_t current_block_verifiers_list; // The list of block verifiers name, public address and IP address for the current round
-extern block_verifiers_list_t next_block_verifiers_list; // The list of block verifiers name, public address and IP address for the next round
+//extern block_verifiers_list_t next_block_verifiers_list; // The list of block verifiers name, public address and IP address for the next round
 extern const char* collection_names[XCASH_DB_COUNT];
 extern bool cleanup_db_before_upsert;
-extern int main_network_data_node_create_block; // 1 if the main network data node can create a block, 0 if not
-
 
 extern struct blockchain_data blockchain_data; // The data for a new block to be added to the network.
 extern char delegates_error_list[(MAXIMUM_BUFFER_SIZE_DELEGATES_NAME * 100) + 5000]; // Holds the list of delegates that did not complete a part of the round
