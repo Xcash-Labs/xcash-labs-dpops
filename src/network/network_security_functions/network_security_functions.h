@@ -20,6 +20,7 @@
 int handle_error(const char *function_name, const char *message, char *buf1, char *buf2, char *buf3);
 int sign_data(char *message);
 bool sign_block_blob(const char* block_blob_hex, char* signature_out, size_t sig_out_len);
-int verify_data(const char* MESSAGE);
+int verify_data(const char *message);
+int verify_bar_data(const char *message)
 
 #endif

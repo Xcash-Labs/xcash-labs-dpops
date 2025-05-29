@@ -3,6 +3,7 @@
 const xcash_msg_t WALLET_SIGN_MESSAGES[] = {
     XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_VRF_DATA,
     XMSG_NODES_TO_NODES_VOTE_MAJORITY_RESULTS,
+    XMSG_NODES_TO_BLOCK_VERIFIERS_REGISTER_DELEGATE,
     XMSG_NONE};
 const size_t WALLET_SIGN_MESSAGES_COUNT = ARRAY_SIZE(WALLET_SIGN_MESSAGES) - 1;
 
@@ -185,9 +186,11 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
 
   DEBUG_PRINT("Processing message from client IP: %s", client->client_ip);
   char trans_type[128] = {0};
+  bool json_type = false;
 
   if (strstr(data, "{") && strstr(data, "}")) {
     // JSON message
+    json_type = true;
     cJSON* json_obj = cJSON_Parse(data);
     if (!json_obj) {
       ERROR_PRINT("Invalid message received, JSON parsing error in handle_srv_message: %s", cJSON_GetErrorPtr());
@@ -205,7 +208,7 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
     cJSON_Delete(json_obj);
 
   } else if (string_count(data, "|") >= 1) {
-    
+
     const char* delimiter = strchr(data, '|');
     if (!delimiter || delimiter == data) {
       ERROR_PRINT("Pipe-delimited message missing command type");
@@ -224,13 +227,20 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
     ERROR_PRINT("Message does not match expected JSON or pipe-delimited format");
     return;
   }
-
+ 
   xcash_msg_t msg_type = get_message_type(trans_type);
 
   if (is_walletsign_type(msg_type)) {
-    if (verify_data(data) == XCASH_ERROR) {
-      ERROR_PRINT("Failed to validate message sign data");
-      return;
+    if (json_type) {
+      if (verify_data(data) == XCASH_ERROR) {
+        ERROR_PRINT("Failed to validate message sign data");
+        return;
+      }
+    } else {
+      if (verify_bar_data(data) == XCASH_ERROR) {
+        ERROR_PRINT("Failed to validate message sign data");
+        return;
+      }
     }
   }
 
