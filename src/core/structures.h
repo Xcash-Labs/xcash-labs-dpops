@@ -68,7 +68,7 @@ typedef struct {
     int block_verifiers_vote_total[BLOCK_VERIFIERS_AMOUNT];
     uint8_t block_verifiers_voted[BLOCK_VERIFIERS_AMOUNT];
 } block_verifiers_list_t;
-
+/*
 struct blockchain_data {
     char* network_version_data; // The network_version
     size_t network_version_data_length; // The amount of characters of the network_version_data
@@ -112,7 +112,7 @@ struct blockchain_data {
     char* reserve_bytes_size_data; // The reserve_bytes_size
     size_t reserve_bytes_size; // Variant decoded reserve_bytes_size
     size_t reserve_bytes_size_data_length; // The amount of characters of the reserve_bytes_size
-//    struct blockchain_reserve_bytes blockchain_reserve_bytes; // A blockchain_reserve_bytes struct that holds all of the reserve bytes
+    struct blockchain_reserve_bytes blockchain_reserve_bytes; // A blockchain_reserve_bytes struct that holds all of the reserve bytes
     char* ringct_version_data; // The ringct_version
     size_t ringct_version_data_length; // The amount of characters of the ringct_version
     char* transaction_amount_data; // The transaction_amount
@@ -120,6 +120,7 @@ struct blockchain_data {
     size_t transaction_amount_data_length; // The amount of characters of the transaction_amount
     char* transactions[MAXIMUM_TRANSACATIONS_PER_BLOCK]; // All of the transactions in the block.
 };
+*/
 
 struct current_round_part_vote_data {
     char current_vote_results[DATA_HASH_LENGTH+1]; // The SHA2-512 hash of the vote results that the block verifier calculated
