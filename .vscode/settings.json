@@ -32,6 +32,7 @@
         "server_functions.h": "c",
         "cstddef": "c",
         "limits": "c",
-        "system_error": "c"
+        "system_error": "c",
+        "block_verifiers_synchronize_server_functions.h": "c"
     }
 }
