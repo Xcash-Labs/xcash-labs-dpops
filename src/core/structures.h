@@ -56,7 +56,6 @@ struct database_multiple_documents_fields {
     char* value[MAXIMUM_DATABASE_COLLECTION_DOCUMENTS][TOTAL_DELEGATES_DATABASE_FIELDS+1]; // The value
 };
 
-// ---- changed this to 50 for now.............
 typedef struct {
     char block_verifiers_name[BLOCK_VERIFIERS_AMOUNT][MAXIMUM_BUFFER_SIZE_DELEGATES_NAME+1]; // The block verifiers name
     char block_verifiers_public_address[BLOCK_VERIFIERS_AMOUNT][XCASH_WALLET_LENGTH+1]; // The block verifiers public address
@@ -72,6 +71,7 @@ typedef struct {
 
 
 // no longer used moved above
+/*
 struct VRF_data {
     char block_verifiers_public_address[BLOCK_VERIFIERS_TOTAL_AMOUNT][XCASH_WALLET_LENGTH + 1];
     char block_verifiers_vrf_public_key_hex[BLOCK_VERIFIERS_TOTAL_AMOUNT][VRF_PUBLIC_KEY_LENGTH + 1];
@@ -79,6 +79,7 @@ struct VRF_data {
     char block_verifiers_vrf_proof_hex[BLOCK_VERIFIERS_TOTAL_AMOUNT][VRF_PROOF_LENGTH + 1];
     char block_verifiers_vrf_beta_hex[BLOCK_VERIFIERS_TOTAL_AMOUNT][VRF_BETA_LENGTH + 1];
 };
+*/
 
 struct blockchain_reserve_bytes {
     char* block_producer_delegates_name_data; // The block_producer_delegates_name

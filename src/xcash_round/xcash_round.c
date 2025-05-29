@@ -79,7 +79,7 @@ xcash_round_result_t process_round(void) {
   snprintf(current_round_part, sizeof(current_round_part), "%d", 2);
   // delegates_all is loaded prior to start of round due to node timing issues
   int total_delegates = 0;
-  for (size_t x = 0; x < BLOCK_VERIFIERS_TOTAL_AMOUNT; x++) {
+  for (size_t x = 0; x < BLOCK_VERIFIERS_AMOUNT; x++) {
     if (strlen(delegates_all[x].public_address) > 0) {
       total_delegates++;
     }
@@ -88,7 +88,7 @@ xcash_round_result_t process_round(void) {
     ERROR_PRINT("Can't get previous block hash");
     return ROUND_ERROR;
   }
-  DEBUG_PRINT("Found %d active delegates out of %d total slots", total_delegates, BLOCK_VERIFIERS_TOTAL_AMOUNT);
+  DEBUG_PRINT("Found %d active delegates out of %d total slots", total_delegates, BLOCK_VERIFIERS_AMOUNT);
 
   // Get the previous block hash
   memset(previous_block_hash, 0, BLOCK_HASH_LENGTH);
@@ -395,21 +395,36 @@ void start_block_production(void) {
     round_result = process_round();
 
     if (round_result != ROUND_OK) {
-      for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
+      for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) { 
         if (strcmp(delegates_all[i].public_address, xcash_wallet_public_address) == 0) {
           // Found current delegate
           if (strcmp(delegates_all[i].online_status, delegates_all[i].online_status_ck) != 0) {
-            DEBUG_PRINT("Updating Online status...");
-            strncpy(delegates_all[i].online_status, delegates_all[i].online_status_ck,
-                    sizeof(delegates_all[i].online_status));
-            delegates_all[i].online_status[sizeof(delegates_all[i].online_status) - 1] = '\0';
 
-            // update online status in collection later
+            char filter_json[BUFFER_SIZE];
+            char update_json[BUFFER_SIZE];
+            // Filter to match the delegate by public_address
+            snprintf(filter_json, sizeof(filter_json),
+                     "{\"public_address\":\"%s\"}", xcash_wallet_public_address);
+            // Update to set the new online_status
+            snprintf(update_json, sizeof(update_json),
+                     "{\"online_status\":\"%s\"}", delegates_all[i].online_status_ck);
+            if (update_document_from_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, filter_json, update_json) != XCASH_OK) {
+              ERROR_PRINT("Failed to update online_status for delegate %s", xcash_wallet_public_address);
+            }
 
+
+
+
+
+            
             if (delegate_db_hash_mismatch > 1) {
-              // need to add code to sync the delegates collection
+              // need to add code to sync the delegates collection and possibly the statics
               //        init_db_from_top();  // --------------------------------------------------------------------?????
             }
+
+
+
+
           }
           break;
         }
