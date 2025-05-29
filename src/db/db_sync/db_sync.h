@@ -13,6 +13,7 @@
 #include "xcash_net.h"
 #include "xcash_delegates.h"
 
+/*
 typedef struct {
     size_t db_rec_index;
     bool db_rec_synced;
@@ -38,11 +39,9 @@ typedef struct
   char overall_md5_hash[MD5_HASH_SIZE + 1];
 
 } xcash_db_sync_prehash_t;
+*/
 
 bool hash_delegates_collection(char *out_hash_hex);
 bool fill_delegates_from_db(void);;
-bool init_db_from_seeds(void);
-bool init_db_from_top(void);
-
 
 #endif
