@@ -95,9 +95,9 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
   int count = 0, count2 = 0;
   size_t data_size = 0;
 
-  #define SERVER_RECEIVE_DATA_SOCKET_NODES_TO_BLOCK_VERIFIERS_REGISTER_DELEGATE_ERROR(settings) \
+  #define SERVER_RECEIVE_DATA_SOCKET_NODES_TO_BLOCK_VERIFIERS_REGISTER_DELEGATE_ERROR(rmess) \
   do { \
-    send_data(client, (unsigned char*)settings, strlen(settings)); \
+    send_data(client, (unsigned char*)rmess, strlen(rmess)); \
     return; \
   } while (0)
 
