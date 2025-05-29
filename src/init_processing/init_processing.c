@@ -9,10 +9,10 @@ bool init_processing(const arg_config_t *arg_config) {
 
   if (arg_config->init_db_from_seeds) {
     INFO_STAGE_PRINT("Initializing database from seeds");
-    if (!init_db_from_seeds()) {
-      ERROR_PRINT("Can't initialize database from seeds");
-      return XCASH_ERROR;
-    };
+//    if (!init_db_from_seeds()) {
+//      ERROR_PRINT("Can't initialize database from seeds");
+//      return XCASH_ERROR;
+//    };
   }
 
   if (arg_config->init_db_from_top) {
@@ -21,10 +21,10 @@ bool init_processing(const arg_config_t *arg_config) {
       return XCASH_ERROR;
     }
     INFO_STAGE_PRINT("Initializing database from top height nodes");
-    if (!init_db_from_top()) {
-      ERROR_PRINT("Can't initialize database from top height nodes");
-      return XCASH_ERROR;
-    };
+//    if (!init_db_from_top()) {
+//      ERROR_PRINT("Can't initialize database from top height nodes");
+//      return XCASH_ERROR;
+//    };
   }
 
   // brief check if database is empty
