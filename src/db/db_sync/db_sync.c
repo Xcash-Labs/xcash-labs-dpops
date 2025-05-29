@@ -41,16 +41,13 @@ bool hash_delegates_collection(char *out_hash_hex) {
     if (bson_iter_init(&iter, doc)) {
       while (bson_iter_next(&iter)) {
         const char *key = bson_iter_key(&iter);
-        if (strcmp(key, "registration_time") != 0) {
+        if (strcmp(key, "registration_timestamp") != 0) {
           bson_append_value(&filtered, key, -1, bson_iter_value(&iter));
         }
       }
     }
 
     char *json = bson_as_canonical_extended_json(&filtered, NULL);
-    
-    INFO_PRINT("string=%s", json);
-
     if (json) {
       EVP_DigestUpdate(ctx, json, strlen(json));
       bson_free(json);
