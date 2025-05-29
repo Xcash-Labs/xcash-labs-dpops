@@ -33,11 +33,26 @@ bool hash_delegates_collection(char *out_hash_hex) {
 
   // Step 5: Feed documents into hash
   while (mongoc_cursor_next(cursor, &doc)) {
-    char *json = bson_as_canonical_extended_json(doc, NULL);
+    bson_t filtered;
+    bson_init(&filtered);
+
+    // Copy everything except "registration_time"
+    bson_iter_t iter;
+    if (bson_iter_init(&iter, doc)) {
+      while (bson_iter_next(&iter)) {
+        const char *key = bson_iter_key(&iter);
+        if (strcmp(key, "registration_time") != 0) {
+          bson_append_value(&filtered, key, -1, bson_iter_value(&iter));
+        }
+      }
+    }
+
+    char *json = bson_as_canonical_extended_json(&filtered, NULL);
     if (json) {
       EVP_DigestUpdate(ctx, json, strlen(json));
       bson_free(json);
     }
+    bson_destroy(&filtered);
   }
 
   if (mongoc_cursor_error(cursor, NULL)) {
