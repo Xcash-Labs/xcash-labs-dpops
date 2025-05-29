@@ -69,68 +69,6 @@ typedef struct {
     uint8_t block_verifiers_voted[BLOCK_VERIFIERS_AMOUNT];
 } block_verifiers_list_t;
 
-
-// no longer used moved above
-/*
-struct VRF_data {
-    char block_verifiers_public_address[BLOCK_VERIFIERS_TOTAL_AMOUNT][XCASH_WALLET_LENGTH + 1];
-    char block_verifiers_vrf_public_key_hex[BLOCK_VERIFIERS_TOTAL_AMOUNT][VRF_PUBLIC_KEY_LENGTH + 1];
-    char block_verifiers_random_hex[BLOCK_VERIFIERS_TOTAL_AMOUNT][VRF_RANDOMBYTES_LENGTH * 2 + 1];
-    char block_verifiers_vrf_proof_hex[BLOCK_VERIFIERS_TOTAL_AMOUNT][VRF_PROOF_LENGTH + 1];
-    char block_verifiers_vrf_beta_hex[BLOCK_VERIFIERS_TOTAL_AMOUNT][VRF_BETA_LENGTH + 1];
-};
-*/
-
-struct blockchain_reserve_bytes {
-    char* block_producer_delegates_name_data; // The block_producer_delegates_name
-    char* block_producer_delegates_name; // The block_producer_delegates_name_data text
-    size_t block_producer_delegates_name_data_length; // The amount of characters of the block_producer_delegates_name_data
-    char* block_producer_public_address_data; // The block_producer_public_address
-    char* block_producer_public_address; // The block_producer_public_address_data text
-    size_t block_producer_public_address_data_length; // The amount of characters of the block_producer_public_address_data
-    char* block_producer_node_backup_count_data; // The block_producer_node_backup_count
-    char* block_producer_node_backup_count; // The block_producer_node_backup_count_data text
-    size_t block_producer_node_backup_count_data_length; // The amount of characters of the block_producer_node_backup_count_data
-    char* block_producer_backup_nodes_names_data; // The block_producer_backup_nodes_names
-    char* block_producer_backup_nodes_names; // The block_producer_backup_nodes_names_data text
-    size_t block_producer_backup_nodes_names_data_length; // The amount of characters of the block_producer_backup_nodes_names_data 
-    char* vrf_secret_key_data; // The VRF secret key text for round part 3
-    unsigned char* vrf_secret_key; // The VRF secret key for round part 3
-    size_t vrf_secret_key_data_length; // The length of the VRF public key for round part 3   
-    char* vrf_public_key_data; // The VRF public key text for round part 3
-    unsigned char* vrf_public_key; // The VRF public key for round part 3
-    size_t vrf_public_key_data_length; // The length of the VRF public key for round part 3
-    char* vrf_alpha_string_data; // The VRF alpha string (input string) text for round part 3
-    unsigned char* vrf_alpha_string; // The VRF alpha string (input string) for round part 3
-    size_t vrf_alpha_string_data_length; // The length of the VRF alpha string (input string) for round part 3
-    char* vrf_proof_data; // The VRF proof text for round part 3
-    unsigned char* vrf_proof; // The VRF proof for round part 3
-    size_t vrf_proof_data_length; // The length of the VRF proof for round part 3
-    char* vrf_beta_string_data; // The VRF beta string (output string) text for round part 3
-    unsigned char* vrf_beta_string; // The VRF beta string (output string) for round part 3
-    size_t vrf_beta_string_data_length; // The length of the VRF beta string (output string) for round part 3
-    char* vrf_data_round; // The VRF data for round part 3  
-    char* vrf_data; // The VRF data for all of the round parts
-    size_t vrf_data_length; // The length of the VRF data for all of the round parts
-    char* block_verifiers_vrf_secret_key_data[BLOCK_VERIFIERS_TOTAL_AMOUNT]; // The VRF secret key text that all of the block verifiers create
-    unsigned char* block_verifiers_vrf_secret_key[BLOCK_VERIFIERS_TOTAL_AMOUNT]; // The VRF secret key that all of the block verifiers create
-    size_t block_verifiers_vrf_secret_key_data_length; // The amount of characters of the block_verifiers_vrf_secret_key_data
-    char* block_verifiers_vrf_public_key_data[BLOCK_VERIFIERS_TOTAL_AMOUNT]; // The VRF public key text that all of the block verifiers create
-    unsigned char* block_verifiers_vrf_public_key[BLOCK_VERIFIERS_TOTAL_AMOUNT]; // The VRF public key that all of the block verifiers create
-    size_t block_verifiers_vrf_public_key_data_length; // The amount of characters of the block_verifiers_vrf_public_key_data
-    char* block_verifiers_random_data[BLOCK_VERIFIERS_TOTAL_AMOUNT]; // The random data that all of the block verifiers create
-    char* block_verifiers_random_data_text[BLOCK_VERIFIERS_TOTAL_AMOUNT]; // The random data text that all of the block verifiers create
-    size_t block_verifiers_random_data_length; // The amount of characters of the block_verifiers_random_data
-    char* next_block_verifiers_public_address_data[BLOCK_VERIFIERS_TOTAL_AMOUNT]; // The next_block_verifiers_public_address
-    char* next_block_verifiers_public_address[BLOCK_VERIFIERS_TOTAL_AMOUNT]; // The next_block_verifiers_public_address_data text
-    size_t next_block_verifiers_public_address_data_length; // The amount of characters of the next_block_verifiers_public_address_data
-    char* previous_block_hash_data; // The previous_block_hash
-    size_t previous_block_hash_data_length; // The amount of characters of the previous_block_hash_data
-    char* block_validation_node_signature_data[BLOCK_VERIFIERS_TOTAL_AMOUNT]; // The block_validation_node_signature
-    char* block_validation_node_signature[BLOCK_VERIFIERS_TOTAL_AMOUNT]; // The block_validation_node_signature_data text
-    size_t block_validation_node_signature_data_length; // The amount of characters of the block_validation_node_signature_data
-};
-
 struct blockchain_data {
     char* network_version_data; // The network_version
     size_t network_version_data_length; // The amount of characters of the network_version_data
