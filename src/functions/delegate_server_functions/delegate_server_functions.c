@@ -166,16 +166,21 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
     SERVER_RECEIVE_DATA_SOCKET_NODES_TO_BLOCK_VERIFIERS_REGISTER_DELEGATE_ERROR("The delegates name is already registered}");
   }
 
-time_t registration_time = time(NULL);
+  int delegate_count = count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, "{}");
+  if (delegate_count > MAXIMUM_AMOUNT_OF_DELEGATES) {
+    SERVER_RECEIVE_DATA_SOCKET_NODES_TO_BLOCK_VERIFIERS_REGISTER_DELEGATE_ERROR("The maximum number of delegates has been reached}");
+  }
 
-snprintf(data, sizeof(data),
-  "{\"public_address\":\"%s\",\"total_vote_count\":\"0\",\"IP_address\":\"%s\",\"delegate_name\":\"%s\","
-  "\"about\":\"\",\"website\":\"\",\"team\":\"\",\"shared_delegate_status\":\"solo\",\"delegate_fee\":\"\","
-  "\"server_specs\":\"\",\"block_verifier_score\":\"0\",\"online_status\":\"true\",\"block_verifier_total_rounds\":\"0\","
-  "\"block_verifier_online_total_rounds\":\"0\",\"block_verifier_online_percentage\":\"0\","
-  "\"block_producer_total_rounds\":\"0\",\"block_producer_block_heights\":\"\",\"public_key\":\"%s\","
-  "\"registration_timestamp\":\"%ld\"}",
-  delegate_public_address, delegates_IP_address, delegate_name, delegate_public_key, registration_time);
+  time_t registration_time = time(NULL);
+
+  snprintf(data, sizeof(data),
+    "{\"public_address\":\"%s\",\"total_vote_count\":\"0\",\"IP_address\":\"%s\",\"delegate_name\":\"%s\","
+    "\"about\":\"\",\"website\":\"\",\"team\":\"\",\"shared_delegate_status\":\"solo\",\"delegate_fee\":\"\","
+    "\"server_specs\":\"\",\"block_verifier_score\":\"0\",\"online_status\":\"true\",\"block_verifier_total_rounds\":\"0\","
+    "\"block_verifier_online_total_rounds\":\"0\",\"block_verifier_online_percentage\":\"0\","
+    "\"block_producer_total_rounds\":\"0\",\"block_producer_block_heights\":\"\",\"public_key\":\"%s\","
+    "\"registration_timestamp\":\"%ld\"}",
+    delegate_public_address, delegates_IP_address, delegate_name, delegate_public_key, registration_time);
 
   if (insert_document_into_collection_json(DATABASE_NAME, DB_COLLECTION_DELEGATES, data) == 0)
   {
