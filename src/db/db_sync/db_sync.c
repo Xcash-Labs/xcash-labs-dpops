@@ -48,6 +48,9 @@ bool hash_delegates_collection(char *out_hash_hex) {
     }
 
     char *json = bson_as_canonical_extended_json(&filtered, NULL);
+    
+    INFO_PRINT("string=%s", json);
+
     if (json) {
       EVP_DigestUpdate(ctx, json, strlen(json));
       bson_free(json);
