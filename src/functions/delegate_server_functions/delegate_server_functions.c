@@ -91,7 +91,6 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
   char delegate_public_key[VRF_PUBLIC_KEY_LENGTH + 1] = {0};
   unsigned char delegate_public_key_data[crypto_vrf_PUBLICKEYBYTES + 1] = {0};
   char delegates_IP_address[BLOCK_VERIFIERS_IP_ADDRESS_TOTAL_LENGTH + 1] = {0};
-  struct tm current_UTC_date_and_time;
   int count = 0, count2 = 0;
   size_t data_size = 0;
 
