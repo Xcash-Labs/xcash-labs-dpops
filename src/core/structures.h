@@ -112,7 +112,7 @@ struct blockchain_data {
     char* reserve_bytes_size_data; // The reserve_bytes_size
     size_t reserve_bytes_size; // Variant decoded reserve_bytes_size
     size_t reserve_bytes_size_data_length; // The amount of characters of the reserve_bytes_size
-    struct blockchain_reserve_bytes blockchain_reserve_bytes; // A blockchain_reserve_bytes struct that holds all of the reserve bytes
+//    struct blockchain_reserve_bytes blockchain_reserve_bytes; // A blockchain_reserve_bytes struct that holds all of the reserve bytes
     char* ringct_version_data; // The ringct_version
     size_t ringct_version_data_length; // The amount of characters of the ringct_version
     char* transaction_amount_data; // The transaction_amount
