@@ -1242,7 +1242,7 @@ function get_installation_directory()
   if [ "$XCASH_DPOPS_INSTALLATION_DIR" == "/" ]; then
     echo -e "${COLOR_PRINT_RED}Can not find the installation directory, Please run the auto installer in installation mode${END_COLOR_PRINT}"
   fi
-  if [ "$XCASH_DIR" == "xcash-core/" ]; then
+  if [ "$XCASH_DIR" == "xcash-labs-core/" ]; then
     echo -e "${COLOR_PRINT_RED}Can not find X-CASH${END_COLOR_PRINT}"
     install_xcash
   fi
@@ -1299,6 +1299,7 @@ function update_xcash()
     cd "${XCASH_DPOPS_INSTALLATION_DIR}"
     git clone "${XCASH_URL}" "$XCASH_DIR"
   fi
+  echo "\r here..."
   cd "$XCASH_DIR"
   git reset --hard HEAD --quiet
   git pull --quiet
@@ -1527,7 +1528,7 @@ function install()
   fi
 
   # add the public address and block verifiers secret key to the XCASH_Daemon systemd service file
-  sed_services "s/xcash-core\/build\/release\/bin\/xcashd/xcash-core\/build\/release\/bin\/xcashd --xcash-dpops-delegates-public-address $PUBLIC_ADDRESS --xcash-dpops-delegates-secret-key $BLOCK_VERIFIER_SECRET_KEY/g" /lib/systemd/system/xcash-daemon.service
+  sed_services "s/xcash-labs-core\/build\/release\/bin\/xcashd/xcash-labs-core\/build\/release\/bin\/xcashd --xcash-dpops-delegates-public-address $PUBLIC_ADDRESS --xcash-dpops-delegates-secret-key $BLOCK_VERIFIER_SECRET_KEY/g" /lib/systemd/system/xcash-daemon.service
 
   # Create a swap file if they don't already have one and have low ram, if not inside container
   if [ ! "$container" == "lxc" ]; then
@@ -1612,7 +1613,7 @@ function configure()
   fi
 
   # add the public address and block verifiers secret key to the XCASH_Daemon systemd service file
-  sed_services "s/xcash-core\/build\/release\/bin\/xcashd/xcash-core\/build\/release\/bin\/xcashd --xcash-dpops-delegates-public-address $PUBLIC_ADDRESS --xcash-dpops-delegates-secret-key $BLOCK_VERIFIER_SECRET_KEY/g" /lib/systemd/system/xcash-daemon.service
+  sed_services "s/xcash-labs-core\/build\/release\/bin\/xcashd/xcash-labs-core\/build\/release\/bin\/xcashd --xcash-dpops-delegates-public-address $PUBLIC_ADDRESS --xcash-dpops-delegates-secret-key $BLOCK_VERIFIER_SECRET_KEY/g" /lib/systemd/system/xcash-daemon.service
 
   # Start the systemd service files
   start_systemd_service_files
