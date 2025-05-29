@@ -11,8 +11,8 @@
 #include "db_functions.h"
 #include "xcash_delegates.h"
 
-int get_block_verifiers_from_network_block(const int TOTAL_DELEGATES, const delegates_t* delegates, const size_t CURRENT_BLOCK_HEIGHT, const int SETTINGS);
-int update_block_verifiers_list(void);
+//int get_block_verifiers_from_network_block(const int TOTAL_DELEGATES, const delegates_t* delegates, const size_t CURRENT_BLOCK_HEIGHT, const int SETTINGS);
+//int update_block_verifiers_list(void);
 //int update_databases(void);
 //int add_block_verifiers_round_statistics(const char* BLOCK_HEIGHT);
 //int add_round_statistics(void);
