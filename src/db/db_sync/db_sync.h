@@ -43,5 +43,7 @@ bool hash_delegates_collection(char *out_hash_hex);
 bool fill_delegates_from_db(void);;
 bool init_db_from_seeds(void);
 bool init_db_from_top(void);
+bool get_sync_seeds_majority_list(xcash_node_sync_info_t **majority_list_result, size_t *majority_count_result);
+int get_random_majority(xcash_node_sync_info_t *majority_list, size_t majority_count);
 
 #endif

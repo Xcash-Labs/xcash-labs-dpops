@@ -107,6 +107,85 @@ bool fill_delegates_from_db(void) {
   return true;
 }
 
+
+
+
+
+
+
+/**
+ * @brief Selects a random valid index from the majority list, avoiding self-selection.
+ *
+ * @param majority_list Pointer to the array of majority nodes.
+ * @param majority_count The number of items in the majority list.
+ * @return int The index of a randomly selected node, avoiding self-selection. Returns -1 on error.
+ */
+int get_random_majority(xcash_node_sync_info_t *majority_list, size_t majority_count) {
+  if (!majority_list || majority_count == 0) {
+    ERROR_PRINT("Invalid majority list or zero count.");
+    return -1;
+  }
+
+  int random_index = -1;
+
+  // Randomly select an index, avoiding self-selection
+  for (size_t attempt = 0; attempt < majority_count; ++attempt) {
+    random_index = rand() % (int)majority_count;
+
+    // Prevent syncing from myself
+    if (strcmp(xcash_wallet_public_address, majority_list[random_index].public_address) != 0) {
+      return random_index;
+    }
+  }
+
+  // Fallback to the first valid non-self index if all attempts failed
+  for (size_t i = 0; i < majority_count; ++i) {
+    if (strcmp(xcash_wallet_public_address, majority_list[i].public_address) != 0) {
+      return (int)i;
+    }
+  }
+
+  // If no valid node is found (should not happen), return an error
+  ERROR_PRINT("No valid majority node found that is not self.");
+  return -1;
+}
+
+bool get_sync_seeds_majority_list(xcash_node_sync_info_t **majority_list_result, size_t *majority_count_result) {
+  bool result = false;
+  *majority_list_result = NULL;
+  *majority_count_result = 0;
+
+  response_t **replies = NULL;
+  bool send_result = send_message(XNET_SEEDS_ALL, XMSG_XCASH_GET_SYNC_INFO, &replies);
+  if (!send_result) {
+    ERROR_PRINT("Can't get sync info from all delegates");
+    cleanup_responses(replies);
+  }
+
+  xcash_node_sync_info_t *majority_list;
+  size_t majority_count = 0;
+  if (check_sync_nodes_majority_list(replies, &majority_list, &majority_count, false)) {
+    result = true;
+  }
+
+  *majority_count_result = majority_count;
+  *majority_list_result = majority_list;
+
+  // free(majority_list);
+  cleanup_responses(replies);
+
+  return result;
+}
+
+
+
+
+
+
+
+
+
+
 bool init_db_from_seeds(void) {
   bool result = false;
 
