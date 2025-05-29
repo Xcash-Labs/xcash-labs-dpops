@@ -164,6 +164,7 @@ void stop_tcp_server(void) {
 
   // Close the listening socket to unblock accept()
   if (server_fd >= 0) {
+    shutdown(server_fd, SHUT_RDWR);
     close(server_fd);
     server_fd = -1;
   }
