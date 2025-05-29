@@ -216,15 +216,15 @@ int main(int argc, char *argv[]) {
     FATAL_ERROR_EXIT("Can't open mongo database");
   }
 
-  if (!(get_node_data())) {
-    FATAL_ERROR_EXIT("Failed to get the nodes public wallet address");
+  if (!(init_processing(&arg_config))) {
+    FATAL_ERROR("Failed server initialization."); 
   }
 
-  if (init_processing(&arg_config)) {;
+  if (get_node_data()) {
     print_starter_state(&arg_config);
     start_block_production();
   } else {
-    FATAL_ERROR("Failed server initialization."); 
+    FATAL_ERROR_EXIT("Failed to get the nodes public wallet address"); 
   }
 
   shutdown_db();
