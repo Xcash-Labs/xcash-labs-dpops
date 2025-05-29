@@ -1299,16 +1299,12 @@ function update_xcash()
     cd "${XCASH_DPOPS_INSTALLATION_DIR}"
     git clone "${XCASH_URL}" "$XCASH_DIR"
   fi
-  echo "\r here..."
+  pwd
   cd "$XCASH_DIR"
   git reset --hard HEAD --quiet
   git pull --quiet
-  if ! command -v cmake &> /dev/null; then
-    echo "CMake is not installed. Installing..."
-    sudo apt install -y cmake /dev/null 
-  fi
   make clean &>/dev/null
-  make release &>/dev/null
+  make release -j $((CPU_THREADS / 2)) &>/dev/nulll
   echo -ne "\r${COLOR_PRINT_GREEN}Updating X-CASH Complete                     ${END_COLOR_PRINT}"
   echo
 }
@@ -1323,12 +1319,8 @@ function update_xcash_dpops()
   cd "$XCASH_DPOPS_DIR"
   git reset --hard HEAD --quiet
   git pull --quiet
-  if ! command -v cmake &> /dev/null; then
-    echo "CMake is not installed. Installing..."
-    sudo apt install -y cmake /dev/null 
-  fi
   make clean &>/dev/null
-  make &>/dev/null
+  make -j $((CPU_THREADS / 2)) &>/dev/null
   echo -ne "\r${COLOR_PRINT_GREEN}Updating xcash-dpops Complete                 ${END_COLOR_PRINT}"
   echo
 }
