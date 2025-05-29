@@ -69,12 +69,6 @@ typedef struct {
     uint8_t block_verifiers_voted[BLOCK_VERIFIERS_AMOUNT];
 } block_verifiers_list_t;
 
-struct current_round_part_vote_data {
-    char current_vote_results[DATA_HASH_LENGTH+1]; // The SHA2-512 hash of the vote results that the block verifier calculated
-    int vote_results_valid; // The current part of the round vote count for a valid vote.
-    int vote_results_invalid; // The current part of the round vote count for a invalid vote.
-};
-
 struct current_block_verifiers_majority_vote {
     char data[BLOCK_VERIFIERS_AMOUNT][BLOCK_VERIFIERS_AMOUNT][500]; // The data for each received data from each block verifier
 };

@@ -163,13 +163,8 @@ void init_globals(void) {
   size_t count = 0;
   srand(time(NULL));
   memset(delegates_all, 0, sizeof(delegates_all));
- 
-
-
-  
-  memset(data,0,sizeof(data));
+   memset(data,0,sizeof(data));
   memset(current_block_height,0,sizeof(current_block_height));
-
   server_limit_IP_address_list = (char*)calloc(15728640,sizeof(char)); // 15 MB
   server_limit_public_address_list = (char*)calloc(15728640,sizeof(char)); // 15 MB
    
@@ -181,25 +176,11 @@ void init_globals(void) {
 
   for (count = 0; count < BLOCK_VERIFIERS_TOTAL_AMOUNT; count++)
   {
-    // initialize the previous, current and next block_verifiers_list struct 
-  //  memset(previous_block_verifiers_list.block_verifiers_name[count],0,sizeof(previous_block_verifiers_list.block_verifiers_name[count]));
-  //  memset(previous_block_verifiers_list.block_verifiers_public_address[count],0,sizeof(previous_block_verifiers_list.block_verifiers_public_address[count]));
-  //  memset(previous_block_verifiers_list.block_verifiers_public_key[count],0,sizeof(previous_block_verifiers_list.block_verifiers_public_key[count]));
-  //  memset(previous_block_verifiers_list.block_verifiers_IP_address[count],0,sizeof(previous_block_verifiers_list.block_verifiers_IP_address[count]));
-
     memset(current_block_verifiers_list.block_verifiers_name[count],0,sizeof(current_block_verifiers_list.block_verifiers_name[count]));
     memset(current_block_verifiers_list.block_verifiers_public_address[count],0,sizeof(current_block_verifiers_list.block_verifiers_public_address[count]));
     memset(current_block_verifiers_list.block_verifiers_public_key[count],0,sizeof(current_block_verifiers_list.block_verifiers_public_key[count]));
     memset(current_block_verifiers_list.block_verifiers_IP_address[count],0,sizeof(current_block_verifiers_list.block_verifiers_IP_address[count]));
-
-  //  memset(next_block_verifiers_list.block_verifiers_name[count],0,sizeof(next_block_verifiers_list.block_verifiers_name[count]));
-  //  memset(next_block_verifiers_list.block_verifiers_public_address[count],0,sizeof(next_block_verifiers_list.block_verifiers_public_address[count]));
-  //  memset(next_block_verifiers_list.block_verifiers_public_key[count],0,sizeof(next_block_verifiers_list.block_verifiers_public_key[count]));
-  //  memset(next_block_verifiers_list.block_verifiers_IP_address[count],0,sizeof(next_block_verifiers_list.block_verifiers_IP_address[count]));
   }
-
-  // initialize the current_round_part_vote_data struct
-  memset(current_round_part_vote_data.current_vote_results,0,sizeof(current_round_part_vote_data.current_vote_results));
 
   return;
 }
