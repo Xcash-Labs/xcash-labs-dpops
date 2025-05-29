@@ -506,3 +506,17 @@ bool base64_decode(const char* input, uint8_t* output, size_t max_output, size_t
     *decoded_len = (size_t)len;
     return true;
 }
+
+/*---------------------------------------------------------------------------------------------------------
+Name: check_for_invalid_strings
+Description: Checks for invalid strings
+Parameters:
+  MESSAGE - The message
+Return: 0 if the string is not valid, 1 if the string is valid
+---------------------------------------------------------------------------------------------------------*/
+int check_for_invalid_strings(const char* MESSAGE)
+{
+  if (!MESSAGE) return XCASH_ERROR;  // Defensive check for null pointer
+
+  return !(strchr(MESSAGE, '"') || strchr(MESSAGE, ',') || strchr(MESSAGE, ':'));
+}

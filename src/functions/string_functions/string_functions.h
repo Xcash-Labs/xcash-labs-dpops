@@ -30,5 +30,6 @@ bool compress_gzip_with_prefix(const unsigned char* input, size_t input_len, uns
 bool decompress_gzip_with_prefix(const unsigned char* input, size_t input_len, unsigned char** output, size_t* output_len);
 int get_random_bytes(unsigned char *buf, size_t len);
 bool base64_decode(const char* input, uint8_t* output, size_t max_output, size_t* decoded_len);
-void escape_json_string(const char *input, char *output, size_t output_size);
+int check_for_invalid_strings(const char* MESSAGE);
+
 #endif
