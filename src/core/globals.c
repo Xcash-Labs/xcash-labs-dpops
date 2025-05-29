@@ -23,7 +23,6 @@ char delegates_hash[MD5_HASH_SIZE + 1] = {0};
 
 int main_network_data_node_create_block = 0;
 char delegates_error_list[(MAXIMUM_BUFFER_SIZE_DELEGATES_NAME * 100) + 5000];     // not sure if this is used    
-struct current_round_part_vote_data current_round_part_vote_data;
 struct current_block_verifiers_majority_vote current_block_verifiers_majority_vote;
 
 mongoc_client_pool_t* database_client_thread_pool = NULL;
