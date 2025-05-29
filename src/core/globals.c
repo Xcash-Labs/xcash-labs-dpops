@@ -53,17 +53,7 @@ pthread_t server_thread;
 //const char* collection_names[XCASH_DB_COUNT] = {"delegates", "statistics", "reserve_proofs", "reserve_bytes"};
 const char* collection_names[XCASH_DB_COUNT] = {"delegates", "statistics"};
 bool cleanup_db_before_upsert = false;  // delete db before put content. make sure we have exact copy during initial db syncing
-
-//block_verifiers_list_t previous_block_verifiers_list;
-
-
-
 block_verifiers_list_t current_block_verifiers_list;
-
-
-
-
-//block_verifiers_list_t next_block_verifiers_list;
 
 NetworkNode network_nodes[] = {
     {"XCA1T1uxPiS8oprWpaCrUiiFcQB3KEriiUVqeeqnVtiKakSZmrZhoXKGbzqn4wj3EXY4JFPdJHqGr7iRHVxF4yyE28NvzLQgZf", "seeds.xcashseeds.us",
