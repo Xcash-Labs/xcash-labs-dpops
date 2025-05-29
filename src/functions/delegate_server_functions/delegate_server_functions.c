@@ -47,7 +47,7 @@ int check_for_valid_ip_address(const char *host) {
   char ip_str[INET_ADDRSTRLEN];
 
   if (!host || strlen(host) >= INET_ADDRSTRLEN) return 0;
-
+ 
   // Setup hints
   hints.ai_family = AF_INET;
   hints.ai_socktype = SOCK_STREAM;
