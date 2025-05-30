@@ -33,8 +33,7 @@ void generate_key()
   char vrf_secret_key_hex[(crypto_vrf_SECRETKEYBYTES * 2) + 1];
   char vrf_public_key_hex[(crypto_vrf_PUBLICKEYBYTES * 2) + 1];
   
-  int count;
-  int count2;
+  unsigned int count, count2;
   memset(vrf_secret_key_hex, 0, sizeof(vrf_secret_key_hex));
   memset(vrf_public_key_hex, 0, sizeof(vrf_public_key_hex));
   memset(vrf_secret_key_data, 0, sizeof(vrf_secret_key_data));
