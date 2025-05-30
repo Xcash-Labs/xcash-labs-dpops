@@ -45,14 +45,22 @@ void generate_key()
     return;
   }
   // convert the VRF data to a string
-  for (count2 = 0, count = 0; count2 < (int)crypto_vrf_SECRETKEYBYTES; count2++, count += 2)
-  {
-    snprintf(vrf_secret_key_hex + count, VRF_SECRET_KEY_LENGTH - 1, "%02x", vrf_secret_key_data[count2] & 0xFF);
+  //for (count2 = 0, count = 0; count2 < (int)crypto_vrf_SECRETKEYBYTES; count2++, count += 2)
+  //{
+  //  snprintf(vrf_secret_key_hex + count, VRF_SECRET_KEY_LENGTH - 1, "%02x", vrf_secret_key_data[count2] & 0xFF);
+  //}
+  //for (count2 = 0, count = 0; count2 < (int)crypto_vrf_PUBLICKEYBYTES; count2++, count += 2)
+  //{
+  //  snprintf(vrf_public_key_hex + count, VRF_PUBLIC_KEY_LENGTH - 1, "%02x", vrf_public_key_data[count2] & 0xFF);
+  //}
+
+  for (count2 = 0, count = 0; count2 < crypto_vrf_SECRETKEYBYTES; count2++, count += 2) {
+    snprintf(vrf_secret_key_hex + count, sizeof(vrf_secret_key_hex) - count, "%02x", vrf_secret_key_data[count2]);
   }
-  for (count2 = 0, count = 0; count2 < (int)crypto_vrf_PUBLICKEYBYTES; count2++, count += 2)
-  {
-    snprintf(vrf_public_key_hex + count, VRF_PUBLIC_KEY_LENGTH - 1, "%02x", vrf_public_key_data[count2] & 0xFF);
+  for (count2 = 0, count = 0; count2 < crypto_vrf_PUBLICKEYBYTES; count2++, count += 2) {
+    snprintf(vrf_public_key_hex + count, sizeof(vrf_public_key_hex) - count, "%02x", vrf_public_key_data[count2]);
   }
+
   COLOR_PRINT("\nPublic Key:", "green");
   COLOR_PRINT(vrf_public_key_hex, "green");
   COLOR_PRINT("\nSecret Key:", "green");
