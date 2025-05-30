@@ -139,7 +139,9 @@ xcash_round_result_t process_round(void) {
   pthread_mutex_lock(&majority_vrf_lock);
   memset(&current_block_verifiers_list, 0, sizeof(current_block_verifiers_list));
   for (size_t i = 0, j = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
-    if (delegates_all[i].public_address != NULL && delegates_all[i].public_address[0] != '\0') {
+
+
+    if (delegates_all[i].public_address[0] != '\0') {
       if (strcmp(delegates_all[i].online_status_ck, "true") == 0) {
         strcpy(current_block_verifiers_list.block_verifiers_name[j], delegates_all[i].delegate_name);
         strcpy(current_block_verifiers_list.block_verifiers_public_address[j], delegates_all[i].public_address);
