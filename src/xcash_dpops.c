@@ -35,7 +35,7 @@ static struct argp_option options[] = {
   {"block-verifiers-secret-key", 'k', "SECRET_KEY", 0, "Set the block verifier's secret key", 0},
   {"log-level", OPTION_LOG_LEVEL, "LOG_LEVEL", 0, "Displays log messages based on the level passed.", 0},
   {"fee", OPTION_FEE, "FEE", 0, "The fee reward to running delegate (in percents 0..100).", 0},
-  {"minimum-amount", OPTION_MINIMUM_AMOUNT, "MINIMUM_PAYOUT", 0, "The minimum amount of payouts to voters.", 0}
+  {"minimum-amount", OPTION_MINIMUM_AMOUNT, "MINIMUM_PAYOUT", 0, "The minimum amount of payouts to voters.", 0},
   {"generate-key", OPTION_GENERATE_KEY, 0, 0, "Generate public/private key for block verifiers.", 0},
   {"init-db-from-seeds", OPTION_INIT_DB_FROM_SEEDS, 0, 0, "Sync current node data from seeds. Needed only during installation process", 0},
   {"init-db-from-top", OPTION_INIT_DB_FROM_TOP, 0, 0, "Sync current node data from top block_height nodes.", 0},

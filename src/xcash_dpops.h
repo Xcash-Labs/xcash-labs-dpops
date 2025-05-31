@@ -21,7 +21,6 @@
 // Define an enum for option IDs
 typedef enum {
     OPTION_GENERATE_KEY,
-//    OPTION_TOTAL_THREADS,
     OPTION_FEE,
     OPTION_MINIMUM_AMOUNT,
     OPTION_INIT_DB_FROM_SEEDS,
