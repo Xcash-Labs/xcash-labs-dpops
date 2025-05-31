@@ -16,6 +16,10 @@ BRIGHT_WHITE_TEXT("Debug Options:\n")
 "  --log-level                             The log-level displays log messages based on the level passed:\n"
 "                                          Critial - 0, Error - 1, Warning - 2, Info - 3, Debug - 4\n"
 "\n"
+BRIGHT_WHITE_TEXT("Delegate Options:\n")
+"  --fee  <reward>                         The fee reward to running delegate (0..100).\n"
+"  --minimum-amount <minimum-amount>       The minimum amount of payouts to voters.\n"
+"\n"
 BRIGHT_WHITE_TEXT("Advanced Options:\n")
 "  --generate-key                          Generate public/private key for block verifiers.\n"
 "\n"
@@ -30,6 +34,8 @@ static struct argp_option options[] = {
   {"help", 'h', 0, 0, "List all valid parameters.", 0},
   {"block-verifiers-secret-key", 'k', "SECRET_KEY", 0, "Set the block verifier's secret key", 0},
   {"log-level", OPTION_LOG_LEVEL, "LOG_LEVEL", 0, "Displays log messages based on the level passed.", 0},
+  {"fee", OPTION_FEE, "FEE", 0, "The fee reward to running delegate (in percents 0..100).", 0},
+  {"minimum-amount", OPTION_MINIMUM_AMOUNT, "MINIMUM_PAYOUT", 0, "The minimum amount of payouts to voters.", 0}
   {"generate-key", OPTION_GENERATE_KEY, 0, 0, "Generate public/private key for block verifiers.", 0},
   {"init-db-from-seeds", OPTION_INIT_DB_FROM_SEEDS, 0, 0, "Sync current node data from seeds. Needed only during installation process", 0},
   {"init-db-from-top", OPTION_INIT_DB_FROM_TOP, 0, 0, "Sync current node data from top block_height nodes.", 0},
@@ -56,6 +62,12 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
     {
       log_level = atoi(arg);
     }
+    break;
+  case OPTION_FEE:
+    arguments->fee = atof(arg);
+    break;
+  case OPTION_MINIMUM_AMOUNT:
+    arguments->minimum_amount = strtoull(arg, NULL, 10);
     break;
   case OPTION_GENERATE_KEY:
     create_key = true;
