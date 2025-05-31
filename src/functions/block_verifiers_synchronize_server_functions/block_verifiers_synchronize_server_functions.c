@@ -147,7 +147,7 @@ void server_receive_data_socket_node_to_network_data_nodes_get_current_block_ver
     if (strlen(current_block_verifiers_list.block_verifiers_public_address[count]) == XCASH_WALLET_LENGTH) {
       strncat(data + offset, current_block_verifiers_list.block_verifiers_public_key[count], VRF_PUBLIC_KEY_LENGTH);
       offset += VRF_PUBLIC_KEY_LENGTH;
-      strncat(data + offset, "|", 1);
+      data[offset++] = '|';
       offset += 1;
     }
   }
@@ -160,7 +160,7 @@ void server_receive_data_socket_node_to_network_data_nodes_get_current_block_ver
       size_t ip_len = strnlen(current_block_verifiers_list.block_verifiers_IP_address[count], 128);
       strncat(data + offset, current_block_verifiers_list.block_verifiers_IP_address[count], ip_len);
       offset += ip_len;
-      strncat(data + offset, "|", 1);
+      data[offset++] = '|';
       offset += 1;
     }
   }
