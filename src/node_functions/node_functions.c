@@ -13,16 +13,7 @@ bool get_node_data(void) {
   }
 
   is_seed_node = is_seed_address(xcash_wallet_public_address);
-
-  // Match by public_address
-  char filter_json[256];
-  snprintf(filter_json, sizeof(filter_json),
-           "{ \"public_address\": \"%s\" }", xcash_wallet_public_address);
-  if (read_document_field_from_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, filter_json, "public_key", vrf_public_key) == XCASH_OK) {
-  } else {
-    FATAL_ERROR_EXIT("Failed to read public_key from db for delegate");
-  }
-
+  get_vrf_public_key();
   return XCASH_OK;
 }
 
@@ -31,6 +22,18 @@ bool is_seed_address(const char *public_address) {
     if (strcmp(network_nodes[i].seed_public_address, public_address) == 0) {
       return true;
     }
+  }
+  return false;
+}
+
+bool get_vrf_public_key() {
+  char filter_json[256];
+  snprintf(filter_json, sizeof(filter_json), "{ \"public_address\": \"%s\" }", xcash_wallet_public_address);
+  if (read_document_field_from_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, filter_json, "public_key", vrf_public_key) == XCASH_OK) {
+    return true;
+  } else {
+    memset(vrf_public_key, 0, sizeof(vrf_public_key));
+    WARNING_PRINT("Failed to read vrf_public_key for delegate, has this delegate been registered?");
   }
   return false;
 }
@@ -135,43 +138,4 @@ const char *address_to_node_name(const char *public_address) {
 
   WARNING_PRINT("Public address %s not found in any list.", public_address);
   return NULL;
-}
-
-/**
- * @brief Retrieves daemon data including the current block height and previous block hash.
- *
- * @return int Returns XCASH_OK (1) if successful, XCASH_ERROR (0) if an error occurs.
- */
-bool get_daemon_data(void) {
-  // Get the current block height
-  if (!get_current_block_height(current_block_height)) {
-    ERROR_PRINT("Could not get the current block height.");
-    return false;
-  }
-
-  // Validate current block height
-  long current_height = atol(current_block_height);
-  if (current_height <= 0) {
-    ERROR_PRINT("Invalid block height retrieved: %s", current_block_height);
-    return false;
-  }
-
-  if (current_height < XCASH_PROOF_OF_STAKE_BLOCK_HEIGHT) {
-    ERROR_PRINT("Current Block Height (%ld) is below DPOPS era. The blockchain data may not be fully synchronized yet.", current_height);
-    return false;
-  }
-
-  // Get the previous block hash
-  if (!get_previous_block_hash(previous_block_hash)) {
-    ERROR_PRINT("Could not get the previous block hash.");
-    return false;
-  }
-
-  // Validate previous block hash
-  if (previous_block_hash[0] == '\0') {
-    ERROR_PRINT("Previous block hash is empty. Consider going offline to avoid errors.");
-    return false;
-  }
-
-  return true;
 }

@@ -65,6 +65,13 @@ int select_block_producer_from_vrf(void) {
  *                                ROUND_ERROR on critical errors.
  */
 xcash_round_result_t process_round(void) {
+
+  if (vrf_public_key[0] == '\0') {
+    WARNING_PRINT("Failed to read vrf_public_key for delegate, has this delegate been registered?");
+    get_vrf_public_key();
+    return ROUND_SKIP
+  }
+
   // Get the current block height
   INFO_STAGE_PRINT("Part 1 - Get Current Block Height");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 2);
@@ -349,7 +356,7 @@ Returns:
 ---------------------------------------------------------------------------------------------------------*/
 void start_block_production(void) {
   struct timeval current_time;
-  xcash_round_result_t round_result = ROUND_OK;
+  xcash_round_result_t round_result;
   bool current_block_healthy = false;
 
   // Wait for node to be fully synced
@@ -361,10 +368,6 @@ void start_block_production(void) {
       sleep(5);
     }
   }
-
-
-  // last, current, and next delegtes load in fill_delegates_from_db - clean up not needed --------------------
-
 
   // set up delegates for first round
   if (!fill_delegates_from_db()) {
@@ -393,6 +396,7 @@ void start_block_production(void) {
     delegate_db_hash_mismatch = 0;
     atomic_store(&wait_for_vrf_init, true);
     atomic_store(&wait_for_block_height_init, true);
+    round_result = ROUND_OK;
 
     round_result = process_round();
 

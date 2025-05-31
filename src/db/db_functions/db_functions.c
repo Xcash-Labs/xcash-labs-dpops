@@ -134,7 +134,7 @@ int insert_document_into_collection_json(const char* DATABASE, const char* COLLE
   mongoc_client_t* database_client_thread = get_temporary_connection();
   if (!database_client_thread) return XCASH_ERROR;
 
-  del_hash(database_client_thread, COLLECTION);
+//  del_hash(database_client_thread, COLLECTION);
   mongoc_collection_t* collection = mongoc_client_get_collection(database_client_thread, DATABASE, COLLECTION);
   if (!collection) return handle_error("Failed to get collection", NULL, NULL, NULL, database_client_thread);
 
