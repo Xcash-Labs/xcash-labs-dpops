@@ -116,13 +116,6 @@ void server_received_msg_get_sync_info(server_client_t *client, const char *MESS
     return;
 }
 
-
-
-
-
-
-
-
 /*---------------------------------------------------------------------------------------------------------
 Name: server_receive_data_socket_node_to_network_data_nodes_get_current_block_verifiers_list
 Description: Runs the code when the server receives the NODE_TO_NETWORK_DATA_NODES_GET_CURRENT_BLOCK_VERIFIERS_LIST message
@@ -180,5 +173,5 @@ void server_receive_data_socket_node_to_network_data_nodes_get_current_block_ver
   }
 
   // Send the data
-  send_data(CLIENT_SOCKET, (unsigned char*)data, strlen(data));
+  send_data(client, (unsigned char*)data, strlen(data));
 }
