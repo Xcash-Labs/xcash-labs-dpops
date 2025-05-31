@@ -41,7 +41,7 @@ static struct argp_option options[] = {
   {"init-db-from-top", OPTION_INIT_DB_FROM_TOP, 0, 0, "Sync current node data from top block_height nodes.", 0},
   {0}
 };
-
+ 
 /*---------------------------------------------------------------------------------------------------------
 Name: error_t parse_opt
 Description: Load program options.  Using the argp system calls.
