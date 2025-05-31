@@ -29,7 +29,7 @@ bool is_seed_address(const char *public_address) {
 void get_vrf_public_key() {
   char filter_json[256];
   snprintf(filter_json, sizeof(filter_json), "{ \"public_address\": \"%s\" }", xcash_wallet_public_address);
-  if !(read_document_field_from_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, filter_json, "public_key", vrf_public_key) == XCASH_OK) {
+  if (read_document_field_from_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, filter_json, "public_key", vrf_public_key) != XCASH_OK) {
     memset(vrf_public_key, 0, sizeof(vrf_public_key));
     WARNING_PRINT("Failed to read vrf_public_key for delegate, has this delegate been registered?");
   }
