@@ -5,6 +5,8 @@
 
 typedef struct {
     char *block_verifiers_secret_key;
+    bool delegates_website;
+    bool shared_delegates_website;
     float fee;
     unsigned long long minimum_amount;
     bool init_db_from_seeds;
