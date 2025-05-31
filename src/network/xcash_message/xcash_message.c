@@ -188,6 +188,8 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
   char trans_type[128] = {0};
   bool json_type = false;
 
+  INFO_PRINT("message=%s", data);
+
   if (strstr(data, "{") && strstr(data, "}")) {
     // JSON message
     json_type = true;
