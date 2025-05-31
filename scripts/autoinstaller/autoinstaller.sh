@@ -657,10 +657,10 @@ function check_if_upgrade_solo_delegate_and_shared_delegate()
       configure_npm
       update_npm
       install_npm_global_packages
-      download_shared_delegate_website
+#      download_shared_delegate_website
       get_installation_directory
-      install_shared_delegates_website_npm_packages
-      build_shared_delegates_website
+#      install_shared_delegates_website_npm_packages
+#      build_shared_delegates_website
       source ~/.profile || true
       echo
       echo
@@ -1210,9 +1210,9 @@ function install_shared_delegates_website()
   configure_npm
   update_npm
   install_npm_global_packages
-  download_shared_delegate_website
-  install_shared_delegates_website_npm_packages
-  build_shared_delegates_website
+#  download_shared_delegate_website
+#  install_shared_delegates_website_npm_packages
+#  build_shared_delegates_website
   source ~/.profile || true
   echo
   echo
