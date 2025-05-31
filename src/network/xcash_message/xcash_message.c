@@ -268,6 +268,13 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
       }
       break;
 
+    case XMSG_NODE_TO_NETWORK_DATA_NODES_GET_CURRENT_BLOCK_VERIFIERS_LIST:
+      if (server_limit_IP_addresses(LIMIT_CHECK, client->client_ip) == 1) {
+        server_receive_data_socket_node_to_network_data_nodes_get_current_block_verifiers_list(client);
+        server_limit_IP_addresses(LIMIT_REMOVE, client->client_ip);
+      }
+      break;
+
     case XMSG_NODES_TO_BLOCK_VERIFIERS_REGISTER_DELEGATE:
       if (server_limit_public_addresses(LIMIT_CHECK, data) == 1) {
         server_receive_data_socket_nodes_to_block_verifiers_register_delegates(client, data);

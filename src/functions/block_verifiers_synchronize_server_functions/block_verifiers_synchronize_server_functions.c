@@ -115,3 +115,70 @@ void server_received_msg_get_sync_info(server_client_t *client, const char *MESS
     }
     return;
 }
+
+
+
+
+
+
+
+
+/*---------------------------------------------------------------------------------------------------------
+Name: server_receive_data_socket_node_to_network_data_nodes_get_current_block_verifiers_list
+Description: Runs the code when the server receives the NODE_TO_NETWORK_DATA_NODES_GET_CURRENT_BLOCK_VERIFIERS_LIST message
+Parameters:
+  CLIENT_SOCKET - The socket to send data to
+---------------------------------------------------------------------------------------------------------*/
+void server_receive_data_socket_node_to_network_data_nodes_get_current_block_verifiers_list(server_client_t* client)
+{
+  char data[BUFFER_SIZE] = {0};
+  int count;
+  size_t offset = 0;
+
+  DEBUG_PRINT("received %s, %s", __func__, "NODE_TO_NETWORK_DATA_NODES_GET_CURRENT_BLOCK_VERIFIERS_LIST");
+
+  // Start building the message
+  offset += snprintf(data + offset, sizeof(data) - offset,
+                     "{\r\n \"message_settings\": \"NETWORK_DATA_NODE_TO_NODE_SEND_CURRENT_BLOCK_VERIFIERS_LIST\",\r\n \"block_verifiers_public_address_list\": \"");
+
+  for (count = 0; count < BLOCK_VERIFIERS_TOTAL_AMOUNT; count++) {
+    if (strlen(current_block_verifiers_list.block_verifiers_public_address[count]) == XCASH_WALLET_LENGTH) {
+      offset += snprintf(data + offset, sizeof(data) - offset, "%s|", current_block_verifiers_list.block_verifiers_public_address[count]);
+    }
+  }
+
+  offset += snprintf(data + offset, sizeof(data) - offset,
+                     "\",\r\n \"block_verifiers_public_key_list\": \"");
+
+  for (count = 0; count < BLOCK_VERIFIERS_TOTAL_AMOUNT; count++) {
+    if (strlen(current_block_verifiers_list.block_verifiers_public_address[count]) == XCASH_WALLET_LENGTH) {
+      strncat(data + offset, current_block_verifiers_list.block_verifiers_public_key[count], VRF_PUBLIC_KEY_LENGTH);
+      offset += VRF_PUBLIC_KEY_LENGTH;
+      strncat(data + offset, "|", 1);
+      offset += 1;
+    }
+  }
+
+  offset += snprintf(data + offset, sizeof(data) - offset,
+                     "\",\r\n \"block_verifiers_IP_address_list\": \"");
+
+  for (count = 0; count < BLOCK_VERIFIERS_TOTAL_AMOUNT; count++) {
+    if (strlen(current_block_verifiers_list.block_verifiers_public_address[count]) == XCASH_WALLET_LENGTH) {
+      size_t ip_len = strnlen(current_block_verifiers_list.block_verifiers_IP_address[count], 128);
+      strncat(data + offset, current_block_verifiers_list.block_verifiers_IP_address[count], ip_len);
+      offset += ip_len;
+      strncat(data + offset, "|", 1);
+      offset += 1;
+    }
+  }
+
+  offset += snprintf(data + offset, sizeof(data) - offset, "\",\r\n}");
+
+  // Sign the data
+  if (sign_data(data) == 0) { 
+    DEBUG_PRINT("Could not sign data");
+  }
+
+  // Send the data
+  send_data(CLIENT_SOCKET, (unsigned char*)data, strlen(data));
+}
