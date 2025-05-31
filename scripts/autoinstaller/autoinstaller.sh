@@ -265,10 +265,6 @@ function get_shared_delegate_installation_settings()
   SHARED_DELEGATE=$([ "$data" == "" ] && echo "$SHARED_DELEGATE" || echo "$data")
   echo -ne "\r"
   echo
-  if [ "${SHARED_DELEGATE^^}" == "NO" ]; then    
-
-  fi
-
   if [ "${SHARED_DELEGATE^^}" == "YES" ]; then    
     while
       echo -ne "${COLOR_PRINT_YELLOW}Shared Delegate Fee (expressed as a percentage, ex: 1 or 1.52): ${END_COLOR_PRINT}"
@@ -287,49 +283,6 @@ function get_shared_delegate_installation_settings()
     do true; done
   fi
 }
-
-
-function get_shared_delegate_installation_settings()
-{
-  echo -ne "${COLOR_PRINT_YELLOW}Only Shared Delegate are allowed at this time (YES): ${END_COLOR_PRINT}"
-  read -r data
-  SHARED_DELEGATE=$([ "$data" == "" ] && echo "$SHARED_DELEGATE" || echo "$data")
-  echo -ne "\r"
-  echo
-
-  if [ "${SHARED_DELEGATE^^}" == "NO" ]; then    
-    echo -e "${COLOR_PRINT_RED}Solo nodes are not allowed at this time. Please choose YES to continue with installation.${END_COLOR_PRINT}"
-  fi
-
-  if [ "${SHARED_DELEGATE^^}" == "SEED" ]; then    
-      SHARED_DELEGATE="NO"
-  fi
-
-  if [ "${SHARED_DELEGATE^^}" == "YES" ]; then    
-    while
-      echo -ne "${COLOR_PRINT_YELLOW}Shared Delegate Fee (expressed as a percentage, ex: 1 or 1.52): ${END_COLOR_PRINT}"
-      read -r DPOPS_FEE
-      echo -ne "\r"
-      echo
-      [[ ! $DPOPS_FEE =~ $regex_DPOPS_FEE ]]
-    do true; done
-    
-    while
-      echo -ne "${COLOR_PRINT_YELLOW}Shared Delegate Minimum Payment Amount (whole number between 10000 and 10000000): ${END_COLOR_PRINT}"
-      read -r DPOPS_MINIMUM_AMOUNT
-      echo -ne "\r"
-      echo
-      [[ ! $DPOPS_MINIMUM_AMOUNT =~ $regex_DPOPS_MINIMUM_AMOUNT ]]
-    do true; done
-  fi
-}
-
-
-
-
-
-
-
 
 function update_systemd_service_files()
 {
