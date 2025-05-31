@@ -5,7 +5,7 @@
 
 typedef struct {
     char *block_verifiers_secret_key;
-    int total_threads;
+//    int total_threads;
     float fee;
     unsigned long long minimum_amount;
     bool init_db_from_seeds;
