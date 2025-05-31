@@ -69,6 +69,7 @@ xcash_round_result_t process_round(void) {
   if (vrf_public_key[0] == '\0') {
     WARNING_PRINT("Failed to read vrf_public_key for delegate, has this delegate been registered?");
     get_vrf_public_key();
+    sleep(5);
     return ROUND_SKIP;
   }
 
