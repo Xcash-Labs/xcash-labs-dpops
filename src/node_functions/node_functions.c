@@ -13,7 +13,7 @@ bool get_node_data(void) {
   }
 
   is_seed_node = is_seed_address(xcash_wallet_public_address);
-  get_vrf_public_key();
+  get_vrf_public_key(); 
   return XCASH_OK;
 }
 
