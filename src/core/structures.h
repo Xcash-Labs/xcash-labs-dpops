@@ -25,7 +25,7 @@ typedef struct {
 typedef struct  {
     char public_address[XCASH_WALLET_LENGTH+1];
     char total_vote_count[100];
-    char IP_address[256];
+    char IP_address[IP_LENGTH+1];
     char delegate_name[MAXIMUM_BUFFER_SIZE_DELEGATES_NAME+1];
     char about[1025];
     char website[256];

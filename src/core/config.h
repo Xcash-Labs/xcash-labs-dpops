@@ -76,7 +76,7 @@
 
 
 // ===================== Buffer Sizes =====================
-#define IP_LENGTH 253
+
 #define BUFFER_SIZE_NETWORK_BLOCK_DATA 500
 
 
@@ -173,7 +173,7 @@
 
 
 // ===================== XCASH DPOPS =====================
-#define MAXIMUM_AMOUNT_OF_DELEGATES 100
+#define MAXIMUM_AMOUNT_OF_DELEGATES 100                                   // may want ot eliminate one of these
 #define BLOCK_VERIFIERS_TOTAL_AMOUNT 100
 #define BLOCK_VERIFIERS_AMOUNT 50
 #define BLOCK_VERIFIERS_SETTINGS 3
@@ -186,7 +186,17 @@
 #define MAXIMUM_TRANSACATIONS_PER_BLOCK 500
 #define MAX_CONNECTIONS 1024
 #define MAX_THREADS 10
-#define BLOCK_VERIFIERS_IP_ADDRESS_TOTAL_LENGTH 100
+
+#define BLOCK_VERIFIERS_IP_ADDRESS_TOTAL_LENGTH 255 / was 100 changed to match delegates table
+#define IP_LENGTH 255  //combine with above
+#define DELEGATES_ONLINE_BUFFER
+    ( (XCASH_WALLET_LENGTH    * MAXIMUM_AMOUNT_OF_DELEGATES) \
+    + (VRF_PUBLIC_KEY_LENGTH * MAXIMUM_AMOUNT_OF_DELEGATES) \
+    + (IP_LENGTH             * MAXIMUM_AMOUNT_OF_DELEGATES) \
+    + 768 )
+
+
+
 #define MINIMUM_BYTE_RANGE 1 // The minimum byte range to use when calculating the next block producer
 #define MAXIMUM_BYTE_RANGE 250 // The maximum byte range to use when calculating the next block producer
 #define BLOCK_VERIFIERS_CREATE_BLOCK_TIMEOUT_SETTINGS 5 // The time to wait to check if the block was created
