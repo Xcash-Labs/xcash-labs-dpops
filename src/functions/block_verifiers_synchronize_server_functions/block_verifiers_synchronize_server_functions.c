@@ -167,11 +167,6 @@ void server_receive_data_socket_node_to_network_data_nodes_get_current_block_ver
 
   offset += snprintf(data + offset, sizeof(data) - offset, "\",\r\n}");
 
-  // Sign the data
-  if (sign_data(data) == 0) { 
-    DEBUG_PRINT("Could not sign data");
-  }
-
   // Send the data
   
   INFO_PRINT("Send Back %s", data);
