@@ -128,7 +128,7 @@ void server_receive_data_socket_node_to_network_data_nodes_get_current_block_ver
   int count;
   size_t offset = 0;
 
-  DEBUG_PRINT("received %s, %s", __func__, "NODE_TO_NETWORK_DATA_NODES_GET_CURRENT_BLOCK_VERIFIERS_LIST");
+  INFO_PRINT("received %s, %s", __func__, "NODE_TO_NETWORK_DATA_NODES_GET_CURRENT_BLOCK_VERIFIERS_LIST");
 
   // Start building the message
   offset += snprintf(data + offset, sizeof(data) - offset,
@@ -173,5 +173,8 @@ void server_receive_data_socket_node_to_network_data_nodes_get_current_block_ver
   }
 
   // Send the data
+  
+  INFO_PRINT(data);
+
   send_data(client, (unsigned char*)data, strlen(data));
 }
