@@ -219,7 +219,7 @@ int read_document_from_collection(const char* DATABASE, const char* COLLECTION, 
 }
 
 // Function to read a specific field from a document
-int read_document_field_from_collection_OLD_(const char* DATABASE, const char* COLLECTION, const char* DATA, const char* FIELD_NAME, char* result) {
+int read_document_field_from_collection(const char* DATABASE, const char* COLLECTION, const char* DATA, const char* FIELD_NAME, char* result) {
   if (!DATABASE || !COLLECTION || !DATA || !FIELD_NAME || !result) {  // NULL checks
       fprintf(stderr, "Invalid input parameters.\n");
       return XCASH_ERROR;
@@ -600,7 +600,7 @@ int read_document_all_fields_from_collection(const char* DATABASE, const char* C
 }
 
 // Function to read multiple documents from a collection
-int read_multiple_documents_all_fields_from_collection(const char* DATABASE, const char* COLLECTION, const char* DATA, struct database_multiple_documents_fields* result, const size_t DOCUMENT_COUNT_START, const size_t DOCUMENT_COUNT_TOTAL, const int DOCUMENT_OPTIONS, const char* DOCUMENT_OPTIONS_DATA) {
+int read_multiple_documents_all_fields_from_collection_OLD_(const char* DATABASE, const char* COLLECTION, const char* DATA, struct database_multiple_documents_fields* result, const size_t DOCUMENT_COUNT_START, const size_t DOCUMENT_COUNT_TOTAL, const int DOCUMENT_OPTIONS, const char* DOCUMENT_OPTIONS_DATA) {
   mongoc_client_t* database_client_thread = get_temporary_connection();
   if (!database_client_thread) return XCASH_ERROR;
 
