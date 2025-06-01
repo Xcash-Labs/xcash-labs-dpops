@@ -124,52 +124,70 @@ Parameters:
 ---------------------------------------------------------------------------------------------------------*/
 void server_receive_data_socket_node_to_network_data_nodes_get_current_block_verifiers_list(server_client_t* client)
 {
-  char data[BUFFER_SIZE] = {0};
-  int count;
-  size_t offset = 0;
+    char data[DELEGATES_BUFFER_SIZE];
+    bson_t*   query_bson = NULL;
+    all_online_delegates_t all_online_delegates = {0};
+    char      filter_json[128];
+    size_t    max_docs = BLOCK_VERIFIERS_TOTAL_AMOUNT;
 
-  INFO_PRINT("received %s, %s", __func__, "NODE_TO_NETWORK_DATA_NODES_GET_CURRENT_BLOCK_VERIFIERS_LIST");
+    DEBUG_PRINT("received %s, %s",
+                __func__,
+                "NODE_TO_NETWORK_DATA_NODES_GET_CURRENT_BLOCK_VERIFIERS_LIST");
 
-  // Start building the message
-  offset += snprintf(data + offset, sizeof(data) - offset,
-                     "{\r\n \"message_settings\": \"NETWORK_DATA_NODE_TO_NODE_SEND_CURRENT_BLOCK_VERIFIERS_LIST\",\r\n \"block_verifiers_public_address_list\": \"");
+    // Build the JSON prefix
+    memset(data, 0, sizeof(data));
+    strcat(data,
+        "{\r\n"
+        "  \"message_settings\": \"NETWORK_DATA_NODE_TO_NODE_SEND_CURRENT_BLOCK_VERIFIERS_LIST\",\r\n"
+        "  \"block_verifiers_public_address_list\": \""
+    );
 
-  for (count = 0; count < BLOCK_VERIFIERS_TOTAL_AMOUNT; count++) {
-    if (strlen(current_block_verifiers_list.block_verifiers_public_address[count]) == XCASH_WALLET_LENGTH) {
-      offset += snprintf(data + offset, sizeof(data) - offset, "%s|", current_block_verifiers_list.block_verifiers_public_address[count]);
+    snprintf(filter_json, sizeof(filter_json), "{ \"online_status\": \"true\" }");
+
+    // Call helper to fetch up to max_docs matching documents
+    if (read_multiple_documents_all_fields_from_collection(
+            DATABASE_NAME,
+            DB_COLLECTION_DELEGATES,
+            filter_json,
+            &all_online_delegates,
+            1,                     // start at the 1st matching document
+            max_docs,              // fetch up to BLOCK_VERIFIERS_TOTAL_AMOUNT
+            0,                     // no sort options
+            NULL                   // not used since options == 0
+        ) != XCASH_OK)
+    {
+      send_data(client,(unsigned char*)"Could not get a list of the current online delegates",0,1,"");
+      return;
     }
-  }
 
-  offset += snprintf(data + offset, sizeof(data) - offset,
-                     "\",\r\n \"block_verifiers_public_key_list\": \"");
-
-  for (count = 0; count < BLOCK_VERIFIERS_TOTAL_AMOUNT; count++) {
-    if (strlen(current_block_verifiers_list.block_verifiers_public_address[count]) == XCASH_WALLET_LENGTH) {
-      strncat(data + offset, current_block_verifiers_list.block_verifiers_public_key[count], VRF_PUBLIC_KEY_LENGTH);
-      offset += VRF_PUBLIC_KEY_LENGTH;
-      data[offset++] = '|';
-      offset += 1;
+    // all_online_delegates.document_count now has N (≤ max_docs).
+    // Build the public_address list:
+    for (size_t i = 0; i < all_online_delegates.document_count; i++) {
+        if (i > 0) strcat(data, "|");
+        strcat(data, all_online_delegates.public_address[i]);
     }
-  }
 
-  offset += snprintf(data + offset, sizeof(data) - offset,
-                     "\",\r\n \"block_verifiers_IP_address_list\": \"");
-
-  for (count = 0; count < BLOCK_VERIFIERS_TOTAL_AMOUNT; count++) {
-    if (strlen(current_block_verifiers_list.block_verifiers_public_address[count]) == XCASH_WALLET_LENGTH) {
-      size_t ip_len = strnlen(current_block_verifiers_list.block_verifiers_IP_address[count], 128);
-      strncat(data + offset, current_block_verifiers_list.block_verifiers_IP_address[count], ip_len);
-      offset += ip_len;
-      data[offset++] = '|';
-      offset += 1;
+    // Continue JSON for "public_key" list
+    strcat(data,
+           "\",\r\n"
+           "  \"block_verifiers_public_key_list\": \""
+    );
+    for (size_t i = 0; i < all_online_delegates.document_count; i++) {
+        if (i > 0) strcat(data, "|");
+        strcat(data, all_online_delegates.public_key[i]);
     }
-  }
 
-  offset += snprintf(data + offset, sizeof(data) - offset, "\",\r\n}");
+    // Continue JSON for "IP_address" list
+    strcat(data,
+           "\",\r\n"
+           "  \"block_verifiers_IP_address_list\": \""
+    );
+    for (size_t i = 0; i < all_online_delegates.document_count; i++) {
+        if (i > 0) strcat(data, "|");
+        strcat(data, all_online_delegates.IP_address[i]);
+    }
 
-  // Send the data
-  
-  INFO_PRINT("Send Back %s", data);
-
-  send_data(client, (unsigned char*)data, strlen(data));
+    // Close JSON and send
+    strcat(data, "\"\r\n}");
+    send_data(client, (unsigned char*)data, strlen(data));
 }
