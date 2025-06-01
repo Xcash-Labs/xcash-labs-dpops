@@ -454,7 +454,7 @@ int read_document_all_fields_from_collection(const char* DATABASE, const char* C
 }
 
 // Function to read multiple documents from a collection
-int read_multiple_documents_all_fields_from_collection(const char* DATABASE, const char* COLLECTION, const char* DATA, struct database_multiple_documents_fields* result, const size_t DOCUMENT_COUNT_START, const size_t DOCUMENT_COUNT_TOTAL, const int DOCUMENT_OPTIONS, const char* DOCUMENT_OPTIONS_DATA) {
+int read_multiple_documents_all_fields_from_collection__OLD__(const char* DATABASE, const char* COLLECTION, const char* DATA, struct database_multiple_documents_fields* result, const size_t DOCUMENT_COUNT_START, const size_t DOCUMENT_COUNT_TOTAL, const int DOCUMENT_OPTIONS, const char* DOCUMENT_OPTIONS_DATA) {
   mongoc_client_t* database_client_thread = get_temporary_connection();
   if (!database_client_thread) return XCASH_ERROR;
 
@@ -536,6 +536,193 @@ int update_document_from_collection(const char* DATABASE, const char* COLLECTION
   free_resources(update, update_settings, collection, database_client_thread);
   return XCASH_OK;
 }
+
+
+
+
+
+
+
+
+
+
+
+int read_multiple_documents_all_fields_from_collection(
+    const char* DATABASE,
+    const char* COLLECTION,
+    const char* DATA,
+    struct database_multiple_documents_fields* result,
+    const size_t DOCUMENT_COUNT_START,
+    const size_t DOCUMENT_COUNT_TOTAL,
+    const int DOCUMENT_OPTIONS,
+    const char* DOCUMENT_OPTIONS_DATA)
+{
+    // 1) Parameter sanity check
+    INFO_PRINT("Enter %s: DATABASE=\"%s\", COLLECTION=\"%s\", DATA=\"%s\", start=%zu, total=%zu, OPTIONS=%d, OPTIONS_DATA=\"%s\"",
+               __func__,
+               DATABASE, COLLECTION, DATA,
+               DOCUMENT_COUNT_START, DOCUMENT_COUNT_TOTAL,
+               DOCUMENT_OPTIONS,
+               DOCUMENT_OPTIONS_DATA ? DOCUMENT_OPTIONS_DATA : "(null)");
+
+    if (!DATABASE || !COLLECTION || !DATA || !result) {
+        INFO_PRINT("%s: Invalid input parameters (one or more NULL)", __func__);
+        return XCASH_ERROR;
+    }
+
+    // 2) Get a MongoDB client from the pool
+    mongoc_client_t* database_client_thread = get_temporary_connection();
+    if (!database_client_thread) {
+        INFO_PRINT("%s: get_temporary_connection() returned NULL", __func__);
+        return XCASH_ERROR;
+    }
+    INFO_PRINT("%s: Acquired Mongo client from pool", __func__);
+
+    // 3) Get the collection handle
+    mongoc_collection_t* collection =
+        mongoc_client_get_collection(database_client_thread, DATABASE, COLLECTION);
+    if (!collection) {
+        INFO_PRINT("%s: mongoc_client_get_collection returned NULL for %s.%s",
+                   __func__, DATABASE, COLLECTION);
+        free_resources(NULL, NULL, collection, database_client_thread);
+        return XCASH_ERROR;
+    }
+    INFO_PRINT("%s: Got collection handle for %s.%s", __func__, DATABASE, COLLECTION);
+
+    // 4) Verify the collection exists
+    if (!check_if_database_collection_exist(DATABASE, COLLECTION)) {
+        INFO_PRINT("%s: Collection %s.%s does not exist", __func__, DATABASE, COLLECTION);
+        free_resources(NULL, NULL, collection, database_client_thread);
+        return XCASH_ERROR;
+    }
+    INFO_PRINT("%s: Collection %s.%s confirmed to exist", __func__, DATABASE, COLLECTION);
+
+    // 5) Build the BSON query from DATA
+    bson_error_t error;
+    bson_t* document = create_bson_document(DATA, &error);
+    if (!document) {
+        INFO_PRINT("%s: create_bson_document failed for DATA=\"%s\", error=\"%s\"",
+                   __func__, DATA, error.message);
+        handle_error("Invalid JSON format", NULL, NULL, collection, database_client_thread);
+        return XCASH_ERROR;
+    }
+    INFO_PRINT("%s: Successfully built BSON query from DATA=\"%s\"", __func__, DATA);
+
+    // 6) Build optional sort/options if requested
+    bson_t* document_options = NULL;
+    if (DOCUMENT_OPTIONS == 1) {
+        document_options =
+            BCON_NEW("sort", "{", DOCUMENT_OPTIONS_DATA, BCON_INT32(-1), "}");
+        if (document_options) {
+            INFO_PRINT("%s: Built document_options for sort: { %s: -1 }", __func__, DOCUMENT_OPTIONS_DATA);
+        } else {
+            INFO_PRINT("%s: BCON_NEW returned NULL (no sort options)", __func__);
+        }
+    }
+
+    // 7) Create the cursor
+    mongoc_cursor_t* document_settings =
+        mongoc_collection_find_with_opts(collection, document, document_options, NULL);
+    if (!document_settings) {
+        INFO_PRINT("%s: mongoc_collection_find_with_opts returned NULL cursor", __func__);
+        bson_destroy(document_options);
+        handle_error("Failed to create cursor", document, NULL, collection, database_client_thread);
+        return XCASH_ERROR;
+    }
+    INFO_PRINT("%s: Created cursor for %s with filter \"%s\"", __func__, COLLECTION, DATA);
+
+    const bson_t* current_document = NULL;
+    char* message = NULL;
+    size_t count = 1;
+    size_t counter = 0;
+
+    // 8) Iterate over cursor
+    while (mongoc_cursor_next(document_settings, &current_document)) {
+        if (!current_document) {
+            INFO_PRINT("%s: mongoc_cursor_next returned NULL document at iteration %zu", __func__, count);
+            count++;
+            continue;
+        }
+        INFO_PRINT("%s: Processing document iteration #%zu", __func__, count);
+
+        // Only parse once we reach DOCUMENT_COUNT_START
+        if (count < DOCUMENT_COUNT_START) {
+            INFO_PRINT("%s: Skipping document #%zu (before start)", __func__, count);
+            count++;
+            continue;
+        }
+
+        // Convert current_document → JSON string
+        message = bson_as_canonical_extended_json(current_document, NULL);
+        if (!message) {
+            INFO_PRINT("%s: bson_as_canonical_extended_json returned NULL at iteration %zu", __func__, count);
+            bson_destroy(document_options);
+            mongoc_cursor_destroy(document_settings);
+            handle_error("Failed to convert BSON to JSON", document, NULL, collection, database_client_thread);
+            return XCASH_ERROR;
+        }
+        INFO_PRINT("%s: JSON of doc #%zu = %s", __func__, count, message);
+
+        // Parse JSON into result at index `counter`
+        if (database_multiple_documents_parse_json_data(message, result, (int)counter) == XCASH_ERROR) {
+            INFO_PRINT("%s: database_multiple_documents_parse_json_data failed at index %zu", __func__, counter);
+            bson_free(message);
+            bson_destroy(document_options);
+            mongoc_cursor_destroy(document_settings);
+            handle_error("JSON parsing failed", document, NULL, collection, database_client_thread);
+            return XCASH_ERROR;
+        }
+        INFO_PRINT("%s: Parsed JSON into result for index %zu", __func__, counter);
+        bson_free(message);
+
+        // On first parsed document, log how many fields we got
+        if (counter == 0) {
+            INFO_PRINT("%s: database_fields_count = %zu (from parse_json_data)", __func__, result->database_fields_count);
+        }
+
+        counter++;
+        result->document_count++;
+        if (counter >= DOCUMENT_COUNT_TOTAL) {
+            INFO_PRINT("%s: Reached DOCUMENT_COUNT_TOTAL = %zu; breaking", __func__, DOCUMENT_COUNT_TOTAL);
+            break;
+        }
+
+        count++;
+    }
+
+    // 9) Clean up cursor and options unconditionally
+    INFO_PRINT("%s: Destroying cursor", __func__);
+    mongoc_cursor_destroy(document_settings);
+
+    INFO_PRINT("%s: Destroying document_options", __func__);
+    bson_destroy(document_options);
+
+    // If no documents matched
+    if (counter == 0) {
+        INFO_PRINT("%s: No documents found matching filter \"%s\"", __func__, DATA);
+        handle_error("No documents found", document, NULL, collection, database_client_thread);
+        return XCASH_ERROR;
+    }
+
+    // 10) Clean up BSON query, collection, and client
+    INFO_PRINT("%s: Destroying BSON query document", __func__);
+    bson_destroy(document);
+
+    INFO_PRINT("%s: Returning client to pool and destroying collection handle", __func__);
+    free_resources(document, NULL, collection, database_client_thread);
+
+    INFO_PRINT("%s: Success, returning XCASH_OK with document_count = %zu", __func__, result->document_count);
+    return XCASH_OK;
+}
+
+
+
+
+
+
+
+
+
 
 // Function to update multiple documents in a collection
 int update_multiple_documents_from_collection(const char* DATABASE, const char* COLLECTION, const char* DATA, const char* FIELD_NAME_AND_DATA) {
