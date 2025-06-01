@@ -344,6 +344,7 @@ int read_document_field_from_collection(const char* DATABASE, const char* COLLEC
 
 
 
+
 // Function to parse JSON data
 int database_document_parse_json_data(const char* DATA, struct database_document_fields* result) {
   if (!strstr(DATA, ",")) {
