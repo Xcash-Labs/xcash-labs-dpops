@@ -241,11 +241,7 @@ void server_receive_data_socket_node_to_network_data_nodes_get_current_block_ver
              );
     if (rc != XCASH_OK)
     {
-        const char *err_msg = "Could not get a list of the current online delegates";
-        INFO_PRINT("DB helper failed: %d", rc);
-        send_data(client,
-                  (unsigned char*)err_msg,
-                  strlen(err_msg));
+        send_data(client, (unsigned char*)"Could not get a list of the current online delegates",  strlen("Could not get a list of the current online delegates"));
         return;
     }
 
