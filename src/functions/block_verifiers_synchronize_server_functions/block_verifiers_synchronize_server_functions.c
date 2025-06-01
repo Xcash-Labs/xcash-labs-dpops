@@ -174,7 +174,7 @@ void server_receive_data_socket_node_to_network_data_nodes_get_current_block_ver
 
   // Send the data
   
-  INFO_PRINT(data);
+  INFO_PRINT("Send Back %s", data);
 
   send_data(client, (unsigned char*)data, strlen(data));
 }
