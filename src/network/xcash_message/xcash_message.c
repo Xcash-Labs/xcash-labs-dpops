@@ -158,7 +158,6 @@ void cleanup_char_list(char** element_list) {
   free(element_list);
 }
 
-/*
 xcash_msg_t get_message_type(const char* data) {
   if (!data || *data == '\0') {
     return XMSG_NONE;  // Handle NULL or empty data safely
@@ -170,29 +169,6 @@ xcash_msg_t get_message_type(const char* data) {
   }
   return XMSG_NONE;  // Default case if no match is found
 }
-*/
-
-xcash_msg_t get_message_type(const char* data) {
-  if (!data || *data == '\0') {
-    return XMSG_NONE;
-  }
-
-for (int i = 0; i < XMSG_MESSAGES_COUNT; i++) {
-  INFO_PRINT("Comparing: trans_type='%s' (len=%zu) with xcash_net_messages[%d]='%s' (len=%zu)",
-             data, strlen(data), i, xcash_net_messages[i], strlen(xcash_net_messages[i]));
-
-  if (strcmp(data, xcash_net_messages[i]) == 0) {
-    return (xcash_msg_t)i;
-  }
-}
-
-  return XMSG_NONE;
-}
-
-
-
-
-
 //
 //  Handle Server Messages
 //
