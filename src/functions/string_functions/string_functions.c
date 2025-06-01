@@ -426,6 +426,7 @@ bool decompress_gzip_with_prefix(const unsigned char* input, size_t input_len,
                                 unsigned char** output, size_t* output_len) {
     if (!input || !output || !output_len || input_len < 2) return XCASH_ERROR;
 
+    /*
     if (input[0] != 0x01) {
         // No compression: treat as plain text
         *output = malloc(input_len);
@@ -434,6 +435,32 @@ bool decompress_gzip_with_prefix(const unsigned char* input, size_t input_len,
         memcpy(*output, input, input_len);
         *output_len = input_len;
         return XCASH_OK;
+    }
+    */
+
+    if (input[0] != 0x01) {
+      // No compression: treat as plain text
+
+      // Find the last valid '}'
+      size_t json_length = 0;
+      for (size_t i = 0; i < input_len; ++i) {
+        if (input[i] == '}') {
+          json_length = i + 1;
+        }
+      }
+
+      if (json_length == 0) {
+        return XCASH_ERROR;  // No closing brace = invalid
+      }
+
+      *output = malloc(json_length + 1);
+      if (!*output) return XCASH_ERROR;
+
+      memcpy(*output, input, json_length);
+      (*output)[json_length] = '\0';  // null-terminate for safety
+      *output_len = json_length;
+
+      return XCASH_OK;
     }
 
     // Strip prefix and decompress
