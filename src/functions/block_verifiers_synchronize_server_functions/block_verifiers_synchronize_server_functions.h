@@ -9,6 +9,7 @@
 #include "config.h"
 #include "globals.h"
 #include "macro_functions.h"
+#include "structures.h"
 #include "db_operations.h"
 #include "db_sync.h"
 #include "xcash_message.h"
