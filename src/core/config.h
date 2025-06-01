@@ -187,7 +187,7 @@
 #define MAX_CONNECTIONS 1024
 #define MAX_THREADS 10
 
-#define BLOCK_VERIFIERS_IP_ADDRESS_TOTAL_LENGTH 255 / was 100 changed to match delegates table
+#define BLOCK_VERIFIERS_IP_ADDRESS_TOTAL_LENGTH 255 // was 100 changed to match delegates table
 #define IP_LENGTH 255  //combine with above
 
 #define DELEGATES_ONLINE_BUFFER \
