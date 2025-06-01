@@ -125,10 +125,8 @@ Parameters:
 void server_receive_data_socket_node_to_network_data_nodes_get_current_block_verifiers_list(server_client_t* client)
 {
     char data[DELEGATES_BUFFER_SIZE];
-    bson_t*   query_bson = NULL;
-    all_online_delegates_t all_online_delegates = {0};
-    char      filter_json[128];
-    size_t    max_docs = BLOCK_VERIFIERS_TOTAL_AMOUNT;
+    char filter_json[128];
+    struct database_multiple_documents_fields all_online_delegates = {0};
 
     DEBUG_PRINT("received %s, %s",
                 __func__,
@@ -142,52 +140,67 @@ void server_receive_data_socket_node_to_network_data_nodes_get_current_block_ver
         "  \"block_verifiers_public_address_list\": \""
     );
 
+    // Prepare filter: { "online_status": "true" }
     snprintf(filter_json, sizeof(filter_json), "{ \"online_status\": \"true\" }");
 
-    // Call helper to fetch up to max_docs matching documents
+    // Fetch up to BLOCK_VERIFIERS_TOTAL_AMOUNT documents into all_online_delegates
     if (read_multiple_documents_all_fields_from_collection(
             DATABASE_NAME,
             DB_COLLECTION_DELEGATES,
             filter_json,
             &all_online_delegates,
-            1,                     // start at the 1st matching document
-            max_docs,              // fetch up to BLOCK_VERIFIERS_TOTAL_AMOUNT
-            0,                     // no sort options
-            NULL                   // not used since options == 0
+            1,                             // start at first document
+            BLOCK_VERIFIERS_TOTAL_AMOUNT,  // max docs → array dimension
+            0,                             // no special sort/options
+            NULL                           // unused because options=0
         ) != XCASH_OK)
     {
-      send_data(client,(unsigned char*)"Could not get a list of the current online delegates",0,1,"");
-      return;
+        send_data(client, (unsigned char*)"Could not get a list of the current online delegates",  strlen("Could not get a list of the current online delegates"));
+        return;
     }
 
-    // all_online_delegates.document_count now has N (≤ max_docs).
-    // Build the public_address list:
+    // Extract “public_address” for each loaded document
     for (size_t i = 0; i < all_online_delegates.document_count; i++) {
-        if (i > 0) strcat(data, "|");
-        strcat(data, all_online_delegates.public_address[i]);
+        // Find index j where item[i][j] == "public_address"
+        for (size_t j = 0; j < all_online_delegates.database_fields_count; j++) {
+            if (strcmp(all_online_delegates.item[i][j], "public_address") == 0) {
+                if (i > 0) strcat(data, "|");
+                strcat(data, all_online_delegates.value[i][j]);
+                break;
+            }
+        }
     }
 
-    // Continue JSON for "public_key" list
+    // Continue JSON for public_key list
     strcat(data,
            "\",\r\n"
            "  \"block_verifiers_public_key_list\": \""
     );
     for (size_t i = 0; i < all_online_delegates.document_count; i++) {
-        if (i > 0) strcat(data, "|");
-        strcat(data, all_online_delegates.public_key[i]);
+        for (size_t j = 0; j < all_online_delegates.database_fields_count; j++) {
+            if (strcmp(all_online_delegates.item[i][j], "public_key") == 0) {
+                if (i > 0) strcat(data, "|");
+                strcat(data, all_online_delegates.value[i][j]);
+                break;
+            }
+        }
     }
 
-    // Continue JSON for "IP_address" list
+    // Continue JSON for IP_address list
     strcat(data,
            "\",\r\n"
            "  \"block_verifiers_IP_address_list\": \""
     );
     for (size_t i = 0; i < all_online_delegates.document_count; i++) {
-        if (i > 0) strcat(data, "|");
-        strcat(data, all_online_delegates.IP_address[i]);
+        for (size_t j = 0; j < all_online_delegates.database_fields_count; j++) {
+            if (strcmp(all_online_delegates.item[i][j], "IP_address") == 0) {
+                if (i > 0) strcat(data, "|");
+                strcat(data, all_online_delegates.value[i][j]);
+                break;
+            }
+        }
     }
 
-    // Close JSON and send
     strcat(data, "\"\r\n}");
     send_data(client, (unsigned char*)data, strlen(data));
 }

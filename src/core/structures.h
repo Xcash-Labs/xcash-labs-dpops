@@ -45,13 +45,6 @@ typedef struct  {
     char online_status_ck[11];
 } delegates_t;
 
-typedef struct {
-    size_t document_count;  // how many documents were read (≤ BLOCK_VERIFIERS_TOTAL_AMOUNT)
-    char public_address[BLOCK_VERIFIERS_TOTAL_AMOUNT][XCASH_WALLET_LENGTH + 1];
-    char public_key[BLOCK_VERIFIERS_TOTAL_AMOUNT][VRF_PUBLIC_KEY_LENGTH + 1];
-    char IP_address[BLOCK_VERIFIERS_TOTAL_AMOUNT][256];
-} all_online_delegates_t; 
-
 // database struct
 struct database_document_fields {
     size_t count; // The amount of items in the database_document_fields struct
