@@ -157,7 +157,7 @@ void cleanup_char_list(char** element_list) {
   }
   free(element_list);
 }
-
+ 
 xcash_msg_t get_message_type(const char* data) {
   if (!data || *data == '\0') {
     return XMSG_NONE;  // Handle NULL or empty data safely

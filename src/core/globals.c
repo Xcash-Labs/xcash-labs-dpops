@@ -70,6 +70,7 @@ NetworkNode network_nodes[] = {
 char* server_limit_IP_address_list;
 char* server_limit_public_address_list;
 
+
 const char* xcash_net_messages[] = {
     "XCASH_GET_SYNC_INFO",
     "BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_VRF_DATA",
