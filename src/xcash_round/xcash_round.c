@@ -401,39 +401,61 @@ void start_block_production(void) {
 
     round_result = process_round();
 
+    /*
     if (round_result != ROUND_OK) {
-      for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) { 
+      for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
+
+        // online status changed, need to update
+        if (strcmp(delegates_all[i].online_status, delegates_all[i].online_status_ck) != 0) {
+          char filter_json[BUFFER_SIZE];
+          char update_json[BUFFER_SIZE];
+          // Filter to match the delegate by public_address
+          snprintf(filter_json, sizeof(filter_json), "{\"public_address\":\"%s\"}", xcash_wallet_public_address);
+          // Update to set the new online_status
+          snprintf(update_json, sizeof(update_json), "{\"online_status\":\"%s\"}", delegates_all[i].online_status_ck);
+          if (update_document_from_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, filter_json, update_json) != XCASH_OK) {
+            ERROR_PRINT("Failed to update online_status for delegate %s", xcash_wallet_public_address);
+          }
+        }
+
         if (strcmp(delegates_all[i].public_address, xcash_wallet_public_address) == 0) {
           // Found current delegate
-          if (strcmp(delegates_all[i].online_status, delegates_all[i].online_status_ck) != 0) {
-
-            char filter_json[BUFFER_SIZE];
-            char update_json[BUFFER_SIZE];
-            // Filter to match the delegate by public_address
-            snprintf(filter_json, sizeof(filter_json),
-                     "{\"public_address\":\"%s\"}", xcash_wallet_public_address);
-            // Update to set the new online_status
-            snprintf(update_json, sizeof(update_json),
-                     "{\"online_status\":\"%s\"}", delegates_all[i].online_status_ck);
-            if (update_document_from_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, filter_json, update_json) != XCASH_OK) {
-              ERROR_PRINT("Failed to update online_status for delegate %s", xcash_wallet_public_address);
-            }
-
-
-
-
-
-            
-            if (delegate_db_hash_mismatch > 1) {
-              // need to add code to sync the delegates collection and possibly the statics
-              //        init_db_from_top();  // --------------------------------------------------------------------?????
-            }
-
-
-
-
+          if (delegate_db_hash_mismatch > 1) {
+            // need to add code to sync the delegates collection and possibly the statics
+            //        init_db_from_top();  // --------------------------------------------------------------------?????
           }
-          break;
+
+        }
+      }
+    }
+*/
+
+    if (round_result != ROUND_OK) {
+      for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
+        // 1) If this delegate’s “online_status” changed, update just that row:
+        if (strcmp(delegates_all[i].online_status, delegates_all[i].online_status_ck) != 0) {
+          char filter_json[VSMALL_BUFFER_SIZE];
+          char update_json[VSMALL_BUFFER_SIZE];
+
+          // Use delegates_all[i].public_address here, not xcash_wallet_public_address
+          snprintf(filter_json, sizeof(filter_json), "{\"public_address\":\"%s\"}", delegates_all[i].public_address);
+          snprintf(update_json, sizeof(update_json), "{\"online_status\":\"%s\"}", delegates_all[i].online_status_ck);
+
+          if (update_document_from_collection(
+                  DATABASE_NAME,
+                  DB_COLLECTION_DELEGATES,
+                  filter_json,
+                  update_json) != XCASH_OK) {
+            ERROR_PRINT("Failed to update online_status for delegate %s",
+                        delegates_all[i].public_address);
+          }
+        }
+
+        // If this is the “current” delegate, check whether we need a full resync
+        if (strcmp(delegates_all[i].public_address, xcash_wallet_public_address) == 0) {
+          if (delegate_db_hash_mismatch > 1) {
+            // TODO: call your sync routine here, e.g.: init_db_from_top();
+          }
         }
       }
     }
