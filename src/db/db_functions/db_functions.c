@@ -286,127 +286,58 @@ int read_document_field_from_collection__OLD(const char* DATABASE, const char* C
 
 
 
+int read_document_field_from_collection(const char* DATABASE, const char* COLLECTION, const char* DATA, const char* FIELD_NAME, char* result) {
+  if (!DATABASE || !COLLECTION || !DATA || !FIELD_NAME || !result) {
+    fprintf(stderr, "Invalid input parameters.\n");
+    return XCASH_ERROR;
+  }
 
-int read_multiple_documents_all_fields_from_collection(
-    const char* DATABASE,
-    const char* COLLECTION,
-    const char* DATA,
-    struct database_multiple_documents_fields* result,
-    const size_t DOCUMENT_COUNT_START,
-    const size_t DOCUMENT_COUNT_TOTAL,
-    const int DOCUMENT_OPTIONS,
-    const char* DOCUMENT_OPTIONS_DATA)
-{
-    if (!DATABASE || !COLLECTION || !DATA || !result) {
-        return XCASH_ERROR;
+  const bson_t* current_document;
+  mongoc_client_t* database_client_thread = get_temporary_connection();
+  if (!database_client_thread) return XCASH_ERROR;
+
+  mongoc_collection_t* collection = mongoc_client_get_collection(database_client_thread, DATABASE, COLLECTION);
+  if (!check_if_database_collection_exist(DATABASE, COLLECTION)) {
+    free_resources(NULL, NULL, collection, database_client_thread);
+    return XCASH_ERROR;
+  }
+
+  bson_error_t error;
+  bson_t* document = create_bson_document(DATA, &error);
+  if (!document) {
+    handle_error("Invalid JSON format", NULL, NULL, collection, database_client_thread);
+    return XCASH_ERROR;
+  }
+
+  mongoc_cursor_t* document_settings = mongoc_collection_find_with_opts(collection, document, NULL, NULL);
+  int found = 0;
+
+  while (mongoc_cursor_next(document_settings, &current_document)) {
+    bson_iter_t iter;
+    if (bson_iter_init_find(&iter, current_document, FIELD_NAME)) {
+      const char* value = bson_iter_utf8(&iter, NULL);
+      if (value) {
+        // Write into result safely (fallback to 1024)
+        size_t max_len = 1024;
+        strncpy(result, value, max_len - 1);
+        result[max_len - 1] = '\0';
+        found = 1;
+        break;
+      }
     }
+  }
 
-    mongoc_client_t* database_client_thread = get_temporary_connection();
-    if (!database_client_thread) {
-        return XCASH_ERROR;
-    }
+  mongoc_cursor_destroy(document_settings);
+  bson_destroy(document);
+  free_resources(NULL, NULL, collection, database_client_thread);
 
-    mongoc_collection_t* collection =
-        mongoc_client_get_collection(database_client_thread, DATABASE, COLLECTION);
-    if (!check_if_database_collection_exist(DATABASE, COLLECTION)) {
-        free_resources(NULL, NULL, collection, database_client_thread);
-        return XCASH_ERROR;
-    }
+  if (!found) {
+    ERROR_PRINT("Field '%s' not found in document.", FIELD_NAME);
+    return XCASH_ERROR;
+  }
 
-    bson_error_t error;
-    bson_t* document = create_bson_document(DATA, &error);
-    if (!document) {
-        // Since document is null, just free collection/client
-        handle_error("Invalid JSON format", NULL, NULL, collection, database_client_thread);
-        return XCASH_ERROR;
-    }
-
-    // Build SORT or other options if requested
-    bson_t* document_options = NULL;
-    if (DOCUMENT_OPTIONS == 1) {
-        document_options =
-            BCON_NEW("sort", "{", DOCUMENT_OPTIONS_DATA, BCON_INT32(-1), "}");
-        // If BCON_NEW fails, document_options == NULL → harmless, find_with_opts treats it as “no options”.
-    }
-
-    mongoc_cursor_t* document_settings =
-        mongoc_collection_find_with_opts(collection, document, document_options, NULL);
-    if (!document_settings) {
-        // Clean up both document and options before returning
-        bson_destroy(document_options);
-        handle_error("Failed to create cursor", document, NULL, collection, database_client_thread);
-        return XCASH_ERROR;
-    }
-
-    const bson_t* current_document = NULL;
-    char* message = NULL;
-    size_t count = 1;
-    size_t counter = 0;
-
-    while (mongoc_cursor_next(document_settings, &current_document)) {
-        if (!current_document) {
-            // Shouldn’t happen, but defensive
-            continue;
-        }
-
-        if (count < DOCUMENT_COUNT_START) {
-            count++;
-            continue;
-        }
-
-        // Convert to JSON string
-        message = bson_as_canonical_extended_json(current_document, NULL);
-        if (!message) {
-            // Must destroy cursor, options, etc.
-            bson_destroy(document_options);
-            mongoc_cursor_destroy(document_settings);
-            handle_error("Failed to convert BSON to JSON", document, NULL, collection, database_client_thread);
-            return XCASH_ERROR;
-        }
-
-        // Parse the JSON into result at index=counter
-        // *** IMPORTANT: parse_json_data must set result->database_fields_count on the first document.
-        if (database_multiple_documents_parse_json_data(message, result, (int)counter) == XCASH_ERROR) {
-            bson_free(message);
-            bson_destroy(document_options);
-            mongoc_cursor_destroy(document_settings);
-            handle_error("JSON parsing failed", document, NULL, collection, database_client_thread);
-            return XCASH_ERROR;
-        }
-        bson_free(message);
-
-        // If this is the first document, store how many fields we parsed
-        if (counter == 0) {
-            // Suppose database_multiple_documents_parse_json_data stored the per-document field count
-            // in result->database_fields_count. If not, compute it here:
-            // size_t fields_parsed = 0;
-            // while (result->item[0][fields_parsed]) ++fields_parsed;
-            // result->database_fields_count = fields_parsed;
-        }
-
-        counter++;
-        result->document_count++;
-        if (counter >= DOCUMENT_COUNT_TOTAL) {
-            break;
-        }
-        count++;
-    }
-
-    // Clean up cursor and options unconditionally
-    mongoc_cursor_destroy(document_settings);
-    bson_destroy(document_options);
-
-    if (counter == 0) {
-        // No documents matched → treat as error
-        handle_error("No documents found", document, NULL, collection, database_client_thread);
-        return XCASH_ERROR;
-    }
-
-    // Finally, destroy the query BSON and free the collection/client
-    free_resources(document, NULL, collection, database_client_thread);
-    return XCASH_OK;
+  return XCASH_OK;
 }
-
 
 
 
