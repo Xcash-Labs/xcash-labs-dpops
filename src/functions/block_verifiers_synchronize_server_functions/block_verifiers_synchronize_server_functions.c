@@ -122,7 +122,7 @@ Description: Runs the code when the server receives the NODE_TO_NETWORK_DATA_NOD
 Parameters:
   CLIENT_SOCKET - The socket to send data to
 ---------------------------------------------------------------------------------------------------------*/
-void server_receive_data_socket_node_to_network_data_nodes_get_current_block_verifiers_list(server_client_t* client)
+void server_receive_data_socket_node_to_network_data_nodes_get_current_block_verifiers_list_OLD_(server_client_t* client)
 {
     char data[DELEGATES_BUFFER_SIZE];
     char filter_json[128];
@@ -202,5 +202,138 @@ void server_receive_data_socket_node_to_network_data_nodes_get_current_block_ver
     }
 
     strcat(data, "\"\r\n}");
+    send_data(client, (unsigned char*)data, strlen(data));
+}
+
+void server_receive_data_socket_node_to_network_data_nodes_get_current_block_verifiers_list(server_client_t* client)
+{
+    char data[DELEGATES_BUFFER_SIZE];
+    char filter_json[128];
+    struct database_multiple_documents_fields all_online_delegates = {0};
+
+    INFO_PRINT("received %s, %s",
+                __func__,
+                "NODE_TO_NETWORK_DATA_NODES_GET_CURRENT_BLOCK_VERIFIERS_LIST");
+
+    // Build the JSON prefix
+    memset(data, 0, sizeof(data));
+    strcat(data,
+        "{\r\n"
+        "  \"message_settings\": \"NETWORK_DATA_NODE_TO_NODE_SEND_CURRENT_BLOCK_VERIFIERS_LIST\",\r\n"
+        "  \"block_verifiers_public_address_list\": \""
+    );
+    INFO_PRINT("After prefix, data length = %zu", strlen(data));
+
+    // Prepare filter: { "online_status": "true" }
+    snprintf(filter_json, sizeof(filter_json), "{ \"online_status\": \"true\" }");
+    INFO_PRINT("Filter for DB query: %s", filter_json);
+
+    // Fetch up to BLOCK_VERIFIERS_TOTAL_AMOUNT documents into all_online_delegates
+    int rc = read_multiple_documents_all_fields_from_collection(
+                 DATABASE_NAME,
+                 DB_COLLECTION_DELEGATES,
+                 filter_json,
+                 &all_online_delegates,
+                 1,                             // start at first document
+                 BLOCK_VERIFIERS_TOTAL_AMOUNT,  // max docs → array dimension
+                 0,                             // no special sort/options
+                 NULL                           // unused because options=0
+             );
+    if (rc != XCASH_OK)
+    {
+        const char *err_msg = "Could not get a list of the current online delegates";
+        INFO_PRINT("DB helper failed: %d", rc);
+        send_data(client,
+                  (unsigned char*)err_msg,
+                  strlen(err_msg));
+        return;
+    }
+
+    INFO_PRINT("DB helper returned document_count = %zu, fields_per_doc = %zu",
+               all_online_delegates.document_count,
+               all_online_delegates.database_fields_count);
+
+    // Extract “public_address” for each loaded document
+    for (size_t i = 0; i < all_online_delegates.document_count; i++) {
+        for (size_t j = 0; j < all_online_delegates.database_fields_count; j++) {
+            char *fld = all_online_delegates.item[i][j];
+            char *val = all_online_delegates.value[i][j];
+            if (!fld || !val) {
+                INFO_PRINT("Doc %zu Field %zu is NULL, skipping", i, j);
+                continue;
+            }
+            if (strcmp(fld, "public_address") == 0) {
+                INFO_PRINT("Found public_address at doc %zu, field %zu: %s", i, j, val);
+                if (i > 0) {
+                    strcat(data, "|");
+                    INFO_PRINT("Appended '|' for public_address, data length = %zu", strlen(data));
+                }
+                strcat(data, val);
+                INFO_PRINT("Appended public_address '%s', data length = %zu", val, strlen(data));
+                break;
+            }
+        }
+    }
+
+    // Continue JSON for public_key list
+    strcat(data,
+           "\",\r\n"
+           "  \"block_verifiers_public_key_list\": \""
+    );
+    INFO_PRINT("After opening public_key list, data length = %zu", strlen(data));
+
+    for (size_t i = 0; i < all_online_delegates.document_count; i++) {
+        for (size_t j = 0; j < all_online_delegates.database_fields_count; j++) {
+            char *fld = all_online_delegates.item[i][j];
+            char *val = all_online_delegates.value[i][j];
+            if (!fld || !val) {
+                INFO_PRINT("Doc %zu Field %zu is NULL, skipping", i, j);
+                continue;
+            }
+            if (strcmp(fld, "public_key") == 0) {
+                INFO_PRINT("Found public_key at doc %zu, field %zu: %s", i, j, val);
+                if (i > 0) {
+                    strcat(data, "|");
+                    INFO_PRINT("Appended '|' for public_key, data length = %zu", strlen(data));
+                }
+                strcat(data, val);
+                INFO_PRINT("Appended public_key '%s', data length = %zu", val, strlen(data));
+                break;
+            }
+        }
+    }
+
+    // Continue JSON for IP_address list
+    strcat(data,
+           "\",\r\n"
+           "  \"block_verifiers_IP_address_list\": \""
+    );
+    INFO_PRINT("After opening IP_address list, data length = %zu", strlen(data));
+
+    for (size_t i = 0; i < all_online_delegates.document_count; i++) {
+        for (size_t j = 0; j < all_online_delegates.database_fields_count; j++) {
+            char *fld = all_online_delegates.item[i][j];
+            char *val = all_online_delegates.value[i][j];
+            if (!fld || !val) {
+                INFO_PRINT("Doc %zu Field %zu is NULL, skipping", i, j);
+                continue;
+            }
+            if (strcmp(fld, "IP_address") == 0) {
+                INFO_PRINT("Found IP_address at doc %zu, field %zu: %s", i, j, val);
+                if (i > 0) {
+                    strcat(data, "|");
+                    INFO_PRINT("Appended '|' for IP_address, data length = %zu", strlen(data));
+                }
+                strcat(data, val);
+                INFO_PRINT("Appended IP_address '%s', data length = %zu", val, strlen(data));
+                break;
+            }
+        }
+    }
+
+    // Close JSON and send
+    strcat(data, "\"\r\n}");
+    INFO_PRINT("Final data JSON length = %zu", strlen(data));
+
     send_data(client, (unsigned char*)data, strlen(data));
 }
