@@ -286,59 +286,120 @@ int read_document_field_from_collection__OLD(const char* DATABASE, const char* C
 
 
 
-int read_document_field_from_collection(const char* DATABASE, const char* COLLECTION, const char* DATA, const char* FIELD_NAME, char* result) {
-  if (!DATABASE || !COLLECTION || !DATA || !FIELD_NAME || !result) {
-    fprintf(stderr, "Invalid input parameters.\n");
-    return XCASH_ERROR;
-  }
+int read_document_field_from_collection(
+    const char* DATABASE,
+    const char* COLLECTION,
+    const char* DATA,
+    const char* FIELD_NAME,
+    char* result)
+{
+    INFO_PRINT("Enter %s: DATABASE=\"%s\", COLLECTION=\"%s\", DATA=\"%s\", FIELD_NAME=\"%s\"",
+               __func__, DATABASE, COLLECTION, DATA, FIELD_NAME);
 
-  const bson_t* current_document;
-  mongoc_client_t* database_client_thread = get_temporary_connection();
-  if (!database_client_thread) return XCASH_ERROR;
-
-  mongoc_collection_t* collection = mongoc_client_get_collection(database_client_thread, DATABASE, COLLECTION);
-  if (!check_if_database_collection_exist(DATABASE, COLLECTION)) {
-    free_resources(NULL, NULL, collection, database_client_thread);
-    return XCASH_ERROR;
-  }
-
-  bson_error_t error;
-  bson_t* document = create_bson_document(DATA, &error);
-  if (!document) {
-    handle_error("Invalid JSON format", NULL, NULL, collection, database_client_thread);
-    return XCASH_ERROR;
-  }
-
-  mongoc_cursor_t* document_settings = mongoc_collection_find_with_opts(collection, document, NULL, NULL);
-  int found = 0;
-
-  while (mongoc_cursor_next(document_settings, &current_document)) {
-    bson_iter_t iter;
-    if (bson_iter_init_find(&iter, current_document, FIELD_NAME)) {
-      const char* value = bson_iter_utf8(&iter, NULL);
-      if (value) {
-        // Write into result safely (fallback to 1024)
-        size_t max_len = 1024;
-        strncpy(result, value, max_len - 1);
-        result[max_len - 1] = '\0';
-        found = 1;
-        break;
-      }
+    if (!DATABASE || !COLLECTION || !DATA || !FIELD_NAME || !result) {
+        INFO_PRINT("%s: Invalid input parameters.", __func__);
+        return XCASH_ERROR;
     }
-  }
 
-  mongoc_cursor_destroy(document_settings);
-  bson_destroy(document);
-  free_resources(NULL, NULL, collection, database_client_thread);
+    // 1) Get a MongoDB client
+    mongoc_client_t* database_client_thread = get_temporary_connection();
+    if (!database_client_thread) {
+        INFO_PRINT("%s: get_temporary_connection() returned NULL", __func__);
+        return XCASH_ERROR;
+    }
+    INFO_PRINT("%s: Obtained Mongo client from pool", __func__);
 
-  if (!found) {
-    ERROR_PRINT("Field '%s' not found in document.", FIELD_NAME);
-    return XCASH_ERROR;
-  }
+    // 2) Get the collection handle
+    mongoc_collection_t* collection =
+        mongoc_client_get_collection(database_client_thread, DATABASE, COLLECTION);
+    if (!collection) {
+        INFO_PRINT("%s: mongoc_client_get_collection returned NULL for %s.%s",
+                   __func__, DATABASE, COLLECTION);
+        free_resources(NULL, NULL, collection, database_client_thread);
+        return XCASH_ERROR;
+    }
+    INFO_PRINT("%s: Got collection handle for %s.%s", __func__, DATABASE, COLLECTION);
 
-  return XCASH_OK;
+    // 3) Verify the collection exists
+    if (!check_if_database_collection_exist(DATABASE, COLLECTION)) {
+        INFO_PRINT("%s: Collection %s.%s does not exist", __func__, DATABASE, COLLECTION);
+        free_resources(NULL, NULL, collection, database_client_thread);
+        return XCASH_ERROR;
+    }
+    INFO_PRINT("%s: Collection %s.%s exists", __func__, DATABASE, COLLECTION);
+
+    // 4) Build the BSON query from DATA
+    bson_error_t error;
+    bson_t* document = create_bson_document(DATA, &error);
+    if (!document) {
+        INFO_PRINT("%s: create_bson_document failed for DATA=\"%s\", error=\"%s\"",
+                   __func__, DATA, error.message);
+        handle_error("Invalid JSON format", NULL, NULL, collection, database_client_thread);
+        return XCASH_ERROR;
+    }
+    INFO_PRINT("%s: Successfully built BSON query from DATA=\"%s\"", __func__, DATA);
+
+    // 5) Execute find() with no extra options
+    mongoc_cursor_t* document_settings =
+        mongoc_collection_find_with_opts(collection, document, NULL, NULL);
+    if (!document_settings) {
+        INFO_PRINT("%s: mongoc_collection_find_with_opts returned NULL cursor", __func__);
+        bson_destroy(document);
+        free_resources(NULL, NULL, collection, database_client_thread);
+        return XCASH_ERROR;
+    }
+    INFO_PRINT("%s: Created cursor for filter \"%s\"", __func__, DATA);
+
+    const bson_t* current_document = NULL;
+    int found = 0;
+    int loop_count = 0;
+
+    // 6) Iterate over cursor results
+    while (mongoc_cursor_next(document_settings, &current_document)) {
+        loop_count++;
+        if (!current_document) {
+            INFO_PRINT("%s: mongoc_cursor_next returned NULL document at iteration %d", __func__, loop_count);
+            continue;
+        }
+        INFO_PRINT("%s: Processing document #%d", __func__, loop_count);
+
+        bson_iter_t iter;
+        if (bson_iter_init_find(&iter, current_document, FIELD_NAME)) {
+            if (BSON_ITER_HOLDS_UTF8(&iter)) {
+                const char* value = bson_iter_utf8(&iter, NULL);
+                if (value) {
+                    size_t max_len = 1024;
+                    INFO_PRINT("%s: Found \"%s\" = \"%s\" in document #%d", __func__, FIELD_NAME, value, loop_count);
+                    strncpy(result, value, max_len - 1);
+                    result[max_len - 1] = '\0';
+                    found = 1;
+                    break;
+                }
+            } else {
+                INFO_PRINT("%s: Field \"%s\" exists but is not a UTF8 string", __func__, FIELD_NAME);
+            }
+        } else {
+            INFO_PRINT("%s: Field \"%s\" not found in document #%d", __func__, FIELD_NAME, loop_count);
+        }
+    }
+
+    INFO_PRINT("%s: Destroying cursor", __func__);
+    mongoc_cursor_destroy(document_settings);
+
+    INFO_PRINT("%s: Destroying BSON query document", __func__);
+    bson_destroy(document);
+
+    INFO_PRINT("%s: Returning client to pool and freeing resources", __func__);
+    free_resources(NULL, NULL, collection, database_client_thread);
+
+    if (!found) {
+        ERROR_PRINT("%s: Field \"%s\" not found in any document for filter \"%s\"", __func__, FIELD_NAME, DATA);
+        return XCASH_ERROR;
+    }
+
+    INFO_PRINT("%s: Success, returning XCASH_OK", __func__);
+    return XCASH_OK;
 }
-
 
 
 
