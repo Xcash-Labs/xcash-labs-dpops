@@ -197,6 +197,18 @@ bool create_delegate_online_list(char* out_data, size_t out_data_size)
         goto cleanup;
     }
 
+    // 8.5) Append a trailing "|" to each non‐empty list
+    if (addr_list[0] != '\0') {
+        // addr_list already contains at least one entry, so tack on a "|" at the end
+        strncat(addr_list, "|", sizeof(addr_list) - strlen(addr_list) - 1);
+    }
+    if (key_list[0] != '\0') {
+        strncat(key_list, "|", sizeof(key_list) - strlen(key_list) - 1);
+    }
+    if (ip_list[0] != '\0') {
+        strncat(ip_list, "|", sizeof(ip_list) - strlen(ip_list) - 1);
+    }
+
     // 9) Build final JSON into 'out_data'
     if (snprintf(out_data, out_data_size,
                  "{\r\n"
