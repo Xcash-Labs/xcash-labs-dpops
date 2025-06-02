@@ -208,7 +208,6 @@ bool create_delegate_online_list(char* out_data, size_t out_data_size)
     if (ip_list[0] != '\0') {
         strncat(ip_list, "|", sizeof(ip_list) - strlen(ip_list) - 1);
     }
-    
 
     // 9) Build final JSON into 'out_data'
     if (snprintf(out_data, out_data_size,
