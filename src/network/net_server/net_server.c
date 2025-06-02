@@ -102,7 +102,7 @@ void* handle_client(void* client_socket_ptr) {
     strncpy(client.client_ip, "unknown", sizeof(client.client_ip));
   }
 
-  char buffer[SMALL_BUFFER_SIZE];
+  char buffer[BUFFER_SIZE];
 
   while (1) {
     ssize_t bytes = recv(client_socket, buffer, sizeof(buffer) - 1, 0);
