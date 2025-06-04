@@ -193,3 +193,175 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
 
   #undef SERVER_RECEIVE_DATA_SOCKET_NODES_TO_BLOCK_VERIFIERS_REGISTER_DELEGATE_ERROR
 }
+
+
+
+
+
+
+void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(server_client_t* client, const char* MESSAGE)
+{
+    char data[SMALL_BUFFER_SIZE]                     = {0};
+    char delegate_name[MAXIMUM_BUFFER_SIZE_DELEGATES_NAME]     = {0};
+    char delegate_public_address[XCASH_WALLET_LENGTH + 1]      = {0};
+    char delegate_public_key[VRF_PUBLIC_KEY_LENGTH + 1]        = {0};
+    unsigned char delegate_public_key_data[crypto_vrf_PUBLICKEYBYTES + 1] = {0};
+    char delegates_IP_address[BLOCK_VERIFIERS_IP_ADDRESS_TOTAL_LENGTH + 1] = {0};
+
+    #define SERVER_ERROR(rmess) \
+      do { \
+        send_data(client, (unsigned char*)(rmess), strlen(rmess)); \
+        return; \
+      } while (0)
+
+    // 1) Parse incoming MESSAGE as JSON
+    cJSON *root = cJSON_Parse(MESSAGE);
+    if (!root) {
+        SERVER_ERROR("Could not verify the message}");
+    }
+
+    // 2) Extract and validate each required field
+    cJSON *msg_settings = cJSON_GetObjectItemCaseSensitive(root, "message_settings");
+    cJSON *js_name      = cJSON_GetObjectItemCaseSensitive(root, "delegate_name");
+    cJSON *js_ip        = cJSON_GetObjectItemCaseSensitive(root, "delegate_IP");
+    cJSON *js_pubkey    = cJSON_GetObjectItemCaseSensitive(root, "delegate_public_key");
+    cJSON *js_address   = cJSON_GetObjectItemCaseSensitive(root, "public_address");
+
+    if (!cJSON_IsString(msg_settings)     || (msg_settings->valuestring == NULL) ||
+        !cJSON_IsString(js_name)          || (js_name->valuestring == NULL)      ||
+        !cJSON_IsString(js_ip)            || (js_ip->valuestring == NULL)        ||
+        !cJSON_IsString(js_pubkey)        || (js_pubkey->valuestring == NULL)    ||
+        !cJSON_IsString(js_address)       || (js_address->valuestring == NULL))
+    {
+        cJSON_Delete(root);
+        SERVER_ERROR("Could not verify the message}");
+    }
+
+    // 2a) Ensure message_settings matches exactly
+    if (strcmp(msg_settings->valuestring, "NODES_TO_BLOCK_VERIFIERS_REGISTER_DELEGATE") != 0) {
+        cJSON_Delete(root);
+        SERVER_ERROR("Invalid message_settings}");
+    }
+
+    // 2b) Copy them into our local buffers (including null terminators)
+    size_t name_len    = strlen(js_name->valuestring);
+    size_t ip_len      = strlen(js_ip->valuestring);
+    size_t pubkey_len  = strlen(js_pubkey->valuestring);
+    size_t address_len = strlen(js_address->valuestring);
+
+    if (name_len == 0 || name_len >= sizeof(delegate_name) ||
+        ip_len == 0   || ip_len >= sizeof(delegates_IP_address) ||
+        pubkey_len != VRF_PUBLIC_KEY_LENGTH ||
+        address_len != XCASH_WALLET_LENGTH)
+    {
+        cJSON_Delete(root);
+        SERVER_ERROR("Invalid message data}");
+    }
+
+    memcpy(delegate_name,        js_name->valuestring,    name_len);
+    memcpy(delegates_IP_address, js_ip->valuestring,      ip_len);
+    memcpy(delegate_public_key,  js_pubkey->valuestring,  pubkey_len);
+    memcpy(delegate_public_address, js_address->valuestring, address_len);
+
+    // 3) Convert hex string → raw bytes for VRF public key
+    //    (each two hex chars → one byte)
+    for (int i = 0, j = 0; i < (int)pubkey_len; i += 2, j++) {
+        char byte_hex[3] = { delegate_public_key[i], delegate_public_key[i+1], 0 };
+        delegate_public_key_data[j] = (unsigned char)strtol(byte_hex, NULL, 16);
+    }
+    delegate_public_key_data[crypto_vrf_PUBLICKEYBYTES] = 0; // just in case
+
+    // 4) Validate ranges and formats
+    if (check_for_valid_delegate_name(delegate_name) == 0 ||
+        strlen(delegate_public_address) != XCASH_WALLET_LENGTH ||
+        strncmp(delegate_public_address, XCASH_WALLET_PREFIX, sizeof(XCASH_WALLET_PREFIX) - 1) != 0 ||
+        check_for_valid_ip_address(delegates_IP_address) == 0 ||
+        crypto_vrf_is_valid_key(delegate_public_key_data) != 1)
+    {
+        cJSON_Delete(root);
+        SERVER_ERROR("Invalid data}");
+    }
+
+    cJSON_Delete(root); // we no longer need the JSON tree
+
+    // 5) Check uniqueness in database
+    // 5a) public_address
+    snprintf(data, sizeof(data), "{\"public_address\":\"%s\"}", delegate_public_address);
+    if (count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, data) != 0)
+    {
+        SERVER_ERROR("The delegates public address is already registered}");
+    }
+
+    // 5b) IP_address
+    snprintf(data, sizeof(data), "{\"IP_address\":\"%s\"}", delegates_IP_address);
+    if (count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, data) != 0)
+    {
+        SERVER_ERROR("The delegates IP address is already registered}");
+    }
+
+    // 5c) public_key
+    snprintf(data, sizeof(data), "{\"public_key\":\"%s\"}", delegate_public_key);
+    if (count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, data) != 0)
+    {
+        SERVER_ERROR("The delegates public key is already registered}");
+    }
+
+    // 5d) delegate_name
+    snprintf(data, sizeof(data), "{\"delegate_name\":\"%s\"}", delegate_name);
+    if (count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, data) != 0)
+    {
+        SERVER_ERROR("The delegates name is already registered}");
+    }
+
+    // 6) Check overall delegate count
+    int delegate_count = count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, "{}");
+    if (delegate_count >= MAXIMUM_AMOUNT_OF_DELEGATES)
+    {
+        SERVER_ERROR("The maximum amount of delegates has been reached}");
+    }
+
+    // 7) Finally insert a new document
+    time_t registration_time = time(NULL);
+
+    snprintf(data, sizeof(data),
+      "{"
+        "\"public_address\":\"%s\","
+        "\"total_vote_count\":\"0\","
+        "\"IP_address\":\"%s\","
+        "\"delegate_name\":\"%s\","
+        "\"about\":\"\","
+        "\"website\":\"\","
+        "\"team\":\"\","
+        "\"shared_delegate_status\":\"shared\","
+        "\"delegate_fee\":\"\","
+        "\"server_specs\":\"\","
+        "\"block_verifier_score\":\"0\","
+        "\"online_status\":\"true\","
+        "\"block_verifier_total_rounds\":\"0\","
+        "\"block_verifier_online_total_rounds\":\"0\","
+        "\"block_verifier_online_percentage\":\"0\","
+        "\"block_producer_total_rounds\":\"0\","
+        "\"block_producer_block_heights\":\"\","
+        "\"public_key\":\"%s\","
+        "\"registration_timestamp\":\"%ld\""
+      "}",
+      delegate_public_address,
+      delegates_IP_address,
+      delegate_name,
+      delegate_public_key,
+      (long)registration_time
+    );
+
+    if (insert_document_into_collection_json(DATABASE_NAME, DB_COLLECTION_DELEGATES, data) == 0) {
+        SERVER_ERROR("The delegate could not be added to the database}");
+    }
+
+    // 8) Success: reply back to the client
+    send_data(client, (unsigned char*)"Registered the delegate}", strlen("Registered the delegate}"));
+    return;
+
+    #undef SERVER_ERROR
+}
+
+
+
