@@ -233,8 +233,6 @@ int verify_action_data(const char *message)
 
   char signature[XCASH_SIGN_DATA_LENGTH + 1] = {0};
   char ck_public_address[XCASH_WALLET_LENGTH + 1] = {0};
-  char ck_round_part[3] = {0};
-  char ck_previous_block_hash[BLOCK_HASH_LENGTH + 1] = {0};
   char raw_data[MEDIUM_BUFFER_SIZE] = {0};
   char request[MEDIUM_BUFFER_SIZE * 2] = {0};
   char response[MEDIUM_BUFFER_SIZE] = {0};
