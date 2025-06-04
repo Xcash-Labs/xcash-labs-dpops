@@ -3,14 +3,28 @@
 const xcash_msg_t WALLET_SIGN_MESSAGES[] = {
     XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_VRF_DATA,
     XMSG_NODES_TO_NODES_VOTE_MAJORITY_RESULTS,
-    XMSG_NODES_TO_BLOCK_VERIFIERS_REGISTER_DELEGATE,
     XMSG_NONE};
 const size_t WALLET_SIGN_MESSAGES_COUNT = ARRAY_SIZE(WALLET_SIGN_MESSAGES) - 1;
+
+const xcash_msg_t WALLET_SIGN_ACTION_MESSAGES[] = {
+    XMSG_NODES_TO_BLOCK_VERIFIERS_REGISTER_DELEGATE,
+    XMSG_NONE};
+const size_t WALLET_SIGN_ACTION_MESSAGES_COUNT = ARRAY_SIZE(WALLET_SIGN_ACTION_MESSAGES) - 1;
 
 // Checks if a message requires wallet signature
 bool is_walletsign_type(xcash_msg_t msg) {
   for (size_t i = 0; i < WALLET_SIGN_MESSAGES_COUNT; i++) {
     if (msg == WALLET_SIGN_MESSAGES[i]) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// Checks if an action message (vote, register, ect) requires wallet signature
+bool is_walletsign_action_type(xcash_msg_t msg) {
+  for (size_t i = 0; i < WALLET_SIGN_ACTION_MESSAGES_COUNT; i++) {
+    if (msg == WALLET_SIGN_ACTION_MESSAGES[i]) {
       return true;
     }
   }
@@ -157,7 +171,7 @@ void cleanup_char_list(char** element_list) {
   }
   free(element_list);
 }
- 
+
 xcash_msg_t get_message_type(const char* data) {
   if (!data || *data == '\0') {
     return XMSG_NONE;  // Handle NULL or empty data safely
@@ -209,22 +223,6 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
     snprintf(trans_type, sizeof(trans_type), "%s", settings_obj->valuestring);
     cJSON_Delete(json_obj);
 
-  } else if (string_count(data, "|") >= 1) {
-
-    const char* delimiter = strchr(data, '|');
-    if (!delimiter || delimiter == data) {
-      ERROR_PRINT("Pipe-delimited message missing command type");
-      return;
-    }
-
-    size_t type_len = delimiter - data;
-    if (type_len >= sizeof(trans_type)) {
-      ERROR_PRINT("Command type too long");
-      return;
-    }
-
-    strncpy(trans_type, data, type_len);
-    trans_type[type_len] = '\0';  // Null-terminate
   } else {
     ERROR_PRINT("Message does not match expected JSON or pipe-delimited format");
     return;
@@ -235,16 +233,14 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
   xcash_msg_t msg_type = get_message_type(trans_type);
 
   if (is_walletsign_type(msg_type)) {
-    if (json_type) {
-      if (verify_data(data) == XCASH_ERROR) {
-        ERROR_PRINT("Failed to validate message sign data");
-        return;
-      }
-    } else {
-      if (verify_bar_data(data) == XCASH_ERROR) {
-        ERROR_PRINT("Failed to validate message sign data");
-        return;
-      }
+    if (verify_data(data) == XCASH_ERROR) {
+      ERROR_PRINT("Failed to validate message sign data");
+      return;
+    }
+
+    if (verify_action_data(data) == XCASH_ERROR) {
+      ERROR_PRINT("Failed to validate message sign data");
+      return;
     }
   }
 
