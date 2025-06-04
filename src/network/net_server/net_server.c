@@ -108,9 +108,6 @@ void* handle_client(void* client_socket_ptr) {
     ssize_t bytes = recv(client_socket, buffer, sizeof(buffer) - 1, 0);
 
     if (bytes <= 0) {
-      if (errno == EAGAIN || errno == EWOULDBLOCK) {
-        WARNING_PRINT("recv() timed out from %s", client.client_ip);
-      }
       break;
     }
 
@@ -127,6 +124,7 @@ void* handle_client(void* client_socket_ptr) {
     DEBUG_PRINT("[TCP] Message from %s: %.*s", client.client_ip, (int)decompressed_len, decompressed);
     handle_srv_message((char*)decompressed, decompressed_len, &client);
     free(decompressed);
+
   }
 
   close(client_socket);
