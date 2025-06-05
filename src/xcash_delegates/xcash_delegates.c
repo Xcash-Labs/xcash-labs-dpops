@@ -65,10 +65,8 @@ int compare_delegates(const void* a, const void* b) {
   }
 
   // 3. Sort by how many total votes the delegate has
-  long long int count;
-  long long int count2;
-  sscanf(delegate1->total_vote_count, "%lld", &count);
-  sscanf(delegate2->total_vote_count, "%lld", &count2);
+  uint64_t count  = delegate1->total_vote_count;
+  uint64_t count2 = delegate2->total_vote_count;
   if (count != count2) {
     return count2 - count < 0 ? -1 : 1;
   }
