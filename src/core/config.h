@@ -153,8 +153,8 @@
 #define DATABASE_EMPTY_STRING "empty_database_collection"
 #define TOTAL_RESERVE_PROOFS_DATABASES 50
 #define ID_MAX_SIZE 256
-#define NUM_FIELDS 14
-#define NUM_DB_FIELDS 13
+#define NUM_FIELDS 17
+#define NUM_DB_FIELDS 16
 
 // ===================== General Settings =====================
 #define BITS_IN_BYTE 8

@@ -414,13 +414,8 @@ void start_block_production(void) {
           snprintf(filter_json, sizeof(filter_json), "{\"public_address\":\"%s\"}", delegates_all[i].public_address);
           snprintf(update_json, sizeof(update_json), "{\"online_status\":\"%s\"}", delegates_all[i].online_status_ck);
 
-          if (update_document_from_collection(
-                  DATABASE_NAME,
-                  DB_COLLECTION_DELEGATES,
-                  filter_json,
-                  update_json) != XCASH_OK) {
-            ERROR_PRINT("Failed to update online_status for delegate %s",
-                        delegates_all[i].public_address);
+          if (update_document_from_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, filter_json, update_json) != XCASH_OK) {
+            ERROR_PRINT("Failed to update online_status for delegate %s", delegates_all[i].public_address);
           }
         }
       }
