@@ -417,8 +417,15 @@ void start_block_production(void) {
           if (update_document_from_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, filter_json, update_json) != XCASH_OK) {
             ERROR_PRINT("Failed to update online_status for delegate %s", delegates_all[i].public_address);
           }
-        }
+        }        
       }
+
+
+
+
+
+
+      
     } else {
       if (delegate_db_hash_mismatch > 1) {
         // check whether we need a full resync, xcash_wallet_public_address don't pick self

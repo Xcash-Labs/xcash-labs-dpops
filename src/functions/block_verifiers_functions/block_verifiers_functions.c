@@ -387,7 +387,7 @@ bool create_sync_msg(char** message) {
     ERROR_PRINT("Memory allocation failed for param_list");
     return XCASH_ERROR;
   }
-
+  
   int param_index = 0;
   param_list[param_index++] = "block_height";
   param_list[param_index++] = current_block_height;
