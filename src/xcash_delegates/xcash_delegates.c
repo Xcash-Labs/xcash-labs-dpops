@@ -67,9 +67,12 @@ int compare_delegates(const void* a, const void* b) {
   // 3. Sort by how many total votes the delegate has
   uint64_t count  = delegate1->total_vote_count;
   uint64_t count2 = delegate2->total_vote_count;
-  if (count != count2) {
-    return count2 - count < 0 ? -1 : 1;
-  }
+  if (count2 < count)
+    return -1;
+  else if (count2 > count)
+    return 1;
+  else
+    return 0;
 
   // 4. Sort by the public address
   return strcmp(delegate1->public_address, delegate2->public_address);
