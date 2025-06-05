@@ -22,6 +22,7 @@ typedef struct {
 } NetworkNode;
 
 // xcash-next
+/*
 typedef struct  {
     char public_address[XCASH_WALLET_LENGTH+1];
     char total_vote_count[100];
@@ -44,6 +45,34 @@ typedef struct  {
     char registration_timestamp[21];
     char online_status_ck[11];
 } delegates_t;
+*/
+
+// xcash-next
+typedef struct  {
+    char public_address[XCASH_WALLET_LENGTH+1];
+    char total_vote_count[100];
+    char IP_address[IP_LENGTH+1];
+    char delegate_name[MAXIMUM_BUFFER_SIZE_DELEGATES_NAME+1];
+    char about[1025];
+    char website[256];
+    char team[256];
+    char shared_delegate_status[10];
+    char delegate_fee[11];
+    char server_specs[1025];
+    char online_status[11];
+    char public_key[VRF_PUBLIC_KEY_LENGTH+1];
+    char registration_timestamp[21];
+    char online_status_ck[11];
+} delegates_t;
+
+
+
+
+
+
+
+
+
 
 // database struct
 struct database_document_fields {
