@@ -59,13 +59,13 @@ typedef struct  {
     char delegate_type[10];
     float delegate_fee; 
     char server_specs[1025];
-    bool online_status;
+    char online_status[11];
     uint64_t block_verifier_total_rounds;
     uint64_t block_verifier_online_total_rounds;
     uint64_t block_producer_total_rounds;
     char public_key[VRF_PUBLIC_KEY_LENGTH+1];
     char registration_timestamp[21];
-    bool online_status_ck;
+    char online_status_ck[11];
 } delegates_t;
 
 // database struct

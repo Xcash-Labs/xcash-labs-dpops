@@ -56,7 +56,7 @@ bool init_processing(const arg_config_t *arg_config) {
                "\"delegate_type\":\"seed\","
                 "\"delegate_fee\":0.00,"
                "\"server_specs\":\"Operating System = Ubuntu 22.04\","
-               "\"online_status\":false,"
+               "\"online_status\":\"false\","
                "\"block_verifier_total_rounds\":0,"
                "\"block_verifier_online_total_rounds\":0,"
                "\"block_producer_total_rounds\":0,"
