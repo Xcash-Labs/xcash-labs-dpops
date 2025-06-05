@@ -52,7 +52,7 @@ bool init_processing(const arg_config_t *arg_config) {
                "\"about\":\"Official xCash-Labs Node\","
                "\"website\":\"%s\","
                "\"team\":\"xCash-Labs Team\","
-               "\"shared_delegate_status\":\"solo\","
+               "\"delegate_status\":\"solo\","
                "\"delegate_fee\":\"0\"," 
                "\"server_specs\":\"Operating System = Ubuntu 22.04\","
 //               "\"block_verifier_score\":\"0\","
