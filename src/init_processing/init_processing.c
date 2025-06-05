@@ -77,21 +77,21 @@ bool init_processing(const arg_config_t *arg_config) {
         ERROR_PRINT("Failed to insert delegate document during initialization. IP: %s", network_nodes[i].ip_address);
         return XCASH_ERROR;
       }
+
+      snprintf(json_buffer, sizeof(json_buffer),
+               "{"
+               "\"public_key\":\"%s\","
+               "\"block_verifier_total_rounds\":\"0\","
+               "\"block_verifier_online_total_rounds\":\"0\","
+               "\"block_producer_total_rounds\":\"0\","
+               "}",
+               network_nodes[i].seed_public_key);
+
+      if (insert_document_into_collection_json(DATABASE_NAME, "statistics", json_buffer) != XCASH_OK) {
+        ERROR_PRINT("Failed to insert statistics document during initialization.");
+        return XCASH_ERROR;
+      }
     }
-
-//    const char *statistics_default_data =
-//        "{\"username\":\"XCASH\","
-//        "\"most_total_rounds_delegate_name\":\"xcashseeds_us\","
-//        "\"most_total_rounds\":\"0\","
-//        "\"best_block_verifier_online_percentage_delegate_name\":\"xcashseeds_us\","
-//        "\"best_block_verifier_online_percentage\":\"0\","
-//        "\"most_block_producer_total_rounds_delegate_name\":\"xcashseeds_us\","
-//        "\"most_block_producer_total_rounds\":\"0\"}";
-
-//    if (insert_document_into_collection_json(DATABASE_NAME, "statistics", statistics_default_data) != XCASH_OK) {
-//      ERROR_PRINT("Failed to insert statistics document during initialization.");
-//      return XCASH_ERROR;
-//    }
   }
 
   return XCASH_OK;
