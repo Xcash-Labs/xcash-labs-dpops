@@ -66,6 +66,7 @@ bool init_processing(const arg_config_t *arg_config) {
                network_nodes[i].seed_public_key,
                registration_time);
 
+               
       if (insert_document_into_collection_json(DATABASE_NAME, "delegates", json_buffer) != XCASH_OK) {
         ERROR_PRINT("Failed to insert delegate document during initialization. IP: %s", network_nodes[i].ip_address);
         return XCASH_ERROR;
