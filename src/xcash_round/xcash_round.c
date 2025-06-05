@@ -419,13 +419,28 @@ void start_block_production(void) {
           }
         }        
       }
+      // Update statics
+      for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
+        if (delegates_all[i].public_address != NULL &&
+            strlen(delegates_all[i].public_address) > 0 &&
+            strcmp(vrf_public_key, producer_refs[0].vrf_public_key) == 0) {
+
+              
+          // ✅ Use delegates_all[i].public_address here
+          // You can now access any stat, log, or slashing logic
+        }
+      }
+
+//      snprintf(json_buffer, sizeof(json_buffer),
+//               "{"
+//               "\"public_key\":\"%s\","
+//               "\"block_verifier_total_rounds\":\"0\","
+//               "\"block_verifier_online_total_rounds\":\"0\","
+//               "\"block_producer_total_rounds\":\"0\","
+//               "}",
+//               network_nodes[i].seed_public_key);
 
 
-
-
-
-
-      
     } else {
       if (delegate_db_hash_mismatch > 1) {
         // check whether we need a full resync, xcash_wallet_public_address don't pick self

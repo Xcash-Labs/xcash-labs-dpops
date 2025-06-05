@@ -21,7 +21,7 @@ typedef struct {
     int online_status;
 } NetworkNode;
 
-// xcash-next
+// xcash-next __OLD__
 /*
 typedef struct  {
     char public_address[XCASH_WALLET_LENGTH+1];
@@ -50,27 +50,23 @@ typedef struct  {
 // xcash-next
 typedef struct  {
     char public_address[XCASH_WALLET_LENGTH+1];
-    char total_vote_count[100];
+    uint64_t total_vote_count;
     char IP_address[IP_LENGTH+1];
     char delegate_name[MAXIMUM_BUFFER_SIZE_DELEGATES_NAME+1];
     char about[1025];
     char website[256];
     char team[256];
-    char delegate_status[10];
-    char delegate_fee[11];
+    char delegate_type[10];
+    float delegate_fee; 
     char server_specs[1025];
-//    char block_verifier_score[10];
-    char online_status[11];
-//    char block_verifier_total_rounds[10];
-//    char block_verifier_online_total_rounds[10];
-//    char block_verifier_online_percentage[10];
-//     char block_producer_total_rounds[10];
-//    char block_producer_block_heights[BUFFER_SIZE_BLOCK_HEIGHTS_DATA];
+    bool online_status;
+    uint64_t block_verifier_total_rounds;
+    uint64_t block_verifier_online_total_rounds;
+    uint64_t block_producer_total_rounds;
     char public_key[VRF_PUBLIC_KEY_LENGTH+1];
     char registration_timestamp[21];
-    char online_status_ck[11];
+    bool online_status_ck;
 } delegates_t;
-
 
 // database struct
 struct database_document_fields {

@@ -28,7 +28,8 @@ bool init_processing(const arg_config_t *arg_config) {
   }
 
   // brief check if database is empty
-  if (count_db_delegates() <= 0 && count_db_statistics() <= 0) {
+//  if (count_db_delegates() <= 0 && count_db_statistics() <= 0) {
+  if (count_db_delegates() <= 0) {
     INFO_PRINT("Delegates and Statistics collections do not exist so creating them.");
     // Check if it should create the default database data
     char json_buffer[MEDIUM_BUFFER_SIZE];
@@ -46,22 +47,19 @@ bool init_processing(const arg_config_t *arg_config) {
       snprintf(json_buffer, sizeof(json_buffer),
                "{"
                "\"public_address\":\"%s\","
-               "\"total_vote_count\":\"0\","
+               "\"total_vote_count\":0,"
                "\"IP_address\":\"%s\","
                "\"delegate_name\":\"%s\","
                "\"about\":\"Official xCash-Labs Node\","
                "\"website\":\"%s\","
                "\"team\":\"xCash-Labs Team\","
-               "\"delegate_status\":\"solo\","
-               "\"delegate_fee\":\"0\"," 
+               "\"delegate_type\":\"seed\","
+                "\"delegate_fee\":0.00,"
                "\"server_specs\":\"Operating System = Ubuntu 22.04\","
-//               "\"block_verifier_score\":\"0\","
-               "\"online_status\":\"false\","
-               "\"block_verifier_total_rounds\":\"0\","
-               "\"block_verifier_online_total_rounds\":\"0\","
-//               "\"block_verifier_online_percentage\":\"0\","
-               "\"block_producer_total_rounds\":\"0\","
-//               "\"block_producer_block_heights\":\"%d\","
+               "\"online_status\":false,"
+               "\"block_verifier_total_rounds\":0,"
+               "\"block_verifier_online_total_rounds\":0,"
+               "\"block_producer_total_rounds\":0,"
                "\"public_key\":\"%s\","
                "\"registration_timestamp\":\"%ld\""
                "}",
@@ -69,26 +67,11 @@ bool init_processing(const arg_config_t *arg_config) {
                network_nodes[i].ip_address,
                delegate_name,
                network_nodes[i].ip_address,
-//               XCASH_PROOF_OF_STAKE_BLOCK_HEIGHT,
                network_nodes[i].seed_public_key,
                registration_time);
 
       if (insert_document_into_collection_json(DATABASE_NAME, "delegates", json_buffer) != XCASH_OK) {
         ERROR_PRINT("Failed to insert delegate document during initialization. IP: %s", network_nodes[i].ip_address);
-        return XCASH_ERROR;
-      }
-
-      snprintf(json_buffer, sizeof(json_buffer),
-               "{"
-               "\"public_key\":\"%s\","
-               "\"block_verifier_total_rounds\":\"0\","
-               "\"block_verifier_online_total_rounds\":\"0\","
-               "\"block_producer_total_rounds\":\"0\","
-               "}",
-               network_nodes[i].seed_public_key);
-
-      if (insert_document_into_collection_json(DATABASE_NAME, "statistics", json_buffer) != XCASH_OK) {
-        ERROR_PRINT("Failed to insert statistics document during initialization.");
         return XCASH_ERROR;
       }
     }
