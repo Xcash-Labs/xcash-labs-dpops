@@ -63,7 +63,6 @@ bool init_processing(const arg_config_t *arg_config) {
                network_nodes[i].ip_address,
                delegate_name,
                network_nodes[i].ip_address,
-               XCASH_PROOF_OF_STAKE_BLOCK_HEIGHT,
                network_nodes[i].seed_public_key,
                registration_time);
 
