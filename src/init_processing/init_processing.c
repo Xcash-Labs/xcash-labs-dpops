@@ -66,19 +66,20 @@ bool init_processing(const arg_config_t *arg_config) {
                network_nodes[i].seed_public_key,
                registration_time);
 
-               
+
       if (insert_document_into_collection_json(DATABASE_NAME, "delegates", json_buffer) != XCASH_OK) {
         ERROR_PRINT("Failed to insert delegate document during initialization. IP: %s", network_nodes[i].ip_address);
         return XCASH_ERROR;
       }
-    }
 
-    snprintf(json_buffer, sizeof(json_buffer),
+      snprintf(json_buffer, sizeof(json_buffer),
         "{\"public_key\":\"%s\","
         "\"block_verifier_total_rounds\":\"0\","
         "\"block_verifier_online_total_rounds\":\"0\","
         "\"block_producer_blocks_created\":\"0\"}",
         network_nodes[i].seed_public_key);
+
+    }
 
     if (insert_document_into_collection_json(DATABASE_NAME, "statistics", json_buffer) != XCASH_OK) {
       ERROR_PRINT("Failed to insert statistics document during initialization.");
