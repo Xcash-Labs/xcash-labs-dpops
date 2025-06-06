@@ -368,6 +368,8 @@ void start_block_production(void) {
     }
   }
 
+  INFO_PRINT("HERE.................................");
+
   // set up delegates for first round
   if (!fill_delegates_from_db()) {
     FATAL_ERROR_EXIT("Failed to load and organize delegates for starting round, Possible problem with Mongodb");
