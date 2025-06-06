@@ -330,7 +330,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
              "\"IP_address\":\"%s\","
              "\"delegate_name\":\"%s\","
              "\"about\":\"\","
-             "\"website\":\"%s\","
+             "\"website\":\"\","
              "\"team\":\"\","
              "\"delegate_type\":\"shared\","
              "\"delegate_fee\":0.00,"
@@ -342,11 +342,10 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
              "\"public_key\":\"%s\","
              "\"registration_timestamp\":%" PRIu64
              "}",
-             js_address,
-             js_ip,
+             delegate_public_address,
+             delegates_IP_address,
              delegate_name,
-             js_ip,
-             js_pubkey,
+             delegate_public_key,
              registration_time);
 
     if (insert_document_into_collection_json(DATABASE_NAME, DB_COLLECTION_DELEGATES, data) == 0) {

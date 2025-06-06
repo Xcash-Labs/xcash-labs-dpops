@@ -51,7 +51,7 @@ bool init_processing(const arg_config_t *arg_config) {
                "\"IP_address\":\"%s\","
                "\"delegate_name\":\"%s\","
                "\"about\":\"Official xCash-Labs Node\","
-               "\"website\":\"%s\","
+               "\"website\":\xcashlabs.org\","
                "\"team\":\"xCash-Labs Team\","
                "\"delegate_type\":\"seed\","
                 "\"delegate_fee\":0.00,"
@@ -66,7 +66,6 @@ bool init_processing(const arg_config_t *arg_config) {
                network_nodes[i].seed_public_address,
                network_nodes[i].ip_address,
                delegate_name,
-               network_nodes[i].ip_address,
                network_nodes[i].seed_public_key,
                registration_time);
 
