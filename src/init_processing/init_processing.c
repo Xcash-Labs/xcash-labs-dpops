@@ -43,7 +43,7 @@ bool init_processing(const arg_config_t *arg_config) {
         if (*p == '.') *p = '_';
       }
 
-      time_t registration_time = time(NULL);
+      uint64_t registration_time = (uint64_t)time(NULL);
       snprintf(json_buffer, sizeof(json_buffer),
                "{"
                "\"public_address\":\"%s\","
@@ -61,7 +61,7 @@ bool init_processing(const arg_config_t *arg_config) {
                "\"block_verifier_online_total_rounds\":0,"
                "\"block_producer_total_rounds\":0,"
                "\"public_key\":\"%s\","
-               "\"registration_timestamp\":\"%ld\""
+               "\"registration_timestamp\":%" PRIu64
                "}",
                network_nodes[i].seed_public_address,
                network_nodes[i].ip_address,
