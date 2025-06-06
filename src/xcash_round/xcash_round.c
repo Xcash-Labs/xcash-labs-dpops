@@ -437,16 +437,7 @@ void start_block_production(void) {
         }        
       }
       // Update statistics 
-      for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
-        if (delegates_all[i].public_address != NULL 
-            && strlen(delegates_all[i].public_address) > 0) 
-            && strcmp(delegates_all[i].public_address, delegates_all[i].online_status_ck) != 0) {
 
-
-          // ✅ Use delegates_all[i].public_address here
-          // You can now access any stat, log, or slashing logic
-        }
-      }
 
 //      snprintf(json_buffer, sizeof(json_buffer),
 //               "{"
