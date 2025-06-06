@@ -412,20 +412,37 @@ void start_block_production(void) {
 
           // Use delegates_all[i].public_address here, not xcash_wallet_public_address
           snprintf(filter_json, sizeof(filter_json), "{\"public_address\":\"%s\"}", delegates_all[i].public_address);
-          snprintf(update_json, sizeof(update_json), "{\"online_status\":\"%s\"}", delegates_all[i].online_status_ck);
+
+//          snprintf(update_json, sizeof(update_json), "{\"online_status\":\"%s\"}", delegates_all[i].online_status_ck);
+
+            uint64_t tmp_verifier_total_round = 1 + delegates_all[i].block_verifier_total_rounds;
+//            uint64_t tmp_verifier_online_total_rounds;
+//            uint64_t tmp_producer_total_rounds;
+
+
+          snprintf(update_json, sizeof(update_json),
+            "{"
+            "\"online_status\":\"%s\","
+            "\"block_verifier_online_total_rounds\":%" PRIu64
+            "}",
+            delegates_all[i].online_status_ck,
+            delegates_all[i].block_verifier_online_total_rounds);
+
+
+
 
           if (update_document_from_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, filter_json, update_json) != XCASH_OK) {
             ERROR_PRINT("Failed to update online_status for delegate %s", delegates_all[i].public_address);
           }
         }        
       }
-      // Update statics
+      // Update statistics 
       for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
-        if (delegates_all[i].public_address != NULL &&
-            strlen(delegates_all[i].public_address) > 0 &&
-            strcmp(vrf_public_key, producer_refs[0].vrf_public_key) == 0) {
+        if (delegates_all[i].public_address != NULL 
+            && strlen(delegates_all[i].public_address) > 0) 
+            && strcmp(delegates_all[i].public_address, delegates_all[i].online_status_ck) != 0) {
 
-              
+
           // ✅ Use delegates_all[i].public_address here
           // You can now access any stat, log, or slashing logic
         }
