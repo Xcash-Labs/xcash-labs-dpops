@@ -367,16 +367,10 @@ void start_block_production(void) {
       sleep(5);
     }
   }
-
-  INFO_PRINT("HERE.................................");
-
   // set up delegates for first round
   if (!fill_delegates_from_db()) {
     FATAL_ERROR_EXIT("Failed to load and organize delegates for starting round, Possible problem with Mongodb");
   }
-
-  INFO_PRINT("HERE.................................");
-
   // Start production loop
   while (true) {
     gettimeofday(&current_time, NULL);
