@@ -1,42 +1,7 @@
 #include "xcash_delegates.h"
 
-delegates_t temp_instance;
+//delegates_t temp_instance;
 
-size_t delegate_field_sizes[NUM_DB_FIELDS] = {sizeof(temp_instance.public_address),
-                                           sizeof(temp_instance.total_vote_count),
-                                           sizeof(temp_instance.IP_address),
-                                           sizeof(temp_instance.delegate_name),
-                                           sizeof(temp_instance.about),
-                                           sizeof(temp_instance.website),
-                                           sizeof(temp_instance.team),
-                                           sizeof(temp_instance.delegate_type),
-                                           sizeof(temp_instance.delegate_fee),
-                                           sizeof(temp_instance.server_specs),
-                                           sizeof(temp_instance.online_status),
-                                           sizeof(temp_instance.block_verifier_total_rounds),
-                                           sizeof(temp_instance.block_verifier_online_total_rounds),
-                                           sizeof(temp_instance.block_producer_total_rounds),
-                                           sizeof(temp_instance.public_key),
-                                           sizeof(temp_instance.registration_timestamp)};
-
-const char* delegate_keys[NUM_DB_FIELDS] = {
-    "public_address",
-    "total_vote_count",
-    "IP_address",
-    "delegate_name",
-    "about",
-    "website",
-    "team",
-    "delegate_type",
-    "delegate_fee",
-    "server_specs",
-    "online_status",
-    "block_verifier_total_rounds",
-    "block_verifier_online_total_rounds",
-    "block_producer_total_rounds",
-    "public_key",
-    "registration_timestamp",
-};
 
 // Helper function to get the position of a delegate in the network_data_nodes_list
 int get_network_data_node_position(const char* public_address) {
@@ -112,44 +77,52 @@ int read_organize_delegates(delegates_t* delegates, size_t* delegates_count_resu
       if (bson_iter_init(&record_iter, &record)) {
         while (bson_iter_next(&record_iter)) {
           const char* db_key = bson_iter_key(&record_iter);
-          char* current_delegate = (char*)&delegates[delegate_index];
-          bool field_set = false;
 
-          for (int field_index = 0; field_index < NUM_FIELDS; field_index++) {
-            if (strcmp(db_key, delegate_keys[field_index]) == 0) {
-              const char* value = bson_iter_utf8(&record_iter, NULL);
-
-              if (strcmp(db_key, "registration_timestamp") == 0) {
-                time_t reg_time = strtoull(value, NULL, 10);
-                if (now - reg_time < 300) {
-                  skip_delegate = true;
-                }
-              }
-
-              strncpy(current_delegate, value, delegate_field_sizes[field_index]);
-              current_delegate[delegate_field_sizes[field_index] - 1] = '\0';
-              field_set = true;
-              break;
+          if (strcmp(db_key, "public_address") == 0 && BSON_ITER_HOLDS_UTF8(&record_iter)) {
+            strncpy(delegates[delegate_index].public_address, bson_iter_utf8(&record_iter, NULL), XCASH_WALLET_LENGTH);
+          } else if (strcmp(db_key, "total_vote_count") == 0 && BSON_ITER_HOLDS_INT64(&record_iter)) {
+            delegates[delegate_index].total_vote_count = bson_iter_int64(&record_iter);
+          } else if (strcmp(db_key, "IP_address") == 0 && BSON_ITER_HOLDS_UTF8(&record_iter)) {
+            strncpy(delegates[delegate_index].IP_address, bson_iter_utf8(&record_iter, NULL), IP_LENGTH);
+          } else if (strcmp(db_key, "delegate_name") == 0 && BSON_ITER_HOLDS_UTF8(&record_iter)) {
+            strncpy(delegates[delegate_index].delegate_name, bson_iter_utf8(&record_iter, NULL), MAXIMUM_BUFFER_SIZE_DELEGATES_NAME);
+          } else if (strcmp(db_key, "about") == 0 && BSON_ITER_HOLDS_UTF8(&record_iter)) {
+            strncpy(delegates[delegate_index].about, bson_iter_utf8(&record_iter, NULL), 1024);
+          } else if (strcmp(db_key, "website") == 0 && BSON_ITER_HOLDS_UTF8(&record_iter)) {
+            strncpy(delegates[delegate_index].website, bson_iter_utf8(&record_iter, NULL), 255);
+          } else if (strcmp(db_key, "team") == 0 && BSON_ITER_HOLDS_UTF8(&record_iter)) {
+            strncpy(delegates[delegate_index].team, bson_iter_utf8(&record_iter, NULL), 255);
+          } else if (strcmp(db_key, "delegate_type") == 0 && BSON_ITER_HOLDS_UTF8(&record_iter)) {
+            strncpy(delegates[delegate_index].delegate_type, bson_iter_utf8(&record_iter, NULL), 10);
+          } else if (strcmp(db_key, "delegate_fee") == 0 && BSON_ITER_HOLDS_DOUBLE(&record_iter)) {
+            delegates[delegate_index].delegate_fee = bson_iter_double(&record_iter);
+          } else if (strcmp(db_key, "server_specs") == 0 && BSON_ITER_HOLDS_UTF8(&record_iter)) {
+            strncpy(delegates[delegate_index].server_specs, bson_iter_utf8(&record_iter, NULL), 1024);
+          } else if (strcmp(db_key, "online_status") == 0 && BSON_ITER_HOLDS_UTF8(&record_iter)) {
+            strncpy(delegates[delegate_index].online_status, bson_iter_utf8(&record_iter, NULL), 10);
+          } else if (strcmp(db_key, "block_verifier_total_rounds") == 0 && BSON_ITER_HOLDS_INT64(&record_iter)) {
+            delegates[delegate_index].block_verifier_total_rounds = bson_iter_int64(&record_iter);
+          } else if (strcmp(db_key, "block_verifier_online_total_rounds") == 0 && BSON_ITER_HOLDS_INT64(&record_iter)) {
+            delegates[delegate_index].block_verifier_online_total_rounds = bson_iter_int64(&record_iter);
+          } else if (strcmp(db_key, "block_producer_total_rounds") == 0 && BSON_ITER_HOLDS_INT64(&record_iter)) {
+            delegates[delegate_index].block_producer_total_rounds = bson_iter_int64(&record_iter);
+          } else if (strcmp(db_key, "public_key") == 0 && BSON_ITER_HOLDS_UTF8(&record_iter)) {
+            strncpy(delegates[delegate_index].public_key, bson_iter_utf8(&record_iter, NULL), VRF_PUBLIC_KEY_LENGTH);
+          } else if (strcmp(db_key, "registration_timestamp") == 0 && BSON_ITER_HOLDS_INT64(&record_iter)) {
+            time_t reg_time = bson_iter_int64(&record_iter);
+            if (now - reg_time < 300) {
+              skip_delegate = true;
             }
-            current_delegate += delegate_field_sizes[field_index];
-          }
-
-          if (!field_set) {
-            DEBUG_PRINT("The db key '%s' doesn't belong to delegate structure", db_key);
-            bson_destroy(delegates_db_data);
-            return XCASH_ERROR;
+            delegates[delegate_index].registration_timestamp = reg_time;
           }
         }
       }
 
-      if (skip_delegate) {
-        continue;  // skip this recently registered delegate
+      if (!skip_delegate) {
+        strncpy(delegates[delegate_index].online_status, "PENDING", sizeof(delegates[delegate_index].online_status));
+        delegates[delegate_index].online_status[sizeof(delegates[delegate_index].online_status) - 1] = '\0';
+        delegate_index++;
       }
-
-      strncpy(delegates[delegate_index].online_status, "PENDING", sizeof(delegates[delegate_index].online_status));
-      delegates[delegate_index].online_status[sizeof(delegates[delegate_index].online_status) - 1] = '\0';
-
-      delegate_index++;
     }
   }
 
