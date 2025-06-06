@@ -147,10 +147,8 @@ xcash_round_result_t process_round(void) {
   pthread_mutex_lock(&majority_vrf_lock);
   memset(&current_block_verifiers_list, 0, sizeof(current_block_verifiers_list));
   for (size_t i = 0, j = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
-
-
     if (delegates_all[i].public_address[0] != '\0') {
-      if (strcmp(delegates_all[i].online_status_ck, "true") == 0) {
+      if (strcmp(delegates_all[i].online_status, "true") == 0) {
         strcpy(current_block_verifiers_list.block_verifiers_name[j], delegates_all[i].delegate_name);
         strcpy(current_block_verifiers_list.block_verifiers_public_address[j], delegates_all[i].public_address);
         strcpy(current_block_verifiers_list.block_verifiers_public_key[j], delegates_all[i].public_key);
@@ -403,52 +401,49 @@ void start_block_production(void) {
 
     if (round_result == ROUND_OK) {
       for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
-        // If a delegate’s “online_status” changed, update it
-        if (delegates_all[i].public_address != NULL
-          && strlen(delegates_all[i].public_address) > 0
-          && strcmp(delegates_all[i].online_status, delegates_all[i].online_status_ck) != 0) {
+        if (delegates_all[i].public_address != NULL && strlen(delegates_all[i].public_address) > 0) {
+
           char filter_json[SMALL_BUFFER_SIZE];
           char update_json[SMALL_BUFFER_SIZE];
 
-          // Use delegates_all[i].public_address here, not xcash_wallet_public_address
           snprintf(filter_json, sizeof(filter_json), "{\"public_address\":\"%s\"}", delegates_all[i].public_address);
 
-//          snprintf(update_json, sizeof(update_json), "{\"online_status\":\"%s\"}", delegates_all[i].online_status_ck);
+          uint64_t tmp_verifier_total_round = delegates_all[i].block_verifier_total_rounds;
+          uint64_t tmp_verifier_online_total_rounds = delegates_all[i].block_verifier_online_total_rounds;
+          if (strcmp(delegates_all[i].online_status, "true") == 0) {
+            tmp_verifier_online_total_rounds += 1; 
+            if (i <= 49) {
+              tmp_verifier_total_round += 1; 
+            }
+          }
 
-            uint64_t tmp_verifier_total_round = 1 + delegates_all[i].block_verifier_total_rounds;
-//            uint64_t tmp_verifier_online_total_rounds;
-//            uint64_t tmp_producer_total_rounds;
-
+          uint64_t tmp_producer_total_rounds = delegates_all[i].block_producer_total_rounds;
+          if (strcmp(delegates_all[i].public_address, producer_refs[0].public_address) == 0) {
+            tmp_producer_total_rounds += 1;
+          }
 
           snprintf(update_json, sizeof(update_json),
-            "{"
-            "\"online_status\":\"%s\","
-            "\"block_verifier_online_total_rounds\":%" PRIu64
-            "}",
-            delegates_all[i].online_status_ck,
-            delegates_all[i].block_verifier_online_total_rounds);
+                   "{"
+                   "\"online_status\":\"%s\","
+                   "\"block_verifier_total_rounds\":%" PRIu64 ","
+                   "\"block_verifier_online_total_rounds\":%" PRIu64 ","
+                   "\"block_producer_total_rounds\":%" PRIu64 "}",
+                   delegates_all[i].online_status,
+                   tmp_verifier_total_round,
+                   tmp_verifier_online_total_rounds,
+                   tmp_producer_total_rounds);
 
-
-
+          INFO_PRINT("Updated delegate %s: total=%" PRIu64 ", online=%" PRIu64 ", produced=%" PRIu64,
+            delegates_all[i].public_address,
+            tmp_verifier_total_round,
+            tmp_verifier_online_total_rounds,
+            tmp_producer_total_rounds);
 
           if (update_document_from_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, filter_json, update_json) != XCASH_OK) {
             ERROR_PRINT("Failed to update online_status for delegate %s", delegates_all[i].public_address);
           }
         }        
       }
-      // Update statistics 
-
-
-//      snprintf(json_buffer, sizeof(json_buffer),
-//               "{"
-//               "\"public_key\":\"%s\","
-//               "\"block_verifier_total_rounds\":\"0\","
-//               "\"block_verifier_online_total_rounds\":\"0\","
-//               "\"block_producer_total_rounds\":\"0\","
-//               "}",
-//               network_nodes[i].seed_public_key);
-
-
     } else {
       if (delegate_db_hash_mismatch > 1) {
         // check whether we need a full resync, xcash_wallet_public_address don't pick self

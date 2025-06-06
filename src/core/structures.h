@@ -65,7 +65,6 @@ typedef struct  {
     uint64_t block_producer_total_rounds;
     char public_key[VRF_PUBLIC_KEY_LENGTH+1];
     char registration_timestamp[21];
-    char online_status_ck[11];
 } delegates_t;
 
 // database struct

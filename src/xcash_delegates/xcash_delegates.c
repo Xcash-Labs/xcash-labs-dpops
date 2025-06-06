@@ -2,7 +2,7 @@
 
 delegates_t temp_instance;
 
-size_t delegate_field_sizes[NUM_FIELDS] = {sizeof(temp_instance.public_address),
+size_t delegate_field_sizes[NUM_DB_FIELDS] = {sizeof(temp_instance.public_address),
                                            sizeof(temp_instance.total_vote_count),
                                            sizeof(temp_instance.IP_address),
                                            sizeof(temp_instance.delegate_name),
@@ -17,9 +17,7 @@ size_t delegate_field_sizes[NUM_FIELDS] = {sizeof(temp_instance.public_address),
                                            sizeof(temp_instance.block_verifier_online_total_rounds),
                                            sizeof(temp_instance.block_producer_total_rounds),
                                            sizeof(temp_instance.public_key),
-                                           sizeof(temp_instance.registration_timestamp),
-                                           sizeof(temp_instance.online_status_ck)};
-
+                                           sizeof(temp_instance.registration_timestamp)};
 
 const char* delegate_keys[NUM_DB_FIELDS] = {
     "public_address",
@@ -148,8 +146,8 @@ int read_organize_delegates(delegates_t* delegates, size_t* delegates_count_resu
         continue;  // skip this recently registered delegate
       }
 
-      strncpy(delegates[delegate_index].online_status_ck, "PENDING", sizeof(delegates[delegate_index].online_status_ck));
-      delegates[delegate_index].online_status_ck[sizeof(delegates[delegate_index].online_status_ck) - 1] = '\0';
+      strncpy(delegates[delegate_index].online_status, "PENDING", sizeof(delegates[delegate_index].online_status));
+      delegates[delegate_index].online_status[sizeof(delegates[delegate_index].online_status) - 1] = '\0';
 
       delegate_index++;
     }

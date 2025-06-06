@@ -107,8 +107,8 @@ void server_received_msg_get_sync_info(server_client_t *client, const char *MESS
             }
     
             // All checks passed — mark online
-            strncpy(delegates_all[i].online_status_ck, "true", sizeof(delegates_all[i].online_status_ck));
-            delegates_all[i].online_status_ck[sizeof(delegates_all[i].online_status_ck) - 1] = '\0';
+            strncpy(delegates_all[i].online_status, "true", sizeof(delegates_all[i].online_status));
+            delegates_all[i].online_status[sizeof(delegates_all[i].online_status) - 1] = '\0';
             DEBUG_PRINT("Marked delegate %s as online (ck)", parsed_address);
             break;
         }
