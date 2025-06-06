@@ -51,7 +51,7 @@ bool init_processing(const arg_config_t *arg_config) {
                "\"IP_address\":\"%s\","
                "\"delegate_name\":\"%s\","
                "\"about\":\"Official xCash-Labs Node\","
-               "\"website\":\xcashlabs.org\","
+               "\"website\":\"xcashlabs.org\","
                "\"team\":\"xCash-Labs Team\","
                "\"delegate_type\":\"seed\","
                 "\"delegate_fee\":0.00,"
