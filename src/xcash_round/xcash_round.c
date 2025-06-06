@@ -373,6 +373,8 @@ void start_block_production(void) {
     FATAL_ERROR_EXIT("Failed to load and organize delegates for starting round, Possible problem with Mongodb");
   }
 
+  INFO_PRINT("HERE.................................");
+
   // Start production loop
   while (true) {
     gettimeofday(&current_time, NULL);
