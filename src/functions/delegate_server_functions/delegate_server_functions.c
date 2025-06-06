@@ -321,36 +321,33 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
     }
 
     // 7) Finally insert a new document
-    time_t registration_time = time(NULL);
+    uint64_t registration_time = (uint64_t)time(NULL);
 
     snprintf(data, sizeof(data),
-      "{"
-        "\"public_address\":\"%s\","
-        "\"total_vote_count\":\"0\","
-        "\"IP_address\":\"%s\","
-        "\"delegate_name\":\"%s\","
-        "\"about\":\"\","
-        "\"website\":\"\","
-        "\"team\":\"\","
-        "\"shared_delegate_status\":\"shared\","
-        "\"delegate_fee\":\"\","
-        "\"server_specs\":\"\","
-        "\"block_verifier_score\":\"0\","
-        "\"online_status\":\"true\","
-        "\"block_verifier_total_rounds\":\"0\","
-        "\"block_verifier_online_total_rounds\":\"0\","
-        "\"block_verifier_online_percentage\":\"0\","
-        "\"block_producer_total_rounds\":\"0\","
-        "\"block_producer_block_heights\":\"\","
-        "\"public_key\":\"%s\","
-        "\"registration_timestamp\":\"%ld\""
-      "}",
-      delegate_public_address,
-      delegates_IP_address,
-      delegate_name,
-      delegate_public_key,
-      (long)registration_time
-    );
+             "{"
+             "\"public_address\":\"%s\","
+             "\"total_vote_count\":0,"
+             "\"IP_address\":\"%s\","
+             "\"delegate_name\":\"%s\","
+             "\"about\":\"\","
+             "\"website\":\"%s\","
+             "\"team\":\"\","
+             "\"delegate_type\":\"shared\","
+             "\"delegate_fee\":0.00,"
+             "\"server_specs\":\"\","
+             "\"online_status\":\"false\","
+             "\"block_verifier_total_rounds\":0,"
+             "\"block_verifier_online_total_rounds\":0,"
+             "\"block_producer_total_rounds\":0,"
+             "\"public_key\":\"%s\","
+             "\"registration_timestamp\":%" PRIu64
+             "}",
+             js_address,
+             js_ip,
+             delegate_name,
+             js_ip,
+             js_pubkey,
+             registration_time);
 
     if (insert_document_into_collection_json(DATABASE_NAME, DB_COLLECTION_DELEGATES, data) == 0) {
         SERVER_ERROR("The delegate could not be added to the database}");
