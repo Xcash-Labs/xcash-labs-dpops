@@ -240,7 +240,7 @@ cleanup:
 
 
 
-bool create_delegate_online_list(char* out_data, size_t out_data_size)
+bool create_delegate_online_list_OLD_(char* out_data, size_t out_data_size)
 {
     char addr_list[((XCASH_WALLET_LENGTH * MAXIMUM_AMOUNT_OF_DELEGATES) + 256)];
     char key_list [((VRF_PUBLIC_KEY_LENGTH * MAXIMUM_AMOUNT_OF_DELEGATES) +256)];
