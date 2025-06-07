@@ -125,7 +125,7 @@ Parameters:
 void server_receive_data_socket_node_to_network_data_nodes_get_current_block_verifiers_list(server_client_t* client)
 {
     char out_data[DELEGATES_ONLINE_BUFFER];
-    bool ok = create_delegate_online_list(out_data, sizeof(out_data));
+    bool ok = create_delegate_online_ip_list(out_data, sizeof(out_data));
 
     if (ok) {
         INFO_PRINT("Generated JSON (%zu bytes):\n%s\n", strlen(out_data), out_data);
