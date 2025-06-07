@@ -42,12 +42,9 @@ typedef struct
 
 } xcash_db_sync_prehash_t;
 
-
-
-
 bool hash_delegates_collection(char *out_hash_hex);
 bool fill_delegates_from_db(void);;
-int get_random_majority(xcash_node_sync_info_t* majority_list, size_t majority_count);
+int select_random_online_delegate(void);
 bool create_delegate_online_ip_list(char* out_data, size_t out_data_size);
 
 #endif

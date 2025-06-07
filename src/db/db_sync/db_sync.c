@@ -394,14 +394,6 @@ cleanup:
     return success;
 }
 
-
-
-
-
-
-
-
-
 bool create_delegate_online_ip_list(char* out_data, size_t out_data_size)
 {
     char ip_list[(IP_LENGTH * MAXIMUM_AMOUNT_OF_DELEGATES) + 256];
@@ -504,12 +496,8 @@ cleanup:
     return success;
 }
 
-
-
-
-
 bool fill_delegates_from_db(void) {
-  delegates_t *delegates = (delegates_t *)calloc(MAXIMUM_AMOUNT_OF_DELEGATES, sizeof(delegates_t));
+  delegates_t* delegates = (delegates_t*)calloc(MAXIMUM_AMOUNT_OF_DELEGATES, sizeof(delegates_t));
   size_t total_delegates = 0;
 
   if (read_organize_delegates(delegates, &total_delegates) != XCASH_OK) {
@@ -521,6 +509,8 @@ bool fill_delegates_from_db(void) {
 
   total_delegates = total_delegates > BLOCK_VERIFIERS_TOTAL_AMOUNT ? BLOCK_VERIFIERS_TOTAL_AMOUNT : total_delegates;
 
+  pthread_mutex_lock(&delegates_mutex);
+
   // fill actual list of all delegates from db
   for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
     if (i < total_delegates) {
@@ -530,45 +520,42 @@ bool fill_delegates_from_db(void) {
     }
   }
 
+  pthread_mutex_unlock(&delegates_mutex);
+
   // cleanup the allocated memory
   free(delegates);
-
   return true;
 }
 
-/**
- * @brief Selects a random valid index from the majority list, avoiding self-selection.
- *
- * @param majority_list Pointer to the array of majority nodes.
- * @param majority_count The number of items in the majority list.
- * @return int The index of a randomly selected node, avoiding self-selection. Returns -1 on error.
- */
-int get_random_majority(xcash_node_sync_info_t *majority_list, size_t majority_count) {
-  if (!majority_list || majority_count == 0) {
-    ERROR_PRINT("Invalid majority list or zero count.");
-    return -1;
-  }
+// @brief Selects a random valid index from the online list, avoiding self-selection.
+// Output: selected delegate index (or -1 if none)
+int select_random_online_delegate(void) {
+    int eligible_indices[BLOCK_VERIFIERS_TOTAL_AMOUNT];
+    int eligible_count = 0;
 
-  int random_index = -1;
+    for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; ++i) {
+        if (delegates_all[i].public_address[0] == '\0') {
+            continue;
+        }
 
-  // Randomly select an index, avoiding self-selection
-  for (size_t attempt = 0; attempt < majority_count; ++attempt) {
-    random_index = rand() % (int)majority_count;
-
-    // Prevent syncing from myself
-    if (strcmp(xcash_wallet_public_address, majority_list[random_index].public_address) != 0) {
-      return random_index;
+        // Must be online and not self
+        if (strcmp(delegates_all[i].online_status, "true") == 0 &&
+            strcmp(delegates_all[i].public_address, xcash_wallet_public_address) != 0) {
+            eligible_indices[eligible_count++] = i;
+        }
     }
-  }
 
-  // Fallback to the first valid non-self index if all attempts failed
-  for (size_t i = 0; i < majority_count; ++i) {
-    if (strcmp(xcash_wallet_public_address, majority_list[i].public_address) != 0) {
-      return (int)i;
+    if (eligible_count == 0) {
+        return -1;
     }
-  }
 
-  // If no valid node is found (should not happen), return an error
-  ERROR_PRINT("No valid majority node found that is not self.");
-  return -1;
+    // Seed RNG once
+    static int seeded = 0;
+    if (!seeded) {
+        srand(time(NULL));
+        seeded = 1;
+    }
+
+    int random_index = rand() % eligible_count;
+    return eligible_indices[random_index];
 }

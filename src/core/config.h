@@ -206,6 +206,12 @@
 #define PRODUCER_REF_COUNT 1  // Main + 0 backups for now
 #define MAJORITY_PERCENT 70
 
+
+
+#define MAX_ACTIVE_CLIENTS 200
+
+
+
 // ===================== Constants =====================
 #define ALPHANUM_STRING "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 #define XCASH_OK 1

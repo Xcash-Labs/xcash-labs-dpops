@@ -89,6 +89,8 @@ void server_received_msg_get_sync_info(server_client_t *client, const char *MESS
       ERROR_PRINT("Timed out waiting for current_block_height in server_received_msg_get_sync_info");
     }
 
+    pthread_mutex_lock(&delegates_mutex);
+
     for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
         if (strcmp(delegates_all[i].public_address, parsed_address) == 0) {
 
@@ -113,6 +115,9 @@ void server_received_msg_get_sync_info(server_client_t *client, const char *MESS
             break;
         }
     }
+
+    pthread_mutex_unlock(&delegates_mutex);
+
     return;
 }
 
@@ -136,4 +141,106 @@ void server_receive_data_socket_node_to_network_data_nodes_get_current_block_ver
                   (unsigned char*)"Could not get a list of the current online delegates",
                   strlen("Could not get a list of the current online delegates"));
     }
+}
+
+
+
+
+
+
+/*---------------------------------------------------------------------------------------------------------
+Name: server_receive_data_socket_block_verifiers_to_block_verifiers_delegates_database_download_file_update
+Description: Runs the code when the server receives the BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_DELEGATES_DATABASE_DOWNLOAD_FILE_UPDATE message
+Parameters:
+  CLIENT_SOCKET - The socket to send data to
+---------------------------------------------------------------------------------------------------------*/
+void server_receive_data_socket_block_verifiers_to_block_verifiers_delegates_database_download_file_update(const int CLIENT_SOCKET)
+{
+  // define macros
+  #define DATABASE_COLLECTION "delegates"
+  
+  // Constants
+  const size_t DATABASE_COLLECTION_SIZE = get_database_collection_size(database_name,DATABASE_COLLECTION);
+
+  if (DATABASE_COLLECTION_SIZE == 0)
+  {
+    ERROR_DATA_MESSAGE;
+  }
+
+  char* data;
+  char* data2;
+
+  if (time(NULL) > TIME_SF_V_1_0_5_PART_1)
+  {
+    data = (char*)calloc(MAXIMUM_BUFFER_SIZE,sizeof(char));
+    data2 = (char*)calloc(MAXIMUM_BUFFER_SIZE,sizeof(char));
+  }
+  else
+  {
+    data = (char*)calloc(DATABASE_COLLECTION_SIZE+SMALL_BUFFER_SIZE,sizeof(char));
+    data2 = (char*)calloc(DATABASE_COLLECTION_SIZE+SMALL_BUFFER_SIZE,sizeof(char));    
+  }
+
+  // Variables
+  char buffer[1024];
+  time_t current_date_and_time;
+  struct tm current_UTC_date_and_time;
+
+  // define macros
+  #define pointer_reset_all \
+  free(data); \
+  data = NULL; \
+  free(data2); \
+  data2 = NULL;
+
+  #define SERVER_RECEIVE_DATA_SOCKET_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_DELEGATES_DATABASE_DOWNLOAD_FILE_UPDATE_ERROR(settings) \
+  if (debug_settings == 1) \
+  { \
+  memcpy(error_message.function[error_message.total],"server_receive_data_socket_block_verifiers_to_block_verifiers_delegates_database_download_file_update",101); \
+  memcpy(error_message.data[error_message.total],settings,sizeof(settings)-1); \
+  error_message.total++; \
+  } \
+  pointer_reset_all; \
+  ERROR_DATA_MESSAGE;
+
+  memset(buffer,0,sizeof(buffer));
+
+  // check if the memory needed was allocated on the heap successfully
+  if (data == NULL || data2 == NULL)
+  {
+    if (data != NULL)
+    {
+      pointer_reset(data);
+    }
+    if (data2 != NULL)
+    {
+      pointer_reset(data2);
+    }
+    memcpy(error_message.function[error_message.total],"server_receive_data_socket_block_verifiers_to_block_verifiers_delegates_database_download_file_update",101);
+    memcpy(error_message.data[error_message.total],"Could not allocate the memory needed on the heap",48);
+    error_message.total++;
+    print_error_message(current_date_and_time,current_UTC_date_and_time,buffer);  
+    exit(0);
+  }
+
+  // get the database data for the reserve bytes database
+  if (get_database_data(data2,database_name,DATABASE_COLLECTION) == 0)
+  {
+    SERVER_RECEIVE_DATA_SOCKET_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_DELEGATES_DATABASE_DOWNLOAD_FILE_UPDATE_ERROR("Could not get the database data hash for the delegates database");
+  }
+
+  // create the message
+  memcpy(data,"{\r\n \"message_settings\": \"BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_DELEGATES_DATABASE_DOWNLOAD_FILE_DOWNLOAD\",\r\n \"delegates_database\": \"",129);
+  memcpy(data+129,data2,strnlen(data2,MAXIMUM_BUFFER_SIZE));
+  memcpy(data+strlen(data),"\",\r\n}",5);
+
+  // send the data
+  send_data(CLIENT_SOCKET,(unsigned char*)data,0,1,"");
+
+  pointer_reset_all;
+  return;
+
+  #undef DATABASE_COLLECTION
+  #undef pointer_reset_all
+  #undef SERVER_RECEIVE_DATA_SOCKET_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_DELEGATES_DATABASE_DOWNLOAD_FILE_UPDATE_ERROR
 }

@@ -144,6 +144,7 @@ xcash_round_result_t process_round(void) {
   // Fill block verifiers list with proven online nodes
   int nodes_majority_count = 0;
 
+  pthread_mutex_lock(&delegates_mutex);
   pthread_mutex_lock(&majority_vrf_lock);
   memset(&current_block_verifiers_list, 0, sizeof(current_block_verifiers_list));
   for (size_t i = 0, j = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
@@ -164,6 +165,7 @@ xcash_round_result_t process_round(void) {
     }
   }
   pthread_mutex_unlock(&majority_vrf_lock);
+  pthread_mutex_unlock(&delegates_mutex);
   atomic_store(&wait_for_vrf_init, false);
 
   if (nodes_majority_count < BLOCK_VERIFIERS_VALID_AMOUNT) {
@@ -443,7 +445,7 @@ void start_block_production(void) {
         }        
       }
     } else {
-      if (delegate_db_hash_mismatch > 1) {
+      if (delegate_db_hash_mismatch > 2) {
         // check whether we need a full resync, xcash_wallet_public_address don't pick self
         // TODO: call your sync routine here, e.g.: init_db_from_top();
       }

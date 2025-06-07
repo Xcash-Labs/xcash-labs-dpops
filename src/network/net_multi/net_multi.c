@@ -13,7 +13,12 @@ response_t** send_multi_request(const char** hosts, int port, const char* messag
   for (int i = 0; i < total_hosts; i++) {
     const char* host = hosts[i];
     response_t* response = calloc(1, sizeof(response_t));
-    if (!response) continue;
+    if (!response) {
+      response_t* dummy = calloc(1, sizeof(response_t));
+      dummy->status = STATUS_ERROR;
+      responses[i] = dummy;
+      continue;
+    }
 
     response->host = strdup(host);
     response->status = STATUS_PENDING;
@@ -42,6 +47,10 @@ response_t** send_multi_request(const char** hosts, int port, const char* messag
       freeaddrinfo(res);
       continue;
     }
+
+    // Force socket to close immediately (no lingering in TIME_WAIT)
+    struct linger so_linger = {1, 0};  // on, 0 seconds
+    setsockopt(sock, SOL_SOCKET, SO_LINGER, &so_linger, sizeof(so_linger));
 
     // Non-blocking connect
     fcntl(sock, F_SETFL, O_NONBLOCK);

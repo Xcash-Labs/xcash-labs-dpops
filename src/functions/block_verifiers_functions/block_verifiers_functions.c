@@ -441,3 +441,17 @@ bool block_verifiers_create_vote_majority_result(char **message, int producer_in
     *message = create_message_param_list(XMSG_NODES_TO_NODES_VOTE_MAJORITY_RESULTS, params);
     return (*message != NULL);
 }
+
+/*---------------------------------------------------------------------------------------------------------
+Name: block_verifiers_to_block_verifiers_delegates_database_sync_req
+Description: The block verifiers will create the vote majority results
+Parameters:
+  result - The result
+  SETTINGS - The data settings
+---------------------------------------------------------------------------------------------------------*/
+bool create_delegates_db_sync_request(int sync_index) {
+const char *static_msg = "{\r\n \"message_settings\": \"DELEGATES_DATABASE_SYNC_REQ\"\r\n}";
+
+
+  return true;
+}

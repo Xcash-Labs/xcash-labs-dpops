@@ -1,6 +1,7 @@
 #include "net_server.h"
 
 int server_fd = -1;
+sem_t client_slots;
 
 // Start the TCP server
 int start_tcp_server(int port) {
@@ -14,6 +15,9 @@ int start_tcp_server(int port) {
 
   int opt = 1;
   setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+
+  struct linger so_linger = {1, 0};
+  setsockopt(server_fd, SOL_SOCKET, SO_LINGER, &so_linger, sizeof(so_linger));
 
   memset(&server_addr, 0, sizeof(server_addr));
   server_addr.sin_family = AF_INET;
@@ -31,6 +35,8 @@ int start_tcp_server(int port) {
     close(server_fd);
     return 0;
   }
+
+  sem_init(&client_slots, 0, MAX_ACTIVE_CLIENTS);
 
   if (pthread_create(&server_thread, NULL, server_thread_loop, NULL) != 0) {
     perror("pthread_create");
@@ -61,19 +67,21 @@ void* server_thread_loop(void* arg) {
       free(client_socket);
 
       if (!atomic_load(&server_running)) {
-        // Shutdown has been triggered, exit cleanly
         break;
       }
 
-      perror("accept");  // Only log if not shutting down
+      perror("accept");
       continue;
     }
+
+    sem_wait(&client_slots);
 
     pthread_t client_thread;
     if (pthread_create(&client_thread, NULL, handle_client, client_socket) != 0) {
       perror("pthread_create");
       close(*client_socket);
       free(client_socket);
+      sem_post(&client_slots);
       continue;
     }
 
@@ -89,11 +97,9 @@ void* handle_client(void* client_socket_ptr) {
 
   server_client_t client = { .socket_fd = client_socket };
 
-  // Set receive timeout (5 seconds)
   struct timeval recv_timeout = {RECEIVE_TIMEOUT_SEC, 0};
   setsockopt(client_socket, SOL_SOCKET, SO_RCVTIMEO, &recv_timeout, sizeof(recv_timeout));
 
-  // Get client IP
   struct sockaddr_in addr;
   socklen_t addr_len = sizeof(addr);
   if (getpeername(client_socket, (struct sockaddr*)&addr, &addr_len) == 0) {
@@ -105,8 +111,10 @@ void* handle_client(void* client_socket_ptr) {
   char buffer[BUFFER_SIZE];
 
   while (1) {
+    memset(buffer, 0, sizeof(buffer));
     ssize_t bytes = recv(client_socket, buffer, sizeof(buffer) - 1, 0);
 
+    if (bytes < 0 && errno == EINTR) continue;
     if (bytes <= 0) {
       break;
     }
@@ -124,10 +132,10 @@ void* handle_client(void* client_socket_ptr) {
     DEBUG_PRINT("[TCP] Message from %s: %.*s", client.client_ip, (int)decompressed_len, decompressed);
     handle_srv_message((char*)decompressed, decompressed_len, &client);
     free(decompressed);
-
   }
 
   close(client_socket);
+  sem_post(&client_slots);
   return NULL;
 }
 
@@ -160,7 +168,6 @@ void stop_tcp_server(void) {
 
   atomic_store(&server_running, false);
 
-  // Close the listening socket to unblock accept()
   if (server_fd >= 0) {
     shutdown(server_fd, SHUT_RDWR);
     close(server_fd);
@@ -168,6 +175,8 @@ void stop_tcp_server(void) {
   }
 
   pthread_join(server_thread, NULL);
+
+  sem_destroy(&client_slots);
 
   printf("TCP server stopped.\n");
 }

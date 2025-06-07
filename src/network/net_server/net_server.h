@@ -8,6 +8,7 @@
 #include <pthread.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <semaphore.h>
 #include "config.h"
 #include "globals.h"
 #include "macro_functions.h"
