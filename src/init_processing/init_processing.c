@@ -54,7 +54,7 @@ bool init_processing(const arg_config_t *arg_config) {
                "\"website\":\"xcashlabs.org\","
                "\"team\":\"xCash-Labs Team\","
                "\"delegate_type\":\"seed\","
-                "\"delegate_fee\":0.00,"
+                "\"delegate_fee\":%.2f,"
                "\"server_specs\":\"Operating System = Ubuntu 22.04\","
                "\"online_status\":\"false\","
                "\"block_verifier_total_rounds\":0,"
