@@ -450,11 +450,8 @@ void start_block_production(void) {
         pthread_mutex_lock(&delegates_mutex);
         selected_index = select_random_online_delegate();
         pthread_mutex_unlock(&delegates_mutex);
-          if(!create_delegates_db_sync_request(selected_index)) {
+        if(!create_delegates_db_sync_request(selected_index)) {
 
-          }
-        } else {
-          ERROR_PRINT("No valid delegate available to sync delegates collection from");
         }
       }
     }
