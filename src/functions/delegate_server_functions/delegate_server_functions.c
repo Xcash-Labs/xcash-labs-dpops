@@ -183,7 +183,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates__OLD
            "\"website\":\"\","
            "\"team\":\"\","
            "\"delegate_type\":\"shared\","
-           "\"delegate_fee\":%.2f,"
+           "\"delegate_fee\":0.00,"
            "\"server_specs\":\"\","
            "\"online_status\":\"false\","
            "\"block_verifier_total_rounds\":0,"
