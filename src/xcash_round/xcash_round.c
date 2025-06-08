@@ -449,10 +449,11 @@ void start_block_production(void) {
         int selected_index;
         pthread_mutex_lock(&delegates_mutex);
         selected_index = select_random_online_delegate();
-        pthread_mutex_unlock(&delegates_mutex);
-        if(!create_delegates_db_sync_request(selected_index)) {
-
-        }
+        INFO_PRINT("Selected delegate index: %d", selected_index);
+//        pthread_mutex_unlock(&delegates_mutex);
+//        if(!create_delegates_db_sync_request(selected_index)) {
+//
+//        }
       }
     }
 
