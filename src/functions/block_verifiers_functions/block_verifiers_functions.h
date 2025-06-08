@@ -19,5 +19,5 @@ int block_verifiers_create_block(void);
 int sync_block_verifiers_minutes_and_seconds(const int MINUTES, const int SECONDS);
 bool create_sync_msg(char** message);
 bool block_verifiers_create_vote_majority_result(char **message, int producer_indx);
-
+bool create_delegates_db_sync_request(int selected_index);
 #endif

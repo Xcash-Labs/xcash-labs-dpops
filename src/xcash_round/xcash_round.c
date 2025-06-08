@@ -454,7 +454,7 @@ void start_block_production(void) {
 
           }
         } else {
-          ERROR_PRINT('No valid delegate available to sync delegates collection from')
+          ERROR_PRINT("No valid delegate available to sync delegates collection from");
         }
       }
     }
