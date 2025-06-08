@@ -401,7 +401,7 @@ void start_block_production(void) {
 
     if (round_result == ROUND_OK) {
       for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
-        if (delegates_all[i].public_address != NULL && strlen(delegates_all[i].public_address) > 0) {
+        if (strlen(delegates_all[i].public_address) > 0) {
 
           char filter_json[SMALL_BUFFER_SIZE];
           char update_json[SMALL_BUFFER_SIZE];
