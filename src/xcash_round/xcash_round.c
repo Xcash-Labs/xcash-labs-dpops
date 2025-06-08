@@ -68,7 +68,7 @@ xcash_round_result_t process_round(void) {
 
   if (vrf_public_key[0] == '\0') {
     WARNING_PRINT("Failed to read vrf_public_key for delegate, has this delegate been registered?");
-    get_vrf_public_key();
+//    get_vrf_public_key();
     return ROUND_SKIP;
   }
 
@@ -454,11 +454,10 @@ void start_block_production(void) {
 //
 //        }
       }
-    }
-
-    // sync to end of round
-    if (sync_block_verifiers_minutes_and_seconds(1, 55) == XCASH_ERROR) {
-      INFO_STAGE_PRINT("Waiting For End of round sync...");
+      // sync to end of round
+      if (sync_block_verifiers_minutes_and_seconds(1, 55) == XCASH_ERROR) {
+        INFO_STAGE_PRINT("Waiting For End of round sync...");
+      }
     }
 
     // set up delegates for next round
