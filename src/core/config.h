@@ -190,12 +190,7 @@
 #define BLOCK_VERIFIERS_IP_ADDRESS_TOTAL_LENGTH 255 // was 100 changed to match delegates table
 #define IP_LENGTH 255  //combine with above
 
-#define DELEGATES_ONLINE_BUFFER \
-    ( (XCASH_WALLET_LENGTH    * MAXIMUM_AMOUNT_OF_DELEGATES) \
-    + (VRF_PUBLIC_KEY_LENGTH * MAXIMUM_AMOUNT_OF_DELEGATES) \
-    + (IP_LENGTH             * MAXIMUM_AMOUNT_OF_DELEGATES) \
-    + 768 )
-
+#define DELEGATES_ONLINE_BUFFER ((IP_LENGTH * MAXIMUM_AMOUNT_OF_DELEGATES) + 512)
 
 
 #define MINIMUM_BYTE_RANGE 1 // The minimum byte range to use when calculating the next block producer
