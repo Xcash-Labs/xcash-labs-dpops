@@ -14,6 +14,9 @@ bool get_node_data(void) {
 
   is_seed_node = is_seed_address(xcash_wallet_public_address);
   get_vrf_public_key();
+  if (vrf_public_key[0] == '\0') {
+    WARNING_PRINT("Failed to read vrf_public_key for delegate, has this delegate been registered?");
+  }
   return XCASH_OK;
 }
 
@@ -31,7 +34,6 @@ void get_vrf_public_key() {
   snprintf(filter_json, sizeof(filter_json), "{ \"public_address\": \"%s\" }", xcash_wallet_public_address);
   if (read_document_field_from_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, filter_json, "public_key", vrf_public_key) != XCASH_OK) {
     memset(vrf_public_key, 0, sizeof(vrf_public_key));
-    WARNING_PRINT("Failed to read vrf_public_key for delegate, has this delegate been registered?");
   }
   return;
 }
