@@ -221,7 +221,7 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
     cJSON_Delete(json_obj);
 
   } else {
-    ERROR_PRINT("Message does not match expected JSON or pipe-delimited format");
+    ERROR_PRINT("Message does not match expected JSON format");
     return;
   }
  
@@ -236,7 +236,7 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
 
   if (is_walletsign_action_type(msg_type)) {
     if (verify_action_data(data) == XCASH_ERROR) {
-      ERROR_PRINT("Failed to validate message sign data");
+      ERROR_PRINT("Failed to validate action message sign data");
       return;
     }
   }
