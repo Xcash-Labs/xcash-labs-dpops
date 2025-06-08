@@ -450,7 +450,7 @@ Parameters:
   SETTINGS - The data settings
 ---------------------------------------------------------------------------------------------------------*/
 bool create_delegates_db_sync_request(int selected_index) {
-  if (selected_index < 0 || selected_index >= DELEGATES_TOTAL_AMOUNT) {
+  if (selected_index < 0 || selected_index >= BLOCK_VERIFIERS_TOTAL_AMOUNT) {
     ERROR_PRINT("Invalid delegate index: %d", selected_index);
     return false;
   }
