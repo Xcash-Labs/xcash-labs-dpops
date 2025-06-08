@@ -456,9 +456,9 @@ void start_block_production(void) {
       }
     }
 
-    // sync end of round
+    // sync to end of round
     if (sync_block_verifiers_minutes_and_seconds(1, 55) == XCASH_ERROR) {
-      INFO_PRINT("End of round sync");
+      INFO_STAGE_PRINT("Waiting For End of round sync...");
     }
 
     // set up delegates for next round
