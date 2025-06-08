@@ -246,8 +246,6 @@ int verify_action_data(const char *message)
 
   strncpy(raw_data, message, sizeof(raw_data));
 
-INFO_PRINT("Raw data before trimming signature: %s", raw_data);
-
   char *sig_pos = strstr(raw_data, ",\"signature\"");
   if (sig_pos) {
     *sig_pos = '}';         // Replace start of signature field with closing brace
