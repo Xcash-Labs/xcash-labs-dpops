@@ -180,3 +180,76 @@ void stop_tcp_server(void) {
 
   printf("TCP server stopped.\n");
 }
+
+int send_message_to_ip_or_hostname(const char* host_or_ip, int port, const char* message) {
+  if (!host_or_ip || !message) {
+    ERROR_PRINT("Invalid arguments to send_message_to_ip_or_hostname");
+    return XCASH_ERROR;
+  }
+
+  char ip[INET_ADDRSTRLEN];
+  struct sockaddr_in addr;
+  memset(&addr, 0, sizeof(addr));
+  addr.sin_family = AF_INET;
+  addr.sin_port = htons(port);
+
+  // Try interpreting as raw IP first
+  if (inet_pton(AF_INET, host_or_ip, &addr.sin_addr) != 1) {
+    // Not a raw IP — try resolving hostname
+    struct addrinfo hints = {0}, *res = NULL;
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+
+    char port_str[6];
+    snprintf(port_str, sizeof(port_str), "%d", port);
+
+    if (getaddrinfo(host_or_ip, port_str, &hints, &res) != 0) {
+      ERROR_PRINT("DNS resolution failed for host: %s", host_or_ip);
+      return XCASH_ERROR;
+    }
+
+    struct sockaddr_in* resolved = (struct sockaddr_in*)res->ai_addr;
+    addr.sin_addr = resolved->sin_addr;
+    freeaddrinfo(res);
+  }
+
+  int sock = socket(AF_INET, SOCK_STREAM, 0);
+  if (sock < 0) {
+    perror("socket");
+    return XCASH_ERROR;
+  }
+
+  struct linger so_linger = {1, 0}; // Force immediate close
+  setsockopt(sock, SOL_SOCKET, SO_LINGER, &so_linger, sizeof(so_linger));
+
+  struct timeval timeout = {CONNECT_TIMEOUT_SEC, 0};
+  setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
+  setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+
+  if (connect(sock, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
+    perror("connect");
+    close(sock);
+    return XCASH_ERROR;
+  }
+
+  unsigned char* compressed = NULL;
+  size_t compressed_len = 0;
+  if (!compress_gzip_with_prefix((const unsigned char*)message, strlen(message), &compressed, &compressed_len)) {
+    ERROR_PRINT("Compression failed");
+    close(sock);
+    return XCASH_ERROR;
+  }
+
+  ssize_t sent = send(sock, compressed, compressed_len, MSG_NOSIGNAL);
+  free(compressed);
+
+  if (sent < 0) {
+    perror("send");
+    close(sock);
+    return XCASH_ERROR;
+  }
+
+  DEBUG_PRINT("Sent message to %s:%d", host_or_ip, port);
+  close(sock);
+  return XCASH_OK;
+}

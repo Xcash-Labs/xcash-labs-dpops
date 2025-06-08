@@ -446,8 +446,16 @@ void start_block_production(void) {
       }
     } else {
       if (delegate_db_hash_mismatch > 2) {
-        // check whether we need a full resync, xcash_wallet_public_address don't pick self
-        // TODO: call your sync routine here, e.g.: init_db_from_top();
+        int selected_index;
+        pthread_mutex_lock(&delegates_mutex);
+        selected_index = select_random_online_delegate();
+        pthread_mutex_unlock(&delegates_mutex);
+          if(!create_delegates_db_sync_request(selected_index)) {
+
+          }
+        } else {
+          ERROR_PRINT('No valid delegate available to sync delegates collection from')
+        }
       }
     }
 

@@ -449,9 +449,20 @@ Parameters:
   result - The result
   SETTINGS - The data settings
 ---------------------------------------------------------------------------------------------------------*/
-bool create_delegates_db_sync_request(int sync_index) {
-const char *static_msg = "{\r\n \"message_settings\": \"DELEGATES_DATABASE_SYNC_REQ\"\r\n}";
+bool create_delegates_db_sync_request(int selected_index) {
+  if (selected_index < 0 || selected_index >= DELEGATES_TOTAL_AMOUNT) {
+    ERROR_PRINT("Invalid delegate index: %d", selected_index);
+    return false;
+  }
 
+  const char *static_msg = "{\r\n \"message_settings\": \"DELEGATES_DATABASE_SYNC_REQ\"\r\n}";
+  const char* ip = delegates_all[selected_index].IP_address;
 
-  return true;
+  if (send_message_to_ip_or_hostname(ip, XCASH_DPOPS_PORT, static_msg) == XCASH_OK) {
+    DEBUG_PRINT("Sync request sent to delegate %d (%s)", selected_index, ip);
+    return true;
+  }
+
+  WARNING_PRINT("Failed to send sync request to delegate %d (%s)", selected_index, ip);
+  return false;
 }
