@@ -121,6 +121,11 @@ void* handle_client(void* client_socket_ptr) {
 
     buffer[bytes] = '\0';
 
+    if (strncmp(buffer, "GET ", 4) == 0 || strncmp(buffer, "POST", 4) == 0 || strncmp(buffer, "HEAD", 4) == 0) {
+      WARNING_PRINT("Rejected HTTP request from %s", client.client_ip);
+      break;
+    }
+
     unsigned char* decompressed = NULL;
     size_t decompressed_len = 0;
 
