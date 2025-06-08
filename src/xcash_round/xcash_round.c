@@ -69,7 +69,6 @@ xcash_round_result_t process_round(void) {
   if (vrf_public_key[0] == '\0') {
     WARNING_PRINT("Failed to read vrf_public_key for delegate, has this delegate been registered?");
     get_vrf_public_key();
-    sleep(5);
     return ROUND_SKIP;
   }
 
@@ -135,7 +134,7 @@ xcash_round_result_t process_round(void) {
 
   INFO_STAGE_PRINT("Waiting for Delegates to sync...");
   if (sync_block_verifiers_minutes_and_seconds(0, 30) == XCASH_ERROR) {
-    INFO_PRINT("Failed to sync Delegates in the aloted time, skipping round");
+    INFO_PRINT("Failed to sync Delegates in the allotted  time, skipping round");
     return ROUND_SKIP;
   }
 
@@ -207,7 +206,7 @@ xcash_round_result_t process_round(void) {
 
   // Sync start
   if (sync_block_verifiers_minutes_and_seconds(1, 00) == XCASH_ERROR) {
-    INFO_PRINT("Failed to sync VRF data in the aloted time, skipping roung");
+    INFO_PRINT("Failed to sync VRF data in the allotted  time, skipping round");
     return ROUND_SKIP;
   }
 
@@ -263,7 +262,7 @@ xcash_round_result_t process_round(void) {
 
   // Sync start
   if (sync_block_verifiers_minutes_and_seconds(1, 30) == XCASH_ERROR) {
-    INFO_PRINT("Failed to Confirm Block Creator in the aloted time, skipping roung");
+    INFO_PRINT("Failed to Confirm Block Creator in the allotted  time, skipping round");
     return ROUND_SKIP;
   }
 
@@ -455,6 +454,11 @@ void start_block_production(void) {
 //
 //        }
       }
+    }
+
+    // sync end of round
+    if (sync_block_verifiers_minutes_and_seconds(1, 55) == XCASH_ERROR) {
+      INFO_PRINT("End of round sync");
     }
 
     // set up delegates for next round
