@@ -72,7 +72,6 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
       size_t host_index = 0;
       for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
         const char *ip = delegates_all[i].IP_address;
-        const char *delegate_name = delegates_all[i].delegate_name;
 
         if (!ip) {
           continue;
@@ -82,7 +81,6 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
           continue;
         }
 
-        DEBUG_PRINT("REQ to %s : %s", delegate_name, ip);
         delegates_hosts[host_index++] = ip;
       }
       delegates_hosts[host_index] = NULL;  // Null-terminate the array
@@ -98,8 +96,8 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
 
       size_t host_index = 0;
       for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
-        bool not_self = strcmp(delegates_all[i].block_verifiers_public_address, xcash_wallet_public_address) != 0;
-        const char *ip = delegates_all[i].block_verifiers_IP_address;
+        bool not_self = strcmp(delegates_all[i].public_address, xcash_wallet_public_address) != 0;
+        const char *ip = delegates_all[i].IP_address;
 
         if (not_self) {
 
@@ -111,7 +109,7 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
             continue;
           }
 
-          delegates_online_hosts[host_index++] = delegates_all[i].block_verifiers_IP_address;
+          delegates_online_hosts[host_index++] = delegates_all[i].IP_address;
         }
       }
 
