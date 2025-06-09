@@ -92,7 +92,7 @@ xcash_round_result_t process_round(void) {
     }
   }
   if (total_delegates == 0) {
-    ERROR_PRINT("Can't get previous block hash");
+    ERROR_PRINT("No delegates were loaded from the database");
     return ROUND_ERROR;
   }
   DEBUG_PRINT("Found %d active delegates out of %d total slots", total_delegates, BLOCK_VERIFIERS_AMOUNT);
@@ -449,7 +449,7 @@ void start_block_production(void) {
         pthread_mutex_lock(&delegates_mutex);
         selected_index = select_random_online_delegate();
         INFO_PRINT("Selected delegate index: %d", selected_index);
-//        pthread_mutex_unlock(&delegates_mutex);
+        pthread_mutex_unlock(&delegates_mutex);
 //        if(!create_delegates_db_sync_request(selected_index)) {
 //
 //        }

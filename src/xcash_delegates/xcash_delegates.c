@@ -119,7 +119,7 @@ int read_organize_delegates(delegates_t* delegates, size_t* delegates_count_resu
       }
 
       if (!skip_delegate) {
-        strncpy(delegates[delegate_index].online_status, "PENDING", sizeof(delegates[delegate_index].online_status));
+        strncpy(delegates[delegate_index].online_status, "false", sizeof(delegates[delegate_index].online_status));
         delegates[delegate_index].online_status[sizeof(delegates[delegate_index].online_status) - 1] = '\0';
         delegate_index++;
       }
