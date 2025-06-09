@@ -86,7 +86,7 @@ xcash_round_result_t process_round(void) {
   snprintf(current_round_part, sizeof(current_round_part), "%d", 2);
   // delegates_all is loaded prior to start of round due to node timing issues
   int total_delegates = 0;
-  for (size_t x = 0; x < BLOCK_VERIFIERS_AMOUNT; x++) {
+  for (size_t x = 0; x < BLOCK_VERIFIERS_TOTAL_AMOUNT; x++) {
     if (strlen(delegates_all[x].public_address) > 0) {
       total_delegates++;
     }
@@ -95,7 +95,7 @@ xcash_round_result_t process_round(void) {
     ERROR_PRINT("No delegates were loaded from the database");
     return ROUND_ERROR;
   }
-  DEBUG_PRINT("Found %d active delegates out of %d total slots", total_delegates, BLOCK_VERIFIERS_AMOUNT);
+  DEBUG_PRINT("Found %d active delegates out of %d total slots", total_delegates, BLOCK_VERIFIERS_TOTAL_AMOUNT);
 
   // Get the previous block hash
   memset(previous_block_hash, 0, BLOCK_HASH_LENGTH);
@@ -232,7 +232,7 @@ xcash_round_result_t process_round(void) {
   
   pthread_mutex_lock(&majority_vote_lock);
   current_block_verifiers_list.block_verifiers_vote_total[producer_indx] += 1;
-  for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
+  for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
     if (strcmp(xcash_wallet_public_address, current_block_verifiers_list.block_verifiers_public_address[i]) == 0) {
       current_block_verifiers_list.block_verifiers_voted[i] = 1;
       break;
@@ -266,7 +266,7 @@ xcash_round_result_t process_round(void) {
     return ROUND_SKIP;
   }
 
-  for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
+  for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
     if (current_block_verifiers_list.block_verifiers_public_address[i][0] != '\0' &&
      current_block_verifiers_list.block_verifiers_voted[i] > 0) {
       DEBUG_PRINT(
@@ -282,7 +282,7 @@ xcash_round_result_t process_round(void) {
   int max_index = -1;
   int max_votes = -1;
 
-  for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
+  for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
     int votes = current_block_verifiers_list.block_verifiers_vote_total[i];
     if (votes > max_votes) {
       max_votes = votes;
