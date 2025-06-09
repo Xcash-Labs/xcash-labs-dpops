@@ -181,7 +181,7 @@ xcash_round_result_t process_round(void) {
 
   INFO_PRINT_STATUS_OK("Data majority reached. Online Nodes: [%d/%d]", nodes_majority_count, required_majority);
 
-  INFO_STAGE_PRINT("Part 5 - Create VRF Data and Send To All Block Verifiers");
+  INFO_STAGE_PRINT("Part 5 - Create VRF Data and Send To All Online Block Verifiers");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 5);
 
   responses = NULL;
@@ -232,7 +232,7 @@ xcash_round_result_t process_round(void) {
   
   pthread_mutex_lock(&majority_vote_lock);
   current_block_verifiers_list.block_verifiers_vote_total[producer_indx] += 1;
-  for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
+  for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     if (strcmp(xcash_wallet_public_address, current_block_verifiers_list.block_verifiers_public_address[i]) == 0) {
       current_block_verifiers_list.block_verifiers_voted[i] = 1;
       break;
@@ -266,7 +266,7 @@ xcash_round_result_t process_round(void) {
     return ROUND_SKIP;
   }
 
-  for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
+  for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     if (current_block_verifiers_list.block_verifiers_public_address[i][0] != '\0' &&
      current_block_verifiers_list.block_verifiers_voted[i] > 0) {
       DEBUG_PRINT(
@@ -282,7 +282,7 @@ xcash_round_result_t process_round(void) {
   int max_index = -1;
   int max_votes = -1;
 
-  for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
+  for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     int votes = current_block_verifiers_list.block_verifiers_vote_total[i];
     if (votes > max_votes) {
       max_votes = votes;

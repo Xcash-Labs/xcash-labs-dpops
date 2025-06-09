@@ -335,7 +335,7 @@ bool generate_and_request_vrf_data_msg(char** message)
     }
   }
 
-  // Save current block_verifiers data into structure
+  // Save current block_verifiers data into structure if it is one of the top 50
   pthread_mutex_lock(&majority_vrf_lock);
   for (i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     if (strncmp(current_block_verifiers_list.block_verifiers_public_address[i], xcash_wallet_public_address, XCASH_WALLET_LENGTH) == 0) {

@@ -109,6 +109,10 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
             continue;
           }
 
+          if (strcmp(delegates_all[i].online_status, "true") != 0) {
+            continue;
+          }
+
           delegates_online_hosts[host_index++] = delegates_all[i].IP_address;
         }
       }
