@@ -82,9 +82,6 @@ bool db_upsert_doc(const char *db_name, const char *collection_name, const bson_
         return false;
     }
 
-    // we need to rehash this db next time
-    del_hash(client, collection_name);
-
     // Get the collection
     collection = mongoc_client_get_collection(client, db_name, collection_name);
     if (!collection) {
@@ -133,9 +130,6 @@ bool db_upsert_multi_docs(const char *db_name, const char *collection_name, cons
         DEBUG_PRINT("Failed to pop client from pool");
         return false;
     }
-
-    // we need to rehash this db next time
-    del_hash(client, collection_name);
 
     // Get the collection
     collection = mongoc_client_get_collection(client, db_name, collection_name);
@@ -200,9 +194,6 @@ bool db_delete_doc(const char *db_name, const char *collection_name, const bson_
         DEBUG_PRINT("Failed to pop client from pool");
         return false;
     }
-
-    // we need to rehash this db next time
-    del_hash(client, collection_name);
 
     // Get the collection
     collection = mongoc_client_get_collection(client, db_name, collection_name);

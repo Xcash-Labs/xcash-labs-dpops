@@ -134,7 +134,6 @@ int insert_document_into_collection_json(const char* DATABASE, const char* COLLE
   mongoc_client_t* database_client_thread = get_temporary_connection();
   if (!database_client_thread) return XCASH_ERROR;
 
-  del_hash(database_client_thread, COLLECTION);
   mongoc_collection_t* collection = mongoc_client_get_collection(database_client_thread, DATABASE, COLLECTION);
   if (!collection) return handle_error("Failed to get collection", NULL, NULL, NULL, database_client_thread);
 
@@ -512,8 +511,6 @@ int update_document_from_collection(const char* DATABASE, const char* COLLECTION
   mongoc_client_t* database_client_thread = get_temporary_connection();
   if (!database_client_thread) return XCASH_ERROR;
 
-  del_hash(database_client_thread, COLLECTION);
-
   mongoc_collection_t* collection = mongoc_client_get_collection(database_client_thread, DATABASE, COLLECTION);
   if (!check_if_database_collection_exist(DATABASE, COLLECTION)) {
     return handle_error("Collection does not exist", NULL, NULL, collection, database_client_thread);
@@ -546,8 +543,6 @@ int update_multiple_documents_from_collection(const char* DATABASE, const char* 
 
   mongoc_client_t* database_client_thread = get_temporary_connection();
   if (!database_client_thread) return XCASH_ERROR;
-
-  del_hash(database_client_thread, COLLECTION);
 
   mongoc_collection_t* collection = mongoc_client_get_collection(database_client_thread, DATABASE, COLLECTION);
   if (!check_if_database_collection_exist(DATABASE, COLLECTION)) {
@@ -582,8 +577,6 @@ int update_all_documents_from_collection(const char* DATABASE, const char* COLLE
   mongoc_client_t* database_client_thread = get_temporary_connection();
   if (!database_client_thread) return XCASH_ERROR;
 
-  del_hash(database_client_thread, COLLECTION);
-
   mongoc_collection_t* collection = mongoc_client_get_collection(database_client_thread, DATABASE, COLLECTION);
   if (!check_if_database_collection_exist(DATABASE, COLLECTION)) {
     return handle_error("Collection does not exist", NULL, NULL, collection, database_client_thread);
@@ -612,8 +605,6 @@ int delete_document_from_collection(const char* DATABASE, const char* COLLECTION
   mongoc_client_t* database_client_thread = get_temporary_connection();
   if (!database_client_thread) return XCASH_ERROR;
 
-  del_hash(database_client_thread, COLLECTION);
-
   mongoc_collection_t* collection = mongoc_client_get_collection(database_client_thread, DATABASE, COLLECTION);
   if (!check_if_database_collection_exist(DATABASE, COLLECTION)) {
     return handle_error("Collection does not exist", NULL, NULL, collection, database_client_thread);
@@ -635,8 +626,6 @@ int delete_document_from_collection(const char* DATABASE, const char* COLLECTION
 int delete_collection_from_database(const char* DATABASE, const char* COLLECTION) {
   mongoc_client_t* database_client_thread = get_temporary_connection();
   if (!database_client_thread) return XCASH_ERROR;
-
-  del_hash(database_client_thread, COLLECTION);
 
   mongoc_collection_t* collection = mongoc_client_get_collection(database_client_thread, DATABASE, COLLECTION);
   if (!check_if_database_collection_exist(DATABASE, COLLECTION)) {

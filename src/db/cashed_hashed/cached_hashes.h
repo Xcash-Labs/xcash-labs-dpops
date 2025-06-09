@@ -12,7 +12,6 @@
 #include "node_functions.h"
 #include "db_functions.h"
 
-int del_hash(mongoc_client_t *client, const char *db_name);
 int get_multi_hash(mongoc_client_t *client, const char *db_prefix, char *hash);
 int drop_all_hashes(mongoc_client_t *client);
 

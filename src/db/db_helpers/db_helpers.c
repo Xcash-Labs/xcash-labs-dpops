@@ -145,11 +145,6 @@ int remove_reserve_byte_duplicates(const char *db_name, const char *collection_n
         }
     }
 
-    if (removed_count>0) {
-        // we need to rehash this db next time
-        del_hash(client, collection_name);
-    }
-
     // Cleanup
     mongoc_collection_destroy(collection);
     mongoc_client_pool_push(database_client_thread_pool, client);
