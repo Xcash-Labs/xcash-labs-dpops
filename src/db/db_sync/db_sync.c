@@ -84,9 +84,9 @@ cleanup:
 // and returns true. On failure, it returns false.
 bool create_delegate_online_list__OLD__(char* out_data, size_t out_data_size)
 {
-    char addr_list[((XCASH_WALLET_LENGTH * MAXIMUM_AMOUNT_OF_DELEGATES) + 256)];
-    char key_list [((VRF_PUBLIC_KEY_LENGTH * MAXIMUM_AMOUNT_OF_DELEGATES) +256)];
-    char ip_list  [((IP_LENGTH * MAXIMUM_AMOUNT_OF_DELEGATES) + 256)];
+    char addr_list[((XCASH_WALLET_LENGTH * BLOCK_VERIFIERS_TOTAL_AMOUNT) + 256)];
+    char key_list [((VRF_PUBLIC_KEY_LENGTH * BLOCK_VERIFIERS_TOTAL_AMOUNT) +256)];
+    char ip_list  [((IP_LENGTH * BLOCK_VERIFIERS_TOTAL_AMOUNT) + 256)];
 
     mongoc_client_t*       db_client   = NULL;
     mongoc_collection_t*   collection  = NULL;
@@ -242,9 +242,9 @@ cleanup:
 
 bool create_delegate_online_list_OLD_(char* out_data, size_t out_data_size)
 {
-    char addr_list[((XCASH_WALLET_LENGTH * MAXIMUM_AMOUNT_OF_DELEGATES) + 256)];
-    char key_list [((VRF_PUBLIC_KEY_LENGTH * MAXIMUM_AMOUNT_OF_DELEGATES) +256)];
-    char ip_list  [((IP_LENGTH * MAXIMUM_AMOUNT_OF_DELEGATES) + 256)];
+    char addr_list[((XCASH_WALLET_LENGTH * BLOCK_VERIFIERS_TOTAL_AMOUNT) + 256)];
+    char key_list [((VRF_PUBLIC_KEY_LENGTH * BLOCK_VERIFIERS_TOTAL_AMOUNT) +256)];
+    char ip_list  [((IP_LENGTH * BLOCK_VERIFIERS_TOTAL_AMOUNT) + 256)];
 
     mongoc_client_t*       db_client   = NULL;
     mongoc_collection_t*   collection  = NULL;
@@ -396,7 +396,7 @@ cleanup:
 
 bool create_delegate_online_ip_list(char* out_data, size_t out_data_size)
 {
-    char ip_list[(IP_LENGTH * MAXIMUM_AMOUNT_OF_DELEGATES) + 256];
+    char ip_list[(IP_LENGTH * BLOCK_VERIFIERS_TOTAL_AMOUNT) + 256];
 
     mongoc_client_t*       db_client   = NULL;
     mongoc_collection_t*   collection  = NULL;
@@ -497,7 +497,7 @@ cleanup:
 }
 
 bool fill_delegates_from_db(void) {
-  delegates_t* delegates = (delegates_t*)calloc(MAXIMUM_AMOUNT_OF_DELEGATES, sizeof(delegates_t));
+  delegates_t* delegates = (delegates_t*)calloc(BLOCK_VERIFIERS_TOTAL_AMOUNT, sizeof(delegates_t));
   size_t total_delegates = 0;
 
   if (read_organize_delegates(delegates, &total_delegates) != XCASH_OK) {

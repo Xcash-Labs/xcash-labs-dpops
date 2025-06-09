@@ -57,14 +57,14 @@ int read_organize_delegates(delegates_t* delegates, size_t* delegates_count_resu
     WARNING_PRINT("delegates db has only %d delegates", delegates_count);
   }
 
-  memset(delegates, 0, sizeof(delegates_t) * MAXIMUM_AMOUNT_OF_DELEGATES);
+  memset(delegates, 0, sizeof(delegates_t) * BLOCK_VERIFIERS_TOTAL_AMOUNT);
 
   bson_iter_t iter;
   int delegate_index = 0;
   time_t now = time(NULL);
 
   if (bson_iter_init(&iter, delegates_db_data)) {
-    while (delegate_index < MAXIMUM_AMOUNT_OF_DELEGATES && bson_iter_next(&iter)) {
+    while (delegate_index < BLOCK_VERIFIERS_TOTAL_AMOUNT && bson_iter_next(&iter)) {
       bson_t record;
       const uint8_t* data;
       uint32_t len;

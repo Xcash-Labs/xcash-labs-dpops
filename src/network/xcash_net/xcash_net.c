@@ -70,7 +70,7 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
       }
 
       size_t host_index = 0;
-      for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
+      for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
         const char *ip = delegates_all[i].IP_address;
         const char *delegate_name = delegates_all[i].delegate_name;
 
@@ -97,9 +97,9 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
       }
 
       size_t host_index = 0;
-      for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
-        bool not_self = strcmp(current_block_verifiers_list.block_verifiers_public_address[i], xcash_wallet_public_address) != 0;
-        const char *ip = current_block_verifiers_list.block_verifiers_IP_address[i];
+      for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
+        bool not_self = strcmp(delegates_all[i].block_verifiers_public_address, xcash_wallet_public_address) != 0;
+        const char *ip = delegates_all[i].block_verifiers_IP_address;
 
         if (not_self) {
 
@@ -111,8 +111,7 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
             continue;
           }
 
-          DEBUG_PRINT("Online delegate: %s (%s)", current_block_verifiers_list.block_verifiers_name[i], current_block_verifiers_list.block_verifiers_IP_address[i]);
-          delegates_online_hosts[host_index++] = current_block_verifiers_list.block_verifiers_IP_address[i];
+          delegates_online_hosts[host_index++] = delegates_all[i].block_verifiers_IP_address;
         }
       }
 

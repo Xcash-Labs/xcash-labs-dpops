@@ -100,7 +100,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates__OLD
     return; \
   } while (0)
 
-  if (count_all_documents_in_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES) >= (MAXIMUM_AMOUNT_OF_DELEGATES - 1))
+  if (count_all_documents_in_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES) >= (BLOCK_VERIFIERS_TOTAL_AMOUNT - 1))
   {
     SERVER_RECEIVE_DATA_SOCKET_NODES_TO_BLOCK_VERIFIERS_REGISTER_DELEGATE_ERROR("The maximum amount of delegates has been registered}");
   }
@@ -167,7 +167,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates__OLD
   }
 
   int delegate_count = count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, "{}");
-  if (delegate_count > MAXIMUM_AMOUNT_OF_DELEGATES) {
+  if (delegate_count > BLOCK_VERIFIERS_TOTAL_AMOUNT) {
     SERVER_RECEIVE_DATA_SOCKET_NODES_TO_BLOCK_VERIFIERS_REGISTER_DELEGATE_ERROR("The maximum number of delegates has been reached}");
   }
 
@@ -323,7 +323,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
 
     // 6) Check overall delegate count
     int delegate_count = count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, "{}");
-    if (delegate_count >= MAXIMUM_AMOUNT_OF_DELEGATES)
+    if (delegate_count >= BLOCK_VERIFIERS_TOTAL_AMOUNT)
     {
         SERVER_ERROR("The maximum amount of delegates has been reached}");
     }

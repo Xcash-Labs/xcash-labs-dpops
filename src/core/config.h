@@ -173,8 +173,7 @@
 
 
 // ===================== XCASH DPOPS =====================
-#define MAXIMUM_AMOUNT_OF_DELEGATES 100                                   // may want ot eliminate one of these
-#define BLOCK_VERIFIERS_TOTAL_AMOUNT 100
+#define BLOCK_VERIFIERS_TOTAL_AMOUNT 75
 #define BLOCK_VERIFIERS_AMOUNT 50
 #define BLOCK_VERIFIERS_SETTINGS 3
 #define VOTE_PARAMETER_AMOUNT 5
@@ -190,7 +189,7 @@
 #define BLOCK_VERIFIERS_IP_ADDRESS_TOTAL_LENGTH 255 // was 100 changed to match delegates table
 #define IP_LENGTH 255  //combine with above
 
-#define DELEGATES_ONLINE_BUFFER ((IP_LENGTH * MAXIMUM_AMOUNT_OF_DELEGATES) + 512)
+#define DELEGATES_ONLINE_BUFFER ((IP_LENGTH * BLOCK_VERIFIERS_TOTAL_AMOUNT) + 512)
 
 
 #define MINIMUM_BYTE_RANGE 1 // The minimum byte range to use when calculating the next block producer
