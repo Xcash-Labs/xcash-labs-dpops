@@ -451,6 +451,7 @@ void start_block_production(void) {
         }        
       }
     } else {
+      INFO_STAGE_PRINT("Round Skipped or Error Occured, waiting until end of round");
       if (sync_block_verifiers_minutes_and_seconds(1, 45) == XCASH_ERROR) {
         INFO_PRINT("Failed to sync in the allotted time");
       }
@@ -464,6 +465,7 @@ void start_block_production(void) {
 //        if(!create_delegates_db_sync_request(selected_index)) {
 //
 //        }
+      }
       if (sync_block_verifiers_minutes_and_seconds(1, 58) == XCASH_ERROR) {
         INFO_PRINT("Failed to sync in the allotted time");
       
