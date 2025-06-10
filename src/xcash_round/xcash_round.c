@@ -172,6 +172,7 @@ xcash_round_result_t process_round(void) {
     INFO_PRINT_STATUS_FAIL("Failed to reach the required number of online nodes: [%d/%d]", nodes_majority_count, BLOCK_VERIFIERS_VALID_AMOUNT);
     if (total_delegates > nodes_majority_count) {
       return ROUND_SYNC_ERROR;
+      INFO_PRINT("Setting round to round_sync_error");
     } else {
       return ROUND_SKIP;
     }
@@ -459,7 +460,7 @@ void start_block_production(void) {
       }
 
 
-
+      INFO_PRINT("Mismatch %d", delegate_db_hash_mismatch);
 
       if (delegate_db_hash_mismatch > 2 && round_result == ROUND_SYNC_ERROR) {
         int selected_index;
