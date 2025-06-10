@@ -105,7 +105,8 @@ void* handle_client(void* client_socket_ptr) {
   if (getpeername(client_socket, (struct sockaddr*)&addr, &addr_len) == 0) {
     inet_ntop(AF_INET, &addr.sin_addr, client.client_ip, sizeof(client.client_ip));
   } else {
-    strncpy(client.client_ip, "unknown", sizeof(client.client_ip));
+      snprintf(client.client_ip, sizeof(client.client_ip), "unknown (%s)", strerror(errno));
+//    strncpy(client.client_ip, "unknown", sizeof(client.client_ip));
   }
 
   char buffer[BUFFER_SIZE];
