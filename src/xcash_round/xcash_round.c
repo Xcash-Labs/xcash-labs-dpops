@@ -167,9 +167,14 @@ xcash_round_result_t process_round(void) {
   pthread_mutex_unlock(&delegates_mutex);
   atomic_store(&wait_for_vrf_init, false);
 
+  // if no delegetes are found the db is most likely out of sync
   if (nodes_majority_count < BLOCK_VERIFIERS_VALID_AMOUNT) {
     INFO_PRINT_STATUS_FAIL("Failed to reach the required number of online nodes: [%d/%d]", nodes_majority_count, BLOCK_VERIFIERS_VALID_AMOUNT);
-    return ROUND_SKIP;
+    if (total_delegates > nodes_majority_count) {
+      return ROUND_SYNC_ERROR
+    } else {
+      return ROUND_SKIP;
+    }
   }
 
   int required_majority = (total_delegates * MAJORITY_PERCENT + 99) / 100;
@@ -421,13 +426,18 @@ void start_block_production(void) {
             tmp_producer_total_rounds += 1;
           }
 
+          const char* tmp_status = delegates_all[i].online_status;
+          if (strcmp(tmp_status, "true") != 0) {
+            tmp_status = "false";
+          }
+
           snprintf(update_json, sizeof(update_json),
                    "{"
                    "\"online_status\":\"%s\","
                    "\"block_verifier_total_rounds\":%" PRIu64 ","
                    "\"block_verifier_online_total_rounds\":%" PRIu64 ","
                    "\"block_producer_total_rounds\":%" PRIu64 "}",
-                   delegates_all[i].online_status,
+                   tmp_status,
                    tmp_verifier_total_round,
                    tmp_verifier_online_total_rounds,
                    tmp_producer_total_rounds);
@@ -444,7 +454,14 @@ void start_block_production(void) {
         }        
       }
     } else {
-      if (delegate_db_hash_mismatch > 2) {
+      if (sync_block_verifiers_minutes_and_seconds(1, 45) == XCASH_ERROR) {
+        INFO_PRINT("Failed to sync in the allotted  time");
+      }
+
+
+
+
+      if (delegate_db_hash_mismatch > 2 && round_result == ROUND_SYNC_ERROR) {
         int selected_index;
         pthread_mutex_lock(&delegates_mutex);
         selected_index = select_random_online_delegate();

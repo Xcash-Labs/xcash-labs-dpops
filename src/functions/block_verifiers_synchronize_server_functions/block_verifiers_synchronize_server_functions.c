@@ -105,9 +105,11 @@ void server_received_msg_get_sync_info(server_client_t *client, const char *MESS
                 DEBUG_PRINT("Delegates hash mismatch for %s: remote=%s, local=%s",
                             parsed_address, parsed_delegates_hash, delegates_hash);
                 delegate_db_hash_mismatch = delegate_db_hash_mismatch + 1;
+                strncpy(delegates_all[i].online_status, "partial", sizeof(delegates_all[i].online_status));
+                delegates_all[i].online_status[sizeof(delegates_all[i].online_status) - 1] = '\0';
                 break;
             }
-    
+
             // All checks passed — mark online
             strncpy(delegates_all[i].online_status, "true", sizeof(delegates_all[i].online_status));
             delegates_all[i].online_status[sizeof(delegates_all[i].online_status) - 1] = '\0';
