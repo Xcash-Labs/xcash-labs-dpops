@@ -457,7 +457,7 @@ bool create_delegates_db_sync_request(int selected_index) {
 
   const char *static_msg = "{\r\n \"message_settings\":\"DELEGATES_DATABASE_SYNC_REQ\"\r\n}";
 //  const char* ip = delegates_all[selected_index].IP_address;
-  const char* ip = delegates_all[1].IP_address;   // US node
+  const char* ip = "seeds_xcash.us";   // US node
 
   if (send_message_to_ip_or_hostname(ip, XCASH_DPOPS_PORT, static_msg) == XCASH_OK) {
     INFO_PRINT("Sync request sent to delegate %d (%s)", selected_index, ip);
