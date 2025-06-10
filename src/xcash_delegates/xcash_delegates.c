@@ -75,11 +75,8 @@ int read_organize_delegates(delegates_t* delegates, size_t* delegates_count_resu
       bson_iter_t record_iter;
       bool skip_delegate = false;
       if (bson_iter_init(&record_iter, &record)) {
-        INFO_PRINT("Entering While...........");
         while (bson_iter_next(&record_iter)) {
           const char* db_key = bson_iter_key(&record_iter);
-
-INFO_PRINT("Key: %s, Type: %d", db_key, bson_iter_type(&record_iter));
 
           if (strcmp(db_key, "public_address") == 0 && BSON_ITER_HOLDS_UTF8(&record_iter)) {
             strncpy(delegates[delegate_index].public_address, bson_iter_utf8(&record_iter, NULL), XCASH_WALLET_LENGTH);
