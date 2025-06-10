@@ -44,28 +44,31 @@ bool init_processing(const arg_config_t *arg_config) {
       }
 
       uint64_t registration_time = (uint64_t)time(NULL);
+      double set_delegate_fee = 0.00;
       snprintf(json_buffer, sizeof(json_buffer),
                "{"
                "\"public_address\":\"%s\","
-               "\"total_vote_count\":0,"
+               "\"total_vote_count\":%" PRIu64 ","
                "\"IP_address\":\"%s\","
                "\"delegate_name\":\"%s\","
                "\"about\":\"Official xCash-Labs Node\","
                "\"website\":\"xcashlabs.org\","
                "\"team\":\"xCash-Labs Team\","
                "\"delegate_type\":\"seed\","
-                "\"delegate_fee\":0.00,"
+                "\"delegate_fee\":%.2f,"
                "\"server_specs\":\"Operating System = Ubuntu 22.04\","
                "\"online_status\":\"false\","
-               "\"block_verifier_total_rounds\":0,"
-               "\"block_verifier_online_total_rounds\":0,"
-               "\"block_producer_total_rounds\":0,"
+               "\"block_verifier_total_rounds\":%" PRIu64 ","
+               "\"block_verifier_online_total_rounds\":%" PRIu64 ","
+               "\"block_producer_total_rounds\":%" PRIu64 ","
                "\"public_key\":\"%s\","
                "\"registration_timestamp\":%" PRIu64
                "}",
                network_nodes[i].seed_public_address,
+               0ULL,
                network_nodes[i].ip_address,
                delegate_name,
+               set_delegate_fee, 0ULL, 0ULL, 0ULL,
                network_nodes[i].seed_public_key,
                registration_time);
 

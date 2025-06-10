@@ -209,28 +209,31 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
     }
 
     // 7) Finally insert a new document
+    double set_delegate_fee = 0.00;
     snprintf(data, sizeof(data),
              "{"
              "\"public_address\":\"%s\","
-             "\"total_vote_count\":0,"
+             "\"total_vote_count\":%" PRIu64 ","
              "\"IP_address\":\"%s\","
              "\"delegate_name\":\"%s\","
              "\"about\":\"\","
              "\"website\":\"\","
              "\"team\":\"\","
              "\"delegate_type\":\"shared\","
-             "\"delegate_fee\":0.00,"
+             "\"delegate_fee\":%.2f,"
              "\"server_specs\":\"\","
              "\"online_status\":\"false\","
-             "\"block_verifier_total_rounds\":0,"
-             "\"block_verifier_online_total_rounds\":0,"
-             "\"block_producer_total_rounds\":0,"
+             "\"block_verifier_total_rounds\":%" PRIu64 ","
+             "\"block_verifier_online_total_rounds\":%" PRIu64 ","
+             "\"block_producer_total_rounds\":%" PRIu64 ","
              "\"public_key\":\"%s\","
              "\"registration_timestamp\":%" PRIu64
              "}",
              delegate_public_address,
+             0ULL,
              delegates_IP_address,
              delegate_name,
+             set_delegate_fee, 0ULL, 0ULL, 0ULL,
              delegate_public_key,
              registration_time);
 
