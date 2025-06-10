@@ -102,7 +102,7 @@ void server_received_msg_get_sync_info(server_client_t *client, const char *MESS
     
             // Compare delegate list hash
             if (strcmp(parsed_delegates_hash, delegates_hash) != 0) {
-                DEBUG_PRINT("Delegates hash mismatch for %s: remote=%s, local=%s",
+                INFO_PRINT("Delegates hash mismatch for %s: remote=%s, local=%s",
                             parsed_address, parsed_delegates_hash, delegates_hash);
                 delegate_db_hash_mismatch = delegate_db_hash_mismatch + 1;
                 strncpy(delegates_all[i].online_status, "partial", sizeof(delegates_all[i].online_status));
