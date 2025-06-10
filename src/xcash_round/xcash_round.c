@@ -457,6 +457,7 @@ void start_block_production(void) {
       }
       // If more that a 30% mismatch lets resync the node
       if ((delegate_db_hash_mismatch * 100) > (total_delegates * 30)) {
+        INFO_STAGE_PRINT("Node is out of sync, attempting to refresh delegates");
         int selected_index;
         pthread_mutex_lock(&delegates_mutex);
         selected_index = select_random_online_delegate();
