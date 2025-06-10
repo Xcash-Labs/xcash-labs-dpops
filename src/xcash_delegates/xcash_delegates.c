@@ -101,7 +101,13 @@ int read_organize_delegates(delegates_t* delegates, size_t* delegates_count_resu
           } else if (strcmp(db_key, "online_status") == 0 && BSON_ITER_HOLDS_UTF8(&record_iter)) {
             strncpy(delegates[delegate_index].online_status, bson_iter_utf8(&record_iter, NULL), 10);
           } else if (strcmp(db_key, "block_verifier_total_rounds") == 0 && BSON_ITER_HOLDS_INT64(&record_iter)) {
+
             delegates[delegate_index].block_verifier_total_rounds = bson_iter_int64(&record_iter);
+
+INFO_PRINT("Delegate [%d] total rounds: %" PRId64,
+           delegate_index,
+           delegates[delegate_index].block_verifier_total_rounds);
+
           } else if (strcmp(db_key, "block_verifier_online_total_rounds") == 0 && BSON_ITER_HOLDS_INT64(&record_iter)) {
             delegates[delegate_index].block_verifier_online_total_rounds = bson_iter_int64(&record_iter);
           } else if (strcmp(db_key, "block_producer_total_rounds") == 0 && BSON_ITER_HOLDS_INT64(&record_iter)) {

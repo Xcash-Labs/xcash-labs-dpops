@@ -413,7 +413,7 @@ void start_block_production(void) {
           uint64_t tmp_verifier_online_total_rounds = delegates_all[i].block_verifier_online_total_rounds;
           if (strcmp(delegates_all[i].online_status, "true") == 0) {
             tmp_verifier_online_total_rounds += 1; 
-            if (i <= 49) {
+            if (i < BLOCK_VERIFIERS_AMOUNT) {
               tmp_verifier_total_round += 1; 
             }
           }
