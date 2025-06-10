@@ -1,6 +1,7 @@
 #include "xcash_round.h"
 
 producer_ref_t producer_refs[] = {0};
+static int total_delegates = 0;
 
 /**
  * @brief Selects the block producer from the current round’s verifiers using VRF beta comparison.
@@ -85,7 +86,7 @@ xcash_round_result_t process_round(void) {
   INFO_STAGE_PRINT("Part 2 - Check Delegates Data, Get Previous Block Hash, and Delegates Hash");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 2);
   // delegates_all is loaded prior to start of round due to node timing issues
-  int total_delegates = 0;
+  total_delegates = 0;
   for (size_t x = 0; x < BLOCK_VERIFIERS_TOTAL_AMOUNT; x++) {
     if (strlen(delegates_all[x].public_address) > 0) {
       total_delegates++;
@@ -167,18 +168,13 @@ xcash_round_result_t process_round(void) {
   pthread_mutex_unlock(&delegates_mutex);
   atomic_store(&wait_for_vrf_init, false);
 
-  // if no delegetes are found the db is most likely out of sync
   if (nodes_majority_count < BLOCK_VERIFIERS_VALID_AMOUNT) {
     INFO_PRINT_STATUS_FAIL("Failed to reach the required number of online nodes: [%d/%d]", nodes_majority_count, BLOCK_VERIFIERS_VALID_AMOUNT);
-    if (total_delegates > nodes_majority_count) {
-      return ROUND_SYNC_ERROR;
-      INFO_PRINT("Setting round to round_sync_error");
-    } else {
-      return ROUND_SKIP;
-    }
+    return ROUND_SKIP;
   }
 
-  int required_majority = (total_delegates * MAJORITY_PERCENT + 99) / 100;
+  int delegates_num = (total_delegates < BLOCK_VERIFIERS_AMOUNT) ? total_delegates : BLOCK_VERIFIERS_AMOUNT;
+  int required_majority = (delegates_num * MAJORITY_PERCENT + 99) / 100;
 
   if (nodes_majority_count < required_majority) {
     INFO_PRINT_STATUS_FAIL("Data majority not reached. Online Nodes: [%d/%d]", nodes_majority_count, required_majority);
@@ -456,13 +452,10 @@ void start_block_production(void) {
       }
     } else {
       if (sync_block_verifiers_minutes_and_seconds(1, 45) == XCASH_ERROR) {
-        INFO_PRINT("Failed to sync in the allotted  time");
+        INFO_PRINT("Failed to sync in the allotted time");
       }
-
-
-      INFO_PRINT("Mismatch %d", delegate_db_hash_mismatch);
-
-      if (delegate_db_hash_mismatch > 2 && round_result == ROUND_SYNC_ERROR) {
+      // If more that a 30% mismatch lets resync the node
+      if ((delegate_db_hash_mismatch * 100) > (total_delegates * 30)) {
         int selected_index;
         pthread_mutex_lock(&delegates_mutex);
         selected_index = select_random_online_delegate();
@@ -471,10 +464,9 @@ void start_block_production(void) {
 //        if(!create_delegates_db_sync_request(selected_index)) {
 //
 //        }
-      }
-      // sync to end of round
-      if (sync_block_verifiers_minutes_and_seconds(1, 55) == XCASH_ERROR) {
-        INFO_STAGE_PRINT("Waiting For End of round sync...");
+      if (sync_block_verifiers_minutes_and_seconds(1, 58) == XCASH_ERROR) {
+        INFO_PRINT("Failed to sync in the allotted time");
+      
       }
     }
 
