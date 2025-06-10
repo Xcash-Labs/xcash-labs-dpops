@@ -253,7 +253,7 @@ int send_message_to_ip_or_hostname(const char* host_or_ip, int port, const char*
     return XCASH_ERROR;
   }
 
-  DEBUG_PRINT("Sent message to %s:%d", host_or_ip, port);
+  INFO_PRINT("Sent message to %s:%d", host_or_ip, port);
   close(sock);
   return XCASH_OK;
 }
