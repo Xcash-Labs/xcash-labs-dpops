@@ -49,7 +49,7 @@ int start_tcp_server(int port) {
 }
 
 // Accept and spawn client threads
-void* server_thread_loop(void* arg) {
+void* server_thread_loop__OLD__(void* arg) {
   (void)arg;
 
   while (atomic_load(&server_running)) {
@@ -74,6 +74,13 @@ void* server_thread_loop(void* arg) {
       continue;
     }
 
+    char ip_str[INET_ADDRSTRLEN] = {0};
+    if (inet_ntop(AF_INET, &(client_addr->sin_addr), ip_str, sizeof(ip_str))) {
+      strncpy(client.client_ip, ip_str, sizeof(client.client_ip));
+    } else {
+      strncpy(client.client_ip, "unknown", sizeof(client.client_ip));
+    }
+
     sem_wait(&client_slots);
 
     pthread_t client_thread;
@@ -91,23 +98,121 @@ void* server_thread_loop(void* arg) {
   return NULL;
 }
 
-void* handle_client(void* client_socket_ptr) {
+
+
+
+
+
+
+void* server_thread_loop(void* arg) {
+  (void)arg;
+
+  while (atomic_load(&server_running)) {
+    struct sockaddr_in client_addr;
+    socklen_t client_len = sizeof(client_addr);
+
+    server_client_t* client = malloc(sizeof(server_client_t));
+    if (!client) {
+      perror("malloc");
+      continue;
+    }
+
+    client->socket_fd = accept(server_fd, (struct sockaddr*)&client_addr, &client_len);
+    if (client->socket_fd < 0) {
+      free(client);
+
+      if (!atomic_load(&server_running)) {
+        break;
+      }
+
+      perror("accept");
+      continue;
+    }
+
+    if (inet_ntop(AF_INET, &client_addr.sin_addr, client->client_ip, sizeof(client->client_ip)) == NULL) {
+      strncpy(client->client_ip, "unknown", sizeof(client->client_ip));
+      client->client_ip[sizeof(client->client_ip) - 1] = '\0';  // Ensure null-termination
+    }
+
+    sem_wait(&client_slots);
+
+    pthread_t client_thread;
+    if (pthread_create(&client_thread, NULL, handle_client, client) != 0) {
+      perror("pthread_create");
+      close(client->socket_fd);
+      free(client);
+      sem_post(&client_slots);
+      continue;
+    }
+
+    pthread_detach(client_thread);
+  }
+
+  return NULL;
+}
+
+void* handle_client(void* arg) {
+  server_client_t* client = (server_client_t*)arg;
+
+  struct timeval recv_timeout = {RECEIVE_TIMEOUT_SEC, 0};
+  setsockopt(client->socket_fd, SOL_SOCKET, SO_RCVTIMEO, &recv_timeout, sizeof(recv_timeout));
+
+  char buffer[BUFFER_SIZE];
+
+  while (1) {
+    memset(buffer, 0, sizeof(buffer));
+    ssize_t bytes = recv(client->socket_fd, buffer, sizeof(buffer) - 1, 0);
+
+    if (bytes < 0 && errno == EINTR) continue;
+    if (bytes <= 0) break;
+
+    buffer[bytes] = '\0';
+
+    if (strncmp(buffer, "GET ", 4) == 0 || strncmp(buffer, "POST", 4) == 0 || strncmp(buffer, "HEAD", 4) == 0) {
+      WARNING_PRINT("Rejected HTTP request from %s", client->client_ip);
+      break;
+    }
+
+    unsigned char* decompressed = NULL;
+    size_t decompressed_len = 0;
+
+    if (!decompress_gzip_with_prefix((const unsigned char*)buffer, (size_t)bytes, &decompressed, &decompressed_len)) {
+      WARNING_PRINT("Failed to decompress message from %s", client->client_ip);
+      continue;
+    }
+
+    DEBUG_PRINT("[TCP] Message from %s: %.*s", client->client_ip, (int)decompressed_len, decompressed);
+    handle_srv_message((char*)decompressed, decompressed_len, client);
+    free(decompressed);
+  }
+
+  close(client->socket_fd);
+  free(client);
+  sem_post(&client_slots);
+  return NULL;
+}
+
+
+
+
+
+void* handle_client__OLD__(void* client_socket_ptr) {
   int client_socket = *(int*)client_socket_ptr;
   free(client_socket_ptr);
 
-  server_client_t client = { .socket_fd = client_socket };
+  server_client_t client = {.socket_fd = client_socket};
 
   struct timeval recv_timeout = {RECEIVE_TIMEOUT_SEC, 0};
   setsockopt(client_socket, SOL_SOCKET, SO_RCVTIMEO, &recv_timeout, sizeof(recv_timeout));
 
-  struct sockaddr_in addr;
-  socklen_t addr_len = sizeof(addr);
-  if (getpeername(client_socket, (struct sockaddr*)&addr, &addr_len) == 0) {
-    inet_ntop(AF_INET, &addr.sin_addr, client.client_ip, sizeof(client.client_ip));
-  } else {
-    INFO_PRINT("Info: %s", strerror(errno));
-    strncpy(client.client_ip, "unknown", sizeof(client.client_ip));
-  }
+  //  struct sockaddr_in addr;
+  //  socklen_t addr_len = sizeof(addr);
+  //  if (getpeername(client_socket, (struct sockaddr*)&addr, &addr_len) == 0) {
+  //    inet_ntop(AF_INET, &addr.sin_addr, client.client_ip, sizeof(client.client_ip));
+  //  } else {
+  //    INFO_PRINT("Info: %s", strerror(errno));
+  //    strncpy(client.client_ip, "unknown", sizeof(client.client_ip));
+  //  }
 
   char buffer[BUFFER_SIZE];
 
@@ -226,7 +331,7 @@ int send_message_to_ip_or_hostname(const char* host_or_ip, int port, const char*
     return XCASH_ERROR;
   }
 
-  struct linger so_linger = {1, 0}; // Force immediate close
+  struct linger so_linger = {1, 0};  // Force immediate close
   setsockopt(sock, SOL_SOCKET, SO_LINGER, &so_linger, sizeof(so_linger));
 
   struct timeval timeout = {CONNECT_TIMEOUT_SEC, 0};
