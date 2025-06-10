@@ -171,7 +171,7 @@ xcash_round_result_t process_round(void) {
   if (nodes_majority_count < BLOCK_VERIFIERS_VALID_AMOUNT) {
     INFO_PRINT_STATUS_FAIL("Failed to reach the required number of online nodes: [%d/%d]", nodes_majority_count, BLOCK_VERIFIERS_VALID_AMOUNT);
     if (total_delegates > nodes_majority_count) {
-      return ROUND_SYNC_ERROR
+      return ROUND_SYNC_ERROR;
     } else {
       return ROUND_SKIP;
     }
