@@ -48,6 +48,7 @@ int start_tcp_server(int port) {
   return 1;
 }
 
+/*
 // Accept and spawn client threads
 void* server_thread_loop__OLD__(void* arg) {
   (void)arg;
@@ -98,7 +99,7 @@ void* server_thread_loop__OLD__(void* arg) {
   return NULL;
 }
 
-
+*/
 
 
 
@@ -195,7 +196,7 @@ void* handle_client(void* arg) {
 
 
 
-
+/*
 void* handle_client__OLD__(void* client_socket_ptr) {
   int client_socket = *(int*)client_socket_ptr;
   free(client_socket_ptr);
@@ -249,6 +250,11 @@ void* handle_client__OLD__(void* client_socket_ptr) {
   sem_post(&client_slots);
   return NULL;
 }
+*/
+
+
+
+
 
 int send_data(server_client_t* client, const unsigned char* data, size_t length) {
   if (!client) {
