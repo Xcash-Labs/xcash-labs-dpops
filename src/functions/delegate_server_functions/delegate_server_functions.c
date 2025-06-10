@@ -210,6 +210,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
 
     // 7) Finally insert a new document
     double set_delegate_fee = 0.00;
+    uint64_t set_counts = 0;
     snprintf(data, sizeof(data),
              "{"
              "\"public_address\":\"%s\","
@@ -230,10 +231,10 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
              "\"registration_timestamp\":%" PRIu64
              "}",
              delegate_public_address,
-             0ULL,
+             set_counts,
              delegates_IP_address,
              delegate_name,
-             set_delegate_fee, 0ULL, 0ULL, 0ULL,
+             set_delegate_fee, set_counts, set_counts, set_counts,
              delegate_public_key,
              registration_time);
 

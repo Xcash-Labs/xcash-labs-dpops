@@ -45,6 +45,7 @@ bool init_processing(const arg_config_t *arg_config) {
 
       uint64_t registration_time = (uint64_t)time(NULL);
       double set_delegate_fee = 0.00;
+      uint64_t set_counts = 0;
       snprintf(json_buffer, sizeof(json_buffer),
                "{"
                "\"public_address\":\"%s\","
@@ -65,10 +66,10 @@ bool init_processing(const arg_config_t *arg_config) {
                "\"registration_timestamp\":%" PRIu64
                "}",
                network_nodes[i].seed_public_address,
-               0ULL,
+               set_counts,
                network_nodes[i].ip_address,
                delegate_name,
-               set_delegate_fee, 0ULL, 0ULL, 0ULL,
+               set_delegate_fee, set_counts, set_counts, set_counts,
                network_nodes[i].seed_public_key,
                registration_time);
 
