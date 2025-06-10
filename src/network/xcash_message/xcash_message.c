@@ -3,6 +3,7 @@
 const xcash_msg_t WALLET_SIGN_MESSAGES[] = {
     XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_VRF_DATA,
     XMSG_NODES_TO_NODES_VOTE_MAJORITY_RESULTS,
+    XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_DELEGATES_DATABASE_SYNC_REQ,
     XMSG_NONE};
 const size_t WALLET_SIGN_MESSAGES_COUNT = ARRAY_SIZE(WALLET_SIGN_MESSAGES) - 1;
 
@@ -198,7 +199,7 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
     return;
   }
 
-  INFO_PRINT("Processing message from client IP: %s", client->client_ip);
+  DEBUG_PRINT("Processing message from client IP: %s", client->client_ip);
   char trans_type[128] = {0};
 
   if (strstr(data, "{") && strstr(data, "}")) {
@@ -274,6 +275,14 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
         server_limit_public_addresses(LIMIT_REMOVE, data);
       }
       break;
+
+    case XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_DELEGATES_DATABASE_SYNC_REQ:
+      if (server_limit_IP_addresses(LIMIT_CHECK, client->client_ip) == 1) {
+//      server_received_msg_get_sync_info(client, data);
+        INFO_PRINT("Message SYNC_REQ received........");
+        server_limit_IP_addresses(LIMIT_REMOVE, client->client_ip);
+      }
+    break;
 
     default:
       ERROR_PRINT("Unknown message type received: %s", data);

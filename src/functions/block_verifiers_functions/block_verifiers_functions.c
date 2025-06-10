@@ -455,7 +455,7 @@ bool create_delegates_db_sync_request(int selected_index) {
     return false;
   }
 
-  const char *static_msg = "{\r\n \"message_settings\": \"DELEGATES_DATABASE_SYNC_REQ\"\r\n}";
+  const char *static_msg = "{\r\n \"message_settings\":\"DELEGATES_DATABASE_SYNC_REQ\"\r\n}";
 //  const char* ip = delegates_all[selected_index].IP_address;
   const char* ip = delegates_all[1].IP_address;   // US node
 
