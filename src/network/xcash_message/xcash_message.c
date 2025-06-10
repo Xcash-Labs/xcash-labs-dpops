@@ -3,7 +3,7 @@
 const xcash_msg_t WALLET_SIGN_MESSAGES[] = {
     XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_VRF_DATA,
     XMSG_NODES_TO_NODES_VOTE_MAJORITY_RESULTS,
-    XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_DELEGATES_DATABASE_SYNC_REQ,
+    XMSG_NODES_TO_NODES_DATABASE_SYNC_REQ,
     XMSG_NONE};
 const size_t WALLET_SIGN_MESSAGES_COUNT = ARRAY_SIZE(WALLET_SIGN_MESSAGES) - 1;
 
@@ -276,7 +276,7 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
       }
       break;
 
-    case XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_DELEGATES_DATABASE_SYNC_REQ:
+    case XMSG_NODES_TO_NODES_DATABASE_SYNC_REQ:
       if (server_limit_IP_addresses(LIMIT_CHECK, client->client_ip) == 1) {
 //      server_received_msg_get_sync_info(client, data);
         INFO_PRINT("Message SYNC_REQ received........");
