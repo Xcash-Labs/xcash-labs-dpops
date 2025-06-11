@@ -77,10 +77,6 @@ int read_organize_delegates(delegates_t* delegates, size_t* delegates_count_resu
       if (bson_iter_init(&record_iter, &record)) {
         while (bson_iter_next(&record_iter)) {
           const char* db_key = bson_iter_key(&record_iter);
-          
-if (strcmp(db_key, "total_vote_count") == 0) {
-  printf("Field: %s, Type: %d\n", db_key, bson_iter_type(&record_iter));
-}
           if (strcmp(db_key, "public_address") == 0 && BSON_ITER_HOLDS_UTF8(&record_iter)) {
             strncpy(delegates[delegate_index].public_address, bson_iter_utf8(&record_iter, NULL), XCASH_WALLET_LENGTH);
           } else if (strcmp(db_key, "total_vote_count") == 0 && BSON_ITER_HOLDS_INT64(&record_iter)) {
@@ -113,7 +109,7 @@ if (strcmp(db_key, "total_vote_count") == 0) {
             strncpy(delegates[delegate_index].public_key, bson_iter_utf8(&record_iter, NULL), VRF_PUBLIC_KEY_LENGTH);
           } else if (strcmp(db_key, "registration_timestamp") == 0 && BSON_ITER_HOLDS_INT64(&record_iter)) {
             time_t reg_time = bson_iter_int64(&record_iter);
-            if (now - reg_time < 600) {   // 10 minutes just to be safe
+            if (now - reg_time < 300) {
               skip_delegate = true;
             }
             delegates[delegate_index].registration_timestamp = reg_time;
