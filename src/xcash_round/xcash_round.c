@@ -453,7 +453,7 @@ void start_block_production(void) {
       }
     } else {
       INFO_STAGE_PRINT("Round Skipped or Error Occured, waiting until end of round");
-      if (sync_block_verifiers_minutes_and_seconds(1, 45) == XCASH_ERROR) {
+      if (sync_block_verifiers_minutes_and_seconds(1, 40) == XCASH_ERROR) {
         INFO_PRINT("Failed to sync in the allotted time");
       }
       // Check if registered
@@ -481,4 +481,5 @@ void start_block_production(void) {
         FATAL_ERROR_EXIT("Failed to load and organize delegates for next round, Possible problem with Mongodb");
       }
     }
+  }
 }

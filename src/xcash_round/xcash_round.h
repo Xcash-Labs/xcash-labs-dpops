@@ -40,7 +40,6 @@ typedef enum {
     ROUND_ERROR, // some system fault occurred. mostly communication errors or other non-fatal error.
     ROUND_OK, //all the procedures finished successfully
     ROUND_SKIP, // wait till next round
-    ROUND_SYNC_ERROR, // wait till next round but try and sync the database
 } xcash_round_result_t;
 
 xcash_round_result_t process_round(void);
