@@ -32,7 +32,7 @@ bool init_processing(const arg_config_t *arg_config) {
   if (count_db_delegates() <= 0) {
     INFO_PRINT("Delegates collection does not exist so creating it.");
     // Check if it should create the default database data
-    char json_buffer[MEDIUM_BUFFER_SIZE];
+//    char json_buffer[MEDIUM_BUFFER_SIZE];
 
     for (int i = 0; network_nodes[i].seed_public_address != NULL; i++) {
       char delegate_name[256];
