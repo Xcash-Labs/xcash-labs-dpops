@@ -75,7 +75,7 @@ xcash_round_result_t process_round(void) {
 
   // Get the current block height
   INFO_STAGE_PRINT("Part 1 - Get Current Block Height");
-  snprintf(current_round_part, sizeof(current_round_part), "%d", 2);
+  snprintf(current_round_part, sizeof(current_round_part), "%d", 1);
   if (get_current_block_height(current_block_height) != XCASH_OK) {
     ERROR_PRINT("Can't get current block height");
     return ROUND_ERROR;
@@ -400,6 +400,8 @@ void start_block_production(void) {
 
     round_result = process_round();
 
+    // Final step - Update DB
+    snprintf(current_round_part, sizeof(current_round_part), "%d", 12);
     if (round_result == ROUND_OK) {
       for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
         if (strlen(delegates_all[i].public_address) > 0) {
