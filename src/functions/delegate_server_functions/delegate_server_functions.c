@@ -214,8 +214,8 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
     bson_init(&bson);
 
     // Strings
-    bson_append_utf8(&bson, "public_address", -1, network_nodes[i].seed_public_address, -1);
-    bson_append_utf8(&bson, "IP_address", -1, network_nodes[i].ip_address, -1);
+    bson_append_utf8(&bson, "public_address", -1, delegate_public_address, -1);
+    bson_append_utf8(&bson, "IP_address", -1, delegates_IP_address, -1);
     bson_append_utf8(&bson, "delegate_name", -1, delegate_name, -1);
     bson_append_utf8(&bson, "about", -1, "", -1);
     bson_append_utf8(&bson, "website", -1, "", -1);
@@ -223,7 +223,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
     bson_append_utf8(&bson, "delegate_type", -1, "shared", -1);
     bson_append_utf8(&bson, "server_specs", -1, "", -1);
     bson_append_utf8(&bson, "online_status", -1, "false", -1);
-    bson_append_utf8(&bson, "public_key", -1, network_nodes[i].seed_public_key, -1);
+    bson_append_utf8(&bson, "public_key", -1, delegate_public_key, -1);
 
     // Numbers
     bson_append_int64(&bson, "total_vote_count", -1, set_counts);
