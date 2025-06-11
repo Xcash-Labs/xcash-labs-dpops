@@ -81,7 +81,7 @@ int read_organize_delegates(delegates_t* delegates, size_t* delegates_count_resu
 
   printf("Field: %s, Type: %d\n", db_key, bson_iter_type(&record_iter));
 
-  
+
           if (strcmp(db_key, "public_address") == 0 && BSON_ITER_HOLDS_UTF8(&record_iter)) {
             strncpy(delegates[delegate_index].public_address, bson_iter_utf8(&record_iter, NULL), XCASH_WALLET_LENGTH);
           } else if (strcmp(db_key, "total_vote_count") == 0 && BSON_ITER_HOLDS_INT64(&record_iter)) {
@@ -126,6 +126,8 @@ int read_organize_delegates(delegates_t* delegates, size_t* delegates_count_resu
         strncpy(delegates[delegate_index].online_status, "false", sizeof(delegates[delegate_index].online_status));
         delegates[delegate_index].online_status[sizeof(delegates[delegate_index].online_status) - 1] = '\0';
         delegate_index++;
+      } else {
+        INFO_PRINT("Skipping newly added delegate...");
       }
     }
   }
