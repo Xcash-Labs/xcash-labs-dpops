@@ -69,7 +69,6 @@ xcash_round_result_t process_round(void) {
 
   if (vrf_public_key[0] == '\0') {
     WARNING_PRINT("Failed to read vrf_public_key for delegate, has this delegate been registered?");
-//    get_vrf_public_key();
     return ROUND_SKIP;
   }
 
@@ -457,7 +456,11 @@ void start_block_production(void) {
       if (sync_block_verifiers_minutes_and_seconds(1, 45) == XCASH_ERROR) {
         INFO_PRINT("Failed to sync in the allotted time");
       }
-      // If more that a 30% mismatch lets resync the node
+      // Check if registered
+      if (vrf_public_key[0] == '\0') {
+        get_vrf_public_key();
+      }
+      // If more that a 30% mismatch lets resync the node if it is registered
       if ((delegate_db_hash_mismatch * 100) > (total_delegates * 30)) {
         INFO_STAGE_PRINT("Node is out of sync, attempting to refresh delegates");
         int selected_index;
@@ -465,19 +468,17 @@ void start_block_production(void) {
         selected_index = select_random_online_delegate();
         INFO_PRINT("Selected delegate index: %d", selected_index);
         pthread_mutex_unlock(&delegates_mutex);
-        if(!create_delegates_db_sync_request(selected_index)) {
+        if (!create_delegates_db_sync_request(selected_index)) {
           ERROR_PRINT("Error occured while syncing delegates");
         }
+        if (sync_block_verifiers_minutes_and_seconds(1, 58) == XCASH_ERROR) {
+          INFO_PRINT("Failed to sync in the allotted time");
+        }
       }
-      if (sync_block_verifiers_minutes_and_seconds(1, 58) == XCASH_ERROR) {
-        INFO_PRINT("Failed to sync in the allotted time");
-      
-      }
-    }
 
-    // set up delegates for next round
-    if (!fill_delegates_from_db()) {
-      FATAL_ERROR_EXIT("Failed to load and organize delegates for next round, Possible problem with Mongodb");
+      // set up delegates for next round
+      if (!fill_delegates_from_db()) {
+        FATAL_ERROR_EXIT("Failed to load and organize delegates for next round, Possible problem with Mongodb");
+      }
     }
-  }
 }
