@@ -450,18 +450,26 @@ Parameters:
   SETTINGS - The data settings
 ---------------------------------------------------------------------------------------------------------*/
 bool create_delegates_db_sync_request(int selected_index) {
+
   if (selected_index < 0 || selected_index >= BLOCK_VERIFIERS_TOTAL_AMOUNT) {
     ERROR_PRINT("Invalid delegate index: %d", selected_index);
     return false;
   }
 
-  const char *static_msg = "{\r\n \"message_settings\":\"NODES_TO_NODES_DATABASE_SYNC_REQ\"\r\n}";
-//  const char* ip = delegates_all[selected_index].IP_address;
+  const char *params[] = {
+    "public_address",     xcash_wallet_public_address,
+    NULL
+  };
+
+  char* message = NULL;
+  message = create_message_param_list(XMSG_NODES_TO_NODES_DATABASE_SYNC_REQ, params);
+
+  //  const char* ip = delegates_all[selected_index].IP_address;
   const char* ip = "seeds.xcashseeds.us";   // US node
 
-  if (send_message_to_ip_or_hostname(ip, XCASH_DPOPS_PORT, static_msg) == XCASH_OK) {
+  if (send_message_to_ip_or_hostname(ip, XCASH_DPOPS_PORT, message) == XCASH_OK) {
     INFO_PRINT("Sync request sent to delegate %d (%s)", selected_index, ip);
-    return true;
+    return true; 
   } else {
     ERROR_PRINT("Failed to send sync request sent to delegate %d (%s)", selected_index, ip);
   }
