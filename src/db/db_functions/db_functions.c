@@ -512,6 +512,50 @@ int update_document_from_collection(const char* DATABASE, const char* COLLECTION
   return XCASH_OK;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+int update_document_from_collection_bson(const char* DATABASE, const char* COLLECTION, const bson_t* filter, const bson_t* update_fields) {
+
+  mongoc_client_t* database_client_thread = get_temporary_connection();
+  if (!database_client_thread) return XCASH_ERROR;
+
+  mongoc_collection_t* collection = mongoc_client_get_collection(database_client_thread, DATABASE, COLLECTION);
+  if (!check_if_database_collection_exist(DATABASE, COLLECTION)) {
+    return handle_error("Collection does not exist", NULL, NULL, collection, database_client_thread);
+  }
+
+  bson_error_t error;
+
+  // Wrap update_fields in a $set
+  bson_t update_doc;
+  bson_init(&update_doc);
+  BSON_APPEND_DOCUMENT(&update_doc, "$set", update_fields);
+
+  if (!mongoc_collection_update_one(collection, filter, &update_doc, NULL, NULL, &error)) {
+    bson_destroy(&update_doc);
+    return handle_error("Failed to update document", NULL, NULL, collection, database_client_thread);
+  }
+
+  bson_destroy(&update_doc);
+  mongoc_collection_destroy(collection);
+  mongoc_client_destroy(database_client_thread);
+  return XCASH_OK;
+}
+
+
+
+
+
 // Function to update multiple documents in a collection
 int update_multiple_documents_from_collection(const char* DATABASE, const char* COLLECTION, const char* DATA, const char* FIELD_NAME_AND_DATA) {
   if (strlen(FIELD_NAME_AND_DATA) > MAXIMUM_DATABASE_WRITE_SIZE) {

@@ -403,17 +403,9 @@ void start_block_production(void) {
     snprintf(current_round_part, sizeof(current_round_part), "%d", 12);
     if (round_result == ROUND_OK) {
       for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
+        
         if (strlen(delegates_all[i].public_address) > 0) {
-
-          char filter_json[SMALL_BUFFER_SIZE];
-          char update_json[SMALL_BUFFER_SIZE];
-
-          snprintf(filter_json, sizeof(filter_json), "{\"public_address\":\"%s\"}", delegates_all[i].public_address);
-
           uint64_t tmp_verifier_total_round = delegates_all[i].block_verifier_total_rounds;
-
-          INFO_PRINT("block_verifier_total_rounds: %" PRIu64, tmp_verifier_total_round);
-
           uint64_t tmp_verifier_online_total_rounds = delegates_all[i].block_verifier_online_total_rounds;
           if (strcmp(delegates_all[i].online_status, "true") == 0) {
             tmp_verifier_online_total_rounds += 1; 
@@ -432,27 +424,31 @@ void start_block_production(void) {
             tmp_status = "false";
           }
 
-          snprintf(update_json, sizeof(update_json),
-                   "{"
-                   "\"online_status\":\"%s\","
-                   "\"block_verifier_total_rounds\":%" PRIu64 ","
-                   "\"block_verifier_online_total_rounds\":%" PRIu64 ","
-                   "\"block_producer_total_rounds\":%" PRIu64 "}",
-                   tmp_status,
-                   tmp_verifier_total_round,
-                   tmp_verifier_online_total_rounds,
-                   tmp_producer_total_rounds);
+          bson_t filter;
+          bson_t update_fields;
+
+          bson_init(&filter);
+          BSON_APPEND_UTF8(&filter, "public_address", delegates_all[i].public_address);
+
+          bson_init(&update_fields);
+          BSON_APPEND_UTF8(&update_fields, "online_status", tmp_status);
+          BSON_APPEND_INT64(&update_fields, "block_verifier_total_rounds", tmp_verifier_total_round);
+          BSON_APPEND_INT64(&update_fields, "block_verifier_online_total_rounds", tmp_verifier_online_total_rounds);
+          BSON_APPEND_INT64(&update_fields, "block_producer_total_rounds", tmp_producer_total_rounds);
 
           INFO_PRINT("Updated delegate %s: total=%" PRIu64 ", online=%" PRIu64 ", produced=%" PRIu64,
-            delegates_all[i].public_address,
-            tmp_verifier_total_round,
-            tmp_verifier_online_total_rounds,
-            tmp_producer_total_rounds);
+                     delegates_all[i].public_address,
+                     tmp_verifier_total_round,
+                     tmp_verifier_online_total_rounds,
+                     tmp_producer_total_rounds);
 
-          if (update_document_from_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, filter_json, update_json) != XCASH_OK) {
+          if (update_document_from_collection_bson(DATABASE_NAME, DB_COLLECTION_DELEGATES, &filter, &update_fields) != XCASH_OK) {
             ERROR_PRINT("Failed to update online_status for delegate %s", delegates_all[i].public_address);
           }
-        }        
+
+          bson_destroy(&filter);
+          bson_destroy(&update_fields);
+        }
       }
     } else {
       INFO_STAGE_PRINT("Round Skipped or Error Occured, waiting until end of round");
