@@ -480,50 +480,6 @@ int read_multiple_documents_all_fields_from_collection(const char* DATABASE, con
 }
 
 // Function to update a single document in a collection
-int update_document_from_collection(const char* DATABASE, const char* COLLECTION, const char* DATA, const char* FIELD_NAME_AND_DATA) {
-  if (strlen(FIELD_NAME_AND_DATA) > MAXIMUM_DATABASE_WRITE_SIZE) {
-    ERROR_PRINT("Data exceeds maximum write size.");
-    return XCASH_ERROR;
-  }
-
-  mongoc_client_t* database_client_thread = get_temporary_connection();
-  if (!database_client_thread) return XCASH_ERROR;
-
-  mongoc_collection_t* collection = mongoc_client_get_collection(database_client_thread, DATABASE, COLLECTION);
-  if (!check_if_database_collection_exist(DATABASE, COLLECTION)) {
-    return handle_error("Collection does not exist", NULL, NULL, collection, database_client_thread);
-  }
-
-  bson_error_t error;
-  bson_t* update = create_bson_document(DATA, &error);
-  if (!update) return handle_error("Invalid JSON format", NULL, NULL, collection, database_client_thread);
-
-  char data2[BUFFER_SIZE];
-  snprintf(data2, sizeof(data2), "{\"$set\":%s}", FIELD_NAME_AND_DATA);
-
-  bson_t* update_settings = create_bson_document(data2, &error);
-  if (!update_settings) return handle_error("Invalid update settings format", update, NULL, collection, database_client_thread);
-
-  if (!mongoc_collection_update_one(collection, update, update_settings, NULL, NULL, &error)) {
-    return handle_error("Failed to update document", update, update_settings, collection, database_client_thread);
-  }
-
-  free_resources(update, update_settings, collection, database_client_thread);
-  return XCASH_OK;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
 int update_document_from_collection_bson(const char* DATABASE, const char* COLLECTION, const bson_t* filter, const bson_t* update_fields) {
 
   mongoc_client_t* database_client_thread = get_temporary_connection();
@@ -551,10 +507,6 @@ int update_document_from_collection_bson(const char* DATABASE, const char* COLLE
   mongoc_client_destroy(database_client_thread);
   return XCASH_OK;
 }
-
-
-
-
 
 // Function to update multiple documents in a collection
 int update_multiple_documents_from_collection(const char* DATABASE, const char* COLLECTION, const char* DATA, const char* FIELD_NAME_AND_DATA) {
