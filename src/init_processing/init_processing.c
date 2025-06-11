@@ -46,6 +46,40 @@ bool init_processing(const arg_config_t *arg_config) {
       uint64_t registration_time = (uint64_t)time(NULL);
       double set_delegate_fee = 0.00;
       uint64_t set_counts = 0;
+
+
+bson_t bson;
+bson_init(&bson);
+
+// Strings
+bson_append_utf8(&bson, "public_address", -1, network_nodes[i].seed_public_address, -1);
+bson_append_utf8(&bson, "IP_address", -1, network_nodes[i].ip_address, -1);
+bson_append_utf8(&bson, "delegate_name", -1, delegate_name, -1);
+bson_append_utf8(&bson, "about", -1, "Official xCash-Labs Node", -1);
+bson_append_utf8(&bson, "website", -1, "xcashlabs.org", -1);
+bson_append_utf8(&bson, "team", -1, "xCash-Labs Team", -1);
+bson_append_utf8(&bson, "delegate_type", -1, "seed", -1);
+bson_append_utf8(&bson, "server_specs", -1, "Operating System = Ubuntu 22.04", -1);
+bson_append_utf8(&bson, "online_status", -1, "false", -1);
+bson_append_utf8(&bson, "public_key", -1, network_nodes[i].seed_public_key, -1);
+
+// Numbers
+bson_append_int64(&bson, "total_vote_count", -1, set_counts);
+bson_append_double(&bson, "delegate_fee", -1, set_delegate_fee);
+bson_append_int64(&bson, "block_verifier_total_rounds", -1, set_counts);
+bson_append_int64(&bson, "block_verifier_online_total_rounds", -1, set_counts);
+bson_append_int64(&bson, "block_producer_total_rounds", -1, set_counts);
+bson_append_int64(&bson, "registration_timestamp", -1, registration_time);
+
+if (insert_document_into_collection_bson(DATABASE_NAME, "delegates", &bson) != XCASH_OK) {
+    ERROR_PRINT("Failed to insert delegate document.");
+    bson_destroy(&bson);
+    return XCASH_ERROR;
+}
+
+bson_destroy(&bson);
+
+/*
       snprintf(json_buffer, sizeof(json_buffer),
                "{"
                "\"public_address\":\"%s\","
@@ -77,6 +111,7 @@ bool init_processing(const arg_config_t *arg_config) {
         ERROR_PRINT("Failed to insert delegate document during initialization. IP: %s", network_nodes[i].ip_address);
         return XCASH_ERROR;
       }
+*/
     }
   }
 
