@@ -27,13 +27,9 @@ bool init_processing(const arg_config_t *arg_config) {
 //    };
   }
 
-  // brief check if database is empty
-//  if (count_db_delegates() <= 0 && count_db_statistics() <= 0) {
+  // Check if database is empty and create the default database data
   if (count_db_delegates() <= 0) {
     INFO_PRINT("Delegates collection does not exist so creating it.");
-    // Check if it should create the default database data
-//    char json_buffer[MEDIUM_BUFFER_SIZE];
-
     for (int i = 0; network_nodes[i].seed_public_address != NULL; i++) {
       char delegate_name[256];
       strncpy(delegate_name, network_nodes[i].ip_address, sizeof(delegate_name));
@@ -47,71 +43,36 @@ bool init_processing(const arg_config_t *arg_config) {
       double set_delegate_fee = 0.00;
       uint64_t set_counts = 0;
 
+      bson_t bson;
+      bson_init(&bson);
 
-bson_t bson;
-bson_init(&bson);
+      // Strings
+      bson_append_utf8(&bson, "public_address", -1, network_nodes[i].seed_public_address, -1);
+      bson_append_utf8(&bson, "IP_address", -1, network_nodes[i].ip_address, -1);
+      bson_append_utf8(&bson, "delegate_name", -1, delegate_name, -1);
+      bson_append_utf8(&bson, "about", -1, "Official xCash-Labs Node", -1);
+      bson_append_utf8(&bson, "website", -1, "xcashlabs.org", -1);
+      bson_append_utf8(&bson, "team", -1, "xCash-Labs Team", -1);
+      bson_append_utf8(&bson, "delegate_type", -1, "seed", -1);
+      bson_append_utf8(&bson, "server_specs", -1, "Operating System = Ubuntu 22.04", -1);
+      bson_append_utf8(&bson, "online_status", -1, "false", -1);
+      bson_append_utf8(&bson, "public_key", -1, network_nodes[i].seed_public_key, -1);
 
-// Strings
-bson_append_utf8(&bson, "public_address", -1, network_nodes[i].seed_public_address, -1);
-bson_append_utf8(&bson, "IP_address", -1, network_nodes[i].ip_address, -1);
-bson_append_utf8(&bson, "delegate_name", -1, delegate_name, -1);
-bson_append_utf8(&bson, "about", -1, "Official xCash-Labs Node", -1);
-bson_append_utf8(&bson, "website", -1, "xcashlabs.org", -1);
-bson_append_utf8(&bson, "team", -1, "xCash-Labs Team", -1);
-bson_append_utf8(&bson, "delegate_type", -1, "seed", -1);
-bson_append_utf8(&bson, "server_specs", -1, "Operating System = Ubuntu 22.04", -1);
-bson_append_utf8(&bson, "online_status", -1, "false", -1);
-bson_append_utf8(&bson, "public_key", -1, network_nodes[i].seed_public_key, -1);
+      // Numbers
+      bson_append_int64(&bson, "total_vote_count", -1, set_counts);
+      bson_append_double(&bson, "delegate_fee", -1, set_delegate_fee);
+      bson_append_int64(&bson, "block_verifier_total_rounds", -1, set_counts);
+      bson_append_int64(&bson, "block_verifier_online_total_rounds", -1, set_counts);
+      bson_append_int64(&bson, "block_producer_total_rounds", -1, set_counts);
+      bson_append_int64(&bson, "registration_timestamp", -1, registration_time);
 
-// Numbers
-bson_append_int64(&bson, "total_vote_count", -1, set_counts);
-bson_append_double(&bson, "delegate_fee", -1, set_delegate_fee);
-bson_append_int64(&bson, "block_verifier_total_rounds", -1, set_counts);
-bson_append_int64(&bson, "block_verifier_online_total_rounds", -1, set_counts);
-bson_append_int64(&bson, "block_producer_total_rounds", -1, set_counts);
-bson_append_int64(&bson, "registration_timestamp", -1, registration_time);
-
-if (insert_document_into_collection_bson(DATABASE_NAME, "delegates", &bson) != XCASH_OK) {
-    ERROR_PRINT("Failed to insert delegate document.");
-    bson_destroy(&bson);
-    return XCASH_ERROR;
-}
-
-bson_destroy(&bson);
-
-/*
-      snprintf(json_buffer, sizeof(json_buffer),
-               "{"
-               "\"public_address\":\"%s\","
-               "\"total_vote_count\":%" PRIu64 ","
-               "\"IP_address\":\"%s\","
-               "\"delegate_name\":\"%s\","
-               "\"about\":\"Official xCash-Labs Node\","
-               "\"website\":\"xcashlabs.org\","
-               "\"team\":\"xCash-Labs Team\","
-               "\"delegate_type\":\"seed\","
-                "\"delegate_fee\":%.2f,"
-               "\"server_specs\":\"Operating System = Ubuntu 22.04\","
-               "\"online_status\":\"false\","
-               "\"block_verifier_total_rounds\":%" PRIu64 ","
-               "\"block_verifier_online_total_rounds\":%" PRIu64 ","
-               "\"block_producer_total_rounds\":%" PRIu64 ","
-               "\"public_key\":\"%s\","
-               "\"registration_timestamp\":%" PRIu64
-               "}",
-               network_nodes[i].seed_public_address,
-               set_counts,
-               network_nodes[i].ip_address,
-               delegate_name,
-               set_delegate_fee, set_counts, set_counts, set_counts,
-               network_nodes[i].seed_public_key,
-               registration_time);
-
-      if (insert_document_into_collection_json(DATABASE_NAME, "delegates", json_buffer) != XCASH_OK) {
-        ERROR_PRINT("Failed to insert delegate document during initialization. IP: %s", network_nodes[i].ip_address);
+      if (insert_document_into_collection_bson(DATABASE_NAME, "delegates", &bson) != XCASH_OK) {
+        ERROR_PRINT("Failed to insert delegate document.");
+        bson_destroy(&bson);
         return XCASH_ERROR;
       }
-*/
+
+      bson_destroy(&bson);
     }
   }
 

@@ -203,51 +203,46 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
 
     // 6) Check overall delegate count
     int delegate_count = count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, "{}");
-    if (delegate_count >= BLOCK_VERIFIERS_TOTAL_AMOUNT)
-    {
-        SERVER_ERROR("The maximum amount of delegates has been reached}");
+    if (delegate_count >= BLOCK_VERIFIERS_TOTAL_AMOUNT) {
+      SERVER_ERROR("The maximum amount of delegates has been reached}");
     }
 
     // 7) Finally insert a new document
     double set_delegate_fee = 0.00;
     uint64_t set_counts = 0;
-    snprintf(data, sizeof(data),
-             "{"
-             "\"public_address\":\"%s\","
-             "\"total_vote_count\":%" PRIu64 ","
-             "\"IP_address\":\"%s\","
-             "\"delegate_name\":\"%s\","
-             "\"about\":\"\","
-             "\"website\":\"\","
-             "\"team\":\"\","
-             "\"delegate_type\":\"shared\","
-             "\"delegate_fee\":%.2f,"
-             "\"server_specs\":\"\","
-             "\"online_status\":\"false\","
-             "\"block_verifier_total_rounds\":%" PRIu64 ","
-             "\"block_verifier_online_total_rounds\":%" PRIu64 ","
-             "\"block_producer_total_rounds\":%" PRIu64 ","
-             "\"public_key\":\"%s\","
-             "\"registration_timestamp\":%" PRIu64
-             "}",
-             delegate_public_address,
-             set_counts,
-             delegates_IP_address,
-             delegate_name,
-             set_delegate_fee, set_counts, set_counts, set_counts,
-             delegate_public_key,
-             registration_time);
+    bson_t bson;
+    bson_init(&bson);
 
-    if (insert_document_into_collection_json(DATABASE_NAME, DB_COLLECTION_DELEGATES, data) == 0) {
-        SERVER_ERROR("The delegate could not be added to the database}");
+    // Strings
+    bson_append_utf8(&bson, "public_address", -1, network_nodes[i].seed_public_address, -1);
+    bson_append_utf8(&bson, "IP_address", -1, network_nodes[i].ip_address, -1);
+    bson_append_utf8(&bson, "delegate_name", -1, delegate_name, -1);
+    bson_append_utf8(&bson, "about", -1, "", -1);
+    bson_append_utf8(&bson, "website", -1, "", -1);
+    bson_append_utf8(&bson, "team", -1, "", -1);
+    bson_append_utf8(&bson, "delegate_type", -1, "shared", -1);
+    bson_append_utf8(&bson, "server_specs", -1, "", -1);
+    bson_append_utf8(&bson, "online_status", -1, "false", -1);
+    bson_append_utf8(&bson, "public_key", -1, network_nodes[i].seed_public_key, -1);
+
+    // Numbers
+    bson_append_int64(&bson, "total_vote_count", -1, set_counts);
+    bson_append_double(&bson, "delegate_fee", -1, set_delegate_fee);
+    bson_append_int64(&bson, "block_verifier_total_rounds", -1, set_counts);
+    bson_append_int64(&bson, "block_verifier_online_total_rounds", -1, set_counts);
+    bson_append_int64(&bson, "block_producer_total_rounds", -1, set_counts);
+    bson_append_int64(&bson, "registration_timestamp", -1, registration_time);
+
+    if (insert_document_into_collection_bson(DATABASE_NAME, "delegates", &bson) != XCASH_OK) {
+      bson_destroy(&bson);
+      SERVER_ERROR("The delegate could not be added to the database}");
     }
 
+    bson_destroy(&bson);
+
     // 8) Success: reply back to the client
-    send_data(client, (unsigned char*)"Registered the delegate}", strlen("Registered the delegate}"));
+    send_data(client, (unsigned char *)"Registered the delegate}", strlen("Registered the delegate}"));
     return;
 
-    #undef SERVER_ERROR
+#undef SERVER_ERROR
 }
-
-
-

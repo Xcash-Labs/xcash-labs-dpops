@@ -15,12 +15,7 @@
 
 int count_documents_in_collection(const char* DATABASE, const char* COLLECTION, const char* DATA);
 int count_all_documents_in_collection(const char* DATABASE, const char* COLLECTION);
-int insert_document_into_collection_json(const char* DATABASE, const char* COLLECTION, const char* DATA);
-
 int insert_document_into_collection_bson(const char* DATABASE, const char* COLLECTION, bson_t* document);
-
-
-
 int check_if_database_collection_exist(const char* DATABASE, const char* COLLECTION);
 int read_document_from_collection(const char* DATABASE, const char* COLLECTION, const char* DATA, char *result);
 int read_document_field_from_collection(const char* DATABASE, const char* COLLECTION, const char* DATA, const char* FIELD_NAME, char *result);

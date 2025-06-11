@@ -83,84 +83,6 @@ int count_all_documents_in_collection(const char* DATABASE, const char* COLLECTI
 }
 
 // Function to insert a document into a collection
-int insert_document_into_collection_json(const char* DATABASE, const char* COLLECTION, const char* DATA) {
-  if (strlen(DATA) > MAXIMUM_DATABASE_WRITE_SIZE) {
-    ERROR_PRINT("Data exceeds maximum write size.");
-    return XCASH_ERROR;
-  }
-
-  char data_hash[DATA_HASH_LENGTH + 1] = {0};
-  char data_buffer[BUFFER_SIZE] = {0};
-  char formatted_json[BUFFER_SIZE] = {0};
-  strncpy(data_buffer, DATA, sizeof(data_buffer) - 1);
-
-  string_replace(data_buffer, sizeof(data_buffer), "\r\n", "");
-  string_replace(data_buffer, sizeof(data_buffer), "\n", "");
-  string_replace(data_buffer, sizeof(data_buffer), "\" : \"", "\":\"");
-  string_replace(data_buffer, sizeof(data_buffer), "\", \"", "\",\"");
-  string_replace(data_buffer, sizeof(data_buffer), "\" }", "\"}");
-
-  const char* message = NULL;
-  if (strstr(COLLECTION, "reserve_proofs") && (message = strstr(data_buffer, "\"public_address_created_reserve_proof\":\""))) {
-    message += 40;
-    snprintf(data_hash, sizeof(data_hash), "000000000000000000000000000000%.*s", DATA_HASH_LENGTH - 32, message);
-  } else if (strstr(COLLECTION, "reserve_bytes") && (message = strstr(data_buffer, "\"reserve_bytes_data_hash\":\""))) {
-    message += 27;
-    strncpy(data_hash, message, DATA_HASH_LENGTH);
-  } else if (strstr(COLLECTION, "delegates") && (message = strstr(data_buffer, "\"public_key\":\""))) {
-    message += 14;
-    snprintf(data_hash, sizeof(data_hash), "0000000000000000000000000000000000000000000000000000000000000000%.*s", DATA_HASH_LENGTH - 64, message);
-  } else if (strstr(COLLECTION, "statistics")) {
-    memset(data_hash, '0', DATA_HASH_LENGTH);
-  } else {
-    random_string(data_hash, DATA_HASH_LENGTH);
-  }
-
-  if (strlen(data_hash) != DATA_HASH_LENGTH) {
-    ERROR_PRINT("Invalid data hash length.");
-    return XCASH_ERROR;
-  }
-
-  char* json_body = data_buffer;
-  if (data_buffer[0] == '{') {
-    json_body++;
-  }
-  int json_size = snprintf(formatted_json, sizeof(formatted_json), "{\"_id\":\"%s\",%s", data_hash, json_body);
-  if (json_size < 0 || json_size >= (int)sizeof(formatted_json)) {
-    ERROR_PRINT("Formatted JSON size exceeds buffer limit.");
-    return XCASH_ERROR;
-  }
-
-  mongoc_client_t* database_client_thread = get_temporary_connection();
-  if (!database_client_thread) return XCASH_ERROR;
-
-  mongoc_collection_t* collection = mongoc_client_get_collection(database_client_thread, DATABASE, COLLECTION);
-  if (!collection) return handle_error("Failed to get collection", NULL, NULL, NULL, database_client_thread);
-
-  bson_error_t error;
-  bson_t* document = create_bson_document(formatted_json, &error);
-  if (!document) return handle_error("Invalid JSON format", NULL, NULL, collection, database_client_thread);
-
-  if (!mongoc_collection_insert_one(collection, document, NULL, NULL, &error)) {
-    ERROR_PRINT("Could not insert document: %s", error.message);
-    free_resources(document, NULL, collection, database_client_thread);
-    return XCASH_ERROR;
-  }
-
-  free_resources(document, NULL, collection, database_client_thread);
-  return XCASH_OK;
-}
-
-
-
-
-
-
-
-
-
-
-
 int insert_document_into_collection_bson(const char* DATABASE, const char* COLLECTION, bson_t* document) {
   if (document == NULL) {
     ERROR_PRINT("BSON document is NULL.");
@@ -206,21 +128,6 @@ int insert_document_into_collection_bson(const char* DATABASE, const char* COLLE
   free_resources(NULL, NULL, collection, database_client_thread);
   return XCASH_OK;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /*-----------------------------------------------------------------------------------------------------------
 Name: check_if_database_collection_exist
