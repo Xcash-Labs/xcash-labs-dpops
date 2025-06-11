@@ -411,6 +411,9 @@ void start_block_production(void) {
           snprintf(filter_json, sizeof(filter_json), "{\"public_address\":\"%s\"}", delegates_all[i].public_address);
 
           uint64_t tmp_verifier_total_round = delegates_all[i].block_verifier_total_rounds;
+
+          INFO_PRINT("block_verifier_total_rounds: %" PRIu64, tmp_verifier_total_round);
+
           uint64_t tmp_verifier_online_total_rounds = delegates_all[i].block_verifier_online_total_rounds;
           if (strcmp(delegates_all[i].online_status, "true") == 0) {
             tmp_verifier_online_total_rounds += 1; 
@@ -418,6 +421,8 @@ void start_block_production(void) {
               tmp_verifier_total_round += 1; 
             }
           }
+
+INFO_PRINT("block_verifier_total_rounds: %" PRIu64, tmp_verifier_total_round);
 
           uint64_t tmp_producer_total_rounds = delegates_all[i].block_producer_total_rounds;
           if (strcmp(delegates_all[i].public_address, producer_refs[0].public_address) == 0) {
