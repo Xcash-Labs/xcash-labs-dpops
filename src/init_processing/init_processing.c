@@ -58,14 +58,13 @@ bool init_processing(const arg_config_t *arg_config) {
       bson_append_utf8(&bson, "online_status", -1, "false", -1);
       bson_append_utf8(&bson, "public_key", -1, network_nodes[i].seed_public_key, -1);
 
-      // Numbers
+    // Numbers (need to be in this order for mongodb to assign types correctly)
       bson_append_int64(&bson, "total_vote_count", -1, set_counts);
       bson_append_int64(&bson, "block_verifier_total_rounds", -1, set_counts);
       bson_append_int64(&bson, "block_verifier_online_total_rounds", -1, set_counts);
       bson_append_int64(&bson, "block_producer_total_rounds", -1, set_counts);
       bson_append_int64(&bson, "registration_timestamp", -1, registration_time);
       bson_append_double(&bson, "delegate_fee", -1, set_delegate_fee);
-
 
       if (insert_document_into_collection_bson(DATABASE_NAME, "delegates", &bson) != XCASH_OK) {
         ERROR_PRINT("Failed to insert delegate document.");
