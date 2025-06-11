@@ -422,8 +422,6 @@ void start_block_production(void) {
             }
           }
 
-INFO_PRINT("block_verifier_total_rounds: %" PRIu64, tmp_verifier_total_round);
-
           uint64_t tmp_producer_total_rounds = delegates_all[i].block_producer_total_rounds;
           if (strcmp(delegates_all[i].public_address, producer_refs[0].public_address) == 0) {
             tmp_producer_total_rounds += 1;

@@ -77,11 +77,78 @@ int read_organize_delegates(delegates_t* delegates, size_t* delegates_count_resu
         while (bson_iter_next(&record_iter)) {
           const char* db_key = bson_iter_key(&record_iter);
 
+          /*
+                    if (strcmp(db_key, "public_address") == 0 && BSON_ITER_HOLDS_UTF8(&record_iter)) {
+                      strncpy(delegates[delegate_index].public_address, bson_iter_utf8(&record_iter, NULL), XCASH_WALLET_LENGTH);
+                    } else if (strcmp(db_key, "total_vote_count") == 0) {
+                      if (BSON_ITER_HOLDS_INT64(&record_iter)) {
+                        delegates[delegate_index].total_vote_count = bson_iter_int64(&record_iter);
+                      } else {
+                        WARNING_PRINT("Unexpected type for total_vote_count: %d", bson_iter_type(&record_iter));
+                      }
+                    } else if (strcmp(db_key, "IP_address") == 0 && BSON_ITER_HOLDS_UTF8(&record_iter)) {
+                      strncpy(delegates[delegate_index].IP_address, bson_iter_utf8(&record_iter, NULL), IP_LENGTH);
+                    } else if (strcmp(db_key, "delegate_name") == 0 && BSON_ITER_HOLDS_UTF8(&record_iter)) {
+                      strncpy(delegates[delegate_index].delegate_name, bson_iter_utf8(&record_iter, NULL), MAXIMUM_BUFFER_SIZE_DELEGATES_NAME);
+                    } else if (strcmp(db_key, "about") == 0 && BSON_ITER_HOLDS_UTF8(&record_iter)) {
+                      strncpy(delegates[delegate_index].about, bson_iter_utf8(&record_iter, NULL), 1024);
+                    } else if (strcmp(db_key, "website") == 0 && BSON_ITER_HOLDS_UTF8(&record_iter)) {
+                      strncpy(delegates[delegate_index].website, bson_iter_utf8(&record_iter, NULL), 255);
+                    } else if (strcmp(db_key, "team") == 0 && BSON_ITER_HOLDS_UTF8(&record_iter)) {
+                      strncpy(delegates[delegate_index].team, bson_iter_utf8(&record_iter, NULL), 255);
+                    } else if (strcmp(db_key, "delegate_type") == 0 && BSON_ITER_HOLDS_UTF8(&record_iter)) {
+                      strncpy(delegates[delegate_index].delegate_type, bson_iter_utf8(&record_iter, NULL), 10);
+                    } else if (strcmp(db_key, "delegate_fee") == 0) {
+                      if (BSON_ITER_HOLDS_DOUBLE(&record_iter)) {
+                        delegates[delegate_index].delegate_fee = bson_iter_double(&record_iter);
+                      } else {
+                        WARNING_PRINT("Unexpected type for delegate_fee: %d", bson_iter_type(&record_iter));
+                      }
+                    } else if (strcmp(db_key, "server_specs") == 0 && BSON_ITER_HOLDS_UTF8(&record_iter)) {
+                      strncpy(delegates[delegate_index].server_specs, bson_iter_utf8(&record_iter, NULL), 1024);
+                    } else if (strcmp(db_key, "online_status") == 0 && BSON_ITER_HOLDS_UTF8(&record_iter)) {
+                      strncpy(delegates[delegate_index].online_status, bson_iter_utf8(&record_iter, NULL), 10);
+                    } else if (strcmp(db_key, "block_verifier_total_rounds") == 0) {
+                      if (BSON_ITER_HOLDS_INT64(&record_iter)) {
+                        delegates[delegate_index].block_verifier_total_rounds = bson_iter_int64(&record_iter);
+                      } else {
+                        WARNING_PRINT("Unexpected type for block_verifier_total_rounds: %d", bson_iter_type(&record_iter));
+                      }
+                    } else if (strcmp(db_key, "block_verifier_online_total_rounds") == 0) {
+                      if (BSON_ITER_HOLDS_INT64(&record_iter)) {
+                        delegates[delegate_index].block_verifier_online_total_rounds = bson_iter_int64(&record_iter);
+                      } else {
+                        WARNING_PRINT("Unexpected type for block_verifier_online_total_rounds: %d", bson_iter_type(&record_iter));
+                      }
+                    } else if (strcmp(db_key, "block_producer_total_rounds") == 0) {
+                      if (BSON_ITER_HOLDS_INT64(&record_iter)) {
+                        delegates[delegate_index].block_producer_total_rounds = bson_iter_int64(&record_iter);
+                      } else {
+                        WARNING_PRINT("Unexpected type for block_producer_total_rounds: %d", bson_iter_type(&record_iter));
+                      }
+                    } else if (strcmp(db_key, "public_key") == 0 && BSON_ITER_HOLDS_UTF8(&record_iter)) {
+                      strncpy(delegates[delegate_index].public_key, bson_iter_utf8(&record_iter, NULL), VRF_PUBLIC_KEY_LENGTH);
+                    } else if (strcmp(db_key, "registration_timestamp") == 0) {
+                      if (BSON_ITER_HOLDS_INT64(&record_iter)) {
+                        time_t reg_time = bson_iter_int64(&record_iter);
+                        if (now - reg_time < 300) {
+                          skip_delegate = true;
+                        }
+                        delegates[delegate_index].registration_timestamp = reg_time;
+                      } else {
+                        WARNING_PRINT("Unexpected type for registration_timestamp: %d", bson_iter_type(&record_iter));
+                      }
+                    }
+
+          */
+
           if (strcmp(db_key, "public_address") == 0 && BSON_ITER_HOLDS_UTF8(&record_iter)) {
             strncpy(delegates[delegate_index].public_address, bson_iter_utf8(&record_iter, NULL), XCASH_WALLET_LENGTH);
           } else if (strcmp(db_key, "total_vote_count") == 0) {
             if (BSON_ITER_HOLDS_INT64(&record_iter)) {
               delegates[delegate_index].total_vote_count = bson_iter_int64(&record_iter);
+            } else if (BSON_ITER_HOLDS_INT32(&record_iter)) {
+              delegates[delegate_index].total_vote_count = bson_iter_int32(&record_iter);
             } else {
               WARNING_PRINT("Unexpected type for total_vote_count: %d", bson_iter_type(&record_iter));
             }
@@ -110,18 +177,24 @@ int read_organize_delegates(delegates_t* delegates, size_t* delegates_count_resu
           } else if (strcmp(db_key, "block_verifier_total_rounds") == 0) {
             if (BSON_ITER_HOLDS_INT64(&record_iter)) {
               delegates[delegate_index].block_verifier_total_rounds = bson_iter_int64(&record_iter);
+            } else if (BSON_ITER_HOLDS_INT32(&record_iter)) {
+              delegates[delegate_index].block_verifier_total_rounds = bson_iter_int32(&record_iter);
             } else {
               WARNING_PRINT("Unexpected type for block_verifier_total_rounds: %d", bson_iter_type(&record_iter));
             }
           } else if (strcmp(db_key, "block_verifier_online_total_rounds") == 0) {
             if (BSON_ITER_HOLDS_INT64(&record_iter)) {
               delegates[delegate_index].block_verifier_online_total_rounds = bson_iter_int64(&record_iter);
+            } else if (BSON_ITER_HOLDS_INT32(&record_iter)) {
+              delegates[delegate_index].block_verifier_online_total_rounds = bson_iter_int32(&record_iter);
             } else {
               WARNING_PRINT("Unexpected type for block_verifier_online_total_rounds: %d", bson_iter_type(&record_iter));
             }
           } else if (strcmp(db_key, "block_producer_total_rounds") == 0) {
             if (BSON_ITER_HOLDS_INT64(&record_iter)) {
               delegates[delegate_index].block_producer_total_rounds = bson_iter_int64(&record_iter);
+            } else if (BSON_ITER_HOLDS_INT32(&record_iter)) {
+              delegates[delegate_index].block_producer_total_rounds = bson_iter_int32(&record_iter);
             } else {
               WARNING_PRINT("Unexpected type for block_producer_total_rounds: %d", bson_iter_type(&record_iter));
             }
@@ -130,6 +203,12 @@ int read_organize_delegates(delegates_t* delegates, size_t* delegates_count_resu
           } else if (strcmp(db_key, "registration_timestamp") == 0) {
             if (BSON_ITER_HOLDS_INT64(&record_iter)) {
               time_t reg_time = bson_iter_int64(&record_iter);
+              if (now - reg_time < 300) {
+                skip_delegate = true;
+              }
+              delegates[delegate_index].registration_timestamp = reg_time;
+            } else if (BSON_ITER_HOLDS_INT32(&record_iter)) {
+              time_t reg_time = bson_iter_int32(&record_iter);
               if (now - reg_time < 300) {
                 skip_delegate = true;
               }
