@@ -200,6 +200,9 @@ if (bson_iter_init(&record_iter, &record)) {
     } else if (strcmp(db_key, "block_verifier_total_rounds") == 0) {
       if (BSON_ITER_HOLDS_INT64(&record_iter) || BSON_ITER_HOLDS_INT32(&record_iter)) {
         delegates[delegate_index].block_verifier_total_rounds = (uint64_t)bson_iter_as_int64(&record_iter);
+        
+        INFO_PRINT("block_verifier_total_rounds: %" PRIu64, delegates[delegate_index].block_verifier_total_rounds);
+
       } else {
         WARNING_PRINT("Unexpected type for block_verifier_total_rounds: %d", bson_iter_type(&record_iter));
       }
