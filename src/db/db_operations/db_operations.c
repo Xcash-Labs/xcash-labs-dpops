@@ -50,7 +50,7 @@ bool db_find_doc(const char *db_name, const char *collection_name, const bson_t 
         mongoc_client_pool_push(database_client_thread_pool, client);
         return false;
     }
-
+  INFO_PRINT("HERE5............");
     int index = 0;
     char str_index[16];  // for converting integer to string
     while (mongoc_cursor_next(cursor, &doc)) {
@@ -58,7 +58,7 @@ bool db_find_doc(const char *db_name, const char *collection_name, const bson_t 
         bson_append_document(reply, str_index, -1, doc);
         index++;
     }
-
+  INFO_PRINT("HERE6............");
     if (mongoc_cursor_error(cursor, error)) {
         DEBUG_PRINT("Cursor error: %s", error->message);
         mongoc_cursor_destroy(cursor);
@@ -67,7 +67,7 @@ bool db_find_doc(const char *db_name, const char *collection_name, const bson_t 
 
         return false;
     }
-
+  INFO_PRINT("HERE7............");
     // Cleanup
     mongoc_cursor_destroy(cursor);
     mongoc_collection_destroy(collection);
