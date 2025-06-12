@@ -82,7 +82,7 @@ xcash_round_result_t process_round(void) {
   atomic_store(&wait_for_block_height_init, false);
   INFO_STAGE_PRINT("Attempting To Create Block: %s", current_block_height);
 
-  INFO_STAGE_PRINT("Part 2 - Check Delegates Data, Get Previous Block Hash, and Delegates Hash");
+  INFO_STAGE_PRINT("Part 2 - Check Delegates, Get Previous Block Hash, and Delegates Hash");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 2);
   // delegates_all is loaded prior to start of round due to node timing issues
   total_delegates = 0;
