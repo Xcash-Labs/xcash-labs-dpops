@@ -17,5 +17,6 @@
 
 void server_received_msg_get_sync_info(server_client_t* client, const char* MESSAGE);
 void server_receive_data_socket_node_to_network_data_nodes_get_current_block_verifiers_list(server_client_t* client);
+void server_receive_data_socket_node_to_node_db_sync_req(server_client_t *client);
 
 #endif

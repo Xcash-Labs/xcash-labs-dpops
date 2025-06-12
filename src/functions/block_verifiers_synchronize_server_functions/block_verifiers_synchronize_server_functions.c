@@ -154,23 +154,22 @@ Parameters:
 void server_receive_data_socket_node_to_node_db_sync_req(server_client_t *client) {
   bson_t reply;
   bson_error_t error;
-  INFO_PRINT("HERE............");
 
   // Export the collection to BSON
   if (!db_export_collection_to_bson(DATABASE_NAME, DB_COLLECTION_DELEGATES, &reply, &error)) {
     ERROR_PRINT("Failed to export collection: %s", error.message);
     return;
   }
-  INFO_PRINT("HERE1............");
+
   // Convert BSON to raw buffer for sending
   uint32_t bson_len = 0;
   uint8_t *bson_buf = bson_destroy_with_steal(&reply, true, &bson_len);
-  INFO_PRINT("HERE3............");
+
   if (!bson_buf) {
     ERROR_PRINT("Failed to convert BSON to buffer");
     return;
   }
-  INFO_PRINT("HERE4............");
+
   // Send raw BSON data
   //if (send_data(client, bson_buf, bson_len) != bson_len) {
   //  ERROR_PRINT("Failed to send the DB sync message to %s", client->client_ip);
