@@ -16,9 +16,6 @@ bool db_find_all_doc(const char *db_name, const char *collection_name, bson_t *r
 
 bool db_find_doc(const char *db_name, const char *collection_name, const bson_t *query, bson_t *reply,
   bson_error_t *error) {
-
-          INFO_PRINT("HERE............");
-
     mongoc_client_t *client;
     mongoc_collection_t *collection;
     mongoc_cursor_t *cursor;
@@ -30,7 +27,7 @@ bool db_find_doc(const char *db_name, const char *collection_name, const bson_t 
         DEBUG_PRINT("Failed to pop client from pool");
         return false;
     }
-  INFO_PRINT("HERE2............");
+
     // Get the collection
     collection = mongoc_client_get_collection(client, db_name, collection_name);
     if (!collection) {
@@ -38,7 +35,7 @@ bool db_find_doc(const char *db_name, const char *collection_name, const bson_t 
         mongoc_client_pool_push(database_client_thread_pool, client);
         return false;
     }
-  INFO_PRINT("HERE3............");
+
     // suppress '_id' output to result data
     bson_t *opts = BCON_NEW("projection", "{", "_id", BCON_BOOL(false), "}");
 
@@ -46,14 +43,14 @@ bool db_find_doc(const char *db_name, const char *collection_name, const bson_t 
     cursor = mongoc_collection_find_with_opts(collection, query, opts, NULL);
     // clean it immediately
     bson_destroy(opts);
-  INFO_PRINT("HERE4............");
+
     if (!cursor) {
         DEBUG_PRINT("Failed to initiate find operation");
         mongoc_collection_destroy(collection);
         mongoc_client_pool_push(database_client_thread_pool, client);
         return false;
     }
-  INFO_PRINT("HERE5............");
+
     int index = 0;
     char str_index[16];  // for converting integer to string
     while (mongoc_cursor_next(cursor, &doc)) {
