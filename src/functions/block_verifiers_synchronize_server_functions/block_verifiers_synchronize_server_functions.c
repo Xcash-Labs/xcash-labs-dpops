@@ -154,7 +154,8 @@ Parameters:
 void server_receive_data_socket_node_to_node_db_sync_req(server_client_t *client) {
   bson_t reply;
   bson_error_t error;
-
+  INFO_PRINT("HERE............");
+  
   // Export the collection to BSON
   if (!db_export_collection_to_bson(DATABASE_NAME, DB_COLLECTION_DELEGATES, &reply, &error)) {
     ERROR_PRINT("Failed to export collection: %s", error.message);
