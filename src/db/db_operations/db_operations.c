@@ -23,6 +23,8 @@ bool db_find_doc(const char *db_name, const char *collection_name, const bson_t 
     mongoc_cursor_t *cursor;
     const bson_t *doc = NULL;
 
+          INFO_PRINT("HERE1............");
+
     // Pop a client from the pool
     client = mongoc_client_pool_pop(database_client_thread_pool);
     if (!client) {

@@ -160,11 +160,11 @@ void server_receive_data_socket_node_to_node_db_sync_req(server_client_t *client
     ERROR_PRINT("Failed to export collection: %s", error.message);
     return;
   }
-      INFO_PRINT("req 1............");
+
   // Convert BSON to raw buffer for sending
   uint32_t bson_len = 0;
   uint8_t *bson_buf = bson_destroy_with_steal(&reply, true, &bson_len);
-      INFO_PRINT("req 2............");
+
   if (!bson_buf) {
     ERROR_PRINT("Failed to convert BSON to buffer");
     return;
