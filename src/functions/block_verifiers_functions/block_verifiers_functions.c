@@ -462,8 +462,6 @@ bool create_delegates_db_sync_request(int selected_index) {
   if (send_message_to_ip_or_hostname(ip, XCASH_DPOPS_PORT, message) == XCASH_OK) {
     INFO_PRINT("Sync request sent to delegate %d (%s)", selected_index, ip);
     return true; 
-  } else {
-    ERROR_PRINT("Failed to send sync request sent to delegate %d (%s)", selected_index, ip);
   }
 
   WARNING_PRINT("Failed to send sync request to delegate %d (%s)", selected_index, ip);

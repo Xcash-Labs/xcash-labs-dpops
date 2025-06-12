@@ -1,5 +1,12 @@
 #include "db_operations.h"
 
+bool db_export_collection_to_bson(const char* db_name, const char* collection_name, bson_t* out, bson_error_t* error) {
+  bson_t filter = BSON_INITIALIZER;
+  bool success = db_find_doc(db_name, collection_name, &filter, out, error);
+  bson_destroy(&filter);
+  return success;
+}
+
 bool db_find_all_doc(const char *db_name, const char *collection_name, bson_t *reply, bson_error_t *error) {
     bson_t filter = BSON_INITIALIZER;
     bool result = db_find_doc(db_name, collection_name, &filter, reply, error);
@@ -8,7 +15,7 @@ bool db_find_all_doc(const char *db_name, const char *collection_name, bson_t *r
 }
 
 bool db_find_doc(const char *db_name, const char *collection_name, const bson_t *query, bson_t *reply,
-                 bson_error_t *error) {
+  bson_error_t *error) {
     mongoc_client_t *client;
     mongoc_collection_t *collection;
     mongoc_cursor_t *cursor;
@@ -350,4 +357,44 @@ bool get_db_data_hash(const char *collection_prefix, char *db_hash_result) {
     mongoc_client_pool_push(database_client_thread_pool, client);
 
     return cache_request_result < 0 ? false : true;
+}
+
+/// @brief Get multi data db hash
+/// @param collection collection name prefix. in case if reserve_proofs and reserve_bytes calculates hash for all dbs
+/// @param db_hash_result pointer to buffer to receive result hash
+/// @return true or false in case of error
+bool db_copy_collection(const char *db_name, const char *src_collection, const char *dst_collection, bson_error_t *error) {
+    bson_t filter = BSON_INITIALIZER;
+    bson_t reply = BSON_INITIALIZER;
+
+    if (!db_find_doc(db_name, src_collection, &filter, &reply, error)) {
+        bson_destroy(&filter);
+        return false;
+    }
+
+    bson_iter_t iter;
+    if (!bson_iter_init(&iter, &reply)) {
+        bson_destroy(&reply);
+        bson_destroy(&filter);
+        return false;
+    }
+
+    bool success = true;
+    while (bson_iter_next(&iter)) {
+        const uint8_t *doc_data;
+        uint32_t doc_len;
+        bson_t doc;
+
+        bson_iter_document(&iter, &doc_len, &doc_data);
+        bson_init_static(&doc, doc_data, doc_len);
+
+        if (!db_upsert_doc(db_name, dst_collection, &doc, error)) {
+            success = false;
+            break;
+        }
+    }
+
+    bson_destroy(&reply);
+    bson_destroy(&filter);
+    return success;
 }

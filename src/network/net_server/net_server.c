@@ -48,63 +48,6 @@ int start_tcp_server(int port) {
   return 1;
 }
 
-/*
-// Accept and spawn client threads
-void* server_thread_loop__OLD__(void* arg) {
-  (void)arg;
-
-  while (atomic_load(&server_running)) {
-    struct sockaddr_in client_addr;
-    socklen_t client_len = sizeof(client_addr);
-
-    int* client_socket = malloc(sizeof(int));
-    if (!client_socket) {
-      perror("malloc");
-      continue;
-    }
-
-    *client_socket = accept(server_fd, (struct sockaddr*)&client_addr, &client_len);
-    if (*client_socket < 0) {
-      free(client_socket);
-
-      if (!atomic_load(&server_running)) {
-        break;
-      }
-
-      perror("accept");
-      continue;
-    }
-
-    char ip_str[INET_ADDRSTRLEN] = {0};
-    if (inet_ntop(AF_INET, &(client_addr->sin_addr), ip_str, sizeof(ip_str))) {
-      strncpy(client.client_ip, ip_str, sizeof(client.client_ip));
-    } else {
-      strncpy(client.client_ip, "unknown", sizeof(client.client_ip));
-    }
-
-    sem_wait(&client_slots);
-
-    pthread_t client_thread;
-    if (pthread_create(&client_thread, NULL, handle_client, client_socket) != 0) {
-      perror("pthread_create");
-      close(*client_socket);
-      free(client_socket);
-      sem_post(&client_slots);
-      continue;
-    }
-
-    pthread_detach(client_thread);
-  }
-
-  return NULL;
-}
-
-*/
-
-
-
-
-
 void* server_thread_loop(void* arg) {
   (void)arg;
 

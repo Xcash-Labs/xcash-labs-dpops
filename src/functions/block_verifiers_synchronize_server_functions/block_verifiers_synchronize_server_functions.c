@@ -145,18 +145,38 @@ void server_receive_data_socket_node_to_network_data_nodes_get_current_block_ver
     }
 }
 
-
-
-
-
-
 /*---------------------------------------------------------------------------------------------------------
-Name: server_receive_data_socket_block_verifiers_to_block_verifiers_delegates_database_download_file_update
+Name: server_receive_data_socket_node_to_node_db_sync_req
 Description: Runs the code when the server receives the BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_DELEGATES_DATABASE_DOWNLOAD_FILE_UPDATE message
 Parameters:
   CLIENT_SOCKET - The socket to send data to
 ---------------------------------------------------------------------------------------------------------*/
-void server_receive_data_socket_block_verifiers_to_block_verifiers_delegates_database_download_file_update(const int CLIENT_SOCKET)
-{
+void server_receive_data_socket_node_to_node_db_sync_req(server_client_t *client) {
+  bson_t reply;
+  bson_error_t error;
 
+  // Export the collection to BSON
+  if (!db_export_collection_to_bson(DATABASE_NAME, DB_COLLECTION_DELEGATES, &reply, &error)) {
+    ERROR_PRINT("Failed to export collection: %s", error.message);
+    return;
+  }
+
+  // Convert BSON to raw buffer for sending
+  uint32_t bson_len = 0;
+  uint8_t *bson_buf = bson_destroy_with_steal(&reply, true, &bson_len);
+
+  if (!bson_buf) {
+    ERROR_PRINT("Failed to convert BSON to buffer");
+    return;
+  }
+
+  // Send raw BSON data
+  //if (send_data(client, bson_buf, bson_len) != bson_len) {
+  //  ERROR_PRINT("Failed to send the DB sync message to %s", client->client_ip);
+  //  bson_free(bson_buf);
+  //  return;
+  //}
+
+  INFO_PRINT("Sent %u bytes of DB sync BSON to %s", bson_len, client->client_ip);
+  bson_free(bson_buf);
 }
