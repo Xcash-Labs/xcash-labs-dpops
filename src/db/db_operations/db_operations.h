@@ -13,7 +13,7 @@
 bool db_find_all_doc(const char *db_name, const char *collection_name, bson_t *reply, bson_error_t *error);
 bool db_find_doc(const char *db_name, const char *collection_name, const bson_t *query, bson_t *reply,
                  bson_error_t *error);
-
+bool db_export_collection_to_bson(const char* db_name, const char* collection_name, bson_t* out, bson_error_t* error);
 bool db_upsert_multi_docs(const char *db_name, const char *collection_name, const bson_t *docs, bson_error_t *error);
 bool db_upsert_doc(const char *db_name, const char *collection_name, const bson_t *doc, bson_error_t *error);
 bool db_delete_doc(const char *db_name, const char *collection_name, const bson_t *query, bson_error_t *error);
