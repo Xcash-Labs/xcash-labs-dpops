@@ -15,8 +15,10 @@ bool db_find_all_doc(const char *db_name, const char *collection_name, bson_t *r
 }
 
 bool db_find_doc(const char *db_name, const char *collection_name, const bson_t *query, bson_t *reply,
-      INFO_PRINT("HERE............");
   bson_error_t *error) {
+
+          INFO_PRINT("HERE............");
+
     mongoc_client_t *client;
     mongoc_collection_t *collection;
     mongoc_cursor_t *cursor;
