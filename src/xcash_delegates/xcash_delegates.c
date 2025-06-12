@@ -149,7 +149,7 @@ int read_organize_delegates(delegates_t* delegates, size_t* delegates_count_resu
         delegates[delegate_index].online_status[sizeof(delegates[delegate_index].online_status) - 1] = '\0';
         delegate_index++;
       } else {
-        DEBUG_PRINT("Skipping newly added delegate...");
+        WARNING_PRINT("Skipping newly added delegate...");
       }
     }
   }
