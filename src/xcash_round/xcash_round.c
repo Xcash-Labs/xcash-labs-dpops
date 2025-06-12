@@ -405,25 +405,8 @@ void start_block_production(void) {
       for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
 
         if (strlen(delegates_all[i].public_address) > 0) {
-
-
-
-        INFO_PRINT("Entering DB Updates..........................................");
-
-
           uint64_t tmp_verifier_total_round = delegates_all[i].block_verifier_total_rounds;
-
-
-
-
-        INFO_PRINT("block_verifier_total_rounds: %" PRIu64, tmp_verifier_total_round);
-
-
-
-
           uint64_t tmp_verifier_online_total_rounds = delegates_all[i].block_verifier_online_total_rounds;
-
-          INFO_PRINT("block_verifier_total_rounds: %s", delegates_all[i].online_status);
 
           if (strcmp(delegates_all[i].online_status, "true") == 0) {
             tmp_verifier_online_total_rounds += 1; 
@@ -492,12 +475,12 @@ void start_block_production(void) {
           INFO_PRINT("Failed to sync in the allotted time");
         }
       }
-
-      // set up delegates for next round
-      INFO_PRINT("CALLING fill_delegates_from_db");
-      if (!fill_delegates_from_db()) {
-        FATAL_ERROR_EXIT("Failed to load and organize delegates for next round, Possible problem with Mongodb");
-      }
     }
+
+    // set up delegates for next round
+    if (!fill_delegates_from_db()) {
+      FATAL_ERROR_EXIT("Failed to load and organize delegates for next round, Possible problem with Mongodb");
+    }
+
   }
 }

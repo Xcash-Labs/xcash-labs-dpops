@@ -193,69 +193,6 @@ void* handle_client(void* arg) {
   return NULL;
 }
 
-
-
-
-/*
-void* handle_client__OLD__(void* client_socket_ptr) {
-  int client_socket = *(int*)client_socket_ptr;
-  free(client_socket_ptr);
-
-  server_client_t client = {.socket_fd = client_socket};
-
-  struct timeval recv_timeout = {RECEIVE_TIMEOUT_SEC, 0};
-  setsockopt(client_socket, SOL_SOCKET, SO_RCVTIMEO, &recv_timeout, sizeof(recv_timeout));
-
-  //  struct sockaddr_in addr;
-  //  socklen_t addr_len = sizeof(addr);
-  //  if (getpeername(client_socket, (struct sockaddr*)&addr, &addr_len) == 0) {
-  //    inet_ntop(AF_INET, &addr.sin_addr, client.client_ip, sizeof(client.client_ip));
-  //  } else {
-  //    INFO_PRINT("Info: %s", strerror(errno));
-  //    strncpy(client.client_ip, "unknown", sizeof(client.client_ip));
-  //  }
-
-  char buffer[BUFFER_SIZE];
-
-  while (1) {
-    memset(buffer, 0, sizeof(buffer));
-    ssize_t bytes = recv(client_socket, buffer, sizeof(buffer) - 1, 0);
-
-    if (bytes < 0 && errno == EINTR) continue;
-    if (bytes <= 0) {
-      break;
-    }
-
-    buffer[bytes] = '\0';
-
-    if (strncmp(buffer, "GET ", 4) == 0 || strncmp(buffer, "POST", 4) == 0 || strncmp(buffer, "HEAD", 4) == 0) {
-      WARNING_PRINT("Rejected HTTP request from %s", client.client_ip);
-      break;
-    }
-
-    unsigned char* decompressed = NULL;
-    size_t decompressed_len = 0;
-
-    if (!decompress_gzip_with_prefix((const unsigned char*)buffer, (size_t)bytes, &decompressed, &decompressed_len)) {
-      WARNING_PRINT("Failed to decompress message from %s", client.client_ip);
-      continue;
-    }
-
-    DEBUG_PRINT("[TCP] Message from %s: %.*s", client.client_ip, (int)decompressed_len, decompressed);
-    handle_srv_message((char*)decompressed, decompressed_len, &client);
-    free(decompressed);
-  }
-
-  close(client_socket);
-  sem_post(&client_slots);
-  return NULL;
-}
-*/
-
-
-
-
-
 int send_data(server_client_t* client, const unsigned char* data, size_t length) {
   if (!client) {
     ERROR_PRINT("send_data failed: client is NULL");

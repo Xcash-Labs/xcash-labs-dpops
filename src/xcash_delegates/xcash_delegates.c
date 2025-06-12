@@ -42,11 +42,6 @@ int compare_delegates(const void* a, const void* b) {
 
 int read_organize_delegates(delegates_t* delegates, size_t* delegates_count_result) {
 
-
-
-    INFO_PRINT("IN read_organize_delegates ..........");
-
-
   bson_error_t error;
   int delegates_count;
 
@@ -70,8 +65,6 @@ int read_organize_delegates(delegates_t* delegates, size_t* delegates_count_resu
 
   if (bson_iter_init(&iter, delegates_db_data)) {
     while (delegate_index < BLOCK_VERIFIERS_TOTAL_AMOUNT && bson_iter_next(&iter)) {
-
-    INFO_PRINT("Processing Record ..........");
 
       bson_t record;
       const uint8_t* data;
@@ -120,9 +113,6 @@ int read_organize_delegates(delegates_t* delegates, size_t* delegates_count_resu
           } else if (strcmp(db_key, "block_verifier_total_rounds") == 0) {
             if (BSON_ITER_HOLDS_INT64(&record_iter) || BSON_ITER_HOLDS_INT32(&record_iter)) {
               delegates[delegate_index].block_verifier_total_rounds = (uint64_t)bson_iter_as_int64(&record_iter);
-
-              INFO_PRINT("block_verifier_total_rounds: %" PRIu64, delegates[delegate_index].block_verifier_total_rounds);
-
             } else {
               WARNING_PRINT("Unexpected type for block_verifier_total_rounds: %d", bson_iter_type(&record_iter));
             }
@@ -159,7 +149,7 @@ int read_organize_delegates(delegates_t* delegates, size_t* delegates_count_resu
         delegates[delegate_index].online_status[sizeof(delegates[delegate_index].online_status) - 1] = '\0';
         delegate_index++;
       } else {
-        INFO_PRINT("Skipping newly added delegate...");
+        DEBUG_PRINT("Skipping newly added delegate...");
       }
     }
   }
