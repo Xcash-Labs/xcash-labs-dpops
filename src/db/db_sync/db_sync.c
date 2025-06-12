@@ -497,6 +497,9 @@ cleanup:
 }
 
 bool fill_delegates_from_db(void) {
+
+    INFO_PRINT("IN fill_delegates_from_db..........");
+
   delegates_t* delegates = (delegates_t*)calloc(BLOCK_VERIFIERS_TOTAL_AMOUNT, sizeof(delegates_t));
   size_t total_delegates = 0;
 

@@ -102,7 +102,7 @@ void init_globals(void) {
   char data[SMALL_BUFFER_SIZE];
   size_t count = 0;
   srand(time(NULL));
-  memset(delegates_all, 0, sizeof(delegates_all));
+//  memset(delegates_all, 0, sizeof(delegates_all));
    memset(data,0,sizeof(data));
   memset(current_block_height,0,sizeof(current_block_height));
   server_limit_IP_address_list = (char*)calloc(15728640,sizeof(char)); // 15 MB
