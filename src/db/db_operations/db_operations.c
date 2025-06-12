@@ -2,7 +2,9 @@
 
 bool db_export_collection_to_bson(const char* db_name, const char* collection_name, bson_t* out, bson_error_t* error) {
   bson_t filter = BSON_INITIALIZER;
+        INFO_PRINT("BACK............");
   bool success = db_find_doc(db_name, collection_name, &filter, out, error);
+            INFO_PRINT("BACK2............");
   bson_destroy(&filter);
   return success;
 }
@@ -10,9 +12,7 @@ bool db_export_collection_to_bson(const char* db_name, const char* collection_na
 bool db_find_all_doc(const char *db_name, const char *collection_name, bson_t *reply, bson_error_t *error) {
     bson_t filter = BSON_INITIALIZER;
     bool result = db_find_doc(db_name, collection_name, &filter, reply, error);
-      INFO_PRINT("BACK............");
     bson_destroy(&filter);
-          INFO_PRINT("BACK2............");
     return result;
 }
 
@@ -74,7 +74,7 @@ bool db_find_doc(const char *db_name, const char *collection_name, const bson_t 
     mongoc_cursor_destroy(cursor);
     mongoc_collection_destroy(collection);
     mongoc_client_pool_push(database_client_thread_pool, client);
-
+          INFO_PRINT("HERE7............");
     return true;
 }
 
