@@ -365,5 +365,6 @@ int verify_the_ip(const char *message, const char *client_ip) {
     return XCASH_ERROR;
   }
 
+  INFO_PRINT("Returning control back to calling program.....");
   return XCASH_OK;
 }
