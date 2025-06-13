@@ -376,11 +376,10 @@ int verify_ip(const char *message, const char *client_ip) {
     return XCASH_ERROR;
   }
 
-  INFO_PRINT("Made it here.........");
-
   // Safety: ensure ip_address_trans is null-terminated
   ip_address_trans[sizeof(ip_address_trans) - 1] = '\0';
 
+INFO_PRINT("Made it here.........");
   // 4. Resolve the hostname/IP
   struct addrinfo hints;
   struct addrinfo *res = NULL;
@@ -409,6 +408,8 @@ int verify_ip(const char *message, const char *client_ip) {
     }
     freeaddrinfo(res);
   }
+
+ INFO_PRINT("Made it here 2.........");
 
   // 5. Compare
   if (strcmp(resolved_ip, client_ip) != 0) {
