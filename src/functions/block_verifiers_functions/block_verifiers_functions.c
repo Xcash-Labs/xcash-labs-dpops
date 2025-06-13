@@ -436,11 +436,18 @@ bool block_verifiers_create_vote_majority_result(char **message, int producer_in
 }
 
 /*---------------------------------------------------------------------------------------------------------
-Name: block_verifiers_to_block_verifiers_delegates_database_sync_req
-Description: The block verifiers will create the vote majority results
+Name: create_delegates_db_sync_request
+Description:
+  Sends a database sync request to another delegate node.
+  This is typically used by a block verifier to request an updated copy of the delegates database
+  from a peer node (e.g., during startup, resync, or recovery).
+
 Parameters:
-  result - The result
-  SETTINGS - The data settings
+  selected_index - Index of the delegate in the global delegates list. Used to resolve the target IP.
+
+Returns:
+  true  - if the sync request was sent successfully
+  false - if the index is invalid or the message failed to send
 ---------------------------------------------------------------------------------------------------------*/
 bool create_delegates_db_sync_request(int selected_index) {
 

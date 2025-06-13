@@ -147,9 +147,23 @@ void server_receive_data_socket_node_to_network_data_nodes_get_current_block_ver
 
 /*---------------------------------------------------------------------------------------------------------
 Name: server_receive_data_socket_node_to_node_db_sync_req
-Description: Runs the code when the server receives the BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_DELEGATES_DATABASE_DOWNLOAD_FILE_UPDATE message
+Description:
+  Handles an incoming database sync request from another node.
+  When a peer node sends a XMSG_NODES_TO_NODES_DATABASE_SYNC_REQ message, this function is triggered.
+  It responds by exporting the local delegates collection, converting it to canonical extended JSON,
+  and sending it back in a structured message using the existing message format.
+
 Parameters:
-  CLIENT_SOCKET - The socket to send data to
+  client - Pointer to the server_client_t structure representing the requesting peer connection.
+
+Behavior:
+  - Exports the delegates collection from the local database (including "_id" fields).
+  - Converts the data to a JSON string.
+  - Packages it into a key-value parameter message.
+  - Sends the message back to the requesting client over the socket.
+
+Returns:
+  None
 ---------------------------------------------------------------------------------------------------------*/
 void server_receive_data_socket_node_to_node_db_sync_req(server_client_t *client) {
   bson_t reply;
@@ -195,4 +209,50 @@ void server_receive_data_socket_node_to_node_db_sync_req(server_client_t *client
 
   bson_free(json_string);
   free(message);
+}
+
+void server_receive_data_socket_node_to_node_db_sync_data(const char *MESSAGE) {
+  if (!MESSAGE) {
+    ERROR_PRINT("Received null MESSAGE in sync data handler");
+    return;
+  }
+
+  INFO_PRINT("SYNCING DATA....................................");
+
+  // Step 1: Extract the "json" field from the message
+  char json_data[BUFFER_SIZE] = {0};
+  if (parse_json_data("json", MESSAGE, json_data) == 0 || strlen(json_data) == 0) {
+    ERROR_PRINT("Failed to extract 'json' field from sync message");
+    return;
+  }
+
+  // Optional: Log who sent it (if public_address is included)
+  char sender_address[XCASH_WALLET_LENGTH + 1] = {0};
+  if (parse_json_data("public_address", MESSAGE, sender_address) == 1) {
+    INFO_PRINT("Received delegates sync data from %s", sender_address);
+  }
+
+  // Step 2: Convert the JSON string to BSON
+  bson_error_t error;
+  bson_t *doc = bson_new_from_json((const uint8_t*)json_data, -1, &error);
+  if (!doc) {
+    ERROR_PRINT("Failed to parse BSON from JSON: %s", error.message);
+    return;
+  }
+
+  if (!db_drop(DATABASE_NAME, DB_COLLECTION_DELEGATES, &error)) {
+    ERROR_PRINT("Failed to clear old delegates table before sync: %s", error.message);
+    bson_destroy(doc);
+    return;
+  }
+
+  // Step 3: Upsert the documents into the delegates collection
+  if (!db_upsert_multi_docs(DATABASE_NAME, DB_COLLECTION_DELEGATES, doc, &error)) {
+    ERROR_PRINT("Failed to upsert delegates sync data: %s", error.message);
+    bson_destroy(doc);
+    return;
+  }
+
+  INFO_PRINT("Successfully updated delegates database from sync message");
+  bson_destroy(doc);
 }
