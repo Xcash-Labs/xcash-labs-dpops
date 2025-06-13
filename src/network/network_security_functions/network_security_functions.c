@@ -326,11 +326,12 @@ int verify_ip(const char *message, const char *client_ip) {
 
   // Resolve hostname (if needed)
   struct hostent *he = gethostbyname(ip_address_trans);
-  if (he && he->h_addrtype == AF_INET) {
-    inet_ntop(AF_INET, he->h_addr, resolved_ip, sizeof(resolved_ip));
+  if (he && he->h_addrtype == AF_INET && he->h_addr_list[0]) {
+    inet_ntop(AF_INET, he->h_addr_list[0], resolved_ip, sizeof(resolved_ip));
   } else {
     WARNING_PRINT("Failed to resolve hostname '%s' for delegate '%s'", ip_address_trans, ck_public_address);
     strncpy(resolved_ip, ip_address_trans, sizeof(resolved_ip) - 1);
+    resolved_ip[sizeof(resolved_ip) - 1] = '\0';  // ensure null-termination
   }
 
   // Compare resolved IP to client IP
