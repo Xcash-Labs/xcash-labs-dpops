@@ -299,7 +299,7 @@ int verify_action_data(const char *message)
  *   XCASH_OK (1) if the IP matches a known delegate and (optionally) round part is valid.
  *   XCASH_ERROR (0) if the delegate is unknown, the IP does not match, or data is invalid.
 ---------------------------------------------------------------------------------------------------------*/
-int verify_ip__OLD__(const char *message, const char *client_ip) {
+int verify_ip(const char *message, const char *client_ip) {
   char ck_public_address[XCASH_WALLET_LENGTH + 1] = {0};
   char ip_address_trans[IP_LENGTH + 1] = {0};
   char filter_json[256] = {0};
@@ -341,6 +341,8 @@ int verify_ip__OLD__(const char *message, const char *client_ip) {
     return XCASH_ERROR;
   }
 
+    INFO_PRINT("Made it here 3.........");
+
   return XCASH_OK;
 }
 
@@ -351,7 +353,7 @@ int verify_ip__OLD__(const char *message, const char *client_ip) {
 
 
 
-int verify_ip(const char *message, const char *client_ip) {
+int verify_ip__new__(const char *message, const char *client_ip) {
   char ck_public_address[XCASH_WALLET_LENGTH + 1] = {0};
   char ip_address_trans[IP_LENGTH + 1] = {0};
   char filter_json[256] = {0};
