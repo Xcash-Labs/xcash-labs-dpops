@@ -23,7 +23,7 @@ bool get_block_hash(unsigned long block_height, char* block_hash, size_t block_h
   }
 
   // Query MongoDB
-  if (!db_find_doc(DATABASE_NAME, db_collection_name, filter, doc, &error)) {
+  if (!db_find_doc(DATABASE_NAME, db_collection_name, filter, doc, &error, true)) {
     ERROR_PRINT("Failed to find document: %s", error.message);
     goto cleanup;
   }
