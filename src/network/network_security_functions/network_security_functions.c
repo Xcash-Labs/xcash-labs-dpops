@@ -417,6 +417,8 @@ INFO_PRINT("Made it here.........");
                 ck_public_address, ip_address_trans, resolved_ip, client_ip);
     return XCASH_ERROR;
   }
+ 
+  INFO_PRINT("Made it here 3.........");
 
   return XCASH_OK;
 }
