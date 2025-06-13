@@ -376,8 +376,14 @@ int verify_ip(const char *message, const char *client_ip) {
     return XCASH_ERROR;
   }
 
+  INFO_PRINT("Made it here.........");
+
+  // Safety: ensure ip_address_trans is null-terminated
+  ip_address_trans[sizeof(ip_address_trans) - 1] = '\0';
+
   // 4. Resolve the hostname/IP
-  struct addrinfo hints, *res = NULL;
+  struct addrinfo hints;
+  struct addrinfo *res = NULL;
   memset(&hints, 0, sizeof(hints));
   hints.ai_family = AF_INET;
   hints.ai_socktype = SOCK_STREAM;
@@ -385,13 +391,19 @@ int verify_ip(const char *message, const char *client_ip) {
   int gai_ret = getaddrinfo(ip_address_trans, NULL, &hints, &res);
   if (gai_ret != 0 || res == NULL) {
     WARNING_PRINT("getaddrinfo failed for '%s': %s", ip_address_trans, gai_strerror(gai_ret));
-    // Fallback: use raw string as IP
     strncpy(resolved_ip, ip_address_trans, sizeof(resolved_ip) - 1);
     resolved_ip[sizeof(resolved_ip) - 1] = '\0';
   } else {
-    struct sockaddr_in *addr = (struct sockaddr_in *)res->ai_addr;
-    if (!inet_ntop(AF_INET, &(addr->sin_addr), resolved_ip, sizeof(resolved_ip))) {
-      ERROR_PRINT("inet_ntop failed for '%s'", ip_address_trans);
+    // Check ai_addr and its family
+    if (res->ai_addr != NULL && res->ai_addr->sa_family == AF_INET) {
+      struct sockaddr_in *addr = (struct sockaddr_in *)res->ai_addr;
+      if (!inet_ntop(AF_INET, &(addr->sin_addr), resolved_ip, sizeof(resolved_ip))) {
+        ERROR_PRINT("inet_ntop failed for '%s'", ip_address_trans);
+        freeaddrinfo(res);
+        return XCASH_ERROR;
+      }
+    } else {
+      ERROR_PRINT("getaddrinfo returned invalid ai_addr for '%s'", ip_address_trans);
       freeaddrinfo(res);
       return XCASH_ERROR;
     }
