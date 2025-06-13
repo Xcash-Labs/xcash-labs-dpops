@@ -1,8 +1,7 @@
 #include "network_security_functions.h"
 
 // Helper function for error handling
-int handle_error(const char *function_name, const char *message, char *buf1, char *buf2, char *buf3)
-{
+int handle_error(const char *function_name, const char *message, char *buf1, char *buf2, char *buf3) {
   ERROR_PRINT("%s: %s", function_name, message);
   if (buf1) free(buf1);
   if (buf2) free(buf2);
@@ -17,66 +16,64 @@ Parameters:
   message - The sign_data
 Return: 0 if an error has occured, 1 if successfull
 ---------------------------------------------------------------------------------------------------------*/
-int sign_data(char *message)
-{
-    const char *HTTP_HEADERS[] = {"Content-Type: application/json", "Accept: application/json"};
-    const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0]);
+int sign_data(char *message) {
+  const char *HTTP_HEADERS[] = {"Content-Type: application/json", "Accept: application/json"};
+  const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0]);
 
-    char *signature = calloc(MEDIUM_BUFFER_SIZE, sizeof(char));
-    char *payload = calloc(MEDIUM_BUFFER_SIZE, sizeof(char));
-    char *request = calloc(MEDIUM_BUFFER_SIZE * 2, sizeof(char));
-    char response[MEDIUM_BUFFER_SIZE] = {0};
-    char random_data[RANDOM_STRING_LENGTH + 1] = {0};
+  char *signature = calloc(MEDIUM_BUFFER_SIZE, sizeof(char));
+  char *payload = calloc(MEDIUM_BUFFER_SIZE, sizeof(char));
+  char *request = calloc(MEDIUM_BUFFER_SIZE * 2, sizeof(char));
+  char response[MEDIUM_BUFFER_SIZE] = {0};
+  char random_data[RANDOM_STRING_LENGTH + 1] = {0};
 
-    if (!signature || !payload || !request) {
-        FATAL_ERROR_EXIT("sign_data: Memory allocation failed");
-    }
+  if (!signature || !payload || !request) {
+    FATAL_ERROR_EXIT("sign_data: Memory allocation failed");
+  }
 
-    // Generate random data
-    if (!random_string(random_data, RANDOM_STRING_LENGTH)) {
-        return handle_error("sign_data", "Failed to generate random data", signature, payload, request);
-    }
+  // Generate random data
+  if (!random_string(random_data, RANDOM_STRING_LENGTH)) {
+    return handle_error("sign_data", "Failed to generate random data", signature, payload, request);
+  }
 
-    // Step 1: Build the full JSON message to be signed
-    snprintf(message + strlen(message) - 1, MEDIUM_BUFFER_SIZE - strlen(message),
-      ",\"v_previous_block_hash\":\"%s\","
-      "\"v_current_round_part\":\"%s\","
-      "\"v_random_data\":\"%.*s\""
-      "}",
-      previous_block_hash,
-      current_round_part,
-      RANDOM_STRING_LENGTH, random_data);
+  // Step 1: Build the full JSON message to be signed
+  snprintf(message + strlen(message) - 1, MEDIUM_BUFFER_SIZE - strlen(message),
+           ",\"v_previous_block_hash\":\"%s\","
+           "\"v_current_round_part\":\"%s\","
+           "\"v_random_data\":\"%.*s\""
+           "}",
+           previous_block_hash,
+           current_round_part,
+           RANDOM_STRING_LENGTH, random_data);
 
-    // Step 2: Escape the message for the JSON-RPC request
-    strncpy(payload, message, MEDIUM_BUFFER_SIZE);
-    string_replace(payload, MEDIUM_BUFFER_SIZE, "\"", "\\\"");
+  // Step 2: Escape the message for the JSON-RPC request
+  strncpy(payload, message, MEDIUM_BUFFER_SIZE);
+  string_replace(payload, MEDIUM_BUFFER_SIZE, "\"", "\\\"");
 
-    snprintf(request, MEDIUM_BUFFER_SIZE * 2,
-        "{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"sign\",\"params\":{\"data\":\"%s\"}}",
-        payload
-    );
+  snprintf(request, MEDIUM_BUFFER_SIZE * 2,
+           "{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"sign\",\"params\":{\"data\":\"%s\"}}",
+           payload);
 
-    // Step 3: Send signing request to wallet
-    if (send_http_request(response, MEDIUM_BUFFER_SIZE, XCASH_WALLET_IP, "/json_rpc", XCASH_WALLET_PORT,
-                          "POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH,
-                          request, SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) <= 0 ||
-        !parse_json_data(response, "result.signature", signature, MEDIUM_BUFFER_SIZE)) {
-        return handle_error("sign_data", "Wallet signature failed", signature, payload, request);
-    }
+  // Step 3: Send signing request to wallet
+  if (send_http_request(response, MEDIUM_BUFFER_SIZE, XCASH_WALLET_IP, "/json_rpc", XCASH_WALLET_PORT,
+                        "POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH,
+                        request, SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) <= 0 ||
+      !parse_json_data(response, "result.signature", signature, MEDIUM_BUFFER_SIZE)) {
+    return handle_error("sign_data", "Wallet signature failed", signature, payload, request);
+  }
 
-    if (strlen(signature) != XCASH_SIGN_DATA_LENGTH ||
-        strncmp(signature, XCASH_SIGN_DATA_PREFIX, sizeof(XCASH_SIGN_DATA_PREFIX) - 1) != 0) {
-        return handle_error("sign_data", "Invalid wallet signature format", signature, payload, request);
-    }
+  if (strlen(signature) != XCASH_SIGN_DATA_LENGTH ||
+      strncmp(signature, XCASH_SIGN_DATA_PREFIX, sizeof(XCASH_SIGN_DATA_PREFIX) - 1) != 0) {
+    return handle_error("sign_data", "Invalid wallet signature format", signature, payload, request);
+  }
 
-    // Step 4: Append the signature to the original message
-    snprintf(message + strlen(message) - 1, MEDIUM_BUFFER_SIZE - strlen(message),
-        ",\"XCASH_DPOPS_signature\":\"%s\"}", signature);
+  // Step 4: Append the signature to the original message
+  snprintf(message + strlen(message) - 1, MEDIUM_BUFFER_SIZE - strlen(message),
+           ",\"XCASH_DPOPS_signature\":\"%s\"}", signature);
 
-    free(signature);
-    free(payload);
-    free(request);
-    return XCASH_OK;
+  free(signature);
+  free(payload);
+  free(request);
+  return XCASH_OK;
 }
 /*-----------------------------------------------------------------------------------------------------------
 Name: sign_block_blob
@@ -94,16 +91,15 @@ Returns:
   true  - If the signing process succeeds and the signature is extracted successfully.
   false - If the HTTP request fails, the response is invalid, or the signature cannot be parsed.
 -----------------------------------------------------------------------------------------------------------*/
-bool sign_block_blob(const char* block_blob_hex, char* signature_out, size_t sig_out_len) {
+bool sign_block_blob(const char *block_blob_hex, char *signature_out, size_t sig_out_len) {
   char request_json[BUFFER_SIZE + 256];
   char response[SMALL_BUFFER_SIZE];
 
   snprintf(request_json, sizeof(request_json),
-    "{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"sign\",\"params\":{\"data\":\"%s\"}}",
-    block_blob_hex
-  );
+           "{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"sign\",\"params\":{\"data\":\"%s\"}}",
+           block_blob_hex);
 
-  const char* headers[] = { "Content-Type: application/json", "Accept: application/json" };
+  const char *headers[] = {"Content-Type: application/json", "Accept: application/json"};
   if (send_http_request(response, SMALL_BUFFER_SIZE, XCASH_WALLET_IP, "/json_rpc", XCASH_WALLET_PORT,
                         "POST", headers, 2, request_json, HTTP_TIMEOUT_SETTINGS) <= 0) {
     return false;
@@ -120,15 +116,14 @@ bool sign_block_blob(const char* block_blob_hex, char* signature_out, size_t sig
  *
  * Parameters:
  *   message - The complete signed message (in JSON or delimited format).
- *   VERIFY_CURRENT_ROUND_PART_SETTING - 
+ *   VERIFY_CURRENT_ROUND_PART_SETTING -
  *     Set to 1 to validate the "current_round_part" field against the expected round part.
  *     Set to 0 to skip round part validation.
  *
  * Return:
  *   0 if the signed data is not verified, 1 if successfull
 ---------------------------------------------------------------------------------------------------------*/
-int verify_data(const char *message)
-{
+int verify_data(const char *message) {
   const char *HTTP_HEADERS[] = {"Content-Type: application/json", "Accept: application/json"};
   const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0]);
 
@@ -159,10 +154,9 @@ int verify_data(const char *message)
     ERROR_PRINT("Failed Signature Verification, previous block hash is not valid");
     return XCASH_ERROR;
   }
-  
+
   snprintf(data, sizeof(data), "{\"public_address\":\"%s\"}", ck_public_address);
-  if (count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, data) == 0)
-  {
+  if (count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, data) == 0) {
     ERROR_PRINT("The delegates public address in this transaction does not exist");
     return XCASH_ERROR;
   }
@@ -226,8 +220,7 @@ int verify_data(const char *message)
  *
  * @return XCASH_OK if the signature is valid, otherwise XCASH_ERROR.
 ---------------------------------------------------------------------------------------------------------*/
-int verify_action_data(const char *message)
-{
+int verify_action_data(const char *message) {
   const char *HTTP_HEADERS[] = {"Content-Type: application/json", "Accept: application/json"};
   const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0]);
 
@@ -300,12 +293,13 @@ int verify_action_data(const char *message)
  *   XCASH_ERROR (0) if the delegate is unknown, the IP does not match, or data is invalid.
 ---------------------------------------------------------------------------------------------------------*/
 int verify_the_ip(const char *message, const char *client_ip) {
-  if (!message || !client_ip) {
-    ERROR_PRINT("Null pointer passed to verify_ip");
+
+  if (!message || !client_ip || strlen(client_ip) == 0) {
+    ERROR_PRINT("verify_ip: Null or empty client_ip passed");
     return XCASH_ERROR;
   }
 
- INFO_PRINT("Processing message from client IP: %s", client_ip);
+  INFO_PRINT("Processing message from client IP: %s", client_ip);
 
   char ck_public_address[XCASH_WALLET_LENGTH + 1] = {0};
   char ip_address_trans[IP_LENGTH + 1] = {0};
@@ -315,6 +309,11 @@ int verify_the_ip(const char *message, const char *client_ip) {
   // 1. Extract the public address
   if (parse_json_data(message, "public_address", ck_public_address, sizeof(ck_public_address)) != XCASH_OK) {
     ERROR_PRINT("verify_ip: Failed to parse public_address field");
+    return XCASH_ERROR;
+  }
+
+  if (strlen(ck_public_address) == 0) {
+    ERROR_PRINT("verify_ip: Parsed public_address is empty");
     return XCASH_ERROR;
   }
 
