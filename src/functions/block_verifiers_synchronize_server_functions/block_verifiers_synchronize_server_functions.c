@@ -219,20 +219,15 @@ void server_receive_data_socket_node_to_node_db_sync_data(const char *MESSAGE) {
 
   INFO_PRINT("SYNCING DATA....................................");
 
-  // Step 1: Extract the "json" field from the message
+  // Extract the "json" field from the message
   char json_data[BUFFER_SIZE] = {0};
-  if (parse_json_data("json", MESSAGE, json_data) == 0 || strlen(json_data) == 0) {
-    ERROR_PRINT("Failed to extract 'json' field from sync message");
+  if (parse_json_data(MESSAGE, "json", json_data, sizeof(json_data)) == 0 || strlen(json_data) == 0) {
+    ERROR_PRINT("Failed to parse 'json' from message");
     return;
   }
 
-  // Optional: Log who sent it (if public_address is included)
-  char sender_address[XCASH_WALLET_LENGTH + 1] = {0};
-  if (parse_json_data("public_address", MESSAGE, sender_address) == 1) {
-    INFO_PRINT("Received delegates sync data from %s", sender_address);
-  }
 
-  // Step 2: Convert the JSON string to BSON
+  // Convert the JSON string to BSON
   bson_error_t error;
   bson_t *doc = bson_new_from_json((const uint8_t*)json_data, -1, &error);
   if (!doc) {
@@ -246,7 +241,7 @@ void server_receive_data_socket_node_to_node_db_sync_data(const char *MESSAGE) {
     return;
   }
 
-  // Step 3: Upsert the documents into the delegates collection
+  // Upsert the documents into the delegates collection
   if (!db_upsert_multi_docs(DATABASE_NAME, DB_COLLECTION_DELEGATES, doc, &error)) {
     ERROR_PRINT("Failed to upsert delegates sync data: %s", error.message);
     bson_destroy(doc);

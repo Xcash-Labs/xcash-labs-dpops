@@ -463,8 +463,7 @@ bool create_delegates_db_sync_request(int selected_index) {
 
   char* message = NULL;
   message = create_message_param_list(XMSG_NODES_TO_NODES_DATABASE_SYNC_REQ, params);
-  //  const char* ip = delegates_all[selected_index].IP_address;
-  const char* ip = "seeds.xcashseeds.us";   // US node
+  const char* ip = delegates_all[selected_index].IP_address;
 
   if (send_message_to_ip_or_hostname(ip, XCASH_DPOPS_PORT, message) == XCASH_OK) {
     INFO_PRINT("Sync request sent to delegate %d (%s)", selected_index, ip);
