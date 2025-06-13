@@ -201,21 +201,7 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
 
   INFO_PRINT("Processing message from client IP: %s", client->client_ip);
 
-  char client_ip_address[INET_ADDRSTRLEN];
-  strncpy(client_ip_address, client->client_ip, INET_ADDRSTRLEN - 1);
-  client_ip_address[INET_ADDRSTRLEN - 1] = '\0';
-  INFO_PRINT("Checking IP.....");
-  if (verify_the_ip(data, client_ip_address) == XCASH_ERROR) {
-      INFO_PRINT("Checking IP, return.....");
-    ERROR_PRINT("Failed to validate the IP came from a valid source");
-    return;
-  }
-  INFO_PRINT("Checking IP, return.....");
-
-
-
   char trans_type[128] = {0};
-
   if (strstr(data, "{") && strstr(data, "}")) {
     cJSON* json_obj = cJSON_Parse(data);
     if (!json_obj) {
@@ -238,6 +224,11 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
     return;
   }
  
+  if (verify_the_ip(data, client->client_ip) == XCASH_ERROR) {
+    ERROR_PRINT("Failed to validate the IP came from a valid source");
+    return;
+  }
+
   xcash_msg_t msg_type = get_message_type(trans_type);
 
   if (is_walletsign_type(msg_type)) {
