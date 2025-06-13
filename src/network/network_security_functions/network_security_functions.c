@@ -324,7 +324,7 @@ int verify_the_ip(const char *message, const char *client_ip) {
   snprintf(filter_json, sizeof(filter_json), "{ \"public_address\": \"%s\" }", ck_public_address);
   INFO_PRINT("Public address2: %s", ck_public_address);
 
-  if (read_document_field_from_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, filter_json, "IP_address", ip_address_trans) != XCASH_OK) {
+  if (read_document_field_from_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, filter_json, "IP_address", ip_address_trans, sizeof(ip_address_trans)) != XCASH_OK) {
     ERROR_PRINT("Delegate '%s' not found in DB or missing IP_address", ck_public_address);
     return XCASH_ERROR;
   }
