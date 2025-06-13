@@ -305,6 +305,8 @@ int verify_the_ip(const char *message, const char *client_ip) {
     return XCASH_ERROR;
   }
 
+ INFO_PRINT("Processing message from client IP: %s", client_ip);
+
   char ck_public_address[XCASH_WALLET_LENGTH + 1] = {0};
   char ip_address_trans[IP_LENGTH + 1] = {0};
   char filter_json[256] = {0};
