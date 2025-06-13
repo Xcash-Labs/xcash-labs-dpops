@@ -227,7 +227,7 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
   xcash_msg_t msg_type = get_message_type(trans_type);
 
   INFO_PRINT("Checking IP.....");
-  if (verify_ip(data, client->client_ip) == XCASH_ERROR) {
+  if (verify_ip(data, client) == XCASH_ERROR) {
     ERROR_PRINT("Failed to validate the IP came from a valid source");
     return;
   }

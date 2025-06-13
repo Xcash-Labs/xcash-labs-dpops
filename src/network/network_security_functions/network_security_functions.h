@@ -25,6 +25,6 @@ int sign_data(char *message);
 bool sign_block_blob(const char* block_blob_hex, char* signature_out, size_t sig_out_len);
 int verify_data(const char *message);
 int verify_action_data(const char *message);
-int verify_ip(const char *message, const char *client_ip);
+int verify_ip__new__(const char *message, const server_client_t *client);
 
 #endif
