@@ -299,9 +299,11 @@ int verify_action_data(const char *message)
  *   XCASH_OK (1) if the IP matches a known delegate and (optionally) round part is valid.
  *   XCASH_ERROR (0) if the delegate is unknown, the IP does not match, or data is invalid.
 ---------------------------------------------------------------------------------------------------------*/
-int verify_ip(const char *message, const char *client_ip)
-{
+int verify_ip(const char *message, const char *client_ip) {
   char ck_public_address[XCASH_WALLET_LENGTH + 1] = {0};
+  char ip_address_trans[IP_LENGTH + 1] = {0};
+  char filter_json[256] = {0};
+  char resolved_ip[INET_ADDRSTRLEN] = {0};
 
   // Parse the public address from the message
   if (parse_json_data(message, "public_address", ck_public_address, sizeof(ck_public_address)) != XCASH_OK) {
@@ -309,40 +311,32 @@ int verify_ip(const char *message, const char *client_ip)
     return XCASH_ERROR;
   }
 
-  // Check for local/internal connection
+  // Allow internal loopback IPs
   if (strcmp(client_ip, "127.0.0.1") == 0 || strcmp(client_ip, "::1") == 0) {
     INFO_PRINT("Internal IP access (loopback) from same node: %s", client_ip);
     return XCASH_OK;
   }
 
-  bool found = false;
-  char resolved_ip[INET_ADDRSTRLEN] = {0};
-
-  for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
-    if (strcmp(delegates_all[i].public_address, ck_public_address) == 0) {
-      found = true;
-
-      // Resolve hostname to IP
-      struct hostent *he = gethostbyname(delegates_all[i].IP_address);
-      if (he && he->h_addrtype == AF_INET) {
-        inet_ntop(AF_INET, he->h_addr, resolved_ip, sizeof(resolved_ip));
-      } else {
-        strncpy(resolved_ip, delegates_all[i].IP_address, sizeof(resolved_ip) - 1);
-      }
-
-      // Compare to actual client IP
-      if (strcmp(resolved_ip, client_ip) != 0) {
-        ERROR_PRINT("IP verification failed: Delegate '%s' expected IP/host '%s' (resolved: %s), but message came from %s.",
-          delegates_all[i].delegate_name, delegates_all[i].IP_address, resolved_ip, client_ip);
-        return XCASH_ERROR;
-      }
-
-      return XCASH_OK;
-    }
+  // Fetch the delegate's expected IP address from the database
+  snprintf(filter_json, sizeof(filter_json), "{ \"public_address\": \"%s\" }", ck_public_address);
+  if (read_document_field_from_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, filter_json, "IP_address", ip_address_trans) != XCASH_OK) {
+    ERROR_PRINT("Delegate with public address '%s' not found in database.", ck_public_address);
+    return XCASH_ERROR;
   }
 
-  if (!found) {
-    ERROR_PRINT("Delegate with public address '%s' not found in delegate list.", ck_public_address);
+  // Resolve hostname (if needed)
+  struct hostent *he = gethostbyname(ip_address_trans);
+  if (he && he->h_addrtype == AF_INET) {
+    inet_ntop(AF_INET, he->h_addr, resolved_ip, sizeof(resolved_ip));
+  } else {
+    WARNING_PRINT("Failed to resolve hostname '%s' for delegate '%s'", ip_address_trans, ck_public_address);
+    strncpy(resolved_ip, ip_address_trans, sizeof(resolved_ip) - 1);
+  }
+
+  // Compare resolved IP to client IP
+  if (strcmp(resolved_ip, client_ip) != 0) {
+    ERROR_PRINT("IP verification failed: Delegate '%s' expected IP/host '%s' (resolved: %s), but message came from %s.",
+                ck_public_address, ip_address_trans, resolved_ip, client_ip);
     return XCASH_ERROR;
   }
 
