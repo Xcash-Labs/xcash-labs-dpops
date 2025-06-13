@@ -299,8 +299,8 @@ int verify_action_data(const char *message)
  *   XCASH_OK (1) if the IP matches a known delegate and (optionally) round part is valid.
  *   XCASH_ERROR (0) if the delegate is unknown, the IP does not match, or data is invalid.
 ---------------------------------------------------------------------------------------------------------*/
-int verify_ip(const char *message, const server_client_t *client) {
-  if (!message || !client) {
+int verify_ip(const char *message, const char *client_ip) {
+  if (!message || !client_ip) {
     ERROR_PRINT("Null pointer passed to verify_ip");
     return XCASH_ERROR;
   }
@@ -317,8 +317,8 @@ int verify_ip(const char *message, const server_client_t *client) {
   }
 
   // 2. Allow loopback traffic
-  if (strcmp(client->client_ip, "127.0.0.1") == 0 || strcmp(client->client_ip, "::1") == 0) {
-    INFO_PRINT("Internal loopback connection from: %s", client->client_ip);
+  if (strcmp(client_ip, "127.0.0.1") == 0 || strcmp(client_ip, "::1") == 0) {
+    INFO_PRINT("Internal loopback connection from: %s", client_ip);
     return XCASH_OK;
   }
 
@@ -358,9 +358,9 @@ int verify_ip(const char *message, const server_client_t *client) {
   }
 
   // 5. Compare
-  if (strcmp(resolved_ip, client->client_ip) != 0) {
+  if (strcmp(resolved_ip, client_ip) != 0) {
     ERROR_PRINT("IP verification failed: Delegate '%s' expects '%s' (resolved: %s), got: %s",
-                ck_public_address, ip_address_trans, resolved_ip, client->client_ip);
+                ck_public_address, ip_address_trans, resolved_ip, client_ip);
     return XCASH_ERROR;
   }
 
