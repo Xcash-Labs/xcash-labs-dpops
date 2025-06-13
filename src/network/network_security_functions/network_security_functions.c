@@ -304,6 +304,8 @@ int verify_the_ip(const char *message, const char *client_ip) {
   char filter_json[256] = {0};
   char resolved_ip[INET_ADDRSTRLEN] = {0};
 
+  INFO_PRINT("Message: %s", data);
+
   // 1. Extract the public address
   if (parse_json_data(message, "public_address", ck_public_address, sizeof(ck_public_address)) != XCASH_OK) {
     ERROR_PRINT("verify_ip: Failed to parse public_address field");
