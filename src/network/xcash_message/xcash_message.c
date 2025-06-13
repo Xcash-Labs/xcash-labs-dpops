@@ -199,7 +199,7 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
     return;
   }
 
-  DEBUG_PRINT("Processing message from client IP: %s", client->client_ip);
+  INFO_PRINT("Processing message from client IP: %s", client->client_ip);
 
   //char client_ip[INET_ADDRSTRLEN];
 
