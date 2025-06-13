@@ -318,10 +318,12 @@ int verify_the_ip(const char *message, const char *client_ip) {
     return XCASH_OK;
   }
 
-  INFO_PRINT("Public address: %s", ck_public_address);
+  INFO_PRINT("Public address1: %s", ck_public_address);
 
   // 3. Get the IP/hostname from DB
   snprintf(filter_json, sizeof(filter_json), "{ \"public_address\": \"%s\" }", ck_public_address);
+  INFO_PRINT("Public address2: %s", ck_public_address);
+
   if (read_document_field_from_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, filter_json, "IP_address", ip_address_trans) != XCASH_OK) {
     ERROR_PRINT("Delegate '%s' not found in DB or missing IP_address", ck_public_address);
     return XCASH_ERROR;
@@ -330,7 +332,7 @@ int verify_the_ip(const char *message, const char *client_ip) {
   ip_address_trans[sizeof(ip_address_trans) - 1] = '\0';
 
 
-  INFO_PRINT("Public address: %s", ck_public_address);
+  INFO_PRINT("Public address4: %s", ck_public_address);
   INFO_PRINT("IP address: %s", ip_address_trans);
 
 
