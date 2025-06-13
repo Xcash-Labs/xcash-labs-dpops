@@ -4,7 +4,6 @@ const xcash_msg_t WALLET_SIGN_MESSAGES[] = {
     XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_VRF_DATA,
     XMSG_NODES_TO_NODES_VOTE_MAJORITY_RESULTS,
     XMSG_NODES_TO_NODES_DATABASE_SYNC_REQ,
-    XMSG_NODES_TO_NODES_DATABASE_SYNC_DATA,
     XMSG_NONE};
 const size_t WALLET_SIGN_MESSAGES_COUNT = ARRAY_SIZE(WALLET_SIGN_MESSAGES) - 1;
 
@@ -226,6 +225,7 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
   }
  
   xcash_msg_t msg_type = get_message_type(trans_type);
+
 
   if (is_walletsign_type(msg_type)) {
     if (verify_data(data) == XCASH_ERROR) {
