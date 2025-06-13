@@ -357,45 +357,50 @@ int verify_ip(const char *message, const char *client_ip) {
   char filter_json[256] = {0};
   char resolved_ip[INET_ADDRSTRLEN] = {0};
 
-  // Parse the public address from the message
+  // 1. Extract the public address
   if (parse_json_data(message, "public_address", ck_public_address, sizeof(ck_public_address)) != XCASH_OK) {
     ERROR_PRINT("verify_ip: Failed to parse public_address field");
     return XCASH_ERROR;
   }
 
-  // Allow internal loopback IPs
+  // 2. Allow loopback traffic
   if (strcmp(client_ip, "127.0.0.1") == 0 || strcmp(client_ip, "::1") == 0) {
-    INFO_PRINT("Internal IP access (loopback) from same node: %s", client_ip);
+    INFO_PRINT("Internal loopback connection from: %s", client_ip);
     return XCASH_OK;
   }
 
-  // Fetch the delegate's expected IP address or hostname
+  // 3. Get the IP/hostname from DB
   snprintf(filter_json, sizeof(filter_json), "{ \"public_address\": \"%s\" }", ck_public_address);
   if (read_document_field_from_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, filter_json, "IP_address", ip_address_trans) != XCASH_OK) {
-    ERROR_PRINT("Delegate with public address '%s' not found in database.", ck_public_address);
+    ERROR_PRINT("Delegate '%s' not found in DB or missing IP_address", ck_public_address);
     return XCASH_ERROR;
   }
 
-  // Resolve hostname to IP using getaddrinfo
+  // 4. Resolve the hostname/IP
   struct addrinfo hints, *res = NULL;
   memset(&hints, 0, sizeof(hints));
-  hints.ai_family = AF_INET;  // IPv4 only for now
+  hints.ai_family = AF_INET;
   hints.ai_socktype = SOCK_STREAM;
 
   int gai_ret = getaddrinfo(ip_address_trans, NULL, &hints, &res);
   if (gai_ret != 0 || res == NULL) {
-    WARNING_PRINT("Failed to resolve IP/host '%s' for delegate '%s': %s", ip_address_trans, ck_public_address, gai_strerror(gai_ret));
+    WARNING_PRINT("getaddrinfo failed for '%s': %s", ip_address_trans, gai_strerror(gai_ret));
+    // Fallback: use raw string as IP
     strncpy(resolved_ip, ip_address_trans, sizeof(resolved_ip) - 1);
     resolved_ip[sizeof(resolved_ip) - 1] = '\0';
   } else {
     struct sockaddr_in *addr = (struct sockaddr_in *)res->ai_addr;
-    inet_ntop(AF_INET, &(addr->sin_addr), resolved_ip, sizeof(resolved_ip));
+    if (!inet_ntop(AF_INET, &(addr->sin_addr), resolved_ip, sizeof(resolved_ip))) {
+      ERROR_PRINT("inet_ntop failed for '%s'", ip_address_trans);
+      freeaddrinfo(res);
+      return XCASH_ERROR;
+    }
     freeaddrinfo(res);
   }
 
-  // Compare resolved IP to client IP
+  // 5. Compare
   if (strcmp(resolved_ip, client_ip) != 0) {
-    ERROR_PRINT("IP verification failed: Delegate '%s' expected IP/host '%s' (resolved: %s), but message came from %s.",
+    ERROR_PRINT("IP verification failed: Delegate '%s' expects '%s' (resolved: %s), got: %s",
                 ck_public_address, ip_address_trans, resolved_ip, client_ip);
     return XCASH_ERROR;
   }
