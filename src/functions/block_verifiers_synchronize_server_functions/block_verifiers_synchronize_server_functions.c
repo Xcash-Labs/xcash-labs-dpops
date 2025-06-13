@@ -155,28 +155,44 @@ void server_receive_data_socket_node_to_node_db_sync_req(server_client_t *client
   bson_t reply;
   bson_error_t error;
 
-  // Export the collection to BSON
+  // Export the collection to BSON (with _id included)
   if (!db_export_collection_to_bson(DATABASE_NAME, DB_COLLECTION_DELEGATES, &reply, &error)) {
     ERROR_PRINT("Failed to export collection: %s", error.message);
     return;
   }
 
-  // Convert BSON to raw buffer for sending
-  uint32_t bson_len = 0;
-  uint8_t *bson_buf = bson_destroy_with_steal(&reply, true, &bson_len);
+  // Convert BSON to canonical extended JSON
+  char* json_string = bson_as_canonical_extended_json(&reply, NULL);
+  bson_destroy(&reply);
 
-  if (!bson_buf) {
-    ERROR_PRINT("Failed to convert BSON to buffer");
+  if (!json_string) {
+    ERROR_PRINT("Failed to convert BSON to JSON");
     return;
   }
 
-  // Send raw BSON data
-  //if (send_data(client, bson_buf, bson_len) != bson_len) {
-  //  ERROR_PRINT("Failed to send the DB sync message to %s", client->client_ip);
-  //  bson_free(bson_buf);
-  //  return;
-  //}
+  // Wrap the message using your key-value format
+  const char* params[] = {
+    "message_settings", "XMSG_NODES_TO_NODES_DATABASE_SYNC_DATA",
+    "public_address", xcash_wallet_public_address,
+    "json", json_string,
+    NULL
+  };
 
-  INFO_PRINT("Sent %u bytes of DB sync BSON to %s", bson_len, client->client_ip);
-  bson_free(bson_buf);
+  char* message = create_message_param_list(XMSG_NODES_TO_NODES_DATABASE_SYNC_DATA, params);
+
+  if (!message) {
+    ERROR_PRINT("Failed to create sync message for %s", client->client_ip);
+    bson_free(json_string);
+    return;
+  }
+
+  // Send the complete message
+  if (send_data(client, (const unsigned char*)message, strlen(message)) <= 0) {
+    ERROR_PRINT("Failed to send the DB sync message to %s", client->client_ip);
+  } else {
+    INFO_PRINT("Sent delegate sync message to %s", client->client_ip);
+  }
+
+  bson_free(json_string);
+  free(message);
 }

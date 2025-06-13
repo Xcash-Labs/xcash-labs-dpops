@@ -86,7 +86,7 @@ bool db_find_doc(const char *db_name, const char *collection_name, const bson_t 
   mongoc_cursor_destroy(cursor);
   mongoc_collection_destroy(collection);
   mongoc_client_pool_push(database_client_thread_pool, client);
-  INFO_PRINT("HERE8............");
+
   return true;
 }
 
