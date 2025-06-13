@@ -186,7 +186,6 @@ void server_receive_data_socket_node_to_node_db_sync_req(server_client_t *client
 
   // Wrap the message using your key-value format
   const char* params[] = {
-    "message_settings", "XMSG_NODES_TO_NODES_DATABASE_SYNC_DATA",
     "public_address", xcash_wallet_public_address,
     "json", json_string,
     NULL
