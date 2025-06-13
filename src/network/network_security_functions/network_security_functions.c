@@ -326,6 +326,10 @@ int verify_the_ip(const char *message, const char *client_ip) {
   ip_address_trans[sizeof(ip_address_trans) - 1] = '\0';
 
 
+  INFO_PRINT("Public address: %s", ck_public_address);
+  INFO_PRINT("IP address: %s", ip_address_trans);
+
+
 /*
   // 4. Resolve the hostname/IP
   struct addrinfo hints = {0}, *res = NULL;
