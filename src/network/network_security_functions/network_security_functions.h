@@ -8,6 +8,7 @@
 #include <mongoc/mongoc.h>
 #include <bson/bson.h>
 #include <netdb.h>
+#include <sys/socket.h>
 #include <arpa/inet.h>
 #include "config.h"
 #include "macro_functions.h"
