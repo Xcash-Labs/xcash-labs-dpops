@@ -310,11 +310,6 @@ int verify_the_ip(const char *message, const char *client_ip) {
     return XCASH_ERROR;
   }
 
-  if (strlen(ck_public_address) == 0) {
-    ERROR_PRINT("verify_ip: Parsed public_address is empty");
-    return XCASH_ERROR;
-  }
-
   // 2. Allow loopback traffic
   if (strcmp(client_ip, "127.0.0.1") == 0 || strcmp(client_ip, "::1") == 0) {
     INFO_PRINT("Internal loopback connection from: %s", client_ip);
@@ -330,6 +325,8 @@ int verify_the_ip(const char *message, const char *client_ip) {
 
   ip_address_trans[sizeof(ip_address_trans) - 1] = '\0';
 
+
+/*
   // 4. Resolve the hostname/IP
   struct addrinfo hints = {0}, *res = NULL;
   hints.ai_family = AF_INET;
@@ -355,6 +352,7 @@ int verify_the_ip(const char *message, const char *client_ip) {
     }
     freeaddrinfo(res);
   }
+*/
 
   // 5. Compare
   if (strcmp(resolved_ip, client_ip) != 0) {
