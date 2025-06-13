@@ -200,8 +200,7 @@ void server_receive_data_socket_node_to_node_db_sync_req(server_client_t *client
   }
 
   // Send the complete message
-
-  if (send_message_to_ip_or_hostname(client->client_ip, (const unsigned char*)message, strlen(message)) <= 0) {
+  if (send_message_to_ip_or_hostname(client->client_ip, XCASH_DPOPS_PORT, message) {
     ERROR_PRINT("Failed to send the DB sync message to %s", client->client_ip);
   } else {
     INFO_PRINT("Sent delegate sync message to %s", client->client_ip);
