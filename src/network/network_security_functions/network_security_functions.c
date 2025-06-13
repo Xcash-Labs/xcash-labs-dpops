@@ -299,7 +299,7 @@ int verify_action_data(const char *message)
  *   XCASH_OK (1) if the IP matches a known delegate and (optionally) round part is valid.
  *   XCASH_ERROR (0) if the delegate is unknown, the IP does not match, or data is invalid.
 ---------------------------------------------------------------------------------------------------------*/
-int verify_ip(const char *message, const char *client_ip) {
+int verify_the_ip(const char *message, const char *client_ip) {
   if (!message || !client_ip) {
     ERROR_PRINT("Null pointer passed to verify_ip");
     return XCASH_ERROR;

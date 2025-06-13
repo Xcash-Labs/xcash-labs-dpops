@@ -204,7 +204,7 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
   //char client_ip[INET_ADDRSTRLEN];
 
   INFO_PRINT("Checking IP.....");
-  if (verify_ip(data, client->client_ip) == XCASH_ERROR) {
+  if (verify_the_ip(data, client->client_ip) == XCASH_ERROR) {
     ERROR_PRINT("Failed to validate the IP came from a valid source");
     return;
   }
