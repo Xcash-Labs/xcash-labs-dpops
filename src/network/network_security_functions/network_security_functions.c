@@ -304,40 +304,27 @@ int verify_the_ip(const char *message, const char *client_ip) {
   char filter_json[256] = {0};
   char resolved_ip[INET_ADDRSTRLEN] = {0};
 
-  INFO_PRINT("Message: %s", message);
-
-  // 1. Extract the public address
+  // Extract the public address
   if (parse_json_data(message, "public_address", ck_public_address, sizeof(ck_public_address)) != XCASH_OK) {
     ERROR_PRINT("verify_ip: Failed to parse public_address field");
     return XCASH_ERROR;
   }
 
-  // 2. Allow loopback traffic
+  // Allow loopback traffic
   if (strcmp(client_ip, "127.0.0.1") == 0 || strcmp(client_ip, "::1") == 0) {
-    INFO_PRINT("Internal loopback connection from: %s", client_ip);
+    DEBUG_PRINT("Internal loopback connection from: %s", client_ip);
     return XCASH_OK;
   }
 
-  INFO_PRINT("Public address1: %s", ck_public_address);
-
-  // 3. Get the IP/hostname from DB
+  // Get the IP/hostname from DB
   snprintf(filter_json, sizeof(filter_json), "{ \"public_address\": \"%s\" }", ck_public_address);
-  INFO_PRINT("Public address2: %s", ck_public_address);
-
   if (read_document_field_from_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, filter_json, "IP_address", ip_address_trans, sizeof(ip_address_trans)) != XCASH_OK) {
     ERROR_PRINT("Delegate '%s' not found in DB or missing IP_address", ck_public_address);
     return XCASH_ERROR;
   }
-
   ip_address_trans[sizeof(ip_address_trans) - 1] = '\0';
 
-
-  INFO_PRINT("Public address4: %s", ck_public_address);
-  INFO_PRINT("IP address: %s", ip_address_trans);
-
-
-/*
-  // 4. Resolve the hostname/IP
+  // Resolve the hostname/IP
   struct addrinfo hints = {0}, *res = NULL;
   hints.ai_family = AF_INET;
   hints.ai_socktype = SOCK_STREAM;
@@ -362,9 +349,8 @@ int verify_the_ip(const char *message, const char *client_ip) {
     }
     freeaddrinfo(res);
   }
-*/
 
-  // 5. Compare
+  // Compare
   if (strcmp(resolved_ip, client_ip) != 0) {
     ERROR_PRINT("IP verification failed: Delegate '%s' expects '%s' (resolved: %s), got: %s",
                 ck_public_address, ip_address_trans, resolved_ip, client_ip);
@@ -376,6 +362,6 @@ int verify_the_ip(const char *message, const char *client_ip) {
     ERROR_PRINT("verify_ip: Null or empty client_ip trashed in code");
     return XCASH_ERROR;
   }
-  INFO_PRINT("Returning control back to calling program.....");
+  
   return XCASH_OK;
 }
