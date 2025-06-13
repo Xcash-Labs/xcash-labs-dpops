@@ -299,8 +299,6 @@ int verify_the_ip(const char *message, const char *client_ip) {
     return XCASH_ERROR;
   }
 
-  INFO_PRINT("Processing message from client IP: %s", client_ip);
-
   char ck_public_address[XCASH_WALLET_LENGTH + 1] = {0};
   char ip_address_trans[IP_LENGTH + 1] = {0};
   char filter_json[256] = {0};
@@ -365,6 +363,11 @@ int verify_the_ip(const char *message, const char *client_ip) {
     return XCASH_ERROR;
   }
 
+
+  if (!message || !client_ip || strlen(client_ip) == 0) {
+    ERROR_PRINT("verify_ip: Null or empty client_ip passed");
+    return XCASH_ERROR;
+  }
   INFO_PRINT("Returning control back to calling program.....");
   return XCASH_OK;
 }
