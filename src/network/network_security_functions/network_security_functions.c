@@ -312,6 +312,8 @@ int verify_the_ip(const char *message, const char *client_ip) {
     return XCASH_ERROR;
   }
 
+    INFO_PRINT("Public address: %s", ck_public_address);
+
   // 2. Allow loopback traffic
   if (strcmp(client_ip, "127.0.0.1") == 0 || strcmp(client_ip, "::1") == 0) {
     INFO_PRINT("Internal loopback connection from: %s", client_ip);
