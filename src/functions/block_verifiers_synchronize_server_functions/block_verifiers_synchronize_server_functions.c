@@ -193,8 +193,6 @@ void server_receive_data_socket_node_to_node_db_sync_req(server_client_t *client
 
   char* message = create_message_param_list(XMSG_NODES_TO_NODES_DATABASE_SYNC_DATA, params);
 
-  INFO_PRINT("Data: %s", message);
-
   if (!message) {
     ERROR_PRINT("Failed to create sync message for %s", client->client_ip);
     bson_free(json_string);
@@ -202,7 +200,7 @@ void server_receive_data_socket_node_to_node_db_sync_req(server_client_t *client
   }
 
   char escaped[BUFFER_SIZE] = {0};
-  strncpy(escaped, raw_data, BUFFER_SIZE);
+  strncpy(escaped, message, BUFFER_SIZE);
   string_replace(escaped, BUFFER_SIZE, "\"", "\\\"");
 
   INFO_PRINT("Data: %s", escaped);
