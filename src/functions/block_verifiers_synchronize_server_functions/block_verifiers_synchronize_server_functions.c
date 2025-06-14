@@ -165,54 +165,6 @@ Behavior:
 Returns:
   None
 ---------------------------------------------------------------------------------------------------------*/
-void server_receive_data_socket_node_to_node_db_sync_req__OLD__(server_client_t *client) {
-  bson_t reply;
-  bson_error_t error;
-
-  // Export the collection to BSON (with _id included)
-  if (!db_export_collection_to_bson(DATABASE_NAME, DB_COLLECTION_DELEGATES, &reply, &error)) {
-    ERROR_PRINT("Failed to export collection: %s", error.message);
-    return;
-  }
-
-  // Convert BSON to canonical extended JSON
-  char* json_string = bson_as_canonical_extended_json(&reply, NULL);
-  bson_destroy(&reply);
-
-  if (!json_string) {
-    ERROR_PRINT("Failed to convert BSON to JSON");
-    return;
-  }
-
-  // Wrap the message using your key-value format
-  const char* params[] = {
-    "public_address", xcash_wallet_public_address,
-    "json", json_string,
-    NULL
-  };
-
-  char* message = create_message_param_list(XMSG_NODES_TO_NODES_DATABASE_SYNC_DATA, params);
-
-  if (!message) {
-    ERROR_PRINT("Failed to create sync message for %s", client->client_ip);
-    bson_free(json_string);
-    return;
-  }
-
-  INFO_PRINT("Data: %s", message);
-
-  // Send the complete message
-  if (send_message_to_ip_or_hostname(client->client_ip, XCASH_DPOPS_PORT, message) !=  XCASH_OK) {
-    ERROR_PRINT("Failed to send the DB sync message to %s", client->client_ip);
-  }
-
-  INFO_PRINT("Sent delegate sync message to %s", client->client_ip);
-  bson_free(json_string);
-  free(message);
-}
-
-
-
 void server_receive_data_socket_node_to_node_db_sync_req(server_client_t *client) {
   bson_t reply;
   bson_error_t error;
@@ -257,53 +209,30 @@ void server_receive_data_socket_node_to_node_db_sync_req(server_client_t *client
   free(message_str);
 }
 
-
-
-
-
-
-
-
-void server_receive_data_socket_node_to_node_db_sync_data__OLD__(const char *MESSAGE) {
-  if (!MESSAGE) {
-    ERROR_PRINT("Received null MESSAGE in sync data handler");
-    return;
-  }
-
-  // Extract the "json" field from the message
-  char json_data[BUFFER_SIZE] = {0};
-  if (parse_json_data(MESSAGE, "json", json_data, sizeof(json_data)) == 0 || strlen(json_data) == 0) {
-    ERROR_PRINT("Failed to parse 'json' from message");
-    return;
-  }
-
-
-  // Convert the JSON string to BSON
-  bson_error_t error;
-  bson_t *doc = bson_new_from_json((const uint8_t*)json_data, -1, &error);
-  if (!doc) {
-    ERROR_PRINT("Failed to parse BSON from JSON: %s", error.message);
-    return;
-  }
-
-  if (!db_drop(DATABASE_NAME, DB_COLLECTION_DELEGATES, &error)) {
-    ERROR_PRINT("Failed to clear old delegates table before sync: %s", error.message);
-    bson_destroy(doc);
-    return;
-  }
-
-  // Upsert the documents into the delegates collection
-  if (!db_upsert_multi_docs(DATABASE_NAME, DB_COLLECTION_DELEGATES, doc, &error)) {
-    ERROR_PRINT("Failed to upsert delegates sync data: %s", error.message);
-    bson_destroy(doc);
-    return;
-  }
-
-  INFO_PRINT("Successfully updated delegates database from sync message");
-  bson_destroy(doc);
-}
-
-
+/*---------------------------------------------------------------------------------------------------------
+ * @brief Handles incoming delegate database sync messages from other nodes.
+ *
+ * This function is called when a node receives a `NODES_TO_NODES_DATABASE_SYNC_DATA` message.
+ * It parses the received JSON message, extracts the embedded "json" object containing delegate
+ * records, converts it to BSON, clears the current delegates collection, and upserts the new data
+ * into the MongoDB database.
+ *
+ * The "json" field in the incoming message should be a valid JSON object (not a stringified JSON)
+ * representing multiple delegate documents keyed by index ("0", "1", etc).
+ *
+ * Example message format:
+ * {
+ *   "message_settings": "NODES_TO_NODES_DATABASE_SYNC_DATA",
+ *   "public_address": "XCA1...",
+ *   "json": {
+ *     "0": { "_id": "...", "public_address": "...", ... },
+ *     "1": { "_id": "...", "public_address": "...", ... },
+ *     ...
+ *   }
+ * }
+ *
+ * @param MESSAGE The full raw JSON message string received from another node.
+ ---------------------------------------------------------------------------------------------------------*/
 void server_receive_data_socket_node_to_node_db_sync_data(const char *MESSAGE) {
   if (!MESSAGE) {
     ERROR_PRINT("Received null MESSAGE in sync data handler");
@@ -343,6 +272,8 @@ void server_receive_data_socket_node_to_node_db_sync_data(const char *MESSAGE) {
     ERROR_PRINT("Failed to parse BSON from JSON: %s", error.message);
     return;
   }
+
+//               add locking   pthread_mutex_lock(&delegates_mutex);
 
   // Drop old delegates collection before sync
   if (!db_drop(DATABASE_NAME, DB_COLLECTION_DELEGATES, &error)) {
