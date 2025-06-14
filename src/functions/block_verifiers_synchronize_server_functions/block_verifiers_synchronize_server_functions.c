@@ -201,14 +201,14 @@ void server_receive_data_socket_node_to_node_db_sync_req(server_client_t *client
     return;
   }
 
+  char escaped[BUFFER_SIZE] = {0};
+  strncpy(escaped, raw_data, BUFFER_SIZE);
+  string_replace(escaped, BUFFER_SIZE, "\"", "\\\"");
 
-
-
-
-
+  INFO_PRINT("Data: %s", escaped);
 
   // Send the complete message
-  if (send_message_to_ip_or_hostname(client->client_ip, XCASH_DPOPS_PORT, message) ==  XCASH_OK) {
+  if (send_message_to_ip_or_hostname(client->client_ip, XCASH_DPOPS_PORT, escaped) ==  XCASH_OK) {
     ERROR_PRINT("Failed to send the DB sync message to %s", client->client_ip);
   }
 
@@ -216,6 +216,12 @@ void server_receive_data_socket_node_to_node_db_sync_req(server_client_t *client
   bson_free(json_string);
   free(message);
 }
+
+
+
+
+
+
 
 void server_receive_data_socket_node_to_node_db_sync_data(const char *MESSAGE) {
   if (!MESSAGE) {
