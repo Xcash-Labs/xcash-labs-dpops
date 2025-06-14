@@ -193,19 +193,26 @@ void server_receive_data_socket_node_to_node_db_sync_req(server_client_t *client
 
   char* message = create_message_param_list(XMSG_NODES_TO_NODES_DATABASE_SYNC_DATA, params);
 
+  INFO_PRINT("Data: %s", message);
+
   if (!message) {
     ERROR_PRINT("Failed to create sync message for %s", client->client_ip);
     bson_free(json_string);
     return;
   }
 
+
+
+
+
+
+
   // Send the complete message
-  if (send_message_to_ip_or_hostname(client->client_ip, XCASH_DPOPS_PORT, message)) {
+  if (send_message_to_ip_or_hostname(client->client_ip, XCASH_DPOPS_PORT, message) ==  XCASH_OK) {
     ERROR_PRINT("Failed to send the DB sync message to %s", client->client_ip);
-  } else {
-    INFO_PRINT("Sent delegate sync message to %s", client->client_ip);
   }
 
+  INFO_PRINT("Sent delegate sync message to %s", client->client_ip);
   bson_free(json_string);
   free(message);
 }
