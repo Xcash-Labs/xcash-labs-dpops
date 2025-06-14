@@ -310,25 +310,48 @@ void server_receive_data_socket_node_to_node_db_sync_data(const char *MESSAGE) {
     return;
   }
 
-  char json_data[BUFFER_SIZE] = {0};
-  if (parse_json_data(MESSAGE, "json", json_data, sizeof(json_data)) == 0 || strlen(json_data) == 0) {
-    ERROR_PRINT("Failed to parse 'json' from message");
+  // Parse the incoming message into cJSON
+  cJSON *root = cJSON_Parse(MESSAGE);
+  if (!root) {
+    ERROR_PRINT("Failed to parse root JSON message");
     return;
   }
 
+  // Extract the embedded JSON object from "json"
+  cJSON *json_field = cJSON_GetObjectItemCaseSensitive(root, "json");
+  if (!json_field || !cJSON_IsObject(json_field)) {
+    ERROR_PRINT("Field 'json' not found or not a JSON object");
+    cJSON_Delete(root);
+    return;
+  }
+
+  // Serialize the "json" object into a compact string
+  char *json_compact = cJSON_PrintUnformatted(json_field);
+  if (!json_compact) {
+    ERROR_PRINT("Failed to serialize 'json' field");
+    cJSON_Delete(root);
+    return;
+  }
+
+  // Convert the JSON string to BSON
   bson_error_t error;
-  bson_t *doc = bson_new_from_json((const uint8_t *)json_data, -1, &error);
+  bson_t *doc = bson_new_from_json((const uint8_t *)json_compact, -1, &error);
+  free(json_compact);
+  cJSON_Delete(root);
+
   if (!doc) {
     ERROR_PRINT("Failed to parse BSON from JSON: %s", error.message);
     return;
   }
 
+  // Drop old delegates collection before sync
   if (!db_drop(DATABASE_NAME, DB_COLLECTION_DELEGATES, &error)) {
     ERROR_PRINT("Failed to clear old delegates table before sync: %s", error.message);
     bson_destroy(doc);
     return;
   }
 
+  // Insert new delegate data
   if (!db_upsert_multi_docs(DATABASE_NAME, DB_COLLECTION_DELEGATES, doc, &error)) {
     ERROR_PRINT("Failed to upsert delegates sync data: %s", error.message);
     bson_destroy(doc);
