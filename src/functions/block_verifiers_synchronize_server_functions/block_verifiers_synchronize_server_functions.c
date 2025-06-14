@@ -264,7 +264,7 @@ void server_receive_data_socket_node_to_node_db_sync_req(server_client_t *client
 
 
 
-void server_receive_data_socket_node_to_node_db_sync_data(const char *MESSAGE) {
+void server_receive_data_socket_node_to_node_db_sync_data__OLD__(const char *MESSAGE) {
   if (!MESSAGE) {
     ERROR_PRINT("Received null MESSAGE in sync data handler");
     return;
@@ -293,6 +293,42 @@ void server_receive_data_socket_node_to_node_db_sync_data(const char *MESSAGE) {
   }
 
   // Upsert the documents into the delegates collection
+  if (!db_upsert_multi_docs(DATABASE_NAME, DB_COLLECTION_DELEGATES, doc, &error)) {
+    ERROR_PRINT("Failed to upsert delegates sync data: %s", error.message);
+    bson_destroy(doc);
+    return;
+  }
+
+  INFO_PRINT("Successfully updated delegates database from sync message");
+  bson_destroy(doc);
+}
+
+
+void server_receive_data_socket_node_to_node_db_sync_data(const char *MESSAGE) {
+  if (!MESSAGE) {
+    ERROR_PRINT("Received null MESSAGE in sync data handler");
+    return;
+  }
+
+  char json_data[BUFFER_SIZE] = {0};
+  if (parse_json_data(MESSAGE, "json", json_data, sizeof(json_data)) == 0 || strlen(json_data) == 0) {
+    ERROR_PRINT("Failed to parse 'json' from message");
+    return;
+  }
+
+  bson_error_t error;
+  bson_t *doc = bson_new_from_json((const uint8_t *)json_data, -1, &error);
+  if (!doc) {
+    ERROR_PRINT("Failed to parse BSON from JSON: %s", error.message);
+    return;
+  }
+
+  if (!db_drop(DATABASE_NAME, DB_COLLECTION_DELEGATES, &error)) {
+    ERROR_PRINT("Failed to clear old delegates table before sync: %s", error.message);
+    bson_destroy(doc);
+    return;
+  }
+
   if (!db_upsert_multi_docs(DATABASE_NAME, DB_COLLECTION_DELEGATES, doc, &error)) {
     ERROR_PRINT("Failed to upsert delegates sync data: %s", error.message);
     bson_destroy(doc);
