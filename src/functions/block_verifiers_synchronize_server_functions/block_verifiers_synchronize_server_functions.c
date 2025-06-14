@@ -165,7 +165,7 @@ Behavior:
 Returns:
   None
 ---------------------------------------------------------------------------------------------------------*/
-void server_receive_data_socket_node_to_node_db_sync_req(server_client_t *client) {
+void server_receive_data_socket_node_to_node_db_sync_req__OLD__(server_client_t *client) {
   bson_t reply;
   bson_error_t error;
 
@@ -213,6 +213,53 @@ void server_receive_data_socket_node_to_node_db_sync_req(server_client_t *client
 
 
 
+void server_receive_data_socket_node_to_node_db_sync_req(server_client_t *client) {
+  bson_t reply;
+  bson_error_t error;
+
+  if (!db_export_collection_to_bson(DATABASE_NAME, DB_COLLECTION_DELEGATES, &reply, &error)) {
+    ERROR_PRINT("Failed to export collection: %s", error.message);
+    return;
+  }
+
+  char* json_string = bson_as_canonical_extended_json(&reply, NULL);
+  bson_destroy(&reply);
+  if (!json_string) {
+    ERROR_PRINT("Failed to convert BSON to JSON");
+    return;
+  }
+
+  cJSON* message = cJSON_CreateObject();
+  cJSON_AddStringToObject(message, "message_settings", XMSG_NODES_TO_NODES_DATABASE_SYNC_DATA);
+  cJSON_AddStringToObject(message, "public_address", xcash_wallet_public_address);
+
+  // Parse the JSON string to object
+  cJSON* json_data = cJSON_Parse(json_string);
+  bson_free(json_string);
+  if (!json_data) {
+    ERROR_PRINT("Failed to parse inner JSON data");
+    cJSON_Delete(message);
+    return;
+  }
+
+  cJSON_AddItemToObject(message, "json", json_data);  // now added as actual nested object
+
+  char* message_str = cJSON_PrintUnformatted(message);
+  cJSON_Delete(message);
+
+  // Send message
+  if (send_message_to_ip_or_hostname(client->client_ip, XCASH_DPOPS_PORT, message_str) != XCASH_OK) {
+    ERROR_PRINT("Failed to send the DB sync message to %s", client->client_ip);
+  } else {
+    INFO_PRINT("Sent delegate sync message to %s", client->client_ip);
+  }
+
+  free(message_str);
+}
+
+
+
+
 
 
 
@@ -222,8 +269,6 @@ void server_receive_data_socket_node_to_node_db_sync_data(const char *MESSAGE) {
     ERROR_PRINT("Received null MESSAGE in sync data handler");
     return;
   }
-
-  INFO_PRINT("SYNCING DATA....................................");
 
   // Extract the "json" field from the message
   char json_data[BUFFER_SIZE] = {0};
