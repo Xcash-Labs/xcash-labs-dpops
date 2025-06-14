@@ -106,7 +106,7 @@ xcash_round_result_t process_round(void) {
 
   // Get hash for delegates collection
   memset(delegates_hash, 0, sizeof(delegates_hash));
-  if (!hash_delegates_collection(delegates_hash)) {
+  if (!hash_delegates_collection(delegates_hash, false)) {
     ERROR_PRINT("Failed to create delegates MD5 hash");
     return ROUND_ERROR;
   }
