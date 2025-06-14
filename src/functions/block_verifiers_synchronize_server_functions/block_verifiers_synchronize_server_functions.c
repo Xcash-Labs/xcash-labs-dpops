@@ -230,7 +230,7 @@ void server_receive_data_socket_node_to_node_db_sync_req(server_client_t *client
   }
 
   cJSON* message = cJSON_CreateObject();
-  cJSON_AddStringToObject(message, "message_settings", XMSG_NODES_TO_NODES_DATABASE_SYNC_DATA);
+  cJSON_AddStringToObject(message, "message_settings", "NODES_TO_NODES_DATABASE_SYNC_DATA");
   cJSON_AddStringToObject(message, "public_address", xcash_wallet_public_address);
 
   // Parse the JSON string to object
