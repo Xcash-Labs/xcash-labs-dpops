@@ -1,7 +1,5 @@
 #include "xcash_delegates.h"
 
-// delegates_t temp_instance;
-
 // Helper function to get the position of a delegate in the network_data_nodes_list
 int get_network_data_node_position(const char* public_address) {
   for (int i = 0; i < network_data_nodes_amount; i++) {
@@ -144,13 +142,15 @@ int read_organize_delegates(delegates_t* delegates, size_t* delegates_count_resu
         }
       }
 
-      if (!skip_delegate) {
+      if (!skip_delegate &&
+          strlen(delegates[delegate_index].public_address) > 0 &&
+          strlen(delegates[delegate_index].IP_address) > 0) {
         strncpy(delegates[delegate_index].online_status, "false", sizeof(delegates[delegate_index].online_status));
         delegates[delegate_index].online_status[sizeof(delegates[delegate_index].online_status) - 1] = '\0';
+
         delegate_index++;
-      } else {
-        WARNING_PRINT("Skipping newly added delegate...");
       }
+      
     }
   }
 

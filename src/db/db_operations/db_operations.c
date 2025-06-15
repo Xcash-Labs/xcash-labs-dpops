@@ -33,6 +33,7 @@ bool db_find_doc(const char *db_name, const char *collection_name, const bson_t 
   mongoc_collection_t *collection;
   mongoc_cursor_t *cursor;
   const bson_t *doc = NULL;
+  bson_t *opts = NULL;
 
   // Pop a client from the pool
   client = mongoc_client_pool_pop(database_client_thread_pool);
@@ -49,7 +50,6 @@ bool db_find_doc(const char *db_name, const char *collection_name, const bson_t 
     return false;
   }
 
-  bson_t *opts = NULL;
   if (exclude_id) {
     opts = BCON_NEW("projection", "{", "_id", BCON_BOOL(false), "}");
   }
@@ -71,6 +71,10 @@ bool db_find_doc(const char *db_name, const char *collection_name, const bson_t 
     snprintf(str_index, sizeof(str_index), "%d", index);
     bson_append_document(reply, str_index, -1, doc);
     index++;
+  }
+
+  if (index == 0) {
+    DEBUG_PRINT("Query returned no documents");
   }
 
   if (mongoc_cursor_error(cursor, error)) {

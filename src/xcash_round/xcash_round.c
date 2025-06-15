@@ -80,7 +80,7 @@ xcash_round_result_t process_round(void) {
     return ROUND_ERROR;
   }
   atomic_store(&wait_for_block_height_init, false);
-  INFO_STAGE_PRINT("Attempting To Create Block: %s", current_block_height);
+  INFO_STAGE_PRINT("Createing Block: %s", current_block_height);
 
   INFO_STAGE_PRINT("Part 2 - Check Delegates, Get Previous Block Hash, and Delegates Hash");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 2);

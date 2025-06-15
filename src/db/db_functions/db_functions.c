@@ -417,7 +417,6 @@ int read_multiple_documents_all_fields_from_collection(const char* DATABASE, con
 
 // Function to update a single document in a collection
 int update_document_from_collection_bson(const char* DATABASE, const char* COLLECTION, const bson_t* filter, const bson_t* update_fields) {
-
   mongoc_client_t* database_client_thread = get_temporary_connection();
   if (!database_client_thread) return XCASH_ERROR;
 
@@ -427,8 +426,6 @@ int update_document_from_collection_bson(const char* DATABASE, const char* COLLE
   }
 
   bson_error_t error;
-
-  // Wrap update_fields in a $set
   bson_t update_doc;
   bson_init(&update_doc);
   BSON_APPEND_DOCUMENT(&update_doc, "$set", update_fields);
@@ -440,13 +437,9 @@ int update_document_from_collection_bson(const char* DATABASE, const char* COLLE
 
   bson_destroy(&update_doc);
   mongoc_collection_destroy(collection);
-  mongoc_client_destroy(database_client_thread);
+  mongoc_client_pool_push(database_client_thread_pool, database_client_thread);
   return XCASH_OK;
 }
-
-
-
-
 
 // Function to update multiple documents in a collection
 int update_multiple_documents_from_collection(const char* DATABASE, const char* COLLECTION, const char* DATA, const char* FIELD_NAME_AND_DATA) {
