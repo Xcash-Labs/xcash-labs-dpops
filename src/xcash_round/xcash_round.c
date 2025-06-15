@@ -168,13 +168,15 @@ xcash_round_result_t process_round(void) {
   pthread_mutex_unlock(&delegates_mutex);
   atomic_store(&wait_for_vrf_init, false);
 
-  if (nodes_majority_count <= 1) {
-    first_round = false;
-  }
-
   // Need at least BLOCK_VERIFIERS_VALID_AMOUNT delegates to start things off, delegates data needs to match for first delegates
   if (nodes_majority_count < BLOCK_VERIFIERS_VALID_AMOUNT) {
     INFO_PRINT_STATUS_FAIL("Failed to reach the required number of online nodes: [%d/%d]", nodes_majority_count, BLOCK_VERIFIERS_VALID_AMOUNT);
+    first_round = false;
+    return ROUND_SKIP;
+  }
+
+  // Lets sync the delegates counter data on the first round
+  if (first_round) {
     return ROUND_SKIP;
   }
 
