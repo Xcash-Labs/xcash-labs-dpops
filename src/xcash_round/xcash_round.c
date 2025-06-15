@@ -2,7 +2,6 @@
 
 producer_ref_t producer_refs[] = {0};
 static int total_delegates = 0;
-static bool first_round = true;
 
 /**
  * @brief Selects the block producer from the current round’s verifiers using VRF beta comparison.
@@ -168,15 +167,7 @@ xcash_round_result_t process_round(void) {
   pthread_mutex_unlock(&delegates_mutex);
   atomic_store(&wait_for_vrf_init, false);
 
-  // Need at lease 2 delegates to start things off, delegates data needs to match for first 2 delegates
-  if (nodes_majority_count < 2) {
-    first_round = false;
-  } else {
-    if (first_round) {
-      return ROUND_SKIP;
-    }
-  }
-
+  // Need at lease BLOCK_VERIFIERS_VALID_AMOUNT delegates to start things off, delegates data needs to match for first delegates
   if (nodes_majority_count < BLOCK_VERIFIERS_VALID_AMOUNT) {
     INFO_PRINT_STATUS_FAIL("Failed to reach the required number of online nodes: [%d/%d]", nodes_majority_count, BLOCK_VERIFIERS_VALID_AMOUNT);
     return ROUND_SKIP;
@@ -474,10 +465,8 @@ void start_block_production(void) {
         if (sync_block_verifiers_minutes_and_seconds(1, 45) == XCASH_ERROR) {
           INFO_PRINT("Failed to sync in the allotted time");
         }
-        // If more that a 30% mismatch lets resync the node or first_round is true
-        // Not checking counters each round just syncing at node startup
-        if (((delegate_db_hash_mismatch * 100) > (total_delegates * 30)) || first_round) {
-          first_round == false;
+        // If more that a 30% mismatch lets resync the node
+        if ((delegate_db_hash_mismatch * 100) > (total_delegates * 30)) {
           INFO_STAGE_PRINT("Node is out of sync, attempting to refresh delegates");
           int selected_index;
           pthread_mutex_lock(&delegates_mutex);
