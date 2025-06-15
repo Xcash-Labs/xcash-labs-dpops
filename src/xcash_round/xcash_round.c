@@ -2,6 +2,7 @@
 
 producer_ref_t producer_refs[] = {0};
 static int total_delegates = 0;
+static bool first_round = true;
 
 /**
  * @brief Selects the block producer from the current round’s verifiers using VRF beta comparison.
@@ -167,7 +168,11 @@ xcash_round_result_t process_round(void) {
   pthread_mutex_unlock(&delegates_mutex);
   atomic_store(&wait_for_vrf_init, false);
 
-  // Need at lease BLOCK_VERIFIERS_VALID_AMOUNT delegates to start things off, delegates data needs to match for first delegates
+  if (nodes_majority_count <= 1) {
+    first_round = false;
+  }
+
+  // Need at least BLOCK_VERIFIERS_VALID_AMOUNT delegates to start things off, delegates data needs to match for first delegates
   if (nodes_majority_count < BLOCK_VERIFIERS_VALID_AMOUNT) {
     INFO_PRINT_STATUS_FAIL("Failed to reach the required number of online nodes: [%d/%d]", nodes_majority_count, BLOCK_VERIFIERS_VALID_AMOUNT);
     return ROUND_SKIP;
@@ -466,7 +471,7 @@ void start_block_production(void) {
           INFO_PRINT("Failed to sync in the allotted time");
         }
         // If more that a 30% mismatch lets resync the node
-        if ((delegate_db_hash_mismatch * 100) > (total_delegates * 30)) {
+        if (((delegate_db_hash_mismatch * 100) > (total_delegates * 30)) || first_round) {
           INFO_STAGE_PRINT("Node is out of sync, attempting to refresh delegates");
           int selected_index;
           pthread_mutex_lock(&delegates_mutex);
@@ -483,6 +488,7 @@ void start_block_production(void) {
       }
     }
 
+    first_round = false;
     // set up delegates for next round
     if (!fill_delegates_from_db()) {
       FATAL_ERROR_EXIT("Failed to load and organize delegates for next round, Possible problem with Mongodb");
