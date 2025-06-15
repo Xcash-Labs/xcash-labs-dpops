@@ -169,7 +169,7 @@ xcash_round_result_t process_round(void) {
   atomic_store(&wait_for_vrf_init, false);
 
   // Need at lease 2 delegates to start things off, delegates data needs to match for first 2 delegates
-  if (delegates_num < 2) {
+  if (nodes_majority_count < 2) {
     first_round = false;
   } else {
     if (first_round) {
