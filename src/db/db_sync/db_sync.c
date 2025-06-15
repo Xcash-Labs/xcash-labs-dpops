@@ -36,12 +36,16 @@ bool hash_delegates_collection(char *out_hash_hex) {
     bson_t filtered;
     bson_init(&filtered);
 
-    // Copy everything except "registration_time"
+    // Copy everything except fields below
     bson_iter_t iter;
     if (bson_iter_init(&iter, doc)) {
       while (bson_iter_next(&iter)) {
         const char *key = bson_iter_key(&iter);
         if (strcmp(key, "registration_timestamp") != 0 &&
+          strcmp(key, "block_verifier_total_rounds") != 0 &&
+          strcmp(key, "block_verifier_online_total_rounds") != 0 &&
+          strcmp(key, "block_producer_total_rounds") != 0 &&
+//        strcmp(key, "total_vote_count") != 0 &&                                       not sure about this one
           strcmp(key, "online_status") != 0) {
             bson_append_value(&filtered, key, -1, bson_iter_value(&iter));
         }
