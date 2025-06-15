@@ -259,9 +259,6 @@ bool generate_and_request_vrf_data_msg(char** message)
 {
   unsigned char random_buf_bin[VRF_RANDOMBYTES_LENGTH] = {0};
   unsigned char alpha_input_bin[VRF_RANDOMBYTES_LENGTH * 2] = {0};
-//  unsigned char sk_bin[crypto_vrf_SECRETKEYBYTES] = {0};
-
-
   unsigned char pk_bin[crypto_vrf_PUBLICKEYBYTES] = {0};
   unsigned char vrf_proof[crypto_vrf_PROOFBYTES] = {0};
   unsigned char vrf_beta[crypto_vrf_OUTPUTBYTES] = {0};
