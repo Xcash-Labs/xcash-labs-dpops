@@ -1,5 +1,19 @@
 #include "block_verifiers_functions.h"
 
+bool append_vrf_extra_to_tx(std::vector<uint8_t>& extra, const std::vector<uint8_t>& vrf_blob)
+{
+  if (vrf_blob.size() != 208) {
+    std::cerr << "VRF blob must be exactly 208 bytes" << std::endl;
+    return false;
+  }
+
+  extra.push_back(TX_EXTRA_VRF_SIGNATURE_TAG);  // 0x07
+  extra.push_back(static_cast<uint8_t>(vrf_blob.size())); // 208
+  extra.insert(extra.end(), vrf_blob.begin(), vrf_blob.end());
+
+  return true;
+}
+
 /*---------------------------------------------------------------------------------------------------------
  * @brief Injects VRF-related data into the reserved section of a Monero-style blocktemplate blob
  *        and signs the original block blob using the producer's private key.
@@ -26,7 +40,7 @@
  * @note Ensure the get_block_template reserve_size is at least 210–220 bytes to fit the full VRF blob.
  * @note The signature is calculated on the original (unpatched) block_blob_hex for consensus correctness.
 ---------------------------------------------------------------------------------------------------------*/
-bool add_vrf_extra_and_sign(char* block_blob_hex)
+bool add_vrf_extra_and_sign__OLD__(char* block_blob_hex)
 {
   unsigned char* block_blob_bin = calloc(1, BUFFER_SIZE);
   if (!block_blob_bin) {
@@ -129,6 +143,89 @@ bool add_vrf_extra_and_sign(char* block_blob_hex)
   free(block_blob_bin);
   return true;
 }
+
+
+
+bool add_vrf_extra_and_sign(char* block_blob_hex)
+{
+  // Step 1: Parse the original blob into a `block` object
+  cryptonote::block block;
+  std::string blob_bin;
+  if (!string_tools::parse_hexstr_to_binbuff(block_blob_hex, blob_bin)) {
+    ERROR_PRINT("Failed to parse block blob hex into binary");
+    return false;
+  }
+
+  if (!cryptonote::parse_and_validate_block_from_blob(blob_bin, block)) {
+    ERROR_PRINT("Failed to parse block from blob");
+    return false;
+  }
+
+  // Step 2: Build the 240-byte VRF blob
+  std::vector<uint8_t> vrf_blob;
+  vrf_blob.reserve(240);
+
+  auto append_hex_field = [&](const char* hex_str, size_t expected_bytes) -> bool {
+    std::vector<uint8_t> bin(expected_bytes);
+    if (!hex_to_byte_array(hex_str, bin.data(), expected_bytes)) {
+      ERROR_PRINT("Failed to decode hex field");
+      return false;
+    }
+    vrf_blob.insert(vrf_blob.end(), bin.begin(), bin.end());
+    return true;
+  };
+
+  if (!append_hex_field(producer_refs[0].vrf_proof_hex, 80) ||
+      !append_hex_field(producer_refs[0].vrf_beta_hex, 64) ||
+      !append_hex_field(producer_refs[0].vrf_public_key, 32)) {
+    return false;
+  }
+
+  // Step 3: Sign the original blob and append signature
+  char signature_str[XCASH_SIGN_DATA_LENGTH + 1] = {0};
+  if (!sign_block_blob(block_blob_hex, signature_str, sizeof(signature_str))) {
+    ERROR_PRINT("Failed to sign block blob");
+    return false;
+  }
+
+  const char* base64_part = signature_str + 5; // Skip "SigV2"
+  uint8_t sig_bytes[64] = {0};
+  size_t sig_len = 0;
+
+  if (!base64_decode(base64_part, sig_bytes, sizeof(sig_bytes), &sig_len) || sig_len != 64) {
+    ERROR_PRINT("Invalid base64 VRF signature length");
+    return false;
+  }
+
+  vrf_blob.insert(vrf_blob.end(), sig_bytes, sig_bytes + 64);
+  if (vrf_blob.size() != 240) {
+    ERROR_PRINT("Final VRF blob size incorrect: %zu", vrf_blob.size());
+    return false;
+  }
+
+  // Step 4: Append to miner_tx.extra using proper helper
+  if (!append_vrf_extra_to_tx(block.miner_tx.extra, std::vector<uint8_t>(vrf_blob.begin(), vrf_blob.begin() + 208))) {
+    ERROR_PRINT("Failed to append VRF blob to miner_tx.extra");
+    return false;
+  }
+
+  // Step 5: Re-serialize the block
+  cryptonote::blobdata final_blob;
+  if (!t_serializable_object_to_blob(block, final_blob)) {
+    ERROR_PRINT("Failed to re-serialize block");
+    return false;
+  }
+
+  if (!bytes_to_hex((const unsigned char*)final_blob.data(), final_blob.size(), block_blob_hex, BUFFER_SIZE)) {
+    ERROR_PRINT("Failed to convert final blob to hex");
+    return false;
+  }
+
+  return true;
+}
+
+
+
 
 /*---------------------------------------------------------------------------------------------------------
 Name: block_verifiers_create_block
