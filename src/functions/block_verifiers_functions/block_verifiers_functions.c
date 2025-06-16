@@ -151,15 +151,18 @@ bool add_vrf_extra_and_sign__OLD__(char* block_blob_hex)
   return true;
 }
 
-
-
-bool add_vrf_extra_and_sign(char* block_blob_hex)
+bool add_vrf_extra_and_sign(char* block_blob_hex, size_t reserved_offset)
 {
   unsigned char* block_blob_bin = calloc(1, BUFFER_SIZE);
   if (!block_blob_bin) {
     ERROR_PRINT("Memory allocation failed for block_blob_bin");
     return false;
   }
+
+
+INFO_PRINT("add_vrf_extra_and_sign() called with block_blob_hex (first 64 chars): %s", block_blob_hex);
+INFO_PRINT("Reserved offset: %zu", reserved_offset);
+
 
   size_t blob_len = strlen(block_blob_hex) / 2;
   if (!hex_to_byte_array(block_blob_hex, block_blob_bin, blob_len)) {
@@ -231,7 +234,7 @@ bool add_vrf_extra_and_sign(char* block_blob_hex)
 
 
 
-  
+
   // Inject the blob using the clean C helper
   size_t pos = 124;
   size_t extra_len = 0;
@@ -280,6 +283,7 @@ int block_verifiers_create_block(void) {
   }
 
   char block_blob[BUFFER_SIZE] = {0};
+  size_t reserved_offset = 0;
   // Only the block producer completes the following steps, producer_refs is an array in case we decide to add 
   // backup producers in the future
   INFO_PRINT("Parts 9 thru 11 are only perfomed by the block producer");
@@ -288,7 +292,7 @@ int block_verifiers_create_block(void) {
     // Create block template
     INFO_STAGE_PRINT("Part 9 - Create block template");
     snprintf(current_round_part, sizeof(current_round_part), "%d", 9);
-    if (get_block_template(block_blob, BUFFER_SIZE) == 0) {
+    if (get_block_template(block_blob, BUFFER_SIZE, &reserved_offset) == XCASH_OK) {
       return ROUND_ERROR;
     }
 
@@ -300,7 +304,7 @@ int block_verifiers_create_block(void) {
     // Create block template
     INFO_STAGE_PRINT("Part 10 - Add VRF Data and Sign Block Blob");
     snprintf(current_round_part, sizeof(current_round_part), "%d", 10);
-    if(!add_vrf_extra_and_sign(block_blob)) {
+    if(!add_vrf_extra_and_sign(block_blob, reserved_offset)) {
       return ROUND_ERROR;
     }
 
