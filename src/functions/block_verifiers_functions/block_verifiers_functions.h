@@ -1,6 +1,10 @@
 #ifndef BLOCK_VERIFIERS_FUNCTIONS_H_   /* Include guard */
 #define BLOCK_VERIFIERS_FUNCTIONS_H_
 
+#include <stdint.h>
+#include <stddef.h>
+#include <string.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sodium/randombytes.h>
