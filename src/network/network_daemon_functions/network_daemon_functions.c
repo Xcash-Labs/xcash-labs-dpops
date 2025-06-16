@@ -152,55 +152,7 @@ Parameters:
   result_size - The size of the block_template
 Return: 0 if an error has occured, 1 if successfull
 ---------------------------------------------------------------------------------------------------------*/
-int get_block_template__OLD__(char* result)
-{
-  // Constants
-  const char* HTTP_HEADERS[] = {"Content-Type: application/json", "Accept: application/json"}; 
-  const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0]);
-  const char* RPC_ENDPOINT = "/json_rpc";
-  const char* RPC_METHOD = "POST";
-  const char* JSON_REQUEST_PREFIX = "{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"get_block_template\",\"params\":{\"wallet_address\":\"";
-  const char* JSON_REQUEST_SUFFIX = "\",\"reserve_size\":245}"; 
 
-  // Variables
-  char message[SMALL_BUFFER_SIZE] = {0};
-  char* response = (char*)calloc(SMALL_BUFFER_SIZE, sizeof(char));
-  int retry_attempts = 2;
-
-  if (!response) {
-    ERROR_PRINT("Memory allocation failed for response buffer");
-    return XCASH_ERROR;
-  }
-
-  for (int attempt = 0; attempt < retry_attempts; attempt++) 
-  {
-    // Clear response buffer before each use
-    memset(response, 0, SMALL_BUFFER_SIZE);
-
-    // Compose JSON request
-    snprintf(message, sizeof(message), "%s%s%s", JSON_REQUEST_PREFIX, xcash_wallet_public_address, JSON_REQUEST_SUFFIX);
-
-    // Send HTTP request
-    if (send_http_request(response, SMALL_BUFFER_SIZE, XCASH_DAEMON_IP, RPC_ENDPOINT, XCASH_DAEMON_PORT, RPC_METHOD, HTTP_HEADERS, HTTP_HEADERS_LENGTH, message,
-      SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) > 0 &&
-        parse_json_data(response, "result.blocktemplate_blob", result, result_size) == 1)
-    {
-      free(response);
-      return XCASH_OK;
-    }
-
-    // On failure, sleep and retry
-    if (attempt + 1 < retry_attempts) 
-    {
-      sleep(RETRY_SECONDS);
-    }
-  }
-
-  ERROR_PRINT("Could not get the block template");
-  free(response);
-
-  return XCASH_ERROR;
-}
 
 
 

@@ -4,6 +4,21 @@
 #include "globals.h"
 #include "macro_functions.h"
 #include "VRF_functions.h"
+/*
+-----------------------------------------------------------------------------------------------------------
+Name: append_string
+Description: append string
+Parameters:
+  data1 - data1
+  data2 - data2
+Return: Writes the correct code
+-----------------------------------------------------------------------------------------------------------
+*/
+
+#define append_string(data1,data2,data1_length) \
+memcpy(data1+strlen(data1),data2,strnlen(data2,(data1_length) - strlen(data1) - 1));
+
+
 
 /*---------------------------------------------------------------------------------------------------------
 Name: varint_encode
