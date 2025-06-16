@@ -231,12 +231,8 @@ INFO_PRINT("Reserved offset: %zu", reserved_offset);
     return false;
   }
 
-
-
-
-
   // Inject the blob using the clean C helper
-  size_t pos = 124;
+  size_t pos = reserved_offset;
   size_t extra_len = 0;
   if (!append_vrf_extra_to_tx(block_blob_bin + pos, &extra_len, BLOCK_RESERVED_SIZE, vrf_blob)) {
     ERROR_PRINT("Failed to append VRF data using helper");
@@ -255,8 +251,8 @@ INFO_PRINT("Reserved offset: %zu", reserved_offset);
     return false;
   }
 
-  DEBUG_PRINT("Final block_blob_hex (length: %zu):", strlen(block_blob_hex));
-  DEBUG_PRINT("%s", block_blob_hex);
+  INFO_PRINT("Final block_blob_hex (length: %zu):", strlen(block_blob_hex));
+  INFO_PRINT("%s", block_blob_hex);
 
   free(block_blob_bin);
   return true;
