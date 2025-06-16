@@ -292,7 +292,7 @@ int block_verifiers_create_block(void) {
     // Create block template
     INFO_STAGE_PRINT("Part 9 - Create block template");
     snprintf(current_round_part, sizeof(current_round_part), "%d", 9);
-    if (get_block_template(block_blob, BUFFER_SIZE, &reserved_offset) == XCASH_OK) {
+    if (get_block_template(block_blob, BUFFER_SIZE, &reserved_offset) == XCASH_ERROR) {
       return ROUND_ERROR;
     }
 
