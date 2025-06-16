@@ -228,8 +228,12 @@ bool add_vrf_extra_and_sign(char* block_blob_hex)
     return false;
   }
 
+
+
+
+  
   // Inject the blob using the clean C helper
-  size_t pos = 125;
+  size_t pos = 124;
   size_t extra_len = 0;
   if (!append_vrf_extra_to_tx(block_blob_bin + pos, &extra_len, BLOCK_RESERVED_SIZE, vrf_blob)) {
     ERROR_PRINT("Failed to append VRF data using helper");
