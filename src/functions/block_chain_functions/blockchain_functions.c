@@ -1,23 +1,15 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include "globals.h"
-#include "macro_functions.h"
-#include "VRF_functions.h"
-/*
------------------------------------------------------------------------------------------------------------
+#include "blockchain_functions.h"
+/*---------------------------------------------------------------------------------------------------------
 Name: append_string
 Description: append string
 Parameters:
   data1 - data1
   data2 - data2
 Return: Writes the correct code
------------------------------------------------------------------------------------------------------------
-*/
+---------------------------------------------------------------------------------------------------------*/
 
 #define append_string(data1,data2,data1_length) \
 memcpy(data1+strlen(data1),data2,strnlen(data2,(data1_length) - strlen(data1) - 1));
-
 
 
 /*---------------------------------------------------------------------------------------------------------

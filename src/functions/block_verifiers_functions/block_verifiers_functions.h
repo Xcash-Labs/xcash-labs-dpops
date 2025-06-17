@@ -17,6 +17,7 @@
 #include "macro_functions.h"
 #include "VRF_functions.h"
 #include "xcash_round.h"
+#include "blockchain_functions.h"
 
 bool generate_and_request_vrf_data_msg(char** message);
 int block_verifiers_create_block(void);
