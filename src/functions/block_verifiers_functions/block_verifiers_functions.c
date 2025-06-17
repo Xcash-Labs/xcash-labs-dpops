@@ -47,7 +47,7 @@ bool add_vrf_extra_and_sign(char* block_blob_hex, size_t reserved_offsetx)
   size_t pos = reserved_offset;
 
   // Construct the VRF blob
-  uint8_t vrf_blob[VRF_BLOB_SIZE] = {0};
+  uint8_t vrf_blob[VRF_BLOB_TOTAL_SIZE] = {0};
   size_t vrf_pos = 0;
 
   if (!hex_to_byte_array(producer_refs[0].vrf_proof_hex, vrf_blob + vrf_pos, VRF_PROOF_LENGTH / 2)) {
@@ -131,6 +131,7 @@ bool add_vrf_extra_and_sign(char* block_blob_hex, size_t reserved_offsetx)
   free(block_blob_bin);
   return true;
 }
+
 
 /*---------------------------------------------------------------------------------------------------------
 Name: block_verifiers_create_block
