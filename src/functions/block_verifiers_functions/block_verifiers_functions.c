@@ -26,7 +26,7 @@
  * @note Ensure the get_block_template reserve_size is at least 210–220 bytes to fit the full VRF blob.
  * @note The signature is calculated on the original (unpatched) block_blob_hex for consensus correctness.
 ---------------------------------------------------------------------------------------------------------*/
-bool add_vrf_extra_and_sign(char* block_blob_hex, size_t reserved_offset)
+bool add_vrf_extra_and_sign(char* block_blob_hex, size_t reserved_offsetx)
 {
   unsigned char* block_blob_bin = calloc(1, BUFFER_SIZE);
   if (!block_blob_bin) {
@@ -41,10 +41,13 @@ bool add_vrf_extra_and_sign(char* block_blob_hex, size_t reserved_offset)
     return false;
   }
 
+  INFO_PRINT("Passes reserved offset: %zu", reserved_offsetx);
+
+  size_t reserved_offset = 125;
   size_t pos = reserved_offset;
 
   // Construct the VRF blob
-  uint8_t vrf_blob[VRF_BLOB_SIZE] = {0};
+  uint8_t vrf_blob[VRF_BLOB_TOTAL_SIZE] = {0};
   size_t vrf_pos = 0;
 
   if (!hex_to_byte_array(producer_refs[0].vrf_proof_hex, vrf_blob + vrf_pos, VRF_PROOF_LENGTH / 2)) {
