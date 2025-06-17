@@ -1,6 +1,6 @@
 #include "block_verifiers_functions.h"
 
-bool append_vrf_extra_to_tx(uint8_t* extra, size_t* extra_len, size_t max_len, const uint8_t* vrf_blob)
+bool append_vrf_extra_to_tx__OLD__(uint8_t* extra, size_t* extra_len, size_t max_len, const uint8_t* vrf_blob)
 {
     if (!extra || !extra_len || !vrf_blob) {
         fprintf(stderr, "Null pointer passed to append_vrf_extra_to_tx\n");
@@ -20,6 +20,47 @@ bool append_vrf_extra_to_tx(uint8_t* extra, size_t* extra_len, size_t max_len, c
 
     return true;
 }
+
+
+
+
+bool append_vrf_extra_to_tx(uint8_t* extra, size_t* extra_len, size_t max_len, const uint8_t* vrf_blob)
+{
+    if (!extra || !extra_len || !vrf_blob) {
+        fprintf(stderr, "Null pointer passed to append_vrf_extra_to_tx\n");
+        return false;
+    }
+
+    char varint_buf[10]; // More than enough for varint-encoded lengths
+    int varint_len = varint_encode((long long int)VRF_BLOB_SIZE, varint_buf, sizeof(varint_buf));
+    if (varint_len <= 0) {
+        fprintf(stderr, "Failed to encode varint for VRF_BLOB_SIZE\n");
+        return false;
+    }
+
+    if (*extra_len + 1 + varint_len + VRF_BLOB_SIZE > max_len) {
+        fprintf(stderr, "Not enough space in extra buffer (needed: %zu, available: %zu)\n",
+                *extra_len + 1 + varint_len + VRF_BLOB_SIZE, max_len);
+        return false;
+    }
+
+    // Tag byte
+    extra[(*extra_len)++] = TX_EXTRA_VRF_SIGNATURE_TAG;
+
+    // Varint-encoded length
+    memcpy(&extra[*extra_len], varint_buf, varint_len);
+    *extra_len += varint_len;
+
+    // Actual VRF data
+    memcpy(&extra[*extra_len], vrf_blob, VRF_BLOB_SIZE);
+    *extra_len += VRF_BLOB_SIZE;
+
+    return true;
+}
+
+
+
+
 
 /*---------------------------------------------------------------------------------------------------------
  * @brief Injects VRF-related data into the reserved section of a Monero-style blocktemplate blob
