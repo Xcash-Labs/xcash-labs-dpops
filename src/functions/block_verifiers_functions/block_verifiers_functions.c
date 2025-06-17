@@ -126,8 +126,8 @@ bool add_vrf_extra_and_sign(char* block_blob_hex, size_t reserved_offset)
     return false;
   }
 
-  DEBUG_PRINT("Final block_blob_hex (length: %zu):", strlen(block_blob_hex));
-  DEBUG_PRINT("%s", block_blob_hex);
+  INFO_PRINT("Final block_blob_hex (length: %zu):", strlen(block_blob_hex));
+  INFO_PRINT("%s", block_blob_hex);
 
   free(block_blob_bin);
   return true;
