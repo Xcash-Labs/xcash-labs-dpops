@@ -282,7 +282,7 @@ INFO_PRINT("Reserved offset: %zu", reserved_offset);
   }
 
   pos += extra_len;
-
+  blob_len += extra_len;
   // Convert back to hex
   bytes_to_hex(block_blob_bin, blob_len, block_blob_hex, BUFFER_SIZE);
 
