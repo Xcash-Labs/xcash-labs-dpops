@@ -189,6 +189,9 @@ int get_block_template(char* result, size_t result_size, size_t* reserved_offset
         parse_json_data(response, "result.reserved_offset", reserved_offset_str, sizeof(reserved_offset_str)) == 1)
     {
       *reserved_offset_out = (size_t)strtoul(reserved_offset_str, NULL, 10);
+
+
+      INFO_PRINT("Block Temp: %s", response);
       free(response);
       return XCASH_OK;
     }
