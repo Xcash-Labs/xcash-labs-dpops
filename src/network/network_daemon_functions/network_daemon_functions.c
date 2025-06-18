@@ -185,8 +185,8 @@ int get_block_template(char* result, size_t result_size, size_t* reserved_offset
     // Send HTTP request
     if (send_http_request(response, SMALL_BUFFER_SIZE, XCASH_DAEMON_IP, RPC_ENDPOINT, XCASH_DAEMON_PORT, RPC_METHOD,
         HTTP_HEADERS, HTTP_HEADERS_LENGTH, message, SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) > 0 &&
-        parse_json_data(response, "result.blocktemplate_blob", result, result_size) == 1 &&
-        parse_json_data(response, "result.reserved_offset", reserved_offset_str, sizeof(reserved_offset_str)) == 1)
+        parse_json_data(response, "result.blocktemplate_blob", result, result_size) == XCASH_OK &&
+        parse_json_data(response, "result.reserved_offset", reserved_offset_str, sizeof(reserved_offset_str)) == XCASH_OK)
     {
       *reserved_offset_out = (size_t)strtoul(reserved_offset_str, NULL, 10);
 
