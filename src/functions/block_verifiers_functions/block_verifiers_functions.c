@@ -1,5 +1,15 @@
 #include "block_verifiers_functions.h"
 
+size_t write_varint(uint8_t *out, size_t value) {
+    size_t i = 0;
+    while (value >= 0x80) {
+        out[i++] = (value & 0x7F) | 0x80;
+        value >>= 7;
+    }
+    out[i++] = value;
+    return i;
+}
+
 /*---------------------------------------------------------------------------------------------------------
  * @brief Injects VRF-related data into the reserved section of a Monero-style blocktemplate blob
  *        and signs the original block blob using the producer's private key.
@@ -108,7 +118,11 @@ bool add_vrf_extra_and_sign(char* block_blob_hex, size_t reserved_offset)
   }
   
   block_blob_bin[pos++] = TX_EXTRA_VRF_SIGNATURE_TAG;
-  block_blob_bin[pos++] = VRF_BLOB_TOTAL_SIZE;  // length of VRF blob (must match vrf_pos)
+//  block_blob_bin[pos++] = VRF_BLOB_TOTAL_SIZE;  // length of VRF blob (must match vrf_pos)
+
+  size_t varint_len = write_varint(block_blob_bin + pos, VRF_BLOB_TOTAL_SIZE);
+  pos += varint_len;
+
   memcpy(block_blob_bin + pos, vrf_blob, VRF_BLOB_TOTAL_SIZE);
   pos += VRF_BLOB_TOTAL_SIZE;
 
