@@ -118,14 +118,12 @@ bool add_vrf_extra_and_sign(char* block_blob_hex, size_t reserved_offset)
     return false;
   }
   
-  block_blob_bin[pos++] = TX_EXTRA_VRF_SIGNATURE_TAG;
-//  block_blob_bin[pos++] = VRF_BLOB_TOTAL_SIZE;  // length of VRF blob (must match vrf_pos)
-
+  // block_blob_bin[pos++] = TX_EXTRA_VRF_SIGNATURE_TAG;
+//  block_blob_bin[pos++] = VRF_BLOB_TOTAL_SIZE;  // length of VRF blob (must match vrf_pos) stay commented out
   size_t varint_len = write_varint(block_blob_bin + pos, VRF_BLOB_TOTAL_SIZE);
-  pos += varint_len;
-
-  memcpy(block_blob_bin + pos, vrf_blob, VRF_BLOB_TOTAL_SIZE);
-  pos += VRF_BLOB_TOTAL_SIZE;
+  //pos += varint_len;
+  //memcpy(block_blob_bin + pos, vrf_blob, VRF_BLOB_TOTAL_SIZE);
+  //pos += VRF_BLOB_TOTAL_SIZE;
 
   if ((pos - reserved_offset) > BLOCK_RESERVED_SIZE) {
     ERROR_PRINT("VRF data exceeds reserved space: used %zu bytes, allowed %d", pos - reserved_offset, BLOCK_RESERVED_SIZE);
