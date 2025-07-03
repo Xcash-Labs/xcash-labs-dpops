@@ -55,7 +55,8 @@ bool add_vrf_extra_and_sign(char* block_blob_hex, size_t reserved_offset)
 
 // passing back 124 but I had it set to 125
 //  size_t reserved_offset = 125;
-  size_t pos = reserved_offset - 2;
+//  size_t pos = reserved_offset - 2;
+    size_t pos = reserved_offset;
 
   // Construct the VRF blob
   uint8_t vrf_blob[VRF_BLOB_TOTAL_SIZE] = {0};
