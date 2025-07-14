@@ -228,11 +228,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
     // Numbers
     bson_append_int64(&bson, "total_vote_count", -1, set_counts);
     bson_append_double(&bson, "delegate_fee", -1, set_delegate_fee);
-    bson_append_int64(&bson, "block_verifier_total_rounds", -1, set_counts);
-    bson_append_int64(&bson, "block_verifier_online_total_rounds", -1, set_counts);
-    bson_append_int64(&bson, "block_producer_total_rounds", -1, set_counts);
     bson_append_int64(&bson, "registration_timestamp", -1, registration_time);
-
 
     if (insert_document_into_collection_bson(DATABASE_NAME, "delegates", &bson) != XCASH_OK) {
       bson_destroy(&bson);
@@ -240,6 +236,28 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
     }
 
     bson_destroy(&bson);
+
+    if (is_seed_address(delegate_public_address)) {
+      bson_t bson_statistics;
+      bson_init(&bson_statistics);
+
+      // Strings
+      bson_append_utf8(&bson_statistics, "public_key", -1, delegate_public_address, -1);
+
+      // Numbers
+      bson_append_int64(&bson, "block_verifier_total_rounds", -1, set_counts);
+      bson_append_int64(&bson, "block_verifier_online_total_rounds", -1, set_counts);
+      bson_append_int64(&bson, "block_producer_total_rounds", -1, set_counts);
+
+      // Insert into "statistics" collection
+      if (insert_document_into_collection_bson(DATABASE_NAME, "statistics", &bson_statistics) != XCASH_OK) {
+        ERROR_PRINT("Failed to insert statistics document during initialization.");
+        bson_destroy(&bson_statistics);
+        return XCASH_ERROR;
+      }
+
+      bson_destroy(&bson_statistics);
+    }
 
     // 8) Success: reply back to the client
     send_data(client, (unsigned char *)"Registered the delegate}", strlen("Registered the delegate}"));
