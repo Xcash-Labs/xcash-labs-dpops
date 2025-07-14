@@ -452,7 +452,7 @@ void start_block_production(void) {
           uint64_t tmp_producer_total_rounds = 0;
 
           if (get_statistics_totals_by_public_key(delegates_all[i].public_key, &tmp_verifier_total_round, &tmp_verifier_online_total_rounds,
-            &tmp_producer_total_rounds) == XCASH_OK)
+            &tmp_producer_total_rounds) == XCASH_OK) {
 
             if (strcmp(delegates_all[i].online_status, "true") == 0) {
               tmp_verifier_online_total_rounds += 1; 
