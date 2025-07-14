@@ -66,7 +66,7 @@ bool init_processing(const arg_config_t *arg_config) {
       bson_append_int64(&bson, "block_producer_total_rounds", -1, set_counts);  // remove
       bson_append_int64(&bson, "registration_timestamp", -1, registration_time);
 
-      if (insert_document_into_collection_bson(DATABASE_NAME, "delegates", &bson) != XCASH_OK) {
+      if (insert_document_into_collection_bson(DATABASE_NAME, DB_COLLECTION_DELEGATES, &bson) != XCASH_OK) {
         ERROR_PRINT("Failed to insert delegate document.");
         bson_destroy(&bson);
         return XCASH_ERROR;
@@ -87,7 +87,7 @@ bool init_processing(const arg_config_t *arg_config) {
         bson_append_int64(&bson, "block_producer_total_rounds", -1, set_counts);
 
         // Insert into "statistics" collection
-        if (insert_document_into_collection_bson(DATABASE_NAME, "statistics", &bson_statistics) != XCASH_OK) {
+        if (insert_document_into_collection_bson(DATABASE_NAME, DB_COLLECTION_STATISTICS, &bson_statistics) != XCASH_OK) {
           ERROR_PRINT("Failed to insert statistics document during initialization.");
           bson_destroy(&bson_statistics);
           return XCASH_ERROR;

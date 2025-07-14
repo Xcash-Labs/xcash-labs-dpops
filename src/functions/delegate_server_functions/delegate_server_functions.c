@@ -230,9 +230,9 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
     bson_append_double(&bson, "delegate_fee", -1, set_delegate_fee);
     bson_append_int64(&bson, "registration_timestamp", -1, registration_time);
 
-    if (insert_document_into_collection_bson(DATABASE_NAME, "delegates", &bson) != XCASH_OK) {
+    if (insert_document_into_collection_bson(DATABASE_NAME, DB_COLLECTION_DELEGATES, &bson) != XCASH_OK) {
       bson_destroy(&bson);
-      SERVER_ERROR("The delegate could not be added to the database}");
+      SERVER_ERROR("Failed to insert the delegate document}");
     }
 
     bson_destroy(&bson);
@@ -250,10 +250,9 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
       bson_append_int64(&bson, "block_producer_total_rounds", -1, set_counts);
 
       // Insert into "statistics" collection
-      if (insert_document_into_collection_bson(DATABASE_NAME, "statistics", &bson_statistics) != XCASH_OK) {
-        ERROR_PRINT("Failed to insert statistics document during initialization.");
-        bson_destroy(&bson_statistics);
-        return XCASH_ERROR;
+      if (insert_document_into_collection_bson(DATABASE_NAME, DB_COLLECTION_STATISTICS, &bson_statistics) != XCASH_OK) {
+        son_destroy(&bson_statistics);
+        SERVER_ERROR("Failed to insert the statistics document}");
       }
 
       bson_destroy(&bson_statistics);
