@@ -247,16 +247,6 @@ int read_document_field_from_collection(const char* DATABASE, const char* COLLEC
   return XCASH_OK;
 }
 
-
-
-
-
-
-
-
-
-
-
 // Function to parse JSON data
 int database_document_parse_json_data(const char* DATA, struct database_document_fields* result) {
   if (!strstr(DATA, ",")) {
@@ -822,4 +812,50 @@ int get_data(mongoc_client_t *client, const char *db_name, const char *field_nam
     free_resources(query, opts, collection, NULL);
 
     return result;
+}
+
+int get_statistics_totals_by_public_key(
+    const char* public_key,
+    uint64_t* block_verifier_total_rounds,
+    uint64_t* block_verifier_online_total_rounds,
+    uint64_t* block_producer_total_rounds)
+{
+  mongoc_client_t* database_client_thread = get_temporary_connection();
+  if (!database_client_thread) return XCASH_ERROR;
+
+  mongoc_collection_t* collection = mongoc_client_get_collection(database_client_thread, DATABASE_NAME, DB_COLLECTION_STATISTICS);
+
+  bson_t* query = BCON_NEW("public_key", BCON_UTF8(public_key));
+  mongoc_cursor_t* cursor = mongoc_collection_find_with_opts(collection, query, NULL, NULL);
+
+  const bson_t* doc;
+  bson_iter_t iter;
+
+  bool success = false;
+
+  if (mongoc_cursor_next(cursor, &doc)) {
+    if (bson_iter_init(&iter, doc)) {
+      while (bson_iter_next(&iter)) {
+        const char* key = bson_iter_key(&iter);
+        if (strcmp(key, "block_verifier_total_rounds") == 0 && (BSON_ITER_HOLDS_INT64(&iter) || BSON_ITER_HOLDS_INT32(&iter))) {
+          *block_verifier_total_rounds = bson_iter_int64(&iter);
+        } else if (strcmp(key, "block_verifier_online_total_rounds") == 0 && (BSON_ITER_HOLDS_INT64(&iter) || BSON_ITER_HOLDS_INT32(&iter))) {
+          *block_verifier_online_total_rounds = bson_iter_int64(&iter);
+        } else if (strcmp(key, "block_producer_total_rounds") == 0 && (BSON_ITER_HOLDS_INT64(&iter) || BSON_ITER_HOLDS_INT32(&iter))) {
+          *block_producer_total_rounds = bson_iter_int64(&iter);
+        }
+      }
+      success = true;
+    }
+  }
+
+  // Cleanup
+  bson_destroy(query);
+  mongoc_cursor_destroy(cursor);
+  mongoc_collection_destroy(collection);
+
+  if (database_client_thread)
+    mongoc_client_pool_push(database_client_thread_pool, database_client_thread);
+
+  return success ? XCASH_OK : XCASH_ERROR;
 }

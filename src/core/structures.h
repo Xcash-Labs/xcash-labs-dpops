@@ -34,9 +34,6 @@ typedef struct  {
     float delegate_fee; 
     char server_specs[1025];
     char online_status[11];
-    uint64_t block_verifier_total_rounds;
-    uint64_t block_verifier_online_total_rounds;
-    uint64_t block_producer_total_rounds;
     char public_key[VRF_PUBLIC_KEY_LENGTH+1];
     uint64_t registration_timestamp;
     char online_status_orginal[11];
