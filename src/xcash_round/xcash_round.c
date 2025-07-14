@@ -414,7 +414,7 @@ void start_block_production(void) {
     if (round_result == ROUND_OK) {
       for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
 
-        if (strlen(delegates_all[i].public_address) > 0 && strlen(delegates_all[i].public_key > 0)) {
+        if (strlen(delegates_all[i].public_address) > 0 && strlen(delegates_all[i].public_key) > 0) {
 
           If(strcmp(delegates_all[i].online_status, delegates_all[i].online_status_prior) == 0) {
 
