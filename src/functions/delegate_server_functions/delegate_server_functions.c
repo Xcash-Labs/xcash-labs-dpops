@@ -251,7 +251,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
 
       // Insert into "statistics" collection
       if (insert_document_into_collection_bson(DATABASE_NAME, DB_COLLECTION_STATISTICS, &bson_statistics) != XCASH_OK) {
-        son_destroy(&bson_statistics);
+        bson_destroy(&bson_statistics);
         SERVER_ERROR("Failed to insert the statistics document}");
       }
 
