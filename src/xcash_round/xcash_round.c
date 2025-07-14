@@ -416,7 +416,7 @@ void start_block_production(void) {
 
         if (strlen(delegates_all[i].public_address) > 0 && strlen(delegates_all[i].public_key) > 0) {
 
-          If(strcmp(delegates_all[i].online_status, delegates_all[i].online_status_prior) == 0) {
+          If(strcmp(delegates_all[i].online_status, delegates_all[i].online_status_orginal) == 0) {
 
             INFO_PRINT("No change to online status, update skipped...");
 
