@@ -61,9 +61,6 @@ bool init_processing(const arg_config_t *arg_config) {
     // Numbers
       bson_append_int64(&bson, "total_vote_count", -1, set_counts);
       bson_append_double(&bson, "delegate_fee", -1, set_delegate_fee);
-      bson_append_int64(&bson, "block_verifier_total_rounds", -1, set_counts);  // remove
-      bson_append_int64(&bson, "block_verifier_online_total_rounds", -1, set_counts);  // remove
-      bson_append_int64(&bson, "block_producer_total_rounds", -1, set_counts);  // remove
       bson_append_int64(&bson, "registration_timestamp", -1, registration_time);
 
       if (insert_document_into_collection_bson(DATABASE_NAME, DB_COLLECTION_DELEGATES, &bson) != XCASH_OK) {
