@@ -81,9 +81,9 @@ bool init_processing(const arg_config_t *arg_config) {
       bson_append_utf8(&bson_statistics, "public_key", -1, network_nodes[i].seed_public_key, -1);
 
       // Numbers
-      bson_append_int64(&bson, "block_verifier_total_rounds", -1, set_counts);
-      bson_append_int64(&bson, "block_verifier_online_total_rounds", -1, set_counts);
-      bson_append_int64(&bson, "block_producer_total_rounds", -1, set_counts);
+      bson_append_int64(&bson_statistics, "block_verifier_total_rounds", -1, set_counts);
+      bson_append_int64(&bson_statistics, "block_verifier_online_total_rounds", -1, set_counts);
+      bson_append_int64(&bson_statistics, "block_producer_total_rounds", -1, set_counts);
 
       // Insert into "statistics" collection
       if (insert_document_into_collection_bson(DATABASE_NAME, DB_COLLECTION_STATISTICS, &bson_statistics) != XCASH_OK) {

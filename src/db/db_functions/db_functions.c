@@ -97,19 +97,16 @@ int insert_document_into_collection_bson(const char* DATABASE, const char* COLLE
   if (strstr(COLLECTION, "delegates") && bson_iter_init_find(&iter, document, "public_key") && BSON_ITER_HOLDS_UTF8(&iter)) {
     const char* public_key = bson_iter_utf8(&iter, NULL);
     snprintf(data_hash, sizeof(data_hash), "0000000000000000000000000000000000000000000000000000000000000000%.*s", DATA_HASH_LENGTH - 64, public_key);
-  } else if (strstr(COLLECTION, "statistics")) {
-    memset(data_hash, '0', DATA_HASH_LENGTH);
-  } else {
-    random_string(data_hash, DATA_HASH_LENGTH);
-  }
 
-  if (strlen(data_hash) != DATA_HASH_LENGTH) {
-    ERROR_PRINT("Invalid data hash length.");
-    return XCASH_ERROR;
-  }
+    if (strlen(data_hash) != DATA_HASH_LENGTH) {
+      ERROR_PRINT("Invalid data hash length.");
+      return XCASH_ERROR;
+    }
 
-  // Add the _id field
-  bson_append_utf8(document, "_id", -1, data_hash, -1);
+    // Add the _id field
+    bson_append_utf8(document, "_id", -1, data_hash, -1);
+
+  }
 
   // Setup MongoDB connection
   mongoc_client_t* database_client_thread = get_temporary_connection();
