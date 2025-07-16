@@ -91,6 +91,10 @@ bool init_processing(const arg_config_t *arg_config) {
 
       bson_destroy(&bson_statistics);
     }
+  } else {
+
+  // drop statistics and add back from another seed node
+
   }
 
   return XCASH_OK;
