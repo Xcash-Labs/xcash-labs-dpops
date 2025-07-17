@@ -180,7 +180,7 @@ int read_document_from_collection(const char* DATABASE, const char* COLLECTION, 
 
   while (mongoc_cursor_next(document_settings, &current_document)) {
     message = bson_as_canonical_extended_json(current_document, NULL);
-    strncpy(result, message, strlen(message));
+    result = message;
     bson_free(message);
     count = 1;
   }
