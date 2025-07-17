@@ -161,7 +161,7 @@ int verify_data(const char *message) {
     return XCASH_ERROR;
   }
 
-  strncpy(raw_data, message, sizeof(raw_data));
+  snprintf(raw_data, sizeof(raw_data), "%s", message);
 
   char *sig_pos = strstr(raw_data, ",\"XCASH_DPOPS_signature\"");
   if (sig_pos) {
@@ -237,7 +237,7 @@ int verify_action_data(const char *message) {
     return XCASH_ERROR;
   }
 
-  strncpy(raw_data, message, sizeof(raw_data));
+  snprintf(raw_data, sizeof(raw_data), "%s", message);
 
   char *sig_pos = strstr(raw_data, ",\"signature\"");
   if (sig_pos) {
