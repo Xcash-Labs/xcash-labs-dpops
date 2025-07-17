@@ -27,8 +27,9 @@ int server_limit_IP_addresses(limit_action_t action, const char* IP_ADDRESS) {
   if (action == LIMIT_CHECK) {
     // Check limit before accepting connection
     if (string_count(server_limit_IP_address_list, data) < MAXIMUM_CONNECTIONS_IP_ADDRESS_OR_PUBLIC_ADDRESS) {
-      strncat(server_limit_IP_address_list, data,
-              sizeof(server_limit_IP_address_list) - strlen(server_limit_IP_address_list) - 1);
+      snprintf(server_limit_IP_address_list + strlen(server_limit_IP_address_list),
+         sizeof(server_limit_IP_address_list) - strlen(server_limit_IP_address_list),
+         "%s", data);
       result = XCASH_OK;
     }
   } else if (action == LIMIT_REMOVE) {
