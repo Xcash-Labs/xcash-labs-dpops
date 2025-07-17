@@ -97,7 +97,8 @@ int read_organize_delegates(delegates_t* delegates, size_t* delegates_count_resu
           } else if (strcmp(db_key, "team") == 0 && BSON_ITER_HOLDS_UTF8(&record_iter)) {
             strncpy(delegates[delegate_index].team, bson_iter_utf8(&record_iter, NULL), 255);
           } else if (strcmp(db_key, "delegate_type") == 0 && BSON_ITER_HOLDS_UTF8(&record_iter)) {
-            strncpy(delegates[delegate_index].delegate_type, bson_iter_utf8(&record_iter, NULL), 10);
+            snprintf(delegates[delegate_index].delegate_type, sizeof(delegates[delegate_index].delegate_type),
+                     "%s", bson_iter_utf8(&record_iter, NULL));
           } else if (strcmp(db_key, "delegate_fee") == 0) {
             if (BSON_ITER_HOLDS_DOUBLE(&record_iter)) {
               delegates[delegate_index].delegate_fee = bson_iter_double(&record_iter);
