@@ -16,6 +16,8 @@ bool initialize_database(void) {
   if (!initialize_mongo_database(mongo_uri, &database_client_thread_pool)) {
     return false;
   }
+  
+  return true;
 }
 
 void shutdown_db(void){
