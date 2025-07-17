@@ -4,10 +4,16 @@ bool initialize_database(void) {
   char mongo_uri[256];
 
 #ifdef SEED_NODE_ON
+  const char *username = getenv("MONGODB_USERNAME");
+  const char *password = getenv("MONGODB_PASSWORD");
+
+  if (!username || !password) {
+    FATAL_ERROR_EXIT("Missing MongoDB credentials: MONGODB_USERNAME or MONGODB_PASSWORD not set");
+  }
+
   snprintf(mongo_uri, sizeof(mongo_uri),
            "mongodb://%s:%s@127.0.0.1:27017/?authSource=admin",
-           getenv("MONGODB_USERNAME"),
-           getenv("MONGODB_PASSWORD"));
+           username, password);
 #else
   strncpy(mongo_uri, DATABASE_CONNECTION, sizeof(mongo_uri) - 1);
   mongo_uri[sizeof(mongo_uri) - 1] = '\0';  // Always null-terminate
@@ -16,7 +22,7 @@ bool initialize_database(void) {
   if (!initialize_mongo_database(mongo_uri, &database_client_thread_pool)) {
     return false;
   }
-  
+
   return true;
 }
 
