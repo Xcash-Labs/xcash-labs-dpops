@@ -250,37 +250,3 @@ int select_random_online_delegate(void) {
     int random_index = rand() % eligible_count;
     return eligible_indices[random_index];
 }
-
-// @brief Selects a random delegate of type "seed", avoiding self-selection.
-// @return Index of selected delegate or -1 if none found
-int select_random_online_seed_delegate(void) {
-    int eligible_indices[network_data_nodes_amount];
-    int eligible_count = 0;
-
-    for (size_t i = 0; i < network_data_nodes_amount; ++i) {
-        if (delegates_all[i].public_address[0] == '\0') {
-            continue;
-        }
-
-        // Must be online and not self
-        if (((strcmp(delegates_all[i].online_status, "true") == 0) ||
-        (strcmp(delegates_all[i].online_status, "partial") == 0)) &&
-        (strcmp(delegates_all[i].public_address, xcash_wallet_public_address) != 0)) {
-            eligible_indices[eligible_count++] = i;
-        }
-    }
-
-    if (eligible_count == 0) {
-        return -1;
-    }
-
-    // Seed RNG once
-    static int seeded = 0;
-    if (!seeded) {
-        srand(time(NULL));
-        seeded = 1;
-    }
-
-    int random_index = rand() % eligible_count;
-    return eligible_indices[random_index];
-}
