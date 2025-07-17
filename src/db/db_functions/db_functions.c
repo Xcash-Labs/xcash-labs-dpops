@@ -160,6 +160,7 @@ int check_if_database_collection_exist(const char* DATABASE, const char* COLLECT
 
 // Function to read a document from collection
 int read_document_from_collection(const char* DATABASE, const char* COLLECTION, const char* DATA, char* result) {
+  (void)result;
   const bson_t* current_document;
   mongoc_client_t* database_client_thread = get_temporary_connection();
   if (!database_client_thread) return XCASH_ERROR;
