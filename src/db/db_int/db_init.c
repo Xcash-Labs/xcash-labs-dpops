@@ -8,7 +8,8 @@ bool initialize_database(void) {
   const char *password = getenv("MONGODB_PASSWORD");
 
   if (!username || !password) {
-    FATAL_ERROR_EXIT("Missing MongoDB credentials: MONGODB_USERNAME or MONGODB_PASSWORD not set");
+    ERROR_PRINT("Missing MongoDB credentials: MONGODB_USERNAME or MONGODB_PASSWORD not set");
+    return false;
   }
 
   snprintf(mongo_uri, sizeof(mongo_uri),
