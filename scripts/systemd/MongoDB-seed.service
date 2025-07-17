@@ -1,0 +1,26 @@
+[Unit]
+Description=MongoDB X-Cash Database Server
+After=network.target
+
+[Service]
+Type=forking
+User=${USER}
+RemainAfterExit=yes
+PIDFile=${XCASH_DPOPS_INSTALLATION_DIR}systemdpid/mongod.pid
+Environment="GLIBC_TUNABLES=glibc.pthread.rseq=0"
+
+ExecStart=${MONGODB_DIR}bin/mongod --fork --logpath=/data/db/mongod.log --pidfilepath=${XCASH_DPOPS_INSTALLATION_DIR}systemdpid/mongod.pid \
+  --dbpath=${MONGODB_INSTALLATION_DIR} --config ${MONGODB_DIR}mongod.config
+
+TimeoutSec=60
+LimitFSIZE=infinity
+LimitCPU=infinity
+LimitAS=infinity
+LimitNOFILE=64000
+LimitNPROC=64000
+LimitMEMLOCK=infinity
+TasksMax=infinity
+TasksAccounting=false
+
+[Install]
+WantedBy=multi-user.target

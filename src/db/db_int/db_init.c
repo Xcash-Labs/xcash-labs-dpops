@@ -1,7 +1,19 @@
 #include "db_init.h"
 
-bool initialize_database(void){
-    return initialize_mongo_database(DATABASE_CONNECTION, &database_client_thread_pool);
+bool initialize_database(void) {
+  char mongo_uri[256];
+
+#ifdef SEED_NODE_ON
+  snprintf(mongo_uri, sizeof(mongo_uri),
+           "mongodb://%s:%s@127.0.0.1:27017/?authSource=admin",
+           getenv("MONGODB_USERNAME"),
+           getenv("MONGODB_PASSWORD"));
+#else
+  strncpy(mongo_uri, DATABASE_CONNECTION, sizeof(mongo_uri) - 1);
+  mongo_uri[sizeof(mongo_uri) - 1] = '\0';  // Always null-terminate
+#endif
+
+  return initialize_mongo_database(mongo_uri, &database_client_thread_pool);
 }
 
 void shutdown_db(void){

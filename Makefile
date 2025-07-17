@@ -49,6 +49,7 @@ LDFLAGS ?= -lmongoc-1.0 -lbson-1.0 -lresolv -lpthread -l:libcrypto.so.3 -lcurl -
 # Build configurations
 debug: CFLAGS += -g -fno-stack-protector
 release: CFLAGS += -O3
+release_seed: CFLAGS += -O3 -DSEED_NODE_ON
 optimized: CFLAGS += -march=native -O3
 analyze: CFLAGS += -g -Og -fsanitize=address -fsanitize=undefined
 analyze: LDFLAGS += -fsanitize=address -fsanitize=undefined
@@ -62,10 +63,11 @@ $(BUILD_DIR)/%.o: %.c
 	@$(CC) $(CFLAGS) -c $< -o $@
 
 # Ensure `debug`, `release`, and `optimized` target the same binary
-.PHONY: debug release optimized analyze analyzethreads clean
+.PHONY: debug release optimized analyze analyzethreads release_seed clean
 
 debug: $(BUILD_DIR)/$(TARGET_BINARY)
 release: $(BUILD_DIR)/$(TARGET_BINARY)
+release_seed: $(BUILD_DIR)/$(TARGET_BINARY)
 optimized: $(BUILD_DIR)/$(TARGET_BINARY)
 analyze: $(BUILD_DIR)/$(TARGET_BINARY)
 analyzethreads: $(BUILD_DIR)/$(TARGET_BINARY)
