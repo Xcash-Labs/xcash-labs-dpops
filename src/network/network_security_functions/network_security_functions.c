@@ -46,7 +46,7 @@ int sign_data(char *message) {
            RANDOM_STRING_LENGTH, random_data);
 
   // Step 2: Escape the message for the JSON-RPC request
-  strncpy(payload, message, MEDIUM_BUFFER_SIZE);
+  snprintf(payload, MEDIUM_BUFFER_SIZE, "%s", message);
   string_replace(payload, MEDIUM_BUFFER_SIZE, "\"", "\\\"");
 
   snprintf(request, MEDIUM_BUFFER_SIZE * 2,
