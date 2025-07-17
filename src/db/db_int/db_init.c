@@ -13,7 +13,9 @@ bool initialize_database(void) {
   mongo_uri[sizeof(mongo_uri) - 1] = '\0';  // Always null-terminate
 #endif
 
-  return initialize_mongo_database(mongo_uri, &database_client_thread_pool);
+  if (!initialize_mongo_database(mongo_uri, &database_client_thread_pool)) {
+    return false;
+  }
 }
 
 void shutdown_db(void){
