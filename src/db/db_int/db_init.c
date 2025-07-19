@@ -2,7 +2,6 @@
 
 bool initialize_database(void) {
   char mongo_uri[512];  // Increased buffer size for full URI
-  ERROR_PRINT("TEST....");
   configure_mongo_error_only_logging();
 
 #ifdef SEED_NODE_ON
@@ -46,8 +45,8 @@ static void error_only_log_handler(mongoc_log_level_t log_level_mongo,
                                    const char *message,
                                    void *user_data) {
   (void)user_data;
-  //MONGOC_LOG_LEVEL_ERROR
-  if (log_level_mongo == MONGOC_LOG_LEVEL_DEBUG) {
+  // The can be changed base on MongoDB Log Levels, Only displaying errors for now
+  if (log_level_mongo == MONGOC_LOG_LEVEL_ERROR) {
     ERROR_PRINT("[MONGODB ERROR] %s: %s", log_domain, message);
   }
 }
