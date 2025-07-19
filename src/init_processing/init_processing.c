@@ -11,6 +11,7 @@ bool init_processing(const arg_config_t *arg_config) {
   // Check if database is empty and create the default database data if true
   if (count_db_delegates() <= 0) {
     bool is_primary = false;
+    uint64_t set_counts = 0;
 
 #ifdef SEED_NODE_ON
     if (is_primary_node()) {
@@ -32,7 +33,6 @@ bool init_processing(const arg_config_t *arg_config) {
 
         uint64_t registration_time = (uint64_t)time(NULL);
         double set_delegate_fee = 0.00;
-        uint64_t set_counts = 0;
 
         bson_t bson;
         bson_init(&bson);
