@@ -39,7 +39,7 @@ void shutdown_db(void){
     shutdown_mongo_database(&database_client_thread_pool);
 }
 
-bool initialize_mongo_database__OLD__(const char *mongo_uri, mongoc_client_pool_t **db_client_thread_pool) {
+bool initialize_mongo_database(const char *mongo_uri, mongoc_client_pool_t **db_client_thread_pool) {
     mongoc_uri_t *uri_thread_pool;
     bson_error_t error;
     // Initialize the MongoDB client library
