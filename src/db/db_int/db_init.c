@@ -15,6 +15,13 @@ bool initialize_database(void) {
   snprintf(mongo_uri, sizeof(mongo_uri),
            "mongodb://%s:%s@127.0.0.1:27017/?authSource=admin",
            username, password);
+
+  snprintf(mongo_uri, sizeof(mongo_uri),
+          "mongodb://%s:%s@host1:27017,host2:27017,host3:27017/"
+          "?authSource=admin&replicaSet=xcashRS&tls=true&tlsCAFile=/etc/ssl/mongodb/mongodb.pem",
+          username, password);
+
+
 #else
   strncpy(mongo_uri, DATABASE_CONNECTION, sizeof(mongo_uri) - 1);
   mongo_uri[sizeof(mongo_uri) - 1] = '\0';  // Always null-terminate

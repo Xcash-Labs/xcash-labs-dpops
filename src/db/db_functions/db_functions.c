@@ -857,3 +857,33 @@ int get_statistics_totals_by_public_key(
 
   return success ? XCASH_OK : XCASH_ERROR;
 }
+
+bool is_primary_node(void) {
+    bson_t command = BSON_INITIALIZER;
+    bson_t reply;
+    bson_error_t error;
+    bool is_primary = false;
+
+    mongoc_client_t *client = mongoc_client_pool_pop(database_client_thread_pool);
+    if (!client) {
+        fprintf(stderr, "Failed to pop client from pool\n");
+        return false;
+    }
+
+    BSON_APPEND_INT32(&command, "hello", 1);
+
+    if (mongoc_client_command_simple(client, "admin", &command, NULL, &reply, &error)) {
+        bson_iter_t iter;
+        if (bson_iter_init_find_case(&iter, &reply, "isWritablePrimary") &&
+            BSON_ITER_HOLDS_BOOL(&iter)) {
+            is_primary = bson_iter_bool(&iter);
+        }
+    } else {
+        fprintf(stderr, "Command failed: %s\n", error.message);
+    }
+
+    bson_destroy(&command);
+    bson_destroy(&reply);
+    mongoc_client_pool_push(database_client_thread_pool, client);
+    return is_primary;
+}

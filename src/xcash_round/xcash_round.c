@@ -504,8 +504,9 @@ void start_block_production(void) {
         if (sync_block_verifiers_minutes_and_seconds(1, 45) == XCASH_ERROR) {
           INFO_PRINT("Failed to sync in the allotted time");
         }
+#ifndef SEED_NODE_ON
         // If more that a 30% mismatch lets resync the node
-        if (((delegate_db_hash_mismatch * 100) > (total_delegates * 30)) || first_round) {
+        if (((delegate_db_hash_mismatch * 100) > (total_delegates * 30)) || first_round) { 
           int selected_index;
           pthread_mutex_lock(&delegates_mutex);
           selected_index = select_random_online_delegate();
@@ -517,6 +518,7 @@ void start_block_production(void) {
             INFO_PRINT("Failed to sync in the allotted time");
           }
         }
+#endif
       }
     }
 
