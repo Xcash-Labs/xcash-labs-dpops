@@ -12,7 +12,6 @@ bool get_node_data(void) {
     return XCASH_ERROR;
   }
 
-  is_seed_node = is_seed_address(xcash_wallet_public_address);
   get_vrf_public_key();
   if (vrf_public_key[0] == '\0') {
     WARNING_PRINT("Failed to read vrf_public_key for delegate, has this delegate been registered?");

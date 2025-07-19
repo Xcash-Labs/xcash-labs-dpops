@@ -4,6 +4,8 @@ bool initialize_database(void) {
   char mongo_uri[256];
 
 #ifdef SEED_NODE_ON
+
+  is_seed_node = true;
   const char *username = getenv("MONGODB_USERNAME");
   const char *password = getenv("MONGODB_PASSWORD");
 
@@ -20,7 +22,6 @@ bool initialize_database(void) {
           "mongodb://%s:%s@host1:27017,host2:27017,host3:27017/"
           "?authSource=admin&replicaSet=xcashRS&tls=true&tlsCAFile=/etc/ssl/mongodb/mongodb.pem",
           username, password);
-
 
 #else
   strncpy(mongo_uri, DATABASE_CONNECTION, sizeof(mongo_uri) - 1);

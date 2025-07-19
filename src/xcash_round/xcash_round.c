@@ -413,84 +413,97 @@ void start_block_production(void) {
     snprintf(current_round_part, sizeof(current_round_part), "%d", 12);
     if (round_result == ROUND_OK) {
       for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
-
         if (strlen(delegates_all[i].public_address) > 0 && strlen(delegates_all[i].public_key) > 0) {
-
-          if(strcmp(delegates_all[i].online_status, delegates_all[i].online_status_orginal) == 0) {
-
+          if (strcmp(delegates_all[i].online_status, delegates_all[i].online_status_orginal) == 0) {
             INFO_PRINT("No change to online status, update skipped...");
 
           } else {
+            bool is_primary = false;
 
-            INFO_PRINT("Updating online status...");
-
-            const char* tmp_status = delegates_all[i].online_status;
-            if (strcmp(tmp_status, "true") != 0) {
-              tmp_status = "false";
+#ifdef SEED_NODE_ON
+            if (is_primary_node()) {
+              is_primary = true;
             }
+#endif
 
-            bson_t filter;
-            bson_t update_fields;
+            if (!is_seed_address(xcash_wallet_public_address) || is_primary) {
+              INFO_PRINT("Updating online status...");
 
-            bson_init(&filter);
-            BSON_APPEND_UTF8(&filter, "public_key", delegates_all[i].public_key);
-
-            bson_init(&update_fields);
-            BSON_APPEND_UTF8(&update_fields, "online_status", tmp_status);
-          
-            if (update_document_from_collection_bson(DATABASE_NAME, DB_COLLECTION_DELEGATES, &filter, &update_fields) != XCASH_OK) {
-              ERROR_PRINT("Failed to update online_status for delegate %s", delegates_all[i].public_address);
-            }
-
-            bson_destroy(&filter);
-            bson_destroy(&update_fields);
-
-          }
-
-          if (is_seed_address(xcash_wallet_public_address)) {
-            uint64_t tmp_verifier_total_round = 0;
-            uint64_t tmp_verifier_online_total_rounds = 0;
-            uint64_t tmp_producer_total_rounds = 0;
-
-            if (get_statistics_totals_by_public_key(delegates_all[i].public_key, &tmp_verifier_total_round, &tmp_verifier_online_total_rounds,
-                                                    &tmp_producer_total_rounds) == XCASH_OK) {
-              if (strcmp(delegates_all[i].online_status, "true") == 0) {
-                tmp_verifier_online_total_rounds += 1;
-                if (i < BLOCK_VERIFIERS_AMOUNT) {
-                  tmp_verifier_total_round += 1;
-
-                  if (strcmp(delegates_all[i].public_address, producer_refs[0].public_address) == 0) {
-                    tmp_producer_total_rounds += 1;
-                  }
-                }
+              const char* tmp_status = delegates_all[i].online_status;
+              if (strcmp(tmp_status, "true") != 0) {
+                tmp_status = "false";
               }
 
-              bson_t filter_stat;
-              bson_t update_fields_stat;
+              bson_t filter;
+              bson_t update_fields;
 
-              bson_init(&filter_stat);
-              BSON_APPEND_UTF8(&filter_stat, "public_key", delegates_all[i].public_key);
+              bson_init(&filter);
+              BSON_APPEND_UTF8(&filter, "public_key", delegates_all[i].public_key);
 
-              BSON_APPEND_INT64(&update_fields_stat, "block_verifier_total_rounds", tmp_verifier_total_round);
-              BSON_APPEND_INT64(&update_fields_stat, "block_verifier_online_total_rounds", tmp_verifier_online_total_rounds);
-              BSON_APPEND_INT64(&update_fields_stat, "block_producer_total_rounds", tmp_producer_total_rounds);
+              bson_init(&update_fields);
+              BSON_APPEND_UTF8(&update_fields, "online_status", tmp_status);
 
-              if (update_document_from_collection_bson(DATABASE_NAME, DB_COLLECTION_STATISTICS, &filter_stat, &update_fields_stat) != XCASH_OK) {
+              if (update_document_from_collection_bson(DATABASE_NAME, DB_COLLECTION_DELEGATES, &filter, &update_fields) != XCASH_OK) {
                 ERROR_PRINT("Failed to update online_status for delegate %s", delegates_all[i].public_address);
               }
 
-              bson_destroy(&filter_stat);
-              bson_destroy(&update_fields_stat);
-
-              INFO_PRINT("Updated delegate %s: total=%" PRIu64 ", online=%" PRIu64 ", produced=%" PRIu64,
-                         delegates_all[i].public_address,
-                         tmp_verifier_total_round,
-                         tmp_verifier_online_total_rounds,
-                         tmp_producer_total_rounds);
-            } else {
-              ERROR_PRINT("Failed retrieve and updated statistics for delegate %s", delegates_all[i].public_address);
-            }
+              bson_destroy(&filter);
+              bson_destroy(&update_fields);
+           }
           }
+
+// Only update statics on seed nodes
+#ifdef SEED_NODE_ON
+          if (is_primary_node()) {
+#endif
+
+          uint64_t tmp_verifier_total_round = 0;
+          uint64_t tmp_verifier_online_total_rounds = 0;
+          uint64_t tmp_producer_total_rounds = 0;
+
+          if (get_statistics_totals_by_public_key(delegates_all[i].public_key, &tmp_verifier_total_round, &tmp_verifier_online_total_rounds,
+                                                  &tmp_producer_total_rounds) == XCASH_OK) {
+            if (strcmp(delegates_all[i].online_status, "true") == 0) {
+              tmp_verifier_online_total_rounds += 1;
+              if (i < BLOCK_VERIFIERS_AMOUNT) {
+                tmp_verifier_total_round += 1;
+
+                if (strcmp(delegates_all[i].public_address, producer_refs[0].public_address) == 0) {
+                  tmp_producer_total_rounds += 1;
+                }
+              }
+            }
+
+            bson_t filter_stat;
+            bson_t update_fields_stat;
+
+            bson_init(&filter_stat);
+            BSON_APPEND_UTF8(&filter_stat, "public_key", delegates_all[i].public_key);
+
+            BSON_APPEND_INT64(&update_fields_stat, "block_verifier_total_rounds", tmp_verifier_total_round);
+            BSON_APPEND_INT64(&update_fields_stat, "block_verifier_online_total_rounds", tmp_verifier_online_total_rounds);
+            BSON_APPEND_INT64(&update_fields_stat, "block_producer_total_rounds", tmp_producer_total_rounds);
+
+            if (update_document_from_collection_bson(DATABASE_NAME, DB_COLLECTION_STATISTICS, &filter_stat, &update_fields_stat) != XCASH_OK) {
+              ERROR_PRINT("Failed to update online_status for delegate %s", delegates_all[i].public_address);
+            }
+
+            bson_destroy(&filter_stat);
+            bson_destroy(&update_fields_stat);
+
+            INFO_PRINT("Updated delegate %s: total=%" PRIu64 ", online=%" PRIu64 ", produced=%" PRIu64,
+                       delegates_all[i].public_address,
+                       tmp_verifier_total_round,
+                       tmp_verifier_online_total_rounds,
+                       tmp_producer_total_rounds);
+          } else {
+            ERROR_PRINT("Failed retrieve and update of statistics for delegate %s", delegates_all[i].public_address);
+          }
+
+#ifdef SEED_NODE_ON
+          }
+#endif
+
         }
       }
     } else {
