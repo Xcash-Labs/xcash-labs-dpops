@@ -5,13 +5,16 @@ Name: init_processing
 Description: Initialize globals and print program start header.
 ---------------------------------------------------------------------------------------------------------*/
 bool init_processing(const arg_config_t *arg_config) {
+  (void) arg_config;
   network_data_nodes_amount = get_seed_node_count();
 
   // Check if database is empty and create the default database data if true
   if (count_db_delegates() <= 0) {
+
 #ifdef SEED_NODE_ON
     if (is_primary_node()) {
 #endif
+
     INFO_PRINT("Delegates collection does not exist so creating it.");
     for (int i = 0; network_nodes[i].seed_public_address != NULL; i++) {
       char delegate_name[256];
