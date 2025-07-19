@@ -4,7 +4,6 @@
 #include "globals.h"
 #include <mongoc/mongoc.h>
 #include <bson/bson.h>
-#include <mongoc/mongoc-log.h>
 #include <stdbool.h>
 #include "string.h"
 #include "config.h"
