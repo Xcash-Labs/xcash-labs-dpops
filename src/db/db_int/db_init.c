@@ -27,7 +27,7 @@ bool initialize_database(void) {
 #endif
 
   // Call database initializer with SSL handled inside
-  if (!initialize_mongo_database(mongo_uri, &database_client_thread_pool)) {
+  if (!initialize_mongo_database_seed(mongo_uri, &database_client_thread_pool)) {
     return false;
   }
 
@@ -61,7 +61,7 @@ bool initialize_mongo_database__OLD__(const char *mongo_uri, mongoc_client_pool_
     return XCASH_OK;
 }
 
-bool initialize_mongo_database(const char *mongo_uri, mongoc_client_pool_t **db_client_thread_pool) {
+bool initialize_mongo_database_seed(const char *mongo_uri, mongoc_client_pool_t **db_client_thread_pool) {
     bson_error_t error;
     mongoc_uri_t *uri_thread_pool = NULL;
     mongoc_client_pool_t *pool = NULL;
