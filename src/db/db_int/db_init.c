@@ -2,8 +2,8 @@
 
 bool initialize_database(void) {
   char mongo_uri[512];  // Increased buffer size for full URI
-  configure_mongo_log_level(log_level);
-  
+  configure_mongo_error_only_logging();
+
 #ifdef SEED_NODE_ON
   is_seed_node = true;
 
@@ -40,30 +40,17 @@ bool initialize_database(void) {
   return true;
 }
 
-// Map to xcash log-level
-void configure_mongo_log_level(int xcash_log_level) {
-  if (xcash_log_level <= LOG_LEVEL_CRITICAL) {
-    mongoc_log_set_handler(NULL, NULL);
-  } else {
-    mongoc_log_level_t mongo_level;
-    switch (xcash_log_level) {
-      case LOG_LEVEL_ERROR:
-        mongo_level = MONGOC_LOG_LEVEL_ERROR;
-        break;
-      case LOG_LEVEL_WARNING:
-        mongo_level = MONGOC_LOG_LEVEL_WARNING;
-        break;
-      case LOG_LEVEL_INFO:
-        mongo_level = MONGOC_LOG_LEVEL_INFO;
-        break;
-      case LOG_LEVEL_DEBUG:
-      default:
-        mongo_level = MONGOC_LOG_LEVEL_DEBUG;
-        break;
+static void error_only_log_handler(mongoc_log_level_t log_level,
+                                   const char *log_domain,
+                                   const char *message,
+                                   void *user_data) {
+    if (log_level == MONGOC_LOG_LEVEL_ERROR) {
+        ERROR_PRINT("[MONGODB ERROR] %s: %s", log_domain, message);
     }
+}
 
-    mongoc_log_set_level(mongo_level);
-  }
+void configure_mongo_error_only_logging(void) {
+    mongoc_log_set_handler(error_only_log_handler, NULL);
 }
 
 void shutdown_db(void){
