@@ -10,53 +10,63 @@ bool init_processing(const arg_config_t *arg_config) {
 
   // Check if database is empty and create the default database data if true
   if (count_db_delegates() <= 0) {
+    bool is_primary = false;
 
 #ifdef SEED_NODE_ON
     if (is_primary_node()) {
+      is_primary = true;
+    }
 #endif
 
-    INFO_PRINT("Delegates collection does not exist so creating it.");
-    for (int i = 0; network_nodes[i].seed_public_address != NULL; i++) {
-      char delegate_name[256];
-      strncpy(delegate_name, network_nodes[i].ip_address, sizeof(delegate_name));
-      delegate_name[sizeof(delegate_name) - 1] = '\0';  // Null-terminate
-      // Replace '.' with '_'
-      for (char *p = delegate_name; *p; p++) {
-        if (*p == '.') *p = '_';
-      }
+    if (!is_seed_node || is_primary) {
+      INFO_PRINT("Delegates collection does not exist so creating it.");
+      for (int i = 0; network_nodes[i].seed_public_address != NULL; i++) {
+        char delegate_name[256];
+        strncpy(delegate_name, network_nodes[i].ip_address, sizeof(delegate_name));
+        delegate_name[sizeof(delegate_name) - 1] = '\0';  // Null-terminate
+        // Replace '.' with '_'
+        for (char *p = delegate_name; *p; p++) {
+          if (*p == '.') *p = '_';
+        }
 
-      uint64_t registration_time = (uint64_t)time(NULL);
-      double set_delegate_fee = 0.00;
-      uint64_t set_counts = 0;
+        uint64_t registration_time = (uint64_t)time(NULL);
+        double set_delegate_fee = 0.00;
+        uint64_t set_counts = 0;
 
-      bson_t bson;
-      bson_init(&bson);
+        bson_t bson;
+        bson_init(&bson);
 
-      // Strings
-      bson_append_utf8(&bson, "public_address", -1, network_nodes[i].seed_public_address, -1);
-      bson_append_utf8(&bson, "IP_address", -1, network_nodes[i].ip_address, -1);
-      bson_append_utf8(&bson, "delegate_name", -1, delegate_name, -1);
-      bson_append_utf8(&bson, "about", -1, "Official xCash-Labs Node", -1);
-      bson_append_utf8(&bson, "website", -1, "xcashlabs.org", -1);
-      bson_append_utf8(&bson, "team", -1, "xCash-Labs Team", -1);
-      bson_append_utf8(&bson, "delegate_type", -1, "seed", -1);
-      bson_append_utf8(&bson, "server_specs", -1, "Operating System = Ubuntu 22.04", -1);
-      bson_append_utf8(&bson, "online_status", -1, "false", -1);
-      bson_append_utf8(&bson, "public_key", -1, network_nodes[i].seed_public_key, -1);
+        // Strings
+        bson_append_utf8(&bson, "public_address", -1, network_nodes[i].seed_public_address, -1);
+        bson_append_utf8(&bson, "IP_address", -1, network_nodes[i].ip_address, -1);
+        bson_append_utf8(&bson, "delegate_name", -1, delegate_name, -1);
+        bson_append_utf8(&bson, "about", -1, "Official xCash-Labs Node", -1);
+        bson_append_utf8(&bson, "website", -1, "xcashlabs.org", -1);
+        bson_append_utf8(&bson, "team", -1, "xCash-Labs Team", -1);
+        bson_append_utf8(&bson, "delegate_type", -1, "seed", -1);
+        bson_append_utf8(&bson, "server_specs", -1, "Operating System = Ubuntu 22.04", -1);
+        bson_append_utf8(&bson, "online_status", -1, "false", -1);
+        bson_append_utf8(&bson, "public_key", -1, network_nodes[i].seed_public_key, -1);
 
-    // Numbers
-      bson_append_int64(&bson, "total_vote_count", -1, set_counts);
-      bson_append_double(&bson, "delegate_fee", -1, set_delegate_fee);
-      bson_append_int64(&bson, "registration_timestamp", -1, registration_time);
+        // Numbers
+        bson_append_int64(&bson, "total_vote_count", -1, set_counts);
+        bson_append_double(&bson, "delegate_fee", -1, set_delegate_fee);
+        bson_append_int64(&bson, "registration_timestamp", -1, registration_time);
 
-      if (insert_document_into_collection_bson(DATABASE_NAME, DB_COLLECTION_DELEGATES, &bson) != XCASH_OK) {
-        ERROR_PRINT("Failed to insert delegate document.");
+        if (insert_document_into_collection_bson(DATABASE_NAME, DB_COLLECTION_DELEGATES, &bson) != XCASH_OK) {
+          ERROR_PRINT("Failed to insert delegate document.");
+          bson_destroy(&bson);
+          return XCASH_ERROR;
+        }
+
         bson_destroy(&bson);
-        return XCASH_ERROR;
       }
+    }  
 
-      bson_destroy(&bson);
+// Only update statics on seed nodes
+#ifdef SEED_NODE_ON
 
+    if (is_primary_node()) {
       bson_t bson_statistics;
       bson_init(&bson_statistics);
 
@@ -78,12 +88,9 @@ bool init_processing(const arg_config_t *arg_config) {
       bson_destroy(&bson_statistics);
     }
 
-#ifdef SEED_NODE_ON
-  }
 #endif
-
-}
-
+  }
+  
   return XCASH_OK;
 }
 

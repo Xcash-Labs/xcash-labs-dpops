@@ -210,34 +210,47 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
     // 7) Finally insert a new document
     double set_delegate_fee = 0.00;
     uint64_t set_counts = 0;
-    bson_t bson;
-    bson_init(&bson);
 
-    // Strings
-    bson_append_utf8(&bson, "public_address", -1, delegate_public_address, -1);
-    bson_append_utf8(&bson, "IP_address", -1, delegates_IP_address, -1);
-    bson_append_utf8(&bson, "delegate_name", -1, delegate_name, -1);
-    bson_append_utf8(&bson, "about", -1, "", -1);
-    bson_append_utf8(&bson, "website", -1, "", -1);
-    bson_append_utf8(&bson, "team", -1, "", -1);
-    bson_append_utf8(&bson, "delegate_type", -1, "shared", -1);
-    bson_append_utf8(&bson, "server_specs", -1, "", -1);
-    bson_append_utf8(&bson, "online_status", -1, "false", -1);
-    bson_append_utf8(&bson, "public_key", -1, delegate_public_key, -1);
+    bool is_primary = false;
 
-    // Numbers
-    bson_append_int64(&bson, "total_vote_count", -1, set_counts);
-    bson_append_double(&bson, "delegate_fee", -1, set_delegate_fee);
-    bson_append_int64(&bson, "registration_timestamp", -1, registration_time);
+#ifdef SEED_NODE_ON
+    if (is_primary_node()) {
+      is_primary = true;
+    }
+#endif
 
-    if (insert_document_into_collection_bson(DATABASE_NAME, DB_COLLECTION_DELEGATES, &bson) != XCASH_OK) {
+    if (!is_seed_node || is_primary) {
+      bson_t bson;
+      bson_init(&bson);
+
+      // Strings
+      bson_append_utf8(&bson, "public_address", -1, delegate_public_address, -1);
+      bson_append_utf8(&bson, "IP_address", -1, delegates_IP_address, -1);
+      bson_append_utf8(&bson, "delegate_name", -1, delegate_name, -1);
+      bson_append_utf8(&bson, "about", -1, "", -1);
+      bson_append_utf8(&bson, "website", -1, "", -1);
+      bson_append_utf8(&bson, "team", -1, "", -1);
+      bson_append_utf8(&bson, "delegate_type", -1, "shared", -1);
+      bson_append_utf8(&bson, "server_specs", -1, "", -1);
+      bson_append_utf8(&bson, "online_status", -1, "false", -1);
+      bson_append_utf8(&bson, "public_key", -1, delegate_public_key, -1);
+
+      // Numbers
+      bson_append_int64(&bson, "total_vote_count", -1, set_counts);
+      bson_append_double(&bson, "delegate_fee", -1, set_delegate_fee);
+      bson_append_int64(&bson, "registration_timestamp", -1, registration_time);
+
+      if (insert_document_into_collection_bson(DATABASE_NAME, DB_COLLECTION_DELEGATES, &bson) != XCASH_OK) {
+        bson_destroy(&bson);
+        SERVER_ERROR("Failed to insert the delegate document}");
+      }
+
       bson_destroy(&bson);
-      SERVER_ERROR("Failed to insert the delegate document}");
     }
 
-    bson_destroy(&bson);
+// Only update statics on seed nodes
+#ifdef SEED_NODE_ON
 
-    if (is_seed_address(xcash_wallet_public_address)) {
       bson_t bson_statistics;
       bson_init(&bson_statistics);
 
@@ -256,7 +269,8 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
       }
 
       bson_destroy(&bson_statistics);
-    }
+
+#endif
 
     // 8) Success: reply back to the client
     send_data(client, (unsigned char *)"Registered the delegate}", strlen("Registered the delegate}"));
