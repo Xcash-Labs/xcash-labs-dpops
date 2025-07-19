@@ -19,7 +19,7 @@ bool initialize_database(void) {
            username, password);
 
   snprintf(mongo_uri, sizeof(mongo_uri),
-          "mongodb://%s:%s@host1:27017,host2:27017,host3:27017/"
+          "mongodb://%s:%s@46.202.89.18:27017,82.180.154.21:27017,91.108.104.25:27017,212.85.13.137:27017/"
           "?authSource=admin&replicaSet=xcashRS&tls=true&tlsCAFile=/etc/ssl/mongodb/mongodb.pem",
           username, password);
 
