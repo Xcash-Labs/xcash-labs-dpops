@@ -26,14 +26,18 @@ bool initialize_database(void) {
   mongo_uri[sizeof(mongo_uri) - 1] = '\0';  // Always null-terminate
 #endif
 
-  // Call database initializer with SSL handled inside
-  if (!initialize_mongo_database_seed(mongo_uri, &database_client_thread_pool)) {
-    return false;
+  if (is_seed_address) {
+    if (!initialize_mongo_database_seed(mongo_uri, &database_client_thread_pool)) {
+      return false;
+    }
+  } else {
+      if (!initialize_mongo_database(mongo_uri, &database_client_thread_pool)) {
+        return false;
+      }
   }
 
   return true;
 }
-
 
 void shutdown_db(void){
     shutdown_mongo_database(&database_client_thread_pool);
