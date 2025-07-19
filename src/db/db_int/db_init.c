@@ -44,9 +44,10 @@ static void error_only_log_handler(mongoc_log_level_t log_level_mongo,
                                    const char *log_domain,
                                    const char *message,
                                    void *user_data) {
-    if (log_level_mongo == MONGOC_LOG_LEVEL_ERROR) {
-        ERROR_PRINT("[MONGODB ERROR] %s: %s", log_domain, message);
-    }
+  (void)user_data;
+  if (log_level_mongo == MONGOC_LOG_LEVEL_ERROR) {
+    ERROR_PRINT("[MONGODB ERROR] %s: %s", log_domain, message);
+  }
 }
 
 void configure_mongo_error_only_logging(void) {
