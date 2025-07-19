@@ -2,7 +2,8 @@
 
 bool initialize_database(void) {
   char mongo_uri[512];  // Increased buffer size for full URI
-
+  configure_mongo_log_level(log_level);
+  
 #ifdef SEED_NODE_ON
   is_seed_node = true;
 
@@ -37,6 +38,32 @@ bool initialize_database(void) {
   }
 
   return true;
+}
+
+// Map to xcash log-level
+void configure_mongo_log_level(int xcash_log_level) {
+  if (xcash_log_level <= LOG_LEVEL_CRITICAL) {
+    mongoc_log_set_handler(NULL, NULL);
+  } else {
+    mongoc_log_level_t mongo_level;
+    switch (xcash_log_level) {
+      case LOG_LEVEL_ERROR:
+        mongo_level = MONGOC_LOG_LEVEL_ERROR;
+        break;
+      case LOG_LEVEL_WARNING:
+        mongo_level = MONGOC_LOG_LEVEL_WARNING;
+        break;
+      case LOG_LEVEL_INFO:
+        mongo_level = MONGOC_LOG_LEVEL_INFO;
+        break;
+      case LOG_LEVEL_DEBUG:
+      default:
+        mongo_level = MONGOC_LOG_LEVEL_DEBUG;
+        break;
+    }
+
+    mongoc_log_set_level(mongo_level);
+  }
 }
 
 void shutdown_db(void){
@@ -80,6 +107,7 @@ bool initialize_mongo_database_seed(const char *mongo_uri, mongoc_client_pool_t 
     // Success — store pool reference
     *db_client_thread_pool = pool;
     mongoc_uri_destroy(uri_thread_pool);
+
     return XCASH_OK;
 }
 

@@ -16,5 +16,6 @@ void shutdown_db(void);
 bool initialize_mongo_database(const char* mongo_uri, mongoc_client_pool_t** database_client_thread_pool);
 bool initialize_mongo_database_seed(const char* mongo_uri, mongoc_client_pool_t** database_client_thread_pool);
 void shutdown_mongo_database(mongoc_client_pool_t** database_client_thread_pool);
+void configure_mongo_log_level(int xcash_log_level);
 
 #endif
