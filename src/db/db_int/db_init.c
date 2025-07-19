@@ -66,17 +66,17 @@ bool initialize_mongo_database(const char *mongo_uri, mongoc_client_pool_t **db_
     mongoc_uri_t *uri_thread_pool = NULL;
     mongoc_client_pool_t *pool = NULL;
 
-    // Initialize the MongoDB C driver
+    // Initialize the MongoDB driver
     mongoc_init();
 
-    // Parse the URI
+    // Parse the MongoDB URI
     uri_thread_pool = mongoc_uri_new_with_error(mongo_uri, &error);
     if (!uri_thread_pool) {
         ERROR_PRINT("Failed to parse MongoDB URI: %s\nError: %s", mongo_uri, error.message);
         return XCASH_ERROR;
     }
 
-    // Create a new client pool
+    // Create the client pool
     pool = mongoc_client_pool_new(uri_thread_pool);
     if (!pool) {
         ERROR_PRINT("Failed to create MongoDB client pool");
@@ -84,16 +84,18 @@ bool initialize_mongo_database(const char *mongo_uri, mongoc_client_pool_t **db_
         return XCASH_ERROR;
     }
 
-    // Setup TLS (mutual authentication)
-    mongoc_ssl_opt_t ssl_opts = {0};
-    mongoc_ssl_opt_get_default(&ssl_opts);  // Load default SSL options
+    // If URI uses TLS, apply mutual TLS certificate options
+    if (strstr(mongo_uri, "tls=true") != NULL) {
+        const mongoc_ssl_opt_t *default_opts = mongoc_ssl_opt_get_default();
+        mongoc_ssl_opt_t ssl_opts = *default_opts;  // Copy default options
 
-    ssl_opts.pem_file = "/etc/ssl/mongodb/mongodb.pem";  // Client cert + private key
-    ssl_opts.ca_file  = "/etc/ssl/mongodb/mongodb.crt";  // CA that signed server cert
+        ssl_opts.pem_file = "/etc/ssl/mongodb/mongodb.pem";  // Client cert + key
+        ssl_opts.ca_file  = "/etc/ssl/mongodb/mongodb.crt";  // CA cert to verify server
 
-    mongoc_client_pool_set_ssl_opts(pool, &ssl_opts);
+        mongoc_client_pool_set_ssl_opts(pool, &ssl_opts);
+    }
 
-    // Output result
+    // Success — store pool reference
     *db_client_thread_pool = pool;
     mongoc_uri_destroy(uri_thread_pool);
     return XCASH_OK;
