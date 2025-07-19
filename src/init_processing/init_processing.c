@@ -18,9 +18,10 @@ bool init_processing(const arg_config_t *arg_config) {
     }
 #endif
 
-    if (!is_seed_node || is_primary) {
-      INFO_PRINT("Delegates collection does not exist so creating it.");
-      for (int i = 0; network_nodes[i].seed_public_address != NULL; i++) {
+    for (int i = 0; network_nodes[i].seed_public_address != NULL; i++) {
+      if (!is_seed_node || is_primary) {
+        INFO_PRINT("Delegates collection does not exist so creating it.");
+
         char delegate_name[256];
         strncpy(delegate_name, network_nodes[i].ip_address, sizeof(delegate_name));
         delegate_name[sizeof(delegate_name) - 1] = '\0';  // Null-terminate
@@ -61,36 +62,37 @@ bool init_processing(const arg_config_t *arg_config) {
 
         bson_destroy(&bson);
       }
-    }  
 
 // Only update statics on seed nodes
 #ifdef SEED_NODE_ON
 
-    if (is_primary_node()) {
-      bson_t bson_statistics;
-      bson_init(&bson_statistics);
+      if (is_primary_node()) {
+        bson_t bson_statistics;
+        bson_init(&bson_statistics);
 
-      // Strings
-      bson_append_utf8(&bson_statistics, "public_key", -1, network_nodes[i].seed_public_key, -1);
+        // Strings
+        bson_append_utf8(&bson_statistics, "public_key", -1, network_nodes[i].seed_public_key, -1);
 
-      // Numbers
-      bson_append_int64(&bson_statistics, "block_verifier_total_rounds", -1, set_counts);
-      bson_append_int64(&bson_statistics, "block_verifier_online_total_rounds", -1, set_counts);
-      bson_append_int64(&bson_statistics, "block_producer_total_rounds", -1, set_counts);
+        // Numbers
+        bson_append_int64(&bson_statistics, "block_verifier_total_rounds", -1, set_counts);
+        bson_append_int64(&bson_statistics, "block_verifier_online_total_rounds", -1, set_counts);
+        bson_append_int64(&bson_statistics, "block_producer_total_rounds", -1, set_counts);
 
-      // Insert into "statistics" collection
-      if (insert_document_into_collection_bson(DATABASE_NAME, DB_COLLECTION_STATISTICS, &bson_statistics) != XCASH_OK) {
-        ERROR_PRINT("Failed to insert statistics document during initialization.");
+        // Insert into "statistics" collection
+        if (insert_document_into_collection_bson(DATABASE_NAME, DB_COLLECTION_STATISTICS, &bson_statistics) != XCASH_OK) {
+          ERROR_PRINT("Failed to insert statistics document during initialization.");
+          bson_destroy(&bson_statistics);
+          return XCASH_ERROR;
+        }
+
         bson_destroy(&bson_statistics);
-        return XCASH_ERROR;
       }
 
-      bson_destroy(&bson_statistics);
-    }
-
 #endif
+
+    }
   }
-  
+
   return XCASH_OK;
 }
 
