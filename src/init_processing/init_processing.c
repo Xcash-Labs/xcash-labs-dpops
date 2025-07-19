@@ -7,28 +7,11 @@ Description: Initialize globals and print program start header.
 bool init_processing(const arg_config_t *arg_config) {
   network_data_nodes_amount = get_seed_node_count();
 
-  if (arg_config->init_db_from_seeds) {
-    INFO_STAGE_PRINT("Initializing database from seeds");
-//    if (!init_db_from_seeds()) {
-//      ERROR_PRINT("Can't initialize database from seeds");
-//      return XCASH_ERROR;
-//    };
-  }
-
-  if (arg_config->init_db_from_top) {
-    if (!fill_delegates_from_db()) {
-      ERROR_PRINT("Can't read delegates list from DB");
-      return XCASH_ERROR;
-    }
-    INFO_STAGE_PRINT("Initializing database from top height nodes");
-//    if (!init_db_from_top()) {
-//      ERROR_PRINT("Can't initialize database from top height nodes");
-//      return XCASH_ERROR;
-//    };
-  }
-
-  // Check if database is empty and create the default database data
+  // Check if database is empty and create the default database data if true
   if (count_db_delegates() <= 0) {
+#ifdef SEED_NODE_ON
+    if (is_primary_node()) {
+#endif
     INFO_PRINT("Delegates collection does not exist so creating it.");
     for (int i = 0; network_nodes[i].seed_public_address != NULL; i++) {
       char delegate_name[256];
@@ -91,11 +74,12 @@ bool init_processing(const arg_config_t *arg_config) {
 
       bson_destroy(&bson_statistics);
     }
-  } else {
 
-  // drop statistics and add back from another seed node
-
+#ifdef SEED_NODE_ON
   }
+#endif
+
+}
 
   return XCASH_OK;
 }

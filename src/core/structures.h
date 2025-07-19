@@ -9,8 +9,6 @@ typedef struct {
     bool shared_delegates_website;
     float fee;
     unsigned long long minimum_amount;
-    bool init_db_from_seeds;
-    bool init_db_from_top;
 } arg_config_t;
 
 // Define a struct to store network node data

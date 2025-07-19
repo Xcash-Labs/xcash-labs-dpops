@@ -27,11 +27,6 @@ BRIGHT_WHITE_TEXT("Delegate Options:\n")
 BRIGHT_WHITE_TEXT("Advanced Options:\n")
 "  --generate-key                          Generate public/private key for block verifiers.\n"
 "\n"
-"  --init-db-from-seeds                    Sync current node data from seeds. Needed only during installation\n"
-"                                          process.\n"
-"\n"
-"  --init-db-from-top                      Sync current node data from top block_height nodes.\n"
-"\n"
 "For more details on each option, refer to the documentation or use the --help option.\n";
 
 static struct argp_option options[] = {
@@ -43,8 +38,6 @@ static struct argp_option options[] = {
   {"fee", OPTION_FEE, "FEE", 0, "The fee reward to running delegate (in percents 0..100).", 0},
   {"minimum-amount", OPTION_MINIMUM_AMOUNT, "MINIMUM_PAYOUT", 0, "The minimum amount of payouts to voters.", 0},
   {"generate-key", OPTION_GENERATE_KEY, 0, 0, "Generate public/private key for block verifiers.", 0},
-  {"init-db-from-seeds", OPTION_INIT_DB_FROM_SEEDS, 0, 0, "Sync current node data from seeds. Needed only during installation process", 0},
-  {"init-db-from-top", OPTION_INIT_DB_FROM_TOP, 0, 0, "Sync current node data from top block_height nodes.", 0},
   {0}
 };
 
@@ -83,12 +76,6 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
     break;
   case OPTION_GENERATE_KEY:
     create_key = true;
-    break;
-  case OPTION_INIT_DB_FROM_SEEDS:
-    arguments->init_db_from_seeds = true;
-    break;
-  case OPTION_INIT_DB_FROM_TOP:
-    arguments->init_db_from_top = true;
     break;
   default:
     return ARGP_ERR_UNKNOWN;
