@@ -10,6 +10,7 @@ bool init_processing(const arg_config_t *arg_config) {
 
   // Check if database is empty and create the default database data if true
   if (count_db_delegates() <= 0) {
+    INFO_PRINT("Delegates collection does not exist so creating it.");
     bool is_primary = false;
     uint64_t set_counts = 0;
 
@@ -21,8 +22,6 @@ bool init_processing(const arg_config_t *arg_config) {
 
     for (int i = 0; network_nodes[i].seed_public_address != NULL; i++) {
       if (!is_seed_node || is_primary) {
-        INFO_PRINT("Delegates collection does not exist so creating it.");
-
         char delegate_name[256];
         strncpy(delegate_name, network_nodes[i].ip_address, sizeof(delegate_name));
         delegate_name[sizeof(delegate_name) - 1] = '\0';  // Null-terminate
