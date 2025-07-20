@@ -273,22 +273,37 @@ void server_receive_data_socket_node_to_node_db_sync_data(const char *MESSAGE) {
     return;
   }
 
-//               add locking   pthread_mutex_lock(&delegates_mutex);
+  bool is_primary = false;
 
-  // Drop old delegates collection before sync
-  if (!db_drop(DATABASE_NAME, DB_COLLECTION_DELEGATES, &error)) {
-    ERROR_PRINT("Failed to clear old delegates table before sync: %s", error.message);
-    bson_destroy(doc);
-    return;
+#ifdef SEED_NODE_ON
+  if (is_primary_node()) {
+    is_primary = true;
   }
+#endif
 
-  // Insert new delegate data
-  if (!db_upsert_multi_docs(DATABASE_NAME, DB_COLLECTION_DELEGATES, doc, &error)) {
-    ERROR_PRINT("Failed to upsert delegates sync data: %s", error.message);
-    bson_destroy(doc);
-    return;
+  if (!is_seed_address || is_primary) {
+    pthread_mutex_lock(&delegates_mutex);
+    // Drop old delegates collection before sync
+    if (!db_drop(DATABASE_NAME, DB_COLLECTION_DELEGATES, &error)) {
+      ERROR_PRINT("Failed to clear old delegates table before sync: %s", error.message);
+      bson_destroy(doc);
+      pthread_mutex_unlock(&delegates_mutex);
+      return;
+    }
+
+    // Insert new delegate data
+    if (!db_upsert_multi_docs(DATABASE_NAME, DB_COLLECTION_DELEGATES, doc, &error)) {
+      ERROR_PRINT("Failed to upsert delegates sync data: %s", error.message);
+      bson_destroy(doc);
+      pthread_mutex_unlock(&delegates_mutex);
+      return;
+    }
+
+    pthread_mutex_unlock(&delegates_mutex);
   }
 
   INFO_PRINT("Successfully updated delegates database from sync message");
   bson_destroy(doc);
+
+  return;
 }
