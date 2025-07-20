@@ -281,7 +281,7 @@ void server_receive_data_socket_node_to_node_db_sync_data(const char *MESSAGE) {
   }
 #endif
 
-  if (!is_seed_address || is_primary) {
+  if (!is_seed_node || is_primary) {
     pthread_mutex_lock(&delegates_mutex);
     // Drop old delegates collection before sync
     if (!db_drop(DATABASE_NAME, DB_COLLECTION_DELEGATES, &error)) {
