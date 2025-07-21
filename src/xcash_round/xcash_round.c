@@ -430,13 +430,10 @@ void start_block_production(void) {
 
               bson_t filter;
               bson_t update_fields;
-
               bson_init(&filter);
               BSON_APPEND_UTF8(&filter, "public_key", delegates_all[i].public_key);
-
               bson_init(&update_fields);
               BSON_APPEND_UTF8(&update_fields, "online_status", tmp_status);
-
               if (update_document_from_collection_bson(DATABASE_NAME, DB_COLLECTION_DELEGATES, &filter, &update_fields) != XCASH_OK) {
                 ERROR_PRINT("Failed to update online_status for delegate %s", delegates_all[i].public_address);
               }
@@ -472,8 +469,8 @@ void start_block_production(void) {
               INFO_PRINT("Stats 1");
               bson_t filter_stat;
               bson_t update_fields_stat;
-              INFO_PRINT("Stats 2");
               bson_init(&filter_stat);
+              bson_init(&update_fields_stat);
               BSON_APPEND_UTF8(&filter_stat, "public_key", delegates_all[i].public_key);
               INFO_PRINT("Stats 3");
               BSON_APPEND_INT64(&update_fields_stat, "block_verifier_total_rounds", tmp_verifier_total_round);
@@ -481,7 +478,7 @@ void start_block_production(void) {
               BSON_APPEND_INT64(&update_fields_stat, "block_producer_total_rounds", tmp_producer_total_rounds);
               INFO_PRINT("Stats 4");
               if (update_document_from_collection_bson(DATABASE_NAME, DB_COLLECTION_STATISTICS, &filter_stat, &update_fields_stat) != XCASH_OK) {
-                ERROR_PRINT("Failed to update online_status for delegate %s", delegates_all[i].public_address);
+                ERROR_PRINT("Failed to update statistics for delegate %s", delegates_all[i].public_address);
               }
               INFO_PRINT("Stats 5");
               bson_destroy(&filter_stat);
