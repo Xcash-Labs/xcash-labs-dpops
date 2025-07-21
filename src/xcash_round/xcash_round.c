@@ -419,7 +419,7 @@ void start_block_production(void) {
             }
 #endif
 
-            if (!is_seed_address || is_primary) {
+            if (!is_seed_node || is_primary) {
               INFO_PRINT("Updating online status...");
 
               char tmp_status[6] = "false";
