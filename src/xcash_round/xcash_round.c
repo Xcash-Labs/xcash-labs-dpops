@@ -452,10 +452,9 @@ void start_block_production(void) {
             uint64_t tmp_verifier_online_total_rounds = 0;
             uint64_t tmp_producer_total_rounds = 0;
 
-            INFO_PRINT("Updating stats...");
             if (get_statistics_totals_by_public_key(delegates_all[i].public_key, &tmp_verifier_total_round, &tmp_verifier_online_total_rounds,
                                                     &tmp_producer_total_rounds) == XCASH_OK) {
-              INFO_PRINT("Stats retrieved");
+
               if (strcmp(delegates_all[i].online_status, "true") == 0) {
                 tmp_verifier_online_total_rounds += 1;
                 if (i < BLOCK_VERIFIERS_AMOUNT) {
@@ -466,25 +465,25 @@ void start_block_production(void) {
                   }
                 }
               }
-              INFO_PRINT("Stats 1");
+              
               bson_t filter_stat;
               bson_t update_fields_stat;
               bson_init(&filter_stat);
               bson_init(&update_fields_stat);
+              
               BSON_APPEND_UTF8(&filter_stat, "public_key", delegates_all[i].public_key);
-              INFO_PRINT("Stats 3");
+
               BSON_APPEND_INT64(&update_fields_stat, "block_verifier_total_rounds", tmp_verifier_total_round);
               BSON_APPEND_INT64(&update_fields_stat, "block_verifier_online_total_rounds", tmp_verifier_online_total_rounds);
               BSON_APPEND_INT64(&update_fields_stat, "block_producer_total_rounds", tmp_producer_total_rounds);
-              INFO_PRINT("Stats 4");
+
               if (update_document_from_collection_bson(DATABASE_NAME, DB_COLLECTION_STATISTICS, &filter_stat, &update_fields_stat) != XCASH_OK) {
                 ERROR_PRINT("Failed to update statistics for delegate %s", delegates_all[i].public_address);
               }
-              INFO_PRINT("Stats 5");
+
               bson_destroy(&filter_stat);
-              INFO_PRINT("Stats 6");
               bson_destroy(&update_fields_stat);
-              INFO_PRINT("Stats 7");
+
 
               INFO_PRINT("Updated delegate %s: total=%" PRIu64 ", online=%" PRIu64 ", produced=%" PRIu64,
                          delegates_all[i].public_address,
@@ -495,9 +494,9 @@ void start_block_production(void) {
               ERROR_PRINT("Failed retrieve and update of statistics for delegate %s", delegates_all[i].public_address);
             }
           }
-            INFO_PRINT("Exit updating stats...");
+          
 #endif
-            INFO_PRINT("Exit updating stats 2...");
+
         }
       }
     } else {
