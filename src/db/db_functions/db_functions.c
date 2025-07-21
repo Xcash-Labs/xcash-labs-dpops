@@ -818,37 +818,53 @@ int get_statistics_totals_by_public_key(
     uint64_t* block_verifier_online_total_rounds,
     uint64_t* block_producer_total_rounds)
 {
+  // Defensive default
+  *block_verifier_total_rounds = 0;
+  *block_verifier_online_total_rounds = 0;
+  *block_producer_total_rounds = 0;
+
+  // Get MongoDB client
   mongoc_client_t* database_client_thread = get_temporary_connection();
   if (!database_client_thread) return XCASH_ERROR;
 
-  mongoc_collection_t* collection = mongoc_client_get_collection(database_client_thread, DATABASE_NAME, DB_COLLECTION_STATISTICS);
+  // Get collection
+  mongoc_collection_t* collection = mongoc_client_get_collection(
+      database_client_thread, DATABASE_NAME, DB_COLLECTION_STATISTICS);
 
-  bson_t* query = BCON_NEW("public_key", BCON_UTF8(public_key));
-  mongoc_cursor_t* cursor = mongoc_collection_find_with_opts(collection, query, NULL, NULL);
+  // Build query using safe stack-based BSON
+  bson_t query;
+  bson_init(&query);
+  BSON_APPEND_UTF8(&query, "public_key", public_key);
+
+  mongoc_cursor_t* cursor = mongoc_collection_find_with_opts(collection, &query, NULL, NULL);
 
   const bson_t* doc;
   bson_iter_t iter;
-
   bool success = false;
 
+  // Search the first matched document
   if (mongoc_cursor_next(cursor, &doc)) {
     if (bson_iter_init(&iter, doc)) {
       while (bson_iter_next(&iter)) {
         const char* key = bson_iter_key(&iter);
-        if (strcmp(key, "block_verifier_total_rounds") == 0 && (BSON_ITER_HOLDS_INT64(&iter) || BSON_ITER_HOLDS_INT32(&iter))) {
-          *block_verifier_total_rounds = bson_iter_int64(&iter);
-        } else if (strcmp(key, "block_verifier_online_total_rounds") == 0 && (BSON_ITER_HOLDS_INT64(&iter) || BSON_ITER_HOLDS_INT32(&iter))) {
-          *block_verifier_online_total_rounds = bson_iter_int64(&iter);
-        } else if (strcmp(key, "block_producer_total_rounds") == 0 && (BSON_ITER_HOLDS_INT64(&iter) || BSON_ITER_HOLDS_INT32(&iter))) {
-          *block_producer_total_rounds = bson_iter_int64(&iter);
+
+        if ((strcmp(key, "block_verifier_total_rounds") == 0) &&
+            BSON_ITER_HOLDS_NUMBER(&iter)) {
+          *block_verifier_total_rounds = bson_iter_as_int64(&iter);
+        } else if ((strcmp(key, "block_verifier_online_total_rounds") == 0) &&
+                   BSON_ITER_HOLDS_NUMBER(&iter)) {
+          *block_verifier_online_total_rounds = bson_iter_as_int64(&iter);
+        } else if ((strcmp(key, "block_producer_total_rounds") == 0) &&
+                   BSON_ITER_HOLDS_NUMBER(&iter)) {
+          *block_producer_total_rounds = bson_iter_as_int64(&iter);
         }
       }
       success = true;
     }
   }
 
-  // Cleanup
-  bson_destroy(query);
+  // Clean up
+  bson_destroy(&query);
   mongoc_cursor_destroy(cursor);
   mongoc_collection_destroy(collection);
 
