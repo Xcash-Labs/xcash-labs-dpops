@@ -450,12 +450,15 @@ void start_block_production(void) {
 #ifdef SEED_NODE_ON
 
           if (is_primary_node()) {
+            INFO_PRINT("Updating stats...");
             uint64_t tmp_verifier_total_round = 0;
             uint64_t tmp_verifier_online_total_rounds = 0;
             uint64_t tmp_producer_total_rounds = 0;
 
+            INFO_PRINT("Updating stats...");
             if (get_statistics_totals_by_public_key(delegates_all[i].public_key, &tmp_verifier_total_round, &tmp_verifier_online_total_rounds,
                                                     &tmp_producer_total_rounds) == XCASH_OK) {
+              INFO_PRINT("Statics retrived");
               if (strcmp(delegates_all[i].online_status, "true") == 0) {
                 tmp_verifier_online_total_rounds += 1;
                 if (i < BLOCK_VERIFIERS_AMOUNT) {
@@ -493,9 +496,9 @@ void start_block_production(void) {
               ERROR_PRINT("Failed retrieve and update of statistics for delegate %s", delegates_all[i].public_address);
             }
           }
-
+            INFO_PRINT("Exit updating stats...");
 #endif
-
+            INFO_PRINT("Exit updating stats 2...");
         }
       }
     } else {
