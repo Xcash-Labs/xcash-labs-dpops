@@ -419,12 +419,13 @@ void start_block_production(void) {
             }
 #endif
 
-            if (!is_seed_address(xcash_wallet_public_address) || is_primary) {
+            if (!is_seed_address || is_primary) {
               INFO_PRINT("Updating online status...");
 
-              const char* tmp_status = delegates_all[i].online_status;
-              if (strcmp(tmp_status, "true") != 0) {
-                tmp_status = "false";
+              char tmp_status[6] = "false";
+
+              if (strcmp(delegates_all[i].online_status, "true") == 0) {
+                strcpy(tmp_status, "true");
               }
 
               bson_t filter;
