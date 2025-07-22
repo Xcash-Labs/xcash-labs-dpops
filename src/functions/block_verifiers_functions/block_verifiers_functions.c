@@ -446,16 +446,7 @@ bool block_verifiers_create_vote_majority_result(char **message, int producer_in
     }
 
 
-
-
-    size_t msg_len = height_len + 32 + 64;
-    uint8_t* hash_input = malloc(msg_len);
-    if (!hash_input) return ERROR;
-    
-
-
-
-jed
+// jed
     size_t height_len = strlen(current_block_height);
     size_t msg_len = height_len + 32 + 64;
 
