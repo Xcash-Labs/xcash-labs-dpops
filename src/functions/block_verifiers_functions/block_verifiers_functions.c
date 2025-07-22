@@ -21,13 +21,15 @@ size_t write_varint(uint8_t *out, size_t value) {
  *    and length prefix (1-byte varint).
  * 4. Converts the modified binary blob back into hex and stores it in `block_blob_hex`.
  *
- * vrf_blob Layout (240 Bytes)
+ * vrf_blob Layout (274 Bytes)
  *  Field	      Bytes   Description
  *  vrf_proof	  80	    Hex-decoded 80-byte VRF proof (e.g. from libsodium)
  *  vrf_beta	  64	    Hex-decoded 32-byte beta (VRF hash output)
  *  vrf_pubkey  32	    Hex-decoded 32-byte VRF public key
+ *  vote_count	1       Hex-decoded 1-byte vote cound of winner
+ *  round_hash	32      Hex-decode 32-byte hash of all votes
  *  signature	  64	    Hex-decoded 64-byte signature
- * 
+ *  
  * @param block_blob_hex The input and output hex-encoded blocktemplate blob.
  *                       Must contain reserved space as defined by get_block_template (e.g. 220 bytes).
  * @return true on success, false if any step fails (conversion, signing, or overflow).
@@ -78,6 +80,15 @@ bool add_vrf_extra_and_sign(char* block_blob_hex, size_t reserved_offset)
     return false;
   }
   vrf_pos += VRF_PUBLIC_KEY_LENGTH / 2;
+
+
+
+
+
+
+
+
+
 
   // Sign the original block blob (before patching)
   char blob_signature[XCASH_SIGN_DATA_LENGTH + 1] = {0};
@@ -420,6 +431,9 @@ Parameters:
 ---------------------------------------------------------------------------------------------------------*/
 bool block_verifiers_create_vote_majority_result(char **message, int producer_indx)
 {
+    unsigned char pk_bin[crypto_vrf_PUBLICKEYBYTES] = {0};
+    unsigned char vrf_beta_bin[crypto_vrf_OUTPUTBYTES] = {0};
+
     if (!message)
         return false;
 
@@ -430,6 +444,45 @@ bool block_verifiers_create_vote_majority_result(char **message, int producer_in
         ERROR_PRINT("Missing VRF data for producer");
         return false;
     }
+
+
+
+
+    size_t msg_len = height_len + 32 + 64;
+    uint8_t* hash_input = malloc(msg_len);
+    if (!hash_input) return ERROR;
+    
+
+
+
+jed
+    size_t height_len = strlen(current_block_height);
+    size_t msg_len = height_len + 32 + 64;
+
+    if (!hex_to_byte_array(current_block_verifiers_list.block_verifiers_vrf_public_key_hex[producer_indx], pk_bin, sizeof(pk_bin))) {
+      ERROR_PRINT("Invalid hex format for public key");
+      return false;
+    }
+
+    if (!hex_to_byte_array(current_block_verifiers_list.block_verifiers_vrf_beta_hex[producer_indx], vrf_beta_bin, sizeof(vrf_beta_bin))) {
+      ERROR_PRINT("Invalid hex format for beta");
+      return false;
+    }
+
+    unsigned char hash_input[msg_len];
+    size_t offset = 0;
+
+    memcpy(hash_input + offset, current_block_height, height_len);
+    offset += height_len;
+
+    memcpy(hash_input + offset, vrf_beta_bin, 64);
+    offset += 64;
+
+    memcpy(hash_input + offset, pk_bin, 32);
+    offset += 32;
+
+    unsigned char hash[crypto_hash_sha256_BYTES];
+    crypto_hash_sha256(hash, hash_input, msg_len);
 
     const char *params[] = {
         "public_address",     xcash_wallet_public_address,
