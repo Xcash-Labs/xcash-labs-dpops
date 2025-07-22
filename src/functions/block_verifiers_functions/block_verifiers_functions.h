@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sodium/randombytes.h>
-#include <crypto_hash_sha256.h>
+#include <sodium/crypto_generichash.h>
 #include <pthread.h>
 #include "config.h"
 #include <time.h>
