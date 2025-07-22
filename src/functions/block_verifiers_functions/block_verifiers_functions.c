@@ -472,9 +472,8 @@ bool block_verifiers_create_vote_majority_result(char **message, int producer_in
     memcpy(hash_input + offset, pk_bin, 32);
     offset += 32;
 
-    unsigned char hash[crypto_hash_sha256_BYTES];
-  //  crypto_hash_sha256(hash, hash_input, msg_len);
-    crypto_generichash(hash, 32, input, len, NULL, 0);
+    unsigned char hash[32]; 
+    crypto_generichash(hash, 32, hash_input, msg_len, NULL, 0);
 
     const char *params[] = {
         "public_address",     xcash_wallet_public_address,
