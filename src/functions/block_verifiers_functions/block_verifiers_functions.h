@@ -8,7 +8,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sodium/randombytes.h>
-#include "sha256.h"
 #include <pthread.h>
 #include "config.h"
 #include <time.h>
