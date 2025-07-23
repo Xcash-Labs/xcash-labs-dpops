@@ -271,7 +271,7 @@ xcash_round_result_t process_round(void) {
   for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     if (current_block_verifiers_list.block_verifiers_public_address[i][0] != '\0' &&
         current_block_verifiers_list.block_verifiers_voted[i] > 0) {
-      DEBUG_PRINT(
+      INFO_PRINT(
           "Name: %s\n"
           " VRF Vote count: %d\n"
           " Voted: %u\n"
