@@ -510,7 +510,9 @@ bool block_verifiers_create_vote_majority_result(char** message, int producer_in
     }
   }
   pthread_mutex_unlock(&majority_vrf_lock);
-  
+
+  INFO_PRINT("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxSignature: %s", signature);
+
   const char* params[] = {
       "public_address", xcash_wallet_public_address,
       "proposed_producer", current_block_verifiers_list.block_verifiers_public_address[producer_indx],
