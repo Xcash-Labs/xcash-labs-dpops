@@ -114,6 +114,7 @@ void server_receive_data_socket_node_to_node_vote_majority(const char* MESSAGE) 
   char vrf_beta_hex[VRF_BETA_LENGTH + 1] = {0};
   char random_buf_hex[(VRF_RANDOMBYTES_LENGTH * 2) + 1] = {0};
   char block_height[BLOCK_HEIGHT_LENGTH] = {0};
+  char vote_signature[XCASH_SIGN_DATA_LENGTH + 1] = {0};
 
   DEBUG_PRINT("received %s, %s", __func__, MESSAGE);
 
@@ -124,8 +125,14 @@ void server_receive_data_socket_node_to_node_vote_majority(const char* MESSAGE) 
       parse_json_data(MESSAGE, "vrf_random", random_buf_hex, sizeof(random_buf_hex)) == XCASH_ERROR ||
       parse_json_data(MESSAGE, "vrf_proof", vrf_proof_hex, sizeof(vrf_proof_hex)) == XCASH_ERROR ||
       parse_json_data(MESSAGE, "vrf_beta", vrf_beta_hex, sizeof(vrf_beta_hex)) == XCASH_ERROR ||
-      parse_json_data(MESSAGE, "block_height", block_height, sizeof(block_height)) == XCASH_ERROR) {
+      parse_json_data(MESSAGE, "block_height", block_height, sizeof(block_height)) == XCASH_ERROR) ||
+      parse_json_data(MESSAGE, "vote_signature", vote_signature, sizeof(XCASH_SIGN_DATA_LENGTH)) == XCASH_ERROR) {
     ERROR_PRINT("Could not parse the block_verifiers_to_block_verifiers_vrf_data");
+    return;
+  }
+
+  if (strlen(vote_signature) != XCASH_SIGN_DATA_LENGTH || strncmp(vote_signature, XCASH_SIGN_DATA_PREFIX, sizeof(XCASH_SIGN_DATA_PREFIX) - 1) != 0) {
+    ERROR_PRINT("Error with vote signature for %s", public_address);
     return;
   }
 
@@ -134,6 +141,7 @@ void server_receive_data_socket_node_to_node_vote_majority(const char* MESSAGE) 
       if (current_block_verifiers_list.block_verifiers_voted[i] == 0) {
         pthread_mutex_lock(&majority_vote_lock);
         current_block_verifiers_list.block_verifiers_voted[i] = 1;
+        memcpy(current_block_verifiers_list.block_verifiers_vote_signature[i], vote_signature, XCASH_SIGN_DATA_LENGTH+1);
         pthread_mutex_unlock(&majority_vote_lock);
       } else {
         WARNING_PRINT("Verifier %s, has already voted and can not vote again", public_address);
