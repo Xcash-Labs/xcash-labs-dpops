@@ -126,13 +126,13 @@ void server_receive_data_socket_node_to_node_vote_majority(const char* MESSAGE) 
       parse_json_data(MESSAGE, "vrf_proof", vrf_proof_hex, sizeof(vrf_proof_hex)) == XCASH_ERROR ||
       parse_json_data(MESSAGE, "vrf_beta", vrf_beta_hex, sizeof(vrf_beta_hex)) == XCASH_ERROR ||
       parse_json_data(MESSAGE, "block_height", block_height, sizeof(block_height)) == XCASH_ERROR ||
-      parse_json_data(MESSAGE, "vote_signature", vote_signature, sizeof(XCASH_SIGN_DATA_LENGTH)) == XCASH_ERROR) {
+      parse_json_data(MESSAGE, "vote_signature", vote_signature, sizeof(vote_signature)) == XCASH_ERROR) {
     ERROR_PRINT("Could not parse the block_verifiers_to_block_verifiers_vrf_data");
     return;
   }
 
 
-  INFO_PRINT("******************** Sign: %.100s", signature);
+  INFO_PRINT("******************** Sign: %.100s", vote_signature);
 
 
   if (strlen(vote_signature) == 0 || strncmp(vote_signature, XCASH_SIGN_DATA_PREFIX, sizeof(XCASH_SIGN_DATA_PREFIX) - 1) != 0) {
@@ -140,7 +140,7 @@ void server_receive_data_socket_node_to_node_vote_majority(const char* MESSAGE) 
     return;
   }
 
-  INFO_PRINT("******************** Sign: %.100s", signature);
+  INFO_PRINT("******************** Sign: %.100s", vots_signature);
 
 
   for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
