@@ -429,64 +429,61 @@ Parameters:
   result - The result
   SETTINGS - The data settings
 ---------------------------------------------------------------------------------------------------------*/
-bool block_verifiers_create_vote_majority_result(char **message, int producer_indx)
-{
-    unsigned char pk_bin[crypto_vrf_PUBLICKEYBYTES] = {0};
-    unsigned char vrf_beta_bin[crypto_vrf_OUTPUTBYTES] = {0};
+bool block_verifiers_create_vote_majority_result(char** message, int producer_indx) {
+  unsigned char pk_bin[crypto_vrf_PUBLICKEYBYTES] = {0};
+  unsigned char vrf_beta_bin[crypto_vrf_OUTPUTBYTES] = {0};
 
-    if (!message)
-        return false;
+  if (!message)
+    return false;
 
-    if(strlen(current_block_verifiers_list.block_verifiers_vrf_public_key_hex[producer_indx]) == 0 ||
+  if (strlen(current_block_verifiers_list.block_verifiers_vrf_public_key_hex[producer_indx]) == 0 ||
       strlen(current_block_verifiers_list.block_verifiers_random_hex[producer_indx]) == 0 ||
       strlen(current_block_verifiers_list.block_verifiers_vrf_proof_hex[producer_indx]) == 0 ||
       strlen(current_block_verifiers_list.block_verifiers_vrf_beta_hex[producer_indx]) == 0) {
-        ERROR_PRINT("Missing VRF data for producer");
-        return false;
-    }
+    ERROR_PRINT("Missing VRF data for producer");
+    return false;
+  }
 
+  // jed
+  size_t height_len = strlen(current_block_height);
+  size_t msg_len = height_len + 32 + 64;
 
-// jed
-    size_t height_len = strlen(current_block_height);
-    size_t msg_len = height_len + 32 + 64;
+  if (!hex_to_byte_array(current_block_verifiers_list.block_verifiers_vrf_public_key_hex[producer_indx], pk_bin, sizeof(pk_bin))) {
+    ERROR_PRINT("Invalid hex format for public key");
+    return false;
+  }
 
-    if (!hex_to_byte_array(current_block_verifiers_list.block_verifiers_vrf_public_key_hex[producer_indx], pk_bin, sizeof(pk_bin))) {
-      ERROR_PRINT("Invalid hex format for public key");
-      return false;
-    }
+  if (!hex_to_byte_array(current_block_verifiers_list.block_verifiers_vrf_beta_hex[producer_indx], vrf_beta_bin, sizeof(vrf_beta_bin))) {
+    ERROR_PRINT("Invalid hex format for beta");
+    return false;
+  }
 
-    if (!hex_to_byte_array(current_block_verifiers_list.block_verifiers_vrf_beta_hex[producer_indx], vrf_beta_bin, sizeof(vrf_beta_bin))) {
-      ERROR_PRINT("Invalid hex format for beta");
-      return false;
-    }
+  unsigned char hash_input[msg_len];
+  size_t offset = 0;
 
-    unsigned char hash_input[msg_len];
-    size_t offset = 0;
+  memcpy(hash_input + offset, current_block_height, height_len);
+  offset += height_len;
 
-    memcpy(hash_input + offset, current_block_height, height_len);
-    offset += height_len;
+  memcpy(hash_input + offset, vrf_beta_bin, 64);
+  offset += 64;
 
-    memcpy(hash_input + offset, vrf_beta_bin, 64);
-    offset += 64;
+  memcpy(hash_input + offset, pk_bin, 32);
+  offset += 32;
 
-    memcpy(hash_input + offset, pk_bin, 32);
-    offset += 32;
+  uint8_t hash[SHA256_EL_HASH_SIZE];
+  sha256EL(input, input_len, hash);
 
-//    unsigned char hash[32]; 
-//    sha256(input, input_len, hash);
-
-    const char *params[] = {
-        "public_address",     xcash_wallet_public_address,
-        "proposed_producer",  current_block_verifiers_list.block_verifiers_public_address[producer_indx],
-        "block_height",       current_block_height,
-        "vrf_beta",           current_block_verifiers_list.block_verifiers_vrf_beta_hex[producer_indx],
-        "vrf_proof",          current_block_verifiers_list.block_verifiers_vrf_proof_hex[producer_indx],
-        "vrf_public_key",     current_block_verifiers_list.block_verifiers_vrf_public_key_hex[producer_indx],
-        "vrf_random",         current_block_verifiers_list.block_verifiers_random_hex[producer_indx],
-        NULL
-    };
-    *message = create_message_param_list(XMSG_NODES_TO_NODES_VOTE_MAJORITY_RESULTS, params);
-    return (*message != NULL);
+  const char* params[] = {
+      "public_address", xcash_wallet_public_address,
+      "proposed_producer", current_block_verifiers_list.block_verifiers_public_address[producer_indx],
+      "block_height", current_block_height,
+      "vrf_beta", current_block_verifiers_list.block_verifiers_vrf_beta_hex[producer_indx],
+      "vrf_proof", current_block_verifiers_list.block_verifiers_vrf_proof_hex[producer_indx],
+      "vrf_public_key", current_block_verifiers_list.block_verifiers_vrf_public_key_hex[producer_indx],
+      "vrf_random", current_block_verifiers_list.block_verifiers_random_hex[producer_indx],
+      NULL};
+  *message = create_message_param_list(XMSG_NODES_TO_NODES_VOTE_MAJORITY_RESULTS, params);
+  return (*message != NULL);
 }
 
 /*---------------------------------------------------------------------------------------------------------
