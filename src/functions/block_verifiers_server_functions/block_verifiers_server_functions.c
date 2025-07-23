@@ -131,6 +131,8 @@ void server_receive_data_socket_node_to_node_vote_majority(const char* MESSAGE) 
     return;
   }
 
+  INFO_PRINT("******************** Sign: %s", vote_signature);
+
   if (strlen(vote_signature) == 0 || strncmp(vote_signature, XCASH_SIGN_DATA_PREFIX, sizeof(XCASH_SIGN_DATA_PREFIX) - 1) != 0) {
     ERROR_PRINT("Error with vote signature for %s", public_address);
     return;
