@@ -140,7 +140,7 @@ void server_receive_data_socket_node_to_node_vote_majority(const char* MESSAGE) 
     return;
   }
 
-  INFO_PRINT("******************** Sign: %.100s", vots_signature);
+  INFO_PRINT("******************** Sign: %.100s", vote_signature);
 
 
   for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
