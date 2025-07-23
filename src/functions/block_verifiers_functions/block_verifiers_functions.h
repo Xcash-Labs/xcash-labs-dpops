@@ -16,6 +16,7 @@
 #include "globals.h"
 #include "macro_functions.h"
 #include "VRF_functions.h"
+#include "sha256EL.h"
 #include "xcash_round.h"
 #include "blockchain_functions.h"
 
