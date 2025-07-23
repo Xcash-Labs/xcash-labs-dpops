@@ -65,10 +65,6 @@ typedef struct {
     char block_verifiers_vote_signature[BLOCK_VERIFIERS_AMOUNT][XCASH_SIGN_DATA_LENGTH + 1];
 } block_verifiers_list_t;
 
-struct current_block_verifiers_majority_vote {
-    char data[BLOCK_VERIFIERS_AMOUNT][BLOCK_VERIFIERS_AMOUNT][500]; // The data for each received data from each block verifier
-};
-
 typedef enum {
     XMSG_XCASH_GET_SYNC_INFO,
     XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_VRF_DATA,
