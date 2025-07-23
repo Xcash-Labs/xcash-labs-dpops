@@ -270,14 +270,16 @@ xcash_round_result_t process_round(void) {
 
   for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     if (current_block_verifiers_list.block_verifiers_public_address[i][0] != '\0' &&
-     current_block_verifiers_list.block_verifiers_voted[i] > 0) {
+        current_block_verifiers_list.block_verifiers_voted[i] > 0) {
       DEBUG_PRINT(
-          "Name: %s"
-          " VRF Vote count: %d"
-          " Voted: %u\n",
+          "Name: %s\n"
+          " VRF Vote count: %d\n"
+          " Voted: %u\n"
+          " Vote Signature: %s\n",
           current_block_verifiers_list.block_verifiers_name[i],
           current_block_verifiers_list.block_verifiers_vote_total[i],
-          current_block_verifiers_list.block_verifiers_voted[i]);
+          current_block_verifiers_list.block_verifiers_voted[i],
+          current_block_verifiers_list.block_verifiers_vote_signature[i]);
     }
   }
 
@@ -494,7 +496,7 @@ void start_block_production(void) {
               ERROR_PRINT("Failed retrieve and update of statistics for delegate %s", delegates_all[i].public_address);
             }
           }
-          
+
 #endif
 
         }
