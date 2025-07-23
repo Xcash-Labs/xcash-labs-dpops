@@ -430,11 +430,14 @@ Parameters:
   SETTINGS - The data settings
 ---------------------------------------------------------------------------------------------------------*/
 bool block_verifiers_create_vote_majority_result(char** message, int producer_indx) {
+  const char *HTTP_HEADERS[] = {"Content-Type: application/json", "Accept: application/json"};
+  const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0]);
   unsigned char pk_bin[crypto_vrf_PUBLICKEYBYTES] = {0};
   unsigned char vrf_beta_bin[crypto_vrf_OUTPUTBYTES] = {0};
   uint8_t hash[SHA256_EL_HASH_SIZE];
   char hash_hex[(SHA256_EL_HASH_SIZE * 2) + 1] = {0};
   size_t offset = 0;
+  char response[MEDIUM_BUFFER_SIZE] = {0};
 
   if (!message)
     return false;
@@ -458,6 +461,13 @@ bool block_verifiers_create_vote_majority_result(char** message, int producer_in
     return false;
   }
 
+  char *signature = calloc(MEDIUM_BUFFER_SIZE, sizeof(char));
+  char *payload = calloc(MEDIUM_BUFFER_SIZE, sizeof(char));
+  char *request = calloc(MEDIUM_BUFFER_SIZE * 2, sizeof(char));
+  if (!signature || !payload || !request) {
+    FATAL_ERROR_EXIT("sign_data: Memory allocation failed");
+  }
+
   unsigned char hash_input[128]; // height_len + 32 + 64
   memcpy(hash_input + offset, current_block_height, height_len);
   offset += height_len;
@@ -468,13 +478,38 @@ bool block_verifiers_create_vote_majority_result(char** message, int producer_in
   memcpy(hash_input + offset, pk_bin, 32);
   offset += 32;
 
+  size_t i = 0;
   sha256EL(hash_input, offset, hash);
-  for (size_t i = 0, offset = 0; i < SHA256_EL_HASH_SIZE; i++, offset += 2)
+  for (i = 0, offset = 0; i < SHA256_EL_HASH_SIZE; i++, offset += 2)
     snprintf(hash_hex + offset, 3, "%02x", hash[i]);
 
+  snprintf(request, MEDIUM_BUFFER_SIZE * 2,
+           "{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"sign\",\"params\":{\"data\":\"%s\"}}",
+           hash_hex);
 
+  // Send signing request to wallet
+  if (send_http_request(response, MEDIUM_BUFFER_SIZE, XCASH_WALLET_IP, "/json_rpc", XCASH_WALLET_PORT,
+                        "POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH,
+                        request, SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) <= 0 ||
+      !parse_json_data(response, "result.signature", signature, MEDIUM_BUFFER_SIZE) ||
+      strlen(signature) != XCASH_SIGN_DATA_LENGTH ||
+      strncmp(signature, XCASH_SIGN_DATA_PREFIX, sizeof(XCASH_SIGN_DATA_PREFIX) - 1) != 0) {
+    ERROR_PRINT("Function: block_verifiers_create_vote_majority_result - Wallet signature failed or format invalid");
+    free(signature);
+    free(payload);
+    free(request);
+    return false;
+  }
 
-
+  // Save current block_verifiers data into structure if it is one of the top 50
+  pthread_mutex_lock(&majority_vrf_lock);
+  for (i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
+    if (strncmp(current_block_verifiers_list.block_verifiers_public_address[i], xcash_wallet_public_address, XCASH_WALLET_LENGTH) == 0) {
+      memcpy(current_block_verifiers_list.block_verifiers_vote_signature[i], signature, XCASH_SIGN_DATA_LENGTH+1);
+      break;    
+    }
+  }
+  pthread_mutex_unlock(&majority_vrf_lock);
   const char* params[] = {
       "public_address", xcash_wallet_public_address,
       "proposed_producer", current_block_verifiers_list.block_verifiers_public_address[producer_indx],
@@ -483,9 +518,20 @@ bool block_verifiers_create_vote_majority_result(char** message, int producer_in
       "vrf_proof", current_block_verifiers_list.block_verifiers_vrf_proof_hex[producer_indx],
       "vrf_public_key", current_block_verifiers_list.block_verifiers_vrf_public_key_hex[producer_indx],
       "vrf_random", current_block_verifiers_list.block_verifiers_random_hex[producer_indx],
+      "vote_signature", signature,
       NULL};
   *message = create_message_param_list(XMSG_NODES_TO_NODES_VOTE_MAJORITY_RESULTS, params);
-  return (*message != NULL);
+
+  free(signature); signature = NULL;
+  free(payload); payload = NULL;
+  free(request); request = NULL;
+
+  if (*message == NULL) {
+    ERROR_PRINT("Function: block_verifiers_create_vote_majority_result - Failed to create message");
+    return false;
+  }
+
+  return true;
 }
 
 /*---------------------------------------------------------------------------------------------------------
