@@ -432,6 +432,9 @@ Parameters:
 bool block_verifiers_create_vote_majority_result(char** message, int producer_indx) {
   unsigned char pk_bin[crypto_vrf_PUBLICKEYBYTES] = {0};
   unsigned char vrf_beta_bin[crypto_vrf_OUTPUTBYTES] = {0};
+  uint8_t hash[SHA256_EL_HASH_SIZE];
+  char hash_hex[(SHA256_EL_HASH_SIZE * 2) + 1] = {0};
+  size_t offset = 0;
 
   if (!message)
     return false;
@@ -444,10 +447,7 @@ bool block_verifiers_create_vote_majority_result(char** message, int producer_in
     return false;
   }
 
-  // jed
   size_t height_len = strlen(current_block_height);
-  size_t msg_len = height_len + 32 + 64;
-
   if (!hex_to_byte_array(current_block_verifiers_list.block_verifiers_vrf_public_key_hex[producer_indx], pk_bin, sizeof(pk_bin))) {
     ERROR_PRINT("Invalid hex format for public key");
     return false;
@@ -458,9 +458,7 @@ bool block_verifiers_create_vote_majority_result(char** message, int producer_in
     return false;
   }
 
-  unsigned char hash_input[msg_len];
-  size_t offset = 0;
-
+  unsigned char hash_input[128]; // height_len + 32 + 64
   memcpy(hash_input + offset, current_block_height, height_len);
   offset += height_len;
 
@@ -470,8 +468,12 @@ bool block_verifiers_create_vote_majority_result(char** message, int producer_in
   memcpy(hash_input + offset, pk_bin, 32);
   offset += 32;
 
-  uint8_t hash[SHA256_EL_HASH_SIZE];
-  sha256EL(hash_input, input_len, hash);
+  sha256EL(hash_input, offset, hash);
+  for (size_t i = 0, offset = 0; i < SHA256_EL_HASH_SIZE; i++, offset += 2)
+    snprintf(hash_hex + offset, 3, "%02x", hash[i]);
+
+
+
 
   const char* params[] = {
       "public_address", xcash_wallet_public_address,
