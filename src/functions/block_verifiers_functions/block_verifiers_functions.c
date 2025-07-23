@@ -471,7 +471,7 @@ bool block_verifiers_create_vote_majority_result(char** message, int producer_in
   offset += 32;
 
   uint8_t hash[SHA256_EL_HASH_SIZE];
-  sha256EL(input, input_len, hash);
+  sha256EL(hash_input, input_len, hash);
 
   const char* params[] = {
       "public_address", xcash_wallet_public_address,
