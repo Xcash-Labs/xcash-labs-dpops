@@ -316,6 +316,7 @@ xcash_round_result_t process_round(void) {
                 current_block_verifiers_list.block_verifiers_public_address[i], XCASH_WALLET_LENGTH) == 0) {
       uint8_t signature_bin[64] = {0};
       const char* encoded_sig = current_block_verifiers_list.block_verifiers_vote_signature[i];
+      
       if (strncmp(encoded_sig, "SigV2", 5) == 0) {
         encoded_sig += 5;  // Skip prefix
       }
