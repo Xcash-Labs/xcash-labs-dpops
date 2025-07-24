@@ -312,6 +312,9 @@ xcash_round_result_t process_round(void) {
     if (current_block_verifiers_list.block_verifiers_voted[i] &&
         strncmp(current_block_verifiers_list.block_verifiers_public_address[max_index],
                 current_block_verifiers_list.block_verifiers_public_address[i], XCASH_WALLET_LENGTH) == 0) {
+
+      INFO_PRINT("Block Verifier Name: %s", current_block_verifiers_list.block_verifiers_name);
+
       uint8_t signature_bin[64] = {0};
       const char* encoded_sig = current_block_verifiers_list.block_verifiers_vote_signature[i];
 
