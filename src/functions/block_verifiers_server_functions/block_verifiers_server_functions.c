@@ -186,3 +186,84 @@ void server_receive_data_socket_node_to_node_vote_majority(const char* MESSAGE) 
     return;
   }
 }
+
+/*---------------------------------------------------------------------------------------------------------
+ * @brief Verifies a delegate's vote for the block producer based on VRF output and signature.
+ *
+ * This function reconstructs the vote hash from the following inputs:
+ *   - block_height (as ASCII string, e.g., "5")
+ *   - vrf_beta (hex-encoded 32-byte VRF output)
+ *   - vrf_public_key (hex-encoded 32-byte VRF public key)
+ *
+ * It hashes: block_height || vrf_beta || vrf_public_key
+ * and verifies the provided signature (hex-encoded) was made by the delegate.
+ *
+ * @param block_height         Null-terminated ASCII string of the block height (e.g., "5")
+ * @param vrf_beta_hex         Hex-encoded 32-byte VRF beta (64 hex characters)
+ * @param vrf_pubkey_hex       Hex-encoded 32-byte VRF public key (64 hex characters)
+ * @param vote_signature_hex   Hex-encoded 64-byte signature (128 hex characters)
+ *
+ * @return true if the signature is valid and matches the inputs; false otherwise
+---------------------------------------------------------------------------------------------------------*/
+bool verify_vrf_vote_signature(const char *block_height,
+                          const char *vrf_beta_hex,
+                          const char *vrf_pubkey_hex,
+                          const char *public_wallet_address,
+                          const char *vote_signature)
+{
+  const char *HTTP_HEADERS[] = {"Content-Type: application/json", "Accept: application/json"};
+  const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0]);
+  uint8_t vrf_beta_bin[crypto_vrf_OUTPUTBYTES] = {0};
+  uint8_t vrf_pubkey_bin[crypto_vrf_PUBLICKEYBYTES] = {0};
+  uint8_t hash[SHA256_EL_HASH_SIZE];
+  char hash_hex[(SHA256_EL_HASH_SIZE * 2) + 1] = {0};
+  uint8_t hash_input[128];
+  size_t offset = 0;
+  char request[MEDIUM_BUFFER_SIZE * 2] = {0};
+  char response[MEDIUM_BUFFER_SIZE] = {0};
+
+  if (!block_height || !vrf_beta_hex || !vrf_pubkey_hex || !vote_signature)
+    return false;
+
+  if (strlen(vrf_beta_hex) != crypto_vrf_OUTPUTBYTES * 2 ||
+      strlen(vrf_pubkey_hex) != crypto_vrf_PUBLICKEYBYTES * 2)
+    return false;
+
+  if (!hex_to_byte_array(vrf_beta_hex, vrf_beta_bin, sizeof(vrf_beta_bin)) ||
+      !hex_to_byte_array(vrf_pubkey_hex, vrf_pubkey_bin, sizeof(vrf_pubkey_bin)))
+    return false;
+
+  size_t block_height_len = strlen(block_height);
+  if (block_height_len + VRF_BETA_BIN_LEN + VRF_PUBKEY_BIN_LEN > sizeof(hash_input))
+    return false;
+
+  memcpy(hash_input + offset, block_height, block_height_len); offset += block_height_len;
+  memcpy(hash_input + offset, vrf_beta_bin, VRF_BETA_BIN_LEN); offset += VRF_BETA_BIN_LEN;
+  memcpy(hash_input + offset, vrf_pubkey_bin, VRF_PUBKEY_BIN_LEN); offset += VRF_PUBKEY_BIN_LEN;
+  sha256EL(hash_input, offset, hash);
+  for (size_t i = 0; i < SHA256_EL_HASH_SIZE; i++)
+    snprintf(hash_hex + i * 2, 3, "%02x", hash[i]);
+
+  snprintf(request, sizeof(request),
+           "{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"verify\",\"params\":{"
+           "\"data\":\"%s\","
+           "\"address\":\"%s\","
+           "\"signature\":\"%s\"}}",
+           hash_hex, public_wallet_address, vote_signature);
+
+  if (send_http_request(response, sizeof(response), XCASH_WALLET_IP, "/json_rpc", XCASH_WALLET_PORT,
+                        "POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH,
+                        request, SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) <= 0) {
+    ERROR_PRINT("verify_vrf_vote_signature: HTTP request failed");
+    return false;
+  }
+
+  // Parse response
+  char result[8] = {0};
+  if (parse_json_data(response, "result.good", result, sizeof(result)) == 1 && strcmp(result, "true") == 0) {
+    return true;
+  } else {
+    return false;
+  }
+
+}
