@@ -234,7 +234,7 @@ bool verify_vrf_vote_signature(const char *block_height,
     return false;
 
   size_t block_height_len = strlen(block_height);
-  if (block_height_len + VRF_BETA_BIN_LEN + VRF_PUBKEY_BIN_LEN > sizeof(hash_input))
+  if (block_height_len + crypto_vrf_OUTPUTBYTES + crypto_vrf_PUBLICKEYBYTES > sizeof(hash_input))
     return false;
 
   memcpy(hash_input + offset, block_height, block_height_len); offset += block_height_len;
