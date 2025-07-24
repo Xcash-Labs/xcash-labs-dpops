@@ -316,11 +316,11 @@ xcash_round_result_t process_round(void) {
                 current_block_verifiers_list.block_verifiers_public_address[i], XCASH_WALLET_LENGTH) == 0) {
       uint8_t signature_bin[64] = {0};
       const char* encoded_sig = current_block_verifiers_list.block_verifiers_vote_signature[i];
-      
+
       if (strncmp(encoded_sig, "SigV2", 5) == 0) {
         encoded_sig += 5;  // Skip prefix
       }
-      if (!base58_decode(encoded_sig, signature_bin, sizeof(signature_bin))) {
+      if (!base58_decode(encoded_sig, signature_bin, SIGNATURE_BIN_LEN)) {
         ERROR_PRINT("Invalid base58 vote signature");
         return ROUND_ERROR;
       }
@@ -350,7 +350,10 @@ xcash_round_result_t process_round(void) {
              sizeof(signature_bin));
       offset += sizeof(signature_bin);
 
-      assert(offset == sizeof(hash_input));
+      if (offset != sizeof(hash_input)) {
+        ERROR_PRINT("Vote hash input length mismatch: got %zu, expected %zu", offset, sizeof(hash_input));
+        return ROUND_ERROR;
+      }
 
       sha256EL(hash_input, offset, vote_hashes[valid_vote_count++]);
     }
@@ -373,7 +376,7 @@ xcash_round_result_t process_round(void) {
   }
 
   // Concatenate all vote_hashes into a buffer
-  uint8_t all_hashes_concat[BLOCK_VERIFIERS_AMOUNT * SHA256_EL_HASH_SIZE] = {0};
+  uint8_t all_hashes_concat[valid_vote_count * SHA256_EL_HASH_SIZE];
   size_t concat_len = valid_vote_count * SHA256_EL_HASH_SIZE;
 
   for (size_t i = 0; i < valid_vote_count; i++) {
