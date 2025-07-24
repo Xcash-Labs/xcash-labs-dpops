@@ -9,6 +9,7 @@
 #include <sys/time.h>
 #include <openssl/sha.h>
 #include <openssl/evp.h>
+#include <stdlib.h> 
 #include "config.h"
 #include "globals.h"
 #include "macro_functions.h"

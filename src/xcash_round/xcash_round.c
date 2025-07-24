@@ -303,10 +303,95 @@ xcash_round_result_t process_round(void) {
     return ROUND_ERROR;
   }
 
+
+  // *******
+
+  uint8_t vote_hashes[BLOCK_VERIFIERS_AMOUNT][SHA256_EL_HASH_SIZE];
+  uint8_t final_vote_hash[SHA256_EL_HASH_SIZE] = {0};
+  size_t valid_vote_count = 0;
+
+  for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
+    if (current_block_verifiers_list.block_verifiers_voted[i] &&
+        strncmp(current_block_verifiers_list.block_verifiers_public_address[max_index],
+                current_block_verifiers_list.block_verifiers_public_address[i], XCASH_WALLET_LENGTH) == 0) {
+      uint8_t signature_bin[64] = {0};
+      const char* encoded_sig = block_verifiers_vote_signature[i];
+      if (strncmp(encoded_sig, "SigV2", 5) == 0) {
+        encoded_sig += 5;  // Skip prefix
+      }
+      if (!base58_decode(encoded_sig, signature_bin, sizeof(signature_bin))) {
+        ERROR_PRINT("Invalid base58 vote signature");
+        return ROUND_ERROR;
+      }
+
+      uint8_t hash_input[crypto_vrf_OUTPUTBYTES + crypto_vrf_PUBLICKEYBYTES + 64];
+      size_t offset = 0;
+
+      if (!hex_to_byte_array(current_block_verifiers_list.block_verifiers_vrf_beta_hex[i],
+                             hash_input + offset,
+                             crypto_vrf_OUTPUTBYTES)) {
+        ERROR_PRINT("Invalid hex for vrf_beta");
+        return ROUND_ERROR;
+      }
+      offset += crypto_vrf_OUTPUTBYTES;
+
+      // Decode and copy VRF pubkey (32 bytes from 64-char hex)
+      if (!hex_to_byte_array(current_block_verifiers_list.block_verifiers_vrf_public_key_hex[i],
+                             hash_input + offset,
+                             crypto_vrf_PUBLICKEYBYTES)) {
+        ERROR_PRINT("Invalid hex for vrf_pubkey");
+        return ROUND_ERROR;
+      }
+      offset += crypto_vrf_PUBLICKEYBYTES;
+
+      memcpy(hash_input + offset,
+             signature_bin,
+             sizeof(signature_bin));
+      offset += sizeof(signature_bin);
+
+      assert(offset == sizeof(hash_input));
+
+      sha256EL(hash_input, offset, vote_hashes[valid_vote_count++]);
+    }
+  }
+
+  if (valid_vote_count != max_votes) {
+    WARNING_PRINT("Unexpected vote count when creating final vote hash");
+    return ROUND_SKIP;
+  }
+
+  int compare_hashes(const void* a, const void* b) {
+    return memcmp(a, b, SHA256_EL_HASH_SIZE);
+  }
+
+  qsort(vote_hashes, valid_vote_count, SHA256_EL_HASH_SIZE, compare_hashes);
+
   if (max_index != producer_indx) {
     ERROR_PRINT("Producer selected by this delegate does not match consensus");
     return ROUND_ERROR;
   }
+
+  // Concatenate all vote_hashes into a buffer
+  uint8_t all_hashes_concat[BLOCK_VERIFIERS_AMOUNT * SHA256_EL_HASH_SIZE] = {0};
+  size_t concat_len = valid_vote_count * SHA256_EL_HASH_SIZE;
+
+  for (size_t i = 0; i < valid_vote_count; i++) {
+    memcpy(all_hashes_concat + (i * SHA256_EL_HASH_SIZE), vote_hashes[i], SHA256_EL_HASH_SIZE);
+  }
+
+  // Final hash of all vote hashes
+  sha256EL(all_hashes_concat, concat_len, final_vote_hash);
+
+  // Optional: store or print
+  char final_vote_hash_hex[SHA256_EL_HASH_SIZE * 2 + 1] = {0};
+  for (size_t i = 0; i < SHA256_EL_HASH_SIZE; i++) {
+    snprintf(final_vote_hash_hex + (i * 2), 3, "%02x", final_vote_hash[i]);
+  }
+  INFO_PRINT("Final vote hash: %s", final_vote_hash_hex);
+
+  // *****
+
+
 
   if (max_votes < required_majority) {
     INFO_PRINT_STATUS_FAIL("Data majority not reached. Online Nodes: [%d/%d]", max_votes, required_majority);
