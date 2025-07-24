@@ -13,6 +13,8 @@
 #include <openssl/md5.h> 
 #include <unistd.h>
 #include <zlib.h>
+#include <stdint.h>
+#include <stdbool.h>
 #include "config.h"
 #include "globals.h"
 #include "macro_functions.h"
