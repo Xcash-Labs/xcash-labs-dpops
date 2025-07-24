@@ -364,7 +364,7 @@ xcash_round_result_t process_round(void) {
   }
 
   if (valid_vote_count != (size_t)max_votes) {
-    WARNING_PRINT("Unexpected vote count when creating final vote hash: valid_vote_count = %zu, max_votes = %d",
+    INFO_PRINT("Unexpected vote count when creating final vote hash: valid_vote_count = %zu, max_votes = %d",
                 valid_vote_count, max_votes);
     return ROUND_SKIP;
   }
