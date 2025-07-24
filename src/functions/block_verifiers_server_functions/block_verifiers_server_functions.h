@@ -9,6 +9,7 @@
 #include "macro_functions.h"
 #include "string_functions.h"
 #include "sha256EL.h"
+#include "network_daemon_functions.h"
 
 void server_receive_data_socket_node_to_node_vote_majority(const char* MESSAGE);
 void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(const char* MESSAGE);
