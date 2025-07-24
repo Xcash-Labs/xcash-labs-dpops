@@ -522,56 +522,6 @@ bool base64_decode(const char* input, uint8_t* output, size_t max_output, size_t
     return true;
 }
 
-#include <stdint.h>
-#include <string.h>
-#include <stdbool.h>
-
-/* Bitcoin-style Base58 alphabet */
-static const char* BASE58_ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
-
-/*---------------------------------------------------------------------------------------------------------
- * @brief Decode a Base58-encoded string.
- *
- * @param input         Null-terminated Base58 input string.
- * @param output        Output buffer for binary result.
- * @param max_output    Maximum size of output buffer.
- * @param decoded_len   Pointer to receive number of decoded bytes.
- * @return true on success, false on error.
----------------------------------------------------------------------------------------------------------*/
-bool base58_decode(const char* input, uint8_t* output, size_t max_output, size_t* decoded_len) {
-    if (!input || !output || !decoded_len || max_output == 0) return false;
-
-    size_t input_len = strlen(input);
-    uint8_t temp[max_output + 1];  // Temporary buffer
-    memset(temp, 0, sizeof(temp));
-
-    for (size_t i = 0; i < input_len; i++) {
-        const char* ch = strchr(BASE58_ALPHABET, input[i]);
-        if (!ch) return false;  // Invalid character
-
-        int carry = (int)(ch - BASE58_ALPHABET);
-        for (size_t j = max_output; j-- > 0;) {
-            carry += 58 * temp[j];
-            temp[j] = carry % 256;
-            carry /= 256;
-        }
-        if (carry != 0) return false;  // Overflow
-    }
-
-    // Skip leading zeroes
-    size_t start = 0;
-    while (start < max_output && temp[start] == 0) {
-        start++;
-    }
-
-    size_t actual_len = max_output - start;
-    if (actual_len > max_output) return false;
-
-    memcpy(output, temp + start, actual_len);
-    *decoded_len = actual_len;
-    return true;
-}
-
 /*---------------------------------------------------------------------------------------------------------
 Name: check_for_invalid_strings
 Description: Checks for invalid strings

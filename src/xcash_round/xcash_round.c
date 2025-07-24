@@ -319,8 +319,8 @@ xcash_round_result_t process_round(void) {
         encoded_sig += 5;  // Skip prefix
       }
       size_t decoded_len = 0;
-      if (!base58_decode(encoded_sig, signature_bin, SIGNATURE_BIN_LEN, &decoded_len)) {
-        ERROR_PRINT("Invalid base58 vote signature");
+      if (!base64_decode(encoded_sig, signature_bin, SIGNATURE_BIN_LEN, &decoded_len)) {
+        ERROR_PRINT("Base64 decode failed");
         return ROUND_ERROR;
       }
 
@@ -395,6 +395,7 @@ xcash_round_result_t process_round(void) {
   for (size_t i = 0; i < SHA256_EL_HASH_SIZE; i++) {
     snprintf(final_vote_hash_hex + (i * 2), 3, "%02x", final_vote_hash[i]);
   }
+
   INFO_PRINT("Final vote hash: %s", final_vote_hash_hex);
 
   // *****
