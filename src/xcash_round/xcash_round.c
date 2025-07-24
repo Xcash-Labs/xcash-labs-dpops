@@ -295,9 +295,7 @@ xcash_round_result_t process_round(void) {
   }
 
   if (max_index != -1) {
-    INFO_PRINT("Most voted verifier: %s with %d votes",
-      current_block_verifiers_list.block_verifiers_name[max_index],
-      max_votes);
+    INFO_PRINT("Most voted verifier: %s with %d votes", current_block_verifiers_list.block_verifiers_name[max_index], max_votes);
   } else {
     ERROR_PRINT("No votes recorded");
     return ROUND_ERROR;
@@ -365,7 +363,7 @@ xcash_round_result_t process_round(void) {
     }
   }
 
-  if (valid_vote_count != max_votes) {
+  if (valid_vote_count !=  (size_t)max_votes) {
     WARNING_PRINT("Unexpected vote count when creating final vote hash");
     return ROUND_SKIP;
   }
