@@ -320,8 +320,14 @@ xcash_round_result_t process_round(void) {
       if (strncmp(encoded_sig, "SigV2", 5) == 0) {
         encoded_sig += 5;  // Skip prefix
       }
-      if (!base58_decode(encoded_sig, signature_bin, SIGNATURE_BIN_LEN)) {
+      size_t decoded_len = 0;
+      if (!base58_decode(encoded_sig, signature_bin, SIGNATURE_BIN_LEN, &decoded_len)) {
         ERROR_PRINT("Invalid base58 vote signature");
+        return ROUND_ERROR;
+      }
+
+      if (decoded_len != SIGNATURE_BIN_LEN) {
+        ERROR_PRINT("Unexpected decoded signature length: got %zu, expected %d", decoded_len, SIGNATURE_BIN_LEN);
         return ROUND_ERROR;
       }
 
