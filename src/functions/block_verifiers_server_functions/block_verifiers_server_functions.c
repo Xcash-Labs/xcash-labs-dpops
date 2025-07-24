@@ -136,7 +136,7 @@ void server_receive_data_socket_node_to_node_vote_majority(const char* MESSAGE) 
     return;
   }
 
-  if (!verify_vrf_vote_signature(block_height, vrf_beta_hex, vrf_pubkey_hex, public_address, vote_signature)) {
+  if (!verify_vrf_vote_signature(block_height, vrf_beta_hex, vrf_public_key_data, public_address, vote_signature)) {
     ERROR_PRINT("Unable to verigy the signature for the vote %s", public_address);
     return;
   } else {
