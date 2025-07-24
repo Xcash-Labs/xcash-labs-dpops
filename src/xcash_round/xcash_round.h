@@ -26,8 +26,6 @@ typedef struct {
     char vrf_beta_hex[VRF_BETA_LENGTH + 1];
 } producer_ref_t;
 
-
-
 extern producer_ref_t producer_refs[PRODUCER_REF_COUNT];
 
 typedef struct {
