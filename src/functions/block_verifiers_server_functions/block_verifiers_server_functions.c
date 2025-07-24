@@ -238,8 +238,8 @@ bool verify_vrf_vote_signature(const char *block_height,
     return false;
 
   memcpy(hash_input + offset, block_height, block_height_len); offset += block_height_len;
-  memcpy(hash_input + offset, vrf_beta_bin, VRF_BETA_BIN_LEN); offset += VRF_BETA_BIN_LEN;
-  memcpy(hash_input + offset, vrf_pubkey_bin, VRF_PUBKEY_BIN_LEN); offset += VRF_PUBKEY_BIN_LEN;
+  memcpy(hash_input + offset, vrf_beta_bin, crypto_vrf_OUTPUTBYTES); offset += crypto_vrf_OUTPUTBYTES;
+  memcpy(hash_input + offset, vrf_pubkey_bin, crypto_vrf_PUBLICKEYBYTES); offset += crypto_vrf_PUBLICKEYBYTES;
   sha256EL(hash_input, offset, hash);
   for (size_t i = 0; i < SHA256_EL_HASH_SIZE; i++)
     snprintf(hash_hex + i * 2, 3, "%02x", hash[i]);
