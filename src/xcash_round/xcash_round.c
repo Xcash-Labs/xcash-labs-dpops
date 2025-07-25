@@ -237,6 +237,8 @@ xcash_round_result_t process_round(void) {
   for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     if (strcmp(xcash_wallet_public_address, current_block_verifiers_list.block_verifiers_public_address[i]) == 0) {
       current_block_verifiers_list.block_verifiers_voted[i] = 1;
+      memcpy(current_block_verifiers_list.block_verifiers_selected_public_address[i],
+        current_block_verifiers_list.block_verifiers_public_address[producer_indx], XCASH_SIGN_DATA_LENGTH+1);
       break;
     }
   }
@@ -275,11 +277,13 @@ xcash_round_result_t process_round(void) {
           "Name: %s\n"
           " VRF Vote count: %d\n"
           " Voted: %u\n"
-          " Vote Signature: %s\n",
+          " Vote Signature: %s\n"
+          " Selected Public Address: %s\n",
           current_block_verifiers_list.block_verifiers_name[i],
           current_block_verifiers_list.block_verifiers_vote_total[i],
           current_block_verifiers_list.block_verifiers_voted[i],
-          current_block_verifiers_list.block_verifiers_vote_signature[i]);
+          current_block_verifiers_list.block_verifiers_vote_signature[i]
+          current_block_verifiers_list.block_verifiers_selected_public_address[i]);
     }
   }
 
@@ -309,9 +313,14 @@ xcash_round_result_t process_round(void) {
   size_t valid_vote_count = 0;
 
   for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
-    if ((strncmp(current_block_verifiers_list.block_verifiers_public_address[i], current_block_verifiers_list.block_verifiers_public_address[max_index],
+    if ( (current_block_verifiers_list.block_verifiers_voted[i] > 0) &&
+      
+      
+      
+      
+      (strncmp(current_block_verifiers_list.block_verifiers_public_address[i], current_block_verifiers_list.block_verifiers_public_address[max_index],
      XCASH_WALLET_LENGTH) == 0) && (current_block_verifiers_list.block_verifiers_public_address[i][0] != '\0') &&
-     (current_block_verifiers_list.block_verifiers_voted[i] > 0)){
+     ){
 
       INFO_PRINT("Block Verifier Name: %s", current_block_verifiers_list.block_verifiers_name[i]);
 
