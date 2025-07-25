@@ -309,9 +309,9 @@ xcash_round_result_t process_round(void) {
   size_t valid_vote_count = 0;
 
   for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
-    if (current_block_verifiers_list.block_verifiers_voted[i] &&
-        strncmp(current_block_verifiers_list.block_verifiers_public_address[max_index],
-                current_block_verifiers_list.block_verifiers_public_address[i], XCASH_WALLET_LENGTH) == 0) {
+    if ((strncmp(current_block_verifiers_list.block_verifiers_public_address[i], current_block_verifiers_list.block_verifiers_public_address[max_index],
+     XCASH_WALLET_LENGTH) == 0) && (current_block_verifiers_list.block_verifiers_public_address[i][0] != '\0') &&
+     (current_block_verifiers_list.block_verifiers_voted[i] > 0)){
 
       INFO_PRINT("Block Verifier Name: %s", current_block_verifiers_list.block_verifiers_name[i]);
 
