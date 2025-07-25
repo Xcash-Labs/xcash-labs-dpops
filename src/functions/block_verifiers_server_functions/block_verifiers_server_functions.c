@@ -148,7 +148,7 @@ void server_receive_data_socket_node_to_node_vote_majority(const char* MESSAGE) 
         pthread_mutex_lock(&majority_vote_lock);
         current_block_verifiers_list.block_verifiers_voted[i] = 1;
         memcpy(current_block_verifiers_list.block_verifiers_vote_signature[i], vote_signature, XCASH_SIGN_DATA_LENGTH+1);
-        memcpy(current_block_verifiers_list.block_verifiers_selected_public_address[i], public_address_producer, XCASH_SIGN_DATA_LENGTH+1);
+        memcpy(current_block_verifiers_list.block_verifiers_selected_public_address[i], public_address_producer, XCASH_WALLET_LENGTH+1);
         pthread_mutex_unlock(&majority_vote_lock);
       } else {
         WARNING_PRINT("Verifier %s, has already voted and can not vote again", public_address);
