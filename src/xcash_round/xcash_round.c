@@ -282,7 +282,7 @@ xcash_round_result_t process_round(void) {
           current_block_verifiers_list.block_verifiers_name[i],
           current_block_verifiers_list.block_verifiers_vote_total[i],
           current_block_verifiers_list.block_verifiers_voted[i],
-          current_block_verifiers_list.block_verifiers_vote_signature[i]
+          current_block_verifiers_list.block_verifiers_vote_signature[i],
           current_block_verifiers_list.block_verifiers_selected_public_address[i]);
     }
   }
