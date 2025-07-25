@@ -327,14 +327,16 @@ xcash_round_result_t process_round(void) {
         return ROUND_ERROR;
       }
 
-      if (decoded_len != SIGNATURE_BIN_LEN) {
+      INFO_PRINT("Here 1......................");
+
+        if (decoded_len != SIGNATURE_BIN_LEN) {
         ERROR_PRINT("Unexpected decoded signature length: got %zu, expected %d", decoded_len, SIGNATURE_BIN_LEN);
         return ROUND_ERROR;
       }
 
       uint8_t hash_input[crypto_vrf_OUTPUTBYTES + crypto_vrf_PUBLICKEYBYTES + 64];
       size_t offset = 0;
-
+      INFO_PRINT("Here 2......................");
       if (!hex_to_byte_array(current_block_verifiers_list.block_verifiers_vrf_beta_hex[i],
                              hash_input + offset,
                              crypto_vrf_OUTPUTBYTES)) {
@@ -361,8 +363,11 @@ xcash_round_result_t process_round(void) {
         ERROR_PRINT("Vote hash input length mismatch: got %zu, expected %zu", offset, sizeof(hash_input));
         return ROUND_ERROR;
       }
-
-      sha256EL(hash_input, offset, vote_hashes[valid_vote_count++]);
+      INFO_PRINT("Here 3......................");
+//      sha256EL(hash_input, offset, vote_hashes[valid_vote_count++]);
+      sha256EL(hash_input, offset, vote_hashes[valid_vote_count]);
+      INFO_PRINT("Here 4......................");
+      valid_vote_count++;
     }
   }
 
