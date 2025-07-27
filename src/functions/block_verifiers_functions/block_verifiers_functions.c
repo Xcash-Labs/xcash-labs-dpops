@@ -40,6 +40,9 @@ size_t write_varint(uint8_t *out, size_t value) {
 ---------------------------------------------------------------------------------------------------------*/
 bool add_vrf_extra_and_sign(char* block_blob_hex, const char* final_vote_hash_hex, size_t reserved_offset)
 {
+
+  INFO_PRINT("Final vote hash 2: %s", final_vote_hash_hex);
+
   unsigned char* block_blob_bin = calloc(1, BUFFER_SIZE);
   if (!block_blob_bin) {
     ERROR_PRINT("Memory allocation failed for block_blob_bin");
