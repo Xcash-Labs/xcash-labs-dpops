@@ -307,7 +307,8 @@ xcash_round_result_t process_round(void) {
 
   uint8_t vote_hashes[BLOCK_VERIFIERS_AMOUNT][SHA256_EL_HASH_SIZE];
   uint8_t final_vote_hash[SHA256_EL_HASH_SIZE] = {0};
-  size_t valid_vote_count = 0;
+//  size_t valid_vote_count = 0;
+    uint8_t valid_vote_count = 0;
 
   for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     if ( (current_block_verifiers_list.block_verifiers_voted[i] > 0) &&

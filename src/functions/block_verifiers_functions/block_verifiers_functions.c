@@ -23,12 +23,13 @@ size_t write_varint(uint8_t *out, size_t value) {
  *
  * vrf_blob Layout (274 Bytes)
  *  Field	      Bytes   Description
- *  vrf_proof	  80	    Hex-decoded 80-byte VRF proof (e.g. from libsodium)
- *  vrf_beta	  64	    Hex-decoded 32-byte beta (VRF hash output)
- *  vrf_pubkey  32	    Hex-decoded 32-byte VRF public key
- *  vote_count	1       Hex-decoded 1-byte vote cound of winner
- *  round_hash	32      Hex-decode 32-byte hash of all votes
- *  signature	  64	    Hex-decoded 64-byte signature
+ *  vrf_proof	   80	    Hex-decoded 80-byte VRF proof (e.g. from libsodium)
+ *  vrf_beta	   64	    Hex-decoded 32-byte beta (VRF hash output)
+ *  vrf_pubkey   32	    Hex-decoded 32-byte VRF public key
+ *  total_votes  1      Hex-decoded 1-byte vote total
+ *  winner_votes 1      Hex-decoded 1-byte vote count of winner
+ *  vote_hash	   32     Hex-decode 32-byte hash of all votes
+ *  signature	   64	    Hex-decoded 64-byte signature
  *  
  * @param block_blob_hex The input and output hex-encoded blocktemplate blob.
  *                       Must contain reserved space as defined by get_block_template (e.g. 220 bytes).
