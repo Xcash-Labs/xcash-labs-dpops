@@ -21,7 +21,7 @@
 #include "blockchain_functions.h"
 
 bool generate_and_request_vrf_data_msg(char** message);
-int block_verifiers_create_block(void);
+int block_verifiers_create_block(const char* final_vote_hash_hex);
 int sync_block_verifiers_minutes_and_seconds(const int MINUTES, const int SECONDS);
 bool create_sync_msg(char** message);
 bool block_verifiers_create_vote_majority_result(char **message, int producer_indx);

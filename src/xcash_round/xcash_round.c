@@ -424,7 +424,7 @@ xcash_round_result_t process_round(void) {
   }
 
   INFO_STAGE_PRINT("Starting block production for block %s", current_block_height);
-  int block_creation_result = block_verifiers_create_block();
+  int block_creation_result = block_verifiers_create_block(const char* final_vote_hash_hex);
 
   if (block_creation_result == ROUND_OK) {
     INFO_PRINT_STATUS_OK("Round Successfully Completed For Block %s", current_block_height);
