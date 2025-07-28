@@ -259,11 +259,11 @@ for (int i = 0; i < 2; i++) {
 }
 blob_len = pos;
 
-  if ((pos - reserved_offset) > BLOCK_RESERVED_SIZE) {
-    ERROR_PRINT("VRF data exceeds reserved space: used %zu bytes, allowed %d", pos - reserved_offset, BLOCK_RESERVED_SIZE);
-    free(block_blob_bin);
-    return false;
-  }
+//  if ((pos - reserved_offset) > BLOCK_RESERVED_SIZE) {
+//    ERROR_PRINT("VRF data exceeds reserved space: used %zu bytes, allowed %d", pos - reserved_offset, BLOCK_RESERVED_SIZE);
+//    free(block_blob_bin);
+//    return false;
+//  }
 
   bytes_to_hex(block_blob_bin, blob_len, block_blob_hex, BUFFER_SIZE);
 
