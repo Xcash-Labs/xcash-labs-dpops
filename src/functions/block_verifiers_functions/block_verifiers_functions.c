@@ -23,13 +23,12 @@ size_t write_varint(uint8_t *out, size_t value) {
  *
  * vrf_blob Layout (274 Bytes)
  *  Field	      Bytes   Description
- *  vrf_proof	   80	    Hex-decoded 80-byte VRF proof (e.g. from libsodium)
- *  vrf_beta	   64	    Hex-decoded 64-byte beta (VRF hash output)
- *  vrf_pubkey   32	    Hex-decoded 32-byte VRF public key
- *  total_votes  1      Hex-decoded 1-byte vote total
- *  winning_vote 1      Hex-decoded 1-byte vote count of winner
- *  vote_hash	   32     Hex-decode 32-byte hash of all votes
- *  signature	   64	    Hex-decoded 64-byte signature
+ *  vrf_proof	  80	    Hex-decoded 80-byte VRF proof (e.g. from libsodium)
+ *  vrf_beta	  64	    Hex-decoded 32-byte beta (VRF hash output)
+ *  vrf_pubkey  32	    Hex-decoded 32-byte VRF public key
+ *  vote_count	1       Hex-decoded 1-byte vote cound of winner
+ *  round_hash	32      Hex-decode 32-byte hash of all votes
+ *  signature	  64	    Hex-decoded 64-byte signature
  *  
  * @param block_blob_hex The input and output hex-encoded blocktemplate blob.
  *                       Must contain reserved space as defined by get_block_template (e.g. 220 bytes).
@@ -39,11 +38,10 @@ size_t write_varint(uint8_t *out, size_t value) {
  * @note Ensure the get_block_template reserve_size is at least 210–220 bytes to fit the full VRF blob.
  * @note The signature is calculated on the original (unpatched) block_blob_hex for consensus correctness.
 ---------------------------------------------------------------------------------------------------------*/
-bool add_vrf_extra_and_sign(char* block_blob_hex, const char* vote_hash_hex, size_t reserved_offset, uint8_t total_vote, uint8_t winning_vote)
+bool add_vrf_extra_and_sign(char* block_blob_hex, const char* final_vote_hash_hex, size_t reserved_offset)
 {
 
-  INFO_PRINT("Final vote hash 2: %s", vote_hash_hex);
-  INFO_PRINT("Total votes this round: %u, Winning delegate received: %u", total_vote, winning_vote);
+  INFO_PRINT("Final vote hash 2: %s", final_vote_hash_hex);
 
   unsigned char* block_blob_bin = calloc(1, BUFFER_SIZE);
   if (!block_blob_bin) {
@@ -57,10 +55,6 @@ bool add_vrf_extra_and_sign(char* block_blob_hex, const char* vote_hash_hex, siz
     free(block_blob_bin);
     return false;
   }
-
-
-
-
 
 // Backoff 2 to overwrite the preset 0x02 trans (TX_EXTRA_NONCE) and length.  Update with new 07 trans (TX_EXTRA_VRF_SIGNATURE_TAG).
   size_t pos = reserved_offset - 2;
@@ -90,19 +84,14 @@ bool add_vrf_extra_and_sign(char* block_blob_hex, const char* vote_hash_hex, siz
   }
   vrf_pos += VRF_PUBLIC_KEY_LENGTH / 2;
 
-  // Add 1-byte total_votes
-  vrf_blob[vrf_pos++] = total_vote;
 
-  // Add 1-byte winning_vote
-  vrf_blob[vrf_pos++] = winning_vote;
 
-  // Add 32-byte final vote hash
-  if (!hex_to_byte_array(vote_hash_hex, vrf_blob + vrf_pos, SHA256_EL_HASH_SIZE)) {
-    ERROR_PRINT("Failed to decode final vote hash hex");
-    free(block_blob_bin);
-    return false;
-  }
-  vrf_pos += SHA256_EL_HASH_SIZE;
+
+
+
+
+
+
 
   // Sign the original block blob (before patching)
   char blob_signature[XCASH_SIGN_DATA_LENGTH + 1] = {0};
@@ -133,7 +122,7 @@ bool add_vrf_extra_and_sign(char* block_blob_hex, const char* vote_hash_hex, siz
   vrf_pos += 64;
   DEBUG_PRINT("VRF proof decoded, vrf_pos now at: %zu", vrf_pos);
 
-  if (vrf_pos != 274) {
+  if (vrf_pos != 240) {
     ERROR_PRINT("VRF blob constructed with incorrect size: %zu bytes", vrf_pos);
     free(block_blob_bin);
     return false;
@@ -145,24 +134,19 @@ bool add_vrf_extra_and_sign(char* block_blob_hex, const char* vote_hash_hex, siz
   memcpy(block_blob_bin + pos, vrf_blob, VRF_BLOB_TOTAL_SIZE);
   pos += VRF_BLOB_TOTAL_SIZE;
 
-  INFO_PRINT("blob_len = %zu", blob_len);
-  size_t new_blob_len = pos;
-  INFO_PRINT("new_blob_len = %zu", new_blob_len);
+  if ((pos - reserved_offset) > BLOCK_RESERVED_SIZE) {
+    ERROR_PRINT("VRF data exceeds reserved space: used %zu bytes, allowed %d", pos - reserved_offset, BLOCK_RESERVED_SIZE);
+    free(block_blob_bin);
+    return false;
+  }
 
-//  if ((pos - reserved_offset) > BLOCK_RESERVED_SIZE) {
-//    ERROR_PRINT("VRF data exceeds reserved space: used %zu bytes, allowed %d", pos - reserved_offset, BLOCK_RESERVED_SIZE);
-//    free(block_blob_bin);
-//    return false;
-//  }
+  bytes_to_hex(block_blob_bin, blob_len, block_blob_hex, BUFFER_SIZE);
 
-  bytes_to_hex(block_blob_bin, new_blob_len, block_blob_hex, BUFFER_SIZE);
-//  bytes_to_hex(block_blob_bin, blob_len, block_blob_hex, BUFFER_SIZE);
-
-//  if (strlen(block_blob_hex) != blob_len * 2) {
-//    ERROR_PRINT("Hex conversion mismatch: expected %zu, got %zu", blob_len * 2, strlen(block_blob_hex));
-//    free(block_blob_bin);
-//    return false;
-//  }
+  if (strlen(block_blob_hex) != blob_len * 2) {
+    ERROR_PRINT("Hex conversion mismatch: expected %zu, got %zu", blob_len * 2, strlen(block_blob_hex));
+    free(block_blob_bin);
+    return false;
+  }
 
   INFO_PRINT("Final block_blob_hex (length: %zu):", strlen(block_blob_hex));
   INFO_PRINT("%s", block_blob_hex);
@@ -177,7 +161,7 @@ Name: block_verifiers_create_block
 Description: Runs the round where the block verifiers will create the block
 Return: 0 if an error has occured, 1 if successfull
 ---------------------------------------------------------------------------------------------------------*/
-int block_verifiers_create_block(const char* vote_hash_hex, uint8_t total_vote, uint8_t winning_vote) {
+int block_verifiers_create_block(const char* final_vote_hash_hex) {
   char data[BUFFER_SIZE] = {0};
 
   // Confirm block height hasn't drifted (this node may be behind the network)
@@ -210,7 +194,7 @@ int block_verifiers_create_block(const char* vote_hash_hex, uint8_t total_vote, 
     // Create block template
     INFO_STAGE_PRINT("Part 10 - Add VRF Data and Sign Block Blob");
     snprintf(current_round_part, sizeof(current_round_part), "%d", 10);
-    if(!add_vrf_extra_and_sign(block_blob, vote_hash_hex, reserved_offset, total_vote, winning_vote)) {
+    if(!add_vrf_extra_and_sign(block_blob, final_vote_hash_hex, reserved_offset)) {
       return ROUND_ERROR;
     }
 
