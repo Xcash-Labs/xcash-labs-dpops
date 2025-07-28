@@ -93,7 +93,7 @@ bool add_vrf_extra_and_sign(char* block_blob_hex, const char* vote_hash_hex, siz
   vrf_blob[vrf_pos++] = winning_vote;
 
   // Add 32-byte final vote hash
-  if (!hex_to_byte_array(final_vote_hash_hex, vrf_blob + vrf_pos, SHA256_EL_HASH_SIZE)) {
+  if (!hex_to_byte_array(vote_hash_hex, vrf_blob + vrf_pos, SHA256_EL_HASH_SIZE)) {
     ERROR_PRINT("Failed to decode final vote hash hex");
     free(block_blob_bin);
     return false;
@@ -168,7 +168,7 @@ Name: block_verifiers_create_block
 Description: Runs the round where the block verifiers will create the block
 Return: 0 if an error has occured, 1 if successfull
 ---------------------------------------------------------------------------------------------------------*/
-int block_verifiers_create_block(const char* final_vote_hash_hex, uint8_t total_vote, uint8_t winning_vote) {
+int block_verifiers_create_block(const char* vote_hash_hex, uint8_t total_vote, uint8_t winning_vote) {
   char data[BUFFER_SIZE] = {0};
 
   // Confirm block height hasn't drifted (this node may be behind the network)
@@ -201,7 +201,7 @@ int block_verifiers_create_block(const char* final_vote_hash_hex, uint8_t total_
     // Create block template
     INFO_STAGE_PRINT("Part 10 - Add VRF Data and Sign Block Blob");
     snprintf(current_round_part, sizeof(current_round_part), "%d", 10);
-    if(!add_vrf_extra_and_sign(block_blob, final_vote_hash_hex, reserved_offset, total_vote, winning_vote)) {
+    if(!add_vrf_extra_and_sign(block_blob, vote_hash_hex, reserved_offset, total_vote, winning_vote)) {
       return ROUND_ERROR;
     }
 
