@@ -904,7 +904,7 @@ bool is_primary_node(void) {
     return is_primary;
 }
 
-bool is_replica_set_ready() {
+bool is_replica_set_ready(void) {
   bson_t reply;
   bson_error_t error;
   bool is_ready = false;
