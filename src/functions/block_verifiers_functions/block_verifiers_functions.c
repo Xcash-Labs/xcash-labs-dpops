@@ -43,8 +43,9 @@ size_t write_varint(uint8_t *out, size_t value) {
 bool add_vrf_extra_and_sign__OLD__(char* block_blob_hex, const char* vote_hash_hex, size_t reserved_offset, uint8_t total_vote, uint8_t winning_vote)
 {
 
-  INFO_PRINT("Final vote hash 2: %s", vote_hash_hex)
-  INFO_PRINT("Final vote hash 2: %s | total_vote: %u | winning_vote: %u", vote_hash_hex, total_vote, winning_vote);
+  INFO_PRINT("Final vote hash 2: %s", vote_hash_hex);
+  INFO_PRINT("total_vote: %u | winning_vote: %u", total_vote, winning_vote);
+
 
 
   unsigned char* block_blob_bin = calloc(1, BUFFER_SIZE);
@@ -161,7 +162,8 @@ bool add_vrf_extra_and_sign(char* block_blob_hex, const char* vote_hash_hex, siz
 {
 
   INFO_PRINT("Final vote hash 2: %s", vote_hash_hex)
-  INFO_PRINT("Final vote hash 2: %s | total_vote: %u | winning_vote: %u", vote_hash_hex, total_vote, winning_vote);
+  INFO_PRINT("total_vote: %u | winning_vote: %u", total_vote, winning_vote);
+
 
 
   unsigned char* block_blob_bin = calloc(1, BUFFER_SIZE);
