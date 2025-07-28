@@ -48,6 +48,7 @@ bool add_vrf_extra_and_sign__OLD__(char* block_blob_hex, const char* vote_hash_h
 
 
 
+
   unsigned char* block_blob_bin = calloc(1, BUFFER_SIZE);
   if (!block_blob_bin) {
     ERROR_PRINT("Memory allocation failed for block_blob_bin");
@@ -161,7 +162,7 @@ bool add_vrf_extra_and_sign__OLD__(char* block_blob_hex, const char* vote_hash_h
 bool add_vrf_extra_and_sign(char* block_blob_hex, const char* vote_hash_hex, size_t reserved_offset, uint8_t total_vote, uint8_t winning_vote)
 {
 
-  INFO_PRINT("Final vote hash 2: %s", vote_hash_hex)
+  INFO_PRINT("Final vote hash 2: %s", vote_hash_hex);
   INFO_PRINT("total_vote: %u | winning_vote: %u", total_vote, winning_vote);
 
 
@@ -250,7 +251,7 @@ bool add_vrf_extra_and_sign(char* block_blob_hex, const char* vote_hash_hex, siz
 
 
 for (int i = 0; i < 2; i++) {
-  block_blob_bin[pos++] = TX_EXTRA_NONCE_TAG;  // 0x07
+  block_blob_bin[pos++] = TX_EXTRA_VRF_SIGNATURE_TAG;  // 0x07
   size_t varint_len = write_varint(block_blob_bin + pos, VRF_BLOB_TOTAL_SIZE);
   pos += varint_len;
   memcpy(block_blob_bin + pos, vrf_blob, VRF_BLOB_TOTAL_SIZE);
