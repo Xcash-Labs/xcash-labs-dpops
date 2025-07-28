@@ -149,11 +149,11 @@ bool add_vrf_extra_and_sign(char* block_blob_hex, const char* vote_hash_hex, siz
   size_t new_blob_len = len(block_blob_bin);
   INFO_PRINT("new_blob_len = %zu", new_blob_len);
 
-  if ((pos - reserved_offset) > BLOCK_RESERVED_SIZE) {
-    ERROR_PRINT("VRF data exceeds reserved space: used %zu bytes, allowed %d", pos - reserved_offset, BLOCK_RESERVED_SIZE);
-    free(block_blob_bin);
-    return false;
-  }
+//  if ((pos - reserved_offset) > BLOCK_RESERVED_SIZE) {
+//    ERROR_PRINT("VRF data exceeds reserved space: used %zu bytes, allowed %d", pos - reserved_offset, BLOCK_RESERVED_SIZE);
+//    free(block_blob_bin);
+//    return false;
+//  }
 
   bytes_to_hex(block_blob_bin, new_blob_len, block_blob_hex, BUFFER_SIZE)
 //  bytes_to_hex(block_blob_bin, blob_len, block_blob_hex, BUFFER_SIZE);
