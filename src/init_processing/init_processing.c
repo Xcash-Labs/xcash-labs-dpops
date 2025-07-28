@@ -6,9 +6,17 @@ Description: Initialize globals and print program start header.
 ---------------------------------------------------------------------------------------------------------*/
 bool init_processing(const arg_config_t *arg_config) {
   (void) arg_config;
+
+#ifdef SEED_NODE_ON
+  while (!is_replica_set_ready()) {
+    INFO_PRINT("Replica set not ready, waiting...");
+    sleep(5);
+  }
+#endif
+
   network_data_nodes_amount = get_seed_node_count();
 
-  // Check if database is empty and create the default database data if true
+  // Check if database is empty and create the default database data if true                             Need to check that things are ready to go
   if (count_db_delegates() <= 0) {
     INFO_PRINT("Delegates collection does not exist so creating it.");
     bool is_primary = false;
