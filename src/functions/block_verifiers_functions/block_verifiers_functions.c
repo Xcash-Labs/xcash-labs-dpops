@@ -36,7 +36,7 @@ size_t write_varint(uint8_t *out, size_t value) {
  * @note Ensure the get_block_template reserve_size is at least 210–220 bytes to fit the full VRF blob.
  * @note The signature is calculated on the original (unpatched) block_blob_hex for consensus correctness.
 ---------------------------------------------------------------------------------------------------------*/
-bool add_vrf_extra_and_sign(char* block_blob_hex, const char* vote_hash_hex, size_t reserved_offset)
+bool add_vrf_extra_and_sign(char* block_blob_hex, const char* vote_hash_hex, size_t reserved_offset, uint8_t total_vote, uint8_t winning_vote)
 {
 
   INFO_PRINT("Final vote hash 2: %s", vote_hash_hex);
@@ -192,7 +192,7 @@ int block_verifiers_create_block(const char* vote_hash_hex, uint8_t total_vote, 
     // Create block template
     INFO_STAGE_PRINT("Part 10 - Add VRF Data and Sign Block Blob");
     snprintf(current_round_part, sizeof(current_round_part), "%d", 10);
-    if(!add_vrf_extra_and_sign(block_blob, vote_hash_hex, reserved_offset)) {
+    if(!add_vrf_extra_and_sign(block_blob, vote_hash_hex, reserved_offset, total_vote, winning_vote)) {
       return ROUND_ERROR;
     }
 
