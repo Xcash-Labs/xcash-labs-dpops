@@ -146,7 +146,7 @@ bool add_vrf_extra_and_sign(char* block_blob_hex, const char* vote_hash_hex, siz
   pos += VRF_BLOB_TOTAL_SIZE;
 
   INFO_PRINT("blob_len = %zu", blob_len);
-  size_t new_blob_len = len(block_blob_bin);
+  size_t new_blob_len = strlen(block_blob_bin);
   INFO_PRINT("new_blob_len = %zu", new_blob_len);
 
 //  if ((pos - reserved_offset) > BLOCK_RESERVED_SIZE) {
