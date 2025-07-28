@@ -162,7 +162,7 @@ Name: block_verifiers_create_block
 Description: Runs the round where the block verifiers will create the block
 Return: 0 if an error has occured, 1 if successfull
 ---------------------------------------------------------------------------------------------------------*/
-int block_verifiers_create_block(const char* final_vote_hash_hex) {
+int block_verifiers_create_block(const char* final_vote_hash_hex, uint8_t total_vote, uint8_t winning_vote) {
   char data[BUFFER_SIZE] = {0};
 
   // Confirm block height hasn't drifted (this node may be behind the network)
