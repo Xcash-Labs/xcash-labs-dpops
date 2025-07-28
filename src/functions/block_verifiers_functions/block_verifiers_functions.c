@@ -58,6 +58,10 @@ bool add_vrf_extra_and_sign(char* block_blob_hex, const char* vote_hash_hex, siz
     return false;
   }
 
+
+
+
+
 // Backoff 2 to overwrite the preset 0x02 trans (TX_EXTRA_NONCE) and length.  Update with new 07 trans (TX_EXTRA_VRF_SIGNATURE_TAG).
   size_t pos = reserved_offset - 2;
 
@@ -142,6 +146,7 @@ bool add_vrf_extra_and_sign(char* block_blob_hex, const char* vote_hash_hex, siz
   pos += VRF_BLOB_TOTAL_SIZE;
 
   INFO_PRINT("blob_len = %zu", blob_len);
+  size_t new_blob_len len(block_blob_bin); 
 
   if ((pos - reserved_offset) > BLOCK_RESERVED_SIZE) {
     ERROR_PRINT("VRF data exceeds reserved space: used %zu bytes, allowed %d", pos - reserved_offset, BLOCK_RESERVED_SIZE);
@@ -149,14 +154,14 @@ bool add_vrf_extra_and_sign(char* block_blob_hex, const char* vote_hash_hex, siz
     return false;
   }
 
+  bytes_to_hex(block_blob_bin, new_blob_len, block_blob_hex, BUFFER_SIZE)
+//  bytes_to_hex(block_blob_bin, blob_len, block_blob_hex, BUFFER_SIZE);
 
-  bytes_to_hex(block_blob_bin, blob_len, block_blob_hex, BUFFER_SIZE);
-
-  if (strlen(block_blob_hex) != blob_len * 2) {
-    ERROR_PRINT("Hex conversion mismatch: expected %zu, got %zu", blob_len * 2, strlen(block_blob_hex));
-    free(block_blob_bin);
-    return false;
-  }
+//  if (strlen(block_blob_hex) != blob_len * 2) {
+//    ERROR_PRINT("Hex conversion mismatch: expected %zu, got %zu", blob_len * 2, strlen(block_blob_hex));
+//    free(block_blob_bin);
+//    return false;
+//  }
 
   INFO_PRINT("Final block_blob_hex (length: %zu):", strlen(block_blob_hex));
   INFO_PRINT("%s", block_blob_hex);
