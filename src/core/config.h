@@ -57,7 +57,7 @@
 #define BLOCK_PRODUCER_NETWORK_BLOCK_NONCE "00000000"
 #define TRANSACTION_HASH_LENGTH 64 // The length of the transaction hash
 #define TX_EXTRA_VRF_SIGNATURE_TAG 0x07
-#define BLOCK_RESERVED_SIZE 278
+#define BLOCK_RESERVED_SIZE 279
 #define VRF_BLOB_TOTAL_SIZE 278
 
 // ======================== Block Template =========================

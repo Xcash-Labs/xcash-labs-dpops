@@ -141,11 +141,11 @@ bool add_vrf_extra_and_sign(char* block_blob_hex, const char* vote_hash_hex, siz
   memcpy(block_blob_bin + pos, vrf_blob, VRF_BLOB_TOTAL_SIZE);
   pos += VRF_BLOB_TOTAL_SIZE;
 
-  //if ((pos - reserved_offset) > BLOCK_RESERVED_SIZE) {
-  //  ERROR_PRINT("VRF data exceeds reserved space: used %zu bytes, allowed %d", pos - reserved_offset, BLOCK_RESERVED_SIZE);
-  //  free(block_blob_bin);
-  //  return false;
-  //}
+  if ((pos - reserved_offset) > BLOCK_RESERVED_SIZE) {
+    ERROR_PRINT("VRF data exceeds reserved space: used %zu bytes, allowed %d", pos - reserved_offset, BLOCK_RESERVED_SIZE);
+    free(block_blob_bin);
+    return false;
+  }
 
   bytes_to_hex(block_blob_bin, blob_len, block_blob_hex, BUFFER_SIZE);
 
