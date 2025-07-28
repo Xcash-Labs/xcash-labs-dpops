@@ -160,7 +160,8 @@ int get_block_template(char* result, size_t result_size, size_t* reserved_offset
   const char* RPC_ENDPOINT = "/json_rpc";
   const char* RPC_METHOD = "POST";
   const char* JSON_REQUEST_PREFIX = "{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"get_block_template\",\"params\":{\"wallet_address\":\"";
-  const char* JSON_REQUEST_SUFFIX = "\",\"reserve_size\":245}"; 
+  // Does not matter what reserve_size is because we are going to overwrite with a new transaction
+  const char* JSON_REQUEST_SUFFIX = "\",\"reserve_size\":255}"; 
 
   // Variables
   char message[SMALL_BUFFER_SIZE] = {0};
