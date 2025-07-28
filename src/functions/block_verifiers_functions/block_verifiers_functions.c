@@ -26,8 +26,6 @@ size_t write_varint(uint8_t *out, size_t value) {
  *  vrf_proof	  80	    Hex-decoded 80-byte VRF proof (e.g. from libsodium)
  *  vrf_beta	  64	    Hex-decoded 32-byte beta (VRF hash output)
  *  vrf_pubkey  32	    Hex-decoded 32-byte VRF public key
- *  vote_count	1       Hex-decoded 1-byte vote cound of winner
- *  round_hash	32      Hex-decode 32-byte hash of all votes
  *  signature	  64	    Hex-decoded 64-byte signature
  *  
  * @param block_blob_hex The input and output hex-encoded blocktemplate blob.
@@ -38,10 +36,10 @@ size_t write_varint(uint8_t *out, size_t value) {
  * @note Ensure the get_block_template reserve_size is at least 210–220 bytes to fit the full VRF blob.
  * @note The signature is calculated on the original (unpatched) block_blob_hex for consensus correctness.
 ---------------------------------------------------------------------------------------------------------*/
-bool add_vrf_extra_and_sign(char* block_blob_hex, const char* final_vote_hash_hex, size_t reserved_offset)
+bool add_vrf_extra_and_sign(char* block_blob_hex, const char* vote_hash_hex, size_t reserved_offset)
 {
 
-  INFO_PRINT("Final vote hash 2: %s", final_vote_hash_hex);
+  INFO_PRINT("Final vote hash 2: %s", vote_hash_hex);
 
   unsigned char* block_blob_bin = calloc(1, BUFFER_SIZE);
   if (!block_blob_bin) {
@@ -161,7 +159,7 @@ Name: block_verifiers_create_block
 Description: Runs the round where the block verifiers will create the block
 Return: 0 if an error has occured, 1 if successfull
 ---------------------------------------------------------------------------------------------------------*/
-int block_verifiers_create_block(const char* final_vote_hash_hex) {
+int block_verifiers_create_block(const char* vote_hash_hex, uint8_t total_vote, uint8_t winning_vote) {
   char data[BUFFER_SIZE] = {0};
 
   // Confirm block height hasn't drifted (this node may be behind the network)
@@ -194,7 +192,7 @@ int block_verifiers_create_block(const char* final_vote_hash_hex) {
     // Create block template
     INFO_STAGE_PRINT("Part 10 - Add VRF Data and Sign Block Blob");
     snprintf(current_round_part, sizeof(current_round_part), "%d", 10);
-    if(!add_vrf_extra_and_sign(block_blob, final_vote_hash_hex, reserved_offset)) {
+    if(!add_vrf_extra_and_sign(block_blob, vote_hash_hex, reserved_offset)) {
       return ROUND_ERROR;
     }
 
