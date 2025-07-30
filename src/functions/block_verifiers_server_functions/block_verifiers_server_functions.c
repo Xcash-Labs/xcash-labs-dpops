@@ -162,14 +162,14 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
       // Form alpha input = previous_block_hash || block_height
       if (!hex_to_byte_array(previous_block_hash, previous_block_hash_bin, 32)) {
         ERROR_PRINT("Failed to decode previous block hash");
-        return XCASH_ERROR;
+        break;
       }
       memcpy(alpha_input_bin, previous_block_hash_bin, 32);
 
       // Convert current_block_height (char*) to binary
       uint64_t block_height = strtoull(current_block_height, NULL, 10);
       uint64_t height_le = htole64(block_height);
-      memcpy(alpha_input_bin + 32, &height_le, sizeof(height_le));  // Write at offset 32
+      memcpy(alpha_input_bin + 32, &height_le, sizeof(height_le));
 
       // Verify VRF proof
       unsigned char computed_beta[crypto_vrf_OUTPUTBYTES];
