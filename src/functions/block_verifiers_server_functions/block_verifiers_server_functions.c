@@ -6,6 +6,7 @@ Description: Runs the code when the server receives the BLOCK_VERIFIERS_TO_BLOCK
 Parameters:
   MESSAGE - The message
 ---------------------------------------------------------------------------------------------------------*/
+/*
 void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data__OLD__(const char* MESSAGE)
 {
   char public_address[XCASH_WALLET_LENGTH + 1] = {0};
@@ -99,7 +100,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data__OLD
 
   return;
 }
-
+*/
 
 void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(const char* MESSAGE)
 {
