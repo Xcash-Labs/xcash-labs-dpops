@@ -142,7 +142,6 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
   for (count = 0; count < BLOCK_VERIFIERS_AMOUNT; count++) {
     if (strncmp(current_block_verifiers_list.block_verifiers_public_address[count], public_address, XCASH_WALLET_LENGTH) == 0 &&
         strncmp(current_block_verifiers_list.block_verifiers_vrf_public_key_hex[count], "", 1) == 0 &&
-        strncmp(current_block_verifiers_list.block_verifiers_random_hex[count], "", 1) == 0 &&
         strncmp(current_block_verifiers_list.block_verifiers_vrf_proof_hex[count], "", 1) == 0 &&
         strncmp(current_block_verifiers_list.block_verifiers_vrf_beta_hex[count], "", 1) == 0) {
 
@@ -215,7 +214,6 @@ void server_receive_data_socket_node_to_node_vote_majority(const char* MESSAGE) 
   char vrf_public_key_data[VRF_PUBLIC_KEY_LENGTH + 1] = {0};
   char vrf_proof_hex[VRF_PROOF_LENGTH + 1] = {0};
   char vrf_beta_hex[VRF_BETA_LENGTH + 1] = {0};
-  char random_buf_hex[(VRF_RANDOMBYTES_LENGTH * 2) + 1] = {0};
   char block_height[BLOCK_HEIGHT_LENGTH] = {0};
   char vote_signature[XCASH_SIGN_DATA_LENGTH + 1] = {0};
 
@@ -225,7 +223,6 @@ void server_receive_data_socket_node_to_node_vote_majority(const char* MESSAGE) 
   if (parse_json_data(MESSAGE, "public_address", public_address, sizeof(public_address)) == XCASH_ERROR ||
       parse_json_data(MESSAGE, "proposed_producer", public_address_producer, sizeof(public_address_producer)) == XCASH_ERROR ||
       parse_json_data(MESSAGE, "vrf_public_key", vrf_public_key_data, sizeof(vrf_public_key_data)) == XCASH_ERROR ||
-      parse_json_data(MESSAGE, "vrf_random", random_buf_hex, sizeof(random_buf_hex)) == XCASH_ERROR ||
       parse_json_data(MESSAGE, "vrf_proof", vrf_proof_hex, sizeof(vrf_proof_hex)) == XCASH_ERROR ||
       parse_json_data(MESSAGE, "vrf_beta", vrf_beta_hex, sizeof(vrf_beta_hex)) == XCASH_ERROR ||
       parse_json_data(MESSAGE, "block_height", block_height, sizeof(block_height)) == XCASH_ERROR ||
@@ -272,11 +269,6 @@ void server_receive_data_socket_node_to_node_vote_majority(const char* MESSAGE) 
 
     if (strcmp(vrf_public_key_data, current_block_verifiers_list.block_verifiers_vrf_public_key_hex[i]) != 0) {
       ERROR_PRINT("Mismatch in vrf_public_key for verifier %s", public_address_producer);
-      return;
-    }
-
-    if (strcmp(random_buf_hex, current_block_verifiers_list.block_verifiers_random_hex[i]) != 0) {
-      ERROR_PRINT("Mismatch in random_data for verifier %s", public_address_producer);
       return;
     }
 
