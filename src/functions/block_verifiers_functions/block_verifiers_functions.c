@@ -136,7 +136,7 @@ bool add_vrf_extra_and_sign(char* block_blob_hex, const char* vote_hash_hex, siz
   */
 
 
-  if (vrf_pos != 212) {
+  if (vrf_pos != VRF_BLOB_TOTAL_SIZE) {
     ERROR_PRINT("VRF blob constructed with incorrect size: %zu bytes", vrf_pos);
     free(block_blob_bin);
     return false;
