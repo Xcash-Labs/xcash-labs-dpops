@@ -645,7 +645,6 @@ bool block_verifiers_create_vote_majority_result(char** message, int producer_in
     return false;
 
   if (strlen(current_block_verifiers_list.block_verifiers_vrf_public_key_hex[producer_indx]) == 0 ||
-      strlen(current_block_verifiers_list.block_verifiers_random_hex[producer_indx]) == 0 ||
       strlen(current_block_verifiers_list.block_verifiers_vrf_proof_hex[producer_indx]) == 0 ||
       strlen(current_block_verifiers_list.block_verifiers_vrf_beta_hex[producer_indx]) == 0) {
     ERROR_PRINT("Missing VRF data for producer");
@@ -720,7 +719,6 @@ bool block_verifiers_create_vote_majority_result(char** message, int producer_in
       "vrf_beta", current_block_verifiers_list.block_verifiers_vrf_beta_hex[producer_indx],
       "vrf_proof", current_block_verifiers_list.block_verifiers_vrf_proof_hex[producer_indx],
       "vrf_public_key", current_block_verifiers_list.block_verifiers_vrf_public_key_hex[producer_indx],
-      "vrf_random", current_block_verifiers_list.block_verifiers_random_hex[producer_indx],
       "vote_signature", signature,
       NULL};
   *message = create_message_param_list(XMSG_NODES_TO_NODES_VOTE_MAJORITY_RESULTS, params);
