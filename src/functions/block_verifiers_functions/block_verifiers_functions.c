@@ -28,7 +28,7 @@ size_t write_varint(uint8_t* out, size_t value) {
  *  vrf_pubkey  32	    Hex-decoded 32-byte VRF public key
  *  total_votes  1      Hex-decoded 1-byte vote total
  *  winning_vote 1      Hex-decoded 1-byte vote count for winner
- *  vote_hash	   32     Hex-decode 32-byte hash of all votes ?
+ *  vote_hash	  32      Hex-decode 32-byte hash of all votes
  *
  * @param block_blob_hex The input and output hex-encoded blocktemplate blob.
  *                       Must contain reserved space as defined by get_block_template (e.g. 220 bytes).
@@ -38,113 +38,6 @@ size_t write_varint(uint8_t* out, size_t value) {
  * @note Ensure the get_block_template reserve_size is at least 210–220 bytes to fit the full VRF blob.
  * @note The signature is calculated on the original (unpatched) block_blob_hex for consensus correctness.
 ---------------------------------------------------------------------------------------------------------*/
-bool add_vrf_extra_and_sign__OLD__(char* block_blob_hex, const char* vote_hash_hex, size_t reserved_offset, uint8_t total_vote, uint8_t winning_vote) {
-  INFO_PRINT("Final vote hash 2: %s", vote_hash_hex);
-  INFO_PRINT("total_vote: %u | winning_vote: %u", total_vote, winning_vote);
-
-  unsigned char* block_blob_bin = calloc(1, BUFFER_SIZE);
-  if (!block_blob_bin) {
-    ERROR_PRINT("Memory allocation failed for block_blob_bin");
-    return false;
-  }
-
-  size_t blob_len = strlen(block_blob_hex) / 2;
-  if (!hex_to_byte_array(block_blob_hex, block_blob_bin, blob_len)) {
-    ERROR_PRINT("Failed to convert block_blob_hex to binary");
-    free(block_blob_bin);
-    return false;
-  }
-
-  // Backoff 2 to overwrite the preset 0x02 trans (TX_EXTRA_NONCE) and length.  Update with new 07 trans (TX_EXTRA_VRF_SIGNATURE_TAG).
-  size_t pos = reserved_offset - 2;
-
-  // Construct the VRF blob
-  uint8_t vrf_blob[VRF_BLOB_TOTAL_SIZE] = {0};
-  size_t vrf_pos = 0;
-
-  if (!hex_to_byte_array(producer_refs[0].vrf_proof_hex, vrf_blob + vrf_pos, VRF_PROOF_LENGTH / 2)) {
-    ERROR_PRINT("Failed to decode VRF proof hex");
-    free(block_blob_bin);
-    return false;
-  }
-  vrf_pos += (VRF_PROOF_LENGTH / 2);
-
-  if (!hex_to_byte_array(producer_refs[0].vrf_beta_hex, vrf_blob + vrf_pos, VRF_BETA_LENGTH / 2)) {
-    ERROR_PRINT("Failed to decode VRF beta hex");
-    free(block_blob_bin);
-    return false;
-  }
-  vrf_pos += VRF_BETA_LENGTH / 2;
-
-  if (!hex_to_byte_array(producer_refs[0].vrf_public_key, vrf_blob + vrf_pos, VRF_PUBLIC_KEY_LENGTH / 2)) {
-    ERROR_PRINT("Failed to decode VRF public key hex");
-    free(block_blob_bin);
-    return false;
-  }
-  vrf_pos += VRF_PUBLIC_KEY_LENGTH / 2;
-
-  // Sign the original block blob (before patching)
-  char blob_signature[XCASH_SIGN_DATA_LENGTH + 1] = {0};
-  if (!sign_block_blob(block_blob_hex, blob_signature, sizeof(blob_signature))) {
-    ERROR_PRINT("Failed to sign block blob");
-    free(block_blob_bin);
-    return false;
-  }
-  DEBUG_PRINT("Block Blob Signature: %s", blob_signature);
-
-  const char* base64_part = blob_signature + 5;  // skip "SigV2"
-  uint8_t sig_bytes[64] = {0};
-  size_t sig_len = 0;
-
-  if (!base64_decode(base64_part, sig_bytes, sizeof(sig_bytes), &sig_len)) {
-    ERROR_PRINT("Base64 decode failed");
-    free(block_blob_bin);
-    return false;
-  }
-
-  if (sig_len != 64) {
-    ERROR_PRINT("Decoded signature must be exactly 64 bytes");
-    free(block_blob_bin);
-    return false;
-  }
-
-  memcpy(vrf_blob + vrf_pos, sig_bytes, 64);
-  vrf_pos += 64;
-  DEBUG_PRINT("VRF proof decoded, vrf_pos now at: %zu", vrf_pos);
-
-  if (vrf_pos != 240) {
-    ERROR_PRINT("VRF blob constructed with incorrect size: %zu bytes", vrf_pos);
-    free(block_blob_bin);
-    return false;
-  }
-
-  block_blob_bin[pos++] = TX_EXTRA_VRF_SIGNATURE_TAG;
-  size_t varint_len = write_varint(block_blob_bin + pos, VRF_BLOB_TOTAL_SIZE);
-  pos += varint_len;
-  memcpy(block_blob_bin + pos, vrf_blob, VRF_BLOB_TOTAL_SIZE);
-  pos += VRF_BLOB_TOTAL_SIZE;
-
-  if ((pos - reserved_offset) > BLOCK_RESERVED_SIZE) {
-    ERROR_PRINT("VRF data exceeds reserved space: used %zu bytes, allowed %d", pos - reserved_offset, BLOCK_RESERVED_SIZE);
-    free(block_blob_bin);
-    return false;
-  }
-
-  bytes_to_hex(block_blob_bin, blob_len, block_blob_hex, BUFFER_SIZE);
-
-  if (strlen(block_blob_hex) != blob_len * 2) {
-    ERROR_PRINT("Hex conversion mismatch: expected %zu, got %zu", blob_len * 2, strlen(block_blob_hex));
-    free(block_blob_bin);
-    return false;
-  }
-
-  INFO_PRINT("Final block_blob_hex (length: %zu):", strlen(block_blob_hex));
-  INFO_PRINT("%s", block_blob_hex);
-
-  free(block_blob_bin);
-  return true;
-}
-
 bool add_vrf_extra_and_sign(char* block_blob_hex, const char* vote_hash_hex, size_t reserved_offset, uint8_t total_vote, uint8_t winning_vote) {
   INFO_PRINT("Final vote hash 2: %s", vote_hash_hex);
   INFO_PRINT("total_vote: %u | winning_vote: %u", total_vote, winning_vote);
@@ -190,6 +83,27 @@ bool add_vrf_extra_and_sign(char* block_blob_hex, const char* vote_hash_hex, siz
   }
   vrf_pos += VRF_PUBLIC_KEY_LENGTH / 2;
 
+  // Add total_votes
+  vrf_blob[vrf_pos++] = total_vote;
+
+  // Add winning_vote
+  vrf_blob[vrf_pos++] = winning_vote;
+
+  // Add vote_hash (32-byte hex → 16-byte binary)
+  if (!hex_to_byte_array(vote_hash_hex, vrf_blob + vrf_pos, VRF_PUBLIC_KEY_LENGTH / 2)) {
+    ERROR_PRINT("Failed to decode vote hash hex");
+    free(block_blob_bin);
+    return false;
+  }
+  vrf_pos += 32;
+
+
+
+
+
+
+  /*
+
   // Sign the original block blob (before patching)
   char blob_signature[XCASH_SIGN_DATA_LENGTH + 1] = {0};
   if (!sign_block_blob(block_blob_hex, blob_signature, sizeof(blob_signature))) {
@@ -219,32 +133,26 @@ bool add_vrf_extra_and_sign(char* block_blob_hex, const char* vote_hash_hex, siz
   vrf_pos += 64;
   DEBUG_PRINT("VRF proof decoded, vrf_pos now at: %zu", vrf_pos);
 
-  if (vrf_pos != 240) {
+  */
+
+
+  if (vrf_pos != 212) {
     ERROR_PRINT("VRF blob constructed with incorrect size: %zu bytes", vrf_pos);
     free(block_blob_bin);
     return false;
   }
 
-  // block_blob_bin[pos++] = TX_EXTRA_VRF_SIGNATURE_TAG;
-  // size_t varint_len = write_varint(block_blob_bin + pos, VRF_BLOB_TOTAL_SIZE);
-  // pos += varint_len;
-  // memcpy(block_blob_bin + pos, vrf_blob, VRF_BLOB_TOTAL_SIZE);
-  // pos += VRF_BLOB_TOTAL_SIZE;
+  block_blob_bin[pos++] = TX_EXTRA_VRF_SIGNATURE_TAG;
+  size_t varint_len = write_varint(block_blob_bin + pos, VRF_BLOB_TOTAL_SIZE);
+  pos += varint_len;
+  memcpy(block_blob_bin + pos, vrf_blob, VRF_BLOB_TOTAL_SIZE);
+  pos += VRF_BLOB_TOTAL_SIZE;
 
-  for (int i = 0; i < 2; i++) {
-    block_blob_bin[pos++] = TX_EXTRA_VRF_SIGNATURE_TAG;  // 0x07
-    size_t varint_len = write_varint(block_blob_bin + pos, VRF_BLOB_TOTAL_SIZE);
-    pos += varint_len;
-    memcpy(block_blob_bin + pos, vrf_blob, VRF_BLOB_TOTAL_SIZE);
-    pos += VRF_BLOB_TOTAL_SIZE;
+  if ((pos - reserved_offset) > BLOCK_RESERVED_SIZE) {
+    ERROR_PRINT("VRF data exceeds reserved space: used %zu bytes, allowed %d", pos - reserved_offset, BLOCK_RESERVED_SIZE);
+    free(block_blob_bin);
+    return false;
   }
-  blob_len = pos;
-
-  //  if ((pos - reserved_offset) > BLOCK_RESERVED_SIZE) {
-  //    ERROR_PRINT("VRF data exceeds reserved space: used %zu bytes, allowed %d", pos - reserved_offset, BLOCK_RESERVED_SIZE);
-  //    free(block_blob_bin);
-  //    return false;
-  //  }
 
   bytes_to_hex(block_blob_bin, blob_len, block_blob_hex, BUFFER_SIZE);
 
