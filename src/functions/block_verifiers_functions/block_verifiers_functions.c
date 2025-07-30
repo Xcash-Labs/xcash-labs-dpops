@@ -410,7 +410,7 @@ Return:
   XCASH_OK (1) if the key generation and message formatting succeed.
   XCASH_ERROR (0) if any step fails.
 ---------------------------------------------------------------------------------------------------------*/
-bool generate_and_request_vrf_data_msg(char** message)
+bool generate_and_request_vrf_data_msg__OLD__(char** message)
 {
   unsigned char random_buf_bin[VRF_RANDOMBYTES_LENGTH] = {0};
   unsigned char alpha_input_bin[VRF_RANDOMBYTES_LENGTH * 2] = {0};
@@ -509,6 +509,112 @@ bool generate_and_request_vrf_data_msg(char** message)
 
     return XCASH_OK;
 }
+
+
+bool generate_and_request_vrf_data_msg(char** message)
+{
+  unsigned char alpha_input_bin[40] = {0};
+
+  unsigned char pk_bin[crypto_vrf_PUBLICKEYBYTES] = {0};
+  unsigned char vrf_proof[crypto_vrf_PROOFBYTES] = {0};
+  unsigned char vrf_beta[crypto_vrf_OUTPUTBYTES] = {0};
+  unsigned char previous_block_hash_bin[BLOCK_HASH_LENGTH / 2] = {0};
+  char vrf_proof_hex[VRF_PROOF_LENGTH + 1] = {0};  
+  char vrf_beta_hex[VRF_BETA_LENGTH + 1] = {0};
+
+
+//  char random_buf_hex[(VRF_RANDOMBYTES_LENGTH * 2) + 1] = {0};
+
+
+  size_t i, offset;
+
+  if (!hex_to_byte_array(vrf_public_key, pk_bin, sizeof(pk_bin))) {
+    ERROR_PRINT("Invalid hex format for public key");
+    return XCASH_ERROR;
+  }
+
+  // Validate the VRF public key
+  if (crypto_vrf_is_valid_key(pk_bin) != 1) {
+    ERROR_PRINT("Public key failed validation");
+    return XCASH_ERROR;
+  }
+
+  // Decode 32-byte hash into alpha_input_bin[0..31]
+  if (!hex_to_byte_array(previous_block_hash, previous_block_hash_bin, 32)) {
+    ERROR_PRINT("Failed to decode previous block hash");
+    return XCASH_ERROR;
+  }
+  
+  memcpy(alpha_input_bin, previous_block_hash_bin, 32);
+
+  // Convert current_block_height (char*) to binary
+  uint64_t block_height = strtoull(current_block_height, NULL, 10);
+  uint64_t height_le = htole64(block_height);
+  memcpy(alpha_input_bin + 32, &height_le, sizeof(height_le));  // Write at offset 32
+
+  // Generate VRF proof
+  if (crypto_vrf_prove(vrf_proof, secret_key_data, alpha_input_bin, sizeof(alpha_input_bin)) != 0) {
+    ERROR_PRINT("Failed to generate VRF proof");
+    return XCASH_ERROR;
+  }
+
+  // Convert proof to beta (random output)
+  if (crypto_vrf_proof_to_hash(vrf_beta, vrf_proof) != 0) {
+    ERROR_PRINT("Failed to convert VRF proof to beta");
+    return XCASH_ERROR;
+  }
+
+  // Convert proof, beta, and random buffer to hex
+  for (i = 0, offset = 0; i < crypto_vrf_PROOFBYTES; i++, offset += 2)
+    snprintf(vrf_proof_hex + offset, 3, "%02x", vrf_proof[i]);
+  for (i = 0, offset = 0; i < crypto_vrf_OUTPUTBYTES; i++, offset += 2)
+    snprintf(vrf_beta_hex + offset, 3, "%02x", vrf_beta[i]);
+//  for (i = 0, offset = 0; i < VRF_RANDOMBYTES_LENGTH; i++, offset += 2) {
+//      snprintf(random_buf_hex + offset, 3, "%02x",random_buf_bin[i]);
+//  }
+
+  unsigned char computed_beta[crypto_vrf_OUTPUTBYTES];
+  if (crypto_vrf_verify(computed_beta, pk_bin, vrf_proof, alpha_input_bin, 64) != 0) {
+    DEBUG_PRINT("Failed to verify the VRF proof for this node");
+    return XCASH_ERROR;
+  } else {
+    if (memcmp(computed_beta, vrf_beta, 64) != 0) {
+      DEBUG_PRINT("Failed to match the computed VRF beta for this node");
+      return XCASH_ERROR;
+    }
+  }
+
+  // Save current block_verifiers data into structure if it is one of the top 50
+  pthread_mutex_lock(&majority_vrf_lock);
+  for (i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
+    if (strncmp(current_block_verifiers_list.block_verifiers_public_address[i], xcash_wallet_public_address, XCASH_WALLET_LENGTH) == 0) {
+      memcpy(current_block_verifiers_list.block_verifiers_public_address[i], xcash_wallet_public_address, XCASH_WALLET_LENGTH+1);
+      memcpy(current_block_verifiers_list.block_verifiers_vrf_public_key_hex[i], vrf_public_key, VRF_PUBLIC_KEY_LENGTH+1);
+//      memcpy(current_block_verifiers_list.block_verifiers_random_hex[i], random_buf_hex, VRF_RANDOMBYTES_LENGTH * 2 + 1);
+      memcpy(current_block_verifiers_list.block_verifiers_vrf_proof_hex[i], vrf_proof_hex, VRF_PROOF_LENGTH + 1); 
+      memcpy(current_block_verifiers_list.block_verifiers_vrf_beta_hex[i], vrf_beta_hex, VRF_BETA_LENGTH + 1);
+      current_block_verifiers_list.block_verifiers_vote_total[i] = 0;
+      current_block_verifiers_list.block_verifiers_voted[i] = 0;
+      break;
+    }
+  }
+  pthread_mutex_unlock(&majority_vrf_lock);
+
+  // Compose outbound message (JSON)
+  *message = create_message_param(
+      XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_VRF_DATA,
+      "public_address", xcash_wallet_public_address,
+      "vrf_public_key", vrf_public_key,
+//      "random_data", random_buf_hex,                               fix everwhere
+      "vrf_proof", vrf_proof_hex,
+      "vrf_beta", vrf_beta_hex,
+      "block-height", current_block_height,
+      NULL);
+
+    return XCASH_OK;
+}
+
+
 
 /*---------------------------------------------------------------------------------------------------------
  * @brief Creates a JSON-formatted synchronization message containing the current node's
