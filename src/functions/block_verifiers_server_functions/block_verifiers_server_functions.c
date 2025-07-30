@@ -167,8 +167,8 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
       memcpy(alpha_input_bin, previous_block_hash_bin, 32);
 
       // Convert current_block_height (char*) to binary
-      uint64_t block_height = strtoull(current_block_height, NULL, 10);
-      uint64_t height_le = htole64(block_height);
+      uint64_t block_height_num = strtoull(current_block_height, NULL, 10);
+      uint64_t height_le = htole64(block_height_num);
       memcpy(alpha_input_bin + 32, &height_le, sizeof(height_le));
 
       // Verify VRF proof
