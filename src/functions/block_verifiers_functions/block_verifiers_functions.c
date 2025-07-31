@@ -508,6 +508,13 @@ bool block_verifiers_create_vote_majority_result(char** message, int producer_in
     return false;
   }
 
+
+
+
+  INFO_PRINT("***XXX*** Signature: %s", signature);
+
+
+
   // Save current block_verifiers data into structure if it is one of the top 50
   pthread_mutex_lock(&majority_vrf_lock);
   for (i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
@@ -528,6 +535,8 @@ bool block_verifiers_create_vote_majority_result(char** message, int producer_in
       "vote_signature", signature,
       NULL};
   *message = create_message_param_list(XMSG_NODES_TO_NODES_VOTE_MAJORITY_RESULTS, params);
+
+  INFO_PRINT("***XXX*** Message: %s", message);
 
   free(signature);
   signature = NULL;
