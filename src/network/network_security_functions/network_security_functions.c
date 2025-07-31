@@ -70,6 +70,28 @@ int sign_data(char *message) {
   snprintf(message + strlen(message) - 1, MEDIUM_BUFFER_SIZE - strlen(message),
     ",\"XCASH_DPOPS_signature\":\"%s\"}", signature);
 
+DEBUG_PRINT("Signed message:\n%s", message);
+
+//size_t message_len = strlen(message);
+
+// Remove the last closing brace temporarily
+//if (message_len > 0 && message[message_len - 1] == '}') {
+//    message[message_len - 1] = '\0';
+//    message_len -= 1;
+//}
+
+//int written = snprintf(message + message_len,
+//                       MEDIUM_BUFFER_SIZE - message_len,
+//                       ",\"XCASH_DPOPS_signature\":\"%s\"}", signature);
+
+// Overflow protection
+//if (written < 0 || (size_t)written >= MEDIUM_BUFFER_SIZE - message_len) {
+//    return handle_error("sign_data", "Message overflow when appending signature", signature, payload, request);
+//}
+
+
+
+
   free(signature);
   free(payload);
   free(request);
