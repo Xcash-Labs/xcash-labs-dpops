@@ -113,10 +113,12 @@ xcash_round_result_t process_round(void) {
 
   INFO_STAGE_PRINT("Part 3 - Send Sync message to all Delegates and wait for replies");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 3);
-
   response_t** responses = NULL;
   char* sync_message = NULL;
   if (create_sync_msg(&sync_message)) {
+
+    INFO_PRINT("*************** Message: %s", sync_message);
+
     if (xnet_send_data_multi(XNET_DELEGATES_ALL, sync_message, &responses)) {
       free(sync_message);
       cleanup_responses(responses);
@@ -417,7 +419,6 @@ xcash_round_result_t process_round(void) {
     strcpy(producer_refs[0].public_address, current_block_verifiers_list.block_verifiers_public_address[producer_indx]);
     strcpy(producer_refs[0].IP_address, current_block_verifiers_list.block_verifiers_IP_address[producer_indx]);
     strcpy(producer_refs[0].vrf_public_key, current_block_verifiers_list.block_verifiers_vrf_public_key_hex[producer_indx]);
-    strcpy(producer_refs[0].random_buf_hex, current_block_verifiers_list.block_verifiers_random_hex[producer_indx]);
     strcpy(producer_refs[0].vrf_proof_hex, current_block_verifiers_list.block_verifiers_vrf_proof_hex[producer_indx]);
     strcpy(producer_refs[0].vrf_beta_hex, current_block_verifiers_list.block_verifiers_vrf_beta_hex[producer_indx]);
     pthread_mutex_unlock(&majority_vrf_lock);
