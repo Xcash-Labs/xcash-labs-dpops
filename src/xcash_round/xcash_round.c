@@ -113,9 +113,6 @@ xcash_round_result_t process_round(void) {
 
   INFO_STAGE_PRINT("Part 3 - Send Sync message to all Delegates and wait for replies");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 3);
-
-  INFO_PRINT("Wallet Public Address: %s", xcash_wallet_public_address);
-
   response_t** responses = NULL;
   char* sync_message = NULL;
   if (create_sync_msg(&sync_message)) {
