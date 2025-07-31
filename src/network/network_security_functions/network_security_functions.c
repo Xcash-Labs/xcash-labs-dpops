@@ -61,14 +61,27 @@ int sign_data(char *message) {
     return handle_error("sign_data", "Wallet signature failed", signature, payload, request);
   }
 
+
+INFO_PRINT("*****************Signature: %s", signature);
+
+
   if (strlen(signature) == 0 ||
       strncmp(signature, XCASH_SIGN_DATA_PREFIX, sizeof(XCASH_SIGN_DATA_PREFIX) - 1) != 0) {
     return handle_error("sign_data", "Invalid wallet signature format", signature, payload, request);
   }
 
   // Step 4: Append the signature to the original message
-  snprintf(message + strlen(message) - 1, MEDIUM_BUFFER_SIZE - strlen(message),
-           ",\"XCASH_DPOPS_signature\":\"%s\"}", signature);
+//  snprintf(message + strlen(message) - 1, MEDIUM_BUFFER_SIZE - strlen(message),
+//           ",\"XCASH_DPOPS_signature\":\"%s\"}", signature);
+  size_t message_len = strlen(message);
+  int written = snprintf(message + message_len,
+                         MEDIUM_BUFFER_SIZE - message_len,
+                         ",\"XCASH_DPOPS_signature\":\"%s\"}", signature);
+
+  // Check for overflow
+  if (written < 0 || (size_t)written >= MEDIUM_BUFFER_SIZE - message_len) {
+    return handle_error("sign_data", "Message overflow when appending signature", signature, payload, request);
+  }
 
   free(signature);
   free(payload);
