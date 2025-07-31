@@ -536,7 +536,7 @@ bool block_verifiers_create_vote_majority_result(char** message, int producer_in
       NULL};
   *message = create_message_param_list(XMSG_NODES_TO_NODES_VOTE_MAJORITY_RESULTS, params);
 
-  INFO_PRINT("***XXX*** Message: %s", message);
+  INFO_PRINT("***XXX*** Message: %s", *message);
 
   free(signature);
   signature = NULL;
