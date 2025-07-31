@@ -119,6 +119,9 @@ xcash_round_result_t process_round(void) {
   response_t** responses = NULL;
   char* sync_message = NULL;
   if (create_sync_msg(&sync_message)) {
+
+    INFO_PRINT("*************** Message: %s", sync_message);
+
     if (xnet_send_data_multi(XNET_DELEGATES_ALL, sync_message, &responses)) {
       free(sync_message);
       cleanup_responses(responses);
