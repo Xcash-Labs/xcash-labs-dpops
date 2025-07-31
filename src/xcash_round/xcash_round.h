@@ -22,7 +22,7 @@ typedef struct {
     char public_address[XCASH_WALLET_LENGTH + 1];
     char IP_address[BLOCK_VERIFIERS_IP_ADDRESS_TOTAL_LENGTH + 1];
     char vrf_public_key[VRF_PUBLIC_KEY_LENGTH + 1];
-//    char random_buf_hex[VRF_RANDOMBYTES_LENGTH * 2 + 1];
+    char random_buf_hex[VRF_RANDOMBYTES_LENGTH * 2 + 1];
     char vrf_proof_hex[VRF_PROOF_LENGTH + 1];
     char vrf_beta_hex[VRF_BETA_LENGTH + 1];
 } producer_ref_t;

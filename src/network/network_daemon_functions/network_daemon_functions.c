@@ -160,7 +160,7 @@ int get_block_template(char* result, size_t result_size, size_t* reserved_offset
   const char* RPC_ENDPOINT = "/json_rpc";
   const char* RPC_METHOD = "POST";
   const char* JSON_REQUEST_PREFIX = "{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"get_block_template\",\"params\":{\"wallet_address\":\"";
-  const char* JSON_REQUEST_SUFFIX = "\",\"reserve_size\":212}"; 
+  const char* JSON_REQUEST_SUFFIX = "\",\"reserve_size\":245}"; 
 
   // Variables
   char message[SMALL_BUFFER_SIZE] = {0};
