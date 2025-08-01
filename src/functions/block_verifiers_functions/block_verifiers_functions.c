@@ -305,7 +305,7 @@ bool generate_and_request_vrf_data_msg(char** message) {
   char vrf_proof_hex[VRF_PROOF_LENGTH + 1] = {0};
   char vrf_beta_hex[VRF_BETA_LENGTH + 1] = {0};
   size_t i, offset;
-
+  INFO_PRINT("1................");
   if (!hex_to_byte_array(vrf_public_key, pk_bin, sizeof(pk_bin))) {
     ERROR_PRINT("Invalid hex format for public key");
     return XCASH_ERROR;
@@ -323,6 +323,7 @@ bool generate_and_request_vrf_data_msg(char** message) {
     return XCASH_ERROR;
   }
   memcpy(alpha_input_bin, previous_block_hash_bin, 32);
+  INFO_PRINT("2................");
 
   // Convert current_block_height (char*) to binary
   uint64_t block_height = strtoull(current_block_height, NULL, 10);
@@ -337,6 +338,7 @@ bool generate_and_request_vrf_data_msg(char** message) {
     ERROR_PRINT("Failed to generate VRF proof");
     return XCASH_ERROR;
   }
+  INFO_PRINT("3................");
 
   // Convert proof to beta (random output)
   if (crypto_vrf_proof_to_hash(vrf_beta, vrf_proof) != 0) {
@@ -350,6 +352,7 @@ bool generate_and_request_vrf_data_msg(char** message) {
   for (i = 0, offset = 0; i < crypto_vrf_OUTPUTBYTES; i++, offset += 2)
     snprintf(vrf_beta_hex + offset, 3, "%02x", vrf_beta[i]);
 
+  INFO_PRINT("4................");    
   unsigned char computed_beta[crypto_vrf_OUTPUTBYTES];
   if (crypto_vrf_verify(computed_beta, pk_bin, vrf_proof, alpha_input_bin, 72) != 0) {
     DEBUG_PRINT("Failed to verify the VRF proof for this node");
