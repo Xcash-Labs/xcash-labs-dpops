@@ -116,8 +116,8 @@
 
 // ===================== Hash and Key Lengths =====================
 #define DATA_HASH_LENGTH 128
-#define XCASH_PUBLIC_ADDR_LENGTH 98
 #define XCASH_WALLET_LENGTH 98
+
 #define BLOCK_HASH_LENGTH 64
 #define RANDOM_STRING_LENGTH 100
 #define XCASH_SIGN_DATA_LENGTH 93
