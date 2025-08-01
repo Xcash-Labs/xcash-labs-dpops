@@ -237,7 +237,7 @@ xcash_round_result_t process_round(void) {
     if (strcmp(xcash_wallet_public_address, current_block_verifiers_list.block_verifiers_public_address[i]) == 0) {
       current_block_verifiers_list.block_verifiers_voted[i] = 1;
       memcpy(current_block_verifiers_list.block_verifiers_selected_public_address[i],
-        current_block_verifiers_list.block_verifiers_public_address[producer_indx], XCASH_SIGN_DATA_LENGTH+1);
+        current_block_verifiers_list.block_verifiers_public_address[producer_indx], XCASH_PUBLIC_ADDR_LENGTH+1);
       break;
     }
   }
@@ -311,7 +311,7 @@ xcash_round_result_t process_round(void) {
   for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     if ( (current_block_verifiers_list.block_verifiers_voted[i] > 0) &&
      (strncmp(current_block_verifiers_list.block_verifiers_selected_public_address[i], 
-      current_block_verifiers_list.block_verifiers_public_address[max_index], XCASH_WALLET_LENGTH) == 0) &&
+      current_block_verifiers_list.block_verifiers_public_address[max_index], XCASH_PUBLIC_ADDR_LENGTH) == 0) &&
       (current_block_verifiers_list.block_verifiers_public_address[i][0] != '\0')){
 
       INFO_PRINT("Block Verifier Name: %s", current_block_verifiers_list.block_verifiers_name[i]);
