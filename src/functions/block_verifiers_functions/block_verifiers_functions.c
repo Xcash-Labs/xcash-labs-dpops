@@ -468,7 +468,7 @@ bool block_verifiers_create_vote_majority_result(char** message, int producer_in
     return false;
   }
 
-  char* signature = calloc(XCASH_SIGN_DATA_LENGTH, sizeof(char));
+  char* signature = calloc(XCASH_SIGN_DATA_LENGTH+1, sizeof(char));
   char* request = calloc(MEDIUM_BUFFER_SIZE * 2, sizeof(char));
   if (!signature || !request) {
     FATAL_ERROR_EXIT("sign_data: Memory allocation failed");
