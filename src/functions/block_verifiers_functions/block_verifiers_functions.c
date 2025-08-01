@@ -363,6 +363,7 @@ bool generate_and_request_vrf_data_msg(char** message) {
       return XCASH_ERROR;
     }
   }
+  INFO_PRINT("5................");
 
   // Save current block_verifiers data into structure if it is one of the top 50
   pthread_mutex_lock(&majority_vrf_lock);
@@ -378,6 +379,8 @@ bool generate_and_request_vrf_data_msg(char** message) {
     }
   }
   pthread_mutex_unlock(&majority_vrf_lock);
+
+  INFO_PRINT("6................");
 
   // Compose outbound message (JSON)
   *message = create_message_param(
