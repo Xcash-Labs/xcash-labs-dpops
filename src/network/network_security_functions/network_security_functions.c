@@ -61,6 +61,8 @@ int sign_data(char *message) {
     return handle_error("sign_data", "Wallet signature failed", signature, payload, request);
   }
 
+  INFO_PRINT("In sign.......");
+
   if (strlen(signature) != XCASH_SIGN_DATA_LENGTH ||
       strncmp(signature, XCASH_SIGN_DATA_PREFIX, strlen(XCASH_SIGN_DATA_PREFIX)) != 0) {
     return handle_error("sign_data", "Invalid wallet signature format", signature, payload, request);
