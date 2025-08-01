@@ -532,8 +532,6 @@ bool block_verifiers_create_vote_majority_result(char** message, int producer_in
 
   free(signature);
   signature = NULL;
-  free(payload);
-  payload = NULL;
   free(request);
   request = NULL;
 
