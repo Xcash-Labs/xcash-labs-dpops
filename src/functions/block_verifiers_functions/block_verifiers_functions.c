@@ -468,11 +468,10 @@ bool block_verifiers_create_vote_majority_result(char** message, int producer_in
     return false;
   }
 
-//  char* signature = calloc(MEDIUM_BUFFER_SIZE, sizeof(char));
-
-  char *signature = calloc(XCASH_SIGN_DATA_LENGTH+1, sizeof(char));
+  char* signature = calloc(MEDIUM_BUFFER_SIZE, sizeof(char));
+  char* payload = calloc(MEDIUM_BUFFER_SIZE, sizeof(char));
   char* request = calloc(MEDIUM_BUFFER_SIZE * 2, sizeof(char));
-  if (!signature || !request) {
+  if (!signature || !payload || !request) {
     FATAL_ERROR_EXIT("sign_data: Memory allocation failed");
   }
 
@@ -504,6 +503,7 @@ bool block_verifiers_create_vote_majority_result(char** message, int producer_in
       strncmp(signature, XCASH_SIGN_DATA_PREFIX, sizeof(XCASH_SIGN_DATA_PREFIX) - 1) != 0) {
     ERROR_PRINT("Function: block_verifiers_create_vote_majority_result - Wallet signature failed or format invalid");
     free(signature);
+    free(payload);
     free(request);
     return false;
   }
@@ -531,6 +531,8 @@ bool block_verifiers_create_vote_majority_result(char** message, int producer_in
 
   free(signature);
   signature = NULL;
+  free(payload);
+  payload = NULL;
   free(request);
   request = NULL;
 
