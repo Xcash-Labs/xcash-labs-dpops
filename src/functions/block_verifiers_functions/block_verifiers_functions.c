@@ -495,7 +495,7 @@ bool block_verifiers_create_vote_majority_result(char** message, int producer_in
   if (send_http_request(response, MEDIUM_BUFFER_SIZE, XCASH_WALLET_IP, "/json_rpc", XCASH_WALLET_PORT,
                         "POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH,
                         request, SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) <= 0 ||
-      !parse_json_data(response, "result.signature", signature, MEDIUM_BUFFER_SIZE) ||
+      !parse_json_data(response, "result.signature", signature, XCASH_SIGN_DATA_LENGTH+1) ||
       strlen(signature) == 0 ||
       strncmp(signature, XCASH_SIGN_DATA_PREFIX, sizeof(XCASH_SIGN_DATA_PREFIX) - 1) != 0) {
     ERROR_PRINT("Function: block_verifiers_create_vote_majority_result - Wallet signature failed or format invalid");
@@ -508,7 +508,7 @@ bool block_verifiers_create_vote_majority_result(char** message, int producer_in
   pthread_mutex_lock(&majority_vrf_lock);
   for (i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     if (strncmp(current_block_verifiers_list.block_verifiers_public_address[i], xcash_wallet_public_address, XCASH_WALLET_LENGTH) == 0) {
-      memcpy(current_block_verifiers_list.block_verifiers_vote_signature[i], signature, XCASH_SIGN_DATA_LENGTH + 1);
+      memcpy(current_block_verifiers_list.block_verifiers_vote_signature[i], signature, XCASH_SIGN_DATA_LENGTH+1);
       break;
     }
   }
