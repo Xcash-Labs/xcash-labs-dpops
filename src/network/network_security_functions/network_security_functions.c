@@ -20,7 +20,7 @@ int sign_data(char *message) {
   const char *HTTP_HEADERS[] = {"Content-Type: application/json", "Accept: application/json"};
   const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0]);
 
-  char *signature = calloc(MEDIUM_BUFFER_SIZE, sizeof(char));
+  char *signature = calloc(XCASH_SIGN_DATA_LENGTH+1, sizeof(char));
   char *payload = calloc(MEDIUM_BUFFER_SIZE, sizeof(char));
   char *request = calloc(MEDIUM_BUFFER_SIZE * 2, sizeof(char));
   char response[MEDIUM_BUFFER_SIZE] = {0};
