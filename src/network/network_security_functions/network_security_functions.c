@@ -59,12 +59,13 @@ int sign_data(char *message) {
   if (send_http_request(response, MEDIUM_BUFFER_SIZE, XCASH_WALLET_IP, "/json_rpc", XCASH_WALLET_PORT,
                         "POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH,
                         request, SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) <= 0 ||
-      !parse_json_data(response, "result.signature", signature, XCASH_SIGN_DATA_LENGTH)) {
+      !parse_json_data(response, "result.signature", signature, XCASH_SIGN_DATA_LENGTH+1)) {
     handle_error("sign_data", "Wallet signature failed", signature, payload, request);
     return XCASH_ERROR;
   }
 
   INFO_PRINT("In sign.......");
+  INFO_PRINT("Signature: '%s' (length: %zu)", signature, strlen(signature));
 
   if (strlen(signature) != XCASH_SIGN_DATA_LENGTH ||
       strncmp(signature, XCASH_SIGN_DATA_PREFIX, strlen(XCASH_SIGN_DATA_PREFIX)) != 0) {
