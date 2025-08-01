@@ -17,9 +17,6 @@ Parameters:
 Return: 0 if an error has occured, 1 if successfull
 ---------------------------------------------------------------------------------------------------------*/
 int sign_data(char *message) {
-
-  INFO_PRINT("message: %s", message);
-
   const char *HTTP_HEADERS[] = {"Content-Type: application/json", "Accept: application/json"};
   const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0]);
 
@@ -64,18 +61,14 @@ int sign_data(char *message) {
     return handle_error("sign_data", "Wallet signature failed", signature, payload, request);
   }
 
-  if (strlen(signature) == 0 ||
-      strncmp(signature, XCASH_SIGN_DATA_PREFIX, sizeof(XCASH_SIGN_DATA_PREFIX) - 1) != 0) {
+  if (strlen(signature) != XCASH_SIGN_DATA_LENGTH ||
+      strncmp(signature, XCASH_SIGN_DATA_PREFIX, strlen(XCASH_SIGN_DATA_PREFIX)) != 0) {
     return handle_error("sign_data", "Invalid wallet signature format", signature, payload, request);
   }
-
-  INFO_PRINT("Sign: %s", signature);
 
   // Step 4: Append the signature to the original message
   snprintf(message + strlen(message) - 1, MEDIUM_BUFFER_SIZE - strlen(message),
     ",\"XCASH_DPOPS_signature\":\"%s\"}", signature);
-
-  INFO_PRINT("message: %s", message);
 
   free(signature);
   free(payload);
