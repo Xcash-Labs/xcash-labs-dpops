@@ -386,6 +386,8 @@ bool generate_and_request_vrf_data_msg(char** message) {
       "block-height", current_block_height,
       NULL);
 
+  INFO_PRINT("END................");
+
   return XCASH_OK;
 }
 
