@@ -1,12 +1,12 @@
 #include "network_security_functions.h"
 
 // Helper function for error handling
-int handle_error(const char *function_name, const char *message, char *buf1, char *buf2, char *buf3) {
+void handle_error(const char *function_name, const char *message, char *buf1, char *buf2, char *buf3) {
   ERROR_PRINT("%s: %s", function_name, message);
   if (buf1) free(buf1);
   if (buf2) free(buf2);
   if (buf3) free(buf3);
-  return XCASH_ERROR;
+  return;
 }
 
 /*---------------------------------------------------------------------------------------------------------
@@ -17,8 +17,10 @@ Parameters:
 Return: 0 if an error has occured, 1 if successfull
 ---------------------------------------------------------------------------------------------------------*/
 int sign_data(char *message) {
+    INFO_PRINT("In sign start.......");
   const char *HTTP_HEADERS[] = {"Content-Type: application/json", "Accept: application/json"};
   const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0]);
+
   char *signature = calloc(XCASH_SIGN_DATA_LENGTH+1, sizeof(char));
   char *payload = calloc(MEDIUM_BUFFER_SIZE, sizeof(char));
   char *request = calloc(MEDIUM_BUFFER_SIZE * 2, sizeof(char));
@@ -31,7 +33,8 @@ int sign_data(char *message) {
 
   // Generate random data
   if (!random_string(random_data, RANDOM_STRING_LENGTH)) {
-    return handle_error("sign_data", "Failed to generate random data", signature, payload, request);
+    handle_error("sign_data", "Failed to generate random data", signature, payload, request);
+    return XCASH_ERROR;
   }
 
   // Step 1: Build the full JSON message to be signed
@@ -57,12 +60,16 @@ int sign_data(char *message) {
                         "POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH,
                         request, SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) <= 0 ||
       !parse_json_data(response, "result.signature", signature, XCASH_SIGN_DATA_LENGTH)) {
-    return handle_error("sign_data", "Wallet signature failed", signature, payload, request);
+    handle_error("sign_data", "Wallet signature failed", signature, payload, request);
+    return XCASH_ERROR;
   }
+
+  INFO_PRINT("In sign.......");
 
   if (strlen(signature) != XCASH_SIGN_DATA_LENGTH ||
       strncmp(signature, XCASH_SIGN_DATA_PREFIX, strlen(XCASH_SIGN_DATA_PREFIX)) != 0) {
-    return handle_error("sign_data", "Invalid wallet signature format", signature, payload, request);
+    handle_error("sign_data", "Invalid wallet signature format", signature, payload, request);
+    return XCASH_ERROR;
   }
 
   // Step 4: Append the signature to the original message
