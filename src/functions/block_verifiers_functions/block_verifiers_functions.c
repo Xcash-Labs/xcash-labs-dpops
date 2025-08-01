@@ -294,6 +294,8 @@ Return:
 ---------------------------------------------------------------------------------------------------------*/
 bool generate_and_request_vrf_data_msg(char** message) {
 
+  INFO_PRINT("BEGIN................");
+
   unsigned char alpha_input_bin[72] = {0};
 
   unsigned char pk_bin[crypto_vrf_PUBLICKEYBYTES] = {0};
