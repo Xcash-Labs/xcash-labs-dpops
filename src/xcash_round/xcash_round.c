@@ -188,9 +188,6 @@ xcash_round_result_t process_round(void) {
   responses = NULL;
   char* vrf_message = NULL;
   if (generate_and_request_vrf_data_msg(&vrf_message)) {
-    
-  INFO_PRINT("HERE................");
-  
     if (xnet_send_data_multi(XNET_DELEGATES_ALL_ONLINE, vrf_message, &responses)) {
       free(vrf_message);
       cleanup_responses(responses);
@@ -207,8 +204,6 @@ xcash_round_result_t process_round(void) {
     }
     return ROUND_ERROR;
   }
-
-  INFO_PRINT("HERE................");
 
   // Sync start
   if (sync_block_verifiers_minutes_and_seconds(1, 00) == XCASH_ERROR) {
