@@ -17,6 +17,7 @@ Parameters:
 Return: 0 if an error has occured, 1 if successfull
 ---------------------------------------------------------------------------------------------------------*/
 int sign_data(char *message) {
+    INFO_PRINT("In sign start.......");
   const char *HTTP_HEADERS[] = {"Content-Type: application/json", "Accept: application/json"};
   const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0]);
 
