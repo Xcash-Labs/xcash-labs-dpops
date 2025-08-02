@@ -377,7 +377,7 @@ bool generate_and_request_vrf_data_msg(char** message) {
 
   // Compose outbound message (JSON)
 
-  INFO_PRINT("Message (before param - block verifiers to block verifiers vrf data): %s", message);
+  INFO_PRINT("Message (before param - block verifiers to block verifiers vrf data): %s", *message);
 
   *message = create_message_param(
       XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_VRF_DATA,
@@ -388,7 +388,7 @@ bool generate_and_request_vrf_data_msg(char** message) {
       "block-height", current_block_height,
       NULL);
 
-  INFO_PRINT("Message (block verifiers to block verifiers vrf data): %s", message);
+  INFO_PRINT("Message (block verifiers to block verifiers vrf data): %s", *message);
 
   return XCASH_OK;
 }
