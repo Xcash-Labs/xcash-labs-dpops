@@ -62,9 +62,6 @@ int sign_data(char *message) {
     return XCASH_ERROR;
   }
 
-  INFO_PRINT("In sign.......");
-  INFO_PRINT("Signature: '%s' (length: %zu)", signature, strlen(signature));
-
   if (strlen(signature) != XCASH_SIGN_DATA_LENGTH ||
       strncmp(signature, XCASH_SIGN_DATA_PREFIX, strlen(XCASH_SIGN_DATA_PREFIX)) != 0) {
     handle_error("sign_data", "Invalid wallet signature format", signature, payload, request);
@@ -74,8 +71,6 @@ int sign_data(char *message) {
   // Step 4: Append the signature to the original message
   snprintf(message + strlen(message) - 1, MEDIUM_BUFFER_SIZE - strlen(message),
     ",\"XCASH_DPOPS_signature\":\"%s\"}", signature);
-
-  INFO_PRINT("Message (sign): %s", message);
 
   free(signature);
   free(payload);
