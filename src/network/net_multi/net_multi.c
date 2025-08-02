@@ -102,8 +102,8 @@ response_t** send_multi_request(const char** hosts, int port, const char* messag
 
 
 
-    
-    INFO_PRINT("Sending to host: %s | Message: %s", host, message);
+
+    INFO_PRINT("Sending to host: %s | Message: %s\n\n", host, message);
 
 
 
