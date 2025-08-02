@@ -75,7 +75,7 @@ int sign_data(char *message) {
   snprintf(message + strlen(message) - 1, MEDIUM_BUFFER_SIZE - strlen(message),
     ",\"XCASH_DPOPS_signature\":\"%s\"}", signature);
 
-  INFO_PRINT("Message: %s", message);
+  INFO_PRINT("Message (sign): %s", message);
 
   free(signature);
   free(payload);

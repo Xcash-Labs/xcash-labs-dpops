@@ -293,6 +293,9 @@ Return:
   XCASH_ERROR (0) if any step fails.
 ---------------------------------------------------------------------------------------------------------*/
 bool generate_and_request_vrf_data_msg(char** message) {
+
+
+
   unsigned char alpha_input_bin[72] = {0};
   unsigned char pk_bin[crypto_vrf_PUBLICKEYBYTES] = {0};
   unsigned char vrf_proof[crypto_vrf_PROOFBYTES] = {0};
@@ -373,6 +376,9 @@ bool generate_and_request_vrf_data_msg(char** message) {
   pthread_mutex_unlock(&majority_vrf_lock);
 
   // Compose outbound message (JSON)
+
+  INFO_PRINT("Message (before param - block verifiers to block verifiers vrf data): %s", message);
+
   *message = create_message_param(
       XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_VRF_DATA,
       "public_address", xcash_wallet_public_address,
@@ -381,6 +387,8 @@ bool generate_and_request_vrf_data_msg(char** message) {
       "vrf_beta", vrf_beta_hex,
       "block-height", current_block_height,
       NULL);
+
+  INFO_PRINT("Message (block verifiers to block verifiers vrf data): %s", message);
 
   return XCASH_OK;
 }
