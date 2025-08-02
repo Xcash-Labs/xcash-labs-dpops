@@ -99,15 +99,6 @@ response_t** send_multi_request(const char** hosts, int port, const char* messag
       continue;
     }
 
-
-
-
-
-    INFO_PRINT("Sending to host: %s | Message: %s\n\n", host, message);
-
-
-
-
     ssize_t sent = send(sock, compressed_message, compressed_length, 0);
     free(compressed_message);
     if (sent < 0) {
