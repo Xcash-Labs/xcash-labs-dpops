@@ -17,7 +17,7 @@ int select_block_producer_from_vrf(void) {
   int selected_index = -1;
   char lowest_beta[VRF_BETA_LENGTH + 1] = {0};
 
-  pthread_mutex_lock(&majority_vrf_lock);
+  pthread_mutex_lock(&current_block_verifiers_lock);
   for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     // Skip if no beta submitted or is a seed node
 
@@ -36,7 +36,6 @@ int select_block_producer_from_vrf(void) {
       strncpy(lowest_beta, current_block_verifiers_list.block_verifiers_vrf_beta_hex[i], VRF_BETA_LENGTH);
     }
   }
-  pthread_mutex_unlock(&majority_vrf_lock);
 
   if (selected_index != -1) {
     INFO_PRINT("Selected block producer: %s",
@@ -44,6 +43,8 @@ int select_block_producer_from_vrf(void) {
   } else {
     ERROR_PRINT("No valid block producer could be selected.");
   }
+  pthread_mutex_unlock(&current_block_verifiers_lock);
+
 
   return selected_index;
 }
@@ -618,9 +619,9 @@ void start_block_production(void) {
         // If more that a 30% mismatch lets resync the node
         if ((delegate_db_hash_mismatch * 100) > (total_delegates * 30)) {
           int selected_index;
-          pthread_mutex_lock(&delegates_mutex);
+          pthread_mutex_lock(&delegates_all_lock);
           selected_index = select_random_online_delegate();
-          pthread_mutex_unlock(&delegates_mutex);
+          pthread_mutex_unlock(&delegates_all_lock);
           if (!create_delegates_db_sync_request(selected_index)) {
             ERROR_PRINT("Error occured while syncing delegates");
           }
