@@ -163,68 +163,122 @@ Behavior:
 Returns:
   None
 ---------------------------------------------------------------------------------------------------------*/
-void server_receive_data_socket_node_to_node_db_sync_req(server_client_t *client, const char *MESSAGE) {
-    bson_t reply;
-    bson_error_t error;
-    char incoming_token[SYNC_TOKEN_LEN + 1] = {0};
+void server_receive_data_socket_node_to_node_db_sync_req__OLD__(server_client_t *client) {
+  bson_t reply;
+  bson_error_t error;
 
-    // Parse incoming MESSAGE to extract sync_token
-    cJSON *root = cJSON_Parse(MESSAGE);
-    if (root) {
-        cJSON *token_item = cJSON_GetObjectItemCaseSensitive(root, "sync_token");
-        if (token_item && cJSON_IsString(token_item) && token_item->valuestring != NULL) {
-            strncpy(incoming_token, token_item->valuestring, SYNC_TOKEN_LEN);
-            incoming_token[SYNC_TOKEN_LEN] = '\0';
-        }
-        cJSON_Delete(root);
-    }
+  if (!db_export_collection_to_bson(DATABASE_NAME, DB_COLLECTION_DELEGATES, &reply, &error)) {
+    ERROR_PRINT("Failed to export collection: %s", error.message);
+    return;
+  }
 
-    // Export the delegate collection to BSON
-    if (!db_export_collection_to_bson(DATABASE_NAME, DB_COLLECTION_DELEGATES, &reply, &error)) {
-        ERROR_PRINT("Failed to export collection: %s", error.message);
-        return;
-    }
+  char* json_string = bson_as_canonical_extended_json(&reply, NULL);
+  bson_destroy(&reply);
+  if (!json_string) {
+    ERROR_PRINT("Failed to convert BSON to JSON");
+    return;
+  }
 
-    char *json_string = bson_as_canonical_extended_json(&reply, NULL);
-    bson_destroy(&reply);
-    if (!json_string) {
-        ERROR_PRINT("Failed to convert BSON to JSON");
-        return;
-    }
+  cJSON* message = cJSON_CreateObject();
+  cJSON_AddStringToObject(message, "message_settings", "NODES_TO_NODES_DATABASE_SYNC_DATA");
+  cJSON_AddStringToObject(message, "public_address", xcash_wallet_public_address);
 
-    // Construct outer message
-    cJSON *message = cJSON_CreateObject();
-    cJSON_AddStringToObject(message, "message_settings", "NODES_TO_NODES_DATABASE_SYNC_DATA");
-    cJSON_AddStringToObject(message, "public_address", xcash_wallet_public_address);
-
-    // Parse delegate data into cJSON
-    cJSON *json_data = cJSON_Parse(json_string);
-    bson_free(json_string);
-    if (!json_data) {
-        ERROR_PRINT("Failed to parse exported JSON data");
-        cJSON_Delete(message);
-        return;
-    }
-
-    // Add sync_token to response if it was extracted
-    if (incoming_token[0] != '\0') {
-        cJSON_AddStringToObject(json_data, "sync_token", incoming_token);
-    }
-
-    cJSON_AddItemToObject(message, "json", json_data);
-
-    char *message_str = cJSON_PrintUnformatted(message);
+  // Parse the JSON string to object
+  cJSON* json_data = cJSON_Parse(json_string);
+  bson_free(json_string);
+  if (!json_data) {
+    ERROR_PRINT("Failed to parse inner JSON data");
     cJSON_Delete(message);
+    return;
+  }
 
-    // Send response
-    if (send_message_to_ip_or_hostname(client->client_ip, XCASH_DPOPS_PORT, message_str) != XCASH_OK) {
-        ERROR_PRINT("Failed to send the DB sync message to %s", client->client_ip);
-    } else {
-        INFO_PRINT("Sent delegate sync message to %s", client->client_ip);
-    }
+  cJSON_AddItemToObject(message, "json", json_data);  // now added as actual nested object
 
-    free(message_str);
+  char* message_str = cJSON_PrintUnformatted(message);
+  cJSON_Delete(message);
+
+  // Send message
+  if (send_message_to_ip_or_hostname(client->client_ip, XCASH_DPOPS_PORT, message_str) != XCASH_OK) {
+    ERROR_PRINT("Failed to send the DB sync message to %s", client->client_ip);
+  } else {
+    INFO_PRINT("Sent delegate sync message to %s", client->client_ip);
+  }
+
+  free(message_str);
 }
+
+
+
+
+
+
+void server_receive_data_socket_node_to_node_db_sync_req(server_client_t *client) {
+  bson_t reply;
+  bson_error_t error;
+  char incoming_token[SYNC_TOKEN_LEN + 1] = {0};
+
+  // Extract sync_token from params
+  extern const char* params[];  // assume this exists in calling scope
+  for (int i = 0; params[i] != NULL && params[i + 1] != NULL; i += 2) {
+    if (strcmp(params[i], "sync_token") == 0) {
+      strncpy(incoming_token, params[i + 1], SYNC_TOKEN_LEN);
+      incoming_token[SYNC_TOKEN_LEN] = '\0';
+      break;
+    }
+  }
+
+  if (!db_export_collection_to_bson(DATABASE_NAME, DB_COLLECTION_DELEGATES, &reply, &error)) {
+    ERROR_PRINT("Failed to export collection: %s", error.message);
+    return;
+  }
+
+  char* json_string = bson_as_canonical_extended_json(&reply, NULL);
+  bson_destroy(&reply);
+  if (!json_string) {
+    ERROR_PRINT("Failed to convert BSON to JSON");
+    return;
+  }
+
+  cJSON* message = cJSON_CreateObject();
+  cJSON_AddStringToObject(message, "message_settings", "NODES_TO_NODES_DATABASE_SYNC_DATA");
+  cJSON_AddStringToObject(message, "public_address", xcash_wallet_public_address);
+
+  // Parse the JSON string to object
+  cJSON* json_data = cJSON_Parse(json_string);
+  bson_free(json_string);
+  if (!json_data) {
+    ERROR_PRINT("Failed to parse inner JSON data");
+    cJSON_Delete(message);
+    return;
+  }
+
+  // Add sync_token to the transaction
+  if (incoming_token[0] != '\0') {
+    cJSON_AddStringToObject(json_data, "sync_token", incoming_token);
+  }
+
+  cJSON_AddItemToObject(message, "json", json_data);
+
+  char* message_str = cJSON_PrintUnformatted(message);
+  cJSON_Delete(message);
+
+  // Send message
+  if (send_message_to_ip_or_hostname(client->client_ip, XCASH_DPOPS_PORT, message_str) != XCASH_OK) {
+    ERROR_PRINT("Failed to send the DB sync message to %s", client->client_ip);
+  } else {
+    INFO_PRINT("Sent delegate sync message to %s", client->client_ip);
+  }
+
+  free(message_str);
+}
+
+
+
+
+
+
+
+
 
 /*---------------------------------------------------------------------------------------------------------
  * @brief Handles incoming delegate database sync messages from other nodes.
