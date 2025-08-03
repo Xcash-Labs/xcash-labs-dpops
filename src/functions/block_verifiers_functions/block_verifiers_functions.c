@@ -555,6 +555,7 @@ Returns:
   true  - if the sync request was sent successfully
   false - if the index is invalid or the message failed to send
 ---------------------------------------------------------------------------------------------------------*/
+
 bool create_delegates_db_sync_request(int selected_index) {
   if (selected_index < 0 || selected_index >= BLOCK_VERIFIERS_TOTAL_AMOUNT) {
     ERROR_PRINT("Invalid delegate index: %d", selected_index);
@@ -563,6 +564,7 @@ bool create_delegates_db_sync_request(int selected_index) {
 
   const char* params[] = {
       "public_address", xcash_wallet_public_address,
+      "sync_token", sync_token,
       NULL};
 
   char* message = NULL;

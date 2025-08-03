@@ -131,6 +131,7 @@
 #define DB_HASH_SIZE 128
 #define BLOCK_HEIGHT_LENGTH 32
 #define SIGNATURE_BIN_LEN 64
+#define SYNC_TOKEN_LEN 32
 
 // ===================== Blockchain Varint Lengths =====================
 #define VARINT_DECODED_VALUE_END_1_BYTE 16383

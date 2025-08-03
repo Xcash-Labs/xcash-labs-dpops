@@ -104,9 +104,7 @@ void server_received_msg_get_sync_info(server_client_t *client, const char *MESS
             if (strcmp(parsed_delegates_hash, delegates_hash) != 0) {
                 DEBUG_PRINT("Delegates hash mismatch for %s: remote=%s, local=%s",
                             parsed_address, parsed_delegates_hash, delegates_hash);
-                delegate_db_hash_mismatch = delegate_db_hash_mismatch + 1;
-                strncpy(delegates_all[i].online_status, "partial", sizeof(delegates_all[i].online_status));
-                delegates_all[i].online_status[sizeof(delegates_all[i].online_status) - 1] = '\0';
+                delegate_db_hash_mismatch = delegate_db_hash_mismatch + 1;;
                 break;
             }
 
@@ -166,47 +164,83 @@ Returns:
   None
 ---------------------------------------------------------------------------------------------------------*/
 void server_receive_data_socket_node_to_node_db_sync_req(server_client_t *client) {
-  bson_t reply;
-  bson_error_t error;
+    bson_t reply;
+    bson_error_t error;
+    char incoming_token[SYNC_TOKEN_LEN + 1] = {0};
 
-  if (!db_export_collection_to_bson(DATABASE_NAME, DB_COLLECTION_DELEGATES, &reply, &error)) {
-    ERROR_PRINT("Failed to export collection: %s", error.message);
-    return;
-  }
+    // Parse incoming sync request from client->message
+    if (!client || !client->message) {
+        ERROR_PRINT("Invalid client or empty message");
+        return;
+    }
 
-  char* json_string = bson_as_canonical_extended_json(&reply, NULL);
-  bson_destroy(&reply);
-  if (!json_string) {
-    ERROR_PRINT("Failed to convert BSON to JSON");
-    return;
-  }
+    cJSON *root = cJSON_Parse(client->message);
+    if (!root) {
+        ERROR_PRINT("Failed to parse incoming sync request JSON");
+        return;
+    }
 
-  cJSON* message = cJSON_CreateObject();
-  cJSON_AddStringToObject(message, "message_settings", "NODES_TO_NODES_DATABASE_SYNC_DATA");
-  cJSON_AddStringToObject(message, "public_address", xcash_wallet_public_address);
+    cJSON *json_field = cJSON_GetObjectItemCaseSensitive(root, "json");
+    if (!json_field || !cJSON_IsObject(json_field)) {
+        ERROR_PRINT("Missing or invalid 'json' field in incoming message");
+        cJSON_Delete(root);
+        return;
+    }
 
-  // Parse the JSON string to object
-  cJSON* json_data = cJSON_Parse(json_string);
-  bson_free(json_string);
-  if (!json_data) {
-    ERROR_PRINT("Failed to parse inner JSON data");
+    cJSON *token_item = cJSON_GetObjectItemCaseSensitive(json_field, "sync_token");
+    if (!token_item || !cJSON_IsString(token_item) || token_item->valuestring == NULL) {
+        ERROR_PRINT("Missing or invalid 'sync_token' in incoming message");
+        cJSON_Delete(root);
+        return;
+    }
+
+    strncpy(incoming_token, token_item->valuestring, SYNC_TOKEN_LEN);
+    incoming_token[SYNC_TOKEN_LEN] = '\0'; // Ensure null termination
+
+    cJSON_Delete(root); // Done with incoming message
+
+    // Export the delegates DB to BSON
+    if (!db_export_collection_to_bson(DATABASE_NAME, DB_COLLECTION_DELEGATES, &reply, &error)) {
+        ERROR_PRINT("Failed to export collection: %s", error.message);
+        return;
+    }
+
+    char* json_string = bson_as_canonical_extended_json(&reply, NULL);
+    bson_destroy(&reply);
+    if (!json_string) {
+        ERROR_PRINT("Failed to convert BSON to JSON");
+        return;
+    }
+
+    // Create outer message structure
+    cJSON* message = cJSON_CreateObject();
+    cJSON_AddStringToObject(message, "message_settings", "NODES_TO_NODES_DATABASE_SYNC_DATA");
+    cJSON_AddStringToObject(message, "public_address", xcash_wallet_public_address);
+
+    // Parse exported delegate data as JSON
+    cJSON* json_data = cJSON_Parse(json_string);
+    bson_free(json_string);
+    if (!json_data) {
+        ERROR_PRINT("Failed to parse exported delegate JSON data");
+        cJSON_Delete(message);
+        return;
+    }
+
+    // Echo the incoming sync_token in the response
+    cJSON_AddStringToObject(json_data, "sync_token", incoming_token);
+    cJSON_AddItemToObject(message, "json", json_data);
+
+    char* message_str = cJSON_PrintUnformatted(message);
     cJSON_Delete(message);
-    return;
-  }
 
-  cJSON_AddItemToObject(message, "json", json_data);  // now added as actual nested object
+    // Send the sync response
+    if (send_message_to_ip_or_hostname(client->client_ip, XCASH_DPOPS_PORT, message_str) != XCASH_OK) {
+        ERROR_PRINT("Failed to send the DB sync message to %s", client->client_ip);
+    } else {
+        INFO_PRINT("Sent delegate sync message to %s", client->client_ip);
+    }
 
-  char* message_str = cJSON_PrintUnformatted(message);
-  cJSON_Delete(message);
-
-  // Send message
-  if (send_message_to_ip_or_hostname(client->client_ip, XCASH_DPOPS_PORT, message_str) != XCASH_OK) {
-    ERROR_PRINT("Failed to send the DB sync message to %s", client->client_ip);
-  } else {
-    INFO_PRINT("Sent delegate sync message to %s", client->client_ip);
-  }
-
-  free(message_str);
+    free(message_str);
 }
 
 /*---------------------------------------------------------------------------------------------------------
@@ -239,6 +273,8 @@ void server_receive_data_socket_node_to_node_db_sync_data(const char *MESSAGE) {
     return;
   }
 
+  char tmp_token[SYNC_TOKEN_LEN + 1] = {0};
+
   // Parse the incoming message into cJSON
   cJSON *root = cJSON_Parse(MESSAGE);
   if (!root) {
@@ -250,6 +286,25 @@ void server_receive_data_socket_node_to_node_db_sync_data(const char *MESSAGE) {
   cJSON *json_field = cJSON_GetObjectItemCaseSensitive(root, "json");
   if (!json_field || !cJSON_IsObject(json_field)) {
     ERROR_PRINT("Field 'json' not found or not a JSON object");
+    cJSON_Delete(root);
+    return;
+  }
+
+  // Extract "sync_token" from the JSON object
+  cJSON *token_item = cJSON_GetObjectItemCaseSensitive(json_field, "sync_token");
+  if (!token_item || !cJSON_IsString(token_item) || token_item->valuestring == NULL) {
+    ERROR_PRINT("Field 'sync_token' not found or not a valid string");
+    cJSON_Delete(root);
+    return;
+  }
+
+  // Copy the token into tmp_token safely
+  strncpy(tmp_token, token_item->valuestring, SYNC_TOKEN_LEN);
+  tmp_token[SYNC_TOKEN_LEN] = '\0';  // Ensure null-termination
+
+  // Optional: verify sync token now
+  if (strcmp(tmp_token, sync_token) != 0) {
+    ERROR_PRINT("Skipping db sync, invalid sync_token received: %s", tmp_token);
     cJSON_Delete(root);
     return;
   }

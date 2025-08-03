@@ -227,10 +227,14 @@ int select_random_online_delegate(void) {
         if (delegates_all[i].public_address[0] == '\0') {
             continue;
         }
+        if (is_seed_node) {
+          if (is_seed_address(delegates_all[i].public_address)) {
+            continue;
+          }
+        }
 
         // Must be online and not self
-        if (((strcmp(delegates_all[i].online_status, "true") == 0) ||
-        (strcmp(delegates_all[i].online_status, "partial") == 0)) &&
+        if ((strcmp(delegates_all[i].online_status, "true") == 0) &&
         (strcmp(delegates_all[i].public_address, xcash_wallet_public_address) != 0)) {
             eligible_indices[eligible_count++] = i;
         }

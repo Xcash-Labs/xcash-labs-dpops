@@ -483,6 +483,29 @@ bool decompress_gzip_with_prefix(const unsigned char* input, size_t input_len,
 }
 
 /*---------------------------------------------------------------------------------------------------------
+Generate a sync token
+---------------------------------------------------------------------------------------------------------*/
+int create_sync_token(void) {
+    size_t bin_len = SYNC_TOKEN_LEN / 2;
+    unsigned char bin[bin_len];
+
+
+    if (get_random_bytes(bin, sizeof(bin)) != XCASH_OK) {
+        ERROR_PRINT("Failed to generate random sync token");
+        return XCASH_ERROR;
+    }
+
+    for (size_t i = 0; i < bin_len; ++i) {
+        sprintf(&sync_token[i * 2], "%02x", bin[i]);
+    }
+
+    sync_token[SYNC_TOKEN_LEN] = '\0'; // Null-terminate
+
+    DEBUG_PRINT("Generated sync token: %s", sync_token); 
+    return XCASH_OK;
+}
+
+/*---------------------------------------------------------------------------------------------------------
 Generate random binary string
 ---------------------------------------------------------------------------------------------------------*/
 int get_random_bytes(unsigned char *buf, size_t len) {

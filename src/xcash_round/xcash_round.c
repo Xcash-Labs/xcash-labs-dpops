@@ -619,12 +619,18 @@ void start_block_production(void) {
           pthread_mutex_lock(&delegates_all_lock);
           selected_index = select_random_online_delegate();
           pthread_mutex_unlock(&delegates_all_lock);
-          if (!create_delegates_db_sync_request(selected_index)) {
-            ERROR_PRINT("Error occured while syncing delegates");
+
+          if (create_sync_token(void) == XCASH_OK) {
+            if (!create_delegates_db_sync_request(selected_index)) {
+              ERROR_PRINT("Error occured while syncing delegates");
+            }
+            if (sync_block_verifiers_minutes_and_seconds(1, 58) == XCASH_ERROR) {
+              INFO_PRINT("Failed to sync in the allotted time");
+            }
+          } else {
+            ERROR_PRINT("Error creating sync token"); 
           }
-          if (sync_block_verifiers_minutes_and_seconds(1, 58) == XCASH_ERROR) {
-            INFO_PRINT("Failed to sync in the allotted time");
-          }
+
         }
       }
     }

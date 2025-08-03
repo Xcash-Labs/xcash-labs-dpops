@@ -32,6 +32,7 @@ extern char vrf_public_key[VRF_PUBLIC_KEY_LENGTH + 1];
 extern char current_round_part[3]; // The current round part
 extern char delegates_hash[MD5_HASH_SIZE + 1];
 
+extern char sync_token[SYNC_TOKEN_LEN + 1];
 
 extern struct main_nodes_list main_nodes_list; // The list of main nodes public address and IP address
 extern block_verifiers_list_t current_block_verifiers_list; // The list of block verifiers name, public address and IP address for the current round
