@@ -21,7 +21,7 @@ size_t write_varint(uint8_t* out, size_t value) {
  *    and length prefix (1-byte varint).
  * 4. Converts the modified binary blob back into hex and stores it in `block_blob_hex`.
  *
- * vrf_blob Layout (274 Bytes)
+ * vrf_blob Layout (210 Bytes)
  *  Field	      Bytes   Description
  *  vrf_proof	  80	    Hex-decoded 80-byte VRF proof (e.g. from libsodium)
  *  vrf_beta	  64	    Hex-decoded 64-byte beta (VRF hash output)
@@ -293,9 +293,6 @@ Return:
   XCASH_ERROR (0) if any step fails.
 ---------------------------------------------------------------------------------------------------------*/
 bool generate_and_request_vrf_data_msg(char** message) {
-
-
-
   unsigned char alpha_input_bin[72] = {0};
   unsigned char pk_bin[crypto_vrf_PUBLICKEYBYTES] = {0};
   unsigned char vrf_proof[crypto_vrf_PROOFBYTES] = {0};
@@ -331,7 +328,7 @@ bool generate_and_request_vrf_data_msg(char** message) {
   // Add vrf_block_producer
   memcpy(alpha_input_bin + 40, pk_bin, 32);  // Write at offset 40
 
-  // Generate VRF proof
+  // Generate VRF proof - the input data is previous block hash, the block height, and the vrf_public_key of the block producer
   if (crypto_vrf_prove(vrf_proof, secret_key_data, alpha_input_bin, sizeof(alpha_input_bin)) != 0) {
     ERROR_PRINT("Failed to generate VRF proof");
     return XCASH_ERROR;
