@@ -90,17 +90,8 @@ Name: cleanup_data_structure
 Description: Clean up before ending
 ---------------------------------------------------------------------------------------------------------*/
 void cleanup_data_structures(void) {
-  pthread_rwlock_destroy(&rwlock);
-  pthread_rwlock_destroy(&rwlock_reserve_proofs);
-  pthread_mutex_destroy(&lock);
-  pthread_mutex_destroy(&database_lock);
-  pthread_mutex_destroy(&verify_network_block_lock);
-  pthread_mutex_destroy(&majority_vote_lock);
-  pthread_mutex_destroy(&add_reserve_proof_lock);
-  pthread_mutex_destroy(&invalid_reserve_proof_lock);
-  pthread_mutex_destroy(&database_data_IP_address_lock);
-  pthread_mutex_destroy(&update_current_block_height_lock);
-  pthread_mutex_destroy(&hash_mutex);
+
+
 
 
   //free(server_limit_IP_address_list);

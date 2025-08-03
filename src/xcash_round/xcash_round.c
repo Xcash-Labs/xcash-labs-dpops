@@ -142,8 +142,7 @@ xcash_round_result_t process_round(void) {
   // Fill block verifiers list with proven online nodes
   int nodes_majority_count = 0;
 
-  pthread_mutex_lock(&delegates_mutex);
-  pthread_mutex_lock(&majority_vrf_lock);
+  pthread_mutex_lock(&current_block_verifiers_lock);
   memset(&current_block_verifiers_list, 0, sizeof(current_block_verifiers_list));
   for (size_t i = 0, j = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     if (delegates_all[i].public_address[0] != '\0') {
@@ -162,8 +161,7 @@ xcash_round_result_t process_round(void) {
       }
     }
   }
-  pthread_mutex_unlock(&majority_vrf_lock);
-  pthread_mutex_unlock(&delegates_mutex);
+  pthread_mutex_unlock(&current_block_verifiers_lock);
   atomic_store(&wait_for_vrf_init, false);
 
   // Need at least BLOCK_VERIFIERS_VALID_AMOUNT delegates to start things off, delegates data needs to match for first delegates
@@ -231,7 +229,7 @@ xcash_round_result_t process_round(void) {
   INFO_STAGE_PRINT("Part 7 - Wait for Block Creator Confirmation by Consensus Vote");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 7);
   
-  pthread_mutex_lock(&majority_vote_lock);
+  pthread_mutex_lock(&current_block_verifiers_lock);
   current_block_verifiers_list.block_verifiers_vote_total[producer_indx] += 1;
   for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     if (strcmp(xcash_wallet_public_address, current_block_verifiers_list.block_verifiers_public_address[i]) == 0) {
@@ -241,7 +239,7 @@ xcash_round_result_t process_round(void) {
       break;
     }
   }
-  pthread_mutex_unlock(&majority_vote_lock);
+  pthread_mutex_unlock(&current_block_verifiers_lock);
 
   responses = NULL;
   char* vote_message = NULL;
@@ -308,6 +306,8 @@ xcash_round_result_t process_round(void) {
   uint8_t final_vote_hash[SHA256_EL_HASH_SIZE] = {0};
   size_t valid_vote_count = 0;
 
+
+  pthread_mutex_lock(&current_block_verifiers_lock);
   for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     if ( (current_block_verifiers_list.block_verifiers_voted[i] > 0) &&
      (strncmp(current_block_verifiers_list.block_verifiers_selected_public_address[i], 
@@ -325,11 +325,13 @@ xcash_round_result_t process_round(void) {
       size_t decoded_len = 0;
       if (!base64_decode(encoded_sig, signature_bin, SIGNATURE_BIN_LEN, &decoded_len)) {
         ERROR_PRINT("Base64 decode failed");
+        pthread_mutex_unlock(&current_block_verifiers_lock);
         return ROUND_ERROR;
       }
 
       if (decoded_len != SIGNATURE_BIN_LEN) {
         ERROR_PRINT("Unexpected decoded signature length: got %zu, expected %d", decoded_len, SIGNATURE_BIN_LEN);
+        pthread_mutex_unlock(&current_block_verifiers_lock);
         return ROUND_ERROR;
       }
 
@@ -348,6 +350,7 @@ xcash_round_result_t process_round(void) {
                              hash_input + offset,
                              crypto_vrf_PUBLICKEYBYTES)) {
         ERROR_PRINT("Invalid hex for vrf_pubkey");
+        pthread_mutex_unlock(&current_block_verifiers_lock);
         return ROUND_ERROR;
       }
       offset += crypto_vrf_PUBLICKEYBYTES;
@@ -359,6 +362,7 @@ xcash_round_result_t process_round(void) {
 
       if (offset != sizeof(hash_input)) {
         ERROR_PRINT("Vote hash input length mismatch: got %zu, expected %zu", offset, sizeof(hash_input));
+        pthread_mutex_unlock(&current_block_verifiers_lock);
         return ROUND_ERROR;
       }
 
@@ -366,6 +370,7 @@ xcash_round_result_t process_round(void) {
       valid_vote_count++;
     }
   }
+  pthread_mutex_unlock(&current_block_verifiers_lock);
 
   if (valid_vote_count != (size_t)max_votes) {
     INFO_PRINT("Unexpected vote count when creating final vote hash: valid_vote_count = %zu, max_votes = %d",
@@ -409,7 +414,7 @@ xcash_round_result_t process_round(void) {
   }
 
   if (producer_indx >= 0) {
-    pthread_mutex_lock(&majority_vrf_lock);
+    pthread_mutex_lock(&producer_refs_lock);
     // For now there is only one block producer and no backups
     memset(&producer_refs, 0, sizeof(producer_refs));
     // Populate the reference list with the selected producer
@@ -418,7 +423,7 @@ xcash_round_result_t process_round(void) {
     strcpy(producer_refs[0].vrf_public_key, current_block_verifiers_list.block_verifiers_vrf_public_key_hex[producer_indx]);
     strcpy(producer_refs[0].vrf_proof_hex, current_block_verifiers_list.block_verifiers_vrf_proof_hex[producer_indx]);
     strcpy(producer_refs[0].vrf_beta_hex, current_block_verifiers_list.block_verifiers_vrf_beta_hex[producer_indx]);
-    pthread_mutex_unlock(&majority_vrf_lock);
+    pthread_mutex_unlock(&producer_refs_lock);
   }
 
   INFO_STAGE_PRINT("Starting block production for block %s", current_block_height);
@@ -468,9 +473,12 @@ void start_block_production(void) {
   }
 
   // set up delegates for first round
+  pthread_mutex_lock(&delegates_all_lock);
   if (!fill_delegates_from_db()) {
+      pthread_mutex_unlock(&delegates_all_lock);
     FATAL_ERROR_EXIT("Failed to load and organize delegates for starting round, Possible problem with Mongodb");
   }
+  pthread_mutex_unlock(&delegates_all_lock);
 
   // Start production loop
   while (true) {

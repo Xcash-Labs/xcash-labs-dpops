@@ -199,7 +199,7 @@ bool fill_delegates_from_db(void) {
 
   total_delegates = total_delegates > BLOCK_VERIFIERS_TOTAL_AMOUNT ? BLOCK_VERIFIERS_TOTAL_AMOUNT : total_delegates;
 
-  pthread_mutex_lock(&delegates_mutex);
+  pthread_mutex_lock(&delegates_all_lock);
 
   // fill actual list of all delegates from db
   for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
@@ -210,7 +210,7 @@ bool fill_delegates_from_db(void) {
     }
   }
 
-  pthread_mutex_unlock(&delegates_mutex);
+  pthread_mutex_unlock(&delegates_all_lock);
 
   // cleanup the allocated memory
   free(delegates);

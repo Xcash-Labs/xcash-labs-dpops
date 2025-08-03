@@ -43,19 +43,10 @@ extern char delegates_error_list[(MAXIMUM_BUFFER_SIZE_DELEGATES_NAME * 100) + 50
 
 extern mongoc_client_pool_t* database_client_thread_pool;  // database
 
-extern pthread_rwlock_t rwlock;
-extern pthread_rwlock_t rwlock_reserve_proofs;
-extern pthread_mutex_t lock;
-extern pthread_mutex_t database_lock;
-extern pthread_mutex_t verify_network_block_lock;
-extern pthread_mutex_t majority_vote_lock;
-extern pthread_mutex_t add_reserve_proof_lock;
-extern pthread_mutex_t invalid_reserve_proof_lock;
-extern pthread_mutex_t database_data_IP_address_lock;
-extern pthread_mutex_t update_current_block_height_lock;
-extern pthread_mutex_t hash_mutex;
-extern pthread_mutex_t majority_vrf_lock;
-extern pthread_mutex_t delegates_mutex;
+
+extern pthread_mutex_t delegates_all_lock;
+extern pthread_mutex_t current_block_verifiers_lock;
+extern pthread_mutex_t producer_refs_lock;
 
 
 extern atomic_bool server_running; 

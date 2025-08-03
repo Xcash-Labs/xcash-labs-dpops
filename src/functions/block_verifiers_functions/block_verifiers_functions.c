@@ -361,7 +361,7 @@ bool generate_and_request_vrf_data_msg(char** message) {
   }
 
   // Save current block_verifiers data into structure if it is one of the top 50
-  pthread_mutex_lock(&majority_vrf_lock);
+  pthread_mutex_lock(&current_block_verifiers_lock);
   for (i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     if (strncmp(current_block_verifiers_list.block_verifiers_public_address[i], xcash_wallet_public_address, XCASH_WALLET_LENGTH) == 0) {
       memcpy(current_block_verifiers_list.block_verifiers_public_address[i], xcash_wallet_public_address, XCASH_WALLET_LENGTH + 1);
@@ -373,7 +373,7 @@ bool generate_and_request_vrf_data_msg(char** message) {
       break;
     }
   }
-  pthread_mutex_unlock(&majority_vrf_lock);
+  pthread_mutex_unlock(&current_block_verifiers_lock);
 
   // Compose outbound message (JSON)
   *message = create_message_param(
@@ -508,14 +508,14 @@ bool block_verifiers_create_vote_majority_result(char** message, int producer_in
   }
 
   // Save current block_verifiers data into structure if it is one of the top 50
-  pthread_mutex_lock(&majority_vrf_lock);
+  pthread_mutex_lock(&current_block_verifiers_lock);
   for (i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     if (strncmp(current_block_verifiers_list.block_verifiers_public_address[i], xcash_wallet_public_address, XCASH_WALLET_LENGTH) == 0) {
       memcpy(current_block_verifiers_list.block_verifiers_vote_signature[i], signature, XCASH_SIGN_DATA_LENGTH+1);
       break;
     }
   }
-  pthread_mutex_unlock(&majority_vrf_lock);
+  pthread_mutex_unlock(&current_block_verifiers_lock);
 
   const char* params[] = {
       "public_address", xcash_wallet_public_address,

@@ -25,26 +25,15 @@ char delegates_error_list[(MAXIMUM_BUFFER_SIZE_DELEGATES_NAME * 100) + 5000];   
 
 mongoc_client_pool_t* database_client_thread_pool = NULL;
 
-pthread_rwlock_t rwlock;
-pthread_rwlock_t rwlock_reserve_proofs;
-pthread_mutex_t lock;
-pthread_mutex_t database_lock;
-pthread_mutex_t verify_network_block_lock;
-pthread_mutex_t majority_vote_lock;
-pthread_mutex_t add_reserve_proof_lock;
-pthread_mutex_t invalid_reserve_proof_lock;
-pthread_mutex_t database_data_IP_address_lock;
-pthread_mutex_t update_current_block_height_lock;
-pthread_mutex_t hash_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t majority_vrf_lock = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t delegates_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+pthread_mutex_t delegates_all_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t current_block_verifiers_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t producer_refs_lock = PTHREAD_MUTEX_INITIALIZER;
 
 
 
 
 atomic_bool server_running = true;
-
 atomic_bool wait_for_vrf_init = true;
 atomic_bool wait_for_block_height_init = true;
 
@@ -89,16 +78,6 @@ const char* xcash_net_messages[] = {
 
 // initialize the global variables
 void init_globals(void) {
-  pthread_rwlock_init(&rwlock, NULL);
-  pthread_rwlock_init(&rwlock_reserve_proofs, NULL);
-  pthread_mutex_init(&lock, NULL);
-  pthread_mutex_init(&database_lock, NULL);
-  pthread_mutex_init(&verify_network_block_lock, NULL);
-  pthread_mutex_init(&majority_vote_lock, NULL);
-  pthread_mutex_init(&add_reserve_proof_lock, NULL);
-  pthread_mutex_init(&invalid_reserve_proof_lock, NULL);
-  pthread_mutex_init(&database_data_IP_address_lock, NULL);
-  pthread_mutex_init(&update_current_block_height_lock, NULL);
   char data[SMALL_BUFFER_SIZE];
   size_t count = 0;
   srand(time(NULL));
