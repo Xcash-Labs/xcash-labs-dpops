@@ -473,15 +473,10 @@ void start_block_production(void) {
     }
   }
 
-  INFO_PRINT("First Lock");
   // set up delegates for first round
-  pthread_mutex_lock(&delegates_all_lock);
   if (!fill_delegates_from_db()) {
-      pthread_mutex_unlock(&delegates_all_lock);
     FATAL_ERROR_EXIT("Failed to load and organize delegates for starting round, Possible problem with Mongodb");
   }
-  pthread_mutex_unlock(&delegates_all_lock);
-  INFO_PRINT("First Lock Complete");
 
   // Start production loop
   while (true) {
