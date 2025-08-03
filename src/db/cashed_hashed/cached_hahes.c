@@ -8,12 +8,10 @@
  * @return int Returns negative if a < b, 0 if a == b, positive if a > b.
 ------------------------------------------------------------------------------------------------------==*/
 // compare strings function
-/*
 int cmpfunc(const void *a, const void *b)
 {
     return strcmp((const char *)a, (const char *)b);
 }
-*/
 /*---------------------------------------------------------------------------------------------------------
  * @brief Update the hash and db_hash for a given collection in the database.
  * 
@@ -23,7 +21,7 @@ int cmpfunc(const void *a, const void *b)
  * @param db_hash 32-byte short MD5 hash.
  * @return int Returns 0 if successful, <0 for error codes.
 -------------------------------------------------------------------------------------------------------*/
-/*int update_hashes(mongoc_client_t *client, const char *db_name, const char *hash, const char *db_hash)
+int update_hashes(mongoc_client_t *client, const char *db_name, const char *hash, const char *db_hash)
 {
     if (!client || !db_name || !hash || !db_hash) {
         ERROR_PRINT("Invalid arguments passed to update_hashes.");
@@ -94,7 +92,7 @@ cleanup:
 
     return result;
 }
-*/
+
 /*---------------------------------------------------------------------------------------------------------
  * @brief Calculate the MD5 hash of the given database.
  * 
@@ -104,7 +102,7 @@ cleanup:
  * @param db_hash Pointer to a 32-byte short MD5 hash buffer.
  * @return int Returns 0 if successful, <0 for error codes.
 -------------------------------------------------------------------------------------------------------*/
-/* int calc_db_hashes(mongoc_client_t *client, const char *db_name, char *hash, char *db_hash)
+int calc_db_hashes(mongoc_client_t *client, const char *db_name, char *hash, char *db_hash)
 {
     if (!client || !db_name || !hash || !db_hash) {
         ERROR_PRINT("Invalid arguments passed to calc_db_hashes.");
@@ -204,7 +202,7 @@ cleanup:
 
     return result;
 }
-*/
+
 /*---------------------------------------------------------------------------------------------------------
  * @brief Get the MD5 hash of the specified database.
  * 
@@ -213,7 +211,7 @@ cleanup:
  * @param db_hash Pointer to a 32-byte short MD5 hash buffer.
  * @return int Returns 0 if successful, <0 for error codes.
 -------------------------------------------------------------------------------------------------------*/
-/*int get_dbhash(mongoc_client_t *client, const char *db_name, char *db_hash)
+int get_dbhash(mongoc_client_t *client, const char *db_name, char *db_hash)
 {
     if (!client || !db_name || !db_hash) {
         ERROR_PRINT("Invalid arguments passed to get_dbhash.");
@@ -235,26 +233,26 @@ cleanup:
     }
 
     // Lock mutex to handle concurrency
-    pthread_mutex_lock(&hash_mutex);
+//    pthread_mutex_lock(&hash_mutex);
 
     // Recheck cache to handle concurrent access
     result = get_data(client, db_name, "db_hash", db_hash);
     if (result == 0) {  // Cache hit on recheck
-        pthread_mutex_unlock(&hash_mutex);
+//        pthread_mutex_unlock(&hash_mutex);
         return result;
     }
 
     // Recalculate hashes if cache miss
     if ((result = calc_db_hashes(client, db_name, l_hash, l_db_hash)) != 0) {
         ERROR_PRINT("Failed to calculate hashes for %s", db_name);
-        pthread_mutex_unlock(&hash_mutex);
+//        pthread_mutex_unlock(&hash_mutex);
         return -1;
     }
 
     // Update the hash in the database
     if ((result = update_hashes(client, db_name, l_hash, l_db_hash)) != 0) {
         ERROR_PRINT("Failed to update hashes for %s", db_name);
-        pthread_mutex_unlock(&hash_mutex);
+//        pthread_mutex_unlock(&hash_mutex);
         return -2;
     }
 
@@ -269,7 +267,7 @@ cleanup:
                (long int)result_time.tv_sec, (long int)result_time.tv_usec);
 
     // Unlock mutex
-    pthread_mutex_unlock(&hash_mutex);
+//    pthread_mutex_unlock(&hash_mutex);
 
     return result;
 }
@@ -384,7 +382,7 @@ int get_hash(mongoc_client_t *client, const char *db_name, char *hash)
     // Start measuring time
     gettimeofday(&start_time, NULL);
 
-    pthread_mutex_lock(&hash_mutex);
+ //   pthread_mutex_lock(&hash_mutex);
 
     // Try to get cached hash first
     result = get_data(client, db_name, "hash", hash);
@@ -406,7 +404,7 @@ int get_hash(mongoc_client_t *client, const char *db_name, char *hash)
         }
     }
 
-    pthread_mutex_unlock(&hash_mutex);
+//    pthread_mutex_unlock(&hash_mutex);
 
     return result;
 }
@@ -437,14 +435,12 @@ int get_multi_hash(mongoc_client_t *client, const char *db_prefix, char *hash) {
   return get_hash(client, db_prefix, hash);
 }
 
-*/
 /*---------------------------------------------------------------------------------------------------------
  * @brief Drops all documents in the "hashes2" collection of the specified database.
  * 
  * @param client MongoDB client connection.
  * @return int Returns XCASH_OK (1) if successful, XCASH_ERROR (0) if an error occurs.
 ---------------------------------------------------------------------------------------------------------*/
-/*
 int drop_all_hashes(mongoc_client_t *client)
 {
     if (!client) {
@@ -476,4 +472,3 @@ int drop_all_hashes(mongoc_client_t *client)
 
     return result;
 }
-*/
