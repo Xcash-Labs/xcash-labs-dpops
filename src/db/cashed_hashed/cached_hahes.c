@@ -8,11 +8,12 @@
  * @return int Returns negative if a < b, 0 if a == b, positive if a > b.
 ------------------------------------------------------------------------------------------------------==*/
 // compare strings function
+/*
 int cmpfunc(const void *a, const void *b)
 {
     return strcmp((const char *)a, (const char *)b);
 }
-
+*/
 /*---------------------------------------------------------------------------------------------------------
  * @brief Update the hash and db_hash for a given collection in the database.
  * 
@@ -22,7 +23,7 @@ int cmpfunc(const void *a, const void *b)
  * @param db_hash 32-byte short MD5 hash.
  * @return int Returns 0 if successful, <0 for error codes.
 -------------------------------------------------------------------------------------------------------*/
-int update_hashes(mongoc_client_t *client, const char *db_name, const char *hash, const char *db_hash)
+/*int update_hashes(mongoc_client_t *client, const char *db_name, const char *hash, const char *db_hash)
 {
     if (!client || !db_name || !hash || !db_hash) {
         ERROR_PRINT("Invalid arguments passed to update_hashes.");
@@ -93,7 +94,7 @@ cleanup:
 
     return result;
 }
-
+*/
 /*---------------------------------------------------------------------------------------------------------
  * @brief Calculate the MD5 hash of the given database.
  * 
@@ -103,7 +104,7 @@ cleanup:
  * @param db_hash Pointer to a 32-byte short MD5 hash buffer.
  * @return int Returns 0 if successful, <0 for error codes.
 -------------------------------------------------------------------------------------------------------*/
-int calc_db_hashes(mongoc_client_t *client, const char *db_name, char *hash, char *db_hash)
+/* int calc_db_hashes(mongoc_client_t *client, const char *db_name, char *hash, char *db_hash)
 {
     if (!client || !db_name || !hash || !db_hash) {
         ERROR_PRINT("Invalid arguments passed to calc_db_hashes.");
@@ -203,7 +204,7 @@ cleanup:
 
     return result;
 }
-
+*/
 /*---------------------------------------------------------------------------------------------------------
  * @brief Get the MD5 hash of the specified database.
  * 
@@ -212,7 +213,7 @@ cleanup:
  * @param db_hash Pointer to a 32-byte short MD5 hash buffer.
  * @return int Returns 0 if successful, <0 for error codes.
 -------------------------------------------------------------------------------------------------------*/
-int get_dbhash(mongoc_client_t *client, const char *db_name, char *db_hash)
+/*int get_dbhash(mongoc_client_t *client, const char *db_name, char *db_hash)
 {
     if (!client || !db_name || !db_hash) {
         ERROR_PRINT("Invalid arguments passed to get_dbhash.");
@@ -436,13 +437,14 @@ int get_multi_hash(mongoc_client_t *client, const char *db_prefix, char *hash) {
   return get_hash(client, db_prefix, hash);
 }
 
-
+*/
 /*---------------------------------------------------------------------------------------------------------
  * @brief Drops all documents in the "hashes2" collection of the specified database.
  * 
  * @param client MongoDB client connection.
  * @return int Returns XCASH_OK (1) if successful, XCASH_ERROR (0) if an error occurs.
 ---------------------------------------------------------------------------------------------------------*/
+/*
 int drop_all_hashes(mongoc_client_t *client)
 {
     if (!client) {
@@ -474,3 +476,4 @@ int drop_all_hashes(mongoc_client_t *client)
 
     return result;
 }
+*/
