@@ -67,6 +67,7 @@ bool init_processing(const arg_config_t *arg_config) {
           return XCASH_ERROR;
         }
 
+        INFO_PRINT("Created delegates collection");
         bson_destroy(&bson);
       }
 
@@ -92,6 +93,7 @@ bool init_processing(const arg_config_t *arg_config) {
           return XCASH_ERROR;
         }
 
+        INFO_PRINT("Created statistics collection");
         bson_destroy(&bson_statistics);
       }
 
