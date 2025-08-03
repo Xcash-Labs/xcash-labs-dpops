@@ -168,7 +168,19 @@ void server_receive_data_socket_node_to_node_db_sync_req(server_client_t *client
   bson_error_t error;
   char incoming_token[SYNC_TOKEN_LEN + 1] = {0};
 
-
+  // Extract sync_token from the incoming MESSAGE
+  cJSON *root = cJSON_Parse(MESSAGE);
+  if (root) {
+    cJSON *json_field = cJSON_GetObjectItemCaseSensitive(root, "json");
+    if (json_field && cJSON_IsObject(json_field)) {
+      cJSON *token_item = cJSON_GetObjectItemCaseSensitive(json_field, "sync_token");
+      if (token_item && cJSON_IsString(token_item) && token_item->valuestring != NULL) {
+        strncpy(incoming_token, token_item->valuestring, SYNC_TOKEN_LEN);
+        incoming_token[SYNC_TOKEN_LEN] = '\0';
+      }
+    }
+    cJSON_Delete(root);
+  }
 
   if (!db_export_collection_to_bson(DATABASE_NAME, DB_COLLECTION_DELEGATES, &reply, &error)) {
     ERROR_PRINT("Failed to export collection: %s", error.message);
@@ -193,6 +205,11 @@ void server_receive_data_socket_node_to_node_db_sync_req(server_client_t *client
     ERROR_PRINT("Failed to parse inner JSON data");
     cJSON_Delete(message);
     return;
+  }
+
+  // Add the extracted sync_token to the outgoing json if it was present
+  if (incoming_token[0] != '\0') {
+    cJSON_AddStringToObject(json_data, "sync_token", incoming_token);
   }
 
   cJSON_AddItemToObject(message, "json", json_data);  // now added as actual nested object
