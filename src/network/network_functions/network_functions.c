@@ -67,6 +67,9 @@ int send_http_request(char *result, size_t return_buffer_size, const char *host,
                       const char *method, const char **headers, size_t headers_length,
                       const char *data, int timeout)
 {
+
+    INFO_PRINT("start ************xcash_wallet_public_address=%s",xcash_wallet_public_address);
+
     CURL *curl;
     CURLcode res;
     struct curl_slist *header_list = NULL;
@@ -110,6 +113,8 @@ int send_http_request(char *result, size_t return_buffer_size, const char *host,
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
     }
 
+    INFO_PRINT("1 ************xcash_wallet_public_address=%s",xcash_wallet_public_address);
+
     // Perform the request
     res = curl_easy_perform(curl);
     if (res != CURLE_OK)
@@ -122,6 +127,8 @@ int send_http_request(char *result, size_t return_buffer_size, const char *host,
         return XCASH_ERROR;
     }
 
+    INFO_PRINT("2 ************xcash_wallet_public_address=%s",xcash_wallet_public_address);
+
     DEBUG_PRINT("Curl result %s", response.data);
 
     // Validate response before copying
@@ -133,7 +140,7 @@ int send_http_request(char *result, size_t return_buffer_size, const char *host,
             curl_slist_free_all(header_list);
         return XCASH_ERROR;
     }
-
+    INFO_PRINT("3 ************xcash_wallet_public_address=%s",xcash_wallet_public_address);
     // Validate result buffer before copying
     if (!result)
     {
