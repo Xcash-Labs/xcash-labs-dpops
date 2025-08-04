@@ -78,7 +78,6 @@ xcash_round_result_t process_round(void) {
   snprintf(current_round_part, sizeof(current_round_part), "%d", 1);
   if (get_current_block_height(current_block_height) != XCASH_OK) {
     ERROR_PRINT("Can't get current block height");
-    INFO_PRINT("after************xcash_wallet_public_address=%s",xcash_wallet_public_address);
     atomic_store(&wait_for_block_height_init, false);
     return ROUND_ERROR;
   }
