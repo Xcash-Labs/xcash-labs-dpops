@@ -86,7 +86,7 @@ void server_received_msg_get_sync_info(server_client_t *client, const char *MESS
       wait_seconds++;
     }
     if (atomic_load(&wait_for_block_height_init)) {
-      ERROR_PRINT("Timed out waiting for current_block_height in server_received_msg_get_sync_info");
+      ERROR_PRINT("Timed out waiting for current_block_height in server_received_msg_get_sync_info");   // Need to check this.........
     }
 
     pthread_mutex_lock(&delegates_all_lock);

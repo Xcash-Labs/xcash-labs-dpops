@@ -61,6 +61,9 @@ Parameters:
 Return: 0 if an error has occurred, 1 if successful
 ---------------------------------------------------------------------------------------------------------*/
 int get_current_block_height(char *result) {
+
+    INFO_PRINT("1 ************xcash_wallet_public_address=%s",xcash_wallet_public_address);
+
     if (!result) {
         ERROR_PRINT("Invalid argument: result is NULL.");
         return XCASH_ERROR;
@@ -74,14 +77,26 @@ int get_current_block_height(char *result) {
     // Buffer to store the response
     char response_data[SMALL_BUFFER_SIZE] = {0};
 
+
+    INFO_PRINT("2 ************xcash_wallet_public_address=%s",xcash_wallet_public_address);
+
+
     // Retry mechanism
     for (int attempt = 0; attempt < 2; ++attempt) {
         if (send_http_request(response_data, SMALL_BUFFER_SIZE, XCASH_DAEMON_IP, "/json_rpc", XCASH_DAEMON_PORT,
                               "POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH, request_payload,
                               SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) == XCASH_OK &&
             parse_json_data(response_data, "result.count", result, SMALL_BUFFER_SIZE) != 0) {
+
+
+            INFO_PRINT("3 ************xcash_wallet_public_address=%s",xcash_wallet_public_address);
+
             return XCASH_OK;
         }
+
+
+    INFO_PRINT("4 ************xcash_wallet_public_address=%s",xcash_wallet_public_address);
+
 
         // Clear buffers before retry
         memset(response_data, 0, sizeof(response_data));
@@ -93,6 +108,8 @@ int get_current_block_height(char *result) {
             sleep(RETRY_SECONDS);
         }
     }
+
+    INFO_PRINT("END ************xcash_wallet_public_address=%s",xcash_wallet_public_address);
 
     ERROR_PRINT("Could not get the current block height.");
     return XCASH_ERROR;
