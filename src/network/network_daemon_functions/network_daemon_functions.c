@@ -24,7 +24,7 @@ bool is_blockchain_synced(void) {
   for (int attempt = 0; attempt < 2; ++attempt) {
     if (send_http_request(response, SMALL_BUFFER_SIZE, XCASH_DAEMON_IP, RPC_ENDPOINT, XCASH_DAEMON_PORT,
                           "GET", HTTP_HEADERS, HTTP_HEADERS_LENGTH, NULL,
-                          SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) == XCASH_OK &&
+                          HTTP_TIMEOUT_SETTINGS) == XCASH_OK &&
         parse_json_data(response, "synchronized", synced_flag, sizeof(synced_flag)) != 0 &&
         parse_json_data(response, "status", status_flag, sizeof(status_flag)) != 0 &&
         parse_json_data(response, "offline", offline_flag, sizeof(offline_flag)) != 0) {
@@ -73,32 +73,11 @@ int get_current_block_height(char *result) {
 
     // Buffer to store the response
     char response_data[SMALL_BUFFER_SIZE] = {0};
-
-    // Retry mechanism
-    for (int attempt = 0; attempt < 2; ++attempt) {
-          INFO_PRINT("************Before http_request=%s",xcash_wallet_public_address);
-        if (send_http_request(response_data, SMALL_BUFFER_SIZE, XCASH_DAEMON_IP, "/json_rpc", XCASH_DAEMON_PORT,
+    if (send_http_request(response_data, SMALL_BUFFER_SIZE, XCASH_DAEMON_IP, "/json_rpc", XCASH_DAEMON_PORT,
                               "POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH, request_payload,
-                              SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) == XCASH_OK &&
+                              HTTP_TIMEOUT_SETTINGS) == XCASH_OK &&
             parse_json_data(response_data, "result.count", result, SMALL_BUFFER_SIZE) != 0) {
             return XCASH_OK;
-        }
-
-
-    INFO_PRINT("************Second Pass=%s",xcash_wallet_public_address);
-
-
-        // Clear buffers before retry
-        memset(response_data, 0, sizeof(response_data));
-        memset(result, 0, SMALL_BUFFER_SIZE);
-        
-    INFO_PRINT("************Second Pass=%s",xcash_wallet_public_address);
-
-        // Sleep only if this is not the last attempt
-        if (attempt == 0) {
-            WARNING_PRINT("Retrying to fetch of block height...");
-            sleep(RETRY_SECONDS);
-        }
     }
 
     ERROR_PRINT("Could not get the current block height.");
@@ -126,28 +105,16 @@ int get_previous_block_hash(char *result)
 
     // Variables
     char data[SMALL_BUFFER_SIZE] = {0};
-
-    // Function to send request and parse result
-    for (int attempt = 0; attempt < 2; attempt++)
-    {
-        if (send_http_request(data, SMALL_BUFFER_SIZE, XCASH_DAEMON_IP, "/json_rpc", XCASH_DAEMON_PORT, "POST",
+    if (send_http_request(data, SMALL_BUFFER_SIZE, XCASH_DAEMON_IP, "/json_rpc", XCASH_DAEMON_PORT, "POST",
                               HTTP_HEADERS, HTTP_HEADERS_LENGTH, REQUEST_PAYLOAD,
-                              SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) > 0 &&
+                              HTTP_TIMEOUT_SETTINGS) > 0 &&
             parse_json_data(data, "result.block_header.hash", result, BLOCK_HASH_LENGTH+1
             ) > 0)
-        {
-            return XCASH_OK;
-        }
-
-        // First attempt failed, retry after delay
-        if (attempt == 0)
-        {
-            WARNING_PRINT("Retrying to fetch previous block hash...");
-            sleep(RETRY_SECONDS);
-        }
+    {
+      return XCASH_OK;
     }
 
-    ERROR_PRINT("Could not get the previous block hash after multiple attempts.");
+    ERROR_PRINT("Could not get the previous block hash.");
     return XCASH_ERROR;
 }
 
@@ -191,7 +158,7 @@ int get_block_template(char* result, size_t result_size, size_t* reserved_offset
 
     // Send HTTP request
     if (send_http_request(response, SMALL_BUFFER_SIZE, XCASH_DAEMON_IP, RPC_ENDPOINT, XCASH_DAEMON_PORT, RPC_METHOD,
-        HTTP_HEADERS, HTTP_HEADERS_LENGTH, message, SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) > 0 &&
+        HTTP_HEADERS, HTTP_HEADERS_LENGTH, message, HTTP_TIMEOUT_SETTINGS) > 0 &&
         parse_json_data(response, "result.blocktemplate_blob", result, result_size) == XCASH_OK &&
         parse_json_data(response, "result.reserved_offset", reserved_offset_str, sizeof(reserved_offset_str)) == XCASH_OK)
     {
