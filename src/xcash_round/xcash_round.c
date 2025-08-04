@@ -79,10 +79,11 @@ xcash_round_result_t process_round(void) {
   if (get_current_block_height(current_block_height) != XCASH_OK) {
     ERROR_PRINT("Can't get current block height");
     INFO_PRINT("after************xcash_wallet_public_address=%s",xcash_wallet_public_address);
+    atomic_store(&wait_for_block_height_init, false);
     return ROUND_ERROR;
   }
 
-  atomic_store(&wait_for_block_height_init, false);                                                          // if error above change to false....??
+  atomic_store(&wait_for_block_height_init, false);
   INFO_STAGE_PRINT("Createing Block: %s", current_block_height);
 
   INFO_STAGE_PRINT("Part 2 - Check Delegates, Get Previous Block Hash, and Delegates Hash");
