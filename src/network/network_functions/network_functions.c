@@ -119,11 +119,15 @@ int send_http_request(char *result, size_t return_buffer_size, const char *host,
     res = curl_easy_perform(curl);
     if (res != CURLE_OK)
     {
+        INFO_PRINT("1-1 ************xcash_wallet_public_address=%s",xcash_wallet_public_address);
         ERROR_PRINT("HTTP request failed: %s", curl_easy_strerror(res));
         free(response.data);
+                INFO_PRINT("1-2 ************xcash_wallet_public_address=%s",xcash_wallet_public_address);
         curl_easy_cleanup(curl);
+                INFO_PRINT("1-3 ************xcash_wallet_public_address=%s",xcash_wallet_public_address);
         if (header_list)
             curl_slist_free_all(header_list);
+                    INFO_PRINT("1-4 ************xcash_wallet_public_address=%s",xcash_wallet_public_address);
         return XCASH_ERROR;
     }
 
