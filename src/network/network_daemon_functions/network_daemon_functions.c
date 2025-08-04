@@ -76,6 +76,7 @@ int get_current_block_height(char *result) {
 
     // Retry mechanism
     for (int attempt = 0; attempt < 2; ++attempt) {
+          INFO_PRINT("************Before http_request=%s",xcash_wallet_public_address);
         if (send_http_request(response_data, SMALL_BUFFER_SIZE, XCASH_DAEMON_IP, "/json_rpc", XCASH_DAEMON_PORT,
                               "POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH, request_payload,
                               SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) == XCASH_OK &&
@@ -91,6 +92,8 @@ int get_current_block_height(char *result) {
         memset(response_data, 0, sizeof(response_data));
         memset(result, 0, SMALL_BUFFER_SIZE);
         
+    INFO_PRINT("************Second Pass=%s",xcash_wallet_public_address);
+
         // Sleep only if this is not the last attempt
         if (attempt == 0) {
             WARNING_PRINT("Retrying to fetch of block height...");
