@@ -37,7 +37,7 @@ size_t write_callback(void *contents, size_t size, size_t nmemb, void *userp)
     if (ptr == NULL)
     {
         ERROR_PRINT("Memory allocation failed in write_callback()");
-        return XCASH_ERROR; // Stop writing
+        return 0; // Stop writing
     }
 
     buffer->data = ptr;
