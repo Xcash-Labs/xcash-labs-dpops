@@ -408,6 +408,11 @@ bool create_sync_msg(char** message) {
     return XCASH_ERROR;
   }
 
+
+
+  INFO_PRINT("************xcash_wallet_public_address=%s",xcash_wallet_public_address);
+
+
   int param_index = 0;
   param_list[param_index++] = "block_height";
   param_list[param_index++] = current_block_height;
