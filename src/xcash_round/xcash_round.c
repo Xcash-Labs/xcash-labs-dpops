@@ -68,10 +68,16 @@ int select_block_producer_from_vrf(void) {
  */
 xcash_round_result_t process_round(void) {
 
+INFO_PRINT("start************xcash_wallet_public_address=%s",xcash_wallet_public_address);
+
   if (strlen(vrf_public_key) == 0) {
     WARNING_PRINT("Failed to read vrf_public_key for delegate, has this delegate been registered?");
     return ROUND_SKIP;
   }
+
+
+INFO_PRINT("before************xcash_wallet_public_address=%s",xcash_wallet_public_address);
+
 
   // Get the current block height
   INFO_STAGE_PRINT("Part 1 - Get Current Block Height");
@@ -80,6 +86,9 @@ xcash_round_result_t process_round(void) {
     ERROR_PRINT("Can't get current block height");
     return ROUND_ERROR;
   }
+
+INFO_PRINT("after************xcash_wallet_public_address=%s",xcash_wallet_public_address);
+
   atomic_store(&wait_for_block_height_init, false);
   INFO_STAGE_PRINT("Createing Block: %s", current_block_height);
 
