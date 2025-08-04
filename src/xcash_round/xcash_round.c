@@ -84,6 +84,7 @@ INFO_PRINT("before************xcash_wallet_public_address=%s",xcash_wallet_publi
   snprintf(current_round_part, sizeof(current_round_part), "%d", 1);
   if (get_current_block_height(current_block_height) != XCASH_OK) {
     ERROR_PRINT("Can't get current block height");
+    INFO_PRINT("after************xcash_wallet_public_address=%s",xcash_wallet_public_address);
     return ROUND_ERROR;
   }
 
