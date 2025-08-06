@@ -370,5 +370,5 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
     send_data(client, (unsigned char *)response, strlen(response));
   }
 
-  retrun;
+  return;
 }
