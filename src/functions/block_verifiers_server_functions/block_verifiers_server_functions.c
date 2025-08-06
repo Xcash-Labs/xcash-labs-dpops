@@ -96,13 +96,6 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
   return;
 }
 
-
-
-
-
-
-
-
 /*---------------------------------------------------------------------------------------------------------
 Name: server_receive_data_socket_node_to_node_vote_majority
 Description: Runs the code when the server receives the NODES_TO_NODES_VOTE_MAJORITY_RESULTS message
