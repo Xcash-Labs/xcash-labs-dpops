@@ -288,83 +288,87 @@ Parameters:
   CLIENT_SOCKET - The socket to send data to
   MESSAGE - The JSON message containing the VRF proof, beta, public key, block height, and previous hash
 ---------------------------------------------------------------------------------------------------------*/
-void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_client_t* client, const char* MESSAGE)
-{
-    char error_response[256] = {0};
+void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_client_t *client, const char *MESSAGE) {
+  char response[VVSMALL_BUFFER_SIZE] = {0};
 
-    // Parse the incoming JSON message
-    cJSON *root = cJSON_Parse(MESSAGE);
-    if (!root) {
-        send_data(client, (unsigned char*)"Invalid JSON format}", strlen("Invalid JSON format}"));
-        return;
-    }
+  // Parse the incoming JSON message
+  cJSON *root = cJSON_Parse(MESSAGE);
+  if (!root) {
+    send_data(client, (unsigned char *)"Invalid JSON format}", strlen("Invalid JSON format}"));
+    return;
+  }
 
-    // Extract fields
-    cJSON *msg_settings  = cJSON_GetObjectItemCaseSensitive(root, "message_settings");
-    cJSON *js_vrf_proof  = cJSON_GetObjectItemCaseSensitive(root, "vrf_proof");
-    cJSON *js_vrf_beta   = cJSON_GetObjectItemCaseSensitive(root, "vrf_beta");
-    cJSON *js_vrf_pubkey = cJSON_GetObjectItemCaseSensitive(root, "vrf_pubkey");
-    cJSON *js_vote_hash  = cJSON_GetObjectItemCaseSensitive(root, "vote_hash");
-    cJSON *js_height     = cJSON_GetObjectItemCaseSensitive(root, "height");
-    cJSON *js_prev_hash  = cJSON_GetObjectItemCaseSensitive(root, "prev_block_hash");
+  // Extract fields
+  cJSON *msg_settings = cJSON_GetObjectItemCaseSensitive(root, "message_settings");
+  cJSON *js_vrf_proof = cJSON_GetObjectItemCaseSensitive(root, "vrf_proof");
+  cJSON *js_vrf_beta = cJSON_GetObjectItemCaseSensitive(root, "vrf_beta");
+  cJSON *js_vrf_pubkey = cJSON_GetObjectItemCaseSensitive(root, "vrf_pubkey");
+  cJSON *js_vote_hash = cJSON_GetObjectItemCaseSensitive(root, "vote_hash");
+  cJSON *js_height = cJSON_GetObjectItemCaseSensitive(root, "height");
+  cJSON *js_prev_hash = cJSON_GetObjectItemCaseSensitive(root, "prev_block_hash");
 
-    if (!cJSON_IsString(msg_settings) || strcmp(msg_settings->valuestring, "XCASHD_TO_DPOPS_VERIFY") != 0 ||
-        !cJSON_IsString(js_vrf_proof) || !cJSON_IsString(js_vrf_beta) || !cJSON_IsString(js_vrf_pubkey) ||
-        !cJSON_IsString(js_vote_hash) || !cJSON_IsNumber(js_height) || !cJSON_IsString(js_prev_hash)) {
-        
-        cJSON_Delete(root);
-        send_data(client, (unsigned char*)"Missing or invalid fields}", strlen("Missing or invalid fields}"));
-        return;
-    }
-
-    // Extract strings and height
-    const char* vrf_proof_str     = js_vrf_proof->valuestring;
-    const char* vrf_beta_str      = js_vrf_beta->valuestring;
-    const char* vrf_pubkey_str    = js_vrf_pubkey->valuestring;
-    const char* prev_hash_str     = js_prev_hash->valuestring;
-    uint64_t height               = (uint64_t)js_height->valuedouble;
-
-    // Buffers for binary data
-    unsigned char pk_bin[crypto_vrf_PUBLICKEYBYTES] = {0};
-    unsigned char proof_bin[crypto_vrf_PROOFBYTES]  = {0};
-    unsigned char beta_bin[crypto_vrf_OUTPUTBYTES]  = {0};
-    unsigned char prev_hash_bin[32]                 = {0};
-    unsigned char alpha_input[72]                   = {0};
-    unsigned char computed_beta[crypto_vrf_OUTPUTBYTES] = {0};
-
-    // Convert hex → binary
-    if (!hex_to_byte_array(vrf_pubkey_str, pk_bin, sizeof(pk_bin)) ||
-        !hex_to_byte_array(vrf_proof_str, proof_bin, sizeof(proof_bin)) ||
-        !hex_to_byte_array(vrf_beta_str, beta_bin, sizeof(beta_bin)) ||
-        !hex_to_byte_array(prev_hash_str, prev_hash_bin, sizeof(prev_hash_bin))) {
-
-        cJSON_Delete(root);
-        send_data(client, (unsigned char*)"Hex decoding failed}", strlen("Hex decoding failed}"));
-        return;
-    }
-
-    // Create alpha = prev_block_hash || height || pubkey
-    memcpy(alpha_input, prev_hash_bin, 32);
-    uint64_t height_le = htole64(height);
-    memcpy(alpha_input + 32, &height_le, sizeof(height_le));
-    memcpy(alpha_input + 40, pk_bin, 32);
-
-    // Verify VRF
-    bool valid_block = true;
-    if (crypto_vrf_verify(computed_beta, pk_bin, proof_bin, alpha_input, sizeof(alpha_input)) != 0) {
-        valid_block = false;
-    } else if (memcmp(computed_beta, beta_bin, sizeof(beta_bin)) != 0) {
-        valid_block = false;
-    }
-
+  if (!cJSON_IsString(msg_settings) || strcmp(msg_settings->valuestring, "XCASHD_TO_DPOPS_VERIFY") != 0 ||
+      !cJSON_IsString(js_vrf_proof) || !cJSON_IsString(js_vrf_beta) || !cJSON_IsString(js_vrf_pubkey) ||
+      !cJSON_IsString(js_vote_hash) || !cJSON_IsNumber(js_height) || !cJSON_IsString(js_prev_hash)) {
     cJSON_Delete(root);
+    send_data(client, (unsigned char *)"Missing or invalid fields}", strlen("Missing or invalid fields}"));
+    return;
+  }
 
-    if (valid_block) {
-        INFO_PRINT("VALID BLOCK.........................................................");
-          send_data(client, (unsigned char*)"failed}", strlen("failed}"));
-//        send_data(client, (unsigned char*)"passed}", strlen("passed}"));
-    } else {
-        send_data(client, (unsigned char*)"failed}", strlen("failed}"));
-    }
+  // Extract strings and height
+  const char *vrf_proof_str = js_vrf_proof->valuestring;
+  const char *vrf_beta_str = js_vrf_beta->valuestring;
+  const char *vrf_pubkey_str = js_vrf_pubkey->valuestring;
+  const char *vote_hash_str   = js_vote_hash->valuestring;
+  const char *prev_hash_str = js_prev_hash->valuestring;
+  uint64_t height = (uint64_t)js_height->valuedouble;
 
+  // Buffers for binary data
+  unsigned char pk_bin[crypto_vrf_PUBLICKEYBYTES] = {0};
+  unsigned char proof_bin[crypto_vrf_PROOFBYTES] = {0};
+  unsigned char beta_bin[crypto_vrf_OUTPUTBYTES] = {0};
+  unsigned char prev_hash_bin[32] = {0};
+  unsigned char alpha_input[72] = {0};
+  unsigned char computed_beta[crypto_vrf_OUTPUTBYTES] = {0};
+
+  // Convert hex → binary
+  if (!hex_to_byte_array(vrf_pubkey_str, pk_bin, sizeof(pk_bin)) ||
+      !hex_to_byte_array(vrf_proof_str, proof_bin, sizeof(proof_bin)) ||
+      !hex_to_byte_array(vrf_beta_str, beta_bin, sizeof(beta_bin)) ||
+      !hex_to_byte_array(prev_hash_str, prev_hash_bin, sizeof(prev_hash_bin))) {
+    cJSON_Delete(root);
+    send_data(client, (unsigned char *)"Hex decoding failed}", strlen("Hex decoding failed}"));
+    return;
+  }
+
+  // Create alpha = prev_block_hash || height || pubkey
+  memcpy(alpha_input, prev_hash_bin, 32);
+  uint64_t height_le = htole64(height);
+  memcpy(alpha_input + 32, &height_le, sizeof(height_le));
+  memcpy(alpha_input + 40, pk_bin, 32);
+
+  // Verify VRF
+  bool valid_block = true;
+  if (crypto_vrf_verify(computed_beta, pk_bin, proof_bin, alpha_input, sizeof(alpha_input)) != 0) {
+    valid_block = false;
+  } else if (memcmp(computed_beta, beta_bin, sizeof(beta_bin)) != 0) {
+    valid_block = false;
+  }
+
+  cJSON_Delete(root);
+
+  if (valid_block) {
+    INFO_PRINT("VALID BLOCK.........................................................");
+    snprintf(response, sizeof(response),
+             "DPOPS_TO_XCASHD_VERIFY|1|Block verification passed|%s",
+             vote_hash_str);
+    send_data(client, (unsigned char *)response, strlen(response));
+  } else {
+    snprintf(response, sizeof(response),
+             "DPOPS_TO_XCASHD_VERIFY|0|Block verification failed|%s",
+             vote_hash_str);
+    send_data(client, (unsigned char *)response, strlen(response));
+  }
+
+  retrun;
 }
