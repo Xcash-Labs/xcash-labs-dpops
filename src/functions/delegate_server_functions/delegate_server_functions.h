@@ -14,6 +14,7 @@
 #include "xcash_delegates.h"
 #include "net_server.h"
 #include "string_functions.h"
+#include "xcash_round.h"
 
 
 //int block_verifiers_add_reserve_proof_check_if_data_is_valid(const char* MESSAGE, struct reserve_proof* reserve_proof);
