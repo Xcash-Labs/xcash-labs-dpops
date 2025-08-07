@@ -410,7 +410,6 @@ xcash_round_result_t process_round(void) {
     pthread_mutex_unlock(&producer_refs_lock);
   }
 
-  INFO_STAGE_PRINT("Starting block production for block %s", current_block_height);
   int block_creation_result = block_verifiers_create_block(final_vote_hash_hex, (uint8_t)valid_vote_count, (uint8_t)nodes_majority_count);
 
   if (block_creation_result == ROUND_OK) {
@@ -489,7 +488,28 @@ void start_block_production(void) {
 
     // Final step - Update DB
     snprintf(current_round_part, sizeof(current_round_part), "%d", 12);
+
     if (round_result == ROUND_OK) {
+
+      INFO_STAGE_PRINT("Waiting To Verify Block Creation...");
+      if (sync_block_verifiers_minutes_and_seconds(1, 50) == XCASH_ERROR) {
+        DEBUG_PRINT("Failed to sync in the allotted time");
+      }
+
+      char ck_block_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
+      if (get_current_block_height(ck_block_height) != XCASH_OK) {
+        ERROR_PRINT("Can't get current block height");
+        goto end_of_round_skip_block;
+      }
+
+      uint64_t ck_height = strtoull(ck_block_height, NULL, 10);
+      uint64_t cur_height = strtoull(current_block_height, NULL, 10);
+
+      if (ck_height != cur_height + 1) {
+        ERROR_PRINT("New block was not created by the selected block producer");
+        goto end_of_round_skip_block;
+      }
+
       for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
         if (strlen(delegates_all[i].public_address) > 0 && strlen(delegates_all[i].public_key) > 0) {
           if (strcmp(delegates_all[i].online_status, delegates_all[i].online_status_orginal) == 0) {
@@ -591,7 +611,7 @@ void start_block_production(void) {
       // if not registered no need to continue
       if (strlen(vrf_public_key) != 0) {
         INFO_STAGE_PRINT("Round skipped or delegate still initializing - waiting to sync...");
-        if (sync_block_verifiers_minutes_and_seconds(1, 45) == XCASH_ERROR) {
+        if (sync_block_verifiers_minutes_and_seconds(1, 50) == XCASH_ERROR) {
           DEBUG_PRINT("Failed to sync in the allotted time");
         }
 
@@ -617,10 +637,10 @@ void start_block_production(void) {
       }
     }
 
+  end_of_round_ok_block:
     // set up delegates for next round
     if (!fill_delegates_from_db()) {
       FATAL_ERROR_EXIT("Failed to load and organize delegates for next round, Possible problem with Mongodb");
     }
-
   }
 }
