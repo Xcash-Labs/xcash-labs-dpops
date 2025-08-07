@@ -322,6 +322,35 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
   const char *vote_hash_str   = js_vote_hash->valuestring;
   const char *prev_hash_str = js_prev_hash->valuestring;
   uint64_t height = (uint64_t)js_height->valuedouble;
+  uint64_t block_height = strtoull(current_block_height, NULL, 10);
+
+
+producer_refs[0]
+
+  // For new block
+  if (block_height = height) {
+
+   if (strncmp(producer_refs[0].vrf_public_key, vrf_pubkey_str, VRF_PUBLIC_KEY_LENGTH) != 0)
+    {
+        ERROR_PRINT("Public key mismatch: expected %s, got %s",
+                    producer_refs[0].vrf_public_key, vrf_pubkey_str);
+        cJSON_Delete(root);
+        send_data(client, (unsigned char *)"Public key mismatch}", strlen("Public key mismatch}"));
+        return;
+    }
+
+    if (strncmp(producer_refs[0].vrf_proof_hex, vrf_proof_str, VRF_PROOF_LENGTH) != 0 ||
+        strncmp(producer_refs[0].vrf_beta_hex, vrf_beta_str, VRF_BETA_LENGTH) != 0)
+    {
+        ERROR_PRINT("VRF proof or beta mismatch");
+        cJSON_Delete(root);
+        send_data(client, (unsigned char *)"VRF data mismatch}", strlen("VRF data mismatch}"));
+        return;
+    }
+
+    INFO_PRINT("Producer VRF data matched successfully.");
+
+  }
 
   // Buffers for binary data
   unsigned char pk_bin[crypto_vrf_PUBLICKEYBYTES] = {0};
@@ -370,11 +399,6 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
     send_data(client, (unsigned char *)response, strlen(response));
   }
 
-
-
-
-
-//  Need to add some more checks above --- 
 
 
 
