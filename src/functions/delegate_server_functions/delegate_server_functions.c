@@ -381,10 +381,6 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
     valid_block = false;
   }
 
-  cJSON_Delete(root);
-
-  INFO_PRINT("******************vote_hash_str: %s", vote_hash_str);
-
   if (valid_block) {
     snprintf(response, sizeof(response),
              "1|Block verification passed|%s}",
@@ -397,5 +393,6 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
     send_data(client, (unsigned char *)response, strlen(response));
   }
 
+  cJSON_Delete(root);
   return;
 }
