@@ -325,7 +325,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
   uint64_t block_height = strtoull(current_block_height, NULL, 10);
 
   // For new block
-  if (block_height = height) {
+  if (block_height == height) {
 
    if (strncmp(producer_refs[0].vrf_public_key, vrf_pubkey_str, VRF_PUBLIC_KEY_LENGTH) != 0)
     {
