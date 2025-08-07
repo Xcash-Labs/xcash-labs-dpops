@@ -425,7 +425,7 @@ xcash_round_result_t process_round(void) {
     strcpy(producer_refs[0].vrf_public_key, current_block_verifiers_list.block_verifiers_vrf_public_key_hex[producer_indx]);
     strcpy(producer_refs[0].vrf_proof_hex, current_block_verifiers_list.block_verifiers_vrf_proof_hex[producer_indx]);
     strcpy(producer_refs[0].vrf_beta_hex, current_block_verifiers_list.block_verifiers_vrf_beta_hex[producer_indx]);
-    strncpy(producer_refs[0].vote_hash_hex, final_vote_hash_hex);
+    strcpy(producer_refs[0].vote_hash_hex, final_vote_hash_hex);
     pthread_mutex_unlock(&producer_refs_lock);
   }
 
