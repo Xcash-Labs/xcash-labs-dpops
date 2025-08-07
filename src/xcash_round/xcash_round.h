@@ -24,6 +24,7 @@ typedef struct {
     char vrf_public_key[VRF_PUBLIC_KEY_LENGTH + 1];
     char vrf_proof_hex[VRF_PROOF_LENGTH + 1];
     char vrf_beta_hex[VRF_BETA_LENGTH + 1];
+    char vote_hash_hex[SHA256_EL_HASH_SIZE * 2 + 1];
 } producer_ref_t;
 
 extern producer_ref_t producer_refs[PRODUCER_REF_COUNT];

@@ -403,7 +403,6 @@ xcash_round_result_t process_round(void) {
   // Final hash of all vote hashes
   sha256EL(all_hashes_concat, concat_len, final_vote_hash);
 
-  // Optional: store or print
   char final_vote_hash_hex[SHA256_EL_HASH_SIZE * 2 + 1] = {0};
   for (size_t i = 0; i < SHA256_EL_HASH_SIZE; i++) {
     snprintf(final_vote_hash_hex + (i * 2), 3, "%02x", final_vote_hash[i]);
@@ -426,6 +425,7 @@ xcash_round_result_t process_round(void) {
     strcpy(producer_refs[0].vrf_public_key, current_block_verifiers_list.block_verifiers_vrf_public_key_hex[producer_indx]);
     strcpy(producer_refs[0].vrf_proof_hex, current_block_verifiers_list.block_verifiers_vrf_proof_hex[producer_indx]);
     strcpy(producer_refs[0].vrf_beta_hex, current_block_verifiers_list.block_verifiers_vrf_beta_hex[producer_indx]);
+    strncpy(producer_refs[0].vote_hash_hex, final_vote_hash_hex);
     pthread_mutex_unlock(&producer_refs_lock);
   }
 
