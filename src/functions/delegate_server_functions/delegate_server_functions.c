@@ -324,9 +324,6 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
   uint64_t height = (uint64_t)js_height->valuedouble;
   uint64_t block_height = strtoull(current_block_height, NULL, 10);
 
-
-producer_refs[0]
-
   // For new block
   if (block_height = height) {
 
