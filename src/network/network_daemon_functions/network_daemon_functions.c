@@ -165,7 +165,7 @@ int get_block_template(char* result, size_t result_size, size_t* reserved_offset
       *reserved_offset_out = (size_t)strtoul(reserved_offset_str, NULL, 10);
 
 
-      INFO_PRINT("Block Temp: %s", response);
+      DEBUG_PRINT("Block Temp: %s", response);
       free(response);
       return XCASH_OK;
     }

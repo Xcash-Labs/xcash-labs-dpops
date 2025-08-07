@@ -42,7 +42,6 @@
         strftime(time_buf, sizeof(time_buf), "%Y-%m-%d %H:%M:%S", tm_info); \
         fprintf(stderr, "\033[1;37m[%s] INFO: ", time_buf); \
         fprintf(stderr, fmt, ##__VA_ARGS__); \
-        fprintf(stderr, "\033[0m\n  --> TRACE: %s:%d, %s()\n\n", __FILE__, __LINE__, __func__); \
     } \
 } while (0)
 

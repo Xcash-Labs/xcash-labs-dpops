@@ -270,23 +270,6 @@ xcash_round_result_t process_round(void) {
     return ROUND_SKIP;
   }
 
-  for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
-    if (current_block_verifiers_list.block_verifiers_public_address[i][0] != '\0' &&
-        current_block_verifiers_list.block_verifiers_voted[i] > 0) {
-      INFO_PRINT(
-          "Name: %s\n"
-          " VRF Vote count: %d\n"
-          " Voted: %u\n"
-          " Vote Signature: %s\n"
-          " Selected Public Address: %s\n",
-          current_block_verifiers_list.block_verifiers_name[i],
-          current_block_verifiers_list.block_verifiers_vote_total[i],
-          current_block_verifiers_list.block_verifiers_voted[i],
-          current_block_verifiers_list.block_verifiers_vote_signature[i],
-          current_block_verifiers_list.block_verifiers_selected_public_address[i]);
-    }
-  }
-
   int max_index = -1;
   int max_votes = -1;
 
