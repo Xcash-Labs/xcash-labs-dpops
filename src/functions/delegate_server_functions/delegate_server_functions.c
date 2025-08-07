@@ -289,7 +289,7 @@ Parameters:
   MESSAGE - The JSON message containing the VRF proof, beta, public key, block height, and previous hash
 ---------------------------------------------------------------------------------------------------------*/
 void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_client_t *client, const char *MESSAGE) {
-  char response[VVSMALL_BUFFER_SIZE] = {0};
+  char response[VSMALL_BUFFER_SIZE] = {0};
 
   // Parse the incoming JSON message
   cJSON *root = cJSON_Parse(MESSAGE);
@@ -360,15 +360,25 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
   if (valid_block) {
     INFO_PRINT("VALID BLOCK.........................................................");
     snprintf(response, sizeof(response),
-             "DPOPS_TO_XCASHD_VERIFY|1|Block verification passed|%s",
+             "1|Block verification passed|%s}",
              vote_hash_str);
     send_data(client, (unsigned char *)response, strlen(response));
   } else {
     snprintf(response, sizeof(response),
-             "DPOPS_TO_XCASHD_VERIFY|0|Block verification failed|%s",
+             "0|Block verification failed|%s}",
              vote_hash_str);
     send_data(client, (unsigned char *)response, strlen(response));
   }
+
+
+
+
+
+//  Need to add some more checks above --- 
+
+
+
+
 
   return;
 }
