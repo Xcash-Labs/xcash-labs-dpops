@@ -306,16 +306,16 @@ int verify_the_ip(const char *message, const char *client_ip) {
   char filter_json[256] = {0};
   char resolved_ip[INET_ADDRSTRLEN] = {0};
 
-  // Extract the public address
-  if (parse_json_data(message, "public_address", ck_public_address, sizeof(ck_public_address)) != XCASH_OK) {
-    ERROR_PRINT("verify_ip: Failed to parse public_address field");
-    return XCASH_ERROR;
-  }
-
   // Allow loopback traffic
   if (strcmp(client_ip, "127.0.0.1") == 0 || strcmp(client_ip, "::1") == 0) {
     DEBUG_PRINT("Internal loopback connection from: %s", client_ip);
     return XCASH_OK;
+  }
+
+  // Extract the public address
+  if (parse_json_data(message, "public_address", ck_public_address, sizeof(ck_public_address)) != XCASH_OK) {
+    ERROR_PRINT("verify_ip: Failed to parse public_address field");
+    return XCASH_ERROR;
   }
 
   // Get the IP/hostname from DB
