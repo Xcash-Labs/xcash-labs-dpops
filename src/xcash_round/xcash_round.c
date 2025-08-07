@@ -512,8 +512,7 @@ void start_block_production(void) {
       for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
         if (strlen(delegates_all[i].public_address) > 0 && strlen(delegates_all[i].public_key) > 0) {
           if (strcmp(delegates_all[i].online_status, delegates_all[i].online_status_orginal) == 0) {
-            INFO_PRINT("No change to online status, update skipped...");
-
+            DEBUG_PRINT("No change to online status, update skipped...");
           } else {
             bool is_primary = false;
 
@@ -524,7 +523,7 @@ void start_block_production(void) {
 #endif
 
             if (!is_seed_node || is_primary) {
-              INFO_PRINT("Updating online status...");
+              DEBUG_PRINT("Updating online status...");
 
               char tmp_status[6] = "false";
 
@@ -551,7 +550,7 @@ void start_block_production(void) {
 #ifdef SEED_NODE_ON
 
           if (is_primary_node()) {
-            INFO_PRINT("Updating stats...");
+            DEBUG_PRINT("Updating stats...");
             uint64_t tmp_verifier_total_round = 0;
             uint64_t tmp_verifier_online_total_rounds = 0;
             uint64_t tmp_producer_total_rounds = 0;
@@ -589,7 +588,7 @@ void start_block_production(void) {
               bson_destroy(&update_fields_stat);
 
 
-              INFO_PRINT("Updated delegate %s: total=%" PRIu64 ", online=%" PRIu64 ", produced=%" PRIu64,
+              DEBUG_PRINT("Updated delegate %s: total=%" PRIu64 ", online=%" PRIu64 ", produced=%" PRIu64,
                          delegates_all[i].public_address,
                          tmp_verifier_total_round,
                          tmp_verifier_online_total_rounds,
@@ -610,9 +609,9 @@ void start_block_production(void) {
       }
       // if not registered no need to continue
       if (strlen(vrf_public_key) != 0) {
-        INFO_STAGE_PRINT("Round skipped or delegate still initializing - waiting to sync...");
+        DEBUG_STAGE_PRINT("Round skipped or delegate still initializing - waiting to sync...");
         if (sync_block_verifiers_minutes_and_seconds(1, 45) == XCASH_ERROR) {
-          INFO_PRINT("Failed to sync in the allotted time");
+          DEBUG_PRINT("Failed to sync in the allotted time");
         }
 
         // If more that a 30% mismatch lets resync the node
@@ -627,7 +626,7 @@ void start_block_production(void) {
               ERROR_PRINT("Error occured while syncing delegates");
             }
             if (sync_block_verifiers_minutes_and_seconds(1, 58) == XCASH_ERROR) {
-              INFO_PRINT("Failed to sync in the allotted time");
+              ERROR_PRINT("Failed to sync in the allotted time");
             }
           } else {
             ERROR_PRINT("Error creating sync token"); 
