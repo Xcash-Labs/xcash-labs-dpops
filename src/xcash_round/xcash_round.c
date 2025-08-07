@@ -609,7 +609,7 @@ void start_block_production(void) {
       }
       // if not registered no need to continue
       if (strlen(vrf_public_key) != 0) {
-        DEBUG_STAGE_PRINT("Round skipped or delegate still initializing - waiting to sync...");
+        INFO_STAGE_PRINT("Round skipped or delegate still initializing - waiting to sync...");
         if (sync_block_verifiers_minutes_and_seconds(1, 45) == XCASH_ERROR) {
           DEBUG_PRINT("Failed to sync in the allotted time");
         }
