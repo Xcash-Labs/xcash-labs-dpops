@@ -282,7 +282,7 @@ xcash_round_result_t process_round(void) {
   }
 
   if (max_index != -1) {
-    INFO_PRINT("Most voted verifier: %s with %d votes", current_block_verifiers_list.block_verifiers_name[max_index], max_votes);
+    INFO_PRINT("Confirmed Block Winner: %s with %d votes", current_block_verifiers_list.block_verifiers_name[max_index], max_votes);
   } else {
     ERROR_PRINT("No votes recorded");
     return ROUND_ERROR;
@@ -295,13 +295,11 @@ xcash_round_result_t process_round(void) {
 
   pthread_mutex_lock(&current_block_verifiers_lock);
   for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
+
     if ( (current_block_verifiers_list.block_verifiers_voted[i] > 0) &&
      (strncmp(current_block_verifiers_list.block_verifiers_selected_public_address[i], 
       current_block_verifiers_list.block_verifiers_public_address[max_index], XCASH_WALLET_LENGTH) == 0) &&
       (current_block_verifiers_list.block_verifiers_public_address[i][0] != '\0')){
-
-      INFO_PRINT("Block Verifier Name: %s", current_block_verifiers_list.block_verifiers_name[i]);
-
       uint8_t signature_bin[64] = {0};
       const char* encoded_sig = current_block_verifiers_list.block_verifiers_vote_signature[i];
 
