@@ -322,8 +322,10 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
   const char *vote_hash_str   = js_vote_hash->valuestring;
   const char *prev_hash_str = js_prev_hash->valuestring;
   uint64_t height = (uint64_t)js_height->valuedouble;
+  uint64_t block_height = strtoull(current_block_height, NULL, 10);
 
-  if (is_blockchain_synced()) {
+  // For new block only
+  if (block_height == height) {
 
    if (strncmp(producer_refs[0].vrf_public_key, vrf_pubkey_str, VRF_PUBLIC_KEY_LENGTH) != 0)
     {
@@ -336,8 +338,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
 
     if (strncmp(producer_refs[0].vrf_proof_hex, vrf_proof_str, VRF_PROOF_LENGTH) != 0 ||
         strncmp(producer_refs[0].vrf_beta_hex, vrf_beta_str, VRF_BETA_LENGTH) != 0 ||
-        strncmp(producer_refs[0].vote_hash_hex, vote_hash_str, SHA256_EL_HASH_SIZE * 2) != 0
-      )
+        strncmp(producer_refs[0].vote_hash_hex, vote_hash_str, SHA256_EL_HASH_SIZE * 2) != 0)
     {
         ERROR_PRINT("VRF proof, beta, or vote_hash mismatch");
         cJSON_Delete(root);
