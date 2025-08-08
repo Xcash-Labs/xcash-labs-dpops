@@ -20,34 +20,22 @@ bool is_blockchain_synced(void) {
   char status_flag[16] = {0};
   char offline_flag[16] = {0};
 
-  // Retry mechanism
-  for (int attempt = 0; attempt < 2; ++attempt) {
-    if (send_http_request(response, SMALL_BUFFER_SIZE, XCASH_DAEMON_IP, RPC_ENDPOINT, XCASH_DAEMON_PORT,
-                          "GET", HTTP_HEADERS, HTTP_HEADERS_LENGTH, NULL,
-                          HTTP_TIMEOUT_SETTINGS) == XCASH_OK &&
-        parse_json_data(response, "synchronized", synced_flag, sizeof(synced_flag)) != 0 &&
-        parse_json_data(response, "status", status_flag, sizeof(status_flag)) != 0 &&
-        parse_json_data(response, "offline", offline_flag, sizeof(offline_flag)) != 0) {
-      if (strcmp(synced_flag, "true") == 0 &&
-          strcmp(status_flag, "OK") == 0 &&
-          strcmp(offline_flag, "false") == 0) {
-        return true;
-      }
-
-      DEBUG_PRINT("Daemon not yet synced or status not OK: synchronized=%s, status=%s, offline=%s", synced_flag, status_flag, offline_flag);
-      return false;
+  if (send_http_request(response, SMALL_BUFFER_SIZE, XCASH_DAEMON_IP, RPC_ENDPOINT, XCASH_DAEMON_PORT,
+                        "GET", HTTP_HEADERS, HTTP_HEADERS_LENGTH, NULL,
+                        HTTP_TIMEOUT_SETTINGS) == XCASH_OK &&
+      parse_json_data(response, "synchronized", synced_flag, sizeof(synced_flag)) != 0 &&
+      parse_json_data(response, "status", status_flag, sizeof(status_flag)) != 0 &&
+      parse_json_data(response, "offline", offline_flag, sizeof(offline_flag)) != 0) {
+    if (strcmp(synced_flag, "true") == 0 &&
+        strcmp(status_flag, "OK") == 0 &&
+        strcmp(offline_flag, "false") == 0) {
+      return true;
     }
 
-    memset(response, 0, sizeof(response));
-    memset(synced_flag, 0, sizeof(synced_flag));
-    memset(status_flag, 0, sizeof(status_flag));
-    memset(offline_flag, 0, sizeof(offline_flag));
-
-    if (attempt == 0) {
-      WARNING_PRINT("Retrying blockchain sync check...");
-      sleep(RETRY_SECONDS);
-    }
+    DEBUG_PRINT("Daemon not yet synced or status not OK: synchronized=%s, status=%s, offline=%s", synced_flag, status_flag, offline_flag);
+    return false;
   }
+}
 
   ERROR_PRINT("Could not determine blockchain sync status.");
   return false;
