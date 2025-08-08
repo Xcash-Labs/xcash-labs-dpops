@@ -492,22 +492,8 @@ void start_block_production(void) {
     if (round_result == ROUND_OK) {
 
       INFO_STAGE_PRINT("Waiting To Verify Block Creation...");
-      if (sync_block_verifiers_minutes_and_seconds(1, 50) == XCASH_ERROR) {
+      if (sync_block_verifiers_minutes_and_seconds(1, 51) == XCASH_ERROR) {
         DEBUG_PRINT("Failed to sync in the allotted time");
-      }
-
-      char ck_block_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
-      if (get_current_block_height(ck_block_height) != XCASH_OK) {
-        ERROR_PRINT("Can't get current block height");
-        goto end_of_round_skip_block;
-      }
-
-      uint64_t ck_height = strtoull(ck_block_height, NULL, 10);
-      uint64_t cur_height = strtoull(current_block_height, NULL, 10);
-
-      if (ck_height != cur_height + 1) {
-        ERROR_PRINT("New block was not created by the selected block producer");
-        goto end_of_round_skip_block;
       }
 
       for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
@@ -524,10 +510,7 @@ void start_block_production(void) {
 #endif
 
             if (!is_seed_node || is_primary) {
-              DEBUG_PRINT("Updating online status...");
-
               char tmp_status[6] = "false";
-
               if (strcmp(delegates_all[i].online_status, "true") == 0) {
                 strcpy(tmp_status, "true");
               }
@@ -551,6 +534,7 @@ void start_block_production(void) {
 #ifdef SEED_NODE_ON
 
           if (is_primary_node()) {
+            
             char ck_block_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
             if (get_current_block_height(ck_block_height) != XCASH_OK) {
               ERROR_PRINT("Can't get current block height");
@@ -569,7 +553,7 @@ void start_block_production(void) {
               ERROR_PRINT("Blockchain is not synced");
               goto end_of_round_skip_block;
             }
-            
+
             uint64_t tmp_verifier_total_round = 0;
             uint64_t tmp_verifier_online_total_rounds = 0;
             uint64_t tmp_producer_total_rounds = 0;
