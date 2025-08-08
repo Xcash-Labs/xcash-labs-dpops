@@ -126,7 +126,6 @@ int get_block_template(char* result, size_t result_size, size_t* reserved_offset
   char message[SMALL_BUFFER_SIZE] = {0};
   char* response = (char*)calloc(SMALL_BUFFER_SIZE, sizeof(char));
   char reserved_offset_str[16] = {0};
-  int retry_attempts = 2;
 
   if (!response || !reserved_offset_out) {
     ERROR_PRINT("Memory allocation failed or invalid output pointer");
