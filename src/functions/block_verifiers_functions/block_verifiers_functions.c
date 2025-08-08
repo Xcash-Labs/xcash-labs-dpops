@@ -97,45 +97,6 @@ bool add_vrf_extra_and_sign(char* block_blob_hex, const char* vote_hash_hex, siz
   }
   vrf_pos += 32;
 
-
-
-
-
-
-  /*
-
-  // Sign the original block blob (before patching)
-  char blob_signature[XCASH_SIGN_DATA_LENGTH + 1] = {0};
-  if (!sign_block_blob(block_blob_hex, blob_signature, sizeof(blob_signature))) {
-    ERROR_PRINT("Failed to sign block blob");
-    free(block_blob_bin);
-    return false;
-  }
-  DEBUG_PRINT("Block Blob Signature: %s", blob_signature);
-
-  const char* base64_part = blob_signature + 5;  // skip "SigV2"
-  uint8_t sig_bytes[64] = {0};
-  size_t sig_len = 0;
-
-  if (!base64_decode(base64_part, sig_bytes, sizeof(sig_bytes), &sig_len)) {
-    ERROR_PRINT("Base64 decode failed");
-    free(block_blob_bin);
-    return false;
-  }
-
-  if (sig_len != 64) {
-    ERROR_PRINT("Decoded signature must be exactly 64 bytes");
-    free(block_blob_bin);
-    return false;
-  }
-
-  memcpy(vrf_blob + vrf_pos, sig_bytes, 64);
-  vrf_pos += 64;
-  DEBUG_PRINT("VRF proof decoded, vrf_pos now at: %zu", vrf_pos);
-
-  */
-
-
   if (vrf_pos != VRF_BLOB_TOTAL_SIZE) {
     ERROR_PRINT("VRF blob constructed with incorrect size: %zu bytes", vrf_pos);
     free(block_blob_bin);
