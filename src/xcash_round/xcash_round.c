@@ -534,7 +534,7 @@ void start_block_production(void) {
 #ifdef SEED_NODE_ON
 
           if (is_primary_node()) {
-            
+
             char ck_block_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
             if (get_current_block_height(ck_block_height) != XCASH_OK) {
               ERROR_PRINT("Can't get current block height");
@@ -613,7 +613,7 @@ void start_block_production(void) {
       // if not registered no need to continue
       if (strlen(vrf_public_key) != 0) {
         INFO_STAGE_PRINT("Round skipped or delegate still initializing - waiting to sync...");
-        if (sync_block_verifiers_minutes_and_seconds(1, 50) == XCASH_ERROR) {
+        if (sync_block_verifiers_minutes_and_seconds(1, 51) == XCASH_ERROR) {
           DEBUG_PRINT("Failed to sync in the allotted time");
         }
 
