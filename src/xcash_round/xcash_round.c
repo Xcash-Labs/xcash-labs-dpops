@@ -564,6 +564,11 @@ void start_block_production(void) {
             goto end_of_round_skip_block;
           }
 
+          if (!is_blockchain_synced()) {
+            ERROR_PRINT("Blockchain is not synced");
+            goto end_of_round_skip_block;
+          }
+
           if (is_primary_node()) {
             DEBUG_PRINT("Updating stats...");
             uint64_t tmp_verifier_total_round = 0;
