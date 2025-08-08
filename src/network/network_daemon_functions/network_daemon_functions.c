@@ -35,7 +35,6 @@ bool is_blockchain_synced(void) {
     DEBUG_PRINT("Daemon not yet synced or status not OK: synchronized=%s, status=%s, offline=%s", synced_flag, status_flag, offline_flag);
     return false;
   }
-}
 
   ERROR_PRINT("Could not determine blockchain sync status.");
   return false;
