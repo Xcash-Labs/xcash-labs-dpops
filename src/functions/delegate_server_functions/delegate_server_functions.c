@@ -322,10 +322,8 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
   const char *vote_hash_str   = js_vote_hash->valuestring;
   const char *prev_hash_str = js_prev_hash->valuestring;
   uint64_t height = (uint64_t)js_height->valuedouble;
-  uint64_t block_height = strtoull(current_block_height, NULL, 10);
 
-  // For new block
-  if (block_height == height) {
+  if (is_blockchain_synced()) {
 
    if (strncmp(producer_refs[0].vrf_public_key, vrf_pubkey_str, VRF_PUBLIC_KEY_LENGTH) != 0)
     {
