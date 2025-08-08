@@ -113,15 +113,14 @@ Parameters:
   result_size - The size of the block_template
 Return: 0 if an error has occured, 1 if successfull
 ---------------------------------------------------------------------------------------------------------*/
-int get_block_template(char* result, size_t result_size, size_t* reserved_offset_out)
-{
+int get_block_template(char* result, size_t result_size, size_t* reserved_offset_out) {
   // Constants
-  const char* HTTP_HEADERS[] = {"Content-Type: application/json", "Accept: application/json"}; 
+  const char* HTTP_HEADERS[] = {"Content-Type: application/json", "Accept: application/json"};
   const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0]);
   const char* RPC_ENDPOINT = "/json_rpc";
   const char* RPC_METHOD = "POST";
   const char* JSON_REQUEST_PREFIX = "{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"get_block_template\",\"params\":{\"wallet_address\":\"";
-  const char* JSON_REQUEST_SUFFIX = "\",\"reserve_size\":212}"; 
+  const char* JSON_REQUEST_SUFFIX = "\",\"reserve_size\":212}";
 
   // Variables
   char message[SMALL_BUFFER_SIZE] = {0};
@@ -135,33 +134,22 @@ int get_block_template(char* result, size_t result_size, size_t* reserved_offset
     return XCASH_ERROR;
   }
 
-  for (int attempt = 0; attempt < retry_attempts; attempt++) 
-  {
-    // Clear response buffer before each use
-    memset(response, 0, SMALL_BUFFER_SIZE);
+  // Clear response buffer before each use
+  memset(response, 0, SMALL_BUFFER_SIZE);
 
-    // Compose JSON request
-    snprintf(message, sizeof(message), "%s%s%s", JSON_REQUEST_PREFIX, xcash_wallet_public_address, JSON_REQUEST_SUFFIX);
+  // Compose JSON request
+  snprintf(message, sizeof(message), "%s%s%s", JSON_REQUEST_PREFIX, xcash_wallet_public_address, JSON_REQUEST_SUFFIX);
 
-    // Send HTTP request
-    if (send_http_request(response, SMALL_BUFFER_SIZE, XCASH_DAEMON_IP, RPC_ENDPOINT, XCASH_DAEMON_PORT, RPC_METHOD,
-        HTTP_HEADERS, HTTP_HEADERS_LENGTH, message, HTTP_TIMEOUT_SETTINGS) > 0 &&
-        parse_json_data(response, "result.blocktemplate_blob", result, result_size) == XCASH_OK &&
-        parse_json_data(response, "result.reserved_offset", reserved_offset_str, sizeof(reserved_offset_str)) == XCASH_OK)
-    {
-      *reserved_offset_out = (size_t)strtoul(reserved_offset_str, NULL, 10);
+  // Send HTTP request
+  if (send_http_request(response, SMALL_BUFFER_SIZE, XCASH_DAEMON_IP, RPC_ENDPOINT, XCASH_DAEMON_PORT, RPC_METHOD,
+                        HTTP_HEADERS, HTTP_HEADERS_LENGTH, message, HTTP_TIMEOUT_SETTINGS) > 0 &&
+      parse_json_data(response, "result.blocktemplate_blob", result, result_size) == XCASH_OK &&
+      parse_json_data(response, "result.reserved_offset", reserved_offset_str, sizeof(reserved_offset_str)) == XCASH_OK) {
+    *reserved_offset_out = (size_t)strtoul(reserved_offset_str, NULL, 10);
 
-
-      DEBUG_PRINT("Block Temp: %s", response);
-      free(response);
-      return XCASH_OK;
-    }
-
-    // On failure, sleep and retry
-    if (attempt + 1 < retry_attempts) 
-    {
-      sleep(RETRY_SECONDS);
-    }
+    DEBUG_PRINT("Block Temp: %s", response);
+    free(response);
+    return XCASH_OK;
   }
 
   ERROR_PRINT("Could not get the block template or reserved_offset");
