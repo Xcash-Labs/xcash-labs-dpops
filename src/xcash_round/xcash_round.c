@@ -550,6 +550,20 @@ void start_block_production(void) {
 // Only update statics on seed nodes
 #ifdef SEED_NODE_ON
 
+          char ck_block_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
+          if (get_current_block_height(ck_block_height) != XCASH_OK) {
+            ERROR_PRINT("Can't get current block height");
+            goto end_of_round_skip_block;
+          }
+
+          uint64_t ck_height = strtoull(ck_block_height, NULL, 10);
+          uint64_t cur_height = strtoull(current_block_height, NULL, 10);
+
+          if (ck_height != cur_height + 1) {
+            ERROR_PRINT("New block was not created by the selected block producer");
+            goto end_of_round_skip_block;
+          }
+
           if (is_primary_node()) {
             DEBUG_PRINT("Updating stats...");
             uint64_t tmp_verifier_total_round = 0;
@@ -643,5 +657,5 @@ void start_block_production(void) {
       FATAL_ERROR_EXIT("Failed to load and organize delegates for next round, Possible problem with Mongodb");
     }
   }
-  
+
 }
