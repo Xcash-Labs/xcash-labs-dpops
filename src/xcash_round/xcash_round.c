@@ -535,6 +535,7 @@ void start_block_production(void) {
 
           if (is_primary_node()) {
 
+            INFO_PRINT("Updating Statistics");
             char ck_block_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
             if (get_current_block_height(ck_block_height) != XCASH_OK) {
               ERROR_PRINT("Can't get current block height");
