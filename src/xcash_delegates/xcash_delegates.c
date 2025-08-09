@@ -64,6 +64,9 @@ int read_organize_delegates(delegates_t* delegates, size_t* delegates_count_resu
   if (bson_iter_init(&iter, delegates_db_data)) {
     while (delegate_index < BLOCK_VERIFIERS_TOTAL_AMOUNT && bson_iter_next(&iter)) {
 
+      delegates_all[delegate_index].verifiers_vrf_proof_hex[0] = '\0';
+      delegates_all[delegate_index].verifiers_vrf_beta_hex[0]  = '\0';
+
       bson_t record;
       const uint8_t* data;
       uint32_t len;
