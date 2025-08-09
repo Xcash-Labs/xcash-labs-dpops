@@ -38,7 +38,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
   }
 
   if (atomic_load(&wait_for_block_height_init)) {
-    ERROR_PRINT("Timed out waiting for current_block_height in server_received_msg_get_sync_info");
+    ERROR_PRINT("Timed out waiting for current_block_height in server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data");
   }
 
   pthread_mutex_lock(&delegates_all_lock);
