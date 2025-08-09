@@ -435,8 +435,8 @@ bool generate_and_request_vrf_data_sync(char** message) {
   pthread_mutex_lock(&current_block_verifiers_lock);
   for (i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     if (strncmp(delegates_all[i].public_address, xcash_wallet_public_address, XCASH_WALLET_LENGTH) == 0) {
-      memcpy(delegates_all[i].verifiers_vrf_proof_hex[i], vrf_proof_hex, VRF_PROOF_LENGTH + 1);
-      memcpy(delegates_all[i].verifiers_vrf_beta_hex[i], vrf_beta_hex, VRF_BETA_LENGTH + 1);
+      memcpy(delegates_all[i].verifiers_vrf_proof_hex, vrf_proof_hex, VRF_PROOF_LENGTH + 1);
+      memcpy(delegates_all[i].verifiers_vrf_beta_hex, vrf_beta_hex, VRF_BETA_LENGTH + 1);
       break;
     }
   }
