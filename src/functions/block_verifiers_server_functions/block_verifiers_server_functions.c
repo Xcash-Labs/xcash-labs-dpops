@@ -49,7 +49,6 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
 
 
     if (strncmp(delegates_all[i].public_address, public_address, XCASH_WALLET_LENGTH) == 0 &&
-        delegates_all[i].public_key[0] == '\0' &&
         delegates_all[i].verifiers_vrf_proof_hex[0] == '\0' &&
         delegates_all[i].verifiers_vrf_beta_hex[0] == '\0') {
       found = true;
