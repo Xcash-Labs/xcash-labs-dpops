@@ -95,7 +95,7 @@ void* server_thread_loop(void* arg) {
   return NULL;
 }
 
-void* handle_client(void* arg) {
+void* handle_client__OLD__(void* arg) {
   server_client_t* client = (server_client_t*)arg;
 
   struct timeval recv_timeout = {RECEIVE_TIMEOUT_SEC, 0};
@@ -135,6 +135,74 @@ void* handle_client(void* arg) {
   sem_post(&client_slots);
   return NULL;
 }
+
+void* handle_client(void* arg) {
+  server_client_t* client = (server_client_t*)arg;
+
+  struct timeval recv_timeout = {RECEIVE_TIMEOUT_SEC, 0};
+  setsockopt(client->socket_fd, SOL_SOCKET, SO_RCVTIMEO, &recv_timeout, sizeof(recv_timeout));
+
+  unsigned char* agg = NULL;
+  size_t agg_len = 0, agg_cap = 0;
+
+  char buffer[BUFFER_SIZE];
+
+  while (1) {
+    ssize_t bytes = recv(client->socket_fd, buffer, sizeof(buffer), 0);
+
+    if (bytes < 0 && errno == EINTR) continue;
+    if (bytes <= 0) break;
+
+    // Reject HTTP on first chunk only
+    if (agg_len == 0 && bytes >= 4 &&
+        (!memcmp(buffer, "GET ", 4) || !memcmp(buffer, "POST", 4) || !memcmp(buffer, "HEAD", 4))) {
+      WARNING_PRINT("Rejected HTTP request from %s", client->client_ip);
+      goto cleanup;
+    }
+
+    // Grow buffer if needed
+    if (agg_len + (size_t)bytes > agg_cap) {
+      size_t ncap = agg_cap ? agg_cap * 2 : 8192;
+      while (ncap < agg_len + (size_t)bytes) ncap <<= 1;
+      unsigned char* tmp = realloc(agg, ncap);
+      if (!tmp) {
+        ERROR_PRINT("OOM while buffering message from %s", client->client_ip);
+        goto cleanup;
+      }
+      agg = tmp; agg_cap = ncap;
+    }
+
+    memcpy(agg + agg_len, buffer, (size_t)bytes);
+    agg_len += (size_t)bytes;
+  }
+
+  if (agg_len > 0) {
+    unsigned char* decompressed = NULL;
+    size_t decompressed_len = 0;
+
+    if (!decompress_gzip_with_prefix(agg, agg_len, &decompressed, &decompressed_len)) {
+      WARNING_PRINT("Failed to decompress message from %s", client->client_ip);
+      goto cleanup;
+    }
+
+    DEBUG_PRINT("[TCP] Message from %s: %.*s\n",
+                client->client_ip,
+                (int)decompressed_len,
+                decompressed);
+
+    handle_srv_message((char*)decompressed, decompressed_len, client);
+    free(decompressed);
+  }
+
+cleanup:
+  if (agg) free(agg);
+  close(client->socket_fd);
+  free(client);
+  sem_post(&client_slots);
+  return NULL;
+}
+
+
 
 int send_data(server_client_t* client, const unsigned char* data, size_t length) {
   if (!client) {
