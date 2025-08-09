@@ -400,7 +400,6 @@ void string_replace_limit(char *data, const size_t DATA_TOTAL_LENGTH, const char
   free(buf);
 }
 
-/*
 bool compress_gzip_with_prefix(const unsigned char* input, size_t input_len,
                               unsigned char** output, size_t* output_len) {
     if (!input || !output || !output_len) return XCASH_ERROR;
@@ -482,106 +481,6 @@ bool decompress_gzip_with_prefix(const unsigned char* input, size_t input_len,
     *output_len = 0;
     return XCASH_ERROR;
 }
-*/
-
-// Helpers -----------------------------------------------------------------
-static void be32_store(unsigned char out[4], uint32_t v) {
-  out[0] = (unsigned char)((v >> 24) & 0xFF);
-  out[1] = (unsigned char)((v >> 16) & 0xFF);
-  out[2] = (unsigned char)((v >>  8) & 0xFF);
-  out[3] = (unsigned char)( v        & 0xFF);
-}
-static uint32_t be32_load(const unsigned char in[4]) {
-  return ((uint32_t)in[0] << 24) | ((uint32_t)in[1] << 16) |
-         ((uint32_t)in[2] <<  8) |  (uint32_t)in[3];
-}
-
-// Writes: [0x01][BE32 uncompressed_len][zlib-compressed payload]
-bool compress_gzip_with_prefix(const unsigned char* input, size_t input_len,
-                               unsigned char** output, size_t* output_len)
-{
-  if (!input || !output || !output_len) return XCASH_ERROR;
-  if (input_len > 0xFFFFFFFFu) return XCASH_ERROR; // cap to 32-bit length
-
-  // Worst-case size for DEFLATE (zlib) + small safety
-  uLongf bound = compressBound((uLong)input_len);
-
-  // Allocate (flag + len + compressed)
-  unsigned char* out = (unsigned char*)malloc(1 + 4 + bound);
-  if (!out) return XCASH_ERROR;
-
-  out[0] = 0x01;                        // compressed flag
-  be32_store(out + 1, (uint32_t)input_len);
-
-  uLongf dest_len = bound;
-  int rc = compress2(out + 1 + 4, &dest_len,
-                     (const Bytef*)input, (uLong)input_len,
-                     Z_BEST_COMPRESSION);
-  if (rc != Z_OK) {
-    free(out);
-    return XCASH_ERROR;
-  }
-
-  *output = out;
-  *output_len = (size_t)(1 + 4 + dest_len);
-  return XCASH_OK;
-}
-
-// Accepts two formats:
-//  - 0x01 + BE32(uncompressed_len) + zlib data
-//  - 0x00 + BE32(len) + plain bytes
-bool decompress_gzip_with_prefix(const unsigned char* input, size_t input_len,
-                                 unsigned char** output, size_t* output_len)
-{
-  if (!input || !output || !output_len) return XCASH_ERROR;
-  if (input_len < 1 + 4) return XCASH_ERROR;
-
-  const unsigned char flag = input[0];
-  const uint32_t declared_len = be32_load(input + 1);
-  const unsigned char* payload = input + 1 + 4;
-  size_t payload_len = input_len - (1 + 4);
-
-  if (flag == 0x00) {
-    // Plain payload with explicit length
-    if ((size_t)declared_len > payload_len) return XCASH_ERROR;
-
-    unsigned char* out = (unsigned char*)malloc((size_t)declared_len + 1);
-    if (!out) return XCASH_ERROR;
-
-    memcpy(out, payload, (size_t)declared_len);
-    out[declared_len] = '\0';
-
-    *output = out;
-    *output_len = declared_len;
-    return XCASH_OK;
-  }
-
-  if (flag != 0x01) {
-    // Unknown flag
-    return XCASH_ERROR;
-  }
-
-  // Compressed (zlib)
-  unsigned char* out = (unsigned char*)malloc((size_t)declared_len + 1);
-  if (!out) return XCASH_ERROR;
-
-  uLongf dest_len = (uLongf)declared_len;
-  int rc = uncompress(out, &dest_len, payload, (uLong)payload_len);
-  if (rc != Z_OK || dest_len != (uLongf)declared_len) {
-    free(out);
-    return XCASH_ERROR;
-  }
-
-  out[declared_len] = '\0';
-  *output = out;
-  *output_len = declared_len;
-  return XCASH_OK;
-}
-
-
-
-
-
 
 /*---------------------------------------------------------------------------------------------------------
 Generate a sync token
