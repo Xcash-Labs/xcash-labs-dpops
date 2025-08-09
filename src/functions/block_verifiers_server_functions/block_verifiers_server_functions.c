@@ -28,7 +28,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
     return;
   }
 
-  DEBUG_PRINT("Parsed remote public_address: %s, block_height: %s, delegates_hash: %s", public_address, block_height, 
+  INFO_PRINT("Parsed remote public_address: %s, block_height: %s, delegates_hash: %s", public_address, block_height, 
     parsed_delegates_hash);
 
   int wait_seconds = 0;
@@ -43,14 +43,27 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
 
   pthread_mutex_lock(&delegates_all_lock);
   bool found = false;
+
   for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
 
-    INFO_PRINT("Looking for: %s", delegates_all[i].public_address);
+INFO_PRINT(
+    "Checking delegate:\n"
+    "  delegates_all[%zu].public_address: %.*s\n"
+    "  incoming public_address: %.*s\n"
+    "  verifiers_vrf_proof_hex[0]: 0x%02X\n"
+    "  verifiers_vrf_beta_hex[0]: 0x%02X",
+    i,
+    XCASH_WALLET_LENGTH, delegates_all[i].public_address,
+    XCASH_WALLET_LENGTH, public_address,
+    (unsigned char)delegates_all[i].verifiers_vrf_proof_hex[0],
+    (unsigned char)delegates_all[i].verifiers_vrf_beta_hex[0]
+);
 
 
     if (strncmp(delegates_all[i].public_address, public_address, XCASH_WALLET_LENGTH) == 0 &&
         delegates_all[i].verifiers_vrf_proof_hex[0] == '\0' &&
         delegates_all[i].verifiers_vrf_beta_hex[0] == '\0') {
+
       found = true;
       if (strcmp(block_height, current_block_height) != 0) {
         DEBUG_PRINT("Block height mismatch for %s: remote=%s, local=%s",
