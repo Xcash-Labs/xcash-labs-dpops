@@ -71,18 +71,23 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
 
       size_t host_index = 0;
       for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
+        bool not_self = strcmp(delegates_all[i].public_address, xcash_wallet_public_address) != 0;
         const char *ip = delegates_all[i].IP_address;
 
-        if (!ip) {
-          continue;
-        }
+        if (not_self) {
 
-        if (strlen(ip) == 0) {
-          continue;
-        }
+          if (!ip) {
+            continue;
+          }
 
-        delegates_hosts[host_index++] = ip;
+          if (strlen(ip) == 0) {
+            continue;
+          }
+
+          delegates_hosts[host_index++] = delegates_all[i].IP_address;
+        }
       }
+
       delegates_hosts[host_index] = NULL;  // Null-terminate the array
       hosts = delegates_hosts;             // Assign heap-allocated array to hosts
     } break;
@@ -131,12 +136,6 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
     ERROR_PRINT("Host array is NULL or not initialized properly.");
     return false;
   }
-
-  // -------------------------------------------------------------------------------------------------
-
-  // remove responses at a later time and change to bool and return status - this is in multiple spots
-
-  // -------------------------------------------------------------------------------------------------
 
   responses = send_multi_request(hosts, XCASH_DPOPS_PORT, message);
   free(hosts);
