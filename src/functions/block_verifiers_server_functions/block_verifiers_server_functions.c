@@ -7,41 +7,67 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
   char vrf_proof_hex[VRF_PROOF_LENGTH + 1] = {0};  
   char vrf_beta_hex[VRF_BETA_LENGTH + 1] = {0};
   char block_height[BLOCK_HEIGHT_LENGTH] = {0};
-  int count;
+  char parsed_delegates_hash[MD5_HASH_SIZE + 1] = {0};
 
   DEBUG_PRINT("received %s, %s", __func__, MESSAGE);
-
-  int wait_seconds = 0;
-  while (atomic_load(&wait_for_vrf_init) && wait_seconds < DELAY_EARLY_TRANSACTIONS_MAX) {
-    sleep(1);
-    wait_seconds++;
-  }
-  if (atomic_load(&wait_for_vrf_init)) {
-    ERROR_PRINT("Timed out waiting for vrf init in server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data");
-  }
 
   // parse the message
   if (parse_json_data(MESSAGE, "public_address", public_address, sizeof(public_address)) == XCASH_ERROR || 
     parse_json_data(MESSAGE, "vrf_public_key", vrf_public_key_data, sizeof(vrf_public_key_data)) == XCASH_ERROR ||
     parse_json_data(MESSAGE, "vrf_proof", vrf_proof_hex, sizeof(vrf_proof_hex)) == XCASH_ERROR ||
     parse_json_data(MESSAGE, "vrf_beta", vrf_beta_hex, sizeof(vrf_beta_hex)) == XCASH_ERROR ||
-    parse_json_data(MESSAGE, "block-height", block_height, sizeof(block_height)) == XCASH_ERROR)
+    parse_json_data(MESSAGE, "block-height", block_height, sizeof(block_height)) == XCASH_ERROR ||
+    parse_json_data(MESSAGE, "delegates_hash", parsed_delegates_hash, sizeof(parsed_delegates_hash)) == XCASH_ERROR)
   {
     ERROR_PRINT("Could not parse the block_verifiers_to_block_verifiers_vrf_data");
     return;
   }
 
-  if (strcmp(block_height, current_block_height) != 0) {
-      ERROR_PRINT("Skipping VRF data: current block_height [%s] does not match expected [%s]", current_block_height, block_height);
-      return; 
+  if (strlen(public_address) < 5 || public_address[0] != 'X') {
+    DEBUG_PRINT("Invalid or missing delegate address: '%s'", public_address);
+    return;
   }
 
-  pthread_mutex_lock(&current_block_verifiers_lock);
-  for (count = 0; count < BLOCK_VERIFIERS_AMOUNT; count++) {
-    if (strncmp(current_block_verifiers_list.block_verifiers_public_address[count], public_address, XCASH_WALLET_LENGTH) == 0 &&
-        strncmp(current_block_verifiers_list.block_verifiers_vrf_public_key_hex[count], "", 1) == 0 &&
-        strncmp(current_block_verifiers_list.block_verifiers_vrf_proof_hex[count], "", 1) == 0 &&
-        strncmp(current_block_verifiers_list.block_verifiers_vrf_beta_hex[count], "", 1) == 0) {
+  DEBUG_PRINT("Parsed remote public_address: %s, block_height: %s, delegates_hash: %s", public_address, block_height, 
+    parsed_delegates_hash);
+
+  int wait_seconds = 0;
+  while (atomic_load(&wait_for_block_height_init) && wait_seconds < DELAY_EARLY_TRANSACTIONS_MAX) {
+    sleep(1);
+    wait_seconds++;
+  }
+
+  if (atomic_load(&wait_for_block_height_init)) {
+    ERROR_PRINT("Timed out waiting for current_block_height in server_received_msg_get_sync_info");
+  }
+
+  pthread_mutex_lock(&delegates_all_lock);
+  bool found = false;
+  for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
+
+    if (strncmp(delegates_all[i].public_address, public_address, XCASH_WALLET_LENGTH) == 0 &&
+        delegates_all[i].public_key[0] == '\0' &&
+        delegates_all[i].verifiers_vrf_proof_hex[0] == '\0' &&
+        delegates_all[i].verifiers_vrf_beta_hex[0] == '\0') {
+      found = true;
+      if (strcmp(block_height, current_block_height) != 0) {
+        DEBUG_PRINT("Block height mismatch for %s: remote=%s, local=%s",
+                    public_address, block_height, current_block_height);
+        break;
+      }
+
+      // Compare delegate list hash
+      if (strcmp(parsed_delegates_hash, delegates_hash) != 0) {
+        DEBUG_PRINT("Delegates hash mismatch for %s: remote=%s, local=%s",
+                    public_address, parsed_delegates_hash, delegates_hash);
+        delegate_db_hash_mismatch = delegate_db_hash_mismatch + 1;
+        break;
+      }
+
+      // All checks passed — mark online
+      strncpy(delegates_all[i].online_status, "true", sizeof(delegates_all[i].online_status));
+      delegates_all[i].online_status[sizeof(delegates_all[i].online_status) - 1] = '\0';
+      DEBUG_PRINT("Marked delegate %s as online (ck)", public_address);
 
       unsigned char alpha_input_bin[72] = {0};
       unsigned char pk_bin[crypto_vrf_PUBLICKEYBYTES] = {0};
@@ -57,11 +83,6 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
           break;
       }
 
-      // Form alpha input = previous_block_hash || block_height
-      if (!hex_to_byte_array(previous_block_hash, previous_block_hash_bin, 32)) {
-        ERROR_PRINT("Failed to decode previous block hash");
-        break;
-      }
       memcpy(alpha_input_bin, previous_block_hash_bin, 32);
 
       // Convert current_block_height (char*) to binary
@@ -84,14 +105,17 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
         break;
       }
 
-      memcpy(current_block_verifiers_list.block_verifiers_vrf_public_key_hex[count], vrf_public_key_data, VRF_PUBLIC_KEY_LENGTH+1);
-      memcpy(current_block_verifiers_list.block_verifiers_vrf_proof_hex[count], vrf_proof_hex, VRF_PROOF_LENGTH + 1); 
-      memcpy(current_block_verifiers_list.block_verifiers_vrf_beta_hex[count], vrf_beta_hex, VRF_BETA_LENGTH + 1);
+      memcpy(delegates_all[i].verifiers_vrf_proof_hex, vrf_proof_hex, VRF_PROOF_LENGTH + 1); 
+      memcpy(delegates_all[i].verifiers_vrf_beta_hex, vrf_beta_hex, VRF_BETA_LENGTH + 1);
 
       break;
+
     }
   }
-  pthread_mutex_unlock(&current_block_verifiers_lock);
+  pthread_mutex_unlock(&delegates_all_lock);
+  if (!found) {
+    DEBUG_PRINT("Delegate not found in delegates_all: %s", public_address);
+  }
 
   return;
 }

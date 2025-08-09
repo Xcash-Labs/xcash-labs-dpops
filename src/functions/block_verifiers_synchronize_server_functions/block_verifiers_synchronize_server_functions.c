@@ -49,6 +49,13 @@ cleanup:
   return result;
 }
 
+
+
+
+
+
+/*
+
 void server_received_msg_get_sync_info(server_client_t *client, const char *MESSAGE)
 {
     char parse_block_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
@@ -120,6 +127,8 @@ void server_received_msg_get_sync_info(server_client_t *client, const char *MESS
 
     return;
 }
+
+*/
 
 /*---------------------------------------------------------------------------------------------------------
 Name: server_receive_data_socket_node_to_network_data_nodes_get_current_block_verifiers_list

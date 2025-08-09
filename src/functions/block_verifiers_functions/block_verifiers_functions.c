@@ -231,28 +231,46 @@ int sync_block_verifiers_minutes_and_seconds(const int MINUTES, const int SECOND
 }
 
 /*---------------------------------------------------------------------------------------------------------
-Name: block_verifiers_create_VRF_secret_key_and_VRF_public_key
+Name: generate_and_request_vrf_data_sync
 Description:
-  Generates a new VRF key pair (public and secret key) and a random alpha string to be used for verifiable
-  randomness in the block producer selection process. The keys and random string are stored in the
-  appropriate VRF_data structure fields and associated with the current node (block verifier).
+  Generates a VRF proof and beta for the current node (delegate) using:
+    - The previous block hash
+    - The current block height
+    - The VRF public key of the intended block producer
 
-  The function also prepares a JSON message that includes:
-    - The public address of the sender (this node)
-    - The VRF secret key (hex-encoded)
-    - The VRF public key (hex-encoded)
-    - The generated random alpha string
+  The VRF proof is generated with the node’s VRF secret key, and then converted to a VRF beta
+  (the pseudorandom output). Both are validated immediately using the VRF public key to ensure correctness.
 
-  This message is broadcast to other block verifiers to allow them to include this node’s randomness
-  contribution in the verifiable selection round.
+  Steps performed:
+    1. Decode and validate the existing VRF public key.
+    2. Decode the previous block hash into binary form.
+    3. Append the current block height (as little-endian 8 bytes) and the VRF public key of the block producer
+       to create the VRF alpha input (72 bytes total).
+    4. Generate a VRF proof from the alpha input.
+    5. Convert the VRF proof to a VRF beta value.
+    6. Verify the VRF proof and ensure the computed beta matches.
+    7. Store the VRF proof and beta in the delegate’s in-memory structure if this node is in the top
+       BLOCK_VERIFIERS_AMOUNT list.
+    8. Create and return a JSON message containing:
+         - Public wallet address
+         - VRF public key
+         - VRF proof
+         - VRF beta
+         - Current block height
+         - Delegates hash
 
 Parameters:
-  message - Output buffer that receives the formatted JSON message to be broadcast to peers.
+  message - Output parameter. On success, set to a newly allocated string containing the
+            JSON message to be broadcast to other block verifiers. Caller is responsible
+            for freeing it.
 
 Return:
-  XCASH_OK (1) if the key generation and message formatting succeed.
-  XCASH_ERROR (0) if any step fails.
+  XCASH_OK (1)   - if all steps complete successfully.
+  XCASH_ERROR (0) - if any validation, key decoding, proof generation, proof verification,
+                    or message creation step fails.
 ---------------------------------------------------------------------------------------------------------*/
+
+/*
 bool generate_and_request_vrf_data_msg(char** message) {
   unsigned char alpha_input_bin[72] = {0};
   unsigned char pk_bin[crypto_vrf_PUBLICKEYBYTES] = {0};
@@ -345,6 +363,99 @@ bool generate_and_request_vrf_data_msg(char** message) {
 
   return XCASH_OK;
 }
+*/
+
+// jed sync combine
+bool generate_and_request_vrf_data_sync(char** message) {
+  unsigned char alpha_input_bin[72] = {0};
+  unsigned char pk_bin[crypto_vrf_PUBLICKEYBYTES] = {0};
+  unsigned char vrf_proof[crypto_vrf_PROOFBYTES] = {0};
+  unsigned char vrf_beta[crypto_vrf_OUTPUTBYTES] = {0};
+  unsigned char previous_block_hash_bin[BLOCK_HASH_LENGTH / 2] = {0};
+  char vrf_proof_hex[VRF_PROOF_LENGTH + 1] = {0};
+  char vrf_beta_hex[VRF_BETA_LENGTH + 1] = {0};
+  size_t i, offset;
+
+  if (!hex_to_byte_array(vrf_public_key, pk_bin, sizeof(pk_bin))) {
+    ERROR_PRINT("Invalid hex format for public key");
+    return false;
+  }
+
+  // Validate the VRF public key
+  if (crypto_vrf_is_valid_key(pk_bin) != 1) {
+    ERROR_PRINT("Public key failed validation");
+    return false;
+  }
+
+  // Decode 32-byte hash into alpha_input_bin[0..31]
+  if (!hex_to_byte_array(previous_block_hash, previous_block_hash_bin, 32)) {
+    ERROR_PRINT("Failed to decode previous block hash");
+    return false;
+  }
+  memcpy(alpha_input_bin, previous_block_hash_bin, 32);
+
+  // Convert current_block_height (char*) to binary
+  uint64_t block_height = strtoull(current_block_height, NULL, 10);
+  uint64_t height_le = htole64(block_height);
+  memcpy(alpha_input_bin + 32, &height_le, sizeof(height_le));  // Write at offset 32
+
+  // Add vrf_block_producer
+  memcpy(alpha_input_bin + 40, pk_bin, 32);  // Write at offset 40
+
+  // Generate VRF proof - the input data is previous block hash, the block height, and the vrf_public_key of the block producer
+  if (crypto_vrf_prove(vrf_proof, secret_key_data, alpha_input_bin, sizeof(alpha_input_bin)) != 0) {
+    ERROR_PRINT("Failed to generate VRF proof");
+    return false;
+  }
+
+  // Convert proof to beta (random output)
+  if (crypto_vrf_proof_to_hash(vrf_beta, vrf_proof) != 0) {
+    ERROR_PRINT("Failed to convert VRF proof to beta");
+    return false;
+  }
+
+  // Convert proof, beta, and random buffer to hex
+  for (i = 0, offset = 0; i < crypto_vrf_PROOFBYTES; i++, offset += 2)
+    snprintf(vrf_proof_hex + offset, 3, "%02x", vrf_proof[i]);
+  for (i = 0, offset = 0; i < crypto_vrf_OUTPUTBYTES; i++, offset += 2)
+    snprintf(vrf_beta_hex + offset, 3, "%02x", vrf_beta[i]);
+  
+  unsigned char computed_beta[crypto_vrf_OUTPUTBYTES];
+  if (crypto_vrf_verify(computed_beta, pk_bin, vrf_proof, alpha_input_bin, 72) != 0) {
+    DEBUG_PRINT("Failed to verify the VRF proof for this node");
+    return false;
+  } else {
+    if (memcmp(computed_beta, vrf_beta, 64) != 0) {
+      DEBUG_PRINT("Failed to match the computed VRF beta for this node");
+      return false;
+    }
+  }
+
+  // Save current block_verifiers data into structure if it is one of the top 50
+  pthread_mutex_lock(&current_block_verifiers_lock);
+  for (i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
+    if (strncmp(delegates_all[i].block_verifiers_public_address, xcash_wallet_public_address, XCASH_WALLET_LENGTH) == 0) {
+      memcpy(delegates_all[i].block_verifiers_vrf_proof_hex[i], vrf_proof_hex, VRF_PROOF_LENGTH + 1);
+      memcpy(delegates_all[i].block_verifiers_vrf_beta_hex[i], vrf_beta_hex, VRF_BETA_LENGTH + 1);
+      break;
+    }
+  }
+  pthread_mutex_unlock(&current_block_verifiers_lock);
+
+  // Compose outbound message (JSON)
+  *message = create_message_param(
+      XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_VRF_DATA,
+      "public_address", xcash_wallet_public_address,
+      "vrf_public_key", vrf_public_key,
+      "vrf_proof", vrf_proof_hex,
+      "vrf_beta", vrf_beta_hex,
+      "block-height", current_block_height,
+      "delegates_hash", delegates_hash,
+      NULL);
+
+  return true;
+}
+
 
 /*---------------------------------------------------------------------------------------------------------
  * @brief Creates a JSON-formatted synchronization message containing the current node's
@@ -359,6 +470,7 @@ bool generate_and_request_vrf_data_msg(char** message) {
  * @return true (XCASH_OK) on success, or false (XCASH_ERROR) if memory allocation fails.
  *
 ---------------------------------------------------------------------------------------------------------*/
+/*
 bool create_sync_msg(char** message) {
   // Only three key-value pairs + NULL terminator
   const int PARAM_COUNT = 4;
@@ -388,6 +500,7 @@ bool create_sync_msg(char** message) {
 
   return XCASH_OK;
 }
+*/
 
 /*---------------------------------------------------------------------------------------------------------
 Name: block_verifiers_create_vote_majority_results

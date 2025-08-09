@@ -68,14 +68,21 @@ int select_block_producer_from_vrf(void) {
  */
 xcash_round_result_t process_round(void) {
 
+  INFO_STAGE_PRINT("Part 1 - Check for Delegate Initialization");
+  snprintf(current_round_part, sizeof(current_round_part), "%d", 1);
   if (strlen(vrf_public_key) == 0) {
     WARNING_PRINT("Failed to read vrf_public_key for delegate, has this delegate been registered?");
     return ROUND_SKIP;
   }
 
+  if (!is_blockchain_synced()) {
+    WARNING_PRINT("Delegate is still syncing, skipping round");
+    return ROUND_SKIP;
+  }
+
   // Get the current block height
-  INFO_STAGE_PRINT("Part 1 - Get Current Block Height");
-  snprintf(current_round_part, sizeof(current_round_part), "%d", 1);
+  INFO_STAGE_PRINT("Part 2 - Get Current Block Height");
+  snprintf(current_round_part, sizeof(current_round_part), "%d", 2);
   if (get_current_block_height(current_block_height) != XCASH_OK) {
     ERROR_PRINT("Can't get current block height");
     atomic_store(&wait_for_block_height_init, false);
@@ -85,8 +92,8 @@ xcash_round_result_t process_round(void) {
   atomic_store(&wait_for_block_height_init, false);
   INFO_STAGE_PRINT("Createing Block: %s", current_block_height);
 
-  INFO_STAGE_PRINT("Part 2 - Check Delegates, Get Previous Block Hash, and Delegates Hash");
-  snprintf(current_round_part, sizeof(current_round_part), "%d", 2);
+  INFO_STAGE_PRINT("Part 3 - Check Delegates, Get Previous Block Hash, and Delegates Collection Hash");
+  snprintf(current_round_part, sizeof(current_round_part), "%d", 3);
   // delegates_all is loaded prior to start of round due to node timing issues
   total_delegates = 0;
   for (size_t x = 0; x < BLOCK_VERIFIERS_TOTAL_AMOUNT; x++) {
@@ -114,82 +121,13 @@ xcash_round_result_t process_round(void) {
     return ROUND_ERROR;
   }
 
-  INFO_STAGE_PRINT("Part 3 - Send Sync message to all Delegates and wait for replies");
-  snprintf(current_round_part, sizeof(current_round_part), "%d", 3);
-  response_t** responses = NULL;
-  char* sync_message = NULL;
-  if (create_sync_msg(&sync_message)) {
-    if (xnet_send_data_multi(XNET_DELEGATES_ALL, sync_message, &responses)) {
-      free(sync_message);
-      cleanup_responses(responses);
-    } else {
-      ERROR_PRINT("Failed to send SYNC message.");
-      free(sync_message);
-      cleanup_responses(responses);
-      return ROUND_ERROR;
-    }
-  } else {
-    ERROR_PRINT("Failed to generate SYNC message");
-    free(sync_message);  // safe even if NULL
-    return ROUND_ERROR;
-  }
-
-  INFO_STAGE_PRINT("Waiting for Delegates to sync...");
-  if (sync_block_verifiers_minutes_and_seconds(0, 30) == XCASH_ERROR) {
-    INFO_PRINT("Failed to sync Delegates in the allotted  time, skipping round");
-    return ROUND_SKIP;
-  }
-
-  INFO_STAGE_PRINT("Part 4 - Checking Block Verifiers Majority and Minimum Online Requirement");
+  INFO_STAGE_PRINT("Part 4 - Sync & Create VRF Data and Send To All Delegates");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 4);
-  // Fill block verifiers list with proven online nodes
-  int nodes_majority_count = 0;
-
-  pthread_mutex_lock(&current_block_verifiers_lock);
-  memset(&current_block_verifiers_list, 0, sizeof(current_block_verifiers_list));
-  for (size_t i = 0, j = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
-    if (delegates_all[i].public_address[0] != '\0') {
-      if (strcmp(delegates_all[i].online_status, "true") == 0) {
-        strcpy(current_block_verifiers_list.block_verifiers_name[j], delegates_all[i].delegate_name);
-        strcpy(current_block_verifiers_list.block_verifiers_public_address[j], delegates_all[i].public_address);
-        strcpy(current_block_verifiers_list.block_verifiers_public_key[j], delegates_all[i].public_key);
-        strcpy(current_block_verifiers_list.block_verifiers_IP_address[j], delegates_all[i].IP_address);
-        current_block_verifiers_list.block_verifiers_vote_total[j] = 0;
-        current_block_verifiers_list.block_verifiers_voted[j] = 0;
-        INFO_PRINT_STATUS_OK("Delegate: %s, Online Status: ", delegates_all[i].delegate_name);
-        nodes_majority_count++;
-        j++;
-      } else {
-        INFO_PRINT_STATUS_FAIL("Delegate: %s, Online Status: ", delegates_all[i].delegate_name);
-      }
-    }
-  }
-  pthread_mutex_unlock(&current_block_verifiers_lock);
-  atomic_store(&wait_for_vrf_init, false);
-
-  // Need at least BLOCK_VERIFIERS_VALID_AMOUNT delegates to start things off, delegates data needs to match for first delegates
-  if (nodes_majority_count < BLOCK_VERIFIERS_VALID_AMOUNT) {
-    INFO_PRINT_STATUS_FAIL("Failed to reach the required number of online nodes: [%d/%d]", nodes_majority_count, BLOCK_VERIFIERS_VALID_AMOUNT);
-    return ROUND_SKIP;
-  }
-
-  int delegates_num = (total_delegates < BLOCK_VERIFIERS_AMOUNT) ? total_delegates : BLOCK_VERIFIERS_AMOUNT;
-  int required_majority = (delegates_num * MAJORITY_PERCENT + 99) / 100;
-
-  if (nodes_majority_count < required_majority) {
-    INFO_PRINT_STATUS_FAIL("Data majority not reached. Online Nodes: [%d/%d]", nodes_majority_count, required_majority);
-    return ROUND_SKIP;
-  }
-
-  INFO_PRINT_STATUS_OK("Data majority reached. Online Nodes: [%d/%d]", nodes_majority_count, required_majority);
-
-  INFO_STAGE_PRINT("Part 5 - Create VRF Data and Send To All Online Block Verifiers");
-  snprintf(current_round_part, sizeof(current_round_part), "%d", 5);
 
   responses = NULL;
   char* vrf_message = NULL;
   if (generate_and_request_vrf_data_msg(&vrf_message)) {
-    if (xnet_send_data_multi(XNET_DELEGATES_ALL_ONLINE, vrf_message, &responses)) {
+    if (xnet_send_data_multi(XNET_DELEGATES_ALL, vrf_message, &responses)) {
       free(vrf_message);
       cleanup_responses(responses);
     } else {
@@ -206,11 +144,78 @@ xcash_round_result_t process_round(void) {
     return ROUND_ERROR;
   }
 
-  // Sync start
-  if (sync_block_verifiers_minutes_and_seconds(1, 00) == XCASH_ERROR) {
-    INFO_PRINT("Failed to sync VRF data in the allotted  time, skipping round");
+  INFO_STAGE_PRINT("Waiting for Sync and VRF Data from all nodes...");
+  if (sync_block_verifiers_minutes_and_seconds(0, 30) == XCASH_ERROR) {
+    INFO_PRINT("Failed to sync Delegates in the allotted  time, skipping round");
     return ROUND_SKIP;
   }
+
+  INFO_STAGE_PRINT("Part 5 - Checking Block Verifiers Majority and Minimum Online Requirement");
+  snprintf(current_round_part, sizeof(current_round_part), "%d", 5);
+  // Fill block verifiers list with proven online nodes
+  int nodes_majority_count = 0;
+
+  pthread_mutex_lock(&current_block_verifiers_lock);
+  memset(&current_block_verifiers_list, 0, sizeof(current_block_verifiers_list));
+  for (size_t i = 0, j = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
+    if (delegates_all[i].public_address[0] != '\0') {
+      if (strcmp(delegates_all[i].online_status, "true") == 0) {
+        strcpy(current_block_verifiers_list.block_verifiers_name[j], delegates_all[i].delegate_name);
+        strcpy(current_block_verifiers_list.block_verifiers_public_address[j], delegates_all[i].public_address);
+        strcpy(current_block_verifiers_list.block_verifiers_public_key[j], delegates_all[i].public_key);
+        strcpy(current_block_verifiers_list.block_verifiers_IP_address[j], delegates_all[i].IP_address);
+        strcpy(current_block_verifiers_list.block_verifiers_vrf_proof_hex[j], delegates_all[i].verifiers_vrf_proof_hex);
+        strcpy(current_block_verifiers_list.block_verifiers_vrf_beta_hex[j], delegates_all[i].verifiers_vrf_beta_hex);
+        current_block_verifiers_list.block_verifiers_vote_total[j] = 0;
+        current_block_verifiers_list.block_verifiers_voted[j] = 0;
+        INFO_PRINT_STATUS_OK("Delegate: %s, Online Status: ", delegates_all[i].delegate_name);
+
+
+INFO_PRINT(
+    "Name: %s\n"
+    "Public Address: %s\n"
+    "Public Key: %s\n"
+    "IP Address: %s\n"
+    "VRF Proof: %s\n"
+    "VRF Beta: %s\n"
+    "Vote Total: %d\n"
+    "Voted: %d",
+    current_block_verifiers_list.block_verifiers_name[j],
+    current_block_verifiers_list.block_verifiers_public_address[j],
+    current_block_verifiers_list.block_verifiers_public_key[j],
+    current_block_verifiers_list.block_verifiers_IP_address[j],
+    current_block_verifiers_list.block_verifiers_vrf_proof_hex[j],
+    current_block_verifiers_list.block_verifiers_vrf_beta_hex[j],
+    current_block_verifiers_list.block_verifiers_vote_total[j],
+    current_block_verifiers_list.block_verifiers_voted[j]
+);
+
+
+        nodes_majority_count++;
+        j++;
+      } else {
+        INFO_PRINT_STATUS_FAIL("Delegate: %s, Online Status: ", delegates_all[i].delegate_name);
+      }
+    }
+  }
+  pthread_mutex_unlock(&current_block_verifiers_lock);
+//  atomic_store(&wait_for_vrf_init, false);
+
+  // Need at least BLOCK_VERIFIERS_VALID_AMOUNT delegates to start things off, delegates data needs to match for first delegates
+  if (nodes_majority_count < BLOCK_VERIFIERS_VALID_AMOUNT) {
+    INFO_PRINT_STATUS_FAIL("Failed to reach the required number of online nodes: [%d/%d]", nodes_majority_count, BLOCK_VERIFIERS_VALID_AMOUNT);
+    return ROUND_SKIP;
+  }
+
+  int delegates_num = (total_delegates < BLOCK_VERIFIERS_AMOUNT) ? total_delegates : BLOCK_VERIFIERS_AMOUNT;
+  int required_majority = (delegates_num * MAJORITY_PERCENT + 99) / 100;
+
+  if (nodes_majority_count < required_majority) {
+    INFO_PRINT_STATUS_FAIL("Data majority not reached. Online Nodes: [%d/%d]", nodes_majority_count, required_majority);
+    return ROUND_SKIP;
+  }
+
+  INFO_PRINT_STATUS_OK("Data majority reached. Online Nodes: [%d/%d]", nodes_majority_count, required_majority);
 
   INFO_STAGE_PRINT("Part 6 - Select Block Creator From VRF Data");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 6);
@@ -251,13 +256,13 @@ xcash_round_result_t process_round(void) {
       free(vote_message);
       cleanup_responses(responses);
     } else {
-      ERROR_PRINT("Failed to send VRF message.");
+      ERROR_PRINT("Failed to send VRF vote result message.");
       free(vote_message);
       cleanup_responses(responses);
       return ROUND_ERROR;
     }
   } else {
-    ERROR_PRINT("Failed to generate VRF keys and message");
+    ERROR_PRINT("Failed to generate Vote Majority Result message");
     if (vote_message != NULL) {
       free(vote_message);
     }
