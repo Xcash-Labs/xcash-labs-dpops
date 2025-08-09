@@ -46,20 +46,6 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
 
   for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
 
-INFO_PRINT(
-    "Checking delegate:\n"
-    "  delegates_all[%zu].public_address: %.*s\n"
-    "  incoming public_address: %.*s\n"
-    "  verifiers_vrf_proof_hex[0]: 0x%02X\n"
-    "  verifiers_vrf_beta_hex[0]: 0x%02X",
-    i,
-    XCASH_WALLET_LENGTH, delegates_all[i].public_address,
-    XCASH_WALLET_LENGTH, public_address,
-    (unsigned char)delegates_all[i].verifiers_vrf_proof_hex[0],
-    (unsigned char)delegates_all[i].verifiers_vrf_beta_hex[0]
-);
-
-
     if (strncmp(delegates_all[i].public_address, public_address, XCASH_WALLET_LENGTH) == 0 &&
         delegates_all[i].verifiers_vrf_proof_hex[0] == '\0' &&
         delegates_all[i].verifiers_vrf_beta_hex[0] == '\0') {
