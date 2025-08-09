@@ -246,12 +246,6 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
   }
 
   switch (msg_type) {
-    case XMSG_XCASH_GET_SYNC_INFO:
-      if (server_limit_IP_addresses(LIMIT_CHECK, client->client_ip) == 1) {
-        server_received_msg_get_sync_info(client, data);
-        server_limit_IP_addresses(LIMIT_REMOVE, client->client_ip);
-      }
-      break;
 
     case XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_VRF_DATA:
       if (server_limit_IP_addresses(LIMIT_CHECK, client->client_ip) == 1) {

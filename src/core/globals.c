@@ -65,7 +65,6 @@ char* server_limit_public_address_list;
 
 
 const char* xcash_net_messages[] = {
-    "XCASH_GET_SYNC_INFO",
     "BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_VRF_DATA",
     "NODES_TO_NODES_VOTE_MAJORITY_RESULTS",
     "NODE_TO_NETWORK_DATA_NODES_GET_CURRENT_BLOCK_VERIFIERS_LIST",
