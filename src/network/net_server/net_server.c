@@ -119,7 +119,6 @@ void* handle_client(void* arg) {
 
     unsigned char* decompressed = NULL;
     size_t decompressed_len = 0;
-
     if (!decompress_gzip_with_prefix((const unsigned char*)buffer, (size_t)bytes, &decompressed, &decompressed_len)) {
       WARNING_PRINT("Failed to decompress message from %s", client->client_ip);
       continue;
@@ -229,7 +228,8 @@ int send_message_to_ip_or_hostname(const char* host_or_ip, int port, const char*
 
   unsigned char* compressed = NULL;
   size_t compressed_len = 0;
-  if (!compress_gzip_with_prefix((const unsigned char*)message, strlen(message), &compressed, &compressed_len)) {
+  size_t msg_len = strlen(message) + 1;
+  if (!compress_gzip_with_prefix((const unsigned char*)message, msg_len, &compressed, &compressed_len)) {
     ERROR_PRINT("Compression failed");
     close(sock);
     return XCASH_ERROR;
