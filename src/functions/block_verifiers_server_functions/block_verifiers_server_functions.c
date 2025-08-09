@@ -45,6 +45,9 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
   bool found = false;
   for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
 
+    INFO_PRINT("Looking for: %s", delegates_all[i].public_address);
+
+
     if (strncmp(delegates_all[i].public_address, public_address, XCASH_WALLET_LENGTH) == 0 &&
         delegates_all[i].public_key[0] == '\0' &&
         delegates_all[i].verifiers_vrf_proof_hex[0] == '\0' &&
@@ -114,7 +117,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
   }
   pthread_mutex_unlock(&delegates_all_lock);
   if (!found) {
-    DEBUG_PRINT("Delegate not found in delegates_all: %s", public_address);
+    INFO_PRINT("Delegate not found in delegates_all: %s", public_address);
   }
 
   return;
