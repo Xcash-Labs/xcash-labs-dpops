@@ -124,9 +124,9 @@ xcash_round_result_t process_round(void) {
   INFO_STAGE_PRINT("Part 4 - Sync & Create VRF Data and Send To All Delegates");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 4);
 
-  responses = NULL;
+  response_t** responses = NULL;
   char* vrf_message = NULL;
-  if (generate_and_request_vrf_data_msg(&vrf_message)) {
+  if (generate_and_request_vrf_data_sync(&vrf_message)) {
     if (xnet_send_data_multi(XNET_DELEGATES_ALL, vrf_message, &responses)) {
       free(vrf_message);
       cleanup_responses(responses);
