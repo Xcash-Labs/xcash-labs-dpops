@@ -170,21 +170,6 @@ for (int j = 0; j < BLOCK_VERIFIERS_TOTAL_AMOUNT; j++) {
   // Fill block verifiers list with proven online nodes
   int nodes_majority_count = 0;
 
-
-for (int j = 0; j < BLOCK_VERIFIERS_TOTAL_AMOUNT; j++) {
-    if (strnlen(delegates_all[j].public_address, XCASH_WALLET_LENGTH) > 0) {
-        INFO_PRINT("Delegate %d:", j);
-        INFO_PRINT("  Name: %s", delegates_all[j].delegate_name);
-        INFO_PRINT("  Public Address: %s", delegates_all[j].public_address);
-        INFO_PRINT("  Public Key: %s", delegates_all[j].public_key);
-        INFO_PRINT("  IP Address: %s", delegates_all[j].IP_address);
-        INFO_PRINT("  VRF Proof Hex: %s", delegates_all[j].verifiers_vrf_proof_hex);
-        INFO_PRINT("  VRF Beta Hex: %s", delegates_all[j].verifiers_vrf_beta_hex);
-        INFO_PRINT("  Online Status: %s", delegates_all[j].online_status);
-    }
-}
-
-
   pthread_mutex_lock(&current_block_verifiers_lock);
   memset(&current_block_verifiers_list, 0, sizeof(current_block_verifiers_list));
   for (size_t i = 0, j = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
@@ -208,24 +193,6 @@ for (int j = 0; j < BLOCK_VERIFIERS_TOTAL_AMOUNT; j++) {
   }
   pthread_mutex_unlock(&current_block_verifiers_lock);
   atomic_store(&wait_for_vrf_init, false);
-
-
-
-for (int j = 0; j < BLOCK_VERIFIERS_AMOUNT; j++) {
-    if (strnlen(current_block_verifiers_list.block_verifiers_public_address[j], XCASH_WALLET_LENGTH) > 0) {
-        INFO_PRINT("Verifier %d:", j);
-        INFO_PRINT("  Name: %s", current_block_verifiers_list.block_verifiers_name[j]);
-        INFO_PRINT("  Public Address: %s", current_block_verifiers_list.block_verifiers_public_address[j]);
-        INFO_PRINT("  Public Key: %s", current_block_verifiers_list.block_verifiers_public_key[j]);
-        INFO_PRINT("  IP Address: %s", current_block_verifiers_list.block_verifiers_IP_address[j]);
-        INFO_PRINT("  VRF Proof Hex: %s", current_block_verifiers_list.block_verifiers_vrf_proof_hex[j]);
-        INFO_PRINT("  VRF Beta Hex: %s", current_block_verifiers_list.block_verifiers_vrf_beta_hex[j]);
-        INFO_PRINT("  Vote Total: %d", current_block_verifiers_list.block_verifiers_vote_total[j]);
-        INFO_PRINT("  Voted: %d", current_block_verifiers_list.block_verifiers_voted[j]);
-    }
-}
-
-
 
   // Need at least BLOCK_VERIFIERS_VALID_AMOUNT delegates to start things off, delegates data needs to match for first delegates
   if (nodes_majority_count < BLOCK_VERIFIERS_VALID_AMOUNT) {
@@ -274,25 +241,6 @@ for (int j = 0; j < BLOCK_VERIFIERS_AMOUNT; j++) {
     }
   }
   pthread_mutex_unlock(&current_block_verifiers_lock);
-
-
-
-
-for (int j = 0; j < BLOCK_VERIFIERS_AMOUNT; j++) {
-    if (strnlen(current_block_verifiers_list.block_verifiers_public_address[j], XCASH_WALLET_LENGTH) > 0) {
-        INFO_PRINT("x Verifier %d:", j);
-        INFO_PRINT("  Name: %s", current_block_verifiers_list.block_verifiers_name[j]);
-        INFO_PRINT("  Public Address: %s", current_block_verifiers_list.block_verifiers_public_address[j]);
-        INFO_PRINT("  Public Key: %s", current_block_verifiers_list.block_verifiers_public_key[j]);
-        INFO_PRINT("  IP Address: %s", current_block_verifiers_list.block_verifiers_IP_address[j]);
-        INFO_PRINT("  VRF Proof Hex: %s", current_block_verifiers_list.block_verifiers_vrf_proof_hex[j]);
-        INFO_PRINT("  VRF Beta Hex: %s", current_block_verifiers_list.block_verifiers_vrf_beta_hex[j]);
-        INFO_PRINT("  Vote Total: %d", current_block_verifiers_list.block_verifiers_vote_total[j]);
-        INFO_PRINT("  Voted: %d", current_block_verifiers_list.block_verifiers_voted[j]);
-    }
-}
-
-
 
   responses = NULL;
   char* vote_message = NULL;
