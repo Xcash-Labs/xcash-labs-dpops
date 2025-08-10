@@ -377,6 +377,9 @@ bool block_verifiers_create_vote_majority_result(char** message, int producer_in
     ERROR_PRINT("Timed out waiting for vrf init in server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data");
   }
 
+  DEBUG_PRINT("producer_index: %d", producer_index);
+
+
   if (strlen(current_block_verifiers_list.block_verifiers_vrf_public_key_hex[producer_indx]) == 0 ||
       strlen(current_block_verifiers_list.block_verifiers_vrf_proof_hex[producer_indx]) == 0 ||
       strlen(current_block_verifiers_list.block_verifiers_vrf_beta_hex[producer_indx]) == 0) {
