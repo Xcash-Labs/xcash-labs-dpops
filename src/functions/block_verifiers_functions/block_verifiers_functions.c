@@ -378,12 +378,12 @@ bool block_verifiers_create_vote_majority_result(char** message, int producer_in
   }
 
   INFO_PRINT("producer_index: %d", producer_indx);
-    INFO_PRINT("VRF Public Key Hex: %s", current_block_verifiers_list.block_verifiers_vrf_public_key_hex[producer_indx]);
+    INFO_PRINT("VRF Public Key Hex: %s", current_block_verifiers_list.block_verifiers_public_key[producer_indx]);
     INFO_PRINT("VRF Proof Hex: %s", current_block_verifiers_list.block_verifiers_vrf_proof_hex[producer_indx]);
     INFO_PRINT("VRF Beta Hex: %s", current_block_verifiers_list.block_verifiers_vrf_beta_hex[producer_indx]);
 
 
-  if (strlen(current_block_verifiers_list.block_verifiers_vrf_public_key_hex[producer_indx]) == 0 ||
+  if (strlen(current_block_verifiers_list.block_verifiers_public_key[producer_indx]) == 0 ||
       strlen(current_block_verifiers_list.block_verifiers_vrf_proof_hex[producer_indx]) == 0 ||
       strlen(current_block_verifiers_list.block_verifiers_vrf_beta_hex[producer_indx]) == 0) {
     ERROR_PRINT("Missing VRF data for producer");
@@ -391,7 +391,7 @@ bool block_verifiers_create_vote_majority_result(char** message, int producer_in
   }
 
   size_t height_len = strlen(current_block_height);
-  if (!hex_to_byte_array(current_block_verifiers_list.block_verifiers_vrf_public_key_hex[producer_indx], pk_bin, sizeof(pk_bin))) {
+  if (!hex_to_byte_array(current_block_verifiers_list.block_verifiers_public_key[producer_indx], pk_bin, sizeof(pk_bin))) {
     ERROR_PRINT("Invalid hex format for public key");
     return false;
   }
@@ -455,7 +455,7 @@ bool block_verifiers_create_vote_majority_result(char** message, int producer_in
       "block_height", current_block_height,
       "vrf_beta", current_block_verifiers_list.block_verifiers_vrf_beta_hex[producer_indx],
       "vrf_proof", current_block_verifiers_list.block_verifiers_vrf_proof_hex[producer_indx],
-      "vrf_public_key", current_block_verifiers_list.block_verifiers_vrf_public_key_hex[producer_indx],
+      "vrf_public_key", current_block_verifiers_list.block_verifiers_public_key[producer_indx],
       "vote_signature", signature,
       NULL};
   *message = create_message_param_list(XMSG_NODES_TO_NODES_VOTE_MAJORITY_RESULTS, params);

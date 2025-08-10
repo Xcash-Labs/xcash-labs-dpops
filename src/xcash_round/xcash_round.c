@@ -275,6 +275,25 @@ for (int j = 0; j < BLOCK_VERIFIERS_AMOUNT; j++) {
   }
   pthread_mutex_unlock(&current_block_verifiers_lock);
 
+
+
+
+for (int j = 0; j < BLOCK_VERIFIERS_AMOUNT; j++) {
+    if (strnlen(current_block_verifiers_list.block_verifiers_public_address[j], XCASH_WALLET_LENGTH) > 0) {
+        INFO_PRINT("x Verifier %d:", j);
+        INFO_PRINT("  Name: %s", current_block_verifiers_list.block_verifiers_name[j]);
+        INFO_PRINT("  Public Address: %s", current_block_verifiers_list.block_verifiers_public_address[j]);
+        INFO_PRINT("  Public Key: %s", current_block_verifiers_list.block_verifiers_public_key[j]);
+        INFO_PRINT("  IP Address: %s", current_block_verifiers_list.block_verifiers_IP_address[j]);
+        INFO_PRINT("  VRF Proof Hex: %s", current_block_verifiers_list.block_verifiers_vrf_proof_hex[j]);
+        INFO_PRINT("  VRF Beta Hex: %s", current_block_verifiers_list.block_verifiers_vrf_beta_hex[j]);
+        INFO_PRINT("  Vote Total: %d", current_block_verifiers_list.block_verifiers_vote_total[j]);
+        INFO_PRINT("  Voted: %d", current_block_verifiers_list.block_verifiers_voted[j]);
+    }
+}
+
+
+
   responses = NULL;
   char* vote_message = NULL;
   if (block_verifiers_create_vote_majority_result(&vote_message, producer_indx)) {
@@ -361,7 +380,7 @@ for (int j = 0; j < BLOCK_VERIFIERS_AMOUNT; j++) {
       offset += crypto_vrf_OUTPUTBYTES;
 
       // Decode and copy VRF pubkey (32 bytes from 64-char hex)
-      if (!hex_to_byte_array(current_block_verifiers_list.block_verifiers_vrf_public_key_hex[i],
+      if (!hex_to_byte_array(current_block_verifiers_list.block_verifiers_public_key[i],
                              hash_input + offset,
                              crypto_vrf_PUBLICKEYBYTES)) {
         ERROR_PRINT("Invalid hex for vrf_pubkey");
@@ -434,7 +453,7 @@ for (int j = 0; j < BLOCK_VERIFIERS_AMOUNT; j++) {
     // Populate the reference list with the selected producer
     strcpy(producer_refs[0].public_address, current_block_verifiers_list.block_verifiers_public_address[producer_indx]);
     strcpy(producer_refs[0].IP_address, current_block_verifiers_list.block_verifiers_IP_address[producer_indx]);
-    strcpy(producer_refs[0].vrf_public_key, current_block_verifiers_list.block_verifiers_vrf_public_key_hex[producer_indx]);
+    strcpy(producer_refs[0].vrf_public_key, current_block_verifiers_list.block_verifiers_public_key[producer_indx]);
     strcpy(producer_refs[0].vrf_proof_hex, current_block_verifiers_list.block_verifiers_vrf_proof_hex[producer_indx]);
     strcpy(producer_refs[0].vrf_beta_hex, current_block_verifiers_list.block_verifiers_vrf_beta_hex[producer_indx]);
     strcpy(producer_refs[0].vote_hash_hex, final_vote_hash_hex);

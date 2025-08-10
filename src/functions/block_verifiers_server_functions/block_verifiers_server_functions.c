@@ -185,7 +185,7 @@ void server_receive_data_socket_node_to_node_vote_majority(const char* MESSAGE) 
       continue;
     }
 
-    if (strcmp(vrf_public_key_data, current_block_verifiers_list.block_verifiers_vrf_public_key_hex[i]) != 0) {
+    if (strcmp(vrf_public_key_data, current_block_verifiers_list.block_verifiers_public_key[i]) != 0) {
       ERROR_PRINT("Mismatch in vrf_public_key for verifier %s", public_address_producer);
       return;
     }
