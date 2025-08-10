@@ -71,21 +71,17 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
 
       size_t host_index = 0;
       for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
-        bool not_self = strcmp(delegates_all[i].public_address, xcash_wallet_public_address) != 0;
         const char *ip = delegates_all[i].IP_address;
 
-        if (not_self) {
-
-          if (!ip) {
-            continue;
-          }
-
-          if (strlen(ip) == 0) {
-            continue;
-          }
-
-          delegates_hosts[host_index++] = delegates_all[i].IP_address;
+        if (!ip) {
+          continue;
         }
+
+        if (strlen(ip) == 0) {
+          continue;
+        }
+
+        delegates_hosts[host_index++] = delegates_all[i].IP_address;
       }
 
       delegates_hosts[host_index] = NULL;  // Null-terminate the array
