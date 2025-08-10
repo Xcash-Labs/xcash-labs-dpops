@@ -68,6 +68,22 @@ int select_block_producer_from_vrf(void) {
  */
 xcash_round_result_t process_round(void) {
 
+for (int j = 0; j < BLOCK_VERIFIERS_TOTAL_AMOUNT; j++) {
+    if (strnlen(delegates_all[j].public_address, XCASH_WALLET_LENGTH) > 0) {
+        INFO_PRINT("Delegate %d:", j);
+        INFO_PRINT("  Name: %s", delegates_all[j].delegate_name);
+        INFO_PRINT("  Public Address: %s", delegates_all[j].public_address);
+        INFO_PRINT("  Public Key: %s", delegates_all[j].public_key);
+        INFO_PRINT("  IP Address: %s", delegates_all[j].IP_address);
+        INFO_PRINT("  VRF Proof Hex: %s", delegates_all[j].verifiers_vrf_proof_hex);
+        INFO_PRINT("  VRF Beta Hex: %s", delegates_all[j].verifiers_vrf_beta_hex);
+        INFO_PRINT("  Vote Total: %d", delegates_all[j].total_vote_count);  // adjust if field name differs
+        INFO_PRINT("  Online Status: %s", delegates_all[j].online_status);
+    }
+}
+
+
+
   INFO_STAGE_PRINT("Part 1 - Check for Delegate Initialization");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 1);
   if (strlen(vrf_public_key) == 0) {
