@@ -77,7 +77,6 @@ for (int j = 0; j < BLOCK_VERIFIERS_TOTAL_AMOUNT; j++) {
         INFO_PRINT("  IP Address: %s", delegates_all[j].IP_address);
         INFO_PRINT("  VRF Proof Hex: %s", delegates_all[j].verifiers_vrf_proof_hex);
         INFO_PRINT("  VRF Beta Hex: %s", delegates_all[j].verifiers_vrf_beta_hex);
-        INFO_PRINT("  Vote Total: %d", delegates_all[j].total_vote_count);  // adjust if field name differs
         INFO_PRINT("  Online Status: %s", delegates_all[j].online_status);
     }
 }
