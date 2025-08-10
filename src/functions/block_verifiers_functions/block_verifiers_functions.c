@@ -378,6 +378,9 @@ bool block_verifiers_create_vote_majority_result(char** message, int producer_in
   }
 
   INFO_PRINT("producer_index: %d", producer_indx);
+    INFO_PRINT("VRF Public Key Hex: %s", current_block_verifiers_list.block_verifiers_vrf_public_key_hex[producer_indx]);
+    INFO_PRINT("VRF Proof Hex: %s", current_block_verifiers_list.block_verifiers_vrf_proof_hex[producer_indx]);
+    INFO_PRINT("VRF Beta Hex: %s", current_block_verifiers_list.block_verifiers_vrf_beta_hex[producer_indx]);
 
 
   if (strlen(current_block_verifiers_list.block_verifiers_vrf_public_key_hex[producer_indx]) == 0 ||
