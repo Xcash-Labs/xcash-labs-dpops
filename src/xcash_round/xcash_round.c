@@ -169,28 +169,6 @@ xcash_round_result_t process_round(void) {
         current_block_verifiers_list.block_verifiers_vote_total[j] = 0;
         current_block_verifiers_list.block_verifiers_voted[j] = 0;
         INFO_PRINT_STATUS_OK("Delegate: %s, Online Status: ", delegates_all[i].delegate_name);
-
-
-INFO_PRINT(
-    "Name: %s\n"
-    "Public Address: %s\n"
-    "Public Key: %s\n"
-    "IP Address: %s\n"
-    "VRF Proof: %s\n"
-    "VRF Beta: %s\n"
-    "Vote Total: %d\n"
-    "Voted: %d",
-    current_block_verifiers_list.block_verifiers_name[j],
-    current_block_verifiers_list.block_verifiers_public_address[j],
-    current_block_verifiers_list.block_verifiers_public_key[j],
-    current_block_verifiers_list.block_verifiers_IP_address[j],
-    current_block_verifiers_list.block_verifiers_vrf_proof_hex[j],
-    current_block_verifiers_list.block_verifiers_vrf_beta_hex[j],
-    current_block_verifiers_list.block_verifiers_vote_total[j],
-    current_block_verifiers_list.block_verifiers_voted[j]
-);
-
-
         nodes_majority_count++;
         j++;
       } else {
@@ -270,7 +248,7 @@ INFO_PRINT(
   }
 
   // Sync start
-  if (sync_block_verifiers_minutes_and_seconds(1, 30) == XCASH_ERROR) {
+  if (sync_block_verifiers_minutes_and_seconds(1, 00) == XCASH_ERROR) {
     INFO_PRINT("Failed to Confirm Block Creator in the allotted  time, skipping round");
     return ROUND_SKIP;
   }
