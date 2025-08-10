@@ -211,7 +211,7 @@ for (int j = 0; j < BLOCK_VERIFIERS_TOTAL_AMOUNT; j++) {
 
 
 
-for (int j = 0; j < BLOCK_VERIFIERS_TOTAL_AMOUNT; j++) {
+for (int j = 0; j < BLOCK_VERIFIERS_AMOUNT; j++) {
     if (strnlen(current_block_verifiers_list.block_verifiers_public_address[j], XCASH_WALLET_LENGTH) > 0) {
         INFO_PRINT("Verifier %d:", j);
         INFO_PRINT("  Name: %s", current_block_verifiers_list.block_verifiers_name[j]);
