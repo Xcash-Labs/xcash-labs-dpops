@@ -28,7 +28,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
     return;
   }
 
-  INFO_PRINT("Parsed remote public_address: %s, block_height: %s, delegates_hash: %s", public_address, block_height, 
+  DEBUG_PRINT("Parsed remote public_address: %s, block_height: %s, delegates_hash: %s", public_address, block_height, 
     parsed_delegates_hash);
 
   int wait_seconds = 0;

@@ -177,7 +177,24 @@ xcash_round_result_t process_round(void) {
     }
   }
   pthread_mutex_unlock(&current_block_verifiers_lock);
-//  atomic_store(&wait_for_vrf_init, false);
+  atomic_store(&wait_for_vrf_init, false);
+
+
+for (int j = 0; j < BLOCK_VERIFIERS_TOTAL_AMOUNT; j++) {
+    if (strnlen(current_block_verifiers_list.block_verifiers_public_address[j], XCASH_WALLET_LENGTH) > 0) {
+        DEBUG_PRINT("Verifier %d:", j);
+        DEBUG_PRINT("  Name: %s", current_block_verifiers_list.block_verifiers_name[j]);
+        DEBUG_PRINT("  Public Address: %s", current_block_verifiers_list.block_verifiers_public_address[j]);
+        DEBUG_PRINT("  Public Key: %s", current_block_verifiers_list.block_verifiers_public_key[j]);
+        DEBUG_PRINT("  IP Address: %s", current_block_verifiers_list.block_verifiers_IP_address[j]);
+        DEBUG_PRINT("  VRF Proof Hex: %s", current_block_verifiers_list.block_verifiers_vrf_proof_hex[j]);
+        DEBUG_PRINT("  VRF Beta Hex: %s", current_block_verifiers_list.block_verifiers_vrf_beta_hex[j]);
+        DEBUG_PRINT("  Vote Total: %d", current_block_verifiers_list.block_verifiers_vote_total[j]);
+        DEBUG_PRINT("  Voted: %d", current_block_verifiers_list.block_verifiers_voted[j]);
+    }
+}
+
+
 
   // Need at least BLOCK_VERIFIERS_VALID_AMOUNT delegates to start things off, delegates data needs to match for first delegates
   if (nodes_majority_count < BLOCK_VERIFIERS_VALID_AMOUNT) {
