@@ -91,7 +91,7 @@ xcash_round_result_t process_round(void) {
 
   if (get_current_block_height(current_block_height) != XCASH_OK) {
     ERROR_PRINT("Can't get current block height");
-/    atomic_store(&wait_for_block_height_init, false);
+    atomic_store(&wait_for_block_height_init, false);
     return ROUND_ERROR;
   }
 
