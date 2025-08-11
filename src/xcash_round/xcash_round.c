@@ -145,7 +145,7 @@ xcash_round_result_t process_round(void) {
   }
 
   INFO_STAGE_PRINT("Waiting for Sync and VRF Data from all nodes...");
-  if (sync_block_verifiers_minutes_and_seconds(0, 30) == XCASH_ERROR) {
+  if (sync_block_verifiers_minutes_and_seconds(0, 20) == XCASH_ERROR) {
     INFO_PRINT("Failed to sync Delegates in the allotted  time, skipping round");
     return ROUND_SKIP;
   }
@@ -248,7 +248,7 @@ xcash_round_result_t process_round(void) {
   }
 
   // Sync start
-  if (sync_block_verifiers_minutes_and_seconds(1, 00) == XCASH_ERROR) {
+  if (sync_block_verifiers_minutes_and_seconds(0, 40) == XCASH_ERROR) {
     INFO_PRINT("Failed to Confirm Block Creator in the allotted  time, skipping round");
     return ROUND_SKIP;
   }
@@ -474,10 +474,10 @@ void start_block_production(void) {
 
     if (round_result == ROUND_OK) {
 
-      INFO_STAGE_PRINT("Waiting To Verify Block Creation...");
-      if (sync_block_verifiers_minutes_and_seconds(1, 51) == XCASH_ERROR) {
-        DEBUG_PRINT("Failed to sync in the allotted time");
-      }
+//      INFO_STAGE_PRINT("Waiting To Verify Block Creation...");
+//      if (sync_block_verifiers_minutes_and_seconds(1, 51) == XCASH_ERROR) {
+//        DEBUG_PRINT("Failed to sync in the allotted time");
+//      }
 
       for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
         if (strlen(delegates_all[i].public_address) > 0 && strlen(delegates_all[i].public_key) > 0) {
@@ -597,9 +597,9 @@ void start_block_production(void) {
       // if not registered no need to continue
       if (strlen(vrf_public_key) != 0) {
         INFO_STAGE_PRINT("Round skipped or delegate still initializing - waiting to sync...");
-        if (sync_block_verifiers_minutes_and_seconds(1, 51) == XCASH_ERROR) {
-          DEBUG_PRINT("Failed to sync in the allotted time");
-        }
+//        if (sync_block_verifiers_minutes_and_seconds(1, 51) == XCASH_ERROR) {
+//          DEBUG_PRINT("Failed to sync in the allotted time");
+//        }
 
         // If more that a 30% mismatch lets resync the node
         if ((delegate_db_hash_mismatch * 100) > (total_delegates * 30)) {
@@ -612,9 +612,9 @@ void start_block_production(void) {
             if (!create_delegates_db_sync_request(selected_index)) {
               ERROR_PRINT("Error occured while syncing delegates");
             }
-            if (sync_block_verifiers_minutes_and_seconds(1, 58) == XCASH_ERROR) {
-              ERROR_PRINT("Failed to sync in the allotted time");
-            }
+//            if (sync_block_verifiers_minutes_and_seconds(1, 58) == XCASH_ERROR) {
+//              ERROR_PRINT("Failed to sync in the allotted time");
+//            }
           } else {
             ERROR_PRINT("Error creating sync token"); 
           }

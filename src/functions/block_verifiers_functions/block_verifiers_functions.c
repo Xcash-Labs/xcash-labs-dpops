@@ -136,12 +136,12 @@ Description: Runs the round where the block verifiers will create the block
 Return: 0 if an error has occured, 1 if successfull
 ---------------------------------------------------------------------------------------------------------*/
 int block_verifiers_create_block(const char* vote_hash_hex, uint8_t total_vote, uint8_t winning_vote) {
-  char data[BUFFER_SIZE] = {0};
+  char ck_block_height[BLOCK_HEIGHT_LENGTH] = {0};
 
   // Confirm block height hasn't drifted (this node may be behind the network)
   INFO_STAGE_PRINT("Part 8 - Confirm block height hasn't drifted");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 8);
-  if (get_current_block_height(data) == 1 && strncmp(current_block_height, data, BUFFER_SIZE) != 0) {
+  if (get_current_block_height(ck_block_height) == 1 && strncmp(current_block_height, ck_block_height, BLOCK_HEIGHT_LENGTH) != 0) {
     WARNING_PRINT("Your block height is not synced correctly, waiting for next round");
     return ROUND_ERROR;
   }
@@ -179,7 +179,24 @@ int block_verifiers_create_block(const char* vote_hash_hex, uint8_t total_vote, 
     }
 
     INFO_PRINT_STATUS_OK("Block signature sent ");
+  } else {
+    time_t start_time = time(NULL);
+    char start_ck_block_height[BLOCK_HEIGHT_LENGTH];
+    strncpy(start_ck_block_height, ck_block_height, BLOCK_HEIGHT_LENGTH);
+    while (strncmp(start_ck_block_height, ck_block_height, BLOCK_HEIGHT_LENGTH) == 0) {
+      if (difftime(time(NULL), start_time) > MAX_WAIT_FOR_BLOCK_CREATION) {
+        ERROR_PRINT("Timeout waiting for block creation and propagation change");
+        break;
+      }
+
+      sleep(5);  // prevent CPU hogging
+      get_current_block_height(ck_block_height);
+    }
   }
+
+  // Print raw time_t (seconds since Epoch)
+  time_t now = time(NULL);
+  INFO_PRINT("Block height changed to %s at %ld", ck_block_height, now);
 
   return ROUND_OK;
 }
