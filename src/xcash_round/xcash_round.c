@@ -129,7 +129,7 @@ xcash_round_result_t process_round(void) {
 
   INFO_STAGE_PRINT("Part 4 - Sync & Create VRF Data and Send To All Delegates");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 4);
-  sleep(1);
+  sleep(1);  // need for nodes time not being exact
   response_t** responses = NULL;
   char* vrf_message = NULL;
   if (generate_and_request_vrf_data_sync(&vrf_message)) {

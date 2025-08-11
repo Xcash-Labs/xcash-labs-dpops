@@ -52,7 +52,7 @@ int read_organize_delegates(delegates_t* delegates, size_t* delegates_count_resu
 
   delegates_count = count_recs(delegates_db_data);
   if (delegates_count == 0 || delegates_count < 20) {
-    WARNING_PRINT("delegates db has only %d delegates", delegates_count);
+    INFO_PRINT("delegates db has only %d delegates", delegates_count);
   }
 
   memset(delegates, 0, sizeof(delegates_t) * BLOCK_VERIFIERS_TOTAL_AMOUNT);
