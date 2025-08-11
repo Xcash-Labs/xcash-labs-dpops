@@ -443,29 +443,31 @@ static void wait_for_slot_open_60s(void) {
   size_t sec_within = (size_t)((now - EPOCH_ANCHOR) % SCHED_WINDOW_SEC);
 
   if (sec_within <= START_WINDOW_SEC) {
-    // Already inside the start window; let caller proceed.
-    return;
+    return; // we're already inside the start window
   }
 
+  // Compute target in REALTIME domain
   time_t next_slot = now - sec_within + SCHED_WINDOW_SEC;
-  long target_ms = (long)next_slot*1000L - SEND_SAFETY_MS; // enter slightly early
-  if (target_ms < now_ms_real()) target_ms = now_ms_real(); // guard
+  long target_real_ms = (long)next_slot * 1000L - SEND_SAFETY_MS;
+  long real_now = now_ms_real();
+  if (target_real_ms < real_now) target_real_ms = real_now;
 
-  // Optional: periodic status prints while we wait
-  while (1) {
-    long remain_ms = target_ms - now_ms_mono();
+  // Periodic status (use REALTIME so the math is consistent)
+  for (;;) {
+    long remain_ms = target_real_ms - now_ms_real();
     if (remain_ms <= 0) break;
     long remain_s = (remain_ms + 999) / 1000;
     if ((remain_s % 10) == 0) {
-      INFO_PRINT("Next round starts in [%02ld:%02ld]",
-                 remain_s/60, remain_s%60);
+      INFO_PRINT("Next round starts in [%02ld:%02ld]", remain_s/60, remain_s%60);
     }
-    // Sleep in 1s chunks so we can print status occasionally
     struct timespec req = { .tv_sec = 1, .tv_nsec = 0 };
     nanosleep(&req, NULL);
   }
 
-  sleep_until_ms_mono(target_ms);
+  // Final precise wait in MONOTONIC domain (robust against NTP jumps)
+  long mono_now = now_ms_mono();
+  long mono_target_ms = mono_now + (target_real_ms - real_now);
+  sleep_until_ms_mono(mono_target_ms);
 }
 
 
