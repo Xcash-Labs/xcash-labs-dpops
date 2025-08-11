@@ -194,10 +194,7 @@ int block_verifiers_create_block(const char* vote_hash_hex, uint8_t total_vote, 
     }
   }
 
-  // Print raw time_t (seconds since Epoch)
-  time_t now = time(NULL);
-  INFO_PRINT("Block height changed to %s at %ld", ck_block_height, now);
-
+  DEBUG_PRINT("Block was created");
   return ROUND_OK;
 }
 
