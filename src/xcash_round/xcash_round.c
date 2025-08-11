@@ -88,14 +88,14 @@ xcash_round_result_t process_round(void) {
   // Get the current block height
 //  INFO_STAGE_PRINT("Part 2 - Get Current Block Height");
 //  snprintf(current_round_part, sizeof(current_round_part), "%d", 2);
-  if (get_current_block_height(current_block_height) != XCASH_OK) {
-    ERROR_PRINT("Can't get current block height");
-    atomic_store(&wait_for_block_height_init, false);
-    return ROUND_ERROR;
-  }
+//  if (get_current_block_height(current_block_height) != XCASH_OK) {
+//    ERROR_PRINT("Can't get current block height");
+//    atomic_store(&wait_for_block_height_init, false);
+//    return ROUND_ERROR;
+//  }
 
-  atomic_store(&wait_for_block_height_init, false);
-  INFO_STAGE_PRINT("Creating Block: %s", current_block_height);
+//  atomic_store(&wait_for_block_height_init, false);
+//  INFO_STAGE_PRINT("Creating Block: %s", current_block_height);
 
 //  INFO_STAGE_PRINT("Part 3 - Check Delegates, Get Previous Block Hash, and Delegates Collection Hash");
 //  snprintf(current_round_part, sizeof(current_round_part), "%d", 3);
@@ -125,6 +125,15 @@ xcash_round_result_t process_round(void) {
     ERROR_PRINT("Failed to create delegates MD5 hash");
     return ROUND_ERROR;
   }
+
+  if (get_current_block_height(current_block_height) != XCASH_OK) {
+    ERROR_PRINT("Can't get current block height");
+    atomic_store(&wait_for_block_height_init, false);
+    return ROUND_ERROR;
+  }
+
+  atomic_store(&wait_for_block_height_init, false);
+  INFO_STAGE_PRINT("Creating Block: %s", current_block_height);
 
 //  INFO_STAGE_PRINT("Part 4 - Sync & Create VRF Data and Send To All Delegates");
 //  snprintf(current_round_part, sizeof(current_round_part), "%d", 4);
