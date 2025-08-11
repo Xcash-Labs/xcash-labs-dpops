@@ -117,6 +117,8 @@ response_t** send_multi_request(const char** hosts, int port, const char* messag
            response->req_time_end - response->req_time_start);
     close(sock);
     freeaddrinfo(res);
+
+    usleep(20000);
   }
 
   return responses;
