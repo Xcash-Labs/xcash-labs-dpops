@@ -208,6 +208,10 @@
 
 #define MAX_ACTIVE_CLIENTS 200
 
+#define SCHED_WINDOW_SEC   60     // run every 60s, regardless of BLOCK_TIME
+#define START_WINDOW_SEC    2     // allow start in first 2s of each 60s slot
+#define SEND_SAFETY_MS    200     // start ~200ms before slot open (sender guard)
+#define EPOCH_ANCHOR ((time_t)0) // set to genesis if you want anchored slots
 
 
 // ===================== Constants =====================
