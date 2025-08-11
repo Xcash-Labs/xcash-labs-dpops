@@ -73,7 +73,7 @@ static int compare_hashes(const void* a, const void* b) {
  */
 xcash_round_result_t process_round(void) {
 
-  INFO_STAGE_PRINT("Part 1 - Initialize round data & Sync All Delegates");
+  INFO_STAGE_PRINT("Part 1 - Initialization and Sync Round");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 1);
   if (strlen(vrf_public_key) == 0) {
     WARNING_PRINT("Failed to read vrf_public_key for delegate, has this delegate been registered?");
@@ -86,19 +86,19 @@ xcash_round_result_t process_round(void) {
   }
 
   // Get the current block height
-//  INFO_STAGE_PRINT("Part 2 - Get Current Block Height");
-//  snprintf(current_round_part, sizeof(current_round_part), "%d", 2);
-//  if (get_current_block_height(current_block_height) != XCASH_OK) {
-//    ERROR_PRINT("Can't get current block height");
-//    atomic_store(&wait_for_block_height_init, false);
-//    return ROUND_ERROR;
-//  }
+  INFO_STAGE_PRINT("Part 2 - Get Current Block Height");
+  snprintf(current_round_part, sizeof(current_round_part), "%d", 2);
+  if (get_current_block_height(current_block_height) != XCASH_OK) {
+    ERROR_PRINT("Can't get current block height");
+    atomic_store(&wait_for_block_height_init, false);
+    return ROUND_ERROR;
+  }
 
-//  atomic_store(&wait_for_block_height_init, false);
-//  INFO_STAGE_PRINT("Creating Block: %s", current_block_height);
+  atomic_store(&wait_for_block_height_init, false);
+  INFO_STAGE_PRINT("Creating Block: %s", current_block_height);
 
-//  INFO_STAGE_PRINT("Part 3 - Check Delegates, Get Previous Block Hash, and Delegates Collection Hash");
-//  snprintf(current_round_part, sizeof(current_round_part), "%d", 3);
+  INFO_STAGE_PRINT("Part 3 - Check Delegates, Get Previous Block Hash, and Delegates Collection Hash");
+  snprintf(current_round_part, sizeof(current_round_part), "%d", 3);
   // delegates_all is loaded prior to start of round due to node timing issues
   total_delegates = 0;
   for (size_t x = 0; x < BLOCK_VERIFIERS_TOTAL_AMOUNT; x++) {
@@ -126,18 +126,12 @@ xcash_round_result_t process_round(void) {
     return ROUND_ERROR;
   }
 
-  if (get_current_block_height(current_block_height) != XCASH_OK) {
-    ERROR_PRINT("Can't get current block height");
-    atomic_store(&wait_for_block_height_init, false);
-    return ROUND_ERROR;
-  }
+  INFO_STAGE_PRINT("Part 4 - Sync & Create VRF Data and Send To All Delegates");
+  snprintf(current_round_part, sizeof(current_round_part), "%d", 4);
 
-  atomic_store(&wait_for_block_height_init, false);
-  INFO_STAGE_PRINT("Creating Block: %s", current_block_height);
 
-//  INFO_STAGE_PRINT("Part 4 - Sync & Create VRF Data and Send To All Delegates");
-//  snprintf(current_round_part, sizeof(current_round_part), "%d", 4);
-
+    sleep(1);
+  
   response_t** responses = NULL;
   char* vrf_message = NULL;
   if (generate_and_request_vrf_data_sync(&vrf_message)) {
@@ -630,8 +624,6 @@ void start_block_production(void) {
     if (!fill_delegates_from_db()) {
       FATAL_ERROR_EXIT("Failed to load and organize delegates for next round, Possible problem with Mongodb");
     }
-    // set up for next round ins case trans come in a little early
-    snprintf(current_round_part, sizeof(current_round_part), "%d", 1);
   }
 
 }
