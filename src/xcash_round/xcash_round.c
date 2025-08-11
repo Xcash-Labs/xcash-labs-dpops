@@ -405,6 +405,74 @@ xcash_round_result_t process_round(void) {
   return (xcash_round_result_t)block_creation_result;
 }
 
+
+
+
+
+
+
+
+
+
+
+static inline long now_ms_real(void) {
+  struct timespec ts; clock_gettime(CLOCK_REALTIME, &ts);
+  return (long)ts.tv_sec*1000L + ts.tv_nsec/1000000L;
+}
+static inline long now_ms_mono(void) {
+  struct timespec ts; clock_gettime(CLOCK_MONOTONIC, &ts);
+  return (long)ts.tv_sec*1000L + ts.tv_nsec/1000000L;
+}
+static void sleep_until_ms_mono(long target_ms) {
+  for (;;) {
+    long now = now_ms_mono();
+    long remain = target_ms - now;
+    if (remain <= 0) break;
+    struct timespec req = { .tv_sec = remain/1000, .tv_nsec = (remain%1000)*1000000L };
+    nanosleep(&req, NULL);
+  }
+}
+
+/* Wait until the next 60s slot opens (with a tiny safety lead). If we're already
+ * inside the first START_WINDOW_SEC of the current slot, return immediately. */
+static void wait_for_slot_open_60s(void) {
+  time_t now = time(NULL);
+  size_t sec_within = (size_t)((now - EPOCH_ANCHOR) % SCHED_WINDOW_SEC);
+
+  if (sec_within <= START_WINDOW_SEC) {
+    return; // we're already inside the start window
+  }
+
+  // Compute target in REALTIME domain
+  time_t next_slot = now - sec_within + SCHED_WINDOW_SEC;
+  long target_real_ms = (long)next_slot * 1000L - SEND_SAFETY_MS;
+  long real_now = now_ms_real();
+  if (target_real_ms < real_now) target_real_ms = real_now;
+
+  // Periodic status (use REALTIME so the math is consistent)
+  for (;;) {
+    long remain_ms = target_real_ms - now_ms_real();
+    if (remain_ms <= 0) break;
+    long remain_s = (remain_ms + 999) / 1000;
+    if ((remain_s % 10) == 0) {
+      INFO_PRINT("Next round starts in [%02ld:%02ld]", remain_s/60, remain_s%60);
+    }
+    struct timespec req = { .tv_sec = 1, .tv_nsec = 0 };
+    nanosleep(&req, NULL);
+  }
+
+  // Final precise wait in MONOTONIC domain (robust against NTP jumps)
+  long mono_now = now_ms_mono();
+  long mono_target_ms = mono_now + (target_real_ms - real_now);
+  sleep_until_ms_mono(mono_target_ms);
+}
+
+
+
+
+
+
+
 /*---------------------------------------------------------------------------------------------------------
 Name: start_block_production
 Description:
@@ -444,20 +512,32 @@ void start_block_production(void) {
     FATAL_ERROR_EXIT("Failed to load and organize delegates for starting round, Possible problem with Mongodb");
   }
 
+
+
+
+
+
+
+
+
+
   // Start production loop
   while (true) {
-    gettimeofday(&current_time, NULL);
-    size_t seconds_within_block = current_time.tv_sec % (BLOCK_TIME * 60);
+//    gettimeofday(&current_time, NULL);
+//    size_t seconds_within_block = current_time.tv_sec % (BLOCK_TIME * 60);
+
+wait_for_slot_open_60s();
+INFO_PRINT("Starting round at %lld", (long long)time(NULL));
 
     // Skip production if outside initial window
-    if (seconds_within_block > 1) {
-      if (seconds_within_block % 10 == 0) {
-        INFO_PRINT("Next round starts in [%ld:%02ld]",
-                   0L, 59 - (current_time.tv_sec % 60));
-      }
-      sleep(1);
-      continue;
-    }
+//    if (seconds_within_block > 1) {
+//      if (seconds_within_block % 10 == 0) {
+//        INFO_PRINT("Next round starts in [%ld:%02ld]",
+//                   0L, 59 - (current_time.tv_sec % 60));
+//      }
+//      sleep(1);
+//      continue;
+//    }
 
     current_block_height[0] = '\0';
     delegate_db_hash_mismatch = 0;
