@@ -447,7 +447,7 @@ void start_block_production(void) {
   while (true) {
     gettimeofday(&current_time, NULL);
     size_t seconds_within_block = current_time.tv_sec % (BLOCK_TIME * 60);
-    size_t minute_within_block = (current_time.tv_sec / 60) % BLOCK_TIME;
+//    size_t minute_within_block = (current_time.tv_sec / 60) % BLOCK_TIME;
 
     // Skip production if outside initial window
 //    if (seconds_within_block > 5) {
