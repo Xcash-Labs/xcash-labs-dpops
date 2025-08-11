@@ -49,6 +49,11 @@ int select_block_producer_from_vrf(void) {
   return selected_index;
 }
 
+// Helper routine
+static int compare_hashes(const void* a, const void* b) {
+  return memcmp(a, b, SHA256_EL_HASH_SIZE);
+}
+
 /**
  * @brief Runs a single round of the DPoPS consensus process.
  *
@@ -90,7 +95,7 @@ xcash_round_result_t process_round(void) {
   }
 
   atomic_store(&wait_for_block_height_init, false);
-  INFO_STAGE_PRINT("Createing Block: %s", current_block_height);
+  INFO_STAGE_PRINT("Creating Block: %s", current_block_height);
 
   INFO_STAGE_PRINT("Part 3 - Check Delegates, Get Previous Block Hash, and Delegates Collection Hash");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 3);
@@ -345,10 +350,6 @@ xcash_round_result_t process_round(void) {
     return ROUND_SKIP;
   }
 
-  int compare_hashes(const void* a, const void* b) {
-    return memcmp(a, b, SHA256_EL_HASH_SIZE);
-  }
-
   qsort(vote_hashes, valid_vote_count, SHA256_EL_HASH_SIZE, compare_hashes);
 
   if (max_index != producer_indx) {
@@ -404,6 +405,75 @@ xcash_round_result_t process_round(void) {
   return (xcash_round_result_t)block_creation_result;
 }
 
+
+
+
+
+
+
+
+
+#define SCHED_WINDOW_SEC   60     // run every 60s, regardless of BLOCK_TIME
+#define START_WINDOW_SEC    2     // allow start in first 2s of each 60s slot
+#define SEND_SAFETY_MS    200     // start ~200ms before slot open (sender guard)
+#define EPOCH_ANCHOR ((time_t)0) // set to genesis if you want anchored slots
+
+static inline long now_ms_real(void) {
+  struct timespec ts; clock_gettime(CLOCK_REALTIME, &ts);
+  return (long)ts.tv_sec*1000L + ts.tv_nsec/1000000L;
+}
+static inline long now_ms_mono(void) {
+  struct timespec ts; clock_gettime(CLOCK_MONOTONIC, &ts);
+  return (long)ts.tv_sec*1000L + ts.tv_nsec/1000000L;
+}
+static void sleep_until_ms_mono(long target_ms) {
+  for (;;) {
+    long now = now_ms_mono();
+    long remain = target_ms - now;
+    if (remain <= 0) break;
+    struct timespec req = { .tv_sec = remain/1000, .tv_nsec = (remain%1000)*1000000L };
+    nanosleep(&req, NULL);
+  }
+}
+
+/* Wait until the next 60s slot opens (with a tiny safety lead). If we're already
+ * inside the first START_WINDOW_SEC of the current slot, return immediately. */
+static void wait_for_slot_open_60s(void) {
+  time_t now = time(NULL);
+  size_t sec_within = (size_t)((now - EPOCH_ANCHOR) % SCHED_WINDOW_SEC);
+
+  if (sec_within <= START_WINDOW_SEC) {
+    // Already inside the start window; let caller proceed.
+    return;
+  }
+
+  time_t next_slot = now - sec_within + SCHED_WINDOW_SEC;
+  long target_ms = (long)next_slot*1000L - SEND_SAFETY_MS; // enter slightly early
+  if (target_ms < now_ms_real()) target_ms = now_ms_real(); // guard
+
+  // Optional: periodic status prints while we wait
+  while (1) {
+    long remain_ms = target_ms - now_ms_mono();
+    if (remain_ms <= 0) break;
+    long remain_s = (remain_ms + 999) / 1000;
+    if ((remain_s % 10) == 0) {
+      INFO_PRINT("Next round starts in [%02ld:%02ld]",
+                 remain_s/60, remain_s%60);
+    }
+    // Sleep in 1s chunks so we can print status occasionally
+    struct timespec req = { .tv_sec = 1, .tv_nsec = 0 };
+    nanosleep(&req, NULL);
+  }
+
+  sleep_until_ms_mono(target_ms);
+}
+
+
+
+
+
+
+
 /*---------------------------------------------------------------------------------------------------------
 Name: start_block_production
 Description:
@@ -443,33 +513,32 @@ void start_block_production(void) {
     FATAL_ERROR_EXIT("Failed to load and organize delegates for starting round, Possible problem with Mongodb");
   }
 
+
+
+
+
+
+
+
+
+
   // Start production loop
   while (true) {
-    gettimeofday(&current_time, NULL);
-    size_t seconds_within_block = current_time.tv_sec % (BLOCK_TIME * 60);
-//    size_t minute_within_block = (current_time.tv_sec / 60) % BLOCK_TIME;
+//    gettimeofday(&current_time, NULL);
+//    size_t seconds_within_block = current_time.tv_sec % (BLOCK_TIME * 60);
+
+wait_for_slot_open_60s();
+INFO_PRINT("Starting round at %lld", (long long)time(NULL));
 
     // Skip production if outside initial window
-//    if (seconds_within_block > 5) {
+//    if (seconds_within_block > 1) {
 //      if (seconds_within_block % 10 == 0) {
-        // only print every 10 seconds
 //        INFO_PRINT("Next round starts in [%ld:%02ld]",
-//                   BLOCK_TIME - 1 - minute_within_block,
-//                   59 - (current_time.tv_sec % 60));
+//                   0L, 59 - (current_time.tv_sec % 60));
 //      }
 //      sleep(1);
 //      continue;
 //    }
-
-    // Skip production if outside initial window
-    if (seconds_within_block > 1) {
-      if (seconds_within_block % 10 == 0) {
-        INFO_PRINT("Next round starts in [%ld:%02ld]",
-                   0L, 59 - (current_time.tv_sec % 60));
-      }
-      sleep(1);
-      continue;
-    }
 
     current_block_height[0] = '\0';
     delegate_db_hash_mismatch = 0;
