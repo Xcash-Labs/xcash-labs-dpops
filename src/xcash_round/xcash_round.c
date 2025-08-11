@@ -80,26 +80,8 @@ xcash_round_result_t process_round(void) {
     return ROUND_SKIP;
   }
 
-  // Get the current block height
-  INFO_STAGE_PRINT("Part 2 - Get Current Block Height");
+  INFO_STAGE_PRINT("Part 2 - Check Delegates, Get Previous Block Hash, and Delegates Collection Hash");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 2);
-
-  if (!is_blockchain_synced()) {
-    WARNING_PRINT("Delegate is still syncing, skipping round");
-    return ROUND_SKIP;
-  }
-
-  if (get_current_block_height(current_block_height) != XCASH_OK) {
-    ERROR_PRINT("Can't get current block height");
-//    atomic_store(&wait_for_block_height_init, false);
-    return ROUND_ERROR;
-  }
-
-//  atomic_store(&wait_for_block_height_init, false);
-  INFO_STAGE_PRINT("Creating Block: %s", current_block_height);
-
-  INFO_STAGE_PRINT("Part 3 - Check Delegates, Get Previous Block Hash, and Delegates Collection Hash");
-  snprintf(current_round_part, sizeof(current_round_part), "%d", 3);
   // delegates_all is loaded prior to start of round due to node timing issues
   total_delegates = 0;
   for (size_t x = 0; x < BLOCK_VERIFIERS_TOTAL_AMOUNT; x++) {
@@ -127,18 +109,27 @@ xcash_round_result_t process_round(void) {
     return ROUND_ERROR;
   }
 
+  // Get the current block height and wait to complete before sending or reading transactions
+  INFO_STAGE_PRINT("Part 3 - Get Current Block Height");
+  snprintf(current_round_part, sizeof(current_round_part), "%d", 3);
+
+  if (!is_blockchain_synced()) {
+    WARNING_PRINT("Delegate is still syncing, skipping round");
+    return ROUND_SKIP;
+  }
+
+  if (get_current_block_height(current_block_height) != XCASH_OK) {
+    ERROR_PRINT("Can't get current block height");
+    atomic_store(&wait_for_block_height_init, false);
+    return ROUND_ERROR;
+  }
+
+  atomic_store(&wait_for_block_height_init, false);
+  INFO_STAGE_PRINT("Creating Block: %s", current_block_height);
+
   INFO_STAGE_PRINT("Part 4 - Sync & Create VRF Data and Send To All Delegates");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 4);
-
-
-
-
   sleep(1);
-  
-
-
-
-
   response_t** responses = NULL;
   char* vrf_message = NULL;
   if (generate_and_request_vrf_data_sync(&vrf_message)) {
@@ -472,7 +463,7 @@ void start_block_production(void) {
     current_block_height[0] = '\0';
     delegate_db_hash_mismatch = 0;
     atomic_store(&wait_for_vrf_init, true);
-//    atomic_store(&wait_for_block_height_init, true);
+    atomic_store(&wait_for_block_height_init, true);
     round_result = ROUND_OK;
 
     round_result = process_round();

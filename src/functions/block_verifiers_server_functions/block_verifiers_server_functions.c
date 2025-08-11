@@ -31,22 +31,15 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
   DEBUG_PRINT("Parsed remote public_address: %s, block_height: %s, delegates_hash: %s", public_address, block_height, 
     parsed_delegates_hash);
 
+  int wait_seconds = 0;
+  while (atomic_load(&wait_for_block_height_init) && wait_seconds < DELAY_EARLY_TRANSACTIONS_MAX) {
+    sleep(1);
+    wait_seconds++;
+  }
 
-
-
-
-//  int wait_seconds = 0;
-//  while (atomic_load(&wait_for_block_height_init) && wait_seconds < DELAY_EARLY_TRANSACTIONS_MAX) {
-//    sleep(1);
-//    wait_seconds++;
-//  }
-
-//  if (atomic_load(&wait_for_block_height_init)) {
-//    ERROR_PRINT("Timed out waiting for current_block_height in server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data");
-//  }
-
-
-
+  if (atomic_load(&wait_for_block_height_init)) {
+    ERROR_PRINT("Timed out waiting for current_block_height in server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data");
+  }
 
   pthread_mutex_lock(&delegates_all_lock);
   bool found = false;
