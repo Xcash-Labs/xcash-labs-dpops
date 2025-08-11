@@ -73,7 +73,7 @@ static int compare_hashes(const void* a, const void* b) {
  */
 xcash_round_result_t process_round(void) {
 
-  INFO_STAGE_PRINT("Part 1 - Check for Delegate Initialization");
+  INFO_STAGE_PRINT("Part 1 - Initialize round data & Sync All Delegates");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 1);
   if (strlen(vrf_public_key) == 0) {
     WARNING_PRINT("Failed to read vrf_public_key for delegate, has this delegate been registered?");
@@ -86,8 +86,8 @@ xcash_round_result_t process_round(void) {
   }
 
   // Get the current block height
-  INFO_STAGE_PRINT("Part 2 - Get Current Block Height");
-  snprintf(current_round_part, sizeof(current_round_part), "%d", 2);
+//  INFO_STAGE_PRINT("Part 2 - Get Current Block Height");
+//  snprintf(current_round_part, sizeof(current_round_part), "%d", 2);
   if (get_current_block_height(current_block_height) != XCASH_OK) {
     ERROR_PRINT("Can't get current block height");
     atomic_store(&wait_for_block_height_init, false);
@@ -97,8 +97,8 @@ xcash_round_result_t process_round(void) {
   atomic_store(&wait_for_block_height_init, false);
   INFO_STAGE_PRINT("Creating Block: %s", current_block_height);
 
-  INFO_STAGE_PRINT("Part 3 - Check Delegates, Get Previous Block Hash, and Delegates Collection Hash");
-  snprintf(current_round_part, sizeof(current_round_part), "%d", 3);
+//  INFO_STAGE_PRINT("Part 3 - Check Delegates, Get Previous Block Hash, and Delegates Collection Hash");
+//  snprintf(current_round_part, sizeof(current_round_part), "%d", 3);
   // delegates_all is loaded prior to start of round due to node timing issues
   total_delegates = 0;
   for (size_t x = 0; x < BLOCK_VERIFIERS_TOTAL_AMOUNT; x++) {
@@ -126,8 +126,8 @@ xcash_round_result_t process_round(void) {
     return ROUND_ERROR;
   }
 
-  INFO_STAGE_PRINT("Part 4 - Sync & Create VRF Data and Send To All Delegates");
-  snprintf(current_round_part, sizeof(current_round_part), "%d", 4);
+//  INFO_STAGE_PRINT("Part 4 - Sync & Create VRF Data and Send To All Delegates");
+//  snprintf(current_round_part, sizeof(current_round_part), "%d", 4);
 
   response_t** responses = NULL;
   char* vrf_message = NULL;
@@ -405,74 +405,6 @@ xcash_round_result_t process_round(void) {
   return (xcash_round_result_t)block_creation_result;
 }
 
-
-
-
-
-
-
-
-
-
-
-static inline long now_ms_real(void) {
-  struct timespec ts; clock_gettime(CLOCK_REALTIME, &ts);
-  return (long)ts.tv_sec*1000L + ts.tv_nsec/1000000L;
-}
-static inline long now_ms_mono(void) {
-  struct timespec ts; clock_gettime(CLOCK_MONOTONIC, &ts);
-  return (long)ts.tv_sec*1000L + ts.tv_nsec/1000000L;
-}
-static void sleep_until_ms_mono(long target_ms) {
-  for (;;) {
-    long now = now_ms_mono();
-    long remain = target_ms - now;
-    if (remain <= 0) break;
-    struct timespec req = { .tv_sec = remain/1000, .tv_nsec = (remain%1000)*1000000L };
-    nanosleep(&req, NULL);
-  }
-}
-
-/* Wait until the next 60s slot opens (with a tiny safety lead). If we're already
- * inside the first START_WINDOW_SEC of the current slot, return immediately. */
-static void wait_for_slot_open_60s(void) {
-  time_t now = time(NULL);
-  size_t sec_within = (size_t)((now - EPOCH_ANCHOR) % SCHED_WINDOW_SEC);
-
-  if (sec_within <= START_WINDOW_SEC) {
-    return; // we're already inside the start window
-  }
-
-  // Compute target in REALTIME domain
-  time_t next_slot = now - sec_within + SCHED_WINDOW_SEC;
-  long target_real_ms = (long)next_slot * 1000L - SEND_SAFETY_MS;
-  long real_now = now_ms_real();
-  if (target_real_ms < real_now) target_real_ms = real_now;
-
-  // Periodic status (use REALTIME so the math is consistent)
-  for (;;) {
-    long remain_ms = target_real_ms - now_ms_real();
-    if (remain_ms <= 0) break;
-    long remain_s = (remain_ms + 999) / 1000;
-    if ((remain_s % 10) == 0) {
-      INFO_PRINT("Next round starts in [%02ld:%02ld]", remain_s/60, remain_s%60);
-    }
-    struct timespec req = { .tv_sec = 1, .tv_nsec = 0 };
-    nanosleep(&req, NULL);
-  }
-
-  // Final precise wait in MONOTONIC domain (robust against NTP jumps)
-  long mono_now = now_ms_mono();
-  long mono_target_ms = mono_now + (target_real_ms - real_now);
-  sleep_until_ms_mono(mono_target_ms);
-}
-
-
-
-
-
-
-
 /*---------------------------------------------------------------------------------------------------------
 Name: start_block_production
 Description:
@@ -512,32 +444,20 @@ void start_block_production(void) {
     FATAL_ERROR_EXIT("Failed to load and organize delegates for starting round, Possible problem with Mongodb");
   }
 
-
-
-
-
-
-
-
-
-
   // Start production loop
   while (true) {
-//    gettimeofday(&current_time, NULL);
-//    size_t seconds_within_block = current_time.tv_sec % (BLOCK_TIME * 60);
-
-wait_for_slot_open_60s();
-INFO_PRINT("Starting round at %lld", (long long)time(NULL));
+    gettimeofday(&current_time, NULL);
+    size_t seconds_within_block = current_time.tv_sec % (BLOCK_TIME * 60);
 
     // Skip production if outside initial window
-//    if (seconds_within_block > 1) {
-//      if (seconds_within_block % 10 == 0) {
-//        INFO_PRINT("Next round starts in [%ld:%02ld]",
-//                   0L, 59 - (current_time.tv_sec % 60));
-//      }
-//      sleep(1);
-//      continue;
-//    }
+    if (seconds_within_block > 1) {
+      if (seconds_within_block % 10 == 0) {
+        INFO_PRINT("Next round starts in [%ld:%02ld]",
+                   0L, 59 - (current_time.tv_sec % 60));
+      }
+      sleep(1);
+      continue;
+    }
 
     current_block_height[0] = '\0';
     delegate_db_hash_mismatch = 0;
@@ -673,14 +593,12 @@ INFO_PRINT("Starting round at %lld", (long long)time(NULL));
         get_vrf_public_key();
       }
       // if not registered no need to continue
-      if (strlen(vrf_public_key) != 0) {
-        INFO_STAGE_PRINT("Round skipped or delegate still initializing - waiting to sync...");
-//        if (sync_block_verifiers_minutes_and_seconds(1, 51) == XCASH_ERROR) {
-//          DEBUG_PRINT("Failed to sync in the allotted time");
-//        }
-
+      if (strlen(vrf_public_key) == 0) {
+        WARNING_PRINT("Failed to read vrf_public_key for delegate, has this delegate been registered?");
+      } else {
         // If more that a 30% mismatch lets resync the node
         if ((delegate_db_hash_mismatch * 100) > (total_delegates * 30)) {
+          INFO_STAGE_PRINT("Delegates Collection is out of sync, attempting to update");
           int selected_index;
           pthread_mutex_lock(&delegates_all_lock);
           selected_index = select_random_online_delegate();
@@ -690,11 +608,8 @@ INFO_PRINT("Starting round at %lld", (long long)time(NULL));
             if (!create_delegates_db_sync_request(selected_index)) {
               ERROR_PRINT("Error occured while syncing delegates");
             }
-//            if (sync_block_verifiers_minutes_and_seconds(1, 58) == XCASH_ERROR) {
-//              ERROR_PRINT("Failed to sync in the allotted time");
-//            }
           } else {
-            ERROR_PRINT("Error creating sync token"); 
+            ERROR_PRINT("Error creating sync token");
           }
 
         }
@@ -706,6 +621,8 @@ INFO_PRINT("Starting round at %lld", (long long)time(NULL));
     if (!fill_delegates_from_db()) {
       FATAL_ERROR_EXIT("Failed to load and organize delegates for next round, Possible problem with Mongodb");
     }
+    // set up for next round ins case trans come in a little early
+    snprintf(current_round_part, sizeof(current_round_part), "%d", 1);
   }
 
 }
