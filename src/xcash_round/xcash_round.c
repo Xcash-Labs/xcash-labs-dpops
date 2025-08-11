@@ -450,12 +450,22 @@ void start_block_production(void) {
     size_t minute_within_block = (current_time.tv_sec / 60) % BLOCK_TIME;
 
     // Skip production if outside initial window
-    if (seconds_within_block > 5) {
-      if (seconds_within_block % 10 == 0) {
+//    if (seconds_within_block > 5) {
+//      if (seconds_within_block % 10 == 0) {
         // only print every 10 seconds
+//        INFO_PRINT("Next round starts in [%ld:%02ld]",
+//                   BLOCK_TIME - 1 - minute_within_block,
+//                   59 - (current_time.tv_sec % 60));
+//      }
+//      sleep(1);
+//      continue;
+//    }
+
+    // Skip production if outside initial window
+    if (seconds_within_block > 1) {
+      if (seconds_within_block % 10 == 0) {
         INFO_PRINT("Next round starts in [%ld:%02ld]",
-                   BLOCK_TIME - 1 - minute_within_block,
-                   59 - (current_time.tv_sec % 60));
+                   0L, 59 - (current_time.tv_sec % 60));
       }
       sleep(1);
       continue;
