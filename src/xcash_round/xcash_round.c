@@ -73,24 +73,25 @@ static int compare_hashes(const void* a, const void* b) {
  */
 xcash_round_result_t process_round(void) {
 
-  INFO_STAGE_PRINT("Part 1 - Initialization and Sync Round");
+  INFO_STAGE_PRINT("Part 1 - Check Delegate Registration");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 1);
   if (strlen(vrf_public_key) == 0) {
     WARNING_PRINT("Failed to read vrf_public_key for delegate, has this delegate been registered?");
     return ROUND_SKIP;
   }
 
+  // Get the current block height
+  INFO_STAGE_PRINT("Part 2 - Get Current Block Height");
+  snprintf(current_round_part, sizeof(current_round_part), "%d", 2);
+
   if (!is_blockchain_synced()) {
     WARNING_PRINT("Delegate is still syncing, skipping round");
     return ROUND_SKIP;
   }
 
-  // Get the current block height
-  INFO_STAGE_PRINT("Part 2 - Get Current Block Height");
-  snprintf(current_round_part, sizeof(current_round_part), "%d", 2);
   if (get_current_block_height(current_block_height) != XCASH_OK) {
     ERROR_PRINT("Can't get current block height");
-    atomic_store(&wait_for_block_height_init, false);
+/    atomic_store(&wait_for_block_height_init, false);
     return ROUND_ERROR;
   }
 
@@ -130,8 +131,14 @@ xcash_round_result_t process_round(void) {
   snprintf(current_round_part, sizeof(current_round_part), "%d", 4);
 
 
-    sleep(1);
+
+
+  sleep(1);
   
+
+
+
+
   response_t** responses = NULL;
   char* vrf_message = NULL;
   if (generate_and_request_vrf_data_sync(&vrf_message)) {
