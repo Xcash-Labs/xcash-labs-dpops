@@ -35,19 +35,19 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
 
 
 
-  int wait_seconds = 0;
-  while (atomic_load(&wait_for_block_height_init) && wait_seconds < DELAY_EARLY_TRANSACTIONS_MAX) {
-    sleep(1);
-    wait_seconds++;
-  }
+//  int wait_seconds = 0;
+//  while (atomic_load(&wait_for_block_height_init) && wait_seconds < DELAY_EARLY_TRANSACTIONS_MAX) {
+//    sleep(1);
+//    wait_seconds++;
+//  }
 
-  if (atomic_load(&wait_for_block_height_init)) {
-    ERROR_PRINT("Timed out waiting for current_block_height in server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data");
-  }
+//  if (atomic_load(&wait_for_block_height_init)) {
+//    ERROR_PRINT("Timed out waiting for current_block_height in server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data");
+//  }
 
 
 
-  
+
   pthread_mutex_lock(&delegates_all_lock);
   bool found = false;
 
@@ -59,14 +59,14 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
 
       found = true;
       if (strcmp(block_height, current_block_height) != 0) {
-        INFO_PRINT("Block height mismatch for %s: remote=%s, local=%s",
+        DEBUG_PRINT("Block height mismatch for %s: remote=%s, local=%s",
                     public_address, block_height, current_block_height);
         break;
       }
 
       // Compare delegate list hash
       if (strcmp(parsed_delegates_hash, delegates_hash) != 0) {
-        INFO_PRINT("Delegates hash mismatch for %s: remote=%s, local=%s",
+        DEBUG_PRINT("Delegates hash mismatch for %s: remote=%s, local=%s",
                     public_address, parsed_delegates_hash, delegates_hash);
         delegate_db_hash_mismatch = delegate_db_hash_mismatch + 1;
         break;
@@ -75,7 +75,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
       // All checks passed — mark online
       strncpy(delegates_all[i].online_status, "true", sizeof(delegates_all[i].online_status));
       delegates_all[i].online_status[sizeof(delegates_all[i].online_status) - 1] = '\0';
-      INFO_PRINT("Marked delegate %s as online (ck)", public_address);
+      DEBUG_PRINT("Marked delegate %s as online (ck)", public_address);
 
       unsigned char alpha_input_bin[72] = {0};
       unsigned char pk_bin[crypto_vrf_PUBLICKEYBYTES] = {0};

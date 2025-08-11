@@ -91,11 +91,11 @@ xcash_round_result_t process_round(void) {
 
   if (get_current_block_height(current_block_height) != XCASH_OK) {
     ERROR_PRINT("Can't get current block height");
-    atomic_store(&wait_for_block_height_init, false);
+//    atomic_store(&wait_for_block_height_init, false);
     return ROUND_ERROR;
   }
 
-  atomic_store(&wait_for_block_height_init, false);
+//  atomic_store(&wait_for_block_height_init, false);
   INFO_STAGE_PRINT("Creating Block: %s", current_block_height);
 
   INFO_STAGE_PRINT("Part 3 - Check Delegates, Get Previous Block Hash, and Delegates Collection Hash");
@@ -472,7 +472,7 @@ void start_block_production(void) {
     current_block_height[0] = '\0';
     delegate_db_hash_mismatch = 0;
     atomic_store(&wait_for_vrf_init, true);
-    atomic_store(&wait_for_block_height_init, true);
+//    atomic_store(&wait_for_block_height_init, true);
     round_result = ROUND_OK;
 
     round_result = process_round();
@@ -526,7 +526,7 @@ void start_block_production(void) {
 
           if (is_primary_node()) {
 
-            INFO_PRINT("Updating Statistics");
+            DEBUG_PRINT("Updating Statistics");
             char ck_block_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
             if (get_current_block_height(ck_block_height) != XCASH_OK) {
               ERROR_PRINT("Can't get current block height");
