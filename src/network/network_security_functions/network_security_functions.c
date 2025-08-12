@@ -153,13 +153,13 @@ int verify_data(const char *message) {
   }
 
   if (strcmp(previous_block_hash, ck_previous_block_hash) != 0) {
-    ERROR_PRINT("Failed Signature Verification, previous block hash is not valid");
+    INFO_PRINT("Failed Signature Verification, previous block hash is not valid");
     return XCASH_ERROR;
   }
 
   snprintf(data, sizeof(data), "{\"public_address\":\"%s\"}", ck_public_address);
   if (count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, data) == 0) {
-    ERROR_PRINT("The delegates public address in this transaction does not exist");
+    INFO_PRINT("The delegates public address in this transaction does not exist");
     return XCASH_ERROR;
   }
 
