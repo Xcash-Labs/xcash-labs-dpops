@@ -154,6 +154,7 @@ int verify_data(const char *message) {
 
   if (strcmp(previous_block_hash, ck_previous_block_hash) != 0) {
     INFO_PRINT("Failed Signature Verification, previous block hash is not valid");
+    INFO_PRINT("previous_block_hash: %s     ck_previous_block_hash:%s", previous_block_hash, ck_previous_block_hash);
     return XCASH_ERROR;
   }
 
