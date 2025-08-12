@@ -80,38 +80,9 @@ xcash_round_result_t process_round(void) {
     return ROUND_SKIP;
   }
 
-  INFO_STAGE_PRINT("Part 2 - Check Delegates, Get Previous Block Hash, and Delegates Collection Hash");
-  snprintf(current_round_part, sizeof(current_round_part), "%d", 2);
-  // delegates_all is loaded prior to start of round due to node timing issues
-  total_delegates = 0;
-  for (size_t x = 0; x < BLOCK_VERIFIERS_TOTAL_AMOUNT; x++) {
-    if (strlen(delegates_all[x].public_address) > 0) {
-      total_delegates++;
-    }
-  }
-  if (total_delegates == 0) {
-    ERROR_PRINT("No delegates were loaded from the database");
-    return ROUND_ERROR;
-  }
-  DEBUG_PRINT("Found %d active delegates out of %d total slots", total_delegates, BLOCK_VERIFIERS_TOTAL_AMOUNT);
-
-  // Get the previous block hash
-  memset(previous_block_hash, 0, BLOCK_HASH_LENGTH);
-  if (get_previous_block_hash(previous_block_hash) != XCASH_OK) {
-    ERROR_PRINT("Can't get previous block hash");
-    return ROUND_SKIP;
-  }
-
-  // Get hash for delegates collection
-  memset(delegates_hash, 0, sizeof(delegates_hash));
-  if (!hash_delegates_collection(delegates_hash)) {
-    ERROR_PRINT("Failed to create delegates MD5 hash");
-    return ROUND_ERROR;
-  }
-
   // Get the current block height and wait to complete before sending or reading transactions
-  INFO_STAGE_PRINT("Part 3 - Get Current Block Height");
-  snprintf(current_round_part, sizeof(current_round_part), "%d", 3);
+  INFO_STAGE_PRINT("Part 2 - Get Current Block Height");
+  snprintf(current_round_part, sizeof(current_round_part), "%d", 2);
 
   if (!is_blockchain_synced()) {
     WARNING_PRINT("Delegate is still syncing, skipping round");
@@ -126,6 +97,35 @@ xcash_round_result_t process_round(void) {
 
   atomic_store(&wait_for_block_height_init, false);
   INFO_STAGE_PRINT("Creating Block: %s", current_block_height);
+
+  INFO_STAGE_PRINT("Part 3 - Check Delegates, Get Previous Block Hash, and Delegates Collection Hash");
+  snprintf(current_round_part, sizeof(current_round_part), "%d", 3);
+  // delegates_all is loaded prior to start of round due to node timing issues
+  total_delegates = 0;
+  for (size_t x = 0; x < BLOCK_VERIFIERS_TOTAL_AMOUNT; x++) {
+    if (strlen(delegates_all[x].public_address) > 0) {
+      total_delegates++;
+    }
+  }
+  if (total_delegates == 0) {
+    ERROR_PRINT("No delegates were loaded from the database");
+    return ROUND_ERROR;
+  }
+  DEBUG_PRINT("Found %d active delegates out of %d total slots", total_delegates, BLOCK_VERIFIERS_TOTAL_AMOUNT);
+
+  // Get the previous block hash
+//  memset(previous_block_hash, 0, BLOCK_HASH_LENGTH);
+  if (get_previous_block_hash(previous_block_hash) != XCASH_OK) {
+    ERROR_PRINT("Can't get previous block hash");
+    return ROUND_SKIP;
+  }
+
+  // Get hash for delegates collection
+  memset(delegates_hash, 0, sizeof(delegates_hash));
+  if (!hash_delegates_collection(delegates_hash)) {
+    ERROR_PRINT("Failed to create delegates MD5 hash");
+    return ROUND_ERROR;
+  }
 
   INFO_STAGE_PRINT("Part 4 - Sync & Create VRF Data and Send To All Delegates");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 4);
@@ -461,6 +461,7 @@ void start_block_production(void) {
     }
 
     current_block_height[0] = '\0';
+    previous_block_hash[0] = '\0';
     delegate_db_hash_mismatch = 0;
     atomic_store(&wait_for_vrf_init, true);
     atomic_store(&wait_for_block_height_init, true);
