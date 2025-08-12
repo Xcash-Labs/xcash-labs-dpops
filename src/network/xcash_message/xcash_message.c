@@ -234,9 +234,9 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
 
 
 
-  
-  INFO_PRINT("Message: %s", data);
-  INFO_PRINT("Processing message from client IP: %s", client->client_ip);
+
+
+  INFO_PRINT("Processing trans_type: %s", trans_type);
 
 
 
