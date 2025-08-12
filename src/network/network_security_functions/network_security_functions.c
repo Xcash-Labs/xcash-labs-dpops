@@ -307,6 +307,9 @@ int verify_the_ip(const char *message, const char *client_ip) {
   char resolved_ip[INET_ADDRSTRLEN] = {0};
 
   // Allow loopback traffic
+
+  INFO_PRINT("client_ip: %s", client_ip);
+
   if (strcmp(client_ip, "127.0.0.1") == 0 || strcmp(client_ip, "::1") == 0) {
     DEBUG_PRINT("Internal loopback connection from: %s", client_ip);
     return XCASH_OK;
