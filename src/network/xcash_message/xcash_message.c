@@ -224,12 +224,14 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
     return;
   }
  
-  if (verify_the_ip(data, client->client_ip) == XCASH_ERROR) {
-    ERROR_PRINT("Failed to validate the IP came from a valid source");
-    return;
-  }
-
   xcash_msg_t msg_type = get_message_type(trans_type);
+
+  if (msg_type != XMSG_NODES_TO_BLOCK_VERIFIERS_REGISTER_DELEGATE) {
+    if (verify_the_ip(data, client->client_ip) != XCASH_OK) {
+      ERROR_PRINT("IP check failed for msg_type=%d from %s", (int)msg_type, client->client_ip);
+      return;
+    }
+  }
 
   if (is_walletsign_type(msg_type)) {
     INFO_PRINT("Processing walletsign type: %s", trans_type);

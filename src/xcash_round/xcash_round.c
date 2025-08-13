@@ -597,7 +597,7 @@ void start_block_production(void) {
       if (strlen(vrf_public_key) == 0) {
         WARNING_PRINT("Failed to read vrf_public_key for delegate, has this delegate been registered?");
       } else {
-        // If more that a 30% mismatch lets resync the node
+        // If >30% of delegates report a DB hash mismatch, trigger a resync.
         if ((delegate_db_hash_mismatch * 100) > (total_delegates * 30)) {
           INFO_STAGE_PRINT("Delegates Collection is out of sync, attempting to update");
           int selected_index;
