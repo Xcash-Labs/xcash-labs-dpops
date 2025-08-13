@@ -481,11 +481,6 @@ void start_block_production(void) {
 
     if (round_result == ROUND_OK) {
 
-//      INFO_STAGE_PRINT("Waiting To Verify Block Creation...");
-//      if (sync_block_verifiers_minutes_and_seconds(1, 51) == XCASH_ERROR) {
-//        DEBUG_PRINT("Failed to sync in the allotted time");
-//      }
-
       for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
         if (strlen(delegates_all[i].public_address) > 0 && strlen(delegates_all[i].public_key) > 0) {
           if (strcmp(delegates_all[i].online_status, delegates_all[i].online_status_orginal) == 0) {
