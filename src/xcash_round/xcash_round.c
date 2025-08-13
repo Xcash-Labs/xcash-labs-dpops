@@ -68,15 +68,15 @@ static int compare_hashes(const void* a, const void* b) {
  * and uses `current_round_part` for identification and message signing context.
  *
  * @return xcash_round_result_t - ROUND_OK if block was created and broadcast successfully,
- *                                ROUND_SKIP if round was skipped due to node majority failure,
- *                                ROUND_ERROR on critical errors.
+ *                                ROUND_SKIP if round was skipped due to xcashd error or round stage took too long
+ *                                ROUND_ERROR on critical errors attempt refresh
  */
 xcash_round_result_t process_round(void) {
 
   INFO_STAGE_PRINT("Part 1 - Check Delegate Registration");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 1);
   if (strlen(vrf_public_key) == 0) {
-    WARNING_PRINT("Failed to read vrf_public_key for delegate, has this delegate been registered?");
+    WARNING_PRINT("Failed to read vrf_public_key, has this delegate been registered?");
     return ROUND_SKIP;
   }
 
@@ -106,7 +106,7 @@ xcash_round_result_t process_round(void) {
   memset(delegates_hash, 0, sizeof(delegates_hash));
   if (!hash_delegates_collection(delegates_hash)) {
     ERROR_PRINT("Failed to create delegates MD5 hash");
-    return ROUND_ERROR;
+    return ROUND_SKIP;
   }
 
   // Get the current block height and wait to complete before sending or reading transactions
@@ -121,7 +121,7 @@ xcash_round_result_t process_round(void) {
   if (get_current_block_height(current_block_height) != XCASH_OK) {
     ERROR_PRINT("Can't get current block height");
     atomic_store(&wait_for_block_height_init, false);
-    return ROUND_ERROR;
+    return ROUND_SKIP;
   }
 
   atomic_store(&wait_for_block_height_init, false);
@@ -188,7 +188,7 @@ xcash_round_result_t process_round(void) {
   // Need at least BLOCK_VERIFIERS_VALID_AMOUNT delegates to start things off, delegates data needs to match for first delegates
   if (nodes_majority_count < BLOCK_VERIFIERS_VALID_AMOUNT) {
     INFO_PRINT_STATUS_FAIL("Failed to reach the required number of online nodes: [%d/%d]", nodes_majority_count, BLOCK_VERIFIERS_VALID_AMOUNT);
-    return ROUND_SKIP;
+    return ROUND_ERROR;
   }
 
   int delegates_num = (total_delegates < BLOCK_VERIFIERS_AMOUNT) ? total_delegates : BLOCK_VERIFIERS_AMOUNT;
@@ -196,7 +196,7 @@ xcash_round_result_t process_round(void) {
 
   if (nodes_majority_count < required_majority) {
     INFO_PRINT_STATUS_FAIL("Data majority not reached. Online Nodes: [%d/%d]", nodes_majority_count, required_majority);
-    return ROUND_SKIP;
+    return ROUND_ERROR;
   }
 
   INFO_PRINT_STATUS_OK("Data majority reached. Online Nodes: [%d/%d]", nodes_majority_count, required_majority);
@@ -378,7 +378,7 @@ xcash_round_result_t process_round(void) {
 
   if (max_votes < required_majority) {
     INFO_PRINT_STATUS_FAIL("Data majority not reached. Online Nodes: [%d/%d]", max_votes, required_majority);
-    return ROUND_SKIP;
+    return ROUND_ERROR;
   }
 
   if (producer_indx >= 0) {
@@ -470,6 +470,14 @@ void start_block_production(void) {
 
     // Final step - Update DB
     snprintf(current_round_part, sizeof(current_round_part), "%d", 12);
+
+    if (round_result == ROUND_SKIP) {
+      sync_block_verifiers_minutes_and_seconds(0, 5) == XCASH_ERROR) {
+      if (strlen(vrf_public_key) == 0) {
+        get_vrf_public_key();
+      }
+      goto end_of_round_skip_block;
+    }
 
     if (round_result == ROUND_OK) {
 
@@ -589,36 +597,25 @@ void start_block_production(void) {
         }
       }
     } else {
-      // Check if registered, if not check db again
-      if (strlen(vrf_public_key) == 0) {
-        get_vrf_public_key();
-      }
-      // if not registered no need to continue
-      if (strlen(vrf_public_key) == 0) {
-        WARNING_PRINT("Failed to read vrf_public_key for delegate, has this delegate been registered?");
-      } else {
-        // If >30% of delegates report a DB hash mismatch, trigger a resync.
-        if ((delegate_db_hash_mismatch * 100) > (total_delegates * 30)) {
-          INFO_STAGE_PRINT("Delegates Collection is out of sync, attempting to update");
-          int selected_index;
-          pthread_mutex_lock(&delegates_all_lock);
-          selected_index = select_random_online_delegate();
-          pthread_mutex_unlock(&delegates_all_lock);
+      // If >30% of delegates report a DB hash mismatch, trigger a resync.
+      if ((delegate_db_hash_mismatch * 100) > (total_delegates * 30)) {
+        INFO_STAGE_PRINT("Delegates Collection is out of sync, attempting to update");
+        int selected_index;
+        pthread_mutex_lock(&delegates_all_lock);
+        selected_index = select_random_online_delegate();
+        pthread_mutex_unlock(&delegates_all_lock);
 
-          if (create_sync_token() == XCASH_OK) {
-            if (!create_delegates_db_sync_request(selected_index)) {
-              ERROR_PRINT("Error occured while syncing delegates");
-            }
-          } else {
-            ERROR_PRINT("Error creating sync token");
+        if (create_sync_token() == XCASH_OK) {
+          if (!create_delegates_db_sync_request(selected_index)) {
+            ERROR_PRINT("Error occured while syncing delegates");
           }
-
+        } else {
+          ERROR_PRINT("Error creating sync token");
         }
       }
     }
-#ifdef SEED_NODE_ON
+
   end_of_round_skip_block:
-#endif
     // set up delegates for next round
     if (!fill_delegates_from_db()) {
       FATAL_ERROR_EXIT("Failed to load and organize delegates for next round, Possible problem with Mongodb");

@@ -234,7 +234,6 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
   }
 
   if (is_walletsign_type(msg_type)) {
-    INFO_PRINT("Processing walletsign type: %s", trans_type);
     if (verify_data(data) == XCASH_ERROR) {
       ERROR_PRINT("Failed to validate message sign data");
       return;
@@ -242,7 +241,6 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
   }
 
   if (is_walletsign_action_type(msg_type)) {
-    INFO_PRINT("Processing walletsign actioin type: %s", data);
     if (verify_action_data(data) == XCASH_ERROR) {
       ERROR_PRINT("Failed to validate action message sign data");
       return;
