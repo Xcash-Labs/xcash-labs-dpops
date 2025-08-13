@@ -472,7 +472,7 @@ void start_block_production(void) {
     snprintf(current_round_part, sizeof(current_round_part), "%d", 12);
 
     if (round_result == ROUND_SKIP) {
-      sync_block_verifiers_minutes_and_seconds(0, 5) == XCASH_ERROR) {
+      sync_block_verifiers_minutes_and_seconds(0, 5);
       if (strlen(vrf_public_key) == 0) {
         get_vrf_public_key();
       }
