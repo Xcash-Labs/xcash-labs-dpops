@@ -616,8 +616,9 @@ void start_block_production(void) {
         }
       }
     }
-
+#ifdef SEED_NODE_ON
   end_of_round_skip_block:
+#endif
     // set up delegates for next round
     if (!fill_delegates_from_db()) {
       FATAL_ERROR_EXIT("Failed to load and organize delegates for next round, Possible problem with Mongodb");
