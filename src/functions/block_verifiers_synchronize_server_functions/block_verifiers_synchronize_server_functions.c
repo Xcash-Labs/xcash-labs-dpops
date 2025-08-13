@@ -55,20 +55,19 @@ Description: Runs the code when the server receives the NODE_TO_NETWORK_DATA_NOD
 Parameters:
   CLIENT_SOCKET - The socket to send data to
 ---------------------------------------------------------------------------------------------------------*/
-void server_receive_data_socket_node_to_network_data_nodes_get_current_block_verifiers_list(server_client_t* client)
-{
-    char out_data[DELEGATES_ONLINE_BUFFER];
-    bool ok = create_delegate_online_ip_list(out_data, sizeof(out_data));
+void server_receive_data_socket_node_to_network_data_nodes_get_current_block_verifiers_list(server_client_t *client) {
+  char out_data[DELEGATES_ONLINE_BUFFER];
+  bool ok = create_delegate_online_ip_list(out_data, sizeof(out_data));
 
-    if (ok) {
-        INFO_PRINT("Generated JSON (%zu bytes):\n%s\n", strlen(out_data), out_data);
-        send_data(client, (unsigned char*)out_data, strlen(out_data));
-    } else {
-        ERROR_PRINT("Failed to build delegate online list (buffer too small or DB error)");
-        send_data(client,
-                  (unsigned char*)"0|Could not get a list of the current online delegates|x}",
-                  strlen("0|Could not get a list of the current online delegates|x}"));
-    }
+  if (ok) {
+    INFO_PRINT("Generated JSON (%zu bytes):\n%s\n", strlen(out_data), out_data);
+    send_data(client, (unsigned char *)out_data, strlen(out_data));
+  } else {
+    ERROR_PRINT("Failed to build delegate online list (buffer too small or DB error)");
+    send_data(client,
+              (unsigned char *)"0|Could not get a list of the current online delegates}",
+              strlen("0|Could not get a list of the current online delegates}"));
+  }
 }
 
 /*---------------------------------------------------------------------------------------------------------

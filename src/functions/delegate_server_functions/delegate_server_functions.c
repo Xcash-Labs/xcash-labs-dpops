@@ -121,13 +121,13 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
         !cJSON_IsNumber(js_reg_time))
     {
         cJSON_Delete(root);
-        SERVER_ERROR("0|Could not verify the message|x}");
+        SERVER_ERROR("0|Could not verify the message}");
     }
 
     // 2a) Ensure message_settings matches exactly
     if (strcmp(msg_settings->valuestring, "NODES_TO_BLOCK_VERIFIERS_REGISTER_DELEGATE") != 0) {
         cJSON_Delete(root);
-        SERVER_ERROR("0|Invalid message_settings|x}");
+        SERVER_ERROR("0|Invalid message_settings}");
     }
 
     // 2b) Copy them into our local buffers (including null terminators)
@@ -142,7 +142,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
         address_len != XCASH_WALLET_LENGTH)
     {
         cJSON_Delete(root);
-        SERVER_ERROR("0|Invalid message data|x}");
+        SERVER_ERROR("0|Invalid message data}");
     }
 
     memcpy(delegate_name,        js_name->valuestring,    name_len);
@@ -167,7 +167,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
         crypto_vrf_is_valid_key(delegate_public_key_data) != 1)
     {
         cJSON_Delete(root);
-        SERVER_ERROR("0|Invalid data|x}");
+        SERVER_ERROR("0|Invalid data}");
     }
 
     cJSON_Delete(root); // we no longer need the JSON tree
@@ -177,34 +177,34 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
     snprintf(data, sizeof(data), "{\"public_address\":\"%s\"}", delegate_public_address);
     if (count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, data) != 0)
     {
-        SERVER_ERROR("0|The delegates public address is already registered|x}");
+        SERVER_ERROR("0|The delegates public address is already registered}");
     }
 
     // 5b) IP_address
     snprintf(data, sizeof(data), "{\"IP_address\":\"%s\"}", delegates_IP_address);
     if (count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, data) != 0)
     {
-        SERVER_ERROR("0|The delegates IP address is already registered|x}");
+        SERVER_ERROR("0|The delegates IP address is already registered}");
     }
 
     // 5c) public_key
     snprintf(data, sizeof(data), "{\"public_key\":\"%s\"}", delegate_public_key);
     if (count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, data) != 0)
     {
-        SERVER_ERROR("0|The delegates public key is already registered|x}");
+        SERVER_ERROR("0|The delegates public key is already registered}");
     }
 
     // 5d) delegate_name
     snprintf(data, sizeof(data), "{\"delegate_name\":\"%s\"}", delegate_name);
     if (count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, data) != 0)
     {
-        SERVER_ERROR("0|The delegates name is already registered|x}");
+        SERVER_ERROR("0|The delegates name is already registered}");
     }
 
     // 6) Check overall delegate count
     int delegate_count = count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, "{}");
     if (delegate_count >= BLOCK_VERIFIERS_TOTAL_AMOUNT) {
-      SERVER_ERROR("0|The maximum amount of delegates has been reached|x}");
+      SERVER_ERROR("0|The maximum amount of delegates has been reached}");
     }
 
     // 7) Finally insert a new document
@@ -242,7 +242,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
 
       if (insert_document_into_collection_bson(DATABASE_NAME, DB_COLLECTION_DELEGATES, &bson) != XCASH_OK) {
         bson_destroy(&bson);
-        SERVER_ERROR("Failed to insert the delegate document}");
+        SERVER_ERROR("0|Failed to insert the delegate document}");
       }
 
       bson_destroy(&bson);
@@ -265,7 +265,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
       // Insert into "statistics" collection
       if (insert_document_into_collection_bson(DATABASE_NAME, DB_COLLECTION_STATISTICS, &bson_statistics) != XCASH_OK) {
         bson_destroy(&bson_statistics);
-        SERVER_ERROR("Failed to insert the statistics document}");
+        SERVER_ERROR("0|Failed to insert the statistics document}");
       }
 
       bson_destroy(&bson_statistics);
@@ -273,7 +273,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
 #endif
 
     // 8) Success: reply back to the client
-    send_data(client, (unsigned char *)"1|Registered the delegate|seqkey.......}", strlen("1|Registered the delegate|seqkey}"));
+    send_data(client, (unsigned char *)"1|Registered the delegate}", strlen("1|Registered the delegate}"));
     return;
 
 #undef SERVER_ERROR
