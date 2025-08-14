@@ -25,7 +25,7 @@ void handle_error(const char *function_name, const char *message, char *buf1, ch
 int sign_data(char *message);
 bool sign_block_blob(const char* block_blob_hex, char* signature_out, size_t sig_out_len);
 int verify_data(const char *message);
-int verify_action_data(const char *message, xcash_msg_t msg_type);
+int verify_action_data(const char *message, const char *client_ip, xcash_msg_t msg_type);
 int verify_the_ip(const char *message, const char *client_ip);
 
 #endif

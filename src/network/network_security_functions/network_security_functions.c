@@ -251,7 +251,7 @@ static bool is_local_address(const char* ip) {
  *
  * @return XCASH_OK if the signature is valid, otherwise XCASH_ERROR.
 ---------------------------------------------------------------------------------------------------------*/
-int verify_action_data(const char *message, xcash_msg_t msg_type) {
+int verify_action_data(const char *message, const char *client_ip, xcash_msg_t msg_type) {
   const char *HTTP_HEADERS[] = {"Content-Type: application/json", "Accept: application/json"};
   const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0]);
 
