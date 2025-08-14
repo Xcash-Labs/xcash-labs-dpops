@@ -603,8 +603,8 @@ void start_block_production(void) {
       }
     } else {
       // Initialize the delegate when it first starts up
-      if (init_the_delegate) {
-        init_the_delegate = false;
+      if (init_needed) {
+        init_needed = false;
 
         sync_block_verifiers_minutes_and_seconds(0, 50);
         INFO_STAGE_PRINT("Delegate just started up, attempting to sync");
