@@ -76,15 +76,6 @@ xcash_round_result_t process_round(void) {
 
   INFO_STAGE_PRINT("Part 1 - Check Delegate Registration");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 1);
-
-  if (init_needed) {
-    if (is_seed_node) {
-      init_needed = false;
-    } else {
-      return ROUND_ERROR;
-    }
-  }
-
   if (strlen(vrf_public_key) == 0) {
     WARNING_PRINT("Failed to read vrf_public_key, has this delegate been registered?");
     return ROUND_SKIP;
@@ -166,6 +157,14 @@ xcash_round_result_t process_round(void) {
     return ROUND_SKIP;
   }
 
+  if (init_needed) {
+    if (is_seed_node) {
+      init_needed = false;
+    } else {
+      return ROUND_ERROR;
+    }
+  }
+
   INFO_STAGE_PRINT("Part 5 - Checking Block Verifiers Majority and Minimum Online Requirement");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 5);
   // Fill block verifiers list with proven online nodes
@@ -197,7 +196,7 @@ xcash_round_result_t process_round(void) {
 
   // Need at least BLOCK_VERIFIERS_VALID_AMOUNT delegates to start things off, delegates data needs to match for first delegates
   if (nodes_majority_count < BLOCK_VERIFIERS_VALID_AMOUNT) {
-    INFO_PRINT_STATUS_FAIL("Failed to reach the required number of online nodes: [%d/%d]", nodes_majority_count, BLOCK_VERIFIERS_VALID_AMOUNT);
+    INFO_PRINT_STATUS_FAIL("Failed to reach the required number of online nodes: %d  Minimum Required: %d", nodes_majority_count, BLOCK_VERIFIERS_VALID_AMOUNT);
     return ROUND_ERROR;
   }
 
@@ -205,7 +204,7 @@ xcash_round_result_t process_round(void) {
   int required_majority = (delegates_num * MAJORITY_PERCENT + 99) / 100;
 
   if (nodes_majority_count < required_majority) {
-    INFO_PRINT_STATUS_FAIL("Data majority not reached. Online Nodes: [%d/%d]", nodes_majority_count, required_majority);
+    INFO_PRINT_STATUS_FAIL("Data majority not reached. Online Nodes: %d  Required majority: %d", nodes_majority_count, required_majority);
     return ROUND_ERROR;
   }
 

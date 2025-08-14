@@ -57,6 +57,10 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
         break;
       }
 
+      // Online and a partial match
+      strncpy(delegates_all[i].online_status, "partial", sizeof(delegates_all[i].online_status));
+      delegates_all[i].online_status[sizeof(delegates_all[i].online_status) - 1] = '\0';
+
       // Compare delegate list hash
       if (strcmp(parsed_delegates_hash, delegates_hash) != 0) {
         DEBUG_PRINT("Delegates hash mismatch for %s: remote=%s, local=%s",
