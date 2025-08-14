@@ -312,8 +312,7 @@ static bool is_local_address(const char* ip) {
  * Name: verify_ip
  * Description:
  *   Verifies that the IP address of the message sender matches the registered IP or resolved hostname
- *   of a known delegate from the current verifier list. Optionally checks that the message's round part
- *   matches the current expected round part.
+ *   of a known delegate from the current verifier list.
  *
  * Parameters:
  *   message - The complete signed message (in JSON or delimited key-value format).

@@ -177,7 +177,13 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
     snprintf(data, sizeof(data), "{\"public_address\":\"%s\"}", delegate_public_address);
     if (count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, data) != 0)
     {
+      if (is_seed_node) {
+      // Seed node db uses replication so it will get add by the primay node
+        send_data(client, (unsigned char *)"1|Registered the delegate}", strlen("1|Registered the delegate}"));
+        return;
+      } else {
         SERVER_ERROR("0|The delegates public address is already registered}");
+      }
     }
 
     // 5b) IP_address
@@ -255,7 +261,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
       bson_init(&bson_statistics);
 
       // Strings
-      bson_append_utf8(&bson_statistics, "public_key", -1, delegate_public_address, -1);
+      bson_append_utf8(&bson_statistics, "public_key", -1, delegate_public_key, -1);
 
       // Numbers
       bson_append_int64(&bson_statistics, "block_verifier_total_rounds", -1, set_counts);
