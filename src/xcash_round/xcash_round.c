@@ -2,7 +2,7 @@
 
 producer_ref_t producer_refs[] = {0};
 static int total_delegates = 0;
-static bool init_the_delegate = true;
+static bool init_needed = true;
 
 /**
  * @brief Selects the block producer from the current round’s verifiers using VRF beta comparison.
@@ -77,8 +77,12 @@ xcash_round_result_t process_round(void) {
   INFO_STAGE_PRINT("Part 1 - Check Delegate Registration");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 1);
 
-  if (init_the_delegate) {
-    return ROUND_ERROR;
+  if (init_needed) {
+    if (is_seed_node) {
+      init_needed = false;
+    } else {
+      return ROUND_ERROR;
+    }
   }
 
   if (strlen(vrf_public_key) == 0) {
@@ -600,24 +604,22 @@ void start_block_production(void) {
     } else {
       // Initialize the delegate when it first starts up
       if (init_the_delegate) {
-        init_the_delegate = false;
+        init_needed = false;
 
-        if (!is_seed_node) {
-          sync_block_verifiers_minutes_and_seconds(0, 50);
-          INFO_STAGE_PRINT("Delegate just started up, attempting to sync");
-          int selected_index;
-          pthread_mutex_lock(&delegates_all_lock);
-          selected_index = select_random_online_delegate();
-          pthread_mutex_unlock(&delegates_all_lock);
-          if (create_sync_token() == XCASH_OK) {
-            if (!create_delegates_db_sync_request(selected_index)) {
-              ERROR_PRINT("Error occured while syncing delegate");
-              goto end_of_round_skip_block;
-            }
-          } else {
-            ERROR_PRINT("Error creating sync token");
+        sync_block_verifiers_minutes_and_seconds(0, 50);
+        INFO_STAGE_PRINT("Delegate just started up, attempting to sync");
+        int selected_index;
+        pthread_mutex_lock(&delegates_all_lock);
+        selected_index = select_random_online_delegate();
+        pthread_mutex_unlock(&delegates_all_lock);
+        if (create_sync_token() == XCASH_OK) {
+          if (!create_delegates_db_sync_request(selected_index)) {
+            ERROR_PRINT("Error occured while syncing delegate");
             goto end_of_round_skip_block;
           }
+        } else {
+          ERROR_PRINT("Error creating sync token");
+          goto end_of_round_skip_block;
         }
       }
 
