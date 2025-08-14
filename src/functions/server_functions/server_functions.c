@@ -39,6 +39,11 @@ int server_limit_IP_addresses(limit_action_t action, const char* IP_ADDRESS) {
   }
 
   pthread_mutex_unlock(&database_data_IP_address_lock);
+
+  if (result == XCASH_ERROR) {
+    ERROR_PRINT("Rate limit hit ip_address: %s", IP_ADDRESS);
+  }
+
   return result;
 }
 
@@ -88,6 +93,11 @@ int server_limit_public_addresses(limit_action_t action, const char* MESSAGE) {
   }
 
   pthread_mutex_unlock(&database_data_IP_address_lock);
+
+  if (result == XCASH_ERROR) {
+    ERROR_PRINT("Rate limit hit for public_address: %s", public_address);
+  }
+
   return result;
 }
 
@@ -151,5 +161,10 @@ int server_limit_public_addresses_vrf_lookup(limit_action_t action, const char* 
   }
 
   pthread_mutex_unlock(&database_data_IP_address_lock);
+
+  if (result == XCASH_ERROR) {
+    ERROR_PRINT("Rate limit hit for public_address: %s", public_address);
+  }
+
   return result;
 }
