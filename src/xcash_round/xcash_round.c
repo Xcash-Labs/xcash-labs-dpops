@@ -600,7 +600,7 @@ void start_block_production(void) {
     } else {
       // Initialize the delegate when it first starts up
       if (init_the_delegate) {
-        delegate_init = false;
+        init_the_delegate = false;
 
         if (!is_seed_node) {
           sync_block_verifiers_minutes_and_seconds(0, 50);
@@ -609,10 +609,9 @@ void start_block_production(void) {
           pthread_mutex_lock(&delegates_all_lock);
           selected_index = select_random_online_delegate();
           pthread_mutex_unlock(&delegates_all_lock);
-
           if (create_sync_token() == XCASH_OK) {
             if (!create_delegates_db_sync_request(selected_index)) {
-              ERROR_PRINT("Error occured while syncing delegates");
+              ERROR_PRINT("Error occured while syncing delegate");
               goto end_of_round_skip_block;
             }
           } else {
@@ -629,7 +628,6 @@ void start_block_production(void) {
         pthread_mutex_lock(&delegates_all_lock);
         selected_index = select_random_online_delegate();
         pthread_mutex_unlock(&delegates_all_lock);
-
         if (create_sync_token() == XCASH_OK) {
           if (!create_delegates_db_sync_request(selected_index)) {
             ERROR_PRINT("Error occured while syncing delegates");
