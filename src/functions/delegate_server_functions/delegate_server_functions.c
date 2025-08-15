@@ -105,7 +105,10 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
     // 1) Parse incoming MESSAGE as JSON
     cJSON *root = cJSON_Parse(MESSAGE);
     if (!root) {
-        SERVER_ERROR("Could not verify the message}");
+
+        INFO_PRINT("0|Could not verify the message}");
+  
+        SERVER_ERROR("0|Could not verify the message}");
     }
 
     // 2) Extract and validate each required field
@@ -124,6 +127,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
         !cJSON_IsNumber(js_reg_time))
     {
         cJSON_Delete(root);
+                INFO_PRINT("0|Could not verify the message2}");
         SERVER_ERROR("0|Could not verify the message}");
     }
 
