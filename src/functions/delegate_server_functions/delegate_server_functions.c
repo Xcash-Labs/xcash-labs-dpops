@@ -35,45 +35,70 @@ int check_for_valid_delegate_name(const char* DELEGATE_NAME)
 }
 
 /*---------------------------------------------------------------------------------------------------------
-Name: check_for_valid_ip_address
-Description: Checks for a valid IP address
+Name:        check_for_valid_ip_address
+Description: Validates that HOST is either:
+               - a numeric IPv4/IPv6 address, or
+               - a hostname that resolves via DNS,
+             and that at least one resolved address is a public, routable address.
+             (Loopback, private, link-local, ULA, and multicast are rejected.)
 Parameters:
-  HOST - The IP address or the domain name
-Return: XCASH_ERROR if the IP address is not valid, 1 if the IP address is valid
+  host  - C string: IPv4/IPv6 literal or DNS hostname (max ~253 chars)
+Return:
+  XCASH_OK    (1) if valid and public-routable
+  XCASH_ERROR (0) on failure (null/empty, unresolvable, or non-public ranges)
+Notes:
+  - Uses getaddrinfo(AF_UNSPEC) to support IPv4 and IPv6.
+  - This performs DNS resolution and may block; call on a non-critical thread.
 ---------------------------------------------------------------------------------------------------------*/
 int check_for_valid_ip_address(const char *host) {
-  struct addrinfo hints = {0}, *res = NULL;
-  struct sockaddr_in *ipv4;
-  char ip_str[INET_ADDRSTRLEN];
+  if (!host) return XCASH_ERROR;
 
-  if (!host || strlen(host) >= INET_ADDRSTRLEN) return 0;
+  size_t len = strlen(host);
+  if (len == 0 || len > 253) return XCASH_ERROR;  // FQDN max ~253
 
-  // Setup hints
-  hints.ai_family = AF_INET;
-  hints.ai_socktype = SOCK_STREAM;
+  struct addrinfo hints, *res = NULL;
+  memset(&hints, 0, sizeof(hints));
+  hints.ai_family   = AF_UNSPEC;    // allow IPv4 and IPv6
+  hints.ai_socktype = SOCK_STREAM;  // any stream socket
 
-  if (getaddrinfo(host, NULL, &hints, &res) != 0) {
-    return XCASH_ERROR; // Not resolvable to IPv4
+  if (getaddrinfo(host, NULL, &hints, &res) != 0 || !res) {
+    return XCASH_ERROR; // not resolvable
   }
 
-  ipv4 = (struct sockaddr_in *)res->ai_addr;
-  inet_ntop(AF_INET, &(ipv4->sin_addr), ip_str, sizeof(ip_str));
+  int rc = XCASH_ERROR; // assume failure until we find a public address
+
+  for (struct addrinfo *ai = res; ai; ai = ai->ai_next) {
+    if (ai->ai_family == AF_INET) {
+      struct in_addr a = ((struct sockaddr_in*)ai->ai_addr)->sin_addr;
+      uint32_t ip = ntohl(a.s_addr);
+
+      // Reject 0.0.0.0/8, 10/8, 127/8, 169.254/16, 172.16/12, 192.168/16, >= 224 multicast/reserved
+      if ((ip >> 24) == 0     || (ip >> 24) == 10   || (ip >> 24) == 127 ||
+          (ip >> 16) == 0xA9FE || (ip >> 20) == 0xAC1 || (ip >> 16) == 0xC0A8 ||
+          (ip >> 24) >= 224) {
+        continue; // not acceptable
+      }
+      rc = XCASH_OK;  // public IPv4
+      break;
+    } else if (ai->ai_family == AF_INET6) {
+      struct in6_addr a = ((struct sockaddr_in6*)ai->ai_addr)->sin6_addr;
+
+      // Reject loopback ::1
+      if (IN6_IS_ADDR_LOOPBACK(&a)) continue;
+      // Reject link-local fe80::/10
+      if ((a.s6_addr[0] == 0xFE) && ((a.s6_addr[1] & 0xC0) == 0x80)) continue;
+      // Reject unique local fc00::/7
+      if ((a.s6_addr[0] & 0xFE) == 0xFC) continue;
+      // Reject multicast ff00::/8
+      if (a.s6_addr[0] == 0xFF) continue;
+
+      rc = XCASH_OK;  // global IPv6
+      break;
+    }
+  }
+
   freeaddrinfo(res);
-
-  uint32_t ip = ntohl(ipv4->sin_addr.s_addr);
-
-  // Reject 0.0.0.0/8, 10.0.0.0/8, 127.0.0.0/8, 169.254.0.0/16, 172.16.0.0/12, 192.168.0.0/16
-  if ((ip >> 24) == 0 ||                   // 0.0.0.0/8
-      (ip >> 24) == 10 ||                  // 10.0.0.0/8
-      (ip >> 24) == 127 ||                 // 127.0.0.0/8
-      (ip >> 16) == 0xA9FE ||              // 169.254.0.0/16
-      (ip >> 20) == 0xAC1 ||               // 172.16.0.0/12
-      (ip >> 16) == 0xC0A8 ||              // 192.168.0.0/16
-      (ip >> 24) >= 224) {                 // Multicast/reserved
-    return XCASH_ERROR;
-  }
-
-  return XCASH_OK;
+  return rc;
 }
 
 /*---------------------------------------------------------------------------------------------------------
@@ -160,39 +185,27 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
     delegate_public_key_data[crypto_vrf_PUBLICKEYBYTES] = 0; // just in case
 
     // 4) Validate ranges and formats
-//    if (check_for_valid_delegate_name(delegate_name) == 0 ||
-//        strlen(delegate_public_address) != XCASH_WALLET_LENGTH ||
-//        strncmp(delegate_public_address, XCASH_WALLET_PREFIX, sizeof(XCASH_WALLET_PREFIX) - 1) != 0 ||
-//        check_for_valid_ip_address(delegates_IP_address) == 0 ||
-//        crypto_vrf_is_valid_key(delegate_public_key_data) != 1)
-//    {
-//        cJSON_Delete(root);
-//        SERVER_ERROR("0|Invalid data}");
-//    }
-
-
-if (check_for_valid_delegate_name(delegate_name) == 0) {
-  cJSON_Delete(root); SERVER_ERROR("0|Invalid delegate_name}");
-}
-if (strlen(delegate_public_address) != XCASH_WALLET_LENGTH) {
-  cJSON_Delete(root); SERVER_ERROR("0|Invalid public_address length}");
-}
-if (strncmp(delegate_public_address, XCASH_WALLET_PREFIX,
-  sizeof(XCASH_WALLET_PREFIX)-1) != 0) {
-  cJSON_Delete(root); SERVER_ERROR("0|Invalid public_address prefix}");
-}
-if (check_for_valid_ip_address(delegates_IP_address) == 0) {
-  cJSON_Delete(root); SERVER_ERROR("0|Invalid delegate_IP (must be IP or resolvable hostname)}");
-}
-if (crypto_vrf_is_valid_key(delegate_public_key_data) != 1) {
-  cJSON_Delete(root); SERVER_ERROR("0|Invalid delegate_public_key}");
-}
-
-
-
-
-
-
+    if (check_for_valid_delegate_name(delegate_name) == 0) {
+      cJSON_Delete(root);
+      SERVER_ERROR("0|Invalid delegate_name}");
+    }
+    if (strlen(delegate_public_address) != XCASH_WALLET_LENGTH) {
+      cJSON_Delete(root);
+      SERVER_ERROR("0|Invalid public_address length}");
+    }
+    if (strncmp(delegate_public_address, XCASH_WALLET_PREFIX,
+                sizeof(XCASH_WALLET_PREFIX) - 1) != 0) {
+      cJSON_Delete(root);
+      SERVER_ERROR("0|Invalid public_address prefix}");
+    }
+    if (check_for_valid_ip_address(delegates_IP_address) == 0) {
+      cJSON_Delete(root);
+      SERVER_ERROR("0|Invalid delegate_IP (must be IP or resolvable hostname)}");
+    }
+    if (crypto_vrf_is_valid_key(delegate_public_key_data) != 1) {
+      cJSON_Delete(root);
+      SERVER_ERROR("0|Invalid delegate_public_key}");
+    }
 
     cJSON_Delete(root); // we no longer need the JSON tree
 
