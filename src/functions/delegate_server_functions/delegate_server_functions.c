@@ -35,91 +35,30 @@ int check_for_valid_delegate_name(const char* DELEGATE_NAME)
 }
 
 /*---------------------------------------------------------------------------------------------------------
-Name:        check_for_valid_ip_address
-Description: Validates that HOST is either:
-               - a numeric IPv4/IPv6 address, or
-               - a hostname that resolves via DNS,
-             and that at least one resolved address is a public, routable address.
-             (Loopback, private, link-local, ULA, and multicast are rejected.)
+Name:        check_for_valid_ip_or_hostname
+Description: Quick sanity check that HOST is either:
+               - a numeric IPv4/IPv6 literal, or
+               - a hostname that resolves via DNS (A/AAAA).
+             No public/private filtering is performed here.
 Parameters:
-  host  - C string: IPv4/IPv6 literal or DNS hostname (max ~253 chars)
+  host  - C string: IPv4/IPv6 literal or DNS hostname
 Return:
-  XCASH_OK    (1) if valid and public-routable
-  XCASH_ERROR (0) on failure (null/empty, unresolvable, or non-public ranges)
+  XCASH_OK    (1) if getaddrinfo() resolves to at least one address
+  XCASH_ERROR (0) if null/empty or resolution fails
 Notes:
   - Uses getaddrinfo(AF_UNSPEC) to support IPv4 and IPv6.
-  - This performs DNS resolution and may block; call on a non-critical thread.
+  - This performs DNS resolution and may block; call off the hot path.
+  - Security enforcement (e.g., public-routable requirement) should be done on the server/seed.
 ---------------------------------------------------------------------------------------------------------*/
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <string.h>
-#include <stdbool.h>
-
-int check_for_valid_ip_address(const char *host) {
-  if (!host) return XCASH_ERROR;
-
-  // trim whitespace
-  while (*host && (*host==' ' || *host=='\t' || *host=='\n' || *host=='\r')) host++;
-  size_t len = strlen(host);
-  while (len && (host[len-1]==' ' || host[len-1]=='\t' || host[len-1]=='\n' || host[len-1]=='\r')) len--;
-  if (len == 0 || len > 253) return XCASH_ERROR;
-
-  // copy trimmed; drop trailing dot
-  char name[256];
-  memcpy(name, host, len);
-  name[len] = '\0';
-  if (len && name[len-1] == '.') { name[len-1] = '\0'; }
-
+int check_for_valid_ip_or_hostname(const char *host) {
+  if (!host || !*host) return XCASH_ERROR;
   struct addrinfo hints = {0}, *res = NULL;
-  hints.ai_family   = AF_UNSPEC;   // v4 or v6
-  hints.ai_socktype = SOCK_STREAM;
-
-  int gai = getaddrinfo(name, NULL, &hints, &res);
-  if (gai != 0 || !res) {
-    INFO_PRINT("DNS fail for '%s': %s", name, gai_strerror(gai));
-    return XCASH_ERROR;
-  }
-
-  int rc = XCASH_ERROR;
-
-  for (struct addrinfo *ai = res; ai; ai = ai->ai_next) {
-    if (ai->ai_family == AF_INET) {
-      struct in_addr a = ((struct sockaddr_in*)ai->ai_addr)->sin_addr;
-      uint32_t ip = ntohl(a.s_addr);
-      INFO_PRINT("A record: %u.%u.%u.%u",
-                 (ip>>24)&0xFF, (ip>>16)&0xFF, (ip>>8)&0xFF, ip&0xFF);
-
-      // reject non-public v4
-      if ((ip >> 24) == 0     || (ip >> 24) == 10   || (ip >> 24) == 127 ||
-          (ip >> 16) == 0xA9FE || (ip >> 20) == 0xAC1 || (ip >> 16) == 0xC0A8 ||
-          (ip >> 24) >= 224) {
-        continue;
-      }
-      rc = XCASH_OK; break;
-    } else if (ai->ai_family == AF_INET6) {
-      struct in6_addr a = ((struct sockaddr_in6*)ai->ai_addr)->sin6_addr;
-      char buf[INET6_ADDRSTRLEN];
-      inet_ntop(AF_INET6, &a, buf, sizeof(buf));
-      INFO_PRINT("AAAA record: %s", buf);
-
-      // reject non-public v6
-      if (IN6_IS_ADDR_LOOPBACK(&a)) continue;                                // ::1
-      if ((a.s6_addr[0] == 0xFE) && ((a.s6_addr[1] & 0xC0) == 0x80)) continue; // fe80::/10
-      if ((a.s6_addr[0] & 0xFE) == 0xFC) continue;                           // fc00::/7
-      if (a.s6_addr[0] == 0xFF) continue;                                    // ff00::/8
-
-      rc = XCASH_OK; break;
-    }
-  }
-
+  hints.ai_family = AF_UNSPEC;   // v4 or v6
+  int rc = getaddrinfo(host, NULL, &hints, &res);
+  if (rc != 0 || !res) return XCASH_ERROR;
   freeaddrinfo(res);
-
-  if (rc != XCASH_OK) {
-    INFO_PRINT("All resolved addresses for '%s' were non-public or filtered", name);
-  }
-  return rc;
+  return XCASH_OK;
 }
-
 
 /*---------------------------------------------------------------------------------------------------------
 Name: server_receive_data_socket_nodes_to_block_verifiers_register_delegates
@@ -218,7 +157,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
       cJSON_Delete(root);
       SERVER_ERROR("0|Invalid public_address prefix}");
     }
-    if (check_for_valid_ip_address(delegates_IP_address) == 0) {
+    if (check_for_valid_ip_or_hostname(delegates_IP_address) == 0) {
       cJSON_Delete(root);
       SERVER_ERROR("0|Invalid delegate_IP (must be IP or resolvable hostname)}");
     }
