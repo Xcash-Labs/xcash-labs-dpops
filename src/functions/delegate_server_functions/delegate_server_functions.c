@@ -35,29 +35,70 @@ int check_for_valid_delegate_name(const char* DELEGATE_NAME)
 }
 
 /*---------------------------------------------------------------------------------------------------------
-Name:        check_for_valid_ip_or_hostname
-Description: Quick sanity check that HOST is either:
-               - a numeric IPv4/IPv6 literal, or
-               - a hostname that resolves via DNS (A/AAAA).
-             No public/private filtering is performed here.
+Name:        check_for_valid_ip_address
+Description: Validates that HOST is either:
+               - a numeric IPv4/IPv6 address, or
+               - a hostname that resolves via DNS,
+             and that at least one resolved address is a public, routable address.
+             (Loopback, private, link-local, ULA, and multicast are rejected.)
 Parameters:
-  host  - C string: IPv4/IPv6 literal or DNS hostname
+  host  - C string: IPv4/IPv6 literal or DNS hostname (max ~253 chars)
 Return:
-  XCASH_OK    (1) if getaddrinfo() resolves to at least one address
-  XCASH_ERROR (0) if null/empty or resolution fails
+  XCASH_OK    (1) if valid and public-routable
+  XCASH_ERROR (0) on failure (null/empty, unresolvable, or non-public ranges)
 Notes:
   - Uses getaddrinfo(AF_UNSPEC) to support IPv4 and IPv6.
-  - This performs DNS resolution and may block; call off the hot path.
-  - Security enforcement (e.g., public-routable requirement) should be done on the server/seed.
+  - This performs DNS resolution and may block; call on a non-critical thread.
 ---------------------------------------------------------------------------------------------------------*/
-int check_for_valid_ip_or_hostname(const char *host) {
-  if (!host || !*host) return XCASH_ERROR;
-  struct addrinfo hints = {0}, *res = NULL;
-  hints.ai_family = AF_UNSPEC;   // v4 or v6
-  int rc = getaddrinfo(host, NULL, &hints, &res);
-  if (rc != 0 || !res) return XCASH_ERROR;
+int check_for_valid_ip_address(const char *host) {
+  if (!host) return XCASH_ERROR;
+
+  size_t len = strlen(host);
+  if (len == 0 || len > 253) return XCASH_ERROR;  // FQDN max ~253
+
+  struct addrinfo hints, *res = NULL;
+  memset(&hints, 0, sizeof(hints));
+  hints.ai_family   = AF_UNSPEC;    // allow IPv4 and IPv6
+  hints.ai_socktype = SOCK_STREAM;  // any stream socket
+
+  if (getaddrinfo(host, NULL, &hints, &res) != 0 || !res) {
+    return XCASH_ERROR; // not resolvable
+  }
+
+  int rc = XCASH_ERROR; // assume failure until we find a public address
+
+  for (struct addrinfo *ai = res; ai; ai = ai->ai_next) {
+    if (ai->ai_family == AF_INET) {
+      struct in_addr a = ((struct sockaddr_in*)ai->ai_addr)->sin_addr;
+      uint32_t ip = ntohl(a.s_addr);
+
+      // Reject 0.0.0.0/8, 10/8, 127/8, 169.254/16, 172.16/12, 192.168/16, >= 224 multicast/reserved
+      if ((ip >> 24) == 0     || (ip >> 24) == 10   || (ip >> 24) == 127 ||
+          (ip >> 16) == 0xA9FE || (ip >> 20) == 0xAC1 || (ip >> 16) == 0xC0A8 ||
+          (ip >> 24) >= 224) {
+        continue; // not acceptable
+      }
+      rc = XCASH_OK;  // public IPv4
+      break;
+    } else if (ai->ai_family == AF_INET6) {
+      struct in6_addr a = ((struct sockaddr_in6*)ai->ai_addr)->sin6_addr;
+
+      // Reject loopback ::1
+      if (IN6_IS_ADDR_LOOPBACK(&a)) continue;
+      // Reject link-local fe80::/10
+      if ((a.s6_addr[0] == 0xFE) && ((a.s6_addr[1] & 0xC0) == 0x80)) continue;
+      // Reject unique local fc00::/7
+      if ((a.s6_addr[0] & 0xFE) == 0xFC) continue;
+      // Reject multicast ff00::/8
+      if (a.s6_addr[0] == 0xFF) continue;
+
+      rc = XCASH_OK;  // global IPv6
+      break;
+    }
+  }
+
   freeaddrinfo(res);
-  return XCASH_OK;
+  return rc;
 }
 
 /*---------------------------------------------------------------------------------------------------------
@@ -157,7 +198,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
       cJSON_Delete(root);
       SERVER_ERROR("0|Invalid public_address prefix}");
     }
-    if (check_for_valid_ip_or_hostname(delegates_IP_address) == 0) {
+    if (check_for_valid_ip_address(delegates_IP_address) == 0) {
       cJSON_Delete(root);
       SERVER_ERROR("0|Invalid delegate_IP (must be IP or resolvable hostname)}");
     }
