@@ -20,7 +20,7 @@
 //int add_reserve_proof_remove_previous_vote(const char* PUBLIC_ADDRESS_CREATE_RESERVE_PROOF_DATA);
 //void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(const int CLIENT_SOCKET, const char* MESSAGE);
 int check_for_valid_delegate_name(const char* DELEGATE_NAME);
-int check_for_valid_ip_or_hostname(const char *host)
+int check_for_valid_ip_or_hostname(const char *host);
 void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(server_client_t* client, const char* MESSAGE);
 void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_client_t *client, const char *MESSAGE);
 //int check_for_valid_delegate_fee(const char* MESSAGE);
