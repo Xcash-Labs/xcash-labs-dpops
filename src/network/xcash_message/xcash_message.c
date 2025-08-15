@@ -241,20 +241,12 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
     }
   }
 
-  INFO_PRINT("Message: %s", data);
-
   if (is_walletsign_action_type(msg_type)) {
-
-    INFO_PRINT("Verify action data");
-
     if (verify_action_data(data, client->client_ip, msg_type) == XCASH_ERROR) {
       ERROR_PRINT("Failed to validate action message sign data");
       return;
     }
   }
-
-    INFO_PRINT("After Verify action data");
-
 
   switch (msg_type) {
 
@@ -280,9 +272,7 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
       break;
 
     case XMSG_NODES_TO_BLOCK_VERIFIERS_REGISTER_DELEGATE:
-        INFO_PRINT("register 1");
       if (server_limit_public_addresses(LIMIT_CHECK, data) == 1) {
-            INFO_PRINT("register 2");
         server_receive_data_socket_nodes_to_block_verifiers_register_delegates(client, data);
         server_limit_public_addresses(LIMIT_REMOVE, data);
       }

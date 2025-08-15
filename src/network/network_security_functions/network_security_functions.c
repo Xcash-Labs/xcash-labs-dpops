@@ -159,7 +159,7 @@ int verify_data(const char *message) {
 
   snprintf(data, sizeof(data), "{\"public_address\":\"%s\"}", ck_public_address);
   if (count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, data) == 0) {
-    INFO_PRINT("The delegates public address in this transaction does not exist");
+    DEBUG_PRINT("The delegates public address in this transaction does not exist");
     return XCASH_ERROR;
   }
 
