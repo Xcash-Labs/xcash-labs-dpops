@@ -241,7 +241,7 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
     }
   }
 
-  INFO_PRINT("Message: &s", data);
+  INFO_PRINT("Message: %s", data);
 
   if (is_walletsign_action_type(msg_type)) {
 
