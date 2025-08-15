@@ -136,35 +136,14 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
     size_t pubkey_len  = strlen(js_pubkey->valuestring);
     size_t address_len = strlen(js_address->valuestring);
 
-//    if (name_len == 0 || name_len >= sizeof(delegate_name) ||
-//        ip_len == 0   || ip_len >= sizeof(delegates_IP_address) ||
-//        pubkey_len != VRF_PUBLIC_KEY_LENGTH ||
-//        address_len != XCASH_WALLET_LENGTH)
-//    {
-//        cJSON_Delete(root);
-//        SERVER_ERROR("0|Invalid message data}");
-//    }
-
-
-if (name_len == 0 || name_len >= sizeof(delegate_name)) {
-  cJSON_Delete(root);
-  SERVER_ERROR("0|Invalid delegate_name length}");
-}
-if (ip_len == 0 || ip_len >= sizeof(delegates_IP_address)) {
-  cJSON_Delete(root);
-  SERVER_ERROR("0|Invalid delegate_IP length}");
-}
-if (pubkey_len != VRF_PUBLIC_KEY_LENGTH) {
-  cJSON_Delete(root);
-  SERVER_ERROR("0|Invalid delegate_public_key length}");
-}
-if (address_len != XCASH_WALLET_LENGTH) {
-  cJSON_Delete(root);
-  SERVER_ERROR("0|Invalid public_address length}");
-}
-
-
-
+    if (name_len == 0 || name_len >= sizeof(delegate_name) ||
+        ip_len == 0   || ip_len >= sizeof(delegates_IP_address) ||
+        pubkey_len != VRF_PUBLIC_KEY_LENGTH ||
+        address_len != XCASH_WALLET_LENGTH)
+    {
+        cJSON_Delete(root);
+        SERVER_ERROR("0|Invalid length for delegate name, delegate ip, public key, or public wallet address}");
+    }
 
     memcpy(delegate_name,        js_name->valuestring,    name_len);
     memcpy(delegates_IP_address, js_ip->valuestring,      ip_len);
@@ -181,15 +160,39 @@ if (address_len != XCASH_WALLET_LENGTH) {
     delegate_public_key_data[crypto_vrf_PUBLICKEYBYTES] = 0; // just in case
 
     // 4) Validate ranges and formats
-    if (check_for_valid_delegate_name(delegate_name) == 0 ||
-        strlen(delegate_public_address) != XCASH_WALLET_LENGTH ||
-        strncmp(delegate_public_address, XCASH_WALLET_PREFIX, sizeof(XCASH_WALLET_PREFIX) - 1) != 0 ||
-        check_for_valid_ip_address(delegates_IP_address) == 0 ||
-        crypto_vrf_is_valid_key(delegate_public_key_data) != 1)
-    {
-        cJSON_Delete(root);
-        SERVER_ERROR("0|Invalid data}");
-    }
+//    if (check_for_valid_delegate_name(delegate_name) == 0 ||
+//        strlen(delegate_public_address) != XCASH_WALLET_LENGTH ||
+//        strncmp(delegate_public_address, XCASH_WALLET_PREFIX, sizeof(XCASH_WALLET_PREFIX) - 1) != 0 ||
+//        check_for_valid_ip_address(delegates_IP_address) == 0 ||
+//        crypto_vrf_is_valid_key(delegate_public_key_data) != 1)
+//    {
+//        cJSON_Delete(root);
+//        SERVER_ERROR("0|Invalid data}");
+//    }
+
+
+if (check_for_valid_delegate_name(delegate_name) == 0) {
+  cJSON_Delete(root); SERVER_ERROR("0|Invalid delegate_name}");
+}
+if (strlen(delegate_public_address) != XCASH_WALLET_LENGTH) {
+  cJSON_Delete(root); SERVER_ERROR("0|Invalid public_address length}");
+}
+if (strncmp(delegate_public_address, XCASH_WALLET_PREFIX,
+  sizeof(XCASH_WALLET_PREFIX)-1) != 0) {
+  cJSON_Delete(root); SERVER_ERROR("0|Invalid public_address prefix}");
+}
+if (check_for_valid_ip_or_hostname(delegates_IP_address) == 0) {
+  cJSON_Delete(root); SERVER_ERROR("0|Invalid delegate_IP (must be IP or resolvable hostname)}");
+}
+if (crypto_vrf_is_valid_key(delegate_public_key_data) != 1) {
+  cJSON_Delete(root); SERVER_ERROR("0|Invalid delegate_public_key}");
+}
+
+
+
+
+
+
 
     cJSON_Delete(root); // we no longer need the JSON tree
 
