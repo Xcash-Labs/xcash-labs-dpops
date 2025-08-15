@@ -85,9 +85,6 @@ Parameters:
 ---------------------------------------------------------------------------------------------------------*/
 void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(server_client_t* client, const char* MESSAGE)
 {
-
-    INFO_PRINT("server_receive_data_socket_nodes_to_block_verifiers_register_delegates");
-
     char data[SMALL_BUFFER_SIZE]                     = {0};
     char delegate_name[MAXIMUM_BUFFER_SIZE_DELEGATES_NAME]     = {0};
     char delegate_public_address[XCASH_WALLET_LENGTH + 1]      = {0};
@@ -105,9 +102,6 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
     // 1) Parse incoming MESSAGE as JSON
     cJSON *root = cJSON_Parse(MESSAGE);
     if (!root) {
-
-        INFO_PRINT("0|Could not verify the message}");
-  
         SERVER_ERROR("0|Could not verify the message}");
     }
 
@@ -127,7 +121,6 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
         !cJSON_IsNumber(js_reg_time))
     {
         cJSON_Delete(root);
-                INFO_PRINT("0|Could not verify the message2}");
         SERVER_ERROR("0|Could not verify the message}");
     }
 
@@ -143,14 +136,35 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
     size_t pubkey_len  = strlen(js_pubkey->valuestring);
     size_t address_len = strlen(js_address->valuestring);
 
-    if (name_len == 0 || name_len >= sizeof(delegate_name) ||
-        ip_len == 0   || ip_len >= sizeof(delegates_IP_address) ||
-        pubkey_len != VRF_PUBLIC_KEY_LENGTH ||
-        address_len != XCASH_WALLET_LENGTH)
-    {
-        cJSON_Delete(root);
-        SERVER_ERROR("0|Invalid message data}");
-    }
+//    if (name_len == 0 || name_len >= sizeof(delegate_name) ||
+//        ip_len == 0   || ip_len >= sizeof(delegates_IP_address) ||
+//        pubkey_len != VRF_PUBLIC_KEY_LENGTH ||
+//        address_len != XCASH_WALLET_LENGTH)
+//    {
+//        cJSON_Delete(root);
+//        SERVER_ERROR("0|Invalid message data}");
+//    }
+
+
+if (name_len == 0 || name_len >= sizeof(delegate_name)) {
+  cJSON_Delete(root);
+  SERVER_ERROR("0|Invalid delegate_name length}");
+}
+if (ip_len == 0 || ip_len >= sizeof(delegates_IP_address)) {
+  cJSON_Delete(root);
+  SERVER_ERROR("0|Invalid delegate_IP length}");
+}
+if (pubkey_len != VRF_PUBLIC_KEY_LENGTH) {
+  cJSON_Delete(root);
+  SERVER_ERROR("0|Invalid delegate_public_key length}");
+}
+if (address_len != XCASH_WALLET_LENGTH) {
+  cJSON_Delete(root);
+  SERVER_ERROR("0|Invalid public_address length}");
+}
+
+
+
 
     memcpy(delegate_name,        js_name->valuestring,    name_len);
     memcpy(delegates_IP_address, js_ip->valuestring,      ip_len);
@@ -284,8 +298,6 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
       bson_destroy(&bson_statistics);
 
 #endif
-
-    INFO_PRINT("server_receive_data_socket_nodes_to_block_verifiers_register_delegates last");
 
     // 8) Success: reply back to the client
     send_data(client, (unsigned char *)"1|Registered the delegate}", strlen("1|Registered the delegate}"));
