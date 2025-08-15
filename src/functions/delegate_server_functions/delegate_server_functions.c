@@ -181,7 +181,7 @@ if (strncmp(delegate_public_address, XCASH_WALLET_PREFIX,
   sizeof(XCASH_WALLET_PREFIX)-1) != 0) {
   cJSON_Delete(root); SERVER_ERROR("0|Invalid public_address prefix}");
 }
-if (check_for_valid_ip_or_hostname(delegates_IP_address) == 0) {
+if (check_for_valid_ip_address(delegates_IP_address) == 0) {
   cJSON_Delete(root); SERVER_ERROR("0|Invalid delegate_IP (must be IP or resolvable hostname)}");
 }
 if (crypto_vrf_is_valid_key(delegate_public_key_data) != 1) {
