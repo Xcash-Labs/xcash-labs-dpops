@@ -85,6 +85,9 @@ Parameters:
 ---------------------------------------------------------------------------------------------------------*/
 void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(server_client_t* client, const char* MESSAGE)
 {
+
+    INFO_PRINT("server_receive_data_socket_nodes_to_block_verifiers_register_delegates");
+
     char data[SMALL_BUFFER_SIZE]                     = {0};
     char delegate_name[MAXIMUM_BUFFER_SIZE_DELEGATES_NAME]     = {0};
     char delegate_public_address[XCASH_WALLET_LENGTH + 1]      = {0};
@@ -277,6 +280,8 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
       bson_destroy(&bson_statistics);
 
 #endif
+
+    INFO_PRINT("server_receive_data_socket_nodes_to_block_verifiers_register_delegates last");
 
     // 8) Success: reply back to the client
     send_data(client, (unsigned char *)"1|Registered the delegate}", strlen("1|Registered the delegate}"));

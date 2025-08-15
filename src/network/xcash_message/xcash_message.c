@@ -253,6 +253,9 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
     }
   }
 
+    INFO_PRINT("After Verify action data");
+
+
   switch (msg_type) {
 
     case XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_VRF_DATA:
@@ -277,7 +280,9 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
       break;
 
     case XMSG_NODES_TO_BLOCK_VERIFIERS_REGISTER_DELEGATE:
+        INFO_PRINT("register 1");
       if (server_limit_public_addresses(LIMIT_CHECK, data) == 1) {
+            INFO_PRINT("register 2");
         server_receive_data_socket_nodes_to_block_verifiers_register_delegates(client, data);
         server_limit_public_addresses(LIMIT_REMOVE, data);
       }
