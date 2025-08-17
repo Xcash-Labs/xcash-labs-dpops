@@ -327,7 +327,9 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
   uint64_t block_height = strtoull(current_block_height, NULL, 10);
 
   // For new block only  "target_height": 636,
-  INFO_PRINT("Current Block Height: %s     Block_height: %s", current_block_height, js_height);
+  INFO_PRINT("Current Block Height: %llu     Block_height: %llu",
+           (unsigned long long)block_height, (unsigned long long)height);
+
   if (block_height == height) {
 
    if (strncmp(producer_refs[0].vrf_public_key, vrf_pubkey_str, VRF_PUBLIC_KEY_LENGTH) != 0)
