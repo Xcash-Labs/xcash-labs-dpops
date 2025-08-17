@@ -448,6 +448,9 @@ void start_block_production(void) {
   char cheight[BLOCK_HEIGHT_LENGTH + 1] = {0};
 
   // Wait for node to be fully synced
+
+  INFO_PRINT("Starting.................................................................");
+
   while (!is_synced) {
     if (is_blockchain_synced(target_height, cheight)) {
       is_synced = true;
