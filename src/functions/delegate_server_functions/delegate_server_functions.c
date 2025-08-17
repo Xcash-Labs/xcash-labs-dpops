@@ -296,7 +296,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
   // Parse the incoming JSON message
   cJSON *root = cJSON_Parse(MESSAGE);
   if (!root) {
-    send_data(client, (unsigned char *)"0|Invalid JSON format|x}", strlen("0|Invalid JSON format|x}"));
+    send_data(client, (unsigned char *)"0|Invalid JSON format}", strlen("0|Invalid JSON format}"));
     return;
   }
 
@@ -313,7 +313,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
       !cJSON_IsString(js_vrf_proof) || !cJSON_IsString(js_vrf_beta) || !cJSON_IsString(js_vrf_pubkey) ||
       !cJSON_IsString(js_vote_hash) || !cJSON_IsNumber(js_height) || !cJSON_IsString(js_prev_hash)) {
     cJSON_Delete(root);
-    send_data(client, (unsigned char *)"0|Missing or invalid fields|x}", strlen("0|Missing or invalid fields|x}"));
+    send_data(client, (unsigned char *)"0|Missing or invalid fields}", strlen("0|Missing or invalid fields}"));
     return;
   }
 
@@ -326,18 +326,19 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
   uint64_t height = (uint64_t)js_height->valuedouble;
   uint64_t block_height = strtoull(current_block_height, NULL, 10);
 
-  // For new block only  "target_height": 636,
+  // For new block only
   INFO_PRINT("Current Block Height: %llu     Block_height: %llu",
            (unsigned long long)block_height, (unsigned long long)height);
 
-  if (block_height == height) {
+  // If top block need to check vrf data and vote_hash
+  if (is_synced) {
 
-   if (strncmp(producer_refs[0].vrf_public_key, vrf_pubkey_str, VRF_PUBLIC_KEY_LENGTH) != 0)
+    if (strncmp(producer_refs[0].vrf_public_key, vrf_pubkey_str, VRF_PUBLIC_KEY_LENGTH) != 0)
     {
         ERROR_PRINT("Public key mismatch: expected %s, got %s",
                     producer_refs[0].vrf_public_key, vrf_pubkey_str);
         cJSON_Delete(root);
-        send_data(client, (unsigned char *)"0|Public key mismatch|x}", strlen("0|Public key mismatch|x}"));
+        send_data(client, (unsigned char *)"0|Public key mismatch}", strlen("0|Public key mismatch}"));
         return;
     }
 
@@ -347,7 +348,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
     {
         ERROR_PRINT("VRF proof, beta, or vote_hash mismatch");
         cJSON_Delete(root);
-        send_data(client, (unsigned char *)"0|VRF data mismatch|x}", strlen("0|VRF data mismatch|x}"));
+        send_data(client, (unsigned char *)"0|VRF data mismatch}", strlen("0|VRF data mismatch}"));
         return;
     }
 
@@ -358,7 +359,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
   unsigned char proof_bin[crypto_vrf_PROOFBYTES] = {0};
   unsigned char beta_bin[crypto_vrf_OUTPUTBYTES] = {0};
   unsigned char prev_hash_bin[32] = {0};
-  unsigned char alpha_input[72] = {0};
+  unsigned char alpha_input[32 + 8 + crypto_vrf_PUBLICKEYBYTES] = {0};
   unsigned char computed_beta[crypto_vrf_OUTPUTBYTES] = {0};
 
   // Convert hex → binary
@@ -367,7 +368,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
       !hex_to_byte_array(vrf_beta_str, beta_bin, sizeof(beta_bin)) ||
       !hex_to_byte_array(prev_hash_str, prev_hash_bin, sizeof(prev_hash_bin))) {
     cJSON_Delete(root);
-    send_data(client, (unsigned char *)"0|Hex decoding failed|x}", strlen("0|Hex decoding failed|x}"));
+    send_data(client, (unsigned char *)"0|Hex decoding failed}", strlen("0|Hex decoding failed}"));
     return;
   }
 

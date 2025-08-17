@@ -114,8 +114,12 @@ xcash_round_result_t process_round(void) {
   INFO_STAGE_PRINT("Part 3 - Get Current Block Height");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 3);
 
-  if (!is_blockchain_synced()) {
-    WARNING_PRINT("Delegate is still syncing, skipping round");
+  char target_height[BLOCK_HEIGHT_LENGTH] = {0};
+  char cheight[BLOCK_HEIGHT_LENGTH] = {0};
+  if (is_blockchain_synced(target_height, cheight)) {
+    is_synced = true;
+  } else {
+    WARNING_PRINT("Delegate is still syncing, this node is at %s and the target height is %s", cheight, target_height);
     return ROUND_SKIP;
   }
 
@@ -437,14 +441,18 @@ Returns:
 void start_block_production(void) {
   struct timeval current_time;
   xcash_round_result_t round_result;
-  bool current_block_healthy = false;
+  is_synced = false;
+  char target_height[BLOCK_HEIGHT_LENGTH] = {0};
+  char cheight[BLOCK_HEIGHT_LENGTH] = {0};
 
   // Wait for node to be fully synced
-  while (!current_block_healthy) {
-    if (is_blockchain_synced()) {
-      current_block_healthy = true;
+  while (!is_synced) {
+    memset(target_height, 0, BLOCK_HEIGHT_LENGTH);
+    memset(cheight, 0, BLOCK_HEIGHT_LENGTH);
+    if (!is_blockchain_synced(target_height, cheight)) {
+      is_synced = true;
     } else {
-      WARNING_PRINT("Node is still syncing. Waiting for recovery...");
+      WARNING_PRINT("Delegate is still syncing, this node is at %s and the target height is %s", cheight, target_height);
       sleep(5);
     }
   }
@@ -471,6 +479,7 @@ void start_block_production(void) {
 
     current_block_height[0] = '\0';
     delegate_db_hash_mismatch = 0;
+    is_synced = false;
     atomic_store(&wait_for_vrf_init, true);
     atomic_store(&wait_for_block_height_init, true);
     round_result = ROUND_OK;
@@ -544,7 +553,9 @@ void start_block_production(void) {
               goto end_of_round_skip_block;
             }
 
-            if (!is_blockchain_synced()) {
+            memset(target_height, 0, BLOCK_HEIGHT_LENGTH);
+            memset(cheight, 0, BLOCK_HEIGHT_LENGTH);
+            if (!is_blockchain_synced(target_height, cheight)) {
               ERROR_PRINT("Blockchain is not synced");
               goto end_of_round_skip_block;
             }

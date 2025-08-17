@@ -10,7 +10,8 @@ Parameters:
 Return:
   true if the blockchain is synced, false otherwise.
 ---------------------------------------------------------------------------------------------------------*/
-bool is_blockchain_synced(void) {
+bool is_blockchain_synced(char target_height[BLOCK_HEIGHT_LENGTH],
+                          char height[BLOCK_HEIGHT_LENGTH])
   const char* HTTP_HEADERS[] = {"Content-Type: application/json", "Accept: application/json"};
   const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0]);
   const char* RPC_ENDPOINT = "/get_info";
@@ -25,6 +26,8 @@ bool is_blockchain_synced(void) {
                         HTTP_TIMEOUT_SETTINGS) == XCASH_OK &&
       parse_json_data(response, "synchronized", synced_flag, sizeof(synced_flag)) != 0 &&
       parse_json_data(response, "status", status_flag, sizeof(status_flag)) != 0 &&
+      parse_json_data(response, "height", height, sizeof(height)) != 0 &&
+      parse_json_data(response, "target_height", target_height, sizeof(target_height)) != 0 &&
       parse_json_data(response, "offline", offline_flag, sizeof(offline_flag)) != 0) {
     if (strcmp(synced_flag, "true") == 0 &&
         strcmp(status_flag, "OK") == 0 &&
