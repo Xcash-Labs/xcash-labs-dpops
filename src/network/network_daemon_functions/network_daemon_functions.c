@@ -25,8 +25,8 @@ bool is_blockchain_synced(char target_height, char height) {
                         HTTP_TIMEOUT_SETTINGS) == XCASH_OK &&
       parse_json_data(response, "synchronized", synced_flag, sizeof(synced_flag)) != 0 &&
       parse_json_data(response, "status", status_flag, sizeof(status_flag)) != 0 &&
-      parse_json_data(response, "height", height, sizeof(height)) != 0 &&
-      parse_json_data(response, "target_height", target_height, sizeof(target_height)) != 0 &&
+      parse_json_data(response, "height", height, BLOCK_HEIGHT_LENGTH) != 0 &&
+      parse_json_data(response, "target_height", target_height, BLOCK_HEIGHT_LENGTH) != 0 &&
       parse_json_data(response, "offline", offline_flag, sizeof(offline_flag)) != 0) {
     if (strcmp(synced_flag, "true") == 0 &&
         strcmp(status_flag, "OK") == 0 &&
