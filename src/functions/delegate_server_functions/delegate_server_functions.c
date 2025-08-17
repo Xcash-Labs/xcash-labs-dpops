@@ -324,7 +324,6 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
   const char *vote_hash_str   = js_vote_hash->valuestring;
   const char *prev_hash_str = js_prev_hash->valuestring;
   uint64_t height = (uint64_t)js_height->valuedouble;
-//  uint64_t block_height = strtoull(current_block_height, NULL, 10);
 
   // For new block only
   //INFO_PRINT("Current Block Height: %llu     Block_height: %llu",
