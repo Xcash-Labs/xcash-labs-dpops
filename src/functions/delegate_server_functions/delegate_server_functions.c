@@ -327,8 +327,8 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
   uint64_t block_height = strtoull(current_block_height, NULL, 10);
 
   // For new block only
-  INFO_PRINT("Current Block Height: %llu     Block_height: %llu",
-           (unsigned long long)block_height, (unsigned long long)height);
+  //INFO_PRINT("Current Block Height: %llu     Block_height: %llu",
+  //         (unsigned long long)block_height, (unsigned long long)height);
 
   // If top block need to check vrf data and vote_hash
   if (is_synced) {
