@@ -115,6 +115,10 @@ char* create_message_param(xcash_msg_t msg, ...) {
   va_start(args, msg);
   char* message = create_message_args(msg, args);
   va_end(args);
+  
+  if (!message) {
+    return NULL;
+  }
   return message;
 }
 

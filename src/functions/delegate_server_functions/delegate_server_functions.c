@@ -320,13 +320,14 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
   // Extract strings and height
   const char *vrf_proof_str = js_vrf_proof->valuestring;
   const char *vrf_beta_str = js_vrf_beta->valuestring;
-  const char *vrf_pubkey_str = js_vrf_pubkey->valuestring;
+  const char *vrf_pubkey_str = js_vrf_pubkey->valuestring; 
   const char *vote_hash_str   = js_vote_hash->valuestring;
   const char *prev_hash_str = js_prev_hash->valuestring;
   uint64_t height = (uint64_t)js_height->valuedouble;
   uint64_t block_height = strtoull(current_block_height, NULL, 10);
 
-  // For new block only
+  // For new block only  "target_height": 636,
+  INFO_PRINT("Current Block Height: %s     Block_height: %s", current_block_height, js_height);
   if (block_height == height) {
 
    if (strncmp(producer_refs[0].vrf_public_key, vrf_pubkey_str, VRF_PUBLIC_KEY_LENGTH) != 0)
