@@ -10,8 +10,7 @@ Parameters:
 Return:
   true if the blockchain is synced, false otherwise.
 ---------------------------------------------------------------------------------------------------------*/
-bool is_blockchain_synced(char target_height[BLOCK_HEIGHT_LENGTH],
-                          char height[BLOCK_HEIGHT_LENGTH]) {
+bool is_blockchain_synced(char target_height, char height) {
   const char* HTTP_HEADERS[] = {"Content-Type: application/json", "Accept: application/json"};
   const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0]);
   const char* RPC_ENDPOINT = "/get_info";
