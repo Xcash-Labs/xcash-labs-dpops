@@ -46,6 +46,9 @@ bool is_blockchain_synced(char *target_height, char *height)
     if (strcmp(synced_flag, "true") == 0 &&
         strcmp(status_flag, "OK") == 0 &&
         strcmp(offline_flag, "false") == 0) {
+
+      INFO_PRINT("Data........: synchronized=%s, status=%s, offline=%s", synced_flag, status_flag, offline_flag);
+
       return true;
     }
 
