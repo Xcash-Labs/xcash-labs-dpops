@@ -119,7 +119,9 @@ xcash_round_result_t process_round(void) {
   if (is_blockchain_synced(target_height, cheight)) {
     is_synced = true;
   } else {
-    WARNING_PRINT("Delegate is still syncing, this node is at %s and the target height is %s", cheight, target_height);
+    uint64_t node_h = strtoull(cheight, NULL, 10);
+    uint64_t target_h = strtoull(target_height, NULL, 10);
+    WARNING_PRINT("Delegate is still syncing, node is at %" PRIu64 " and the target height is %" PRIu64, node_h, target_h);
     return ROUND_SKIP;
   }
 
@@ -447,10 +449,12 @@ void start_block_production(void) {
 
   // Wait for node to be fully synced
   while (!is_synced) {
-    if (!is_blockchain_synced(target_height, cheight)) {
+    if (is_blockchain_synced(target_height, cheight)) {
       is_synced = true;
     } else {
-      WARNING_PRINT("Delegate is still syncing, this node is at %s and the target height is %s", cheight, target_height);
+      uint64_t node_h   = strtoull(cheight, NULL, 10);
+      uint64_t target_h = strtoull(target_height, NULL, 10) 
+      WARNING_PRINT("Delegate is still syncing, node is at %" PRIu64 " and the target height is %" PRIu64, node_h, target_h);
       sleep(5);
     }
   }
