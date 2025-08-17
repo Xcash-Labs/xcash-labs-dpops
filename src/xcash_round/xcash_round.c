@@ -114,8 +114,8 @@ xcash_round_result_t process_round(void) {
   INFO_STAGE_PRINT("Part 3 - Get Current Block Height");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 3);
 
-  char target_height[BLOCK_HEIGHT_LENGTH] = {0};
-  char cheight[BLOCK_HEIGHT_LENGTH] = {0};
+  char target_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
+  char cheight[BLOCK_HEIGHT_LENGTH + 1] = {0};
   if (is_blockchain_synced(target_height, cheight)) {
     is_synced = true;
   } else {
@@ -442,13 +442,11 @@ void start_block_production(void) {
   struct timeval current_time;
   xcash_round_result_t round_result;
   is_synced = false;
-  char target_height[BLOCK_HEIGHT_LENGTH] = {0};
-  char cheight[BLOCK_HEIGHT_LENGTH] = {0};
+  char target_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
+  char cheight[BLOCK_HEIGHT_LENGTH + 1] = {0};
 
   // Wait for node to be fully synced
   while (!is_synced) {
-    memset(target_height, 0, BLOCK_HEIGHT_LENGTH);
-    memset(cheight, 0, BLOCK_HEIGHT_LENGTH);
     if (!is_blockchain_synced(target_height, cheight)) {
       is_synced = true;
     } else {
@@ -553,8 +551,6 @@ void start_block_production(void) {
               goto end_of_round_skip_block;
             }
 
-            memset(target_height, 0, BLOCK_HEIGHT_LENGTH);
-            memset(cheight, 0, BLOCK_HEIGHT_LENGTH);
             if (!is_blockchain_synced(target_height, cheight)) {
               ERROR_PRINT("Blockchain is not synced");
               goto end_of_round_skip_block;
