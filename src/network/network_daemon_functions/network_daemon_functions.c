@@ -10,6 +10,55 @@ Parameters:
 Return:
   true if the blockchain is synced, false otherwise.
 ---------------------------------------------------------------------------------------------------------*/
+// Drop-in replacement
+bool is_blockchain_synced(char *target_height, char *height)
+{
+  if (target_height == NULL || height == NULL) {
+    ERROR_PRINT("is_blockchain_synced: null output buffer(s)");
+    return false;
+  }
+
+  // Make sure outputs start empty
+  target_height[0] = '\0';
+  height[0] = '\0';
+
+  const char* HTTP_HEADERS[] = {
+    "Content-Type: application/json",
+    "Accept: application/json"
+  };
+  const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0]);
+  const char* RPC_ENDPOINT = "/get_info";
+
+  char response[SMALL_BUFFER_SIZE] = {0};
+  char synced_flag[16]  = {0};
+  char status_flag[16]  = {0};
+  char offline_flag[16] = {0};
+
+  if (send_http_request(response, sizeof(response),
+                        XCASH_DAEMON_IP, RPC_ENDPOINT, XCASH_DAEMON_PORT,
+                        "GET", HTTP_HEADERS, HTTP_HEADERS_LENGTH, NULL,
+                        HTTP_TIMEOUT_SETTINGS) == XCASH_OK &&
+      parse_json_data(response, "synchronized",  synced_flag,  sizeof(synced_flag))  != 0 &&
+      parse_json_data(response, "status",        status_flag,  sizeof(status_flag))  != 0 &&
+      parse_json_data(response, "height",        height,       BLOCK_HEIGHT_LENGTH)  != 0 &&
+      parse_json_data(response, "target_height", target_height,BLOCK_HEIGHT_LENGTH)  != 0 &&
+      parse_json_data(response, "offline",       offline_flag, sizeof(offline_flag)) != 0)
+  {
+    if (strcmp(synced_flag, "true") == 0 &&
+        strcmp(status_flag, "OK") == 0 &&
+        strcmp(offline_flag, "false") == 0) {
+      return true;
+    }
+
+    DEBUG_PRINT("Daemon not yet synced or status not OK: synchronized=%s, status=%s, offline=%s", synced_flag, status_flag, offline_flag);
+    return false;
+  }
+
+  ERROR_PRINT("is_blockchain_synced: failed to query or parse /get_info");
+  return false;
+}
+
+
 bool is_blockchain_synced(char target_height, char height) {
   const char* HTTP_HEADERS[] = {"Content-Type: application/json", "Accept: application/json"};
   const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0]);
