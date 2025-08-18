@@ -27,15 +27,8 @@ bool is_blockchain_synced(char *target_height, char *height)
   char synced_flag[16] = {0};
   char status_flag[16] = {0};
   char offline_flag[16] = {0};
-
-  // Make sure outputs start empty
   target_height[0] = '\0';
   height[0] = '\0';
-
-  char response[SMALL_BUFFER_SIZE] = {0};
-  char synced_flag[16]  = {0};
-  char status_flag[16]  = {0};
-  char offline_flag[16] = {0};
 
   if (send_http_request(response, SMALL_BUFFER_SIZE,
                         XCASH_DAEMON_IP, :/json_rpc, XCASH_DAEMON_PORT,
