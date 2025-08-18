@@ -1,6 +1,6 @@
 [Unit]
 Description=X-Cash DPOPS Program background process
-After=network.target xcash-daemon.service xcash-rpc-wallet.service mongodb.service
+After=network.target mongodb.service
 StartLimitIntervalSec=0
 
 [Service]

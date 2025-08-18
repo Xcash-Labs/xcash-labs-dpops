@@ -1,6 +1,6 @@
 [Unit]
 Description=X-Cash Daemon background process
-After=network.target
+After=network.target xcash-dpops.service
 
 [Service]
 Type=forking
