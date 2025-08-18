@@ -31,7 +31,7 @@ bool is_blockchain_synced(char *target_height, char *height)
   height[0] = '\0';
 
   if (send_http_request(response, SMALL_BUFFER_SIZE,
-                        XCASH_DAEMON_IP, :/json_rpc, XCASH_DAEMON_PORT,
+                        XCASH_DAEMON_IP, "/json_rpc", XCASH_DAEMON_PORT,
                         "POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH, request_payload,
                         HTTP_TIMEOUT_SETTINGS) == XCASH_OK &&
       parse_json_data(response, "synchronized",  synced_flag,  sizeof(synced_flag))  != 0 &&
