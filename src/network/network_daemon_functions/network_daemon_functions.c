@@ -10,7 +10,7 @@ Parameters:
 Return:
   true if the blockchain is synced, false otherwise.
 ---------------------------------------------------------------------------------------------------------*/
-bool is_blockchain_synced(char *target_height, char *height)
+bool is_blockchain_synced__OLD__(char *target_height, char *height)
 {
 
   if (target_height == NULL || height == NULL) {
@@ -52,6 +52,79 @@ bool is_blockchain_synced(char *target_height, char *height)
 
   ERROR_PRINT("is_blockchain_synced: failed to query or parse /get_info");
   return false;
+}
+
+
+
+
+// expects: send_http_request(), parse_json_data() already available
+// BLOCK_TIME_MINUTES defined; adjust thresholds as you like
+#define LAG_OK 2
+#define STALE_BLOCK_SECS (3 * (BLOCK_TIME) * 60)
+
+bool is_blockchain_synced(char* target_height, char* height) {
+  if (!target_height || !height) return false;
+  target_height[0] = '\0';
+  height[0] = '\0';
+
+  const char* HTTP_HEADERS[] = {"Content-Type: application/json", "Accept: application/json"};
+  const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0]);
+  char info[SMALL_BUFFER_SIZE] = {0};
+
+  char status[16] = {0}, offline[16] = {0}, synced[16] = {0};
+  char outc_str[16] = {0}, inc_str[16] = {0};
+
+  if (send_http_request(info, sizeof(info),
+                        XCASH_DAEMON_IP, "/get_info", XCASH_DAEMON_PORT,
+                        "GET", HTTP_HEADERS, HTTP_HEADERS_LENGTH, NULL,
+                        HTTP_TIMEOUT_SETTINGS) != XCASH_OK) {
+    return false;
+  }
+
+  if (parse_json_data(info, "status", status, sizeof(status)) == 0 ||
+      parse_json_data(info, "offline", offline, sizeof(offline)) == 0 ||
+      parse_json_data(info, "height", height, BLOCK_HEIGHT_LENGTH) == 0 ||
+      parse_json_data(info, "target_height", target_height, BLOCK_HEIGHT_LENGTH) == 0) {
+    return false;
+  }
+
+  // optional, if available in your build of get_info:
+  parse_json_data(info, "synchronized", synced, sizeof(synced));  // ignore if missing
+  parse_json_data(info, "outgoing_connections_count", outc_str, sizeof(outc_str));
+  parse_json_data(info, "incoming_connections_count", inc_str, sizeof(inc_str));
+
+  const bool ok_status = (strcmp(status, "OK") == 0);
+  const bool not_offline = (strcmp(offline, "false") == 0);
+  const long long h = (long long)strtoull(height, NULL, 10);
+  const long long th = (long long)strtoull(target_height, NULL, 10);
+  const int outc = (int)strtol(outc_str[0] ? outc_str : "0", NULL, 10);
+  const int inc = (int)strtol(inc_str[0] ? inc_str : "0", NULL, 10);
+
+  if (!ok_status || !not_offline) return false;
+  if (outc + inc < 2) return false;   // not enough peers yet
+  if (th == 0) return false;          // target unknown
+  if (h + LAG_OK < th) return false;  // too far behind
+
+  // Freshness check via /get_last_block_header
+  {
+    char lbh[SMALL_BUFFER_SIZE] = {0};
+    if (send_http_request(lbh, sizeof(lbh),
+                          XCASH_DAEMON_IP, "/get_last_block_header", XCASH_DAEMON_PORT,
+                          "GET", HTTP_HEADERS, HTTP_HEADERS_LENGTH, NULL,
+                          HTTP_TIMEOUT_SETTINGS) == XCASH_OK) {
+      // naive parse of nested "timestamp": your parse_json_data may already find it
+      char ts_str[32] = {0};
+      if (parse_json_data(lbh, "timestamp", ts_str, sizeof(ts_str)) != 0) {
+        const long long ts = (long long)strtoll(ts_str, NULL, 10);
+        const time_t now_s = time(NULL);
+        if (ts <= 0 || (now_s - ts) > STALE_BLOCK_SECS) {
+          return false;  // tip is stale compared to current time
+        }
+      }
+    }
+  }
+
+  return true;
 }
 
 /*---------------------------------------------------------------------------------------------------------
