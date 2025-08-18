@@ -232,12 +232,13 @@ int select_random_online_delegate(void) {
             continue;
           }
         }
-        // Must be true OR partial, and not self
-        if ((strcmp(delegates_all[i].online_status, "true") == 0 ||
-             strcmp(delegates_all[i].online_status, "partial") == 0) &&
-            strcmp(delegates_all[i].public_address, xcash_wallet_public_address) != 0) {
-          eligible_indices[eligible_count++] = i;
+
+        // Must be online and not self
+        if ((strcmp(delegates_all[i].online_status, "partial") == 0) &&
+        (strcmp(delegates_all[i].public_address, xcash_wallet_public_address) != 0)) {
+            eligible_indices[eligible_count++] = i;
         }
+        
     }
 
     if (eligible_count == 0) {
