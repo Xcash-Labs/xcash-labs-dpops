@@ -115,8 +115,14 @@ xcash_round_result_t process_round(void) {
 
   char target_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
   char cheight[BLOCK_HEIGHT_LENGTH + 1] = {0};
+
+if (is_synced) INFO_PRINT("is synced is true"); else  INFO_PRINT("is synced is false");
+
+
+
   if (is_blockchain_synced(target_height, cheight)) {
     is_synced = true;
+    INFO_PRINT("Setting is_synced to true................");
   } else {
     unsigned long long node_h   = strtoull(cheight, NULL, 10);
     unsigned long long target_h = strtoull(target_height, NULL, 10);
