@@ -12,30 +12,34 @@ Return:
 ---------------------------------------------------------------------------------------------------------*/
 bool is_blockchain_synced(char *target_height, char *height)
 {
+
   if (target_height == NULL || height == NULL) {
     ERROR_PRINT("is_blockchain_synced: null output buffer(s)");
     return false;
   }
 
+  // Constants
+  const char *HTTP_HEADERS[] = {"Content-Type: application/json", "Accept: application/json"};
+  const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0]);
+  const char *request_payload = "{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"get_info\"}";
+
+  char response[SMALL_BUFFER_SIZE] = {0};
+  char synced_flag[16] = {0};
+  char status_flag[16] = {0};
+  char offline_flag[16] = {0};
+
   // Make sure outputs start empty
   target_height[0] = '\0';
   height[0] = '\0';
-
-  const char* HTTP_HEADERS[] = {
-    "Content-Type: application/json",
-    "Accept: application/json"
-  };
-  const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0]);
-  const char* RPC_ENDPOINT = "/get_info";
 
   char response[SMALL_BUFFER_SIZE] = {0};
   char synced_flag[16]  = {0};
   char status_flag[16]  = {0};
   char offline_flag[16] = {0};
 
-  if (send_http_request(response, sizeof(response),
-                        XCASH_DAEMON_IP, RPC_ENDPOINT, XCASH_DAEMON_PORT,
-                        "GET", HTTP_HEADERS, HTTP_HEADERS_LENGTH, NULL,
+  if (send_http_request(response, SMALL_BUFFER_SIZE,
+                        XCASH_DAEMON_IP, :/json_rpc, XCASH_DAEMON_PORT,
+                        "POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH, request_payload,
                         HTTP_TIMEOUT_SETTINGS) == XCASH_OK &&
       parse_json_data(response, "synchronized",  synced_flag,  sizeof(synced_flag))  != 0 &&
       parse_json_data(response, "status",        status_flag,  sizeof(status_flag))  != 0 &&
