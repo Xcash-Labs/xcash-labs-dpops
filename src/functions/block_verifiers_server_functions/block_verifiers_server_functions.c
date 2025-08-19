@@ -52,27 +52,26 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
 
       found = true;
       if (strcmp(block_height, current_block_height) != 0) {
-        DEBUG_PRINT("Block height mismatch for %s: remote=%s, local=%s",
+        INFO_PRINT("Block height mismatch for %s: remote=%s, local=%s",
                     public_address, block_height, current_block_height);
         break;
       }
 
-      // Online and a partial match
-      strncpy(delegates_all[i].online_status, "partial", sizeof(delegates_all[i].online_status));
-      delegates_all[i].online_status[sizeof(delegates_all[i].online_status) - 1] = '\0';
-
       // Compare delegate list hash
       if (strcmp(parsed_delegates_hash, delegates_hash) != 0) {
-        DEBUG_PRINT("Delegates hash mismatch for %s: remote=%s, local=%s",
+        INFO_PRINT("Delegates hash mismatch for %s: remote=%s, local=%s",
                     public_address, parsed_delegates_hash, delegates_hash);
         delegate_db_hash_mismatch = delegate_db_hash_mismatch + 1;
+        // Online and a partial match
+        strncpy(delegates_all[i].online_status, "partial", sizeof(delegates_all[i].online_status));
+        delegates_all[i].online_status[sizeof(delegates_all[i].online_status) - 1] = '\0';
         break;
       }
 
       // All checks passed — mark online
       strncpy(delegates_all[i].online_status, "true", sizeof(delegates_all[i].online_status));
       delegates_all[i].online_status[sizeof(delegates_all[i].online_status) - 1] = '\0';
-      DEBUG_PRINT("Marked delegate %s as online (ck)", public_address);
+      INFO_PRINT("Marked delegate %s as online (ck)", public_address);
 
       unsigned char alpha_input_bin[72] = {0};
       unsigned char pk_bin[crypto_vrf_PUBLICKEYBYTES] = {0};
