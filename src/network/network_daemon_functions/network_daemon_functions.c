@@ -10,7 +10,7 @@ Parameters:
 Return:
   true if the blockchain is synced, false otherwise.
 ---------------------------------------------------------------------------------------------------------*/
-bool is_blockchain_synced__OLD__(char *target_height, char *height)
+bool is_blockchain_synced(char *target_height, char *height)
 {
 
   if (target_height == NULL || height == NULL) {
@@ -27,6 +27,7 @@ bool is_blockchain_synced__OLD__(char *target_height, char *height)
   char synced_flag[16] = {0};
   char status_flag[16] = {0};
   char offline_flag[16] = {0};
+  char outc_str[16] = {0}, inc_str[16] = {0};
   target_height[0] = '\0';
   height[0] = '\0';
 
@@ -38,6 +39,8 @@ bool is_blockchain_synced__OLD__(char *target_height, char *height)
       parse_json_data(response, "result.status",        status_flag,  sizeof(status_flag))  != 0 &&
       parse_json_data(response, "result.height",        height,       BLOCK_HEIGHT_LENGTH)  != 0 &&
       parse_json_data(response, "result.target_height", target_height,BLOCK_HEIGHT_LENGTH)  != 0 &&
+      parse_json_data(response, "result.outgoing_connections_count", outc_str, sizeof(outc_str)) != 0 &&
+      parse_json_data(response, "result.incoming_connections_count", inc_str, sizeof(inc_str))   != 0 &&
       parse_json_data(response, "result.offline",       offline_flag, sizeof(offline_flag)) != 0)
   {
     if (strcmp(synced_flag, "true") == 0 &&
@@ -62,7 +65,7 @@ bool is_blockchain_synced__OLD__(char *target_height, char *height)
 #define LAG_OK 2
 #define STALE_BLOCK_SECS (3 * (BLOCK_TIME) * 60)
 
-bool is_blockchain_synced(char* target_height, char* height) {
+bool is_blockchain_synced__NEW__(char* target_height, char* height) {
   if (!target_height || !height) return false;
   target_height[0] = '\0';
   height[0] = '\0';
