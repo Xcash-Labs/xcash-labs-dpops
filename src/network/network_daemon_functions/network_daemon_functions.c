@@ -47,20 +47,18 @@ bool is_blockchain_synced(char *target_height, char *height)
         strcmp(status_flag, "OK") == 0 &&
         strcmp(offline_flag, "false") == 0) {
 
-    long incoming = strtol(inc_str[0] ? inc_str : "0", NULL, 10);
-
-    INFO_PRINT("get_info: incoming_connections_count=%ld, offline=%s",
-               incoming, offline_flag);
-
-
-      return true;
+        return true;
     }
 
-    DEBUG_PRINT("Daemon not yet synced or status not OK: synchronized=%s, status=%s, offline=%s", synced_flag, status_flag, offline_flag);
+  INFO_PRINT("outc: %s     inc: %s", outc_str, inc_str);
+
+    INFO_PRINT("Daemon not yet synced or status not OK: synchronized=%s, status=%s, offline=%s", synced_flag, status_flag, offline_flag);
     return false;
   }
 
-  ERROR_PRINT("is_blockchain_synced: failed to query or parse /get_info");
+  INFO_PRINT("outc: %s     inc: %s", outc_str, inc_str);
+
+  INFO_PRINT("is_blockchain_synced: failed to query or parse /get_info");
   return false;
 }
 
