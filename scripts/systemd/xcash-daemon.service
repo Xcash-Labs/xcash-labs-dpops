@@ -1,6 +1,6 @@
 [Unit]
 Description=X-Cash Daemon background process
-After=network.target xcash-dpops.service
+After=network-online.target time-sync.target
 
 [Service]
 Type=forking
@@ -10,7 +10,13 @@ Environment="GLIBC_TUNABLES=glibc.pthread.rseq=0"
 
 ExecStart=${XCASH_DIR}build/Linux/master/release/bin/xcashd --no-zmq --data-dir ${XCASH_BLOCKCHAIN_INSTALLATION_DIR} --rpc-bind-ip 0.0.0.0 --p2p-bind-ip 0.0.0.0 --rpc-bind-port 18281 --restricted-rpc --confirm-external-bind --log-file ${XCASH_LOGS_DIR}xcash-daemon-log.txt --max-log-file-size 0 --detach --pidfile ${XCASH_SYSTEMPID_DIR}xcash-daemon.pid
 RuntimeMaxSec=15d
-Restart=always
+Restart=on-failure
+RestartSec=5s
+LimitNOFILE=65536
+NoNewPrivileges=yes
+ProtectSystem=full
+ProtectHome=true
+PrivateTmp=yes
 
 [Install]
 WantedBy=multi-user.target

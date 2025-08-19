@@ -557,15 +557,17 @@ function get_current_xcash_wallet_data()
   echo
 }
 
+
 function start_systemd_service_files()
 {
   echo -ne "${COLOR_PRINT_YELLOW}Starting Systemd Service Files${END_COLOR_PRINT}"
   sudo systemctl start mongodb &>/dev/null
-  sudo systemctl start xcash-daemon &>/dev/null
-  sleep 30s
-  sudo systemctl start xcash-rpc-wallet &>/dev/null
-  sleep 30s
+  sleep 5s
   sudo systemctl start xcash-dpops &>/dev/null
+  sleep 2s
+  sudo systemctl start xcash-daemon &>/dev/null
+  sleep 2s
+  sudo systemctl start xcash-rpc-wallet &>/dev/null
   echo -ne "\r${COLOR_PRINT_GREEN}Starting Systemd Service Files${END_COLOR_PRINT}"
   echo
 }
@@ -578,10 +580,10 @@ function stop_systemd_service_files()
   echo
 }
 
-function enable_service_files_at_startup()
+function  enable_service_files_at_startup()
 {
   echo -ne "${COLOR_PRINT_YELLOW}Enabling services to autostart on reboot${END_COLOR_PRINT}"
-  sudo systemctl enable mongodb.service xcash-daemon.service xcash-rpc-wallet.timer xcash-dpops.timer 2> /dev/null
+  sudo systemctl enable mongodb.service xcash-daemon.service xcash-rpc-wallet.timer xcash-dpops.timer &> /dev/null
   echo -ne "\r${COLOR_PRINT_GREEN}Enabling services to autostart on reboot${END_COLOR_PRINT}"
 }
 
