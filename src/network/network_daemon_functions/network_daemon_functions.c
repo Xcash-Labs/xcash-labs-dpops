@@ -14,7 +14,7 @@ bool is_blockchain_synced(char *target_height, char *height)
 {
 
 
-  PRINT_INFO("HERE.............................................");
+  INFO_PRINT("HERE.............................................");
 
   if (target_height == NULL || height == NULL) {
     ERROR_PRINT("is_blockchain_synced: null output buffer(s)");
