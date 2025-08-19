@@ -46,6 +46,13 @@ bool is_blockchain_synced(char *target_height, char *height)
     if (strcmp(synced_flag, "true") == 0 &&
         strcmp(status_flag, "OK") == 0 &&
         strcmp(offline_flag, "false") == 0) {
+
+    long incoming = strtol(inc_str[0] ? inc_str : "0", NULL, 10);
+
+    INFO_PRINT("get_info: incoming_connections_count=%ld, offline=%s",
+               incoming, offline_flag);
+
+
       return true;
     }
 
