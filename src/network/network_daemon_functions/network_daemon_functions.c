@@ -50,6 +50,8 @@ bool is_blockchain_synced(char *target_height, char *height)
         strcmp(status_flag, "OK") == 0 &&
         strcmp(offline_flag, "false") == 0) {
 
+  INFO_PRINT("outc: %s     inc: %s", outc_str, inc_str);
+
         return true;
     }
 
