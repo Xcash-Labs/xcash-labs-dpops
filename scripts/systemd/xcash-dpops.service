@@ -8,8 +8,8 @@ LimitNOFILE=infinity
 User=${USER}
 WorkingDirectory=${XCASH_DPOPS_DIR}build
 ExecStart=${XCASH_DPOPS_DIR}build/xcash-dpops --block-verifiers-secret-key ${BLOCK_VERIFIER_SECRET_KEY}
-Restart=on-failure
-RestartSec=5
+Restart=always
+RestartSec=5s
  
 [Install]
 WantedBy=multi-user.target
