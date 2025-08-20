@@ -561,12 +561,10 @@ void start_block_production(void) {
               goto end_of_round_skip_block;
             }
 
-            INFO_PRINT("IN SEED NODE");
-            if (!is_blockchain_synced(target_height, cheight)) {
-              ERROR_PRINT("Blockchain is not synced");
-              goto end_of_round_skip_block;
-            }
-            INFO_PRINT("AFTER IN SEED NODE");
+//            if (!is_blockchain_synced(target_height, cheight)) {
+//              ERROR_PRINT("Blockchain is not synced");
+//              goto end_of_round_skip_block;
+//            }
 
             uint64_t tmp_verifier_total_round = 0;
             uint64_t tmp_verifier_online_total_rounds = 0;
