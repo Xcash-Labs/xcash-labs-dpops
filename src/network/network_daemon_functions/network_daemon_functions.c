@@ -41,11 +41,9 @@ bool is_blockchain_synced(char *target_height, char *height)
       parse_json_data(response, "result.target_height", target_height,BLOCK_HEIGHT_LENGTH)  != 0 &&
       parse_json_data(response, "result.offline",       offline_flag, sizeof(offline_flag)) != 0)
   {
-    unsigned long long target_h = strtoull(target_height, NULL, 10);
     if (strcmp(synced_flag, "true") == 0 &&
         strcmp(status_flag, "OK") == 0 &&
         strcmp(bs_flag, "false") == 0 &&
-        target_h != 0 &&
         strcmp(offline_flag, "false") == 0) {
       return true;
     }
