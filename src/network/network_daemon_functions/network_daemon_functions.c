@@ -49,8 +49,7 @@ bool is_blockchain_synced(char *target_height, char *height)
         strcmp(offline_flag, "false") == 0) {
       return true;
     }
-    DEBUG_PRINT("Daemon not yet synced or status not OK: synchronized=%s, status=%s, offline=%s, busy_syncing=%s",
-      synced_flag, status_flag, offline_flag, bs_flag);
+    DEBUG_PRINT("Daemon not yet synced or status not OK: synchronized=%s, status=%s, offline=%s, busy_syncing=%s", synced_flag, status_flag, offline_flag, bs_flag);
     return false;
   }
 
