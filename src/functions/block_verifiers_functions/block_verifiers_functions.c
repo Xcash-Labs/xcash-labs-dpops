@@ -182,7 +182,7 @@ int block_verifiers_create_block(const char* vote_hash_hex, uint8_t total_vote, 
   } else {
     time_t start_time = time(NULL);
     char start_ck_block_height[BLOCK_HEIGHT_LENGTH + 1];
-    strncpy(start_ck_block_height, ck_block_height, BLOCK_HEIGHT_LENGTH);
+    strncpy(start_ck_block_height, ck_block_height, BLOCK_HEIGHT_LENGTH + 1);
     while (strncmp(start_ck_block_height, ck_block_height, BLOCK_HEIGHT_LENGTH) == 0) {
       if (difftime(time(NULL), start_time) > MAX_WAIT_FOR_BLOCK_CREATION) {
         ERROR_PRINT("Timeout waiting for block creation and propagation change");
