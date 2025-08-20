@@ -12,10 +12,6 @@ Return:
 ---------------------------------------------------------------------------------------------------------*/
 bool is_blockchain_synced(char *target_height, char *height)
 {
-
-
-  INFO_PRINT("HERE.............................................");
-
   if (target_height == NULL || height == NULL) {
     ERROR_PRINT("is_blockchain_synced: null output buffer(s)");
     return false;
@@ -30,7 +26,7 @@ bool is_blockchain_synced(char *target_height, char *height)
   char synced_flag[16] = {0};
   char status_flag[16] = {0};
   char offline_flag[16] = {0};
-  char outc_str[16] = {0}, inc_str[16] = {0};
+  char bs_flag[16] = {0};
   target_height[0] = '\0';
   height[0] = '\0';
 
@@ -40,32 +36,23 @@ bool is_blockchain_synced(char *target_height, char *height)
                         HTTP_TIMEOUT_SETTINGS) == XCASH_OK &&
       parse_json_data(response, "result.synchronized",  synced_flag,  sizeof(synced_flag))  != 0 &&
       parse_json_data(response, "result.status",        status_flag,  sizeof(status_flag))  != 0 &&
+      parse_json_data(response, "result.busy_syncing",  bs_flag,  sizeof(bs_flag))  != 0 &&
       parse_json_data(response, "result.height",        height,       BLOCK_HEIGHT_LENGTH)  != 0 &&
       parse_json_data(response, "result.target_height", target_height,BLOCK_HEIGHT_LENGTH)  != 0 &&
-      parse_json_data(response, "result.outgoing_connections_count", outc_str, sizeof(outc_str)) != 0 &&
-      parse_json_data(response, "result.incoming_connections_count", inc_str, sizeof(inc_str))   != 0 &&
       parse_json_data(response, "result.offline",       offline_flag, sizeof(offline_flag)) != 0)
   {
-
-//  "busy_syncing": false,
-// target_height =0  not connected
-
+    unsigned long long target_h = strtoull(target_height, NULL, 10);
     if (strcmp(synced_flag, "true") == 0 &&
         strcmp(status_flag, "OK") == 0 &&
+        strcmp(bs_flag, "false") == 0 &&
+        target_h != 0 &&
         strcmp(offline_flag, "false") == 0) {
-
-  INFO_PRINT("1 outc: %s     inc: %s", outc_str, inc_str);
-
-        return true;
+      return true;
     }
-
-  INFO_PRINT("2 outc: %s     inc: %s", outc_str, inc_str);
-
-    INFO_PRINT("Daemon not yet synced or status not OK: synchronized=%s, status=%s, offline=%s", synced_flag, status_flag, offline_flag);
+    DEBUG_PRINT("Daemon not yet synced or status not OK: synchronized=%s, status=%s, offline=%s, busy_syncing=%s",
+      synced_flag, status_flag, offline_flag, bs_flag);
     return false;
   }
-
-  INFO_PRINT("3 outc: %s     inc: %s", outc_str, inc_str);
 
   INFO_PRINT("is_blockchain_synced: failed to query or parse /get_info");
   return false;
