@@ -561,6 +561,7 @@ void start_block_production(void) {
               goto end_of_round_skip_block;
             }
 
+            INFO_PRINT("IN SEED NODE");
             if (!is_blockchain_synced(target_height, cheight)) {
               ERROR_PRINT("Blockchain is not synced");
               goto end_of_round_skip_block;
