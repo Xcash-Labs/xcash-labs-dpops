@@ -46,22 +46,26 @@ bool is_blockchain_synced(char *target_height, char *height)
       parse_json_data(response, "result.incoming_connections_count", inc_str, sizeof(inc_str))   != 0 &&
       parse_json_data(response, "result.offline",       offline_flag, sizeof(offline_flag)) != 0)
   {
+
+//  "busy_syncing": false,
+// target_height =0  not connected
+
     if (strcmp(synced_flag, "true") == 0 &&
         strcmp(status_flag, "OK") == 0 &&
         strcmp(offline_flag, "false") == 0) {
 
-  INFO_PRINT("outc: %s     inc: %s", outc_str, inc_str);
+  INFO_PRINT("1 outc: %s     inc: %s", outc_str, inc_str);
 
         return true;
     }
 
-  INFO_PRINT("outc: %s     inc: %s", outc_str, inc_str);
+  INFO_PRINT("2 outc: %s     inc: %s", outc_str, inc_str);
 
     INFO_PRINT("Daemon not yet synced or status not OK: synchronized=%s, status=%s, offline=%s", synced_flag, status_flag, offline_flag);
     return false;
   }
 
-  INFO_PRINT("outc: %s     inc: %s", outc_str, inc_str);
+  INFO_PRINT("3 outc: %s     inc: %s", outc_str, inc_str);
 
   INFO_PRINT("is_blockchain_synced: failed to query or parse /get_info");
   return false;
