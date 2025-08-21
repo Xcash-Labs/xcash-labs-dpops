@@ -615,7 +615,7 @@ void start_block_production(void) {
               bson_destroy(&update_fields_stat);
 
 
-              DEBUG_PRINT("Updated delegate %s: total=%" PRIu64 ", online=%" PRIu64 ", produced=%" PRIu64,
+              INFO_PRINT("Updated delegate %s: total=%" PRIu64 ", online=%" PRIu64 ", produced=%" PRIu64,
                          delegates_all[i].public_address,
                          tmp_verifier_total_round,
                          tmp_verifier_online_total_rounds,
