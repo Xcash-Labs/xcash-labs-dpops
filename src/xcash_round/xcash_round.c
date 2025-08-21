@@ -121,8 +121,6 @@ xcash_round_result_t process_round(void) {
   } else {
     unsigned long long node_h = strtoull(cheight, NULL, 10);
     unsigned long long target_h = strtoull(target_height, NULL, 10);
-    //    WARNING_PRINT("Delegate is still syncing, node is at %llu and the target height is %llu", node_h, target_h);
-
     char target_disp[BLOCK_HEIGHT_LENGTH];
     if (target_h == 0ULL || target_height[0] == '\0') {
       strcpy(target_disp, "unknown");
@@ -507,6 +505,22 @@ void start_block_production(void) {
 
     if (round_result == ROUND_OK) {
 
+#ifdef SEED_NODE_ON
+      bool update_stats = false;
+      char ck_block_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
+      if (get_current_block_height(ck_block_height) != XCASH_OK) {
+        ERROR_PRINT("Can't get current block height");
+        goto end_of_round_skip_block;
+      }
+
+      uint64_t ck_height = strtoull(ck_block_height, NULL, 10);
+      uint64_t cur_height = strtoull(current_block_height, NULL, 10);
+
+      if (ck_height == cur_height + 1) {
+        update_stats = true;
+      }
+#endif
+
       for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
         if (strlen(delegates_all[i].public_address) > 0 && strlen(delegates_all[i].public_key) > 0) {
           if (strcmp(delegates_all[i].online_status, delegates_all[i].online_status_orginal) == 0) {
@@ -544,7 +558,7 @@ void start_block_production(void) {
 // Only update statics on seed nodes
 #ifdef SEED_NODE_ON
 
-          if (is_primary_node()) {
+          if (is_primary_node() && update_stats) {
 
             DEBUG_PRINT("Updating Statistics");
             char ck_block_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
@@ -560,11 +574,6 @@ void start_block_production(void) {
               ERROR_PRINT("New block was not created by the selected block producer");
               goto end_of_round_skip_block;
             }
-
-//            if (!is_blockchain_synced(target_height, cheight)) {
-//              ERROR_PRINT("Blockchain is not synced");
-//              goto end_of_round_skip_block;
-//            }
 
             uint64_t tmp_verifier_total_round = 0;
             uint64_t tmp_verifier_online_total_rounds = 0;
