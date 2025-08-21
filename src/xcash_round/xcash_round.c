@@ -523,6 +523,7 @@ void start_block_production(void) {
 
       for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
         if (strlen(delegates_all[i].public_address) > 0 && strlen(delegates_all[i].public_key) > 0) {
+
           if (strcmp(delegates_all[i].online_status, delegates_all[i].online_status_orginal) == 0) {
             DEBUG_PRINT("No change to online status, update skipped...");
           } else {
@@ -560,13 +561,21 @@ void start_block_production(void) {
 
           if (is_primary_node() && update_stats) {
 
-            DEBUG_PRINT("Updating Statistics");
+            INFO_PRINT("Updating Statistics");
             uint64_t tmp_verifier_total_round = 0;
             uint64_t tmp_verifier_online_total_rounds = 0;
             uint64_t tmp_producer_total_rounds = 0;
 
             if (get_statistics_totals_by_public_key(delegates_all[i].public_key, &tmp_verifier_total_round, &tmp_verifier_online_total_rounds,
                                                     &tmp_producer_total_rounds) == XCASH_OK) {
+
+              INFO_PRINT("Delegate %s -> verifier_total_round=%" PRIu64
+               ", verifier_online_total_rounds=%" PRIu64
+               ", producer_total_rounds=%" PRIu64,
+               delegates_all[i].public_key,
+               tmp_verifier_total_round,
+               tmp_verifier_online_total_rounds,
+               tmp_producer_total_rounds);
 
               if (strcmp(delegates_all[i].online_status, "true") == 0) {
                 tmp_verifier_online_total_rounds += 1;
@@ -579,6 +588,14 @@ void start_block_production(void) {
                 }
               }
               
+              INFO_PRINT("Delegate %s -> verifier_total_round=%" PRIu64
+               ", verifier_online_total_rounds=%" PRIu64
+               ", producer_total_rounds=%" PRIu64,
+               delegates_all[i].public_key,
+               tmp_verifier_total_round,
+               tmp_verifier_online_total_rounds,
+               tmp_producer_total_rounds);
+
               bson_t filter_stat;
               bson_t update_fields_stat;
               bson_init(&filter_stat);
