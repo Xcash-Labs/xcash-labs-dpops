@@ -55,8 +55,11 @@ PKG_LIBS   := $(shell pkg-config --libs   libmongoc-1.0 libbson-1.0)
 # (but ideally, remove the hardcoded /usr/local includes)
 # MongoDB_INC_DIRS := -I/usr/local/include/libbson-1.0 -I/usr/local/include/libmongoc-1.0
 
+# <- tell the compiler where YOUR headers live
+INC_FLAGS  := -I. -Isrc -Iinclude -Ibuild
+
 # Compiler flags
-CFLAGS := $(PKG_CFLAGS) -MMD -MP -Wall -Wextra -Wstrict-prototypes -Wcast-qual \
+CFLAGS := $(PKG_CFLAGS) $(INC_FLAGS) -MMD -MP -Wall -Wextra -Wstrict-prototypes -Wcast-qual \
           -Wfloat-equal -Wundef -Wshadow -Wcast-align -Wstrict-overflow \
           -Wdouble-promotion -fexceptions -pie -fPIE
 # If you keep the manual includes, place them AFTER: CFLAGS += $(MongoDB_INC_DIRS)
