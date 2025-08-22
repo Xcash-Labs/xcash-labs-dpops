@@ -88,8 +88,8 @@ bool init_processing(const arg_config_t *arg_config) {
       bson_destroy(&bson_statistics);
 
       if (i == 0) {
-        if (!add_indexes(void)) {
-          FATAL_ERROR("Failed to add indexes to database!")
+        if (!add_indexes()) {
+          FATAL_ERROR("Failed to add indexes to database!");
         }
       }
 
