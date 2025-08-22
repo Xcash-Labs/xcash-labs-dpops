@@ -33,49 +33,17 @@ DEPS := $(OBJS:.o=.d)
 -include $(DEPS)
 
 # Include directories
-#INC_DIRS := $(shell find $(SRC_DIRS) -type d)
-#INC_FLAGS := $(addprefix -I,$(INC_DIRS))
-
-# MongoDB include directories
-#MongoDB_INC_DIRS := -I/usr/local/include/libbson-1.0 -I/usr/local/include/libmongoc-1.0
-
-# Compiler flags
-#CFLAGS ?= $(INC_FLAGS) $(MongoDB_INC_DIRS) -MMD -MP -Wall -Wextra -Wstrict-prototypes -Wcast-qual -Wfloat-equal -Wundef -Wshadow -Wcast-align -Wstrict-overflow -Wdouble-promotion -fexceptions -pie -fPIE -Wl,dynamicbase -Wl,nxcompat
-
-# Linker flags
-#LDFLAGS ?= -lmongoc-1.0 -lbson-1.0 -lresolv -lpthread -l:libcrypto.so.3 -lcurl -lcjson
-
-
-
-
-
-# --- MongoDB (prefer pkg-config, keep your old includes as fallback) ---
-PKG_CFLAGS := $(shell pkg-config --cflags libmongoc-1.0 libbson-1.0 2>/dev/null)
-PKG_LIBS   := $(shell pkg-config --libs   libmongoc-1.0 libbson-1.0 2>/dev/null)
-
-# Your existing project include dirs
-INC_DIRS  := $(shell find $(SRC_DIRS) -type d)
+INC_DIRS := $(shell find $(SRC_DIRS) -type d)
 INC_FLAGS := $(addprefix -I,$(INC_DIRS))
 
-# Your original hardcoded Mongo includes (kept, but AFTER pkg-config so they don't shadow)
-#MongoDB_INC_DIRS := -I/usr/local/include/libbson-1.0 -I/usr/local/include/libmongoc-1.0
+# MongoDB include directories
+MongoDB_INC_DIRS := -I/usr/local/include/libbson-1.0 -I/usr/local/include/libmongoc-1.0
 
-# --- Compiler flags ---
-# Put pkg-config FIRST, then your project includes, then the old Mongo includes.
-CFLAGS ?= $(PKG_CFLAGS) $(INC_FLAGS) \
-          -MMD -MP -Wall -Wextra -Wstrict-prototypes -Wcast-qual -Wfloat-equal \
-          -Wundef -Wshadow -Wcast-align -Wstrict-overflow -Wdouble-promotion \
-          -fexceptions -pie -fPIE -Wl,dynamicbase -Wl,nxcompat
+# Compiler flags
+CFLAGS ?= $(INC_FLAGS) $(MongoDB_INC_DIRS) -MMD -MP -Wall -Wextra -Wstrict-prototypes -Wcast-qual -Wfloat-equal -Wundef -Wshadow -Wcast-align -Wstrict-overflow -Wdouble-promotion -fexceptions -pie -fPIE -Wl,dynamicbase -Wl,nxcompat
 
-# --- Linker flags ---
-# Put pkg-config libs FIRST, then your originals.
-LDFLAGS ?= $(PKG_LIBS) -lmongoc-1.0 -lbson-1.0 -lresolv -lpthread -l:libcrypto.so.3 -lcurl -lcjson
-
-
-
-
-
-
+# Linker flags
+LDFLAGS ?= -lmongoc-1.0 -lbson-1.0 -lresolv -lpthread -l:libcrypto.so.3 -lcurl -lcjson
 
 # Build configurations
 debug: CFLAGS += -g -fno-stack-protector
