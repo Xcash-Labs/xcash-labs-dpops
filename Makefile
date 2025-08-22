@@ -37,12 +37,10 @@ INC_DIRS := $(shell find $(SRC_DIRS) -type d)
 INC_FLAGS := $(addprefix -I,$(INC_DIRS))
 
 # MongoDB include directories
-#MongoDB_INC_DIRS := -I/usr/local/include/libbson-1.0 -I/usr/local/include/libmongoc-1.0
+MongoDB_INC_DIRS := -I/usr/local/include/libbson-1.0 -I/usr/local/include/libmongoc-1.0
 
 # Compiler flags
-CFLAGS ?= $(INC_FLAGS)  -MMD -MP -Wall -Wextra -Wstrict-prototypes -Wcast-qual -Wfloat-equal -Wundef -Wshadow -Wcast-align -Wstrict-overflow -Wdouble-promotion -fexceptions -pie -fPIE -Wl,dynamicbase -Wl,nxcompat
-
-
+CFLAGS ?= $(INC_FLAGS) $(MongoDB_INC_DIRS) -MMD -MP -Wall -Wextra -Wstrict-prototypes -Wcast-qual -Wfloat-equal -Wundef -Wshadow -Wcast-align -Wstrict-overflow -Wdouble-promotion -fexceptions -pie -fPIE -Wl,dynamicbase -Wl,nxcompat
 
 
 PKG_LIBS   := $(shell pkg-config --libs libmongoc-1.0 libbson-1.0)
