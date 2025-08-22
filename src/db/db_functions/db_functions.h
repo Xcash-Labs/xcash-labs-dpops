@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <mongoc/mongoc.h>
-#pragma message ("MONGOC header version: " MONGOC_VERSION_S)
 #include <bson/bson.h>
 
 #include "config.h"
