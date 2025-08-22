@@ -1,9 +1,9 @@
 #ifndef DB_FUNCTIONS_H_   /* Include guard */
 #define DB_FUNCTIONS_H_
 
+#include <mongoc/mongoc.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <mongoc/mongoc.h>
 #include <bson/bson.h>
 #include "config.h"
 #include "globals.h"
