@@ -909,39 +909,57 @@ bool add_indexes(void) {
   mongoc_client_t *client = mongoc_client_pool_pop(database_client_thread_pool);
   if (!client) return false;
 
-  mongoc_collection_t* coll = mongoc_client_get_collection(client, DATABASE_NAME, DB_COLLECTION_STATISTICS);
+  mongoc_collection_t *coll =
+      mongoc_client_get_collection(client, DATABASE_NAME, DB_COLLECTION_STATISTICS);
 
-  // 1) Unique index on public_key
-  bson_t keys1; bson_init(&keys1);
+  // ---- Index 1: unique on { public_key: 1 }
+  bson_t keys1, opts1;
+  bson_init(&keys1);
   BSON_APPEND_INT32(&keys1, "public_key", 1);
 
-  bson_t opts1; bson_init(&opts1);
+  bson_init(&opts1);
+  BSON_APPEND_UTF8(&opts1, "name", "uniq_public_key");
   BSON_APPEND_BOOL(&opts1, "unique", true);
-  BSON_APPEND_UTF8(&opts1, "name", "uniq_public_key");  // naming makes re-runs idempotent
 
-  if (!mongoc_collection_create_index_with_opts(coll, &keys1, &opts1, &err)) {
-    // If the index already exists with the same spec, Mongo is effectively idempotent.
-    // If you ever change options, you’ll get IndexOptionsConflict here.
-    fprintf(stderr, "ensure_statistics_indexes: create uniq_public_key failed: %s\n", err.message);
-    ok = false;
-  }
-  bson_destroy(&keys1);
-  bson_destroy(&opts1);
+  mongoc_index_model_t *m1 = mongoc_index_model_new(&keys1, &opts1);
 
-  // Speeds up filter { public_key: <eq>, last_counted_block: { $lt: h } }
-  bson_t keys2; bson_init(&keys2);
+  // ---- Index 2: { public_key: 1, last_counted_block: 1 } (non-unique)
+  bson_t keys2, opts2;
+  bson_init(&keys2);
   BSON_APPEND_INT32(&keys2, "public_key", 1);
   BSON_APPEND_INT32(&keys2, "last_counted_block", 1);
 
-  bson_t opts2; bson_init(&opts2);
+  bson_init(&opts2);
   BSON_APPEND_UTF8(&opts2, "name", "idx_public_key_last_counted_block");
 
-  if (!mongoc_collection_create_index_with_opts(coll, &keys2, &opts2, &err)) {
-    fprintf(stderr, "ensure_statistics_indexes: create idx_public_key_last_counted_block failed: %s\n", err.message);
+  mongoc_index_model_t *m2 = mongoc_index_model_new(&keys2, &opts2);
+
+  // ---- Create both indexes in one call (idempotent when specs match)
+  mongoc_index_model_t *models[2] = { m1, m2 };
+
+  bson_t reply;
+  bson_init(&reply);
+
+  if (!mongoc_collection_create_indexes(coll, models, 2, &reply, &err)) {
+    // If you ever changed an existing index’s options (e.g., unique <-> non-unique),
+    // server may return IndexOptionsConflict; log it so you can drop/recreate.
     ok = false;
+    char *json = bson_as_canonical_extended_json(&reply, NULL);
+    fprintf(stderr, "create_indexes failed: %s\nDetails: %s\n",
+            err.message, json ? json : "(no reply)");
+    if (json) bson_free(json);
+  } else {
+    // Optional: log reply once on first run
+    // char *json = bson_as_canonical_extended_json(&reply, NULL);
+    // INFO_PRINT("create_indexes reply: %s", json); bson_free(json);
   }
-  bson_destroy(&keys2);
-  bson_destroy(&opts2);
+
+  // ---- Cleanup
+  bson_destroy(&reply);
+  mongoc_index_model_destroy(m2);
+  mongoc_index_model_destroy(m1);
+  bson_destroy(&opts2); bson_destroy(&keys2);
+  bson_destroy(&opts1); bson_destroy(&keys1);
 
   mongoc_collection_destroy(coll);
   mongoc_client_pool_push(database_client_thread_pool, client);
