@@ -929,7 +929,7 @@ bool add_indexes(void) {
   mongoc_index_model_t *models[2] = { m1, m2 };
 
   bson_t reply; bson_init(&reply);
-  if (!mongoc_collection_create_indexe(coll, models, 2, &reply, &err)) {
+  if (!mongoc_collection_create_index(coll, models, 2, &reply, &err)) {
     ok = false;
     char *json = bson_as_canonical_extended_json(&reply, NULL);
     fprintf(stderr, "create_indexes failed: %s\nDetails: %s\n",
