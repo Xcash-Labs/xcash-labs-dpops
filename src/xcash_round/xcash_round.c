@@ -524,42 +524,92 @@ void start_block_production(void) {
       for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
         if (strlen(delegates_all[i].public_address) > 0 && strlen(delegates_all[i].public_key) > 0) {
 
-          if (strcmp(delegates_all[i].online_status, delegates_all[i].online_status_orginal) == 0) {
-            DEBUG_PRINT("No change to online status, update skipped...");
-          } else {
-            bool is_primary = false;
+          if (strcmp(delegates_all[i].online_status, delegates_all[i].online_status_orginal) != 0) {
 
-#ifdef SEED_NODE_ON
-            if (is_primary_node()) {
-              is_primary = true;
+            char tmp_status[6] = "false";
+            if (strcmp(delegates_all[i].online_status, "true") == 0) {
+              strcpy(tmp_status, "true");
             }
-#endif
 
-            if (!is_seed_node || is_primary) {
-              char tmp_status[6] = "false";
-              if (strcmp(delegates_all[i].online_status, "true") == 0) {
-                strcpy(tmp_status, "true");
-              }
+            bson_t filter;
+            bson_t update_fields;
+            bson_init(&filter);
+            BSON_APPEND_UTF8(&filter, "public_key", delegates_all[i].public_key);
+            bson_init(&update_fields);
+            BSON_APPEND_UTF8(&update_fields, "online_status", tmp_status);
+            if (update_document_from_collection_bson(DATABASE_NAME, DB_COLLECTION_DELEGATES, &filter, &update_fields) != XCASH_OK) {
+              ERROR_PRINT("Failed to update online_status for delegate %s", delegates_all[i].public_address);
+            }
 
-              bson_t filter;
-              bson_t update_fields;
-              bson_init(&filter);
-              BSON_APPEND_UTF8(&filter, "public_key", delegates_all[i].public_key);
-              bson_init(&update_fields);
-              BSON_APPEND_UTF8(&update_fields, "online_status", tmp_status);
-              if (update_document_from_collection_bson(DATABASE_NAME, DB_COLLECTION_DELEGATES, &filter, &update_fields) != XCASH_OK) {
-                ERROR_PRINT("Failed to update online_status for delegate %s", delegates_all[i].public_address);
-              }
+            bson_destroy(&filter);
+            bson_destroy(&update_fields);
 
-              bson_destroy(&filter);
-              bson_destroy(&update_fields);
-           }
           }
 
 // Only update statics on seed nodes
 #ifdef SEED_NODE_ON
 
-          if (is_primary_node() && update_stats) {
+          if (update_stats) {
+
+            unsigned long long cbheight = strtoull(current_block_height, NULL, 10);
+            const bool online = (strcmp(delegates_all[i].online_status, "true") == 0);
+            const bool is_verifier = (i < BLOCK_VERIFIERS_AMOUNT);
+            const bool is_producer = is_verifier && (strcmp(delegates_all[i].public_address, producer_refs[0].public_address) == 0);
+
+            mongoc_client_t* c = mongoc_client_pool_pop(database_client_thread_pool);
+            mongoc_collection_t* stats =
+                mongoc_client_get_collection(c, DATABASE_NAME, DB_COLLECTION_STATISTICS);
+
+            // Filter: { public_key, last_counted_block: { $lt: height } }
+            bson_t filter;
+            bson_init(&filter);
+            BSON_APPEND_UTF8(&filter, "public_key", delegates_all[i].public_key);
+            bson_t lt;
+            bson_init(&lt);
+            BSON_APPEND_INT64(&lt, "$lt", (int64_t)cbheight);
+            BSON_APPEND_DOCUMENT(&filter, "last_counted_block", &lt);
+            bson_destroy(&lt);
+
+            // Build $inc only for fields that apply this round
+            bson_t inc;
+            bson_init(&inc);
+            if (online) {
+              BSON_APPEND_INT64(&inc, "block_verifier_online_total_rounds", 1);
+              if (is_verifier) {
+                BSON_APPEND_INT64(&inc, "block_verifier_total_rounds", 1);
+                if (is_producer) {
+                  BSON_APPEND_INT64(&inc, "block_producer_total_rounds", 1);
+                }
+              }
+            }
+
+            // Always move the watermark so this height is processed once
+            bson_t set;
+            bson_init(&set);
+            BSON_APPEND_INT64(&set, "last_counted_block", (int64_t)cbheight);
+
+            // Update: { $inc: {...}, $set: { last_counted_block: height } }
+            bson_t update;
+            bson_init(&update);
+            BSON_APPEND_DOCUMENT(&update, "$inc", &inc);
+            BSON_APPEND_DOCUMENT(&update, "$set", &set);
+
+            // One atomic call. If the filter doesn't match (already processed), this is a no-op.
+            bson_error_t err;
+            (void)mongoc_collection_update_one(stats, &filter, &update, NULL, NULL, &err);
+
+            // Cleanup
+            bson_destroy(&update);
+            bson_destroy(&set);
+            bson_destroy(&inc);
+            bson_destroy(&filter);
+            mongoc_collection_destroy(stats);
+            mongoc_client_pool_push(database_client_thread_pool, c);
+          }
+
+
+
+/*
 
             INFO_PRINT("Updating Statistics");
             uint64_t tmp_verifier_total_round = 0;
@@ -623,7 +673,7 @@ void start_block_production(void) {
             } else {
               ERROR_PRINT("Failed retrieve and update of statistics for delegate %s", delegates_all[i].public_address);
             }
-          }
+*/
 
 #endif
 

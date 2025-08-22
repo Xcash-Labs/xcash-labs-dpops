@@ -174,7 +174,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
     if (count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, data) != 0)
     {
       if (is_seed_node) {
-      // Seed node db uses replication so it will get add by the primay node
+      // Seed node db uses replication so it alreay exists it has already been added
         send_data(client, (unsigned char *)"1|Registered the delegate}", strlen("1|Registered the delegate}"));
         return;
       } else {
@@ -213,42 +213,32 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
     double set_delegate_fee = 0.00;
     uint64_t set_counts = 0;
 
-    bool is_primary = false;
+    bson_t bson;
+    bson_init(&bson);
 
-#ifdef SEED_NODE_ON
-    if (is_primary_node()) {
-      is_primary = true;
-    }
-#endif
+    // Strings
+    bson_append_utf8(&bson, "public_address", -1, delegate_public_address, -1);
+    bson_append_utf8(&bson, "IP_address", -1, delegates_IP_address, -1);
+    bson_append_utf8(&bson, "delegate_name", -1, delegate_name, -1);
+    bson_append_utf8(&bson, "about", -1, "", -1);
+    bson_append_utf8(&bson, "website", -1, "", -1);
+    bson_append_utf8(&bson, "team", -1, "", -1);
+    bson_append_utf8(&bson, "delegate_type", -1, "shared", -1);
+    bson_append_utf8(&bson, "server_specs", -1, "", -1);
+    bson_append_utf8(&bson, "online_status", -1, "false", -1);
+    bson_append_utf8(&bson, "public_key", -1, delegate_public_key, -1);
 
-    if (!is_seed_node || is_primary) {
-      bson_t bson;
-      bson_init(&bson);
+    // Numbers
+    bson_append_int64(&bson, "total_vote_count", -1, set_counts);
+    bson_append_double(&bson, "delegate_fee", -1, set_delegate_fee);
+    bson_append_int64(&bson, "registration_timestamp", -1, registration_time);
 
-      // Strings
-      bson_append_utf8(&bson, "public_address", -1, delegate_public_address, -1);
-      bson_append_utf8(&bson, "IP_address", -1, delegates_IP_address, -1);
-      bson_append_utf8(&bson, "delegate_name", -1, delegate_name, -1);
-      bson_append_utf8(&bson, "about", -1, "", -1);
-      bson_append_utf8(&bson, "website", -1, "", -1);
-      bson_append_utf8(&bson, "team", -1, "", -1);
-      bson_append_utf8(&bson, "delegate_type", -1, "shared", -1);
-      bson_append_utf8(&bson, "server_specs", -1, "", -1);
-      bson_append_utf8(&bson, "online_status", -1, "false", -1);
-      bson_append_utf8(&bson, "public_key", -1, delegate_public_key, -1);
-
-      // Numbers
-      bson_append_int64(&bson, "total_vote_count", -1, set_counts);
-      bson_append_double(&bson, "delegate_fee", -1, set_delegate_fee);
-      bson_append_int64(&bson, "registration_timestamp", -1, registration_time);
-
-      if (insert_document_into_collection_bson(DATABASE_NAME, DB_COLLECTION_DELEGATES, &bson) != XCASH_OK) {
-        bson_destroy(&bson);
-        SERVER_ERROR("0|Failed to insert the delegate document}");
-      }
-
+    if (insert_document_into_collection_bson(DATABASE_NAME, DB_COLLECTION_DELEGATES, &bson) != XCASH_OK) {
       bson_destroy(&bson);
+      SERVER_ERROR("0|Failed to insert the delegate document}");
     }
+
+    bson_destroy(&bson);
 
 // Only update statics on seed nodes
 #ifdef SEED_NODE_ON
@@ -263,6 +253,9 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
       bson_append_int64(&bson_statistics, "block_verifier_total_rounds", -1, set_counts);
       bson_append_int64(&bson_statistics, "block_verifier_online_total_rounds", -1, set_counts);
       bson_append_int64(&bson_statistics, "block_producer_total_rounds", -1, set_counts);
+
+      // Guard watermark for exactly-once counting:
+      bson_append_int64(&bson_statistics, "last_counted_block", -1, (int64_t)-1);
 
       // Insert into "statistics" collection
       if (insert_document_into_collection_bson(DATABASE_NAME, DB_COLLECTION_STATISTICS, &bson_statistics) != XCASH_OK) {

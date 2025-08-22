@@ -874,36 +874,6 @@ int get_statistics_totals_by_public_key(
   return success ? XCASH_OK : XCASH_ERROR;
 }
 
-bool is_primary_node(void) {
-    bson_t command = BSON_INITIALIZER;
-    bson_t reply;
-    bson_error_t error;
-    bool is_primary = false;
-
-    mongoc_client_t *client = mongoc_client_pool_pop(database_client_thread_pool);
-    if (!client) {
-        fprintf(stderr, "Failed to pop client from pool\n");
-        return false;
-    }
-
-    BSON_APPEND_INT32(&command, "hello", 1);
-
-    if (mongoc_client_command_simple(client, "admin", &command, NULL, &reply, &error)) {
-        bson_iter_t iter;
-        if (bson_iter_init_find_case(&iter, &reply, "isWritablePrimary") &&
-            BSON_ITER_HOLDS_BOOL(&iter)) {
-            is_primary = bson_iter_bool(&iter);
-        }
-    } else {
-        fprintf(stderr, "Command failed: %s\n", error.message);
-    }
-
-    bson_destroy(&command);
-    bson_destroy(&reply);
-    mongoc_client_pool_push(database_client_thread_pool, client);
-    return is_primary;
-}
-
 bool is_replica_set_ready(void) {
   bson_t reply;
   bson_error_t error;
@@ -930,4 +900,50 @@ bool is_replica_set_ready(void) {
   bson_destroy(cmd);
   mongoc_client_pool_push(database_client_thread_pool, client);
   return is_ready;
+}
+
+bool add_indexes(void) {
+  bson_error_t err;
+  bool ok = true;
+
+  mongoc_client_t *client = mongoc_client_pool_pop(database_client_thread_pool);
+  if (!client) return false;
+
+  mongoc_collection_t* coll = mongoc_client_get_collection(client, DATABASE_NAME, DB_COLLECTION_STATISTICS);
+
+  // 1) Unique index on public_key
+  bson_t keys1; bson_init(&keys1);
+  BSON_APPEND_INT32(&keys1, "public_key", 1);
+
+  bson_t opts1; bson_init(&opts1);
+  BSON_APPEND_BOOL(&opts1, "unique", true);
+  BSON_APPEND_UTF8(&opts1, "name", "uniq_public_key");  // naming makes re-runs idempotent
+
+  if (!mongoc_collection_create_index_with_opts(coll, &keys1, &opts1, &err)) {
+    // If the index already exists with the same spec, Mongo is effectively idempotent.
+    // If you ever change options, you’ll get IndexOptionsConflict here.
+    fprintf(stderr, "ensure_statistics_indexes: create uniq_public_key failed: %s\n", err.message);
+    ok = false;
+  }
+  bson_destroy(&keys1);
+  bson_destroy(&opts1);
+
+  // Speeds up filter { public_key: <eq>, last_counted_block: { $lt: h } }
+  bson_t keys2; bson_init(&keys2);
+  BSON_APPEND_INT32(&keys2, "public_key", 1);
+  BSON_APPEND_INT32(&keys2, "last_counted_block", 1);
+
+  bson_t opts2; bson_init(&opts2);
+  BSON_APPEND_UTF8(&opts2, "name", "idx_public_key_last_counted_block");
+
+  if (!mongoc_collection_create_index_with_opts(coll, &keys2, &opts2, &err)) {
+    fprintf(stderr, "ensure_statistics_indexes: create idx_public_key_last_counted_block failed: %s\n", err.message);
+    ok = false;
+  }
+  bson_destroy(&keys2);
+  bson_destroy(&opts2);
+
+  mongoc_collection_destroy(coll);
+  mongoc_client_pool_push(database_client_thread_pool, client);
+  return ok;
 }

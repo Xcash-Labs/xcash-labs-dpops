@@ -239,34 +239,24 @@ void server_receive_data_socket_node_to_node_db_sync_data(const char *MESSAGE) {
     return;
   }
 
-  bool is_primary = false;
-
-#ifdef SEED_NODE_ON
-  if (is_primary_node()) {
-    is_primary = true;
-  }
-#endif
-
-  if (!is_seed_node || is_primary) {
-    pthread_mutex_lock(&delegates_all_lock);
-    // Drop old delegates collection before sync
-    if (!db_drop(DATABASE_NAME, DB_COLLECTION_DELEGATES, &error)) {
-      ERROR_PRINT("Failed to clear old delegates table before sync: %s", error.message);
-      bson_destroy(doc);
-      pthread_mutex_unlock(&delegates_all_lock);
-      return;
-    }
-
-    // Insert new delegate data
-    if (!db_upsert_multi_docs(DATABASE_NAME, DB_COLLECTION_DELEGATES, doc, &error)) {
-      ERROR_PRINT("Failed to upsert delegates sync data: %s", error.message);
-      bson_destroy(doc);
-      pthread_mutex_unlock(&delegates_all_lock);
-      return;
-    }
-
+  pthread_mutex_lock(&delegates_all_lock);
+  // Drop old delegates collection before sync
+  if (!db_drop(DATABASE_NAME, DB_COLLECTION_DELEGATES, &error)) {
+    ERROR_PRINT("Failed to clear old delegates table before sync: %s", error.message);
+    bson_destroy(doc);
     pthread_mutex_unlock(&delegates_all_lock);
+    return;
   }
+
+  // Insert new delegate data
+  if (!db_upsert_multi_docs(DATABASE_NAME, DB_COLLECTION_DELEGATES, doc, &error)) {
+    ERROR_PRINT("Failed to upsert delegates sync data: %s", error.message);
+    bson_destroy(doc);
+    pthread_mutex_unlock(&delegates_all_lock);
+    return;
+  }
+
+  pthread_mutex_unlock(&delegates_all_lock);
 
   INFO_PRINT("Successfully updated delegates database from sync message");
   bson_destroy(doc);
