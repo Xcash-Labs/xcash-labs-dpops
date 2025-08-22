@@ -58,11 +58,11 @@ INC_DIRS  := $(shell find $(SRC_DIRS) -type d)
 INC_FLAGS := $(addprefix -I,$(INC_DIRS))
 
 # Your original hardcoded Mongo includes (kept, but AFTER pkg-config so they don't shadow)
-MongoDB_INC_DIRS := -I/usr/local/include/libbson-1.0 -I/usr/local/include/libmongoc-1.0
+#MongoDB_INC_DIRS := -I/usr/local/include/libbson-1.0 -I/usr/local/include/libmongoc-1.0
 
 # --- Compiler flags ---
 # Put pkg-config FIRST, then your project includes, then the old Mongo includes.
-CFLAGS ?= $(PKG_CFLAGS) $(INC_FLAGS) $(MongoDB_INC_DIRS) \
+CFLAGS ?= $(PKG_CFLAGS) $(INC_FLAGS) \
           -MMD -MP -Wall -Wextra -Wstrict-prototypes -Wcast-qual -Wfloat-equal \
           -Wundef -Wshadow -Wcast-align -Wstrict-overflow -Wdouble-promotion \
           -fexceptions -pie -fPIE -Wl,dynamicbase -Wl,nxcompat
