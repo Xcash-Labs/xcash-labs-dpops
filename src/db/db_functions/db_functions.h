@@ -5,7 +5,6 @@
 #include <stdlib.h>
 #include <mongoc/mongoc.h>
 #include <bson/bson.h>
-
 #include "config.h"
 #include "globals.h"
 #include "structures.h"
