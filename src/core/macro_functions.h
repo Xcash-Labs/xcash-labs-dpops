@@ -71,7 +71,6 @@
     } \
 } while (0)
 
-
 #define FATAL_ERROR_EXIT(fmt, ...) do { \
     if (log_level >= LOG_LEVEL_CRITICAL) { \
         time_t raw_time = time(NULL); \
@@ -79,17 +78,14 @@
         char time_buf[20]; \
         strftime(time_buf, sizeof(time_buf), "%Y-%m-%d %H:%M:%S", tm_info); \
         fprintf(stderr, "\033[1;31m[%s] FATAL: " fmt "\033[0m\n", time_buf, ##__VA_ARGS__); \
-        exit(1); \
-    } \
-} while (0)
-
-#define FATAL_ERROR(fmt, ...) do { \
-    if (log_level >= LOG_LEVEL_CRITICAL) { \
-        time_t raw_time = time(NULL); \
-        struct tm *tm_info = localtime(&raw_time); \
-        char time_buf[20]; \
-        strftime(time_buf, sizeof(time_buf), "%Y-%m-%d %H:%M:%S", tm_info); \
-        fprintf(stderr, "\033[1;31m[%s] FATAL: " fmt "\033[0m\n", time_buf, ##__VA_ARGS__); \
+        fflush(NULL); \
+        signal(SIGTERM, SIG_DFL); \
+        sigset_t _set; sigemptyset(&_set); sigaddset(&_set, SIGTERM); \
+        sigprocmask(SIG_UNBLOCK, &_set, NULL); \
+        if (raise(SIGTERM) != 0) { \
+            kill(getpid(), SIGTERM); \
+        } \
+        _exit(128 + SIGTERM); \
     } \
 } while (0)
 

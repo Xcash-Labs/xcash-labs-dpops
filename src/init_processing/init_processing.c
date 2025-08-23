@@ -89,7 +89,7 @@ bool init_processing(const arg_config_t *arg_config) {
 
       if (i == 0) {
         if (!add_indexes()) {
-          FATAL_ERROR("Failed to add indexes to database!");
+          FATAL_ERROR_EXIT("Failed to add indexes to database!");
         }
       }
 
