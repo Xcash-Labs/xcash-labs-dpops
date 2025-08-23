@@ -2,9 +2,18 @@
 
 bool get_node_data(void) {
   // Get the wallet's public address
-  if (!get_public_address()) {
-    FATAL_ERROR_EXIT("Could not get the wallet's public address");
-    return XCASH_ERROR;
+  const int MAX_WAIT_SEC = 300;
+  time_t t0 = time(NULL);
+  int attempt = 0;
+
+  while (!get_public_address()) {
+    if (difftime(time(NULL), t0) >= MAX_WAIT_SEC) {
+      FATAL_ERROR_EXIT("Could not get the wallet's public address within %d seconds", MAX_WAIT_SEC);
+      return XCASH_ERROR;
+    }
+    attempt++;
+    WARNING_PRINT("Wallet not ready yet (attempt %d). Retrying in %ds...", attempt, SLEEP_SEC);
+    sleep(5);
   }
 
   if (xcash_wallet_public_address[0] == '\0') {
