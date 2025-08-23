@@ -87,13 +87,11 @@ bool init_processing(const arg_config_t *arg_config) {
 
       bson_destroy(&bson_statistics);
 
-      INFO_PRINT("Calling add_indexes");
       if (i == 0) {
         if (!add_indexes()) {
           FATAL_ERROR("Failed to add indexes to database!");
         }
       }
-      INFO_PRINT("Exiting add_indexes");
 
 #endif
 
