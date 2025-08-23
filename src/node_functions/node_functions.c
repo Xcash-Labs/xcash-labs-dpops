@@ -3,6 +3,7 @@
 bool get_node_data(void) {
   // Get the wallet's public address
   const int MAX_WAIT_SEC = 300;
+  const int SLEEP_SEC = 5;
   time_t t0 = time(NULL);
   int attempt = 0;
 
@@ -13,7 +14,7 @@ bool get_node_data(void) {
     }
     attempt++;
     WARNING_PRINT("Wallet not ready yet (attempt %d). Retrying in %ds...", attempt, SLEEP_SEC);
-    sleep(5);
+    sleep(SLEEP_SEC);
   }
 
   if (xcash_wallet_public_address[0] == '\0') {
