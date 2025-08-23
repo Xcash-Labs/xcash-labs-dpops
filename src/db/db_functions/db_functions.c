@@ -903,7 +903,6 @@ bool is_replica_set_ready(void) {
 }
 
 bool add_indexes(void) {
-  INFO_PRINT("In add_indexes......................................");
   bson_error_t err;
   bool ok = true;
 
