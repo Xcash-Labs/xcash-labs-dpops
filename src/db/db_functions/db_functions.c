@@ -913,14 +913,13 @@ bool add_indexes(void) {
   mongoc_collection_t *coll =
       mongoc_client_get_collection(client, DATABASE_NAME, DB_COLLECTION_STATISTICS);
 
-  // ---- Index 1: unique on { public_key: 1 }
+  // ---- models ----
   bson_t keys1, opts1; bson_init(&keys1); bson_init(&opts1);
   BSON_APPEND_INT32(&keys1, "public_key", 1);
   BSON_APPEND_UTF8(&opts1, "name", "uniq_public_key");
   BSON_APPEND_BOOL(&opts1, "unique", true);
   mongoc_index_model_t *m1 = mongoc_index_model_new(&keys1, &opts1);
 
-  // ---- Index 2: { public_key: 1, last_counted_block: 1 } (non-unique)
   bson_t keys2, opts2; bson_init(&keys2); bson_init(&opts2);
   BSON_APPEND_INT32(&keys2, "public_key", 1);
   BSON_APPEND_INT32(&keys2, "last_counted_block", 1);
@@ -929,12 +928,12 @@ bool add_indexes(void) {
 
   mongoc_index_model_t *models[2] = { m1, m2 };
 
+  bson_t create_opts; bson_init(&create_opts);
+  BSON_APPEND_UTF8(&create_opts, "commitQuorum", "majority");
+  BSON_APPEND_INT32(&create_opts, "maxTimeMS", 15000);        // 15s timeout for the operation
+
   bson_t reply; bson_init(&reply);
-  INFO_PRINT("In add_indexes...................................... 1 ");
-  // Use the modern, exported symbol
-  // Signature: bool mongoc_collection_create_indexes_with_opts(coll, models, n_models, opts, reply, error)
-  // We don't need extra options here, so pass NULL.
-  if (!mongoc_collection_create_indexes_with_opts(coll, models, 2, NULL, &reply, &err)) {
+  if (!mongoc_collection_create_indexes_with_opts(coll, models, 2, &create_opts, &reply, &err)) {
     ok = false;
     char *json = bson_as_canonical_extended_json(&reply, NULL);
     fprintf(stderr, "create_indexes_with_opts failed: %s\nDetails: %s\n",
@@ -942,12 +941,13 @@ bool add_indexes(void) {
     if (json) bson_free(json);
   }
 
+  // cleanup
   bson_destroy(&reply);
+  bson_destroy(&create_opts);
   mongoc_index_model_destroy(m2);
   mongoc_index_model_destroy(m1);
   bson_destroy(&opts2); bson_destroy(&keys2);
   bson_destroy(&opts1); bson_destroy(&keys1);
-
   mongoc_collection_destroy(coll);
   mongoc_client_pool_push(database_client_thread_pool, client);
   return ok;
