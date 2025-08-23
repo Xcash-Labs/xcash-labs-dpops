@@ -930,7 +930,7 @@ bool add_indexes(void) {
   mongoc_index_model_t *models[2] = { m1, m2 };
 
   bson_t reply; bson_init(&reply);
-
+  INFO_PRINT("In add_indexes...................................... 1 ");
   // Use the modern, exported symbol
   // Signature: bool mongoc_collection_create_indexes_with_opts(coll, models, n_models, opts, reply, error)
   // We don't need extra options here, so pass NULL.
