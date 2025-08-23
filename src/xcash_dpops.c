@@ -219,7 +219,7 @@ int main(int argc, char *argv[]) {
   }
 
   if (!(init_processing(&arg_config))) {
-    FATAL_ERROR("Failed server initialization.");
+    FATAL_ERROR_EXIT("Failed server initialization.");
   }
 
   if (get_node_data()) {
