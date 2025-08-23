@@ -909,45 +909,117 @@ bool add_indexes(void) {
   mongoc_client_t *client = mongoc_client_pool_pop(database_client_thread_pool);
   if (!client) return false;
 
-  mongoc_collection_t *coll =
-      mongoc_client_get_collection(client, DATABASE_NAME, DB_COLLECTION_STATISTICS);
+  /* =========================
+     STATISTICS COLLECTION
+     ========================= */
+  {
+    mongoc_collection_t *coll =
+        mongoc_client_get_collection(client, DATABASE_NAME, DB_COLLECTION_STATISTICS);
 
-  // ---- models ----
-  bson_t keys1, opts1; bson_init(&keys1); bson_init(&opts1);
-  BSON_APPEND_INT32(&keys1, "public_key", 1);
-  BSON_APPEND_UTF8(&opts1, "name", "uniq_public_key");
-  BSON_APPEND_BOOL(&opts1, "unique", true);
-  mongoc_index_model_t *m1 = mongoc_index_model_new(&keys1, &opts1);
+    // models
+    bson_t keys1, opts1; bson_init(&keys1); bson_init(&opts1);
+    BSON_APPEND_INT32(&keys1, "public_key", 1);
+    BSON_APPEND_UTF8(&opts1, "name", "uniq_public_key");
+    BSON_APPEND_BOOL(&opts1, "unique", true);
+    mongoc_index_model_t *m1 = mongoc_index_model_new(&keys1, &opts1);
 
-  bson_t keys2, opts2; bson_init(&keys2); bson_init(&opts2);
-  BSON_APPEND_INT32(&keys2, "public_key", 1);
-  BSON_APPEND_INT32(&keys2, "last_counted_block", 1);
-  BSON_APPEND_UTF8(&opts2, "name", "idx_public_key_last_counted_block");
-  mongoc_index_model_t *m2 = mongoc_index_model_new(&keys2, &opts2);
+    bson_t keys2, opts2; bson_init(&keys2); bson_init(&opts2);
+    BSON_APPEND_INT32(&keys2, "public_key", 1);
+    BSON_APPEND_INT32(&keys2, "last_counted_block", 1);
+    BSON_APPEND_UTF8(&opts2, "name", "idx_public_key_last_counted_block");
+    mongoc_index_model_t *m2 = mongoc_index_model_new(&keys2, &opts2);
 
-  mongoc_index_model_t *models[2] = { m1, m2 };
+    mongoc_index_model_t *models[2] = { m1, m2 };
 
-  bson_t create_opts; bson_init(&create_opts);
-  BSON_APPEND_UTF8(&create_opts, "commitQuorum", "majority");
-  BSON_APPEND_INT32(&create_opts, "maxTimeMS", 15000);        // 15s timeout for the operation
+    // createIndexes opts
+    bson_t create_opts; bson_init(&create_opts);
+    BSON_APPEND_UTF8(&create_opts, "commitQuorum", "majority");
+    BSON_APPEND_INT32(&create_opts, "maxTimeMS", 15000);
 
-  bson_t reply; bson_init(&reply);
-  if (!mongoc_collection_create_indexes_with_opts(coll, models, 2, &create_opts, &reply, &err)) {
-    ok = false;
-    char *json = bson_as_canonical_extended_json(&reply, NULL);
-    fprintf(stderr, "create_indexes_with_opts failed: %s\nDetails: %s\n",
-            err.message, json ? json : "(no reply)");
-    if (json) bson_free(json);
+    bson_t reply; bson_init(&reply);
+    if (!mongoc_collection_create_indexes_with_opts(coll, models, 2, &create_opts, &reply, &err)) {
+      ok = false;
+      char *json = bson_as_canonical_extended_json(&reply, NULL);
+      fprintf(stderr, "[indexes] statistics failed: %s\nDetails: %s\n",
+              err.message, json ? json : "(no reply)");
+      if (json) bson_free(json);
+    }
+
+    // cleanup
+    bson_destroy(&reply);
+    bson_destroy(&create_opts);
+    mongoc_index_model_destroy(m2);
+    mongoc_index_model_destroy(m1);
+    bson_destroy(&opts2); bson_destroy(&keys2);
+    bson_destroy(&opts1); bson_destroy(&keys1);
+    mongoc_collection_destroy(coll);
   }
 
-  // cleanup
-  bson_destroy(&reply);
-  bson_destroy(&create_opts);
-  mongoc_index_model_destroy(m2);
-  mongoc_index_model_destroy(m1);
-  bson_destroy(&opts2); bson_destroy(&keys2);
-  bson_destroy(&opts1); bson_destroy(&keys1);
-  mongoc_collection_destroy(coll);
+  /* =========================
+     DELEGATES COLLECTION
+     ========================= */
+  {
+    mongoc_collection_t *coll =
+        mongoc_client_get_collection(client, DATABASE_NAME, DB_COLLECTION_DELEGATES);
+
+    // 1) unique public_address
+    bson_t k1, o1; bson_init(&k1); bson_init(&o1);
+    BSON_APPEND_INT32(&k1, "public_address", 1);
+    BSON_APPEND_UTF8(&o1, "name", "uniq_public_address");
+    BSON_APPEND_BOOL(&o1, "unique", true);
+    mongoc_index_model_t *m1 = mongoc_index_model_new(&k1, &o1);
+
+    // 2) unique public_key
+    bson_t k2, o2; bson_init(&k2); bson_init(&o2);
+    BSON_APPEND_INT32(&k2, "public_key", 1);
+    BSON_APPEND_UTF8(&o2, "name", "uniq_public_key");
+    BSON_APPEND_BOOL(&o2, "unique", true);
+    mongoc_index_model_t *m2 = mongoc_index_model_new(&k2, &o2);
+
+    // 3) unique delegate_name (case-insensitive via collation)
+    bson_t k3, o3, coll3; bson_init(&k3); bson_init(&o3); bson_init(&coll3);
+    BSON_APPEND_INT32(&k3, "delegate_name", 1);
+    BSON_APPEND_UTF8(&o3, "name", "uniq_delegate_name_ci");
+    BSON_APPEND_BOOL(&o3, "unique", true);
+    BSON_APPEND_UTF8(&coll3, "locale", "en");
+    BSON_APPEND_INT32(&coll3, "strength", 2); // case-insensitive, diacritics-insensitive
+    BSON_APPEND_DOCUMENT(&o3, "collation", &coll3);
+    mongoc_index_model_t *m3 = mongoc_index_model_new(&k3, &o3);
+
+    // 4) unique IP_address (only if you truly want one delegate per IP/host)
+    bson_t k4, o4; bson_init(&k4); bson_init(&o4);
+    BSON_APPEND_INT32(&k4, "IP_address", 1);
+    BSON_APPEND_UTF8(&o4, "name", "uniq_IP_address");
+    BSON_APPEND_BOOL(&o4, "unique", true);
+    mongoc_index_model_t *m4 = mongoc_index_model_new(&k4, &o4);
+
+    mongoc_index_model_t *models[] = { m1, m2, m3, m4 };
+
+    bson_t create_opts; bson_init(&create_opts);
+    BSON_APPEND_UTF8(&create_opts, "commitQuorum", "majority");
+    BSON_APPEND_INT32(&create_opts, "maxTimeMS", 15000);
+
+    bson_t reply; bson_init(&reply);
+    if (!mongoc_collection_create_indexes_with_opts(coll, models, 4, &create_opts, &reply, &err)) {
+      ok = false;
+      char *json = bson_as_canonical_extended_json(&reply, NULL);
+      fprintf(stderr, "[indexes] delegates failed: %s\nDetails: %s\n",
+              err.message, json ? json : "(no reply)");
+      if (json) bson_free(json);
+    }
+
+    // cleanup
+    bson_destroy(&reply);
+    bson_destroy(&create_opts);
+    mongoc_index_model_destroy(m4); mongoc_index_model_destroy(m3);
+    mongoc_index_model_destroy(m2); mongoc_index_model_destroy(m1);
+    bson_destroy(&o4); bson_destroy(&k4);
+    bson_destroy(&coll3); bson_destroy(&o3); bson_destroy(&k3);
+    bson_destroy(&o2); bson_destroy(&k2);
+    bson_destroy(&o1); bson_destroy(&k1);
+    mongoc_collection_destroy(coll);
+  }
+
   mongoc_client_pool_push(database_client_thread_pool, client);
   return ok;
 }
