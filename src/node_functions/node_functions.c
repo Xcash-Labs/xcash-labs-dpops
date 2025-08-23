@@ -3,7 +3,7 @@
 bool get_node_data(void) {
   // Get the wallet's public address
   if (!get_public_address()) {
-    ERROR_PRINT("Could not get the wallet's public address");
+    FATAL_ERROR_EXIT("Could not get the wallet's public address");
     return XCASH_ERROR;
   }
 
