@@ -289,7 +289,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
   // Parse the incoming JSON message
   cJSON *root = cJSON_Parse(MESSAGE);
   if (!root) {
-    send_data(client, (unsigned char *)"0|Invalid JSON format}", strlen("0|Invalid JSON format}"));
+    send_data(client, (unsigned char *)"0|Invalid JSON format", strlen("0|Invalid JSON format"));
     return;
   }
 
@@ -306,7 +306,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
       !cJSON_IsString(js_vrf_proof) || !cJSON_IsString(js_vrf_beta) || !cJSON_IsString(js_vrf_pubkey) ||
       !cJSON_IsString(js_vote_hash) || !cJSON_IsNumber(js_height) || !cJSON_IsString(js_prev_hash)) {
     cJSON_Delete(root);
-    send_data(client, (unsigned char *)"0|Missing or invalid fields}", strlen("0|Missing or invalid fields}"));
+    send_data(client, (unsigned char *)"0|Missing or invalid fields", strlen("0|Missing or invalid fields"));
     return;
   }
 
@@ -330,7 +330,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
         ERROR_PRINT("Public key mismatch: expected %s, got %s",
                     producer_refs[0].vrf_public_key, vrf_pubkey_str);
         cJSON_Delete(root);
-        send_data(client, (unsigned char *)"0|Public key mismatch}", strlen("0|Public key mismatch}"));
+        send_data(client, (unsigned char *)"0|Public key mismatch", strlen("0|Public key mismatch"));
         return;
     }
 
@@ -340,7 +340,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
     {
         ERROR_PRINT("VRF proof, beta, or vote_hash mismatch");
         cJSON_Delete(root);
-        send_data(client, (unsigned char *)"0|VRF data mismatch}", strlen("0|VRF data mismatch}"));
+        send_data(client, (unsigned char *)"0|VRF data mismatch", strlen("0|VRF data mismatch"));
         return;
     }
 
@@ -360,7 +360,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
       !hex_to_byte_array(vrf_beta_str, beta_bin, sizeof(beta_bin)) ||
       !hex_to_byte_array(prev_hash_str, prev_hash_bin, sizeof(prev_hash_bin))) {
     cJSON_Delete(root);
-    send_data(client, (unsigned char *)"0|Hex decoding failed}", strlen("0|Hex decoding failed}"));
+    send_data(client, (unsigned char *)"0|Hex decoding failed", strlen("0|Hex decoding failed"));
     return;
   }
 
@@ -380,12 +380,12 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
 
   if (valid_block) {
     snprintf(response, sizeof(response),
-             "1|Block verification passed|%s}",
+             "1|Block verification passed|%s",
              vote_hash_str);
     send_data(client, (unsigned char *)response, strlen(response));
   } else {
     snprintf(response, sizeof(response),
-             "0|Block verification failed|%s}",
+             "0|Block verification failed|%s",
              vote_hash_str);
     send_data(client, (unsigned char *)response, strlen(response));
   }

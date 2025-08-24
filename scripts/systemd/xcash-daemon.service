@@ -6,6 +6,8 @@ StartLimitBurst=1
 
 [Service]
 Type=forking
+LimitNOFILE=65535
+TasksMax=infinity
 User=${USER}
 PIDFile=${XCASH_DPOPS_INSTALLATION_DIR}systemdpid/xcash-daemon.pid
 Environment="GLIBC_TUNABLES=glibc.pthread.rseq=0"
