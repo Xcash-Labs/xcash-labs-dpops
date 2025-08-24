@@ -116,9 +116,7 @@ xcash_round_result_t process_round(void) {
   char target_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
   char cheight[BLOCK_HEIGHT_LENGTH + 1] = {0};
 
-  if (is_blockchain_synced(target_height, cheight)) {
-    is_synced = true;
-  } else {
+  if (!is_blockchain_synced(target_height, cheight)) {
     unsigned long long node_h = strtoull(cheight, NULL, 10);
     unsigned long long target_h = strtoull(target_height, NULL, 10);
     char target_disp[BLOCK_HEIGHT_LENGTH];
@@ -441,14 +439,14 @@ Returns:
 void start_block_production(void) {
   struct timeval current_time;
   xcash_round_result_t round_result;
-  is_synced = false;
   char target_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
   char cheight[BLOCK_HEIGHT_LENGTH + 1] = {0};
 
   // Wait for node to be fully synced
-  while (!is_synced) {
+  bool not_synced = true;
+  while (not_synced) {
     if (is_blockchain_synced(target_height, cheight)) {
-      is_synced = true;
+      not_synced = false;
     } else {
       unsigned long long node_h = strtoull(cheight, NULL, 10);
       unsigned long long target_h = strtoull(target_height, NULL, 10);
@@ -485,7 +483,6 @@ void start_block_production(void) {
 
     current_block_height[0] = '\0';
     delegate_db_hash_mismatch = 0;
-    is_synced = false;
     atomic_store(&wait_for_vrf_init, true);
     atomic_store(&wait_for_block_height_init, true);
     round_result = ROUND_OK;

@@ -4,7 +4,6 @@
 int log_level = 0;
 int delegate_db_hash_mismatch = 0;
 bool is_seed_node = false;
-bool is_synced = false;
 int network_data_nodes_amount = 0;
 delegates_t delegates_all[BLOCK_VERIFIERS_TOTAL_AMOUNT] = {0};
 
