@@ -135,7 +135,7 @@ void* handle_client(void* arg) {
   return NULL;
 }
 
-int send_data(server_client_t* client, const unsigned char* data, size_t length) {
+int send_data__OLD__(server_client_t* client, const unsigned char* data, size_t length) {
   if (!client) {
     ERROR_PRINT("send_data failed: client is NULL");
     return XCASH_ERROR;
@@ -156,6 +156,74 @@ int send_data(server_client_t* client, const unsigned char* data, size_t length)
   DEBUG_PRINT("Sent %zd bytes to %s. Message: %.100s", sent, client->client_ip, data);
   return XCASH_OK;
 }
+
+
+
+// add: #include <arpa/inet.h>  // for htonl
+//      #include <errno.h>
+//      #include <string.h>     // for strerror
+
+static int send_all_nosig(int fd, const void* buf, size_t len) {
+  const unsigned char* p = (const unsigned char*)buf;
+  while (len > 0) {
+    ssize_t n = send(fd, p, len, MSG_NOSIGNAL);
+    if (n > 0) { p += (size_t)n; len -= (size_t)n; continue; }
+    if (n < 0 && errno == EINTR) continue;
+    // If your socket is non-blocking, you may want to integrate with your poll/epoll here
+    return -1;
+  }
+  return 0;
+}
+
+int send_data(server_client_t* client, const unsigned char* data, size_t length) {
+  if (!client) {
+    ERROR_PRINT("send_data failed: client is NULL");
+    return XCASH_ERROR;
+  }
+  if (client->socket_fd < 0) {
+    ERROR_PRINT("send_data failed: invalid socket_fd (%d) for client %s",
+                client->socket_fd, client->client_ip);
+    return XCASH_ERROR;
+  }
+  if (length > 0xFFFFFFFFu) {
+    ERROR_PRINT("send_data failed: payload too large (%zu bytes) for 4-byte length", length);
+    return XCASH_ERROR;
+  }
+
+  // 4-byte big-endian length prefix
+  uint32_t be_len = htonl((uint32_t)length);
+
+  // 1) send the 4-byte length
+  if (send_all_nosig(client->socket_fd, &be_len, sizeof(be_len)) != 0) {
+    ERROR_PRINT("Failed to send length prefix to %s (len=%zu): %s",
+                client->client_ip, length, strerror(errno));
+    return XCASH_ERROR;
+  }
+
+  // 2) send the body (raw JSON, unchanged)
+  if (length > 0) {
+    if (send_all_nosig(client->socket_fd, data, length) != 0) {
+      ERROR_PRINT("Failed to send data to %s. Message (first 100B): %.100s",
+                  client->client_ip, (const char*)data);
+      return XCASH_ERROR;
+    }
+  }
+
+  DEBUG_PRINT("Sent %zu bytes to %s (4-byte header + %zu body). Message (first 100B): %.100s",
+              (size_t)sizeof(be_len) + length, client->client_ip, length, (const char*)data);
+  return XCASH_OK;
+}
+
+
+
+
+
+
+
+
+
+
+
 
 void stop_tcp_server(void) {
   if (!atomic_load(&server_running)) return;
