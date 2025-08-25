@@ -18,6 +18,5 @@ bool submit_block_template(const char* DATA);
 int get_current_block_height(char *result);
 int get_previous_block_hash(char *result);
 bool is_blockchain_synced(char *target_height, char *height);
-int get_previous_block_hash_by_height(uint64_t height, char *result);
 //int get_previous_block_information(char *block_hash, char *block_reward, char *block_date_and_time);
 #endif

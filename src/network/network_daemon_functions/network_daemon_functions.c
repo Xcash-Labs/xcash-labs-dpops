@@ -121,44 +121,6 @@ int get_previous_block_hash(char *result)
 }
 
 /*---------------------------------------------------------------------------------------------------------
-Name: get_block_hash_by_height
-Description: Returns the parent hash (prev_hash) of block at `height`. Result must have space for BLOCK_HASH_LENGTH+1.
-Parameters:
-  result - The string where you want the previous block hash to be saved to
-Return: XCASH_OK (1) if successful, XCASH_ERROR (0) if an error occurs
----------------------------------------------------------------------------------------------------------*/
-int get_previous_block_hash_by_height(uint64_t height, char *result) {
-  if (!result) {
-    ERROR_PRINT("Invalid argument: result is NULL.");
-    return XCASH_ERROR;
-  }
-
-  // HTTP setup
-  const char *HTTP_HEADERS[] = {"Content-Type: application/json", "Accept: application/json"};
-  const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0]);
-
-  // Build JSON-RPC request
-  char payload[256] = {0};
-  snprintf(payload, sizeof(payload),
-           "{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"get_block_header_by_height\","
-           "\"params\":{\"height\": %" PRIu64 "}}",
-           (uint64_t)height);
-
-  // Send + receive
-  char data[SMALL_BUFFER_SIZE] = {0};
-  if (send_http_request(data, sizeof(data),
-                        XCASH_DAEMON_IP, "/json_rpc", XCASH_DAEMON_PORT, "POST",
-                        HTTP_HEADERS, HTTP_HEADERS_LENGTH,
-                        payload, HTTP_TIMEOUT_SETTINGS) > 0 &&
-      parse_json_data(data, "result.block_header.hash", result, BLOCK_HASH_LENGTH + 1) > 0) {
-    return XCASH_OK;
-  }
-
-  ERROR_PRINT("Could not get prev_hash for height=%llu", (unsigned long long)height);
-  return XCASH_ERROR;
-}
-
-/*---------------------------------------------------------------------------------------------------------
 Name: get_block_template
 Description: Gets the block template for creating a new block
 Parameters:
