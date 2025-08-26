@@ -126,6 +126,7 @@ xcash_round_result_t process_round(void) {
       snprintf(target_disp, sizeof(target_disp), "%llu", target_h);
     }
     WARNING_PRINT("Delegate is still syncing, node is at %llu and the target height is %s", node_h, target_disp);
+    INFO_PRINT ("Current_block_height: %s", currrent_block_height);
     return ROUND_SKIP;
   }
 
