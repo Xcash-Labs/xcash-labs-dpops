@@ -5,6 +5,9 @@ int log_level = 0;
 int delegate_db_hash_mismatch = 0;
 bool is_seed_node = false;
 int network_data_nodes_amount = 0;
+
+bool is_synced = false;
+
 delegates_t delegates_all[BLOCK_VERIFIERS_TOTAL_AMOUNT] = {0};
 
 char xcash_wallet_public_address[XCASH_WALLET_LENGTH + 1] = {0};

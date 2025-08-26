@@ -130,6 +130,7 @@ xcash_round_result_t process_round(void) {
     return ROUND_SKIP;
   }
 
+  is_synced = true;
   if (get_current_block_height(current_block_height) != XCASH_OK) {
     ERROR_PRINT("Can't get current block height");
     atomic_store(&wait_for_block_height_init, false);
@@ -487,6 +488,7 @@ void start_block_production(void) {
     delegate_db_hash_mismatch = 0;
     atomic_store(&wait_for_vrf_init, true);
     atomic_store(&wait_for_block_height_init, true);
+    is_synced = false;
     round_result = ROUND_OK;
 
     round_result = process_round();
@@ -495,7 +497,7 @@ void start_block_production(void) {
     snprintf(current_round_part, sizeof(current_round_part), "%d", 12);
 
     if (round_result == ROUND_SKIP) {
-      sync_block_verifiers_minutes_and_seconds(0, 5);
+      sync_block_verifiers_minutes_and_seconds(0, 55);
       if (strlen(vrf_public_key) == 0) {
         get_vrf_public_key();
       }
@@ -605,74 +607,6 @@ void start_block_production(void) {
             mongoc_collection_destroy(stats);
             mongoc_client_pool_push(database_client_thread_pool, c);
           }
-
-
-
-/*
-
-            INFO_PRINT("Updating Statistics");
-            uint64_t tmp_verifier_total_round = 0;
-            uint64_t tmp_verifier_online_total_rounds = 0;
-            uint64_t tmp_producer_total_rounds = 0;
-
-            if (get_statistics_totals_by_public_key(delegates_all[i].public_key, &tmp_verifier_total_round, &tmp_verifier_online_total_rounds,
-                                                    &tmp_producer_total_rounds) == XCASH_OK) {
-
-              INFO_PRINT("Delegate %s -> verifier_total_round=%" PRIu64
-               ", verifier_online_total_rounds=%" PRIu64
-               ", producer_total_rounds=%" PRIu64,
-               delegates_all[i].public_key,
-               tmp_verifier_total_round,
-               tmp_verifier_online_total_rounds,
-               tmp_producer_total_rounds);
-
-              if (strcmp(delegates_all[i].online_status, "true") == 0) {
-                tmp_verifier_online_total_rounds += 1;
-                if (i < BLOCK_VERIFIERS_AMOUNT) {
-                  tmp_verifier_total_round += 1;
-
-                  if (strcmp(delegates_all[i].public_address, producer_refs[0].public_address) == 0) {
-                    tmp_producer_total_rounds += 1;
-                  }
-                }
-              }
-              
-              INFO_PRINT("Delegate %s -> verifier_total_round=%" PRIu64
-               ", verifier_online_total_rounds=%" PRIu64
-               ", producer_total_rounds=%" PRIu64,
-               delegates_all[i].public_key,
-               tmp_verifier_total_round,
-               tmp_verifier_online_total_rounds,
-               tmp_producer_total_rounds);
-
-              bson_t filter_stat;
-              bson_t update_fields_stat;
-              bson_init(&filter_stat);
-              bson_init(&update_fields_stat);
-              
-              BSON_APPEND_UTF8(&filter_stat, "public_key", delegates_all[i].public_key);
-
-              BSON_APPEND_INT64(&update_fields_stat, "block_verifier_total_rounds", tmp_verifier_total_round);
-              BSON_APPEND_INT64(&update_fields_stat, "block_verifier_online_total_rounds", tmp_verifier_online_total_rounds);
-              BSON_APPEND_INT64(&update_fields_stat, "block_producer_total_rounds", tmp_producer_total_rounds);
-
-              if (update_document_from_collection_bson(DATABASE_NAME, DB_COLLECTION_STATISTICS, &filter_stat, &update_fields_stat) != XCASH_OK) {
-                ERROR_PRINT("Failed to update statistics for delegate %s", delegates_all[i].public_address);
-              }
-
-              bson_destroy(&filter_stat);
-              bson_destroy(&update_fields_stat);
-
-
-              INFO_PRINT("Updated delegate %s: total=%" PRIu64 ", online=%" PRIu64 ", produced=%" PRIu64,
-                         delegates_all[i].public_address,
-                         tmp_verifier_total_round,
-                         tmp_verifier_online_total_rounds,
-                         tmp_producer_total_rounds);
-            } else {
-              ERROR_PRINT("Failed retrieve and update of statistics for delegate %s", delegates_all[i].public_address);
-            }
-*/
 
 #endif
 

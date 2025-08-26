@@ -354,42 +354,41 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
   // If block_height being passed in is equal to the node block height do extra checks
   unsigned long long cheight = strtoull(current_block_height, NULL, 10);
   bool is_live_round = (height == cheight);
+
+
   bool election_state_ready = is_hex_len(producer_refs[0].vrf_public_key, VRF_PUBLIC_KEY_LENGTH) &&
          is_hex_len(producer_refs[0].vote_hash_hex,  HASH_HEX_LEN);
-
-INFO_PRINT("DPOPS dbg: height=%" PRIu64 " cheight=%llu live=%d state_ready=%d prev_in=%.*s prev_local=%.*s",
+ 
+  INFO_PRINT("DPOPS dbg: height=%" PRIu64 " cheight=%llu live=%d synced=%d state_ready=%d prev_in=%.*s prev_local=%.*s",
            (uint64_t)height,
            (unsigned long long)cheight,
            is_live_round ? 1 : 0,
+           is_synced ? 1 : 0,
            election_state_ready ? 1 : 0,
            64, prev_hash_str,
            64, previous_block_hash);
 
-  // (compare provided prev hash with our local tip hash string)
-  if (is_live_round) {
+  if (is_synced and election_state_ready and current_round_part == 12) {
     if (strncmp(prev_hash_str, previous_block_hash, 64) != 0) {
       cJSON_Delete(root);
       send_data(client, (unsigned char *)"0|PARENT_HASH_MISMATCH", strlen("0|PARENT_HASH_MISMATCH"));
       return;
     }
 
-    if (election_state_ready) {
-      // Parent matches our tip: enforce elected producer + vote hash
-      if (strncmp(producer_refs[0].vrf_public_key, vrf_pubkey_str, VRF_PUBLIC_KEY_LENGTH) != 0) {
-        INFO_PRINT("Public key mismatch: expected %s, got %s",
-                   producer_refs[0].vrf_public_key, vrf_pubkey_str);
-        cJSON_Delete(root);
-        send_data(client, (unsigned char *)"0|VRF_PUBKEY_MISMATCH", strlen("0|VRF_PUBKEY_MISMATCH"));
-        return;
-      }
-      if (strncmp(producer_refs[0].vote_hash_hex, vote_hash_str, HASH_HEX_LEN) != 0) {
-        ERROR_PRINT("Vote hash mismatch");
-        cJSON_Delete(root);
-        send_data(client, (unsigned char *)"0|VOTE_HASH_MISMATCH", strlen("0|VOTE_HASH_MISMATCH"));
-        return;
-      }
+    // Parent matches our tip: enforce elected producer + vote hash
+    if (strncmp(producer_refs[0].vrf_public_key, vrf_pubkey_str, VRF_PUBLIC_KEY_LENGTH) != 0) {
+      INFO_PRINT("Public key mismatch: expected %s, got %s",
+                 producer_refs[0].vrf_public_key, vrf_pubkey_str);
+      cJSON_Delete(root);
+      send_data(client, (unsigned char *)"0|VRF_PUBKEY_MISMATCH", strlen("0|VRF_PUBKEY_MISMATCH"));
+      return;
     }
-    
+    if (strncmp(producer_refs[0].vote_hash_hex, vote_hash_str, HASH_HEX_LEN) != 0) {
+      ERROR_PRINT("Vote hash mismatch");
+      cJSON_Delete(root);
+      send_data(client, (unsigned char *)"0|VOTE_HASH_MISMATCH", strlen("0|VOTE_HASH_MISMATCH"));
+      return;
+    }
   }
 
   // Buffers for binary data

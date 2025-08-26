@@ -18,7 +18,7 @@ extern int delegate_db_hash_mismatch;
 extern bool is_seed_node;   // True if node is a seed node - network_data_node_settings is same as seed node, removed
 extern int network_data_nodes_amount; // Number of network data nodes
 
-
+extern bool is_synced; // True if node is synced with network
 
 extern delegates_t delegates_all[BLOCK_VERIFIERS_TOTAL_AMOUNT];
 
