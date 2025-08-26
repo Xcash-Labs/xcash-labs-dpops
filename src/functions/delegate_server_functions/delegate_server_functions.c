@@ -369,7 +369,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
            64, previous_block_hash,
            current_round_part);
 
-  if (is_synced && election_state_ready && strcmp(current_round_part, "12") == 0) {
+  if (is_synced && election_state_ready && (strcmp(current_round_part, "8") == 0 || strcmp(current_round_part, "12") == 0)) {
 
     INFO_PRINT("Performing full checks.......");
 

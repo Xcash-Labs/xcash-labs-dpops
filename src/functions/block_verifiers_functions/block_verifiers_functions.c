@@ -180,6 +180,8 @@ int block_verifiers_create_block(const char* vote_hash_hex, uint8_t total_vote, 
 
     INFO_PRINT_STATUS_OK("Block signature sent ");
   } else {
+    INFO_STAGE_PRINT("Part 11 - Wait For Block Creation");
+    snprintf(current_round_part, sizeof(current_round_part), "%d", 11);
     time_t start_time = time(NULL);
     char start_ck_block_height[BLOCK_HEIGHT_LENGTH + 1];
     strncpy(start_ck_block_height, ck_block_height, BLOCK_HEIGHT_LENGTH + 1);
@@ -189,7 +191,7 @@ int block_verifiers_create_block(const char* vote_hash_hex, uint8_t total_vote, 
         break;
       }
 
-      sleep(5);  // prevent CPU hogging
+      sleep(3);  // prevent CPU hogging
       get_current_block_height(ck_block_height);
     }
   }
