@@ -364,7 +364,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
     }
     // Parent matches our tip: enforce elected producer + vote hash
     if (strncmp(producer_refs[0].vrf_public_key, vrf_pubkey_str, VRF_PUBLIC_KEY_LENGTH) != 0) {
-      ERROR_PRINT("Public key mismatch: expected %s, got %s",
+      INFO_PRINT("Public key mismatch: expected %s, got %s",
                   producer_refs[0].vrf_public_key, vrf_pubkey_str);
       cJSON_Delete(root);
       send_data(client, (unsigned char *)"0|VRF_PUBKEY_MISMATCH", strlen("0|VRF_PUBKEY_MISMATCH"));

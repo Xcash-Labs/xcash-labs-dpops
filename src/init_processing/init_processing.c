@@ -8,11 +8,13 @@ bool init_processing(const arg_config_t *arg_config) {
   (void) arg_config;
 
 #ifdef SEED_NODE_ON
+
   while (!is_replica_set_ready()) {
     INFO_PRINT("Mongodb Replica set not ready, waiting...");
     sleep(5);
   }
-#endif
+
+  #endif
 
   network_data_nodes_amount = get_seed_node_count();
 
