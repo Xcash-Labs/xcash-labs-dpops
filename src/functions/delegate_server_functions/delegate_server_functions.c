@@ -274,16 +274,6 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
 #undef SERVER_ERROR
 }
 
-// Helper functions
-static inline int is_hex_char(int c){ return (c>='0'&&c<='9')||(c>='a'&&c<='f')||(c>='A'&&c<='F'); }
-static int is_hex_len(const char* s, size_t want) {
-  if (!s) return 0;
-  size_t n = strlen(s);
-  if (n != want) return 0;
-  for (size_t i=0;i<n;i++) if (!is_hex_char((unsigned char)s[i])) return 0;
-  return 1;
-}
-
 /*---------------------------------------------------------------------------------------------------------
 Name: server_receive_data_socket_nodes_to_block_verifiers_validate_block
 Description: Runs the code when the server receives the XCASHD_TO_DPOPS_VERIFY message.
