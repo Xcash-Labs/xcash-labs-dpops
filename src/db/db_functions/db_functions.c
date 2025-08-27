@@ -1020,6 +1020,74 @@ bool add_indexes(void) {
     mongoc_collection_destroy(coll);
   }
 
+  /* =========================
+     ROUND_VOTES COLLECTION (ensure + two indexes)
+     ========================= */
+  {
+    mongoc_database_t *db = mongoc_client_get_database(client, DATABASE_NAME);
+    // Ensure collection exists (ignore NamespaceExists = 48)
+    bson_t c_opts;
+    bson_init(&c_opts);
+    if (!mongoc_database_create_collection(db, DB_COLLECTION_ROUNDS, &c_opts, &err)) {
+      if (err.code != 48) {
+        ok = false;
+        WARNING_PRINT("[indexes] create_collection consensus_rounds failed (domain=%d code=%d): %s",
+          err.domain, err.code, err.message);
+      }
+    }
+    bson_destroy(&c_opts);
+
+    mongoc_collection_t* coll =
+        mongoc_client_get_collection(client, DATABASE_NAME, DB_COLLECTION_ROUNDS);
+
+    // 1) unique block_height
+    bson_t rk1, ro1;
+    bson_init(&rk1);
+    bson_init(&ro1);
+    BSON_APPEND_INT32(&rk1, "block_height", 1);
+    BSON_APPEND_UTF8(&ro1, "name", "ux_block_height");  // explicit name (optional)
+    BSON_APPEND_BOOL(&ro1, "unique", true);
+    mongoc_index_model_t* rm1 = mongoc_index_model_new(&rk1, &ro1);
+
+    // 2) recency on ts_decided
+    bson_t rk2, ro2;
+    bson_init(&rk2);
+    bson_init(&ro2);
+    BSON_APPEND_INT32(&rk2, "ts_decided", -1);
+    BSON_APPEND_UTF8(&ro2, "name", "ix_ts_decided");  // explicit name (optional)
+    mongoc_index_model_t* rm2 = mongoc_index_model_new(&rk2, &ro2);
+
+    const mongoc_index_model_t* rmodels[] = {rm1, rm2};
+
+    bson_t create_opts;
+    bson_init(&create_opts);
+    BSON_APPEND_UTF8(&create_opts, "commitQuorum", "majority");
+    BSON_APPEND_INT32(&create_opts, "maxTimeMS", 15000);
+
+    bson_t reply;
+    bson_init(&reply);
+    if (!mongoc_collection_create_indexes_with_opts(
+            coll, rmodels, 2, &create_opts, &reply, &err)) {
+      ok = false;
+      char* json = bson_as_canonical_extended_json(&reply, NULL);
+      fprintf(stderr, "[indexes] round_votes failed: %s\nDetails: %s\n",
+              err.message, json ? json : "(no reply)");
+      if (json) bson_free(json);
+    }
+
+    // cleanup
+    bson_destroy(&reply);
+    bson_destroy(&create_opts);
+    mongoc_index_model_destroy(rm2);
+    mongoc_index_model_destroy(rm1);
+    bson_destroy(&ro2);
+    bson_destroy(&rk2);
+    bson_destroy(&ro1);
+    bson_destroy(&rk1);
+    mongoc_collection_destroy(coll);
+    mongoc_database_destroy(db);
+  }
+
   mongoc_client_pool_push(database_client_thread_pool, client);
   return ok;
 }
