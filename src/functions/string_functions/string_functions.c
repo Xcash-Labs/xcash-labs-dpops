@@ -1,5 +1,24 @@
 #include "string_functions.h"
 
+// Helper
+static inline bool is_hex_char(char c) {
+  return (c >= '0' && c <= '9') ||
+         (c >= 'a' && c <= 'f') ||
+         (c >= 'A' && c <= 'F');
+}
+
+// Returns true if `s` is non-null, exactly `expected_len` characters long,
+// and every character is a valid hex digit (0-9, a-f, A-F).
+bool is_hex_len(const char *s, size_t expected_len) {
+  if (!s) return false;
+  const size_t n = strlen(s);
+  if (n != expected_len) return false;
+  for (size_t i = 0; i < n; ++i) {
+    if (!is_hex_char(s[i])) return false;
+  }
+  return true;
+}
+
 /*---------------------------------------------------------------------------------------------------------
 /// @brief Converts a hexadecimal string to a byte array.
 /// @param hex_string The input hex string.

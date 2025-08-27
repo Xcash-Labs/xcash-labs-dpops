@@ -19,6 +19,7 @@
 #include "globals.h"
 #include "macro_functions.h"
 
+bool is_hex_len(const char *s, size_t expected_len);
 bool hex_to_byte_array(const char *hex_string, unsigned char *byte_array, size_t byte_array_size);
 void bytes_to_hex(const unsigned char* bytes, size_t byte_len, char* hex_out, size_t hex_out_len);
 int parse_json_data(const char* DATA, const char* FIELD_NAME, char *result, const size_t RESULT_TOTAL_LENGTH);
