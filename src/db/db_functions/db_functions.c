@@ -1021,7 +1021,7 @@ bool add_indexes(void) {
   }
 
   /* =========================
-     ROUND_VOTES COLLECTION (ensure + two indexes)
+     CONSENSUS_ROUNDS COLLECTION (ensure + two indexes)
      ========================= */
   {
     mongoc_database_t *db = mongoc_client_get_database(client, DATABASE_NAME);
@@ -1057,7 +1057,7 @@ bool add_indexes(void) {
     BSON_APPEND_UTF8(&ro2, "name", "ix_ts_decided");  // explicit name (optional)
     mongoc_index_model_t* rm2 = mongoc_index_model_new(&rk2, &ro2);
 
-    const mongoc_index_model_t* rmodels[] = {rm1, rm2};
+    mongoc_index_model_t* rmodels[] = {rm1, rm2};
 
     bson_t create_opts;
     bson_init(&create_opts);
