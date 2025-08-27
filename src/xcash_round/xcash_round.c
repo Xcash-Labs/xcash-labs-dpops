@@ -509,8 +509,15 @@ void start_block_production(void) {
 #ifdef SEED_NODE_ON
       bool update_stats = false;
       char ck_block_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
+      char current_block_hash[BLOCK_HASH_LENGTH + 1] = {0};
+
       if (get_current_block_height(ck_block_height) != XCASH_OK) {
         ERROR_PRINT("Can't get current block height");
+        goto end_of_round_skip_block;
+      }
+
+      if (get_current_block_hash(current_block_hash) != XCASH_OK) {
+        ERROR_PRINT("Can't get current block hash");
         goto end_of_round_skip_block;
       }
 
@@ -631,7 +638,7 @@ void start_block_production(void) {
 
               // --- before hex→bin, validate hex sizes (clear error if bad) ---
               if (!is_hex_len(previous_block_hash, BLOCK_HASH_LENGTH) ||
-                  !is_hex_len(current_block_hash_hex, BLOCK_HASH_LENGTH) ||
+                  !is_hex_len(current_block_hash, BLOCK_HASH_LENGTH) ||
                   !is_hex_len(producer_refs[0].vote_hash_hex, 64)) {  // or final_vote_hash_hex if you have it
                 ERROR_PRINT("[round write] bad hex length(s) at height=%llu",
                             (unsigned long long)cbheight);
@@ -644,7 +651,7 @@ void start_block_production(void) {
               // --- decode round-level hex to binary ---
               uint8_t prev_hash_bin[32], block_hash_bin[32], vote_hash_bin[32];
               if (!hex_to_byte_array(previous_block_hash, prev_hash_bin, sizeof prev_hash_bin) ||
-                  !hex_to_byte_array(current_block_hash_hex, block_hash_bin, sizeof block_hash_bin) ||
+                  !hex_to_byte_array(current_block_hash, block_hash_bin, sizeof block_hash_bin) ||
                   !hex_to_byte_array(producer_refs[0].vote_hash_hex, vote_hash_bin, sizeof vote_hash_bin)) {
                 ERROR_PRINT("[round write] hex→bin decode failed at height=%llu", (unsigned long long)cbheight);
                 bson_destroy(&filter);

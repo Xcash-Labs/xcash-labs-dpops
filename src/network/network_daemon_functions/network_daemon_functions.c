@@ -86,6 +86,39 @@ int get_current_block_height(char *result) {
     return XCASH_ERROR;
 }
 
+
+/*---------------------------------------------------------------------------------------------------------
+Name: get_current_block_hash
+Description: Gets the current block height and last block hash of the network
+Parameters:
+  result - The string where you want the current block height to be saved to
+Return: 0 if an error has occurred, 1 if successful
+---------------------------------------------------------------------------------------------------------*/
+int get_current_block_hash(char *result_hash) {
+    if (!result_hash) {
+        ERROR_PRINT("Invalid argument: result_hash is NULL.");
+        return XCASH_ERROR;
+    }
+
+    // Constants
+    const char *HTTP_HEADERS[] = {"Content-Type: application/json", "Accept: application/json"};
+    const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0]);
+    const char *request_payload = "{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"get_last_block_header\"}";
+
+    // Buffer to store the response
+    char response_data[MEDIUM_BUFFER_SIZE] = {0};
+    if (send_http_request(response_data, MEDIUM_BUFFER_SIZE, XCASH_DAEMON_IP, "/json_rpc", XCASH_DAEMON_PORT,
+                              "POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH, request_payload,
+                              HTTP_TIMEOUT_SETTINGS) == XCASH_OK &&        
+            parse_json_data(response_data, "result.block_header.hash", result_hash, BLOCK_HASH_LENGTH+1) != 0) {
+            return XCASH_OK;
+    }
+
+    ERROR_PRINT("Could not get the current block hash.");
+    return XCASH_ERROR;
+}
+
+
 /*---------------------------------------------------------------------------------------------------------
 Name: get_previous_block_hash
 Description: Gets the previous block hash of the network
@@ -110,8 +143,7 @@ int get_previous_block_hash(char *result)
     if (send_http_request(data, SMALL_BUFFER_SIZE, XCASH_DAEMON_IP, "/json_rpc", XCASH_DAEMON_PORT, "POST",
                               HTTP_HEADERS, HTTP_HEADERS_LENGTH, REQUEST_PAYLOAD,
                               HTTP_TIMEOUT_SETTINGS) > 0 &&
-            parse_json_data(data, "result.block_header.hash", result, BLOCK_HASH_LENGTH+1
-            ) > 0)
+            parse_json_data(data, "result.block_header.hash", result, BLOCK_HASH_LENGTH+1) > 0)
     {
       return XCASH_OK;
     }
