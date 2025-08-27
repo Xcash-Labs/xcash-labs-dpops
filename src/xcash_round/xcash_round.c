@@ -761,7 +761,7 @@ void start_block_production(void) {
           }
 
 #endif
-DB_COLLECTION_ROUNDS
+
         }
       }
 
