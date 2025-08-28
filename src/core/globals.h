@@ -53,7 +53,7 @@ extern pthread_mutex_t database_data_IP_address_lock;
 extern atomic_bool server_running; 
 extern atomic_bool wait_for_vrf_init;
 extern atomic_bool wait_for_block_height_init;
-
+extern atomic_bool wait_for_producer_init;
 
 
 

@@ -173,7 +173,6 @@ int block_verifiers_create_block(const char* vote_hash_hex, uint8_t total_vote, 
 
     // Part 11 - Submit block
     INFO_STAGE_PRINT("Part 11 - Submit the Block");
-    sleep(1);  // Don't wnat block info arriving too soon
     snprintf(current_round_part, sizeof(current_round_part), "%d", 11);
     if (!submit_block_template(block_blob)) {
       return ROUND_ERROR;

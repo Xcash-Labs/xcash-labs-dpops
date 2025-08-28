@@ -345,10 +345,24 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
   unsigned long long cheight = strtoull(current_block_height, NULL, 10);
   bool is_live_round = (height == cheight);
 
-
-  bool election_state_ready = is_hex_len(producer_refs[0].vrf_public_key, VRF_PUBLIC_KEY_LENGTH) &&
+  bool election_state_ready;
+  pthread_mutex_lock(&producer_refs_lock);
+  if (strcmp(current_round_part, "11") == 0 || strcmp(current_round_part, "12") == 0) {
+    int wait_seconds = 0;
+    while (atomic_load(&wait_for_producer_init) && wait_seconds < DELAY_EARLY_TRANSACTIONS_MAX) {
+      sleep(1);
+      wait_seconds++;
+    }
+    if (atomic_load(&wait_for_producer_init)) {
+      ERROR_PRINT("Timed out waiting for producer selection in server_receive_data_socket_nodes_to_block_verifiers_validate_block");
+    }
+    election_state_ready = is_hex_len(producer_refs[0].vrf_public_key, VRF_PUBLIC_KEY_LENGTH) &&
          is_hex_len(producer_refs[0].vote_hash_hex,  HASH_HEX_LEN);
- 
+  } else {
+    election_state_ready = false;
+  }    
+  pthread_mutex_unlock(&producer_refs_lock);
+
   INFO_PRINT("DPOPS dbg: height=%" PRIu64 " cheight=%llu live=%d state_ready=%d prev_in=%.*s prev_local=%.*s round_part %s",
            (uint64_t)height,
            (unsigned long long)cheight,
@@ -357,35 +371,28 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
            64, prev_hash_str,
            64, previous_block_hash,
            current_round_part);
-
-
-  // is_synced not correct so worthless
-           
-  if (election_state_ready && (strcmp(current_round_part, "11") == 0 || strcmp(current_round_part, "12") == 0)) {
+     
+  if (is_live_round && election_state_ready && (strcmp(current_round_part, "11") == 0 || strcmp(current_round_part, "12") == 0)) {
 
     if (strncmp(prev_hash_str, previous_block_hash, 64) != 0) {
       cJSON_Delete(root);
       INFO_PRINT("Prev Hash mismatch: expected %s, got %s",
                  previous_block_hash, prev_hash_str);
       send_data(client, (unsigned char *)"0|PARENT_HASH_MISMATCH", strlen("0|PARENT_HASH_MISMATCH"));
-      FATAL_ERROR_EXIT("Exiting......");
       return;
     }
 
     // Parent matches our tip: enforce elected producer + vote hash
     if (strncmp(producer_refs[0].vrf_public_key, vrf_pubkey_str, VRF_PUBLIC_KEY_LENGTH) != 0) {
-      INFO_PRINT("Public key mismatch: expected %s, got %s",
-                 producer_refs[0].vrf_public_key, vrf_pubkey_str);
+      INFO_PRINT("Public key mismatch: expected %s, got %s", producer_refs[0].vrf_public_key, vrf_pubkey_str);
       cJSON_Delete(root);
       send_data(client, (unsigned char *)"0|VRF_PUBKEY_MISMATCH", strlen("0|VRF_PUBKEY_MISMATCH"));
-      FATAL_ERROR_EXIT("Exiting......");
       return;
     }
     if (strncmp(producer_refs[0].vote_hash_hex, vote_hash_str, HASH_HEX_LEN) != 0) {
       INFO_PRINT("Vote hash mismatch");
       cJSON_Delete(root);
       send_data(client, (unsigned char *)"0|VOTE_HASH_MISMATCH", strlen("0|VOTE_HASH_MISMATCH"));
-      FATAL_ERROR_EXIT("Exiting......");
       return;
     }
   }

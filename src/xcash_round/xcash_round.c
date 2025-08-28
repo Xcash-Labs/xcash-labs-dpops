@@ -138,7 +138,6 @@ xcash_round_result_t process_round(void) {
       unsigned long long target_h = strtoull(target_height, NULL, 10);
       INFO_PRINT("node_h: %llu   target_h: %llu", node_h, target_h);
 
-  is_synced = true;
   if (get_current_block_height(current_block_height) != XCASH_OK) {
     ERROR_PRINT("Can't get current block height");
     atomic_store(&wait_for_block_height_init, false);
@@ -415,6 +414,7 @@ xcash_round_result_t process_round(void) {
     strcpy(producer_refs[0].vote_hash_hex, final_vote_hash_hex);
     pthread_mutex_unlock(&producer_refs_lock);
   }
+  atomic_store(&wait_for_producer_init, false);
 
   int block_creation_result = block_verifiers_create_block(final_vote_hash_hex, (uint8_t)valid_vote_count, (uint8_t)nodes_majority_count);
 
@@ -496,13 +496,13 @@ void start_block_production(void) {
     delegate_db_hash_mismatch = 0;
     atomic_store(&wait_for_vrf_init, true);
     atomic_store(&wait_for_block_height_init, true);
-    is_synced = false;
+    atomic_store(&wait_for_producer_init, true);
     round_result = ROUND_OK;
 
     round_result = process_round();
 
     // Final step - Update DB
-    snprintf(current_round_part, sizeof(current_round_part), "%d", 12);
+    snprintf(current_round_part, sizeof(current_round_part), "%d", 12); 
 
     if (round_result == ROUND_SKIP) {
       sync_block_verifiers_minutes_and_seconds(0, 55);
