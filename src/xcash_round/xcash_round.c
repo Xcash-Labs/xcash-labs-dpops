@@ -620,153 +620,197 @@ void start_block_production(void) {
             }
 
             // ** update the consensus_rounds collection **
+            // Filter: { block_height: <cbheight> }
+            bson_t filter;
+            bson_init(&filter);
+            BSON_APPEND_INT64(&filter, "block_height", (int64_t)cbheight);
+
+            // --- quick hex length checks before decoding ---
+            if (!is_hex_len(previous_block_hash, BLOCK_HASH_LENGTH) ||
+                !is_hex_len(current_block_hash, BLOCK_HASH_LENGTH) ||
+                !is_hex_len(producer_refs[0].vote_hash_hex, 64)) {
+              ERROR_PRINT("[round write] bad hex length(s) at height=%llu",
+                          (unsigned long long)cbheight);
+              bson_destroy(&filter);
+              mongoc_collection_destroy(coll);
+              mongoc_client_pool_push(database_client_thread_pool, c);
+              return;
+            }
+
+            // --- decode round-level hex → binary ---
+            uint8_t prev_hash_bin[32], block_hash_bin[32], vote_hash_bin[32];
+            if (!hex_to_byte_array(previous_block_hash, prev_hash_bin, sizeof prev_hash_bin) ||
+                !hex_to_byte_array(current_block_hash, block_hash_bin, sizeof block_hash_bin) ||
+                !hex_to_byte_array(producer_refs[0].vote_hash_hex, vote_hash_bin, sizeof vote_hash_bin)) {
+              ERROR_PRINT("[round write] hex→bin decode failed at height=%llu",
+                          (unsigned long long)cbheight);
+              bson_destroy(&filter);
+              mongoc_collection_destroy(coll);
+              mongoc_client_pool_push(database_client_thread_pool, c);
+              return;
+            }
+
+            // $setOnInsert payload
+            bson_t soi;
+            bson_init(&soi);
+            BSON_APPEND_INT64(&soi, "block_height", (int64_t)cbheight);
+            BSON_APPEND_BINARY(&soi, "prev_block_hash", BSON_SUBTYPE_BINARY, prev_hash_bin, sizeof prev_hash_bin);
+            BSON_APPEND_BINARY(&soi, "block_hash", BSON_SUBTYPE_BINARY, block_hash_bin, sizeof block_hash_bin);
+            BSON_APPEND_BINARY(&soi, "vote_hash", BSON_SUBTYPE_BINARY, vote_hash_bin, sizeof vote_hash_bin);
+
+            // ts_decided only on insert
+            int64_t now_ms = 0;
             {
-              // winner invariant — refuse to write a broken round
+              struct timespec ts;
+              clock_gettime(CLOCK_REALTIME, &ts);
+              now_ms = (int64_t)ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
+            }
+            BSON_APPEND_DATE_TIME(&soi, "ts_decided", now_ms);
+
+            // block_verifiers array
+            bson_t arr;
+            if (!bson_append_array_begin(&soi, "block_verifiers", -1, &arr)) {
+              ERROR_PRINT("append_array_begin(block_verifiers) failed");
+              goto build_fail;
+            }
+
+            INFO_PRINT("*** HERE 0");
+            uint32_t out = 0;
+
+            for (uint32_t k = 0; k < BLOCK_VERIFIERS_AMOUNT; ++k) {
+              const char* addr = current_block_verifiers_list.block_verifiers_public_address[k];
+              if (!addr || addr[0] == '\0') continue;
+
+              uint8_t pk_bin[32], proof_bin[80], beta_bin[64];
+              if (!hex_to_byte_array(current_block_verifiers_list.block_verifiers_public_key[k], pk_bin, 32) ||
+                  !hex_to_byte_array(current_block_verifiers_list.block_verifiers_vrf_proof_hex[k], proof_bin, 80) ||
+                  !hex_to_byte_array(current_block_verifiers_list.block_verifiers_vrf_beta_hex[k], beta_bin, 64)) {
+                WARNING_PRINT("[round write] verifier hex→bin decode failed (k=%u) height=%llu",
+                              k, (unsigned long long)cbheight);
+                continue;
+              }
+
+              INFO_PRINT("*** HERE 1");
+
+              const char* keyptr = NULL;
+              char keybuf[16];
+              bson_uint32_to_string(out, &keyptr, keybuf, sizeof keybuf);
+
+              bson_t item;
+              if (!bson_append_document_begin(&arr, keyptr, -1, &item)) {
+                ERROR_PRINT("append_document_begin(block_verifiers[%u]) failed", out);
+                bson_append_array_end(&soi, &arr);  // try to close before fail
+                goto build_fail;
+              }
+
+              INFO_PRINT("*** HERE 1.2");
+
+              size_t addrlen = strnlen(addr, XCASH_WALLET_LENGTH + 1);
+              if (addrlen == 0 || addrlen > XCASH_WALLET_LENGTH ||
+                  !bson_append_utf8(&item, "public_address", -1, addr, (int)addrlen) ||
+                  !bson_append_binary(&item, "vrf_public_key", -1, BSON_SUBTYPE_BINARY, pk_bin, 32) ||
+                  !bson_append_binary(&item, "vrf_proof", -1, BSON_SUBTYPE_BINARY, proof_bin, 80) ||
+                  !bson_append_binary(&item, "vrf_beta", -1, BSON_SUBTYPE_BINARY, beta_bin, 64)) {
+                ERROR_PRINT("append field(s) failed at k=%u", k);
+                bson_append_document_end(&arr, &item);
+                continue;
+              }
+
+              INFO_PRINT("*** HERE 1.4");
+
+              bson_append_document_end(&arr, &item);
+              ++out;
+            }
+
+            if (!bson_append_array_end(&soi, &arr)) {
+              ERROR_PRINT("append_array_end(block_verifiers) failed");
+              goto build_fail;
+            }
+
+            // winner subdoc (strict)
+            {
               if (producer_refs[0].public_address[0] == '\0' ||
                   !is_hex_len(producer_refs[0].vrf_public_key, VRF_PUBLIC_KEY_LENGTH)) {
                 ERROR_PRINT("[round write] invariant: missing/invalid winner at height=%llu",
                             (unsigned long long)cbheight);
-                mongoc_client_pool_push(database_client_thread_pool, c);
-                return;
-              }
-              mongoc_collection_t* coll =
-                  mongoc_client_get_collection(c, DATABASE_NAME, DB_COLLECTION_ROUNDS);
-
-              // Filter: { block_height: <cbheight> }
-              bson_t filter;
-              bson_init(&filter);
-              BSON_APPEND_INT64(&filter, "block_height", (int64_t)cbheight);
-              // --- before hex→bin, validate hex sizes (clear error if bad) ---
-              if (!is_hex_len(previous_block_hash, BLOCK_HASH_LENGTH) ||
-                  !is_hex_len(current_block_hash, BLOCK_HASH_LENGTH) ||
-                  !is_hex_len(producer_refs[0].vote_hash_hex, 64)) {  // or final_vote_hash_hex if you have it
-                ERROR_PRINT("[round write] bad hex length(s) at height=%llu",
-                            (unsigned long long)cbheight);
-                bson_destroy(&filter);
-                mongoc_collection_destroy(coll);
-                mongoc_client_pool_push(database_client_thread_pool, c);
-                return;
-              }
-              // --- decode round-level hex to binary ---
-              uint8_t prev_hash_bin[32], block_hash_bin[32], vote_hash_bin[32];
-              if (!hex_to_byte_array(previous_block_hash, prev_hash_bin, sizeof prev_hash_bin) ||
-                  !hex_to_byte_array(current_block_hash, block_hash_bin, sizeof block_hash_bin) ||
-                  !hex_to_byte_array(producer_refs[0].vote_hash_hex, vote_hash_bin, sizeof vote_hash_bin)) {
-                ERROR_PRINT("[round write] hex→bin decode failed at height=%llu", (unsigned long long)cbheight);
-                bson_destroy(&filter);
-                mongoc_collection_destroy(coll);
-                mongoc_client_pool_push(database_client_thread_pool, c);
-                return;
-              }
-              // $setOnInsert with round data (one-time fields)
-              bson_t soi;
-              bson_init(&soi);
-              BSON_APPEND_INT64(&soi, "block_height", (int64_t)cbheight);  // <-- REQUIRED
-              BSON_APPEND_BINARY(&soi, "prev_block_hash", BSON_SUBTYPE_BINARY, prev_hash_bin, sizeof prev_hash_bin);
-              BSON_APPEND_BINARY(&soi, "block_hash", BSON_SUBTYPE_BINARY, block_hash_bin, sizeof block_hash_bin);
-              BSON_APPEND_BINARY(&soi, "vote_hash", BSON_SUBTYPE_BINARY, vote_hash_bin, sizeof vote_hash_bin);
-
-              // ts_decided ONLY on insert
-              int64_t now_ms = 0;
-              {
-                struct timespec ts;
-                clock_gettime(CLOCK_REALTIME, &ts);
-                now_ms = (int64_t)ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
-              }
-              BSON_APPEND_DATE_TIME(&soi, "ts_decided", now_ms);
-
-              // block_verifiers array (skip empty), VRF fields stored as binary
-              bson_t arr;
-              BSON_APPEND_ARRAY_BEGIN(&soi, "block_verifiers", &arr);
-
-              INFO_PRINT("*** HERE 0");              
-              uint32_t out = 0;  // make sure this is initialized before the loop
-              for (uint32_t k = 0; k < BLOCK_VERIFIERS_AMOUNT; ++k) {
-                const char* addr = current_block_verifiers_list.block_verifiers_public_address[k];
-                if (!addr || addr[0] == '\0') continue;
-
-                uint8_t pk_bin[32], proof_bin[80], beta_bin[64];
-                if (!hex_to_byte_array(current_block_verifiers_list.block_verifiers_public_key[k], pk_bin, 32) ||
-                    !hex_to_byte_array(current_block_verifiers_list.block_verifiers_vrf_proof_hex[k], proof_bin, 80) ||
-                    !hex_to_byte_array(current_block_verifiers_list.block_verifiers_vrf_beta_hex[k], beta_bin, 64)) {
-                  WARNING_PRINT("[round write] verifier hex→bin decode failed (k=%u) height=%llu",
-                                k, (unsigned long long)cbheight);
-                  continue;
-                }
-
-                INFO_PRINT("*** HERE 1");
-
-                // Build array element key safely
-                const char* keyptr = NULL;
-                char keybuf[16];
-                bson_uint32_to_string(out, &keyptr, keybuf, sizeof keybuf);
-                // keyptr now points to either an internal static or keybuf
-                INFO_PRINT("*** HERE 1.1");
-                bson_t item;
-                if (!bson_append_document_begin(&arr, keyptr, -1, &item)) {
-                  ERROR_PRINT("append_document_begin failed for index=%u", out);
-                  break;  // or continue; depending on your policy
-                }
-                INFO_PRINT("*** HERE 1.2");
-                // Optionally bound addr length to avoid strlen walks
-                size_t addrlen = strnlen(addr, XCASH_WALLET_LENGTH + 1);
-                if (addrlen == 0 || addrlen > XCASH_WALLET_LENGTH) {
-                  ERROR_PRINT("bad public_address length=%zu at k=%u", addrlen, k);
-                  bson_append_document_end(&arr, &item);
-                  continue;
-                }
-                INFO_PRINT("*** HERE 1.3");
-                if (!bson_append_utf8(&item, "public_address", -1, addr, (int)addrlen) ||
-                    !bson_append_binary(&item, "vrf_public_key", -1, BSON_SUBTYPE_BINARY, pk_bin, 32) ||
-                    !bson_append_binary(&item, "vrf_proof", -1, BSON_SUBTYPE_BINARY, proof_bin, 80) ||
-                    !bson_append_binary(&item, "vrf_beta", -1, BSON_SUBTYPE_BINARY, beta_bin, 64)) {
-                  ERROR_PRINT("append field(s) failed at k=%u", k);
-                  // keep BSON consistent
-                  bson_append_document_end(&arr, &item);
-                  continue;
-                }
-                INFO_PRINT("*** HERE 1.4");
-                bson_append_document_end(&arr, &item);
-                ++out;
+                goto build_fail;
               }
 
-              // Update: { $setOnInsert: soi }  (no $currentDate)
-              bson_t update;
-              bson_init(&update);
-              BSON_APPEND_DOCUMENT(&update, "$setOnInsert", &soi);
+              const char* waddr = producer_refs[0].public_address;
+              const char* wkeyh = producer_refs[0].vrf_public_key;
 
-              // Upsert: true
-              bson_t opts;
-              bson_init(&opts);
-              BSON_APPEND_BOOL(&opts, "upsert", true);
-
-              // One atomic call; if another seed already wrote this height, it's a no-op
-              bson_error_t err;
-              bson_t reply;
-              bson_init(&reply);
-
-              bool ok = mongoc_collection_update_one(coll, &filter, &update, &opts, &reply, &err);
-              if (!ok) {
-                const bool is_dup =
-                    mongoc_error_has_label(&reply, "DuplicateKey") ||
-                    (err.domain == MONGOC_ERROR_SERVER &&
-                     (err.code == 11000 || err.code == 11001 || err.code == 12582));
-
-                if (!is_dup) {
-                  WARNING_PRINT("[round write] upsert %s height=%llu failed: %s",
-                                DB_COLLECTION_ROUNDS, (unsigned long long)cbheight, err.message);
-                }
+              size_t wlen = strnlen(waddr, XCASH_WALLET_LENGTH + 1);
+              if (wlen == 0 || wlen > XCASH_WALLET_LENGTH) {
+                ERROR_PRINT("[round write] winner address length invalid");
+                goto build_fail;
               }
 
-              bson_destroy(&reply);
-              bson_destroy(&opts);
-              bson_destroy(&update);
-              bson_destroy(&soi);
-              bson_destroy(&filter);
-              mongoc_collection_destroy(coll);
+              uint8_t wkey_bin[32] = {0};
+              if (!hex_to_byte_array(wkeyh, wkey_bin, 32)) {
+                ERROR_PRINT("[round write] winner key decode failed");
+                goto build_fail;
+              }
+
+              bson_t wdoc;
+              if (!bson_append_document_begin(&soi, "winner", -1, &wdoc)) {
+                ERROR_PRINT("append_document_begin(winner) failed");
+                goto build_fail;
+              }
+              if (!bson_append_utf8(&wdoc, "public_address", -1, waddr, (int)wlen) ||
+                  !bson_append_binary(&wdoc, "vrf_public_key", -1, BSON_SUBTYPE_BINARY, wkey_bin, 32)) {
+                ERROR_PRINT("append fields(winner) failed");
+                bson_append_document_end(&soi, &wdoc);
+                goto build_fail;
+              }
+              bson_append_document_end(&soi, &wdoc);
             }
-            mongoc_client_pool_push(database_client_thread_pool, c);
-          }
+
+            // validate final doc before update
+            {
+              size_t bad_off = 0;
+              if (!bson_validate(&soi, BSON_VALIDATE_NONE, &bad_off)) {
+                char* dump = bson_as_canonical_extended_json(&soi, NULL);
+                ERROR_PRINT("BSON validate failed at offset=%zu; dump=%s",
+                            bad_off, dump ? dump : "(null)");
+                if (dump) bson_free(dump);
+                goto build_fail;
+              }
+            }
+
+            // Update: { $setOnInsert: soi }
+            bson_t update;
+            bson_init(&update);
+            BSON_APPEND_DOCUMENT(&update, "$setOnInsert", &soi);
+
+            // Upsert: true
+            bson_t opts;
+            bson_init(&opts);
+            BSON_APPEND_BOOL(&opts, "upsert", true);
+
+            // One atomic call
+            bson_error_t err;
+            bson_t reply;
+            bson_init(&reply);
+
+            bool ok = mongoc_collection_update_one(coll, &filter, &update, &opts, &reply, &err);
+            if (!ok) {
+              const bool is_dup =
+                  mongoc_error_has_label(&reply, "DuplicateKey") ||
+                  (err.domain == MONGOC_ERROR_SERVER &&
+                   (err.code == 11000 || err.code == 11001 || err.code == 12582));
+
+              if (!is_dup) {
+                WARNING_PRINT("[round write] upsert %s height=%llu failed: %s",
+                              DB_COLLECTION_ROUNDS, (unsigned long long)cbheight, err.message);
+              }
+            }
+
+            bson_destroy(&reply);
+            bson_destroy(&opts);
+            bson_destroy(&update);
+            bson_destroy(&soi);
+            bson_destroy(&filter);
+            mongoc_collection_destroy(coll);
 
 #endif
 
