@@ -52,14 +52,14 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
 
       found = true;
       if (strcmp(block_height, current_block_height) != 0) {
-        INFO_PRINT("Block height mismatch for %s: remote=%s, local=%s",
+        DEBUG_PRINT("Block height mismatch for %s: remote=%s, local=%s",
                     public_address, block_height, current_block_height);
         break;
       }
 
       // Compare delegate list hash
       if (strcmp(parsed_delegates_hash, delegates_hash) != 0) {
-        INFO_PRINT("Delegates hash mismatch for %s: remote=%s, local=%s",
+        DEBUG_PRINT("Delegates hash mismatch for %s: remote=%s, local=%s",
                     public_address, parsed_delegates_hash, delegates_hash);
         delegate_db_hash_mismatch = delegate_db_hash_mismatch + 1;
         // Online and a partial match

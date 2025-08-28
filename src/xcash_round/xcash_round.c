@@ -516,10 +516,12 @@ void start_block_production(void) {
         goto end_of_round_skip_block;
       }
 
+      INFO_PRINT("CALLING GET_CURRENT_BLOCK_HASH");
       if (get_current_block_hash(current_block_hash) != XCASH_OK) {
         ERROR_PRINT("Can't get current block hash");
         goto end_of_round_skip_block;
       }
+      INFO_PRINT("RETURNING FROM GET_CURRENT_BLOCK_HASH");
 
       uint64_t ck_height = strtoull(ck_block_height, NULL, 10);
       uint64_t cur_height = strtoull(current_block_height, NULL, 10);
