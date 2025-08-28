@@ -363,7 +363,10 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
 
     if (strncmp(prev_hash_str, previous_block_hash, 64) != 0) {
       cJSON_Delete(root);
+      INFO_PRINT("Prev Hash mismatch: expected %s, got %s",
+                 previous_block_hash, prev_hash_str);
       send_data(client, (unsigned char *)"0|PARENT_HASH_MISMATCH", strlen("0|PARENT_HASH_MISMATCH"));
+      FATAL_ERROR_EXIT("Exiting......");
       return;
     }
 
@@ -373,12 +376,14 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
                  producer_refs[0].vrf_public_key, vrf_pubkey_str);
       cJSON_Delete(root);
       send_data(client, (unsigned char *)"0|VRF_PUBKEY_MISMATCH", strlen("0|VRF_PUBKEY_MISMATCH"));
+      FATAL_ERROR_EXIT("Exiting......");
       return;
     }
     if (strncmp(producer_refs[0].vote_hash_hex, vote_hash_str, HASH_HEX_LEN) != 0) {
-      ERROR_PRINT("Vote hash mismatch");
+      INFO_PRINT("Vote hash mismatch");
       cJSON_Delete(root);
       send_data(client, (unsigned char *)"0|VOTE_HASH_MISMATCH", strlen("0|VOTE_HASH_MISMATCH"));
+      FATAL_ERROR_EXIT("Exiting......");
       return;
     }
   }
