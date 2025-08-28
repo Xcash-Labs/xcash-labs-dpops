@@ -1063,7 +1063,7 @@ bool add_indexes(void) {
       bson_init(&rk2);
       bson_init(&ro2);
       BSON_APPEND_INT32(&rk2, "ts_decided", 1);  // single-field TTL index
-      BSON_APPEND_UTF8(&ro2, "name", "ttl_ts_decided_90d");
+      BSON_APPEND_UTF8(&ro2, "name", "ttl_ts_decided_365d");
       BSON_APPEND_INT32(&ro2, "expireAfterSeconds", TTL_SEC);
       mongoc_index_model_t* rm2 = mongoc_index_model_new(&rk2, &ro2);
 
