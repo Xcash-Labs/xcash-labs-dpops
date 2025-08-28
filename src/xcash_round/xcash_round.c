@@ -520,7 +520,6 @@ void start_block_production(void) {
         ERROR_PRINT("Can't get current block hash");
         goto end_of_round_skip_block;
       }
-      INFO_PRINT("RETURNING FROM GET_CURRENT_BLOCK_HASH %s", current_block_hash );
 
       uint64_t ck_height = strtoull(ck_block_height, NULL, 10);
       uint64_t cur_height = strtoull(current_block_height, NULL, 10);
@@ -691,7 +690,6 @@ void start_block_production(void) {
                 goto build_fail;
               }
 
-              INFO_PRINT("*** HERE 0");
               uint32_t out = 0;  // make sure this is initialized before the loop
               for (uint32_t k = 0; k < BLOCK_VERIFIERS_AMOUNT; ++k) {
                 const char* addr = current_block_verifiers_list.block_verifiers_public_address[k];
