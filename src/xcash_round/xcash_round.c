@@ -102,16 +102,12 @@ xcash_round_result_t process_round(void) {
     return ROUND_SKIP;
   }
 
-  INFO_PRINT("previous block hash %s", previous_block_hash);
-
   // Get hash for delegates collection
   memset(delegates_hash, 0, sizeof(delegates_hash));
   if (!hash_delegates_collection(delegates_hash)) {
     ERROR_PRINT("Failed to create delegates MD5 hash");
     return ROUND_SKIP;
   }
-
-  INFO_PRINT("previous block %s", delegates_hash);
 
   // Get the current block height and wait to complete before sending or reading transactions
   INFO_STAGE_PRINT("Part 3 - Get Current Block Height");
@@ -130,13 +126,8 @@ xcash_round_result_t process_round(void) {
       snprintf(target_disp, sizeof(target_disp), "%llu", target_h);
     }
     WARNING_PRINT("Delegate is still syncing, node is at %llu and the target height is %s", node_h, target_disp);
-    INFO_PRINT ("Current_block_height: %s", current_block_height);
     return ROUND_SKIP;
   }
-
-      unsigned long long node_h = strtoull(cheight, NULL, 10);
-      unsigned long long target_h = strtoull(target_height, NULL, 10);
-      INFO_PRINT("node_h: %llu   target_h: %llu", node_h, target_h);
 
   if (get_current_block_height(current_block_height) != XCASH_OK) {
     ERROR_PRINT("Can't get current block height");
