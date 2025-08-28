@@ -16,6 +16,7 @@ bool is_hex_len(const char *s, size_t expected_len) {
   for (size_t i = 0; i < n; ++i) {
     if (!is_hex_char(s[i])) return false;
   }
+  INFO_PRINT("Returning true from is_hex_len");
   return true;
 }
 
