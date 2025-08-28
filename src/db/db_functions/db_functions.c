@@ -1026,7 +1026,6 @@ bool add_indexes(void) {
   {
     const int32_t TTL_SEC = 60 * 60 * 24 * 365;  // 365 days
 
-    bson_error_t err;  // ensure this exists in this scope
     mongoc_database_t* db = mongoc_client_get_database(client, DATABASE_NAME);
 
     // Ensure collection exists (ignore NamespaceExists = 48)
