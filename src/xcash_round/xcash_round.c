@@ -705,15 +705,10 @@ void start_block_production(void) {
                                 k, (unsigned long long)cbheight);
                   continue;
                 }
-
-                INFO_PRINT("*** HERE 1");
-
                 // Build array element key safely
                 const char* keyptr = NULL;
                 char keybuf[16];
                 bson_uint32_to_string(out, &keyptr, keybuf, sizeof keybuf);
-                INFO_PRINT("*** HERE 1.1");
-
                 bson_t item;
                 if (!bson_append_document_begin(&arr, keyptr, -1, &item)) {
                   ERROR_PRINT("append_document_begin failed for index=%u", out);
@@ -721,8 +716,6 @@ void start_block_production(void) {
                   bson_append_array_end(&soi, &arr);
                   goto build_fail;
                 }
-                INFO_PRINT("*** HERE 1.2");
-
                 // Bound addr length to avoid strlen walks
                 size_t addrlen = strnlen(addr, XCASH_WALLET_LENGTH + 1);
                 if (addrlen == 0 || addrlen > XCASH_WALLET_LENGTH) {
@@ -730,8 +723,6 @@ void start_block_production(void) {
                   bson_append_document_end(&arr, &item);
                   continue;
                 }
-                INFO_PRINT("*** HERE 1.3");
-
                 if (!bson_append_utf8(&item, "public_address", -1, addr, (int)addrlen) ||
                     !bson_append_binary(&item, "vrf_public_key", -1, BSON_SUBTYPE_BINARY, pk_bin, 32) ||
                     !bson_append_binary(&item, "vrf_proof", -1, BSON_SUBTYPE_BINARY, proof_bin, 80) ||
@@ -740,8 +731,6 @@ void start_block_production(void) {
                   bson_append_document_end(&arr, &item);
                   continue;
                 }
-                INFO_PRINT("*** HERE 1.4");
-
                 bson_append_document_end(&arr, &item);
                 ++out;
               }
@@ -839,7 +828,7 @@ void start_block_production(void) {
               bson_destroy(&filter);
               mongoc_collection_destroy(coll);
               mongoc_client_pool_push(database_client_thread_pool, c);
-              return;
+              goto end_of_round_skip_block;
 
             // ------------- unified error cleanup -------------
             build_fail:
@@ -847,7 +836,7 @@ void start_block_production(void) {
               bson_destroy(&filter);
               mongoc_collection_destroy(coll);
               mongoc_client_pool_push(database_client_thread_pool, c);
-              return;
+              goto end_of_round_skip_block;
             }
           }
 #endif
