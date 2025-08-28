@@ -151,11 +151,11 @@ int block_verifiers_create_block(const char* vote_hash_hex, uint8_t total_vote, 
   // Only the block producer completes the following steps, producer_refs is an array in case we decide to add
   // backup producers in the future
   INFO_PRINT("Parts 9 thru 11 are only perfomed by the block producer");
-  if (strcmp(producer_refs[0].public_address, xcash_wallet_public_address) == XCASH_ERROR) {
+  if (strcmp(producer_refs[0].public_address, xcash_wallet_public_address) == 0) {
     // Create block template
     INFO_STAGE_PRINT("Part 9 - Create block template");
     snprintf(current_round_part, sizeof(current_round_part), "%d", 9);
-    if (get_block_template(block_blob, BUFFER_SIZE, &reserved_offset) == XCASH_ERROR) {
+    if (get_block_template(block_blob, BUFFER_SIZE, &reserved_offset) == 0) {
       return ROUND_ERROR;
     }
 
@@ -173,6 +173,7 @@ int block_verifiers_create_block(const char* vote_hash_hex, uint8_t total_vote, 
 
     // Part 11 - Submit block
     INFO_STAGE_PRINT("Part 11 - Submit the Block");
+    sleep(1);  // Don't wnat block info arriving too soon
     snprintf(current_round_part, sizeof(current_round_part), "%d", 11);
     if (!submit_block_template(block_blob)) {
       return ROUND_ERROR;
@@ -187,11 +188,11 @@ int block_verifiers_create_block(const char* vote_hash_hex, uint8_t total_vote, 
     strncpy(start_ck_block_height, ck_block_height, BLOCK_HEIGHT_LENGTH + 1);
     while (strncmp(start_ck_block_height, ck_block_height, BLOCK_HEIGHT_LENGTH) == 0) {
       if (difftime(time(NULL), start_time) > MAX_WAIT_FOR_BLOCK_CREATION) {
-        ERROR_PRINT("Timeout waiting for block creation and propagation change");
+        WARNING_PRINT("Timeout waiting for block creation and propagation change");
         break;
       }
 
-      sleep(3);  // prevent CPU hogging
+      sleep(5);  // prevent CPU hogging
       get_current_block_height(ck_block_height);
     }
   }

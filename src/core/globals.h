@@ -18,8 +18,6 @@ extern int delegate_db_hash_mismatch;
 extern bool is_seed_node;   // True if node is a seed node - network_data_node_settings is same as seed node, removed
 extern int network_data_nodes_amount; // Number of network data nodes
 
-extern bool is_synced; // True if node is synced with network
-
 extern delegates_t delegates_all[BLOCK_VERIFIERS_TOTAL_AMOUNT];
 
 extern char xcash_wallet_public_address[XCASH_WALLET_LENGTH + 1]; // xCash wallet public address
@@ -56,10 +54,11 @@ extern atomic_bool server_running;
 extern atomic_bool wait_for_vrf_init;
 extern atomic_bool wait_for_block_height_init;
 
+
+
+
+
 extern pthread_t server_thread;
-
-
-
 
 extern NetworkNode network_nodes[];
 

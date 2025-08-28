@@ -349,17 +349,19 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
   bool election_state_ready = is_hex_len(producer_refs[0].vrf_public_key, VRF_PUBLIC_KEY_LENGTH) &&
          is_hex_len(producer_refs[0].vote_hash_hex,  HASH_HEX_LEN);
  
-  INFO_PRINT("DPOPS dbg: height=%" PRIu64 " cheight=%llu live=%d synced=%d state_ready=%d prev_in=%.*s prev_local=%.*s round_part %s",
+  INFO_PRINT("DPOPS dbg: height=%" PRIu64 " cheight=%llu live=%d state_ready=%d prev_in=%.*s prev_local=%.*s round_part %s",
            (uint64_t)height,
            (unsigned long long)cheight,
            is_live_round ? 1 : 0,
-           is_synced ? 1 : 0,
            election_state_ready ? 1 : 0,
            64, prev_hash_str,
            64, previous_block_hash,
            current_round_part);
 
-  if (is_synced && election_state_ready && (strcmp(current_round_part, "11") == 0 || strcmp(current_round_part, "12") == 0)) {
+
+  // is_synced not correct so worthless
+           
+  if (election_state_ready && (strcmp(current_round_part, "11") == 0 || strcmp(current_round_part, "12") == 0)) {
 
     if (strncmp(prev_hash_str, previous_block_hash, 64) != 0) {
       cJSON_Delete(root);
