@@ -849,9 +849,8 @@ void start_block_production(void) {
               mongoc_client_pool_push(database_client_thread_pool, c);
               return;
             }
-
+          }
 #endif
-
         }
       }
 
