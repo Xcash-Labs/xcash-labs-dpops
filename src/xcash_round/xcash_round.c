@@ -696,7 +696,7 @@ void start_block_production(void) {
                                 k, (unsigned long long)cbheight);
                   continue;
                 }
-
+              INFO_PRINT("*** HERE 6" );
                 bson_t item;
                 char key[16];
                 bson_uint32_to_string(out, NULL, key, sizeof key);
@@ -709,7 +709,7 @@ void start_block_production(void) {
 
                 ++out;
               }
-
+              INFO_PRINT("*** HERE 6" );
               bson_append_array_end(&soi, &arr);
 
               // winner subdoc (no index stored; keep address string, key binary)
@@ -724,7 +724,7 @@ void start_block_production(void) {
                   bson_append_document_end(&soi, &wdoc);
                 }
               }
-
+              INFO_PRINT("*** HERE 7" );
               // Update: { $setOnInsert: soi }  (no $currentDate)
               bson_t update;
               bson_init(&update);
@@ -752,6 +752,7 @@ void start_block_production(void) {
                                 DB_COLLECTION_ROUNDS, (unsigned long long)cbheight, err.message);
                 }
               }
+              INFO_PRINT("*** HERE 8" );
               bson_destroy(&reply);
               bson_destroy(&opts);
               bson_destroy(&update);
