@@ -696,7 +696,7 @@ void start_block_production(void) {
                                 k, (unsigned long long)cbheight);
                   continue;
                 }
-              INFO_PRINT("*** HERE 6" );
+              INFO_PRINT("*** HERE 5.1" );
                 bson_t item;
                 char key[16];
                 bson_uint32_to_string(out, NULL, key, sizeof key);
@@ -712,7 +712,7 @@ void start_block_production(void) {
               INFO_PRINT("*** HERE 6" );
               bson_append_array_end(&soi, &arr);
               INFO_PRINT("*** HERE 6-1, public_address %s",  producer_refs[0].public_address);
-              
+
               // winner subdoc (no index stored; keep address string, key binary)
               if (producer_refs[0].public_address[0] != '\0') {
                 // decode winner key (from producer_refs[0])
