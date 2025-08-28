@@ -123,10 +123,7 @@ xcash_round_result_t process_round(void) {
   if (!is_blockchain_synced(target_height, cheight)) {
     unsigned long long node_h = strtoull(cheight, NULL, 10);
     unsigned long long target_h = strtoull(target_height, NULL, 10);
-    
-    INFO_PRINT("node_h: %llu   target_h: %llu", node_h, target_h);
-
-    char target_disp[BLOCK_HEIGHT_LENGTH];
+        char target_disp[BLOCK_HEIGHT_LENGTH];
     if (target_h == 0ULL || target_height[0] == '\0') {
       strcpy(target_disp, "unknown");
     } else {
@@ -136,6 +133,10 @@ xcash_round_result_t process_round(void) {
     INFO_PRINT ("Current_block_height: %s", current_block_height);
     return ROUND_SKIP;
   }
+
+      unsigned long long node_h = strtoull(cheight, NULL, 10);
+      unsigned long long target_h = strtoull(target_height, NULL, 10);
+      INFO_PRINT("node_h: %llu   target_h: %llu", node_h, target_h);
 
   is_synced = true;
   if (get_current_block_height(current_block_height) != XCASH_OK) {
