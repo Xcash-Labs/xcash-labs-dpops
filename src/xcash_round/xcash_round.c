@@ -110,7 +110,7 @@ xcash_round_result_t process_round(void) {
     ERROR_PRINT("Failed to create delegates MD5 hash");
     return ROUND_SKIP;
   }
-  
+
   INFO_PRINT("previous block %s", delegates_hash);
 
   // Get the current block height and wait to complete before sending or reading transactions
@@ -852,7 +852,7 @@ void start_block_production(void) {
 
       // If >20% of delegates report a DB hash mismatch, trigger a resync.
       if ((delegate_db_hash_mismatch * 100) > (total_delegates * 20)) {
-        if (is_seed_node && strncmp(xcash_wallet_public_address, network_nodes[0].public_address, XCASH_WALLET_LENGTH) != 0) {
+        if (is_seed_node && strncmp(xcash_wallet_public_address, network_nodes[0].seed_public_address, XCASH_WALLET_LENGTH) != 0) {
           DEBUG_PRINT("Skipping resync (not seed node #1)");
         } else {
           INFO_STAGE_PRINT("Delegates Collection is out of sync, attempting to update");
