@@ -516,12 +516,11 @@ void start_block_production(void) {
         goto end_of_round_skip_block;
       }
 
-      INFO_PRINT("CALLING GET_CURRENT_BLOCK_HASH");
       if (get_current_block_hash(current_block_hash) != XCASH_OK) {
         ERROR_PRINT("Can't get current block hash");
         goto end_of_round_skip_block;
       }
-      INFO_PRINT("RETURNING FROM GET_CURRENT_BLOCK_HASH");
+      INFO_PRINT("RETURNING FROM GET_CURRENT_BLOCK_HASH %s", current_block_hash );
 
       uint64_t ck_height = strtoull(ck_block_height, NULL, 10);
       uint64_t cur_height = strtoull(current_block_height, NULL, 10);
@@ -622,6 +621,7 @@ void start_block_production(void) {
 
             // ** update the consensus_rounds collection **
             {
+              INFO_PRINT("*** HERE 1" );
               // winner invariant — refuse to write a broken round
               if (producer_refs[0].public_address[0] == '\0' ||
                   !is_hex_len(producer_refs[0].vrf_public_key, VRF_PUBLIC_KEY_LENGTH)) {
@@ -637,7 +637,7 @@ void start_block_production(void) {
               bson_t filter;
               bson_init(&filter);
               BSON_APPEND_INT64(&filter, "block_height", (int64_t)cbheight);
-
+              INFO_PRINT("*** HERE 2" );
               // --- before hex→bin, validate hex sizes (clear error if bad) ---
               if (!is_hex_len(previous_block_hash, BLOCK_HASH_LENGTH) ||
                   !is_hex_len(current_block_hash, BLOCK_HASH_LENGTH) ||
@@ -649,7 +649,7 @@ void start_block_production(void) {
                 mongoc_client_pool_push(database_client_thread_pool, c);
                 return;
               }
-
+              INFO_PRINT("*** HERE 3" );
               // --- decode round-level hex to binary ---
               uint8_t prev_hash_bin[32], block_hash_bin[32], vote_hash_bin[32];
               if (!hex_to_byte_array(previous_block_hash, prev_hash_bin, sizeof prev_hash_bin) ||
@@ -661,7 +661,7 @@ void start_block_production(void) {
                 mongoc_client_pool_push(database_client_thread_pool, c);
                 return;
               }
-
+              INFO_PRINT("*** HERE 4" );
               // $setOnInsert with round data (one-time fields)
               bson_t soi;
               bson_init(&soi);
@@ -682,7 +682,7 @@ void start_block_production(void) {
               // block_verifiers array (skip empty), VRF fields stored as binary
               bson_t arr;
               BSON_APPEND_ARRAY_BEGIN(&soi, "block_verifiers", &arr);
-
+              INFO_PRINT("*** HERE 5" );
               uint32_t out = 0;
               for (uint32_t k = 0; k < BLOCK_VERIFIERS_AMOUNT; ++k) {
                 const char* addr = current_block_verifiers_list.block_verifiers_public_address[k];
