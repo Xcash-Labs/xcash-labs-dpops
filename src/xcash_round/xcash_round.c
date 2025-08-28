@@ -621,7 +621,6 @@ void start_block_production(void) {
 
             // ** update the consensus_rounds collection **
             {
-              INFO_PRINT("*** HERE 1" );
               // winner invariant — refuse to write a broken round
               if (producer_refs[0].public_address[0] == '\0' ||
                   !is_hex_len(producer_refs[0].vrf_public_key, VRF_PUBLIC_KEY_LENGTH)) {
@@ -637,7 +636,6 @@ void start_block_production(void) {
               bson_t filter;
               bson_init(&filter);
               BSON_APPEND_INT64(&filter, "block_height", (int64_t)cbheight);
-              INFO_PRINT("*** HERE 2" );
               // --- before hex→bin, validate hex sizes (clear error if bad) ---
               if (!is_hex_len(previous_block_hash, BLOCK_HASH_LENGTH) ||
                   !is_hex_len(current_block_hash, BLOCK_HASH_LENGTH) ||
@@ -649,7 +647,6 @@ void start_block_production(void) {
                 mongoc_client_pool_push(database_client_thread_pool, c);
                 return;
               }
-              INFO_PRINT("*** HERE 3" );
               // --- decode round-level hex to binary ---
               uint8_t prev_hash_bin[32], block_hash_bin[32], vote_hash_bin[32];
               if (!hex_to_byte_array(previous_block_hash, prev_hash_bin, sizeof prev_hash_bin) ||
@@ -661,7 +658,6 @@ void start_block_production(void) {
                 mongoc_client_pool_push(database_client_thread_pool, c);
                 return;
               }
-              INFO_PRINT("*** HERE 4" );
               // $setOnInsert with round data (one-time fields)
               bson_t soi;
               bson_init(&soi);
@@ -682,8 +678,9 @@ void start_block_production(void) {
               // block_verifiers array (skip empty), VRF fields stored as binary
               bson_t arr;
               BSON_APPEND_ARRAY_BEGIN(&soi, "block_verifiers", &arr);
-              INFO_PRINT("*** HERE 5" );
-              uint32_t out = 0;
+
+              INFO_PRINT("*** HERE 0");              
+              uint32_t out = 0;  // make sure this is initialized before the loop
               for (uint32_t k = 0; k < BLOCK_VERIFIERS_AMOUNT; ++k) {
                 const char* addr = current_block_verifiers_list.block_verifiers_public_address[k];
                 if (!addr || addr[0] == '\0') continue;
@@ -696,36 +693,43 @@ void start_block_production(void) {
                                 k, (unsigned long long)cbheight);
                   continue;
                 }
-              INFO_PRINT("*** HERE 5.1" );
-                bson_t item;
-                char key[16];
-                bson_uint32_to_string(out, NULL, key, sizeof key);
-                bson_append_document_begin(&arr, key, -1, &item);
-                BSON_APPEND_UTF8(&item, "public_address", addr);
-                BSON_APPEND_BINARY(&item, "vrf_public_key", BSON_SUBTYPE_BINARY, pk_bin, 32);
-                BSON_APPEND_BINARY(&item, "vrf_proof", BSON_SUBTYPE_BINARY, proof_bin, 80);
-                BSON_APPEND_BINARY(&item, "vrf_beta", BSON_SUBTYPE_BINARY, beta_bin, 64);
-                bson_append_document_end(&arr, &item);
 
+                INFO_PRINT("*** HERE 1");
+
+                // Build array element key safely
+                const char* keyptr = NULL;
+                char keybuf[16];
+                bson_uint32_to_string(out, &keyptr, keybuf, sizeof keybuf);
+                // keyptr now points to either an internal static or keybuf
+                INFO_PRINT("*** HERE 1.1");
+                bson_t item;
+                if (!bson_append_document_begin(&arr, keyptr, -1, &item)) {
+                  ERROR_PRINT("append_document_begin failed for index=%u", out);
+                  break;  // or continue; depending on your policy
+                }
+                INFO_PRINT("*** HERE 1.2");
+                // Optionally bound addr length to avoid strlen walks
+                size_t addrlen = strnlen(addr, XCASH_WALLET_LENGTH + 1);
+                if (addrlen == 0 || addrlen > XCASH_WALLET_LENGTH) {
+                  ERROR_PRINT("bad public_address length=%zu at k=%u", addrlen, k);
+                  bson_append_document_end(&arr, &item);
+                  continue;
+                }
+                INFO_PRINT("*** HERE 1.3");
+                if (!bson_append_utf8(&item, "public_address", -1, addr, (int)addrlen) ||
+                    !bson_append_binary(&item, "vrf_public_key", -1, BSON_SUBTYPE_BINARY, pk_bin, 32) ||
+                    !bson_append_binary(&item, "vrf_proof", -1, BSON_SUBTYPE_BINARY, proof_bin, 80) ||
+                    !bson_append_binary(&item, "vrf_beta", -1, BSON_SUBTYPE_BINARY, beta_bin, 64)) {
+                  ERROR_PRINT("append field(s) failed at k=%u", k);
+                  // keep BSON consistent
+                  bson_append_document_end(&arr, &item);
+                  continue;
+                }
+                INFO_PRINT("*** HERE 1.4");
+                bson_append_document_end(&arr, &item);
                 ++out;
               }
-              INFO_PRINT("*** HERE 6" );
-              bson_append_array_end(&soi, &arr);
-              INFO_PRINT("*** HERE 6-1, public_address %s",  producer_refs[0].public_address);
 
-              // winner subdoc (no index stored; keep address string, key binary)
-              if (producer_refs[0].public_address[0] != '\0') {
-                // decode winner key (from producer_refs[0])
-                uint8_t win_pk_bin[32];
-                if (hex_to_byte_array(producer_refs[0].vrf_public_key, win_pk_bin, 32)) {
-                  bson_t wdoc;
-                  BSON_APPEND_DOCUMENT_BEGIN(&soi, "winner", &wdoc);
-                  BSON_APPEND_UTF8(&wdoc, "public_address", producer_refs[0].public_address);
-                  BSON_APPEND_BINARY(&wdoc, "vrf_public_key", BSON_SUBTYPE_BINARY, win_pk_bin, 32);
-                  bson_append_document_end(&soi, &wdoc);
-                }
-              }
-              INFO_PRINT("*** HERE 7" );
               // Update: { $setOnInsert: soi }  (no $currentDate)
               bson_t update;
               bson_init(&update);
@@ -753,7 +757,7 @@ void start_block_production(void) {
                                 DB_COLLECTION_ROUNDS, (unsigned long long)cbheight, err.message);
                 }
               }
-              INFO_PRINT("*** HERE 8" );
+
               bson_destroy(&reply);
               bson_destroy(&opts);
               bson_destroy(&update);
