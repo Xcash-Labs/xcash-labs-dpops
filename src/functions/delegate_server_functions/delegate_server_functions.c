@@ -361,9 +361,6 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
 
   if (is_synced && election_state_ready && (strcmp(current_round_part, "11") == 0 || strcmp(current_round_part, "12") == 0)) {
 
-    INFO_PRINT("Performing full checks.......");
-
-
     if (strncmp(prev_hash_str, previous_block_hash, 64) != 0) {
       cJSON_Delete(root);
       send_data(client, (unsigned char *)"0|PARENT_HASH_MISMATCH", strlen("0|PARENT_HASH_MISMATCH"));
