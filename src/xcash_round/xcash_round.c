@@ -102,12 +102,16 @@ xcash_round_result_t process_round(void) {
     return ROUND_SKIP;
   }
 
+  INFO_PRINT("previous block hash %s", previous_block_hash);
+
   // Get hash for delegates collection
   memset(delegates_hash, 0, sizeof(delegates_hash));
   if (!hash_delegates_collection(delegates_hash)) {
     ERROR_PRINT("Failed to create delegates MD5 hash");
     return ROUND_SKIP;
   }
+  
+  INFO_PRINT("previous block %s", delegates_hash);
 
   // Get the current block height and wait to complete before sending or reading transactions
   INFO_STAGE_PRINT("Part 3 - Get Current Block Height");
@@ -119,6 +123,9 @@ xcash_round_result_t process_round(void) {
   if (!is_blockchain_synced(target_height, cheight)) {
     unsigned long long node_h = strtoull(cheight, NULL, 10);
     unsigned long long target_h = strtoull(target_height, NULL, 10);
+    
+    INFO_PRINT("node_h: %llu   target_h: %llu", node_h, target_h);
+
     char target_disp[BLOCK_HEIGHT_LENGTH];
     if (target_h == 0ULL || target_height[0] == '\0') {
       strcpy(target_disp, "unknown");
@@ -843,19 +850,23 @@ void start_block_production(void) {
 
     } else {
 
-      // If >30% of delegates report a DB hash mismatch, trigger a resync.
-      if ((delegate_db_hash_mismatch * 100) > (total_delegates * 30)) {
-        INFO_STAGE_PRINT("Delegates Collection is out of sync, attempting to update");
-        int selected_index;
-        pthread_mutex_lock(&delegates_all_lock);
-        selected_index = select_random_online_delegate();
-        pthread_mutex_unlock(&delegates_all_lock);
-        if (create_sync_token() == XCASH_OK) {
-          if (!create_delegates_db_sync_request(selected_index)) {
-            ERROR_PRINT("Error occured while syncing delegates");
-          }
+      // If >20% of delegates report a DB hash mismatch, trigger a resync.
+      if ((delegate_db_hash_mismatch * 100) > (total_delegates * 20)) {
+        if (is_seed_node && strncmp(xcash_wallet_public_address, network_nodes[0].public_address, XCASH_WALLET_LENGTH) != 0) {
+          DEBUG_PRINT("Skipping resync (not seed node #1)");
         } else {
-          ERROR_PRINT("Error creating sync token");
+          INFO_STAGE_PRINT("Delegates Collection is out of sync, attempting to update");
+          int selected_index;
+          pthread_mutex_lock(&delegates_all_lock);
+          selected_index = select_random_online_delegate();
+          pthread_mutex_unlock(&delegates_all_lock);
+          if (create_sync_token() == XCASH_OK) {
+            if (!create_delegates_db_sync_request(selected_index)) {
+              ERROR_PRINT("Error occured while syncing delegates");
+            }
+          } else {
+            ERROR_PRINT("Error creating sync token");
+          }
         }
       }
 
