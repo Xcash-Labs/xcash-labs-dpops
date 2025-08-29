@@ -330,18 +330,11 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
   const char *prev_hash_str = js_prev_hash->valuestring;
   uint64_t height = (uint64_t)js_height->valuedouble;
 
-  enum {
-    VRF_PROOF_HEX_LEN = crypto_vrf_PROOFBYTES * 2,    // 80*2 = 160
-    VRF_BETA_HEX_LEN = crypto_vrf_OUTPUTBYTES * 2,    // 64*2 = 128
-    VRF_PUB_HEX_LEN = crypto_vrf_PUBLICKEYBYTES * 2,  // 32*2 = 64
-    HASH_HEX_LEN = 32 * 2                             // 64
-  };
-
-  if (!is_hex_len(vrf_proof_str, VRF_PROOF_HEX_LEN) ||
-      !is_hex_len(vrf_beta_str, VRF_BETA_HEX_LEN) ||
-      !is_hex_len(vrf_pubkey_str, VRF_PUB_HEX_LEN) ||
-      !is_hex_len(vote_hash_str, HASH_HEX_LEN) ||
-      !is_hex_len(prev_hash_str, HASH_HEX_LEN)) {
+  if (!is_hex_len(vrf_proof_str, VRF_PROOF_LENGTH) ||
+      !is_hex_len(vrf_beta_str, VRF_BETA_LENGTH) ||
+      !is_hex_len(vrf_pubkey_str, VRF_PUBLIC_KEY_LENGTH) ||
+      !is_hex_len(vote_hash_str, VOTE_HASH_LEN) ||
+      !is_hex_len(prev_hash_str, BLOCK_HASH_LENGTH)) {
     cJSON_Delete(root);
     send_data(client, (unsigned char *)"0|BAD_FIELD_LEN_OR_NONHEX", strlen("0|BAD_FIELD_LEN_OR_NONHEX"));
     INFO_PRINT("Bad field lenght");
@@ -365,7 +358,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
       ERROR_PRINT("Timed out waiting for producer selection in server_receive_data_socket_nodes_to_block_verifiers_validate_block");
     }
     election_state_ready = is_hex_len(producer_refs[0].vrf_public_key, VRF_PUBLIC_KEY_LENGTH) &&
-         is_hex_len(producer_refs[0].vote_hash_hex,  HASH_HEX_LEN);
+         is_hex_len(producer_refs[0].vote_hash_hex,  VOTE_HASH_LEN);
   } else {
     election_state_ready = false;
   }    
@@ -399,7 +392,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
       FATAL_ERROR_EXIT("Exiting.....");
       return;
     }
-    if (strncmp(producer_refs[0].vote_hash_hex, vote_hash_str, HASH_HEX_LEN) != 0) {
+    if (strncmp(producer_refs[0].vote_hash_hex, vote_hash_str, VOTE_HASH_LEN) != 0) {
       INFO_PRINT("Vote hash mismatch");
       cJSON_Delete(root);
       send_data(client, (unsigned char *)"0|VOTE_HASH_MISMATCH", strlen("0|VOTE_HASH_MISMATCH"));

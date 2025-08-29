@@ -380,7 +380,7 @@ xcash_round_result_t process_round(void) {
   // Final hash of all vote hashes
   sha256EL(all_hashes_concat, concat_len, final_vote_hash);
 
-  char final_vote_hash_hex[SHA256_EL_HASH_SIZE * 2 + 1] = {0};
+  char final_vote_hash_hex[VOTE_HASH_LEN + 1] = {0};
   for (size_t i = 0; i < SHA256_EL_HASH_SIZE; i++) {
     snprintf(final_vote_hash_hex + (i * 2), 3, "%02x", final_vote_hash[i]);
   }
