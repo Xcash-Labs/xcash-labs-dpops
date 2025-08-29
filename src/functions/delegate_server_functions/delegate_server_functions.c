@@ -289,6 +289,8 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
   // early at the top, before parsing JSON
   if (strcmp(client->client_ip, "127.0.0.1") != 0 && strcmp(client->client_ip, "::1") != 0) {
     send_data(client, (unsigned char*)"0|FORBIDDEN_NON_LOCAL", strlen("0|FORBIDDEN_NON_LOCAL"));
+    INFO_PRINT("Non local");
+    FATAL_ERROR_EXIT("Exiting.....");
     return;
   }
 
@@ -296,6 +298,8 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
   cJSON *root = cJSON_Parse(MESSAGE);
   if (!root) {
     send_data(client, (unsigned char *)"0|INVALID_JSON", strlen("0|INVALID_JSON"));
+    INFO_PRINT("Invalid json");
+    FATAL_ERROR_EXIT("Exiting.....");
     return;
   }
 
@@ -313,6 +317,8 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
       !cJSON_IsString(js_vote_hash) || !cJSON_IsNumber(js_height) || !cJSON_IsString(js_prev_hash)) {
     cJSON_Delete(root);
     send_data(client, (unsigned char*)"0|BAD_FIELDS", strlen("0|BAD_FIELDS"));
+    INFO_PRINT("Bad field fields");
+    FATAL_ERROR_EXIT("Exiting.....");
     return;
   }
 
@@ -338,6 +344,8 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
       !is_hex_len(prev_hash_str, HASH_HEX_LEN)) {
     cJSON_Delete(root);
     send_data(client, (unsigned char *)"0|BAD_FIELD_LEN_OR_NONHEX", strlen("0|BAD_FIELD_LEN_OR_NONHEX"));
+    INFO_PRINT("Bad field lenght");
+    FATAL_ERROR_EXIT("Exiting.....");
     return;
   }
 
@@ -379,6 +387,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
       INFO_PRINT("Prev Hash mismatch: expected %s, got %s",
                  previous_block_hash, prev_hash_str);
       send_data(client, (unsigned char *)"0|PARENT_HASH_MISMATCH", strlen("0|PARENT_HASH_MISMATCH"));
+      FATAL_ERROR_EXIT("Exiting.....");
       return;
     }
 
@@ -387,12 +396,14 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
       INFO_PRINT("Public key mismatch: expected %s, got %s", producer_refs[0].vrf_public_key, vrf_pubkey_str);
       cJSON_Delete(root);
       send_data(client, (unsigned char *)"0|VRF_PUBKEY_MISMATCH", strlen("0|VRF_PUBKEY_MISMATCH"));
+      FATAL_ERROR_EXIT("Exiting.....");
       return;
     }
     if (strncmp(producer_refs[0].vote_hash_hex, vote_hash_str, HASH_HEX_LEN) != 0) {
       INFO_PRINT("Vote hash mismatch");
       cJSON_Delete(root);
       send_data(client, (unsigned char *)"0|VOTE_HASH_MISMATCH", strlen("0|VOTE_HASH_MISMATCH"));
+      FATAL_ERROR_EXIT("Exiting.....");
       return;
     }
   }
