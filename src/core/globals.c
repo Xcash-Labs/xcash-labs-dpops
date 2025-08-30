@@ -38,7 +38,6 @@ pthread_mutex_t database_data_IP_address_lock = PTHREAD_MUTEX_INITIALIZER;
 atomic_bool server_running = true;
 atomic_bool wait_for_vrf_init = true;
 atomic_bool wait_for_block_height_init = true;
-atomic_bool wait_for_producer_init = true;
 
 
 

@@ -73,6 +73,8 @@ static int compare_hashes(const void* a, const void* b) {
  */
 xcash_round_result_t process_round(void) {
 
+  memset(&producer_refs, 0, sizeof(producer_refs));
+
   INFO_STAGE_PRINT("Part 1 - Check Delegate Registration");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 1);
   if (strlen(vrf_public_key) == 0) {
@@ -265,7 +267,7 @@ xcash_round_result_t process_round(void) {
   }
 
   // Sync start
-  if (sync_block_verifiers_minutes_and_seconds(0, 40) == XCASH_ERROR) {
+  if (sync_block_verifiers_minutes_and_seconds(0, 35) == XCASH_ERROR) {
     INFO_PRINT("Failed to Confirm Block Creator in the allotted  time, skipping round");
     return ROUND_SKIP;
   }
@@ -394,9 +396,7 @@ xcash_round_result_t process_round(void) {
 
   if (producer_indx >= 0) {
     pthread_mutex_lock(&producer_refs_lock);
-    // For now there is only one block producer and no backups
-    memset(&producer_refs, 0, sizeof(producer_refs));
-    // Populate the reference list with the selected producer
+    // For now there is only one block producer and no backups. Populate the reference list with the selected producer.
     strcpy(producer_refs[0].public_address, current_block_verifiers_list.block_verifiers_public_address[producer_indx]);
     strcpy(producer_refs[0].IP_address, current_block_verifiers_list.block_verifiers_IP_address[producer_indx]);
     strcpy(producer_refs[0].vrf_public_key, current_block_verifiers_list.block_verifiers_public_key[producer_indx]);
@@ -405,7 +405,6 @@ xcash_round_result_t process_round(void) {
     strcpy(producer_refs[0].vote_hash_hex, final_vote_hash_hex);
     pthread_mutex_unlock(&producer_refs_lock);
   }
-  atomic_store(&wait_for_producer_init, false);
 
   int block_creation_result = block_verifiers_create_block(final_vote_hash_hex, (uint8_t)valid_vote_count, (uint8_t)nodes_majority_count);
 
@@ -487,16 +486,18 @@ void start_block_production(void) {
     delegate_db_hash_mismatch = 0;
     atomic_store(&wait_for_vrf_init, true);
     atomic_store(&wait_for_block_height_init, true);
-    atomic_store(&wait_for_producer_init, true);
     round_result = ROUND_OK;
 
     round_result = process_round();
 
     // Final step - Update DB
-    snprintf(current_round_part, sizeof(current_round_part), "%d", 12); 
+    snprintf(current_round_part, sizeof(current_round_part), "%d", 12);
+    if (sync_block_verifiers_minutes_and_seconds(0, 55) == XCASH_ERROR) {
+      INFO_PRINT("Failed to Confirm Block Creator in the allotted  time, skipping round");
+      goto end_of_round_skip_block;
+    }
 
     if (round_result == ROUND_SKIP) {
-      sync_block_verifiers_minutes_and_seconds(0, 55);
       if (strlen(vrf_public_key) == 0) {
         get_vrf_public_key();
       }
@@ -504,7 +505,7 @@ void start_block_production(void) {
     }
 
     if (round_result == ROUND_OK) {
-
+ 
 #ifdef SEED_NODE_ON
       bool update_stats = false;
       char ck_block_height[BLOCK_HEIGHT_LENGTH + 1] = {0};

@@ -174,29 +174,13 @@ int block_verifiers_create_block(const char* vote_hash_hex, uint8_t total_vote, 
     // Part 11 - Submit block
     INFO_STAGE_PRINT("Part 11 - Submit the Block");
     snprintf(current_round_part, sizeof(current_round_part), "%d", 11);
+    sleep(1);
     if (!submit_block_template(block_blob)) {
       return ROUND_ERROR;
     }
-
-    INFO_PRINT_STATUS_OK("Block signature sent ");
-  } else {
-    INFO_STAGE_PRINT("Part 11 - Wait For Block Creation");
-    snprintf(current_round_part, sizeof(current_round_part), "%d", 11);
-    time_t start_time = time(NULL);
-    char start_ck_block_height[BLOCK_HEIGHT_LENGTH + 1];
-    strncpy(start_ck_block_height, ck_block_height, BLOCK_HEIGHT_LENGTH + 1);
-    while (strncmp(start_ck_block_height, ck_block_height, BLOCK_HEIGHT_LENGTH) == 0) {
-      if (difftime(time(NULL), start_time) > MAX_WAIT_FOR_BLOCK_CREATION) {
-        WARNING_PRINT("Timeout waiting for block creation and propagation change");
-        break;
-      }
-
-      sleep(5);  // prevent CPU hogging
-      get_current_block_height(ck_block_height);
-    }
+    INFO_PRINT_STATUS_OK("Block signature sent");
   }
 
-  DEBUG_PRINT("Block was created");
   return ROUND_OK;
 }
 
