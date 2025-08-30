@@ -650,10 +650,6 @@ void start_block_production(void) {
             // Defaults for inserts
             bson_t soi;
             bson_init(&soi);
-            BSON_APPEND_INT64(&soi, "block_verifier_total_rounds", 0);
-            BSON_APPEND_INT64(&soi, "block_verifier_online_total_rounds", 0);
-            BSON_APPEND_INT64(&soi, "block_producer_total_rounds", 0);
-            BSON_APPEND_INT64(&soi, "last_counted_block", -1);
             BSON_APPEND_UTF8(&soi, "public_key", delegates_all[i].public_key);
 
             // Build update doc
