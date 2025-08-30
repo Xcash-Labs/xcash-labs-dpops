@@ -586,6 +586,7 @@ void start_block_production(void) {
               // Build $inc only for fields that apply this round
               bson_t inc;
               bson_init(&inc);
+
               if (online) {
                 BSON_APPEND_INT64(&inc, "block_verifier_online_total_rounds", 1);
                 if (is_verifier) {
@@ -601,15 +602,25 @@ void start_block_production(void) {
               bson_init(&set);
               BSON_APPEND_INT64(&set, "last_counted_block", (int64_t)cbheight);
 
-              // Update: { $inc: {...}, $set: { last_counted_block: height } }
+              // Build update doc
               bson_t update;
               bson_init(&update);
-              BSON_APPEND_DOCUMENT(&update, "$inc", &inc);
+
+              // Only append $inc if it isn't empty
+              if (bson_count_keys(&inc) > 0) {
+                BSON_APPEND_DOCUMENT(&update, "$inc", &inc);
+              }
               BSON_APPEND_DOCUMENT(&update, "$set", &set);
 
-              // One atomic call. If the filter doesn't match (already processed), this is a no-op.
+              // Do the update and log errors
               bson_error_t err;
-              (void)mongoc_collection_update_one(stats, &filter, &update, NULL, NULL, &err);
+              bool ok = mongoc_collection_update_one(stats, &filter, &update, NULL, NULL, &err);
+              if (!ok) {
+                ERROR_PRINT("stats update failed for pk=%.12s… at height=%llu: %s",
+                            delegates_all[i].public_key,
+                            (unsigned long long)cbheight,
+                            err.message);
+              }
 
               // Cleanup
               bson_destroy(&update);
