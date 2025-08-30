@@ -86,7 +86,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
     // 1) Parse incoming MESSAGE as JSON
     cJSON *root = cJSON_Parse(MESSAGE);
     if (!root) {
-        SERVER_ERROR("0|Could not verify the message}");
+        SERVER_ERROR("0|Could not verify the message");
     }
 
     // 2) Extract and validate each required field
@@ -105,13 +105,13 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
         !cJSON_IsNumber(js_reg_time))
     {
         cJSON_Delete(root);
-        SERVER_ERROR("0|Could not verify the message}");
+        SERVER_ERROR("0|Could not verify the message");
     }
 
     // 2a) Ensure message_settings matches exactly
     if (strcmp(msg_settings->valuestring, "NODES_TO_BLOCK_VERIFIERS_REGISTER_DELEGATE") != 0) {
         cJSON_Delete(root);
-        SERVER_ERROR("0|Invalid message_settings}");
+        SERVER_ERROR("0|Invalid message_settings");
     }
 
     // 2b) Copy them into our local buffers (including null terminators)
@@ -126,7 +126,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
         address_len != XCASH_WALLET_LENGTH)
     {
         cJSON_Delete(root);
-        SERVER_ERROR("0|Invalid length for delegate name, delegate ip, public key, or public wallet address}");
+        SERVER_ERROR("0|Invalid length for delegate name, delegate ip, public key, or public wallet address");
     }
 
     memcpy(delegate_name,        js_name->valuestring,    name_len);
@@ -146,24 +146,24 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
     // 4) Validate ranges and formats
     if (check_for_valid_delegate_name(delegate_name) == 0) {
       cJSON_Delete(root);
-      SERVER_ERROR("0|Invalid delegate_name}");
+      SERVER_ERROR("0|Invalid delegate_name");
     }
     if (strlen(delegate_public_address) != XCASH_WALLET_LENGTH) {
       cJSON_Delete(root);
-      SERVER_ERROR("0|Invalid public_address length}");
+      SERVER_ERROR("0|Invalid public_address length");
     }
     if (strncmp(delegate_public_address, XCASH_WALLET_PREFIX,
                 sizeof(XCASH_WALLET_PREFIX) - 1) != 0) {
       cJSON_Delete(root);
-      SERVER_ERROR("0|Invalid public_address prefix}");
+      SERVER_ERROR("0|Invalid public_address prefix");
     }
     if (check_for_valid_ip_or_hostname(delegates_IP_address) == XCASH_ERROR) {
       cJSON_Delete(root);
-      SERVER_ERROR("0|Invalid delegate_IP (must be IP or resolvable hostname)}");
+      SERVER_ERROR("0|Invalid delegate_IP (must be IP or resolvable hostname)");
     }
     if (crypto_vrf_is_valid_key(delegate_public_key_data) != 1) {
       cJSON_Delete(root);
-      SERVER_ERROR("0|Invalid delegate_public_key}");
+      SERVER_ERROR("0|Invalid delegate_public_key");
     }
 
     cJSON_Delete(root); // we no longer need the JSON tree
@@ -178,7 +178,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
         send_data(client, (unsigned char *)"1|Registered the delegate}", strlen("1|Registered the delegate}"));
         return;
       } else {
-        SERVER_ERROR("0|The delegates public address is already registered}");
+        SERVER_ERROR("0|The delegates public address is already registered");
       }
     }
 
@@ -186,27 +186,27 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
     snprintf(data, sizeof(data), "{\"IP_address\":\"%s\"}", delegates_IP_address);
     if (count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, data) != 0)
     {
-        SERVER_ERROR("0|The delegates IP address is already registered}");
+        SERVER_ERROR("0|The delegates IP address is already registered");
     }
 
     // 5c) public_key
     snprintf(data, sizeof(data), "{\"public_key\":\"%s\"}", delegate_public_key);
     if (count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, data) != 0)
     {
-        SERVER_ERROR("0|The delegates public key is already registered}");
+        SERVER_ERROR("0|The delegates public key is already registered");
     }
 
     // 5d) delegate_name
     snprintf(data, sizeof(data), "{\"delegate_name\":\"%s\"}", delegate_name);
     if (count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, data) != 0)
     {
-        SERVER_ERROR("0|The delegates name is already registered}");
+        SERVER_ERROR("0|The delegates name is already registered");
     }
 
     // 6) Check overall delegate count
     int delegate_count = count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, "{}");
     if (delegate_count >= BLOCK_VERIFIERS_TOTAL_AMOUNT) {
-      SERVER_ERROR("0|The maximum amount of delegates has been reached}");
+      SERVER_ERROR("0|The maximum amount of delegates has been reached");
     }
 
     // 7) Finally insert a new document
@@ -235,7 +235,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
 
     if (insert_document_into_collection_bson(DATABASE_NAME, DB_COLLECTION_DELEGATES, &bson) != XCASH_OK) {
       bson_destroy(&bson);
-      SERVER_ERROR("0|Failed to insert the delegate document}");
+      SERVER_ERROR("0|Failed to insert the delegate document");
     }
 
     bson_destroy(&bson);
@@ -260,7 +260,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
       // Insert into "statistics" collection
       if (insert_document_into_collection_bson(DATABASE_NAME, DB_COLLECTION_STATISTICS, &bson_statistics) != XCASH_OK) {
         bson_destroy(&bson_statistics);
-        SERVER_ERROR("0|Failed to insert the statistics document}");
+        SERVER_ERROR("0|Failed to insert the statistics document");
       }
 
       bson_destroy(&bson_statistics);
@@ -268,7 +268,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
 #endif
 
     // 8) Success: reply back to the client
-    send_data(client, (unsigned char *)"1|Registered the delegate}", strlen("1|Registered the delegate}"));
+    send_data(client, (unsigned char *)"1|Registered the delegate", strlen("1|Registered the delegate"));
     return;
 
 #undef SERVER_ERROR
@@ -290,7 +290,6 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
   if (strcmp(client->client_ip, "127.0.0.1") != 0 && strcmp(client->client_ip, "::1") != 0) {
     send_data(client, (unsigned char*)"0|FORBIDDEN_NON_LOCAL", strlen("0|FORBIDDEN_NON_LOCAL"));
     INFO_PRINT("Non local");
-    FATAL_ERROR_EXIT("Exiting.....");
     return;
   }
 
@@ -299,7 +298,6 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
   if (!root) {
     send_data(client, (unsigned char *)"0|INVALID_JSON", strlen("0|INVALID_JSON"));
     INFO_PRINT("Invalid json");
-    FATAL_ERROR_EXIT("Exiting.....");
     return;
   }
 
@@ -318,7 +316,6 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
     cJSON_Delete(root);
     send_data(client, (unsigned char*)"0|BAD_FIELDS", strlen("0|BAD_FIELDS"));
     INFO_PRINT("Bad field fields");
-    FATAL_ERROR_EXIT("Exiting.....");
     return;
   }
 
@@ -338,7 +335,6 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
     cJSON_Delete(root);
     send_data(client, (unsigned char *)"0|BAD_FIELD_LEN_OR_NONHEX", strlen("0|BAD_FIELD_LEN_OR_NONHEX"));
     INFO_PRINT("Bad field lenght");
-    FATAL_ERROR_EXIT("Exiting.....");
     return;
   }
 
@@ -367,7 +363,6 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
         INFO_PRINT("Prev Hash mismatch: expected %s, got %s",
                    previous_block_hash, prev_hash_str);
         send_data(client, (unsigned char *)"0|PARENT_HASH_MISMATCH", strlen("0|PARENT_HASH_MISMATCH"));
-        FATAL_ERROR_EXIT("Exiting.....");
         return;
       }
 
@@ -376,14 +371,12 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
         INFO_PRINT("Public key mismatch: expected %s, got %s", producer_refs[0].vrf_public_key, vrf_pubkey_str);
         cJSON_Delete(root);
         send_data(client, (unsigned char *)"0|VRF_PUBKEY_MISMATCH", strlen("0|VRF_PUBKEY_MISMATCH"));
-        FATAL_ERROR_EXIT("Exiting.....");
         return;
       }
       if (strncmp(producer_refs[0].vote_hash_hex, vote_hash_str, VOTE_HASH_LEN) != 0) {
         INFO_PRINT("Vote hash mismatch");
         cJSON_Delete(root);
         send_data(client, (unsigned char *)"0|VOTE_HASH_MISMATCH", strlen("0|VOTE_HASH_MISMATCH"));
-        FATAL_ERROR_EXIT("Exiting.....");
         return;
       }
 
@@ -391,7 +384,6 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
       INFO_PRINT("No delegated selected, took too long");
       cJSON_Delete(root);
       send_data(client, (unsigned char *)"0|DELEGATE_SELECTION_TIMEOUT", strlen("0|DELEGATE_SELECTION_TIMEOUT"));
-      FATAL_ERROR_EXIT("Exiting.....");
       return;
     }
   }

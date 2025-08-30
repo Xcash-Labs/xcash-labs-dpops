@@ -64,9 +64,8 @@ void server_receive_data_socket_node_to_network_data_nodes_get_current_block_ver
     send_data(client, (unsigned char *)out_data, strlen(out_data));
   } else {
     ERROR_PRINT("Failed to build delegate online list (buffer too small or DB error)");
-    send_data(client,
-              (unsigned char *)"0|Could not get a list of the current online delegates}",
-              strlen("0|Could not get a list of the current online delegates}"));
+    send_data(client, (unsigned char *)"0|Could not get a list of the current online delegates",
+      strlen("0|Could not get a list of the current online delegates"));
   }
 }
 
