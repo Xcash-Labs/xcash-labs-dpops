@@ -36,27 +36,6 @@
     } \
 } while (0)
 
-
-
-
-
-#ifndef DEBUG_HEX
-#define DEBUG_HEX(label, data, len) do {                                      \
-    if (log_level >= LOG_LEVEL_INFO) {                                       \
-      fprintf(stderr, "[DEBUG] %s (%zu): ", (label), (size_t)(len));          \
-      for (size_t _i = 0; _i < (size_t)(len); ++_i) {                         \
-        fprintf(stderr, "%02x", ((const unsigned char*)(data))[_i]);          \
-      }                                                                       \
-      fprintf(stderr, "\n");                                                  \
-    }                                                                         \
-} while (0)
-#endif
-
-
-
-
-
-
 #define INFO_PRINT(fmt, ...) do { \
     if (log_level >= LOG_LEVEL_INFO) { \
         time_t raw_time = time(NULL); \
