@@ -492,39 +492,26 @@ bool create_delegates_db_sync_request(int selected_index) {
     return false;
   }
 
-  if (!xcash_wallet_public_address || !*xcash_wallet_public_address ||
-      !sync_token || !*sync_token) {
-    ERROR_PRINT("Missing wallet address or sync token");
-    return false;
-  }
-
   const char* params[] = {
       "public_address", xcash_wallet_public_address,
       "sync_token", sync_token,
       NULL};
 
-  char* message = create_message_param_list(XMSG_NODES_TO_NODES_DATABASE_SYNC_REQ, params);
+  char* message = NULL;
+  message = create_message_param_list(XMSG_NODES_TO_NODES_DATABASE_SYNC_REQ, params);
   if (!message) {
     WARNING_PRINT("create_message_param_list returned NULL for DATABASE_SYNC_REQ");
     return false;
   }
 
+  free(message);
   const char* ip = delegates_all[selected_index].IP_address;
-  if (!ip || !*ip) {
-    ERROR_PRINT("Delegate %d has no IP address", selected_index);
-    free(message);
-    return false;
-  }
 
-  bool ok = (send_message_to_ip_or_hostname(ip, XCASH_DPOPS_PORT, message) == XCASH_OK);
-
-  free(message);  // <-- prevent leak
-
-  if (ok) {
+  if (send_message_to_ip_or_hostname(ip, XCASH_DPOPS_PORT, message) == XCASH_OK) {
     DEBUG_PRINT("Sync request sent to delegate %d (%s)", selected_index, ip);
     return true;
-  } else {
-    WARNING_PRINT("Failed to send sync request to delegate %d (%s)", selected_index, ip);
-    return false;
   }
+
+  WARNING_PRINT("Failed to send sync request to delegate %d (%s)", selected_index, ip);
+  return false;
 }
