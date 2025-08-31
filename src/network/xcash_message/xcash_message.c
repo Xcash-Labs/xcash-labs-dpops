@@ -33,7 +33,7 @@ bool is_walletsign_action_type(xcash_msg_t msg) {
 }
 
 // Create a message with key-value parameters
-char* create_message_param_list__OLD__(xcash_msg_t msg, const char** pair_params) {
+char* create_message_param_list(xcash_msg_t msg, const char** pair_params) {
   char message_buf[BUFFER_SIZE];
   memset(message_buf, 0, sizeof(message_buf));
 
@@ -58,7 +58,7 @@ char* create_message_param_list__OLD__(xcash_msg_t msg, const char** pair_params
   // Check if message is signed
   if (is_walletsign_type(msg)) {
     if (sign_data(message_buf) != XCASH_OK) {
-      ERROR_PRINT("Failed to sign message: %s", xcash_net_messages[msg]);    // jed
+      ERROR_PRINT("Failed to sign message: %s", xcash_net_messages[msg]);
       return NULL;
     }
   }
