@@ -345,6 +345,11 @@ bool generate_and_request_vrf_data_sync(char** message) {
       "delegates_hash", delegates_hash,
       NULL);
 
+  if (*message == NULL) {
+    ERROR_PRINT("create_message_param returned NULL for VRF_DATA");
+    return false;
+  }
+
   return true;
 }
 
@@ -460,7 +465,7 @@ bool block_verifiers_create_vote_majority_result(char** message, int producer_in
   request = NULL;
 
   if (*message == NULL) {
-    ERROR_PRINT("Function: block_verifiers_create_vote_majority_result - Failed to create message");
+    ERROR_PRINT("create_message_param returned NULL for VOTE_MAJORITY_RESULTS");
     return false;
   }
 
@@ -487,20 +492,39 @@ bool create_delegates_db_sync_request(int selected_index) {
     return false;
   }
 
+  if (!xcash_wallet_public_address || !*xcash_wallet_public_address ||
+      !sync_token || !*sync_token) {
+    ERROR_PRINT("Missing wallet address or sync token");
+    return false;
+  }
+
   const char* params[] = {
       "public_address", xcash_wallet_public_address,
       "sync_token", sync_token,
       NULL};
 
-  char* message = NULL;
-  message = create_message_param_list(XMSG_NODES_TO_NODES_DATABASE_SYNC_REQ, params);
-  const char* ip = delegates_all[selected_index].IP_address;
-
-  if (send_message_to_ip_or_hostname(ip, XCASH_DPOPS_PORT, message) == XCASH_OK) {
-    DEBUG_PRINT("Sync request sent to delegate %d (%s)", selected_index, ip);
-    return true;
+  char* message = create_message_param_list(XMSG_NODES_TO_NODES_DATABASE_SYNC_REQ, params);
+  if (!message) {
+    WARNING_PRINT("create_message_param_list returned NULL for DATABASE_SYNC_REQ");
+    return false;
   }
 
-  WARNING_PRINT("Failed to send sync request to delegate %d (%s)", selected_index, ip);
-  return false;
+  const char* ip = delegates_all[selected_index].IP_address;
+  if (!ip || !*ip) {
+    ERROR_PRINT("Delegate %d has no IP address", selected_index);
+    free(message);
+    return false;
+  }
+
+  bool ok = (send_message_to_ip_or_hostname(ip, XCASH_DPOPS_PORT, message) == XCASH_OK);
+
+  free(message);  // <-- prevent leak
+
+  if (ok) {
+    DEBUG_PRINT("Sync request sent to delegate %d (%s)", selected_index, ip);
+    return true;
+  } else {
+    WARNING_PRINT("Failed to send sync request to delegate %d (%s)", selected_index, ip);
+    return false;
+  }
 }
