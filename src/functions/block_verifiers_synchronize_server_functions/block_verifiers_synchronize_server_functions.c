@@ -94,6 +94,8 @@ void server_receive_data_socket_node_to_node_db_sync_req(server_client_t *client
   bson_error_t error;
   char incoming_token[SYNC_TOKEN_LEN + 1] = {0};
 
+  INFO_PRINT("Incomming Message: %s", MESSAGE);
+
   // Extract sync_token from the incoming MESSAGE
   cJSON *root = cJSON_Parse(MESSAGE);
   if (root) {
