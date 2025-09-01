@@ -202,7 +202,7 @@ void server_receive_data_socket_node_to_node_db_sync_data(const char *MESSAGE) {
     return;
   }
 
-  // 2) Get "json" container
+  // 2) Get "json" container (must be an object of numbered docs)
   cJSON *json_field = cJSON_GetObjectItemCaseSensitive(root, "json");
   if (!json_field || !cJSON_IsObject(json_field)) {
     ERROR_PRINT("Field 'json' not found or not a JSON object");
@@ -232,55 +232,41 @@ void server_receive_data_socket_node_to_node_db_sync_data(const char *MESSAGE) {
     return;
   }
 
-  // 4) Build an ARRAY from the object members 0,1,2,... (skip "sync_token")
-  cJSON *payload_array = cJSON_CreateArray();
-  if (!payload_array) {
-    ERROR_PRINT("Failed to allocate payload array");
-    cJSON_Delete(root);
-    return;
-  }
+  // 4) Remove sync_token so the payload shape matches the old one (object of numbered docs)
+  cJSON_DeleteItemFromObjectCaseSensitive(json_field, "sync_token");
 
-  int added = 0;
+  // (Optional) quick sanity: ensure there is at least one numbered object
+  int doc_count = 0;
   for (cJSON *it = json_field->child; it; it = it->next) {
-    const char *key = it->string ? it->string : "";
-    if (strcmp(key, "sync_token") == 0) continue;      // skip token
-    if (!cJSON_IsObject(it)) continue;                  // only accept objects
-    cJSON *dup = cJSON_Duplicate(it, 1);                // deep copy item
-    if (!dup) { ERROR_PRINT("Failed to duplicate JSON item '%s'", key); continue; }
-    cJSON_AddItemToArray(payload_array, dup);
-    ++added;
+    if (it->string && cJSON_IsObject(it)) ++doc_count;
   }
-
-  if (added == 0) {
-    ERROR_PRINT("DB sync payload empty: no documents under 'json' (excluding 'sync_token')");
-    cJSON_Delete(payload_array);
+  if (doc_count == 0) {
+    ERROR_PRINT("DB sync payload empty: no documents under 'json'");
     cJSON_Delete(root);
     return;
   }
+  INFO_PRINT("DB sync payload object contains %d documents", doc_count);
 
-  // 5) Serialize ONLY the array to JSON
-  char *json_compact = cJSON_PrintUnformatted(payload_array);
-  cJSON_Delete(payload_array);
+  // 5) Serialize the OBJECT (not an array) exactly like before
+  char *json_compact = cJSON_PrintUnformatted(json_field);
   cJSON_Delete(root);
   if (!json_compact) {
-    ERROR_PRINT("Failed to serialize payload array");
+    ERROR_PRINT("Failed to serialize 'json' object");
     return;
   }
-
-  // Optional guard: ensure we’re passing an array to libbson
-  if (json_compact[0] != '[') {
-    ERROR_PRINT("Upsert expects an array; got non-array JSON");
+  if (json_compact[0] != '{') {
+    ERROR_PRINT("Upsert expects an object of documents; got non-object JSON");
     free(json_compact);
     return;
   }
 
-  // 6) Convert JSON array -> BSON
+  // 6) Convert JSON -> BSON
   bson_error_t error;
   bson_t *doc = bson_new_from_json((const uint8_t *)json_compact, -1, &error);
   free(json_compact);
 
   if (!doc) {
-    ERROR_PRINT("Failed to parse BSON from payload array JSON: %s", error.message);
+    ERROR_PRINT("Failed to parse BSON from JSON: %s", error.message);
     return;
   }
   if (doc->len == 0) {
@@ -307,6 +293,7 @@ void server_receive_data_socket_node_to_node_db_sync_data(const char *MESSAGE) {
   }
 
   pthread_mutex_unlock(&delegates_all_lock);
-
   bson_destroy(doc);
+
+  INFO_PRINT("Successfully updated delegates database from sync message");
 }
