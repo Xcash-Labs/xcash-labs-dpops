@@ -282,29 +282,29 @@ void server_receive_data_socket_node_to_node_db_sync_data(const char *MESSAGE) {
   INFO_PRINT("Message: %s", MESSAGE);
 
   char tmp_token[SYNC_TOKEN_LEN + 1] = {0};
+
+  // 1) Parse root JSON
   cJSON *root = cJSON_Parse(MESSAGE);
   if (!root) {
     ERROR_PRINT("Failed to parse root JSON message");
     return;
   }
 
-  // ---- 1) Extract sync_token (top-level preferred; fallback to json.sync_token) ----
-  const cJSON *token_item = cJSON_GetObjectItemCaseSensitive(root, "sync_token");
-  if (!token_item || !cJSON_IsString(token_item) || !token_item->valuestring) {
-    // fallback: nested under "json"
-    const cJSON *json_field_for_token = cJSON_GetObjectItemCaseSensitive(root, "json");
-    if (json_field_for_token && cJSON_IsObject(json_field_for_token)) {
-      token_item = cJSON_GetObjectItemCaseSensitive(json_field_for_token, "sync_token");
-    }
+  // 2) Get "json" container
+  cJSON *json_field = cJSON_GetObjectItemCaseSensitive(root, "json");
+  if (!json_field || !cJSON_IsObject(json_field)) {
+    ERROR_PRINT("Field 'json' not found or not a JSON object");
+    cJSON_Delete(root);
+    return;
   }
 
+  // 3) Extract and verify sync_token (inside "json")
+  cJSON *token_item = cJSON_GetObjectItemCaseSensitive(json_field, "sync_token");
   if (!token_item || !cJSON_IsString(token_item) || !token_item->valuestring) {
     ERROR_PRINT("Field 'sync_token' not found or not a valid string");
     cJSON_Delete(root);
     return;
   }
-
-  // Copy & validate token length
   size_t toklen = strnlen(token_item->valuestring, SYNC_TOKEN_LEN + 1);
   if (toklen != SYNC_TOKEN_LEN) {
     ERROR_PRINT("sync_token wrong length: %zu (expected %d)", toklen, SYNC_TOKEN_LEN);
@@ -320,73 +320,66 @@ void server_receive_data_socket_node_to_node_db_sync_data(const char *MESSAGE) {
     return;
   }
 
-  // ---- 2) Locate the ARRAY payload to upsert (not the whole 'json' object) ----
-  cJSON *json_field = cJSON_GetObjectItemCaseSensitive(root, "json");
-  cJSON *payload = NULL;
-
-  if (json_field) {
-    if (cJSON_IsArray(json_field)) {
-      // old format: json is directly the array
-      payload = json_field;
-    } else if (cJSON_IsObject(json_field)) {
-      // new format: json is an object; try common keys first
-      payload = cJSON_GetObjectItemCaseSensitive(json_field, "delegates");
-      if (!(payload && cJSON_IsArray(payload)))
-        payload = cJSON_GetObjectItemCaseSensitive(json_field, "data");
-
-      // fallback: first array child under json
-      if (!(payload && cJSON_IsArray(payload))) {
-        for (cJSON *it = json_field->child; it; it = it->next) {
-          if (cJSON_IsArray(it)) { payload = it; break; }
-        }
-      }
-    } else {
-      ERROR_PRINT("'json' is neither array nor object");
-      cJSON_Delete(root);
-      return;
-    }
-  } else {
-    // No "json" field: try top-level common keys
-    payload = cJSON_GetObjectItemCaseSensitive(root, "delegates");
-    if (!(payload && cJSON_IsArray(payload)))
-      payload = cJSON_GetObjectItemCaseSensitive(root, "data");
-  }
-
-  if (!(payload && cJSON_IsArray(payload))) {
-    ERROR_PRINT("DB sync payload array not found (expected 'delegates' or 'data' array)");
+  // 4) Build an ARRAY from the object members 0,1,2,... (skip "sync_token")
+  cJSON *payload_array = cJSON_CreateArray();
+  if (!payload_array) {
+    ERROR_PRINT("Failed to allocate payload array");
     cJSON_Delete(root);
     return;
   }
 
-  int elem_count = cJSON_GetArraySize(payload);
-  INFO_PRINT("DB sync payload array size: %d", elem_count);
+  int added = 0;
+  for (cJSON *it = json_field->child; it; it = it->next) {
+    const char *key = it->string ? it->string : "";
+    if (strcmp(key, "sync_token") == 0) continue;      // skip token
+    if (!cJSON_IsObject(it)) continue;                  // only accept objects
+    cJSON *dup = cJSON_Duplicate(it, 1);                // deep copy item
+    if (!dup) { ERROR_PRINT("Failed to duplicate JSON item '%s'", key); continue; }
+    cJSON_AddItemToArray(payload_array, dup);
+    ++added;
+  }
 
-  // ---- 3) Serialize ONLY the array and convert to BSON ----
-  char *json_compact = cJSON_PrintUnformatted(payload);
+  if (added == 0) {
+    ERROR_PRINT("DB sync payload empty: no documents under 'json' (excluding 'sync_token')");
+    cJSON_Delete(payload_array);
+    cJSON_Delete(root);
+    return;
+  }
+
+  INFO_PRINT("DB sync payload array size: %d", added);
+
+  // 5) Serialize ONLY the array to JSON
+  char *json_compact = cJSON_PrintUnformatted(payload_array);
+  cJSON_Delete(payload_array);
+  cJSON_Delete(root);
   if (!json_compact) {
     ERROR_PRINT("Failed to serialize payload array");
-    cJSON_Delete(root);
     return;
   }
 
+  // Optional guard: ensure we’re passing an array to libbson
+  if (json_compact[0] != '[') {
+    ERROR_PRINT("Upsert expects an array; got non-array JSON");
+    free(json_compact);
+    return;
+  }
+
+  // 6) Convert JSON array -> BSON
   bson_error_t error;
   bson_t *doc = bson_new_from_json((const uint8_t *)json_compact, -1, &error);
   free(json_compact);
-  cJSON_Delete(root);
 
   if (!doc) {
     ERROR_PRINT("Failed to parse BSON from payload array JSON: %s", error.message);
     return;
   }
-
-  // Optional: sanity (defensive) – ensure underlying buffer exists
   if (doc->len == 0) {
     ERROR_PRINT("Constructed BSON has zero length");
     bson_destroy(doc);
     return;
   }
 
-  // ---- 4) Replace collection contents with new data ----
+  // 7) Replace collection contents
   pthread_mutex_lock(&delegates_all_lock);
 
   if (!db_drop(DATABASE_NAME, DB_COLLECTION_DELEGATES, &error)) {
