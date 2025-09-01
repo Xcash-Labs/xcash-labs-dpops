@@ -60,7 +60,7 @@ void server_receive_data_socket_node_to_network_data_nodes_get_current_block_ver
   bool ok = create_delegate_online_ip_list(out_data, sizeof(out_data));
 
   if (ok) {
-    INFO_PRINT("Generated JSON (%zu bytes):\n%s\n", strlen(out_data), out_data);
+    DEBUG_PRINT("Generated JSON (%zu bytes):\n%s\n", strlen(out_data), out_data);
     send_data(client, (unsigned char *)out_data, strlen(out_data));
   } else {
     ERROR_PRINT("Failed to build delegate online list (buffer too small or DB error)");
@@ -110,8 +110,6 @@ void server_receive_data_socket_node_to_node_db_sync_req(server_client_t *client
     ERROR_PRINT("cJSON parse failed");  // <-- added missing semicolon
     return;
   }
-
-  INFO_PRINT("sync_token: %s", incoming_token);
 
   if (incoming_token[0] == '\0') {
     ERROR_PRINT("Failed to read sync_token");
@@ -191,8 +189,6 @@ void server_receive_data_socket_node_to_node_db_sync_data__OLD__(const char *MES
     return;
   }
 
-  INFO_PRINT("Message: %s", MESSAGE);
-
   char tmp_token[SYNC_TOKEN_LEN + 1] = {0};
 
   // Parse the incoming message into cJSON
@@ -267,9 +263,7 @@ void server_receive_data_socket_node_to_node_db_sync_data__OLD__(const char *MES
 
   pthread_mutex_unlock(&delegates_all_lock);
 
-  INFO_PRINT("Successfully updated delegates database from sync message");
   bson_destroy(doc);
-
   return;
 }
 
@@ -278,8 +272,6 @@ void server_receive_data_socket_node_to_node_db_sync_data(const char *MESSAGE) {
     ERROR_PRINT("Received null MESSAGE in sync data handler");
     return;
   }
-
-  INFO_PRINT("Message: %s", MESSAGE);
 
   char tmp_token[SYNC_TOKEN_LEN + 1] = {0};
 
@@ -346,8 +338,6 @@ void server_receive_data_socket_node_to_node_db_sync_data(const char *MESSAGE) {
     return;
   }
 
-  INFO_PRINT("DB sync payload array size: %d", added);
-
   // 5) Serialize ONLY the array to JSON
   char *json_compact = cJSON_PrintUnformatted(payload_array);
   cJSON_Delete(payload_array);
@@ -398,6 +388,5 @@ void server_receive_data_socket_node_to_node_db_sync_data(const char *MESSAGE) {
 
   pthread_mutex_unlock(&delegates_all_lock);
 
-  INFO_PRINT("Successfully updated delegates database from sync message");
   bson_destroy(doc);
 }
