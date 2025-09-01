@@ -94,6 +94,8 @@ void server_receive_data_socket_node_to_node_db_sync_req(server_client_t *client
   bson_error_t error;
   char incoming_token[SYNC_TOKEN_LEN + 1] = {0};
 
+  INFO_PRINT("Req Message: %s", MESSAGE);
+
   // Extract sync_token from the incoming MESSAGE
   cJSON *root = cJSON_Parse(MESSAGE);
   if (root) {
@@ -183,95 +185,13 @@ void server_receive_data_socket_node_to_node_db_sync_req(server_client_t *client
  *
  * @param MESSAGE The full raw JSON message string received from another node.
  ---------------------------------------------------------------------------------------------------------*/
-void server_receive_data_socket_node_to_node_db_sync_data__OLD__(const char *MESSAGE) {
-  if (!MESSAGE) {
-    ERROR_PRINT("Received null MESSAGE in sync data handler");
-    return;
-  }
-
-  char tmp_token[SYNC_TOKEN_LEN + 1] = {0};
-
-  // Parse the incoming message into cJSON
-  cJSON *root = cJSON_Parse(MESSAGE);
-  if (!root) {
-    ERROR_PRINT("Failed to parse root JSON message");
-    return;
-  }
-
-  // Extract the embedded JSON object from "json"
-  cJSON *json_field = cJSON_GetObjectItemCaseSensitive(root, "json");
-  if (!json_field || !cJSON_IsObject(json_field)) {
-    ERROR_PRINT("Field 'json' not found or not a JSON object");
-    cJSON_Delete(root);
-    return;
-  }
-
-  // Extract "sync_token" from the JSON object
-  cJSON *token_item = cJSON_GetObjectItemCaseSensitive(json_field, "sync_token");
-  if (!token_item || !cJSON_IsString(token_item) || token_item->valuestring == NULL) {
-    ERROR_PRINT("Field 'sync_token' not found or not a valid string");
-    cJSON_Delete(root);
-    return;
-  }
-
-  // Copy the token into tmp_token safely
-  strncpy(tmp_token, token_item->valuestring, SYNC_TOKEN_LEN);
-  tmp_token[SYNC_TOKEN_LEN] = '\0';  // Ensure null-termination
-
-  // Optional: verify sync token now
-  if (strcmp(tmp_token, sync_token) != 0) {
-    ERROR_PRINT("Skipping db sync, invalid sync_token received: %s", tmp_token);
-    cJSON_Delete(root);
-    return;
-  }
-
-  // Serialize the "json" object into a compact string
-  char *json_compact = cJSON_PrintUnformatted(json_field);
-  if (!json_compact) {
-    ERROR_PRINT("Failed to serialize 'json' field");
-    cJSON_Delete(root);
-    return;
-  }
-
-  // Convert the JSON string to BSON
-  bson_error_t error;
-  bson_t *doc = bson_new_from_json((const uint8_t *)json_compact, -1, &error);
-  free(json_compact);
-  cJSON_Delete(root);
-
-  if (!doc) {
-    ERROR_PRINT("Failed to parse BSON from JSON: %s", error.message);
-    return;
-  }
-
-  pthread_mutex_lock(&delegates_all_lock);
-  // Drop old delegates collection before sync
-  if (!db_drop(DATABASE_NAME, DB_COLLECTION_DELEGATES, &error)) {
-    ERROR_PRINT("Failed to clear old delegates table before sync: %s", error.message);
-    bson_destroy(doc);
-    pthread_mutex_unlock(&delegates_all_lock);
-    return;
-  }
-
-  // Insert new delegate data
-  if (!db_upsert_multi_docs(DATABASE_NAME, DB_COLLECTION_DELEGATES, doc, &error)) {
-    ERROR_PRINT("Failed to upsert delegates sync data: %s", error.message);
-    bson_destroy(doc);
-    pthread_mutex_unlock(&delegates_all_lock);
-    return;
-  }
-
-  pthread_mutex_unlock(&delegates_all_lock);
-
-  bson_destroy(doc);
-  return;
-}
-
 void server_receive_data_socket_node_to_node_db_sync_data(const char *MESSAGE) {
   if (!MESSAGE) {
     ERROR_PRINT("Received null MESSAGE in sync data handler");
     return;
   }
+
+  INFO_PRINT("Data Message: %s", MESSAGE);
 
   char tmp_token[SYNC_TOKEN_LEN + 1] = {0};
 
