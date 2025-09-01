@@ -110,6 +110,8 @@ void server_receive_data_socket_node_to_node_db_sync_req(server_client_t *client
     cJSON_Delete(root);
   }
 
+  INFO_PRINT("sync_token: %s", incoming_token);
+
   if (!db_export_collection_to_bson(DATABASE_NAME, DB_COLLECTION_DELEGATES, &reply, &error)) {
     ERROR_PRINT("Failed to export collection: %s", error.message);
     return;
@@ -149,7 +151,7 @@ void server_receive_data_socket_node_to_node_db_sync_req(server_client_t *client
   if (send_message_to_ip_or_hostname(client->client_ip, XCASH_DPOPS_PORT, message_str) != XCASH_OK) {
     ERROR_PRINT("Failed to send the DB sync message to %s", client->client_ip);
   } else {
-    INFO_PRINT("Sent delegate sync message to %s", client->client_ip);
+    DEBUG_PRINT("Sent delegate sync message to %s", client->client_ip);
   }
 
   free(message_str);
