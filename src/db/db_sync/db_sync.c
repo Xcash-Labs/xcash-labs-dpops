@@ -252,6 +252,7 @@ int select_random_online_delegate(void) {
         seeded = 1;
     }
 
+    
     int random_index = rand() % eligible_count;
     return eligible_indices[random_index];
 }
