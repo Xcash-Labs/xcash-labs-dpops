@@ -254,6 +254,6 @@ int select_random_online_delegate(void) {
 
     int random_index = rand() % eligible_count;
 //    return eligible_indices[random_index];
-    return 1;
+    return 0;
 
 }
