@@ -183,6 +183,8 @@ void server_receive_data_socket_node_to_node_db_sync_data(const char *MESSAGE) {
     return;
   }
 
+  INFO_PRINT("Message: %s", MESSAGE);
+
   char tmp_token[SYNC_TOKEN_LEN + 1] = {0};
 
   // Parse the incoming message into cJSON

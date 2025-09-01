@@ -212,7 +212,7 @@ xcash_round_result_t process_round(void) {
     return ROUND_ERROR;
   }
 
-  INFO_PRINT_STATUS_OK("Data majority reached. Online Nodes: [%d/%d]", nodes_majority_count, required_majority);
+  INFO_PRINT_STATUS_OK("Data majority reached. Online Nodes / Required Majority: [%d/%d]", nodes_majority_count, required_majority);
 
   INFO_STAGE_PRINT("Part 6 - Select Block Creator From VRF Data");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 6);
