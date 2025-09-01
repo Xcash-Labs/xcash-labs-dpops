@@ -495,7 +495,7 @@ void start_block_production(void) {
     snprintf(current_round_part, sizeof(current_round_part), "%d", 12);
     int wait_min = 55;
     if (round_result == ROUND_ERROR) {
-      wait_min = 45
+      wait_min = 45;
     }
     if (sync_block_verifiers_minutes_and_seconds(0, wait_min) == XCASH_ERROR) {
       INFO_PRINT("Failed to Confirm Block Creator in the allotted time, skipping round");
