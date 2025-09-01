@@ -493,7 +493,11 @@ void start_block_production(void) {
     // Final step - Wait for block creation and DB Updates
     INFO_STAGE_PRINT("Part 12 - Wait for Block Creation");
     snprintf(current_round_part, sizeof(current_round_part), "%d", 12);
-    if (sync_block_verifiers_minutes_and_seconds(0, 55) == XCASH_ERROR) {
+    int wait_min = 55;
+    if (round_result == ROUND_ERROR) {
+      wait_min = 45
+    }
+    if (sync_block_verifiers_minutes_and_seconds(0, wait_min) == XCASH_ERROR) {
       INFO_PRINT("Failed to Confirm Block Creator in the allotted time, skipping round");
       goto end_of_round_skip_block;
     }
