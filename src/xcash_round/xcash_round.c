@@ -570,9 +570,8 @@ void start_block_production(void) {
           goto end_of_round_skip_block;
         }
 
-        // ** update the statistics collection **
+        // ** update the statistics collection (simple upsert by public_key) **
         {
-          // Reuse one stats handle for all delegates
           mongoc_collection_t* stats =
               mongoc_client_get_collection(c, DATABASE_NAME, DB_COLLECTION_STATISTICS);
           if (!stats) {
@@ -582,106 +581,51 @@ void start_block_production(void) {
           }
 
           for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
-
-            if (strnlen(delegates_all[i].public_address, XCASH_WALLET_LENGTH + 1) == 0) continue;
-            if (strnlen(delegates_all[i].public_key, VRF_PUBLIC_KEY_LENGTH + 1) == 0) continue;
+            if (!delegates_all[i].public_key[0]) continue;
+            if (!delegates_all[i].public_address[0]) continue;
 
             const bool online = (strcmp(delegates_all[i].online_status, "true") == 0);
             const bool is_verifier = (i < BLOCK_VERIFIERS_AMOUNT);
             const bool is_producer = is_verifier &&
                                      (strcmp(delegates_all[i].public_address, producer_refs[0].public_address) == 0);
 
-            // Filter: { public_key, $or:[ {last_counted_block:{ $lt: cbheight }}, {last_counted_block:{ $exists:false }}] }
+            // filter: { public_key: <hex> }
             bson_t filter;
             bson_init(&filter);
             BSON_APPEND_UTF8(&filter, "public_key", delegates_all[i].public_key);
 
-            bson_t or0;
-            bson_init(&or0);
-            bson_t lt;
-            bson_init(&lt);
-            BSON_APPEND_INT64(&lt, "$lt", (int64_t)cbheight);
-            BSON_APPEND_DOCUMENT(&or0, "last_counted_block", &lt);
-            bson_destroy(&lt);
-
-            bson_t or1;
-            bson_init(&or1);
-            bson_t exists;
-            bson_init(&exists);
-            BSON_APPEND_BOOL(&exists, "$exists", false);
-            BSON_APPEND_DOCUMENT(&or1, "last_counted_block", &exists);
-            bson_destroy(&exists);
-
-            // Attach $or array
-            {
-              bson_t arr;
-              bson_append_array_begin(&filter, "$or", -1, &arr);
-              const char* key;
-              char keybuf[16];
-              bson_uint32_to_string(0, &key, keybuf, sizeof keybuf);
-              bson_append_document(&arr, key, -1, &or0);
-              bson_uint32_to_string(1, &key, keybuf, sizeof keybuf);
-              bson_append_document(&arr, key, -1, &or1);
-              bson_append_array_end(&filter, &arr);
-            }
-            bson_destroy(&or0);
-            bson_destroy(&or1);
-
-            // $inc for correct uptime % semantics
+            // $inc: bump counters by 0/1 (ok to $inc by 0)
             bson_t inc;
             bson_init(&inc);
+            BSON_APPEND_INT64(&inc, "block_verifier_total_rounds", is_verifier ? 1 : 0);
+            BSON_APPEND_INT64(&inc, "block_verifier_online_total_rounds", (is_verifier && online) ? 1 : 0);
+            BSON_APPEND_INT64(&inc, "block_producer_total_rounds", is_producer ? 1 : 0);
 
-            // Count every round where the delegate is an active verifier
-            if (is_verifier) {
-              BSON_APPEND_INT64(&inc, "block_verifier_total_rounds", 1);
-            }
-
-            // Count online only when the delegate is in the active verifier set
-            if (is_verifier && online) {
-              BSON_APPEND_INT64(&inc, "block_verifier_online_total_rounds", 1);
-            }
-
-            // Count producer selection
-            if (is_producer) {
-              BSON_APPEND_INT64(&inc, "block_producer_total_rounds", 1);
-            }
-
-            // Always bump watermark
+            // $set: watermark (and optionally keep identity fields fresh)
             bson_t set;
             bson_init(&set);
             BSON_APPEND_INT64(&set, "last_counted_block", (int64_t)cbheight);
 
-            // Defaults for inserts
-            bson_t soi;
-            bson_init(&soi);
-            BSON_APPEND_UTF8(&soi, "public_key", delegates_all[i].public_key);
-
-            // Build update doc
+            // update = { $inc: {...}, $set: {...} }
             bson_t update;
             bson_init(&update);
-            if (bson_count_keys(&inc) > 0) {
-              BSON_APPEND_DOCUMENT(&update, "$inc", &inc);
-            }
+            BSON_APPEND_DOCUMENT(&update, "$inc", &inc);
             BSON_APPEND_DOCUMENT(&update, "$set", &set);
-            BSON_APPEND_DOCUMENT(&update, "$setOnInsert", &soi);
 
-            // Upsert true
+            // opts: upsert: true (so the row is created if missing)
             bson_t opts;
             bson_init(&opts);
             BSON_APPEND_BOOL(&opts, "upsert", true);
 
-            // Execute
             bson_error_t err;
-            bool ok = mongoc_collection_update_one(stats, &filter, &update, &opts, NULL, &err);
-            if (!ok) {
-              ERROR_PRINT("stats update failed pk=%.12s… h=%llu: %s",
+            if (!mongoc_collection_update_one(stats, &filter, &update, &opts, NULL, &err)) {
+              ERROR_PRINT("stats upsert failed pk=%.12s… h=%llu: %s",
                           delegates_all[i].public_key, (unsigned long long)cbheight, err.message);
             }
 
-            // Cleanup
+            // cleanup
             bson_destroy(&opts);
             bson_destroy(&update);
-            bson_destroy(&soi);
             bson_destroy(&set);
             bson_destroy(&inc);
             bson_destroy(&filter);
