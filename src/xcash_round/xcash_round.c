@@ -570,7 +570,7 @@ void start_block_production(void) {
           goto end_of_round_skip_block;
         }
 
-        // ** update the statistics collection (simple upsert by public_key) **
+        // ** update the statistics collection (one increment per height, keyed by public_key) **
         {
           mongoc_collection_t* stats =
               mongoc_client_get_collection(c, DATABASE_NAME, DB_COLLECTION_STATISTICS);
@@ -589,19 +589,42 @@ void start_block_production(void) {
             const bool is_producer = is_verifier &&
                                      (strcmp(delegates_all[i].public_address, producer_refs[0].public_address) == 0);
 
-            // filter: { public_key: <hex> }
+            // Filter: by public_key AND only if we haven't counted this height yet
             bson_t filter;
             bson_init(&filter);
             BSON_APPEND_UTF8(&filter, "public_key", delegates_all[i].public_key);
 
-            // $inc: bump counters by 0/1 (ok to $inc by 0)
+            bson_t arr, or0, or1, lt, exists;
+            bson_append_array_begin(&filter, "$or", -1, &arr);
+
+            // { last_counted_block: { $lt: cbheight } }
+            bson_init(&or0);
+            bson_init(&lt);
+            BSON_APPEND_INT64(&lt, "$lt", (int64_t)cbheight);
+            BSON_APPEND_DOCUMENT(&or0, "last_counted_block", &lt);
+            bson_destroy(&lt);
+            bson_append_document(&arr, "0", -1, &or0);
+            bson_destroy(&or0);
+
+            // { last_counted_block: { $exists: false } }
+            bson_init(&or1);
+            bson_init(&exists);
+            BSON_APPEND_BOOL(&exists, "$exists", false);
+            BSON_APPEND_DOCUMENT(&or1, "last_counted_block", &exists);
+            bson_destroy(&exists);
+            bson_append_document(&arr, "1", -1, &or1);
+            bson_destroy(&or1);
+
+            bson_append_array_end(&filter, &arr);
+
+            // $inc counters (Mongo is fine with 0)
             bson_t inc;
             bson_init(&inc);
             BSON_APPEND_INT64(&inc, "block_verifier_total_rounds", is_verifier ? 1 : 0);
             BSON_APPEND_INT64(&inc, "block_verifier_online_total_rounds", (is_verifier && online) ? 1 : 0);
             BSON_APPEND_INT64(&inc, "block_producer_total_rounds", is_producer ? 1 : 0);
 
-            // $set: watermark (and optionally keep identity fields fresh)
+            // $set watermark
             bson_t set;
             bson_init(&set);
             BSON_APPEND_INT64(&set, "last_counted_block", (int64_t)cbheight);
@@ -612,19 +635,14 @@ void start_block_production(void) {
             BSON_APPEND_DOCUMENT(&update, "$inc", &inc);
             BSON_APPEND_DOCUMENT(&update, "$set", &set);
 
-            // opts: upsert: true (so the row is created if missing)
-            bson_t opts;
-            bson_init(&opts);
-            BSON_APPEND_BOOL(&opts, "upsert", true);
-
+            // IMPORTANT: no upsert here (docs are created at startup/registration)
             bson_error_t err;
-            if (!mongoc_collection_update_one(stats, &filter, &update, &opts, NULL, &err)) {
-              ERROR_PRINT("stats upsert failed pk=%.12s… h=%llu: %s",
+            if (!mongoc_collection_update_one(stats, &filter, &update, /*opts*/ NULL, NULL, &err)) {
+              ERROR_PRINT("stats update failed pk=%.12s… h=%llu: %s",
                           delegates_all[i].public_key, (unsigned long long)cbheight, err.message);
             }
 
             // cleanup
-            bson_destroy(&opts);
             bson_destroy(&update);
             bson_destroy(&set);
             bson_destroy(&inc);
