@@ -1101,3 +1101,90 @@ bool add_indexes(void) {
   mongoc_client_pool_push(database_client_thread_pool, client);
   return ok;
 }
+
+bool update_statistics(void) {
+  // ** update the statistics collection (one increment per height, keyed by public_key) **
+  mongoc_client_t* c = mongoc_client_pool_pop(database_client_thread_pool);
+  if (!c) {
+    ERROR_PRINT("Mongo client pop failed");
+    return false;
+  }
+  mongoc_collection_t* stats = mongoc_client_get_collection(c, DATABASE_NAME, DB_COLLECTION_STATISTICS);
+  if (!stats) {
+    ERROR_PRINT("get_collection(%s) failed", DB_COLLECTION_STATISTICS);
+    mongoc_client_pool_push(database_client_thread_pool, c);
+    return false;
+  }
+
+  for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
+    if (!delegates_all[i].public_key[0]) continue;
+    if (!delegates_all[i].public_address[0]) continue;
+
+    const bool online = (strcmp(delegates_all[i].online_status, "true") == 0);
+    const bool is_verifier = (i < BLOCK_VERIFIERS_AMOUNT);
+    const bool is_producer = is_verifier &&
+                             (strcmp(delegates_all[i].public_address, producer_refs[0].public_address) == 0);
+
+    // Filter: by public_key AND only if we haven't counted this height yet
+    bson_t filter;
+    bson_init(&filter);
+    BSON_APPEND_UTF8(&filter, "public_key", delegates_all[i].public_key);
+
+    bson_t arr, or0, or1, lt, exists;
+    bson_append_array_begin(&filter, "$or", -1, &arr);
+
+    // { last_counted_block: { $lt: cbheight } }
+    bson_init(&or0);
+    bson_init(&lt);
+    BSON_APPEND_INT64(&lt, "$lt", (int64_t)cbheight);
+    BSON_APPEND_DOCUMENT(&or0, "last_counted_block", &lt);
+    bson_destroy(&lt);
+    bson_append_document(&arr, "0", -1, &or0);
+    bson_destroy(&or0);
+
+    // { last_counted_block: { $exists: false } }
+    bson_init(&or1);
+    bson_init(&exists);
+    BSON_APPEND_BOOL(&exists, "$exists", false);
+    BSON_APPEND_DOCUMENT(&or1, "last_counted_block", &exists);
+    bson_destroy(&exists);
+    bson_append_document(&arr, "1", -1, &or1);
+    bson_destroy(&or1);
+
+    bson_append_array_end(&filter, &arr);
+
+    // $inc counters (Mongo is fine with 0)
+    bson_t inc;
+    bson_init(&inc);
+    BSON_APPEND_INT64(&inc, "block_verifier_total_rounds", is_verifier ? 1 : 0);
+    BSON_APPEND_INT64(&inc, "block_verifier_online_total_rounds", (is_verifier && online) ? 1 : 0);
+    BSON_APPEND_INT64(&inc, "block_producer_total_rounds", is_producer ? 1 : 0);
+
+    // $set watermark
+    bson_t set;
+    bson_init(&set);
+    BSON_APPEND_INT64(&set, "last_counted_block", (int64_t)cbheight);
+
+    // update = { $inc: {...}, $set: {...} }
+    bson_t update;
+    bson_init(&update);
+    BSON_APPEND_DOCUMENT(&update, "$inc", &inc);
+    BSON_APPEND_DOCUMENT(&update, "$set", &set);
+
+    // IMPORTANT: no upsert here (docs are created at startup/registration)
+    bson_error_t err;
+    if (!mongoc_collection_update_one(stats, &filter, &update, /*opts*/ NULL, NULL, &err)) {
+      ERROR_PRINT("stats update failed pk=%.12s… h=%llu: %s",
+                  delegates_all[i].public_key, (unsigned long long)cbheight, err.message);
+    }
+
+    // cleanup
+    bson_destroy(&update);
+    bson_destroy(&set);
+    bson_destroy(&inc);
+    bson_destroy(&filter);
+  }
+
+  mongoc_collection_destroy(stats);
+  mongoc_client_pool_push(database_client_thread_pool, c);
+}
