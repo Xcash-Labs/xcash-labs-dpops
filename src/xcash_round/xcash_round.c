@@ -97,24 +97,26 @@ xcash_round_result_t process_round(void) {
   }
   DEBUG_PRINT("Found %d active delegates out of %d total slots", total_delegates, BLOCK_VERIFIERS_TOTAL_AMOUNT);
 
-  // Get the previous block hash and check to make sure it changed from last round
-  snprintf(previous_round_block_hash, sizeof previous_round_block_hash, "%s", previous_block_hash);
-  for (int attempt = 1; attempt <= 2; ++attempt) {
-    memset(previous_block_hash, 0, BLOCK_HASH_LENGTH + 1);
-    if (get_previous_block_hash(previous_block_hash) != XCASH_OK) {
-      ERROR_PRINT("Can't get previous block hash");
-      return ROUND_SKIP;
+  if (last_round_success) {
+    // Get the previous block hash and check to make sure it changed from last round
+    snprintf(previous_round_block_hash, sizeof previous_round_block_hash, "%s", previous_block_hash);
+    for (int attempt = 1; attempt <= 2; ++attempt) {
+      memset(previous_block_hash, 0, BLOCK_HASH_LENGTH + 1);
+      if (get_previous_block_hash(previous_block_hash) != XCASH_OK) {
+        ERROR_PRINT("Can't get previous block hash");
+        return ROUND_SKIP;
+      }
+      // Success condition: the previous hash changed vs what we had
+      if (strcmp(previous_block_hash, previous_round_block_hash) != 0) {
+        break;
+      }
+      if (attempt >= 2) {
+        ERROR_PRINT("Still showing Previous Block Hash, Block did not advance");
+        return ROUND_SKIP;
+      }
+      INFO_PRINT("Previous hash unchanged, retrying");
+      sleep(2);
     }
-    // Success condition: the previous hash changed vs what we had
-    if (strcmp(previous_block_hash, previous_round_block_hash) != 0) {
-      break;
-    }
-    if (attempt >= 2) {
-      ERROR_PRINT("Still showing Previous Block Hash, Block did not advance");
-      return ROUND_SKIP;
-    }
-    INFO_PRINT("Previous hash unchanged, retrying");
-    sleep(2);
   } else {
     // No majority last round -> chain may be stalled
     memset(previous_block_hash, 0, sizeof previous_block_hash);
@@ -533,7 +535,7 @@ void start_block_production(void) {
     if (round_result == ROUND_OK) {
       last_round_success = true;
 
-      #ifdef SEED_NODE_ON
+#ifdef SEED_NODE_ON
       bool update_stats = false;
       char ck_block_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
       char current_block_hash[BLOCK_HASH_LENGTH + 1] = {0};
