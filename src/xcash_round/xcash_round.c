@@ -895,24 +895,26 @@ void start_block_production(void) {
 
     } else {
       // If >20% of delegates report a DB hash mismatch, trigger a resync.
-      if ((delegate_db_hash_mismatch * 100) > (total_delegates * 20)) {
-        if (is_seed_node && strncmp(xcash_wallet_public_address, network_nodes[0].seed_public_address, XCASH_WALLET_LENGTH) != 0) {
-          DEBUG_PRINT("Skipping resync (not seed node #1)");
-        } else {
-          INFO_STAGE_PRINT("Delegates Collection is out of sync, attempting to update");
-          int selected_index;
-          pthread_mutex_lock(&delegates_all_lock);
-          selected_index = select_random_online_delegate();
-          pthread_mutex_unlock(&delegates_all_lock);
-          if (create_sync_token() == XCASH_OK) {
-            if (create_delegates_db_sync_request(selected_index)) {
-              INFO_PRINT("Waiting for DB sync");
-              sync_block_verifiers_minutes_and_seconds(0, 55);
-            } else {
-              ERROR_PRINT("Error occured while syncing delegates");
-            }
+      if (delegate_db_hash_mismatch > 0) {
+        if ((delegate_db_hash_mismatch * 100) > (total_delegates * 20)) {
+          if (is_seed_node && strncmp(xcash_wallet_public_address, network_nodes[0].seed_public_address, XCASH_WALLET_LENGTH) != 0) {
+            DEBUG_PRINT("Skipping resync (not seed node #1)");
           } else {
-            ERROR_PRINT("Error creating sync token");
+            INFO_STAGE_PRINT("Delegates Collection is out of sync, attempting to update");
+            int selected_index;
+            pthread_mutex_lock(&delegates_all_lock);
+            selected_index = select_random_online_delegate();
+            pthread_mutex_unlock(&delegates_all_lock);
+            if (create_sync_token() == XCASH_OK) {
+              if (create_delegates_db_sync_request(selected_index)) {
+                INFO_PRINT("Waiting for DB sync");
+                sync_block_verifiers_minutes_and_seconds(0, 55);
+              } else {
+                ERROR_PRINT("Error occured while syncing delegates");
+              }
+            } else {
+              ERROR_PRINT("Error creating sync token");
+            }
           }
         }
       }
