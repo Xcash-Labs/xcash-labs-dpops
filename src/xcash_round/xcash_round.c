@@ -124,7 +124,7 @@ xcash_round_result_t process_round(void) {
       ERROR_PRINT("Can't get previous block hash");
       return ROUND_SKIP;
     }
-    INFO_PRINT("No majority last round; skipping tip-advance check");
+    INFO_PRINT("No majority last round; skipping hash tip-advance check");
   }
 
   // Get hash for delegates collection
