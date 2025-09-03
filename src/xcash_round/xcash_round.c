@@ -115,8 +115,7 @@ xcash_round_result_t process_round(void) {
     }
     INFO_PRINT("Previous hash unchanged, retrying");
     sleep(2);
-  }
-  else {
+  } else {
     // No majority last round -> chain may be stalled
     memset(previous_block_hash, 0, sizeof previous_block_hash);
     if (get_previous_block_hash(previous_block_hash) != XCASH_OK) {
