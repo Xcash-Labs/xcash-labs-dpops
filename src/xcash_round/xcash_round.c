@@ -3,6 +3,7 @@
 producer_ref_t producer_refs[] = {0};
 static int total_delegates = 0;
 static char previous_round_block_hash[BLOCK_HASH_LENGTH + 1] = {0};
+static bool last_round_success = false;
 
 /**
  * @brief Selects the block producer from the current round’s verifiers using VRF beta comparison.
@@ -98,7 +99,6 @@ xcash_round_result_t process_round(void) {
 
   // Get the previous block hash and check to make sure it changed from last round
   snprintf(previous_round_block_hash, sizeof previous_round_block_hash, "%s", previous_block_hash);
-
   for (int attempt = 1; attempt <= 2; ++attempt) {
     memset(previous_block_hash, 0, BLOCK_HASH_LENGTH + 1);
     if (get_previous_block_hash(previous_block_hash) != XCASH_OK) {
@@ -115,6 +115,15 @@ xcash_round_result_t process_round(void) {
     }
     INFO_PRINT("Previous hash unchanged, retrying");
     sleep(2);
+  }
+  else {
+    // No majority last round -> chain may be stalled
+    memset(previous_block_hash, 0, sizeof previous_block_hash);
+    if (get_previous_block_hash(previous_block_hash) != XCASH_OK) {
+      ERROR_PRINT("Can't get previous block hash");
+      return ROUND_SKIP;
+    }
+    INFO_PRINT("No majority last round; skipping tip-advance check");
   }
 
   // Get hash for delegates collection
@@ -494,6 +503,7 @@ void start_block_production(void) {
       continue;
     }
 
+    last_round_success = false;
     current_block_height[0] = '\0';
     delegate_db_hash_mismatch = 0;
     atomic_store(&wait_for_vrf_init, true);
@@ -522,7 +532,9 @@ void start_block_production(void) {
     }
 
     if (round_result == ROUND_OK) {
-#ifdef SEED_NODE_ON
+      last_round_success = true;
+
+      #ifdef SEED_NODE_ON
       bool update_stats = false;
       char ck_block_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
       char current_block_hash[BLOCK_HASH_LENGTH + 1] = {0};
