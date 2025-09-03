@@ -2,6 +2,7 @@
 
 producer_ref_t producer_refs[] = {0};
 static int total_delegates = 0;
+static char previous_round_block_hash[BLOCK_HASH_LENGTH + 1] = {0};
 
 /**
  * @brief Selects the block producer from the current round’s verifiers using VRF beta comparison.
@@ -25,10 +26,10 @@ int select_block_producer_from_vrf(void) {
       continue;
     }
 
-//    Include seed nodes in block production for now
-//    if (is_seed_address(current_block_verifiers_list.block_verifiers_public_address[i])) {
-//      continue;
-//    }
+    //    Include seed nodes in block production for now
+    //    if (is_seed_address(current_block_verifiers_list.block_verifiers_public_address[i])) {
+    //      continue;
+    //    }
 
     if (selected_index == -1 ||
         strcmp(current_block_verifiers_list.block_verifiers_vrf_beta_hex[i], lowest_beta) < 0) {
@@ -44,7 +45,6 @@ int select_block_producer_from_vrf(void) {
     ERROR_PRINT("No valid block producer could be selected.");
   }
   pthread_mutex_unlock(&current_block_verifiers_lock);
-
 
   return selected_index;
 }
@@ -72,7 +72,6 @@ static int compare_hashes(const void* a, const void* b) {
  *                                ROUND_ERROR on critical errors attempt refresh
  */
 xcash_round_result_t process_round(void) {
-
   memset(&producer_refs, 0, sizeof(producer_refs));
 
   INFO_STAGE_PRINT("Part 1 - Check Delegate Registration");
@@ -97,11 +96,24 @@ xcash_round_result_t process_round(void) {
   }
   DEBUG_PRINT("Found %d active delegates out of %d total slots", total_delegates, BLOCK_VERIFIERS_TOTAL_AMOUNT);
 
-  // Get the previous block hash
-  memset(previous_block_hash, 0, BLOCK_HASH_LENGTH);
-  if (get_previous_block_hash(previous_block_hash) != XCASH_OK) {
-    ERROR_PRINT("Can't get previous block hash");
-    return ROUND_SKIP;
+  // Get the previous block hash and check to make sure it changed from last round
+  snprintf(previous_round_block_hash, sizeof previous_round_block_hash, "%s", get_current_block_hash ? get_current_block_hash : "");
+  for (int attempt = 1; attempt <= 2; ++attempt) {
+    memset(previous_block_hash, 0, BLOCK_HASH_LENGTH + 1);
+    if (get_previous_block_hash(previous_block_hash) != XCASH_OK) {
+      ERROR_PRINT("Can't get previous block hash");
+      return ROUND_SKIP;
+    }
+    // Success condition: the previous hash changed vs what we had
+    if (strcmp(previous_block_hash, previous_round_block_hash) != 0) {
+      break;
+    }
+    if (attempt >= 2) {
+      ERROR_PRINT("Still showing Previous Block Hash, Block did not advance");
+      return ROUND_SKIP;
+    }
+    INFO_PRINT("Previous hash unchanged, retrying");
+    sleep(2);
   }
 
   // Get hash for delegates collection
@@ -121,7 +133,7 @@ xcash_round_result_t process_round(void) {
   if (!is_blockchain_synced(target_height, cheight)) {
     unsigned long long node_h = strtoull(cheight, NULL, 10);
     unsigned long long target_h = strtoull(target_height, NULL, 10);
-        char target_disp[BLOCK_HEIGHT_LENGTH];
+    char target_disp[BLOCK_HEIGHT_LENGTH];
     if (target_h == 0ULL || target_height[0] == '\0') {
       strcpy(target_disp, "unknown");
     } else {
@@ -230,17 +242,17 @@ xcash_round_result_t process_round(void) {
     INFO_STAGE_PRINT("Block Producer not selected, skipping round");
     return ROUND_ERROR;
   }
-  
+
   INFO_STAGE_PRINT("Part 7 - Wait for Block Creator Confirmation by Consensus Vote");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 7);
-  
+
   pthread_mutex_lock(&current_block_verifiers_lock);
   current_block_verifiers_list.block_verifiers_vote_total[producer_indx] += 1;
   for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     if (strcmp(xcash_wallet_public_address, current_block_verifiers_list.block_verifiers_public_address[i]) == 0) {
       current_block_verifiers_list.block_verifiers_voted[i] = 1;
       memcpy(current_block_verifiers_list.block_verifiers_selected_public_address[i],
-        current_block_verifiers_list.block_verifiers_public_address[producer_indx], XCASH_WALLET_LENGTH+1);
+             current_block_verifiers_list.block_verifiers_public_address[producer_indx], XCASH_WALLET_LENGTH + 1);
       break;
     }
   }
@@ -294,14 +306,12 @@ xcash_round_result_t process_round(void) {
   uint8_t final_vote_hash[SHA256_EL_HASH_SIZE] = {0};
   size_t valid_vote_count = 0;
 
-
   pthread_mutex_lock(&current_block_verifiers_lock);
   for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
-
-    if ( (current_block_verifiers_list.block_verifiers_voted[i] > 0) &&
-     (strncmp(current_block_verifiers_list.block_verifiers_selected_public_address[i], 
-      current_block_verifiers_list.block_verifiers_public_address[max_index], XCASH_WALLET_LENGTH) == 0) &&
-      (current_block_verifiers_list.block_verifiers_public_address[i][0] != '\0')){
+    if ((current_block_verifiers_list.block_verifiers_voted[i] > 0) &&
+        (strncmp(current_block_verifiers_list.block_verifiers_selected_public_address[i],
+                 current_block_verifiers_list.block_verifiers_public_address[max_index], XCASH_WALLET_LENGTH) == 0) &&
+        (current_block_verifiers_list.block_verifiers_public_address[i][0] != '\0')) {
       uint8_t signature_bin[64] = {0};
       const char* encoded_sig = current_block_verifiers_list.block_verifiers_vote_signature[i];
 
@@ -327,6 +337,7 @@ xcash_round_result_t process_round(void) {
                              hash_input + offset,
                              crypto_vrf_OUTPUTBYTES)) {
         ERROR_PRINT("Invalid hex for vrf_beta");
+        pthread_mutex_unlock(&current_block_verifiers_lock);
         return ROUND_ERROR;
       }
       offset += crypto_vrf_OUTPUTBYTES;
@@ -360,7 +371,7 @@ xcash_round_result_t process_round(void) {
 
   if (valid_vote_count != (size_t)max_votes) {
     INFO_PRINT("Unexpected vote count when creating final vote hash: valid_vote_count = %zu, max_votes = %d",
-                valid_vote_count, max_votes);
+               valid_vote_count, max_votes);
     return ROUND_SKIP;
   }
 
@@ -457,7 +468,7 @@ void start_block_production(void) {
         snprintf(target_disp, sizeof(target_disp), "%llu", target_h);
       }
       WARNING_PRINT("Delegate is still syncing, node is at %llu and the target height is %s", node_h, target_disp);
-          INFO_PRINT ("2 Current_block_height: %s", current_block_height);
+      INFO_PRINT("2 Current_block_height: %s", current_block_height);
       sleep(5);
     }
   }
@@ -510,7 +521,6 @@ void start_block_production(void) {
     }
 
     if (round_result == ROUND_OK) {
- 
 #ifdef SEED_NODE_ON
       bool update_stats = false;
       char ck_block_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
@@ -536,9 +546,7 @@ void start_block_production(void) {
 
       for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
         if (strlen(delegates_all[i].public_address) > 0 && strlen(delegates_all[i].public_key) > 0) {
-
           if (strcmp(delegates_all[i].online_status, delegates_all[i].online_status_orginal) != 0) {
-
             char tmp_status[6] = "false";
             if (strcmp(delegates_all[i].online_status, "true") == 0) {
               strcpy(tmp_status, "true");
@@ -556,7 +564,6 @@ void start_block_production(void) {
 
             bson_destroy(&filter);
             bson_destroy(&update_fields);
-
           }
         }
       }
@@ -873,7 +880,6 @@ void start_block_production(void) {
 #endif
 
     } else {
-
       // If >20% of delegates report a DB hash mismatch, trigger a resync.
       if ((delegate_db_hash_mismatch * 100) > (total_delegates * 20)) {
         if (is_seed_node && strncmp(xcash_wallet_public_address, network_nodes[0].seed_public_address, XCASH_WALLET_LENGTH) != 0) {
@@ -896,14 +902,14 @@ void start_block_production(void) {
           }
         }
       }
-
     }
 
   end_of_round_skip_block:
     // set up delegates for next round
+    pthread_mutex_lock(&delegates_all_lock);
     if (!fill_delegates_from_db()) {
       FATAL_ERROR_EXIT("Failed to load and organize delegates for next round, Possible problem with Mongodb");
     }
+    pthread_mutex_unlock(&delegates_all_lock);
   }
-
 }
