@@ -328,7 +328,7 @@ int verify_action_data(const char *message, const char *client_ip, xcash_msg_t m
  *   XCASH_OK (1) if the IP matches a known delegate and (optionally) round part is valid.
  *   XCASH_ERROR (0) if the delegate is unknown, the IP does not match, or data is invalid.
 ---------------------------------------------------------------------------------------------------------*/
-int verify_the_ip__OLD__(const char *message, const char *client_ip) {
+int verify_the_ip(const char *message, const char *client_ip) {
 
   if (!message || !client_ip || strlen(client_ip) == 0) {
     ERROR_PRINT("verify_ip: Null or empty client_ip passed");
@@ -393,163 +393,10 @@ int verify_the_ip__OLD__(const char *message, const char *client_ip) {
     return XCASH_ERROR;
   }
 
-
   if (!message || !client_ip || strlen(client_ip) == 0) {
     ERROR_PRINT("verify_ip: Null or empty client_ip trashed in code");
     return XCASH_ERROR;
   }
   
   return XCASH_OK;
-}
-
-
-
-
-
-
-
-
-
-static inline void cpy_cstr(char *dst, size_t dstsz, const char *src) {
-  if (!dst || dstsz == 0) return;
-  if (!src) { dst[0] = '\0'; return; }
-  size_t n = strnlen(src, dstsz - 1);
-  memcpy(dst, src, n);
-  dst[n] = '\0';
-}
-
-
-// Convert a sockaddr to canonical numeric host string (IPv4 or IPv6)
-static int sockaddr_to_numhost(const struct sockaddr *sa, char *out, size_t outsz) {
-  if (!sa || !out || outsz == 0) return 0;
-  int rc = getnameinfo(sa,
-                       (sa->sa_family == AF_INET) ? sizeof(struct sockaddr_in)
-                                                  : sizeof(struct sockaddr_in6),
-                       out, outsz, NULL, 0, NI_NUMERICHOST);
-  return rc == 0;
-}
-
-// Resolve a host/IP (can be hostname or numeric literal) to a set of numeric IP strings (v4+v6)
-static size_t resolve_all_ip_strings(const char *host_or_ip,
-                                     char out[][NI_MAXHOST],
-                                     size_t out_cap) {
-  if (!host_or_ip || !*host_or_ip || out_cap == 0) return 0;
-
-  // First try DNS (and numeric via getaddrinfo)
-  struct addrinfo hints, *res = NULL;
-  memset(&hints, 0, sizeof(hints));
-  hints.ai_family   = AF_UNSPEC;     // v4 + v6
-  hints.ai_socktype = SOCK_STREAM;   // any
-  hints.ai_flags    = AI_ADDRCONFIG; // prefer families configured on this host
-
-  size_t n = 0;
-  int gai_ret = getaddrinfo(host_or_ip, NULL, &hints, &res);
-  if (gai_ret == 0 && res) {
-    char buf[NI_MAXHOST];
-    for (struct addrinfo *p = res; p && n < out_cap; p = p->ai_next) {
-      if (p->ai_family != AF_INET && p->ai_family != AF_INET6) continue;
-      if (!sockaddr_to_numhost(p->ai_addr, buf, sizeof(buf))) continue;
-
-      // de-duplicate
-      int dup = 0;
-      for (size_t i = 0; i < n; ++i) if (strcmp(out[i], buf) == 0) { dup = 1; break; }
-      if (!dup) {
-        cpy_cstr(out[n], NI_MAXHOST, buf);
-        ++n;
-      }
-    }
-    freeaddrinfo(res);
-    if (n > 0) return n;
-  }
-
-  // Fallback: if getaddrinfo failed but the input was a numeric literal, just return it
-  struct in_addr v4; struct in6_addr v6;
-  if (inet_pton(AF_INET, host_or_ip, &v4) == 1 || inet_pton(AF_INET6, host_or_ip, &v6) == 1) {
-    cpy_cstr(out[n], NI_MAXHOST, host_or_ip);
-    return 1;
-  }
-
-  return 0;
-}
-
-int verify_the_ip(const char *message, const char *client_ip) {
-  if (!message || !client_ip || *client_ip == '\0') {
-    ERROR_PRINT("verify_ip: Null or empty params (message/client_ip)");
-    return XCASH_ERROR;
-  }
-
-  // Allow local: loopback or any interface on this host (your existing helper)
-  if (is_local_address(client_ip)) {
-    DEBUG_PRINT("verify_ip: local connection ok from %s", client_ip);
-    return XCASH_OK;
-  }
-
-  char ck_public_address[XCASH_WALLET_LENGTH + 1] = {0};
-  char ip_address_trans[IP_LENGTH + 1] = {0};
-
-  // Extract the public address
-  if (parse_json_data(message, "public_address", ck_public_address, sizeof(ck_public_address)) != XCASH_OK) {
-    ERROR_PRINT("verify_ip: Failed to parse 'public_address'");
-    return XCASH_ERROR;
-  }
-
-  // Lookup expected IP/hostname for this delegate
-  char filter_json[256] = {0};
-  snprintf(filter_json, sizeof(filter_json), "{ \"public_address\": \"%s\" }", ck_public_address);
-  if (read_document_field_from_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES,
-                                          filter_json, "IP_address",
-                                          ip_address_trans, sizeof(ip_address_trans)) != XCASH_OK) {
-    ERROR_PRINT("verify_ip: Delegate '%s' not found or missing IP_address", ck_public_address);
-    return XCASH_ERROR;
-  }
-  ip_address_trans[sizeof(ip_address_trans) - 1] = '\0';
-
-  // Resolve expected host/IP -> set of numeric addresses
-  char expected_ips[16][NI_MAXHOST]; // up to 16 A/AAAA is plenty; adjust if needed
-  size_t expected_n = resolve_all_ip_strings(ip_address_trans, expected_ips, 16);
-  if (expected_n == 0) {
-    ERROR_PRINT("verify_ip: could not resolve expected host/IP '%s'", ip_address_trans);
-    return XCASH_ERROR;
-  }
-
-  // Normalize client_ip to canonical numeric (covers IPv4, IPv6, v4-mapped forms)
-  char client_canon[NI_MAXHOST] = {0};
-  {
-    struct addrinfo hints, *res = NULL;
-    memset(&hints, 0, sizeof(hints));
-    hints.ai_family = AF_UNSPEC;
-    hints.ai_socktype = SOCK_STREAM;
-    if (getaddrinfo(client_ip, NULL, &hints, &res) == 0 && res) {
-      if (!sockaddr_to_numhost(res->ai_addr, client_canon, sizeof(client_canon))) {
-        cpy_cstr(client_canon, sizeof(client_canon), client_ip);
-      }
-      freeaddrinfo(res);
-    } else {
-      // Already numeric literal or unusual; use as given
-      cpy_cstr(client_canon, sizeof(client_canon), client_ip);
-    }
-  }
-
-  // Compare: match if client_canon is any of the resolved expected IPs
-  for (size_t i = 0; i < expected_n; ++i) {
-    if (strcmp(expected_ips[i], client_canon) == 0) {
-      DEBUG_PRINT("verify_ip: OK '%s' matched '%s' (delegate %s)",
-                  client_canon, expected_ips[i], ck_public_address);
-      return XCASH_OK;
-    }
-  }
-
-  // No match → fail with a helpful message
-  char listbuf[512] = {0};
-  size_t off = 0;
-  for (size_t i = 0; i < expected_n; ++i) {
-    int wrote = snprintf(listbuf + off, sizeof(listbuf) - off, "%s%s",
-                         (i ? "," : ""), expected_ips[i]);
-    if (wrote < 0 || (size_t)wrote >= sizeof(listbuf) - off) { break; }
-    off += (size_t)wrote;
-  }
-
-  ERROR_PRINT("verify_ip: mismatch for delegate '%s' — expected one of [%s] from '%s' (configured '%s')",
-              ck_public_address, listbuf, client_canon, ip_address_trans);
-  return XCASH_ERROR;
 }
