@@ -314,6 +314,16 @@ int verify_action_data(const char *message, const char *client_ip, xcash_msg_t m
   return XCASH_ERROR;
 }
 
+// helper: sockaddr -> numeric string
+static int sockaddr_to_numhost(const struct sockaddr *sa, char *out, size_t outsz) {
+  if (!sa || !out || outsz == 0) return 0;
+  int rc = getnameinfo(sa,
+                       (sa->sa_family == AF_INET) ? sizeof(struct sockaddr_in)
+                                                  : sizeof(struct sockaddr_in6),
+                       out, outsz, NULL, 0, NI_NUMERICHOST);
+  return rc == 0;
+}
+
 /*---------------------------------------------------------------------------------------------------------
  * Name: verify_ip
  * Description:
@@ -406,18 +416,6 @@ int verify_the_ip__OLD__(const char *message, const char *client_ip) {
 
 
 
-#include <netdb.h>
-#include <arpa/inet.h>
-
-// helper: sockaddr -> numeric string
-static int sockaddr_to_numhost(const struct sockaddr *sa, char *out, size_t outsz) {
-  if (!sa || !out || outsz == 0) return 0;
-  int rc = getnameinfo(sa,
-                       (sa->sa_family == AF_INET) ? sizeof(struct sockaddr_in)
-                                                  : sizeof(struct sockaddr_in6),
-                       out, outsz, NULL, 0, NI_NUMERICHOST);
-  return rc == 0;
-}
 
 int verify_the_ip(const char *message, const char *client_ip) {
   if (!message || !client_ip || *client_ip == 0) {
