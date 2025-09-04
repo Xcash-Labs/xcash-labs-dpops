@@ -10,6 +10,7 @@
 #include "structures.h"
 #include "macro_functions.h"
 #include "string_functions.h"
+#include "db_operations.h"
 
 int count_documents_in_collection(const char* DATABASE, const char* COLLECTION, const char* DATA);
 int count_all_documents_in_collection(const char* DATABASE, const char* COLLECTION);
@@ -38,10 +39,7 @@ bool add_indexes(void);
 // from db_helpers
 int count_db_delegates(void);
 int count_db_statistics(void);
-int count_db_reserve_proofs(void);
-int count_db_reserve_bytes(void);
 int count_recs(const bson_t *recs);
 int get_db_max_block_height(const char *dbname, size_t *max_block_heigh, size_t *max_reserve_bytes);
-
 
 #endif

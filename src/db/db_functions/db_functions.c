@@ -1160,30 +1160,6 @@ int count_db_statistics(void) {
     return count;
 }
 
-int count_db_reserve_proofs(void) {
-    bson_error_t error;
-    bool result = false;
-    int64_t count;
-
-    result = db_count_doc(DATABASE_NAME, collection_names[XCASH_DB_RESERVE_PROOFS], &count, &error);
-    if (!result) {
-        count = -1;
-    }
-    return count;
-}
-
-int count_db_reserve_bytes(void) {
-    bson_error_t error;
-    bool result = false;
-    int64_t count;
-
-    result = db_count_doc(DATABASE_NAME, collection_names[XCASH_DB_RESERVE_BYTES], &count, &error);
-    if (!result) {
-        count = -1;
-    }
-    return count;
-}
-
 int count_recs(const bson_t *recs) {
     bson_iter_t iter;
     int count = 0;
