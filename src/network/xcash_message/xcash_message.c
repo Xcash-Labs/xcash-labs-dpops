@@ -286,6 +286,7 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
 
     case XMSG_NODES_TO_BLOCK_VERIFIERS_UPDATE_DELEGATE:
       if (server_limit_public_addresses(LIMIT_CHECK, data) == 1) {
+        INFO_PRINT("***************** Updata delegates...");
         server_receive_data_socket_nodes_to_block_verifiers_update_delegates(client, data);
         server_limit_public_addresses(LIMIT_REMOVE, data);
       }
