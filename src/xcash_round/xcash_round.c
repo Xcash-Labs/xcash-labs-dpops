@@ -490,6 +490,7 @@ void start_block_production(void) {
   }
 
   // Start production loop
+  last_round_success = false;
   while (true) {
     gettimeofday(&current_time, NULL);
     size_t seconds_within_block = current_time.tv_sec % (BLOCK_TIME * 60);
@@ -504,7 +505,6 @@ void start_block_production(void) {
       continue;
     }
 
-    last_round_success = false;
     current_block_height[0] = '\0';
     delegate_db_hash_mismatch = 0;
     atomic_store(&wait_for_vrf_init, true);
