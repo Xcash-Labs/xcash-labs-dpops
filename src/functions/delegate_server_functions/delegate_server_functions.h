@@ -5,6 +5,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <math.h>
 #include "VRF_functions.h"
 #include "config.h"
 #include "globals.h"
