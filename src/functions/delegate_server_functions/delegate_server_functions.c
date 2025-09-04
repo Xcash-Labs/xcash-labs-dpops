@@ -431,3 +431,182 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
   cJSON_Delete(root);
   return;
 }
+
+/*---------------------------------------------------------------------------------------------------------
+Name: server_receive_data_socket_nodes_to_block_verifiers_update_delegates
+Description: Runs the code when the server receives the NODES_TO_BLOCK_VERIFIERS_UPDATE_DELEGATE message
+Parameters:
+  CLIENT_SOCKET - The socket to send data to
+  MESSAGE - The message
+---------------------------------------------------------------------------------------------------------*/
+void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(server_client_t* client, const char* MESSAGE) {
+  char delegate_public_address[XCASH_WALLET_LENGTH + 1];
+  char errctx[] = "server_receive_data_socket_nodes_to_block_verifiers_update_delegates";
+
+  #define SERVER_RECEIVE_DATA_SOCKET_NODES_TO_BLOCK_VERIFIERS_UPDATE_DELEGATE_ERROR(settings) \
+    do { \
+      if (debug_settings == 1) { \
+        memcpy(error_message.function[error_message.total], errctx, sizeof(errctx)-1); \
+        memcpy(error_message.data[error_message.total], settings, sizeof(settings)-1); \
+        error_message.total++; \
+      } \
+      send_data(CLIENT_SOCKET, (unsigned char*)settings, 0, 0, ""); \
+      return; \
+    } while (0)
+
+  memset(delegate_public_address, 0, sizeof(delegate_public_address));
+
+  // 1) Parse JSON
+  if (MESSAGE == NULL || MESSAGE[0] == '\0') {
+    SERVER_RECEIVE_DATA_SOCKET_NODES_TO_BLOCK_VERIFIERS_UPDATE_DELEGATE_ERROR("0|Invalid message payload");
+  }
+  cJSON* root = cJSON_Parse(MESSAGE);
+  if (!root) {
+    SERVER_RECEIVE_DATA_SOCKET_NODES_TO_BLOCK_VERIFIERS_UPDATE_DELEGATE_ERROR("0|Invalid JSON");
+  }
+
+  // Optional sanity: message_settings
+  const cJSON* msg_settings = cJSON_GetObjectItemCaseSensitive(root, "message_settings");
+  if (!cJSON_IsString(msg_settings) ||
+      strncmp(msg_settings->valuestring, "NODES_TO_BLOCK_VERIFIERS_UPDATE_DELEGATE", 40) != 0) {
+    cJSON_Delete(root);
+    SERVER_RECEIVE_DATA_SOCKET_NODES_TO_BLOCK_VERIFIERS_UPDATE_DELEGATE_ERROR("0|Invalid message settings");
+  }
+
+  // public_address
+  const cJSON* jaddr = cJSON_GetObjectItemCaseSensitive(root, "public_address");
+  if (!cJSON_IsString(jaddr)) {
+    cJSON_Delete(root);
+    SERVER_RECEIVE_DATA_SOCKET_NODES_TO_BLOCK_VERIFIERS_UPDATE_DELEGATE_ERROR("0|public_address must be a string");
+  }
+  size_t addr_len = strnlen(jaddr->valuestring, XCASH_WALLET_LENGTH + 1);
+  if (addr_len != XCASH_WALLET_LENGTH ||
+      strncmp(jaddr->valuestring, XCASH_WALLET_PREFIX, sizeof(XCASH_WALLET_PREFIX)-1) != 0) {
+    cJSON_Delete(root);
+    SERVER_RECEIVE_DATA_SOCKET_NODES_TO_BLOCK_VERIFIERS_UPDATE_DELEGATE_ERROR("0|Invalid public_address (wrong length or prefix)");
+  }
+  memcpy(delegate_public_address, jaddr->valuestring, XCASH_WALLET_LENGTH);
+
+  // updates object (required)
+  cJSON* updates = cJSON_GetObjectItemCaseSensitive(root, "updates");
+  if (!cJSON_IsObject(updates)) {
+    cJSON_Delete(root);
+    SERVER_RECEIVE_DATA_SOCKET_NODES_TO_BLOCK_VERIFIERS_UPDATE_DELEGATE_ERROR("0|'updates' must be an object");
+  }
+
+  // 2) Validate each field and build the $set doc
+  static const char* const allowed_fields[] = {
+    "IP_address", "about", "website", "team",
+    "shared_delegate_status", "delegate_fee", "server_specs"
+  };
+  const size_t allowed_fields_count = sizeof(allowed_fields) / sizeof(allowed_fields[0]);
+
+  // filter: { "public_address": "<addr>" }
+  cJSON* filter = cJSON_CreateObject();
+  cJSON_AddStringToObject(filter, "public_address", delegate_public_address);
+
+  // setdoc: { key1: val1, key2: val2, ... }  (your helper treats this as the update doc)
+  cJSON* setdoc = cJSON_CreateObject();
+
+  size_t valid_kv_count = 0;
+  for (cJSON* it = updates->child; it != NULL; it = it->next) {
+    const char* key = it->string;
+    if (!key) {
+      cJSON_Delete(setdoc); cJSON_Delete(filter); cJSON_Delete(root);
+      SERVER_RECEIVE_DATA_SOCKET_NODES_TO_BLOCK_VERIFIERS_UPDATE_DELEGATE_ERROR("0|Missing update field name");
+    }
+    // allowlist check
+    int ok_key = 0;
+    for (size_t i = 0; i < allowed_fields_count; ++i) {
+      if (strncmp(key, allowed_fields[i], BUFFER_SIZE) == 0) { ok_key = 1; break; }
+    }
+    if (!ok_key) {
+      cJSON_Delete(setdoc); cJSON_Delete(filter); cJSON_Delete(root);
+      SERVER_RECEIVE_DATA_SOCKET_NODES_TO_BLOCK_VERIFIERS_UPDATE_DELEGATE_ERROR("0|Invalid update field (allowed: IP_address, about, website, team, shared_delegate_status, delegate_fee, server_specs)");
+    }
+    // value must be string
+    if (!cJSON_IsString(it)) {
+      cJSON_Delete(setdoc); cJSON_Delete(filter); cJSON_Delete(root);
+      SERVER_RECEIVE_DATA_SOCKET_NODES_TO_BLOCK_VERIFIERS_UPDATE_DELEGATE_ERROR("0|Value for update field must be a string");
+    }
+    const char* val = it->valuestring;
+    if (!val) val = "";
+
+    // Per-field constraints (mirror legacy) with clearer text
+    if (strncmp(key, "IP_address", BUFFER_SIZE) == 0) {
+      if (check_for_valid_ip_address(val) == 0) {
+        cJSON_Delete(setdoc); cJSON_Delete(filter); cJSON_Delete(root);
+        SERVER_RECEIVE_DATA_SOCKET_NODES_TO_BLOCK_VERIFIERS_UPDATE_DELEGATE_ERROR("0|Invalid IP_address (must be IPv4 or domain, <=255 chars)");
+      }
+    } else if (strncmp(key, "about", BUFFER_SIZE) == 0) {
+      if (strnlen(val, 1025) > 1024) {
+        cJSON_Delete(setdoc); cJSON_Delete(filter); cJSON_Delete(root);
+        SERVER_RECEIVE_DATA_SOCKET_NODES_TO_BLOCK_VERIFIERS_UPDATE_DELEGATE_ERROR("0|'about' too long (max 1024)");
+      }
+    } else if (strncmp(key, "website", BUFFER_SIZE) == 0) {
+      if (strnlen(val, 256) > 255) {
+        cJSON_Delete(setdoc); cJSON_Delete(filter); cJSON_Delete(root);
+        SERVER_RECEIVE_DATA_SOCKET_NODES_TO_BLOCK_VERIFIERS_UPDATE_DELEGATE_ERROR("0|'website' too long (max 255)");
+      }
+    } else if (strncmp(key, "team", BUFFER_SIZE) == 0) {
+      if (strnlen(val, 256) > 255) {
+        cJSON_Delete(setdoc); cJSON_Delete(filter); cJSON_Delete(root);
+        SERVER_RECEIVE_DATA_SOCKET_NODES_TO_BLOCK_VERIFIERS_UPDATE_DELEGATE_ERROR("0|'team' too long (max 255)");
+      }
+    } else if (strncmp(key, "shared_delegate_status", BUFFER_SIZE) == 0) {
+      if (strncmp(val, "solo", BUFFER_SIZE) != 0 &&
+          strncmp(val, "shared", BUFFER_SIZE) != 0 &&
+          strncmp(val, "group", BUFFER_SIZE) != 0) {
+        cJSON_Delete(setdoc); cJSON_Delete(filter); cJSON_Delete(root);
+        SERVER_RECEIVE_DATA_SOCKET_NODES_TO_BLOCK_VERIFIERS_UPDATE_DELEGATE_ERROR("0|shared_delegate_status must be one of: solo | shared | group");
+      }
+    } else if (strncmp(key, "delegate_fee", BUFFER_SIZE) == 0) {
+      if (check_for_valid_delegate_fee(val) == 0) {
+        cJSON_Delete(setdoc); cJSON_Delete(filter); cJSON_Delete(root);
+        SERVER_RECEIVE_DATA_SOCKET_NODES_TO_BLOCK_VERIFIERS_UPDATE_DELEGATE_ERROR("0|Invalid delegate_fee (bad format or out of range)");
+      }
+    } else if (strncmp(key, "server_specs", BUFFER_SIZE) == 0) {
+      if (strnlen(val, 256) > 255) {
+        cJSON_Delete(setdoc); cJSON_Delete(filter); cJSON_Delete(root);
+        SERVER_RECEIVE_DATA_SOCKET_NODES_TO_BLOCK_VERIFIERS_UPDATE_DELEGATE_ERROR("0|'server_specs' too long (max 255)");
+      }
+    }
+
+    // Add to update doc
+    cJSON_AddStringToObject(setdoc, key, val);
+    ++valid_kv_count;
+  }
+
+  if (valid_kv_count == 0) {
+    cJSON_Delete(setdoc); cJSON_Delete(filter); cJSON_Delete(root);
+    SERVER_RECEIVE_DATA_SOCKET_NODES_TO_BLOCK_VERIFIERS_UPDATE_DELEGATE_ERROR("0|No valid updates provided");
+  }
+
+  // 3) Execute DB update
+  char* filter_json = cJSON_PrintUnformatted(filter);
+  char* setdoc_json = cJSON_PrintUnformatted(setdoc);
+  if (!filter_json || !setdoc_json) {
+    if (filter_json) cJSON_free(filter_json);
+    if (setdoc_json) cJSON_free(setdoc_json);
+    cJSON_Delete(setdoc); cJSON_Delete(filter); cJSON_Delete(root);
+    SERVER_RECEIVE_DATA_SOCKET_NODES_TO_BLOCK_VERIFIERS_UPDATE_DELEGATE_ERROR("0|Internal error while building update JSON");
+  }
+
+  if (update_document_from_collection(database_name, DB_COLLECTION_DELEGATES, filter_json, setdoc_json) == 0) {
+    cJSON_free(filter_json); cJSON_free(setdoc_json);
+    cJSON_Delete(setdoc); cJSON_Delete(filter); cJSON_Delete(root);
+    SERVER_RECEIVE_DATA_SOCKET_NODES_TO_BLOCK_VERIFIERS_UPDATE_DELEGATE_ERROR("0|Database update failed");
+  }
+
+  cJSON_free(filter_json);
+  cJSON_free(setdoc_json);
+  cJSON_Delete(setdoc);
+  cJSON_Delete(filter);
+  cJSON_Delete(root);
+
+  // 4) Success
+  send_data(client, (unsigned char *)"1|Updated the delegate", strlen("1|Updated the delegate"));
+  return;
+
+  #undef SERVER_RECEIVE_DATA_SOCKET_NODES_TO_BLOCK_VERIFIERS_UPDATE_DELEGATE_ERROR
+}

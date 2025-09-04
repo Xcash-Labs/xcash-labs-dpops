@@ -9,6 +9,7 @@ const size_t WALLET_SIGN_MESSAGES_COUNT = ARRAY_SIZE(WALLET_SIGN_MESSAGES) - 1;
 
 const xcash_msg_t WALLET_SIGN_ACTION_MESSAGES[] = {
     XMSG_NODES_TO_BLOCK_VERIFIERS_REGISTER_DELEGATE,
+    XMSG_NODES_TO_BLOCK_VERIFIERS_UPDATE_DELEGATE,
     XMSG_NONE};
 const size_t WALLET_SIGN_ACTION_MESSAGES_COUNT = ARRAY_SIZE(WALLET_SIGN_ACTION_MESSAGES) - 1;
 
@@ -278,6 +279,14 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
     case XMSG_NODES_TO_BLOCK_VERIFIERS_REGISTER_DELEGATE:
       if (server_limit_public_addresses(LIMIT_CHECK, data) == 1) {
         server_receive_data_socket_nodes_to_block_verifiers_register_delegates(client, data);
+        server_limit_public_addresses(LIMIT_REMOVE, data);
+      }
+      break;
+
+
+    case XMSG_NODES_TO_BLOCK_VERIFIERS_UPDATE_DELEGATE:
+      if (server_limit_public_addresses(LIMIT_CHECK, data) == 1) {
+        server_receive_data_socket_nodes_to_block_verifiers_update_delegates(client, data);
         server_limit_public_addresses(LIMIT_REMOVE, data);
       }
       break;
