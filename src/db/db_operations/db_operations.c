@@ -356,28 +356,6 @@ bool db_count_doc_by(const char *db_name, const char *collection_name, const bso
 /// @param collection collection name prefix. in case if reserve_proofs and reserve_bytes calculates hash for all dbs
 /// @param db_hash_result pointer to buffer to receive result hash
 /// @return true or false in case of error
-bool get_db_data_hash(const char *collection_prefix, char *db_hash_result) {
-  mongoc_client_t *client;
-  int cache_request_result;
-
-  // Pop a client from the pool
-  client = mongoc_client_pool_pop(database_client_thread_pool);
-  if (!client) {
-    DEBUG_PRINT("Failed to pop client from pool");
-    return false;
-  }
-
-  cache_request_result = get_multi_hash(client, collection_prefix, db_hash_result);
-
-  mongoc_client_pool_push(database_client_thread_pool, client);
-
-  return cache_request_result < 0 ? false : true;
-}
-
-/// @brief Get multi data db hash
-/// @param collection collection name prefix. in case if reserve_proofs and reserve_bytes calculates hash for all dbs
-/// @param db_hash_result pointer to buffer to receive result hash
-/// @return true or false in case of error
 bool db_copy_collection(const char *db_name, const char *src_collection, const char *dst_collection, bson_error_t *error) {
   bson_t filter = BSON_INITIALIZER;
   bson_t reply = BSON_INITIALIZER;

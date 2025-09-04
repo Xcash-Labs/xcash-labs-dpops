@@ -20,6 +20,4 @@ bool db_drop(const char *db_name, const char *collection_name, bson_error_t *err
 bool db_count_doc(const char *db_name, const char *collection_name, int64_t *result_count, bson_error_t *error);
 bool db_count_doc_by(const char *db_name, const char *collection_name, const bson_t *query, int64_t *result_count, bson_error_t *error);
 
-bool get_db_data_hash(const char *collection_prefix, char *db_hash_result);
-
 #endif
