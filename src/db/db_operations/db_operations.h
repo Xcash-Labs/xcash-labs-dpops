@@ -5,7 +5,6 @@
 #include <mongoc/mongoc.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "cached_hashes.h"
 #include "config.h"
 #include "globals.h"
 #include "macro_functions.h"
