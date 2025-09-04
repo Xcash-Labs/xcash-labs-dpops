@@ -536,27 +536,6 @@ int delete_collection_from_database(const char* DATABASE, const char* COLLECTION
   return XCASH_OK;
 }
 
-// Function to delete a database
-int delete_database(const char* DATABASE) {
-  mongoc_client_t* database_client_thread = get_temporary_connection();
-  if (!database_client_thread) return XCASH_ERROR;
-
-  mongoc_database_t* database = mongoc_client_get_database(database_client_thread, DATABASE);
-  if (!database) return handle_error("Failed to get database", NULL, NULL, NULL, database_client_thread);
-
-  bson_error_t error;
-  if (!mongoc_database_drop(database, &error)) {
-    mongoc_database_destroy(database);
-    return handle_error("Failed to delete database", NULL, NULL, NULL, database_client_thread);
-  }
-
-  drop_all_hashes(database_client_thread);
-  mongoc_database_destroy(database);
-  mongoc_client_pool_push(database_client_thread_pool, database_client_thread);
-
-  return XCASH_OK;
-}
-
 // Function to get database collection size
 size_t get_database_collection_size(const char* DATABASE, const char* COLLECTION) {
     if (!check_if_database_collection_exist(DATABASE, COLLECTION)) return 0;

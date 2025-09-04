@@ -26,7 +26,6 @@ int update_multiple_documents_from_collection(const char* DATABASE, const char* 
 int update_all_documents_from_collection(const char* DATABASE, const char* COLLECTION, const char* DATA);
 int delete_document_from_collection(const char* DATABASE, const char* COLLECTION, const char* DATA);
 int delete_collection_from_database(const char* DATABASE, const char* COLLECTION);
-int delete_database(const char* DATABASE);
 int check_if_database_collection_exist(const char* DATABASE, const char* COLLECTION);
 int get_database_data(char *database_data, const char* DATABASE, const char* COLLECTION);
 int get_database_data_hash(char *data_hash, const char* DATABASE, const char* COLLECTION);
