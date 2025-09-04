@@ -406,6 +406,19 @@ int verify_the_ip__OLD__(const char *message, const char *client_ip) {
 
 
 
+
+
+
+
+static inline void cpy_cstr(char *dst, size_t dstsz, const char *src) {
+  if (!dst || dstsz == 0) return;
+  if (!src) { dst[0] = '\0'; return; }
+  size_t n = strnlen(src, dstsz - 1);
+  memcpy(dst, src, n);
+  dst[n] = '\0';
+}
+
+
 // Convert a sockaddr to canonical numeric host string (IPv4 or IPv6)
 static int sockaddr_to_numhost(const struct sockaddr *sa, char *out, size_t outsz) {
   if (!sa || !out || outsz == 0) return 0;
@@ -441,8 +454,7 @@ static size_t resolve_all_ip_strings(const char *host_or_ip,
       int dup = 0;
       for (size_t i = 0; i < n; ++i) if (strcmp(out[i], buf) == 0) { dup = 1; break; }
       if (!dup) {
-        strncpy(out[n], buf, NI_MAXHOST - 1);
-        out[n][NI_MAXHOST - 1] = '\0';
+        cpy_cstr(out[n], NI_MAXHOST, buf);
         ++n;
       }
     }
@@ -453,8 +465,7 @@ static size_t resolve_all_ip_strings(const char *host_or_ip,
   // Fallback: if getaddrinfo failed but the input was a numeric literal, just return it
   struct in_addr v4; struct in6_addr v6;
   if (inet_pton(AF_INET, host_or_ip, &v4) == 1 || inet_pton(AF_INET6, host_or_ip, &v6) == 1) {
-    strncpy(out[n], host_or_ip, NI_MAXHOST - 1);
-    out[n][NI_MAXHOST - 1] = '\0';
+    cpy_cstr(out[n], NI_MAXHOST, host_or_ip)
     return 1;
   }
 
@@ -510,12 +521,12 @@ int verify_the_ip(const char *message, const char *client_ip) {
     hints.ai_socktype = SOCK_STREAM;
     if (getaddrinfo(client_ip, NULL, &hints, &res) == 0 && res) {
       if (!sockaddr_to_numhost(res->ai_addr, client_canon, sizeof(client_canon))) {
-        strncpy(client_canon, client_ip, sizeof(client_canon) - 1);
+        cpy_cstr(client_canon, sizeof(client_canon), client_ip);
       }
       freeaddrinfo(res);
     } else {
       // Already numeric literal or unusual; use as given
-      strncpy(client_canon, client_ip, sizeof(client_canon) - 1);
+      cpy_cstr(client_canon, sizeof(client_canon), client_ip);
     }
   }
 
