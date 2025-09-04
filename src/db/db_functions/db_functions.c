@@ -1607,43 +1607,6 @@ bool db_count_doc(const char *db_name, const char *collection_name, int64_t *res
   return true;
 }
 
-bool db_count_doc_by(const char *db_name, const char *collection_name, const bson_t *query, int64_t *result_count,
-                     bson_error_t *error) {
-  mongoc_client_t *client;
-  mongoc_collection_t *collection;
-  int64_t count;
-
-  // Pop a client from the pool
-  client = mongoc_client_pool_pop(database_client_thread_pool);
-  if (!client) {
-    DEBUG_PRINT("Failed to pop client from pool");
-    return false;
-  }
-
-  // Get the collection
-  collection = mongoc_client_get_collection(client, db_name, collection_name);
-  if (!collection) {
-    DEBUG_PRINT("Failed to get collection: %s", collection_name);
-    mongoc_client_pool_push(database_client_thread_pool, client);
-    return false;
-  }
-
-  count = mongoc_collection_count_documents(collection, query, NULL, NULL, NULL, error);
-  if (count < 0) {
-    DEBUG_PRINT("Failed to count documents: %s", error->message);
-    mongoc_collection_destroy(collection);
-    mongoc_client_pool_push(database_client_thread_pool, client);
-    return false;
-  }
-
-  // Cleanup
-  mongoc_collection_destroy(collection);
-  mongoc_client_pool_push(database_client_thread_pool, client);
-
-  *result_count = count;
-  return true;
-}
-
 /// @brief Get multi data db hash
 /// @param collection collection name prefix. in case if reserve_proofs and reserve_bytes calculates hash for all dbs
 /// @param db_hash_result pointer to buffer to receive result hash
