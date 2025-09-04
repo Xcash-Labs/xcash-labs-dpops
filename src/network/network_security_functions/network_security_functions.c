@@ -328,7 +328,7 @@ int verify_action_data(const char *message, const char *client_ip, xcash_msg_t m
  *   XCASH_OK (1) if the IP matches a known delegate and (optionally) round part is valid.
  *   XCASH_ERROR (0) if the delegate is unknown, the IP does not match, or data is invalid.
 ---------------------------------------------------------------------------------------------------------*/
-int verify_the_ip(const char *message, const char *client_ip) {
+int verify_the_ip__OLD__(const char *message, const char *client_ip) {
 
   if (!message || !client_ip || strlen(client_ip) == 0) {
     ERROR_PRINT("verify_ip: Null or empty client_ip passed");
@@ -398,5 +398,104 @@ int verify_the_ip(const char *message, const char *client_ip) {
     return XCASH_ERROR;
   }
   
+  return XCASH_OK;
+}
+
+
+
+
+
+
+#include <netdb.h>
+#include <arpa/inet.h>
+
+// helper: sockaddr -> numeric string
+static int sockaddr_to_numhost(const struct sockaddr *sa, char *out, size_t outsz) {
+  if (!sa || !out || outsz == 0) return 0;
+  int rc = getnameinfo(sa,
+                       (sa->sa_family == AF_INET) ? sizeof(struct sockaddr_in)
+                                                  : sizeof(struct sockaddr_in6),
+                       out, outsz, NULL, 0, NI_NUMERICHOST);
+  return rc == 0;
+}
+
+int verify_the_ip(const char *message, const char *client_ip) {
+  if (!message || !client_ip || *client_ip == 0) {
+    ERROR_PRINT("verify_ip: Null or empty client_ip passed");
+    return XCASH_ERROR;
+  }
+
+  char ck_public_address[XCASH_WALLET_LENGTH + 1] = {0};
+  char ip_address_trans[IP_LENGTH + 1] = {0};
+  char filter_json[256] = {0};
+  char resolved_ip[INET_ADDRSTRLEN] = {0};   // v4 only, as before
+  char client_canon[INET_ADDRSTRLEN] = {0};  // v4 only, as before
+
+  // allow local: loopback or any interface on this host
+  if (is_local_address(client_ip)) {
+    DEBUG_PRINT("Internal loopback connection ok from: %s", client_ip);
+    return XCASH_OK;
+  }
+
+  // Extract the public address
+  if (parse_json_data(message, "public_address", ck_public_address, sizeof(ck_public_address)) != XCASH_OK) {
+    ERROR_PRINT("verify_ip: Failed to parse public_address field");
+    return XCASH_ERROR;
+  }
+
+  // Get the IP/hostname from DB
+  snprintf(filter_json, sizeof(filter_json), "{ \"public_address\": \"%s\" }", ck_public_address);
+  if (read_document_field_from_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES,
+                                          filter_json, "IP_address",
+                                          ip_address_trans, sizeof(ip_address_trans)) != XCASH_OK) {
+    ERROR_PRINT("Delegate '%s' not found in DB or missing IP_address", ck_public_address);
+    return XCASH_ERROR;
+  }
+  ip_address_trans[sizeof(ip_address_trans) - 1] = '\0';
+
+  // Canonicalize client IPv4 (keeps your v4-only contract)
+  {
+    struct addrinfo hints = {0}, *cres = NULL;
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+    if (getaddrinfo(client_ip, NULL, &hints, &cres) == 0 && cres) {
+      if (!sockaddr_to_numhost(cres->ai_addr, client_canon, sizeof(client_canon))) {
+        snprintf(client_canon, sizeof(client_canon), "%s", client_ip);
+      }
+      freeaddrinfo(cres);
+    } else {
+      snprintf(client_canon, sizeof(client_canon), "%s", client_ip);
+    }
+  }
+
+  // Resolve the expected hostname/IP (IPv4 only, as before)
+  struct addrinfo hints = {0}, *res = NULL;
+  hints.ai_family = AF_INET;
+  hints.ai_socktype = SOCK_STREAM;
+
+  int gai_ret = getaddrinfo(ip_address_trans, NULL, &hints, &res);
+  bool match = false;
+
+  if (gai_ret == 0 && res != NULL) {
+    // ✅ check ALL results, not just the first
+    for (struct addrinfo *p = res; p; p = p->ai_next) {
+      if (!p->ai_addr || p->ai_addr->sa_family != AF_INET) continue;
+      if (!sockaddr_to_numhost(p->ai_addr, resolved_ip, sizeof(resolved_ip))) continue;
+      if (strcmp(resolved_ip, client_canon) == 0) { match = true; break; }
+    }
+    freeaddrinfo(res);
+  } else {
+    WARNING_PRINT("getaddrinfo failed for '%s': %s", ip_address_trans, gai_strerror(gai_ret));
+    // fallback: treat DB value as a literal IPv4 and compare
+    snprintf(resolved_ip, sizeof(resolved_ip), "%s", ip_address_trans);
+    match = (strcmp(resolved_ip, client_canon) == 0);
+  }
+
+  if (!match) {
+    ERROR_PRINT("IP verification failed: Delegate '%s' expects '%s' (resolved/any: %s), got: %s",
+                ck_public_address, ip_address_trans, resolved_ip, client_canon);
+    return XCASH_ERROR;
+  }
+
   return XCASH_OK;
 }
