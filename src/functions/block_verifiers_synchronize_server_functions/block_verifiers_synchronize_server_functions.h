@@ -10,7 +10,7 @@
 #include "globals.h"
 #include "macro_functions.h"
 #include "structures.h"
-#include "db_operations.h"
+#include "db_functions.h"
 #include "db_sync.h"
 #include "xcash_message.h"
 #include "db_sync.h"

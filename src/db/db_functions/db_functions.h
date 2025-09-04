@@ -10,7 +10,6 @@
 #include "structures.h"
 #include "macro_functions.h"
 #include "string_functions.h"
-#include "db_operations.h"
 
 int count_documents_in_collection(const char* DATABASE, const char* COLLECTION, const char* DATA);
 int count_all_documents_in_collection(const char* DATABASE, const char* COLLECTION);
@@ -41,5 +40,17 @@ int count_db_delegates(void);
 int count_db_statistics(void);
 int count_recs(const bson_t *recs);
 int get_db_max_block_height(const char *dbname, size_t *max_block_heigh, size_t *max_reserve_bytes);
+
+//from db_operations
+bool db_find_all_doc(const char *db_name, const char *collection_name, bson_t *reply, bson_error_t *error);
+bool db_find_doc(const char *db_name, const char *collection_name, const bson_t *query, bson_t *reply,
+                 bson_error_t *error, bool exclude_id);
+bool db_export_collection_to_bson(const char* db_name, const char* collection_name, bson_t* out, bson_error_t* error);
+bool db_upsert_multi_docs(const char *db_name, const char *collection_name, const bson_t *docs, bson_error_t *error);
+bool db_upsert_doc(const char *db_name, const char *collection_name, const bson_t *doc, bson_error_t *error);
+bool db_delete_doc(const char *db_name, const char *collection_name, const bson_t *query, bson_error_t *error);
+bool db_drop(const char *db_name, const char *collection_name, bson_error_t *error);
+bool db_count_doc(const char *db_name, const char *collection_name, int64_t *result_count, bson_error_t *error);
+bool db_count_doc_by(const char *db_name, const char *collection_name, const bson_t *query, int64_t *result_count, bson_error_t *error);
 
 #endif

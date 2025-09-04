@@ -1,7 +1,6 @@
 #ifndef XCASH_DELEGATES_H
 #define XCASH_DELEGATES_H
 
-#include "db_operations.h"
 #include "db_functions.h"
 #include "globals.h"
 
