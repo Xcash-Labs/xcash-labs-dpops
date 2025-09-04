@@ -515,7 +515,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
 
     // Per-field constraints (mirror legacy) with clearer text
     if (strncmp(key, "IP_address", BUFFER_SIZE) == 0) {
-      if (check_for_valid_ip_address(val) == 0) {
+      if (check_for_valid_ip_or_hostname(val) == 0) {
         cJSON_Delete(setdoc); cJSON_Delete(filter); cJSON_Delete(root);
         SERVER_ERROR("0|Invalid IP_address (must be IPv4 or domain, <=255 chars)");
       }
