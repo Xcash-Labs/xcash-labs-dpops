@@ -39,7 +39,6 @@ bool add_indexes(void);
 int count_db_delegates(void);
 int count_db_statistics(void);
 int count_recs(const bson_t *recs);
-int get_db_max_block_height(const char *dbname, size_t *max_block_heigh, size_t *max_reserve_bytes);
 
 //from db_operations
 bool db_find_all_doc(const char *db_name, const char *collection_name, bson_t *reply, bson_error_t *error);
