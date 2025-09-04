@@ -490,7 +490,6 @@ void start_block_production(void) {
   }
 
   // Start production loop
-  last_round_success = false;
   while (true) {
     gettimeofday(&current_time, NULL);
     size_t seconds_within_block = current_time.tv_sec % (BLOCK_TIME * 60);
@@ -526,6 +525,7 @@ void start_block_production(void) {
     }
 
     if (round_result == ROUND_SKIP) {
+      last_round_success = false;
       if (strlen(vrf_public_key) == 0) {
         get_vrf_public_key();
       }
@@ -894,6 +894,7 @@ void start_block_production(void) {
 #endif
 
     } else {
+      last_round_success = false;
       // If >20% of delegates report a DB hash mismatch, trigger a resync.
       if (delegate_db_hash_mismatch > 0) {
         if ((delegate_db_hash_mismatch * 100) > (total_delegates * 20)) {
