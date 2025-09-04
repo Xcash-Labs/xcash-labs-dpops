@@ -465,7 +465,7 @@ static size_t resolve_all_ip_strings(const char *host_or_ip,
   // Fallback: if getaddrinfo failed but the input was a numeric literal, just return it
   struct in_addr v4; struct in6_addr v6;
   if (inet_pton(AF_INET, host_or_ip, &v4) == 1 || inet_pton(AF_INET6, host_or_ip, &v6) == 1) {
-    cpy_cstr(out[n], NI_MAXHOST, host_or_ip)
+    cpy_cstr(out[n], NI_MAXHOST, host_or_ip);
     return 1;
   }
 
