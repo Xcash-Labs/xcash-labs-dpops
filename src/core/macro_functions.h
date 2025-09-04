@@ -121,8 +121,6 @@
     } \
 } while (0)
 
-
-
 #define HOST_OK_STATUS(host, fmt, ...) BLUE_TEXT(host)" "fmt"\t["GREEN_TEXT("OK")"]"
 #define HOST_FALSE_STATUS(host, fmt, ...) BLUE_TEXT(host)" "fmt"\t["RED_TEXT("X")"]"
 
@@ -144,5 +142,11 @@
             color_code = "\033[1;36m";                        \
         fprintf(stderr, "%s%s\033[0m\n", color_code, string); \
     } while (0)
+
+#define SERVER_ERROR(rmess)                                     \
+  do {                                                          \
+    send_data(client, (unsigned char *)(rmess), strlen(rmess)); \
+    return;                                                     \
+  } while (0)
 
 #endif
