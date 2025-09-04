@@ -35,6 +35,61 @@ int check_for_valid_delegate_name(const char* DELEGATE_NAME)
 }
 
 /*---------------------------------------------------------------------------------------------------------
+Name: check_for_valid_delegate_fee
+Description: Checks for a valid delegate fee
+Parameters:
+  DELEGATE_NAME - The delegate name
+Return: 0 if the delegate fee is not valid, 1 if the delegate fee is valid
+---------------------------------------------------------------------------------------------------------*/
+int check_for_valid_delegate_fee(const char *MESSAGE) {
+  const char *p, *q;
+  char *endptr;
+  int dot_seen = 0;
+  int decimals = 0;
+  double number;
+
+  if (MESSAGE == NULL || *MESSAGE == '\0') {
+    return XCASH_ERROR;
+  }
+
+  p = MESSAGE;
+
+  /* 1) Format checks: only digits and at most one '.', not starting with '.' */
+  if (*p == '.') {
+    return XCASH_ERROR; /* disallow leading '.' */
+  }
+
+  for (q = p; *q; ++q) {
+    if (*q == '.') {
+      if (dot_seen) return 0; /* second dot -> invalid */
+      dot_seen = 1;
+      continue;
+    }
+    if (*q < '0' || *q > '9') {
+      return XCASH_ERROR; /* any non-digit/non-dot char -> invalid (no spaces/signs/exponent) */
+    }
+    if (dot_seen) {
+      ++decimals;
+      if (decimals > 6) return 0; /* too many fractional digits */
+    }
+  }
+
+  /* 2) Numeric parse (guaranteed to be plain decimal now) */
+  errno = 0;
+  number = strtod(p, &endptr);
+  if (errno != 0 || endptr == p || *endptr != '\0' || !isfinite(number)) {
+    return XCASH_ERROR;
+  }
+
+  /* 3) Range check: 0..100 inclusive */
+  if (number < 0.0 || number > 100.0) {
+    return XCASH_ERROR;
+  }
+
+  return XCASH_OK;
+}
+
+/*---------------------------------------------------------------------------------------------------------
 Name:        check_for_valid_ip_or_hostname
 Description: Quick sanity check that HOST is either:
                - a numeric IPv4/IPv6 literal, or
@@ -59,6 +114,13 @@ int check_for_valid_ip_or_hostname(const char *host) {
   freeaddrinfo(res);
   return XCASH_OK;
 }
+
+
+
+
+
+
+
 
 /*---------------------------------------------------------------------------------------------------------
 Name: server_receive_data_socket_nodes_to_block_verifiers_register_delegates
@@ -431,10 +493,9 @@ Parameters:
   CLIENT_SOCKET - The socket to send data to
   MESSAGE - The message
 ---------------------------------------------------------------------------------------------------------*/
+// requires: #include <bson/bson.h>
 void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server_client_t* client, const char* MESSAGE) {
   char delegate_public_address[XCASH_WALLET_LENGTH + 1];
-  char errctx[] = "server_receive_data_socket_nodes_to_block_verifiers_update_delegates";
-
   memset(delegate_public_address, 0, sizeof(delegate_public_address));
 
   // 1) Parse JSON
@@ -475,7 +536,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
     SERVER_ERROR("0|'updates' must be an object");
   }
 
-  // 2) Validate each field and build the $set doc
+  // 2) Validate each field and build the BSON update doc
   static const char* const allowed_fields[] = {
     "IP_address", "about", "website", "team",
     "shared_delegate_status", "delegate_fee", "server_specs"
@@ -483,106 +544,106 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
   const size_t allowed_fields_count = sizeof(allowed_fields) / sizeof(allowed_fields[0]);
 
   // filter: { "public_address": "<addr>" }
-  cJSON* filter = cJSON_CreateObject();
-  cJSON_AddStringToObject(filter, "public_address", delegate_public_address);
+  bson_t* filter_bson = bson_new();
+  if (!filter_bson) {
+    cJSON_Delete(root);
+    SERVER_ERROR("0|Internal error (alloc filter)");
+  }
+  BSON_APPEND_UTF8(filter_bson, "public_address", delegate_public_address);
 
   // setdoc: { key1: val1, key2: val2, ... }  (your helper treats this as the update doc)
-  cJSON* setdoc = cJSON_CreateObject();
+  bson_t* setdoc_bson = bson_new();
+  if (!setdoc_bson) {
+    bson_destroy(filter_bson);
+    cJSON_Delete(root);
+    SERVER_ERROR("0|Internal error (alloc update)");
+  }
 
   size_t valid_kv_count = 0;
   for (cJSON* it = updates->child; it != NULL; it = it->next) {
     const char* key = it->string;
     if (!key) {
-      cJSON_Delete(setdoc); cJSON_Delete(filter); cJSON_Delete(root);
+      bson_destroy(setdoc_bson); bson_destroy(filter_bson); cJSON_Delete(root);
       SERVER_ERROR("0|Missing update field name");
     }
+
     // allowlist check
     int ok_key = 0;
     for (size_t i = 0; i < allowed_fields_count; ++i) {
       if (strncmp(key, allowed_fields[i], BUFFER_SIZE) == 0) { ok_key = 1; break; }
     }
     if (!ok_key) {
-      cJSON_Delete(setdoc); cJSON_Delete(filter); cJSON_Delete(root);
+      bson_destroy(setdoc_bson); bson_destroy(filter_bson); cJSON_Delete(root);
       SERVER_ERROR("0|Invalid update field (allowed: IP_address, about, website, team, shared_delegate_status, delegate_fee, server_specs)");
     }
+
     // value must be string
     if (!cJSON_IsString(it)) {
-      cJSON_Delete(setdoc); cJSON_Delete(filter); cJSON_Delete(root);
+      bson_destroy(setdoc_bson); bson_destroy(filter_bson); cJSON_Delete(root);
       SERVER_ERROR("0|Value for update field must be a string");
     }
-    const char* val = it->valuestring;
-    if (!val) val = "";
+    const char* val = it->valuestring ? it->valuestring : "";
 
-    // Per-field constraints (mirror legacy) with clearer text
+    // Per-field constraints (mirror legacy)
     if (strncmp(key, "IP_address", BUFFER_SIZE) == 0) {
       if (check_for_valid_ip_or_hostname(val) == 0) {
-        cJSON_Delete(setdoc); cJSON_Delete(filter); cJSON_Delete(root);
+        bson_destroy(setdoc_bson); bson_destroy(filter_bson); cJSON_Delete(root);
         SERVER_ERROR("0|Invalid IP_address (must be IPv4 or domain, <=255 chars)");
       }
-    } else if (strncmp(key, "about", BUFFER_SIZE) == 0) {
+    } else if (strncmp(key, "about",      BUFFER_SIZE) == 0) {
       if (strnlen(val, 1025) > 1024) {
-        cJSON_Delete(setdoc); cJSON_Delete(filter); cJSON_Delete(root);
+        bson_destroy(setdoc_bson); bson_destroy(filter_bson); cJSON_Delete(root);
         SERVER_ERROR("0|'about' too long (max 1024)");
       }
-    } else if (strncmp(key, "website", BUFFER_SIZE) == 0) {
+    } else if (strncmp(key, "website",    BUFFER_SIZE) == 0) {
       if (strnlen(val, 256) > 255) {
-        cJSON_Delete(setdoc); cJSON_Delete(filter); cJSON_Delete(root);
+        bson_destroy(setdoc_bson); bson_destroy(filter_bson); cJSON_Delete(root);
         SERVER_ERROR("0|'website' too long (max 255)");
       }
-    } else if (strncmp(key, "team", BUFFER_SIZE) == 0) {
+    } else if (strncmp(key, "team",       BUFFER_SIZE) == 0) {
       if (strnlen(val, 256) > 255) {
-        cJSON_Delete(setdoc); cJSON_Delete(filter); cJSON_Delete(root);
+        bson_destroy(setdoc_bson); bson_destroy(filter_bson); cJSON_Delete(root);
         SERVER_ERROR("0|'team' too long (max 255)");
       }
     } else if (strncmp(key, "shared_delegate_status", BUFFER_SIZE) == 0) {
-      if (strncmp(val, "solo", BUFFER_SIZE) != 0 &&
+      if (strncmp(val, "solo",   BUFFER_SIZE) != 0 &&
           strncmp(val, "shared", BUFFER_SIZE) != 0 &&
-          strncmp(val, "group", BUFFER_SIZE) != 0) {
-        cJSON_Delete(setdoc); cJSON_Delete(filter); cJSON_Delete(root);
-        SERVER_ERROR("0|shared_delegate_status must be one of: solo | shared | group");
+          strncmp(val, "group",  BUFFER_SIZE) != 0) {
+        bson_destroy(setdoc_bson); bson_destroy(filter_bson); cJSON_Delete(root);
+        SERVER_ERROR("0|shared_delegate_status must be one of: solo, shared, or group");
       }
     } else if (strncmp(key, "delegate_fee", BUFFER_SIZE) == 0) {
       if (check_for_valid_delegate_fee(val) == 0) {
-        cJSON_Delete(setdoc); cJSON_Delete(filter); cJSON_Delete(root);
+        bson_destroy(setdoc_bson); bson_destroy(filter_bson); cJSON_Delete(root);
         SERVER_ERROR("0|Invalid delegate_fee (bad format or out of range)");
       }
     } else if (strncmp(key, "server_specs", BUFFER_SIZE) == 0) {
       if (strnlen(val, 256) > 255) {
-        cJSON_Delete(setdoc); cJSON_Delete(filter); cJSON_Delete(root);
+        bson_destroy(setdoc_bson); bson_destroy(filter_bson); cJSON_Delete(root);
         SERVER_ERROR("0|'server_specs' too long (max 255)");
       }
     }
 
-    // Add to update doc
-    cJSON_AddStringToObject(setdoc, key, val);
+    // Add to BSON update doc as strings
+    BSON_APPEND_UTF8(setdoc_bson, key, val);
     ++valid_kv_count;
   }
 
   if (valid_kv_count == 0) {
-    cJSON_Delete(setdoc); cJSON_Delete(filter); cJSON_Delete(root);
+    bson_destroy(setdoc_bson); bson_destroy(filter_bson); cJSON_Delete(root);
     SERVER_ERROR("0|No valid updates provided");
   }
 
-  // 3) Execute DB update
-  char* filter_json = cJSON_PrintUnformatted(filter);
-  char* setdoc_json = cJSON_PrintUnformatted(setdoc);
-  if (!filter_json || !setdoc_json) {
-    if (filter_json) cJSON_free(filter_json);
-    if (setdoc_json) cJSON_free(setdoc_json);
-    cJSON_Delete(setdoc); cJSON_Delete(filter); cJSON_Delete(root);
-    SERVER_ERROR("0|Internal error while building update JSON");
-  }
-
-  if (update_document_from_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, filter_json, setdoc_json) == 0) {
-    cJSON_free(filter_json); cJSON_free(setdoc_json);
-    cJSON_Delete(setdoc); cJSON_Delete(filter); cJSON_Delete(root);
+  // 3) Execute DB update (BSON version)
+  if (update_document_from_collection_bson(DATABASE_NAME, DB_COLLECTION_DELEGATES, filter_bson, setdoc_bson) == 0) {
+    bson_destroy(setdoc_bson);
+    bson_destroy(filter_bson);
+    cJSON_Delete(root);
     SERVER_ERROR("0|Database update failed");
   }
 
-  cJSON_free(filter_json);
-  cJSON_free(setdoc_json);
-  cJSON_Delete(setdoc);
-  cJSON_Delete(filter);
+  bson_destroy(setdoc_bson);
+  bson_destroy(filter_bson);
   cJSON_Delete(root);
 
   // 4) Success
