@@ -269,7 +269,9 @@ int verify_action_data(const char *message, const char *client_ip, xcash_msg_t m
   }
 
   // allow local: loopback or any interface on this host, can't check sign due to wallet process being down for delegate registration
-  if (msg_type == XMSG_NODES_TO_BLOCK_VERIFIERS_REGISTER_DELEGATE && is_local_address(client_ip)) {
+  if ((msg_type == XMSG_NODES_TO_BLOCK_VERIFIERS_REGISTER_DELEGATE ||
+     msg_type == XMSG_NODES_TO_BLOCK_VERIFIERS_UPDATE_DELEGATE) 
+     && is_local_address(client_ip)) {
     DEBUG_PRINT("Internal loopback connection ok from: %s", client_ip);
     return XCASH_OK;
   }
@@ -475,7 +477,7 @@ int verify_the_ip(const char *message, const char *client_ip) {
   bool match = false;
 
   if (gai_ret == 0 && res != NULL) {
-    // ✅ check ALL results, not just the first
+    // check ALL results, not just the first
     for (struct addrinfo *p = res; p; p = p->ai_next) {
       if (!p->ai_addr || p->ai_addr->sa_family != AF_INET) continue;
       if (!sockaddr_to_numhost(p->ai_addr, resolved_ip, sizeof(resolved_ip))) continue;
