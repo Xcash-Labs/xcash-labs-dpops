@@ -18,7 +18,20 @@ bool initialize_database(void) {
   // TLS-enabled replica set URI (no tlsCAFile in the URI)
   snprintf(mongo_uri, sizeof(mongo_uri),
            "mongodb://%s:%s@46.202.89.18:27017,82.180.154.21:27017,91.108.104.25:27017,212.85.13.137:27017/"
-           "?authSource=admin&replicaSet=xcashRS&tls=true&retryWrites=true&w=majority&journal=true",
+           "mongodb://%s:%s@"
+           "?authSource=admin"
+           "&replicaSet=xcashRS"
+           "&directConnection=false"
+           "&tls=true"
+           "&retryWrites=true"
+           "&retryReads=true"
+           "&readPreference=primaryPreferred"
+           "&serverSelectionTimeoutMS=5000"
+           "&connectTimeoutMS=5000"
+           "&socketTimeoutMS=15000"
+           "&w=majority"
+           "&journal=true"
+           "&appName=xcash-node",
            username, password);
 
 #else
