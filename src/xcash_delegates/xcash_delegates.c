@@ -44,8 +44,8 @@ int read_organize_delegates(delegates_t* delegates, size_t* delegates_count_resu
   int delegates_count;
 
   bson_t* delegates_db_data = bson_new();
-  if (!db_find_all_doc(DATABASE_NAME, collection_names[XCASH_DB_DELEGATES], delegates_db_data, &error)) {
-    DEBUG_PRINT("Failed to read delegates from db. %s", error.message);
+  if (!db_find_all_doc(DATABASE_NAME, DB_COLLECTION_DELEGATES, delegates_db_data, &error)) {
+    ERROR_PRINT("Failed to read delegates from db. %s", error.message);
     bson_destroy(delegates_db_data);
     return XCASH_ERROR;
   }

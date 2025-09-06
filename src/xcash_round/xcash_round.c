@@ -512,13 +512,18 @@ void start_block_production(void) {
 
     round_result = process_round();
 
-    // Final step - Wait for block creation and DB Updates
-    INFO_STAGE_PRINT("Part 12 - Wait for Block Creation");
+    // Final step - Wait for block creation and DB Updates or Node clean-up
     snprintf(current_round_part, sizeof(current_round_part), "%d", 12);
     int wait_min = 55;
     if (round_result == ROUND_ERROR) {
       wait_min = 45;
     }
+    if (round_result == ROUND_SKIP || round_result == ROUND_ERROR) {
+      INFO_STAGE_PRINT("Part 12 - Wait for Node Clean-up");
+    } else {
+      INFO_STAGE_PRINT("Part 12 - Wait for Block Creation");
+    }
+
     if (sync_block_verifiers_minutes_and_seconds(0, wait_min) == XCASH_ERROR) {
       INFO_PRINT("Failed to Confirm Block Creator in the allotted time, skipping round");
       goto end_of_round_skip_block;
