@@ -90,13 +90,17 @@ bool init_processing(const arg_config_t *arg_config) {
       bson_destroy(&bson_statistics);
 
       if (i == 0) {
-        if (!add_indexes()) {
-          FATAL_ERROR_EXIT("Failed to add indexes to database!");
+        if (!add_seed_indexes()) {
+          FATAL_ERROR_EXIT("Failed to add seed indexes to database!");
         }
       }
 
 #endif
 
+    }
+
+    if (!add_indexes()) {
+      FATAL_ERROR_EXIT("Failed to add indexes to database!");
     }
 
   }

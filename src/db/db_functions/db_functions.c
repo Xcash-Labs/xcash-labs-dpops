@@ -835,7 +835,7 @@ bool is_replica_set_ready(void) {
   return is_ready;
 }
 
-bool add_indexes(void) {
+bool add_seed_indexes(void) {
   bson_error_t err;
   bool ok = true;
 
@@ -885,71 +885,6 @@ bool add_indexes(void) {
     mongoc_index_model_destroy(m1);
     bson_destroy(&opts2); bson_destroy(&keys2);
     bson_destroy(&opts1); bson_destroy(&keys1);
-    mongoc_collection_destroy(coll);
-  }
-
-  /* =========================
-     DELEGATES COLLECTION
-     ========================= */
-  {
-    mongoc_collection_t *coll =
-        mongoc_client_get_collection(client, DATABASE_NAME, DB_COLLECTION_DELEGATES);
-
-    // 1) unique public_address
-    bson_t k1, o1; bson_init(&k1); bson_init(&o1);
-    BSON_APPEND_INT32(&k1, "public_address", 1);
-    BSON_APPEND_UTF8(&o1, "name", "uniq_public_address");
-    BSON_APPEND_BOOL(&o1, "unique", true);
-    mongoc_index_model_t *m1 = mongoc_index_model_new(&k1, &o1);
-
-    // 2) unique public_key
-    bson_t k2, o2; bson_init(&k2); bson_init(&o2);
-    BSON_APPEND_INT32(&k2, "public_key", 1);
-    BSON_APPEND_UTF8(&o2, "name", "uniq_public_key");
-    BSON_APPEND_BOOL(&o2, "unique", true);
-    mongoc_index_model_t *m2 = mongoc_index_model_new(&k2, &o2);
-
-    // 3) unique delegate_name (case-insensitive via collation)
-    bson_t k3, o3, coll3; bson_init(&k3); bson_init(&o3); bson_init(&coll3);
-    BSON_APPEND_INT32(&k3, "delegate_name", 1);
-    BSON_APPEND_UTF8(&o3, "name", "uniq_delegate_name_ci");
-    BSON_APPEND_BOOL(&o3, "unique", true);
-    BSON_APPEND_UTF8(&coll3, "locale", "en");
-    BSON_APPEND_INT32(&coll3, "strength", 2); // case-insensitive, diacritics-insensitive
-    BSON_APPEND_DOCUMENT(&o3, "collation", &coll3);
-    mongoc_index_model_t *m3 = mongoc_index_model_new(&k3, &o3);
-
-    // 4) unique IP_address (only if you truly want one delegate per IP/host)
-    bson_t k4, o4; bson_init(&k4); bson_init(&o4);
-    BSON_APPEND_INT32(&k4, "IP_address", 1);
-    BSON_APPEND_UTF8(&o4, "name", "uniq_IP_address");
-    BSON_APPEND_BOOL(&o4, "unique", true);
-    mongoc_index_model_t *m4 = mongoc_index_model_new(&k4, &o4);
-
-    mongoc_index_model_t *models[] = { m1, m2, m3, m4 };
-
-    bson_t create_opts; bson_init(&create_opts);
-    BSON_APPEND_UTF8(&create_opts, "commitQuorum", "majority");
-    BSON_APPEND_INT32(&create_opts, "maxTimeMS", 15000);
-
-    bson_t reply; bson_init(&reply);
-    if (!mongoc_collection_create_indexes_with_opts(coll, models, 4, &create_opts, &reply, &err)) {
-      ok = false;
-      char *json = bson_as_canonical_extended_json(&reply, NULL);
-      fprintf(stderr, "[indexes] delegates failed: %s\nDetails: %s\n",
-              err.message, json ? json : "(no reply)");
-      if (json) bson_free(json);
-    }
-
-    // cleanup
-    bson_destroy(&reply);
-    bson_destroy(&create_opts);
-    mongoc_index_model_destroy(m4); mongoc_index_model_destroy(m3);
-    mongoc_index_model_destroy(m2); mongoc_index_model_destroy(m1);
-    bson_destroy(&o4); bson_destroy(&k4);
-    bson_destroy(&coll3); bson_destroy(&o3); bson_destroy(&k3);
-    bson_destroy(&o2); bson_destroy(&k2);
-    bson_destroy(&o1); bson_destroy(&k1);
     mongoc_collection_destroy(coll);
   }
 
@@ -1034,6 +969,141 @@ bool add_indexes(void) {
   mongoc_client_pool_push(database_client_thread_pool, client);
   return ok;
 }
+
+
+
+bool add_indexes(void) {
+  bson_error_t err;
+  bool ok = true;
+
+  mongoc_client_t *client = mongoc_client_pool_pop(database_client_thread_pool);
+  if (!client) return false;
+
+  /* =========================
+     DELEGATES COLLECTION
+     ========================= */
+  {
+    mongoc_collection_t *coll =
+        mongoc_client_get_collection(client, DATABASE_NAME, DB_COLLECTION_DELEGATES);
+
+    // 1) unique public_address
+    bson_t k1, o1; bson_init(&k1); bson_init(&o1);
+    BSON_APPEND_INT32(&k1, "public_address", 1);
+    BSON_APPEND_UTF8(&o1, "name", "uniq_public_address");
+    BSON_APPEND_BOOL(&o1, "unique", true);
+    mongoc_index_model_t *m1 = mongoc_index_model_new(&k1, &o1);
+
+    // 2) unique public_key
+    bson_t k2, o2; bson_init(&k2); bson_init(&o2);
+    BSON_APPEND_INT32(&k2, "public_key", 1);
+    BSON_APPEND_UTF8(&o2, "name", "uniq_public_key");
+    BSON_APPEND_BOOL(&o2, "unique", true);
+    mongoc_index_model_t *m2 = mongoc_index_model_new(&k2, &o2);
+
+    // 3) unique delegate_name (case-insensitive via collation)
+    bson_t k3, o3, coll3; bson_init(&k3); bson_init(&o3); bson_init(&coll3);
+    BSON_APPEND_INT32(&k3, "delegate_name", 1);
+    BSON_APPEND_UTF8(&o3, "name", "uniq_delegate_name_ci");
+    BSON_APPEND_BOOL(&o3, "unique", true);
+    BSON_APPEND_UTF8(&coll3, "locale", "en");
+    BSON_APPEND_INT32(&coll3, "strength", 2); // case-insensitive, diacritics-insensitive
+    BSON_APPEND_DOCUMENT(&o3, "collation", &coll3);
+    mongoc_index_model_t *m3 = mongoc_index_model_new(&k3, &o3);
+
+    // 4) unique IP_address (only if you truly want one delegate per IP/host)
+    bson_t k4, o4; bson_init(&k4); bson_init(&o4);
+    BSON_APPEND_INT32(&k4, "IP_address", 1);
+    BSON_APPEND_UTF8(&o4, "name", "uniq_IP_address");
+    BSON_APPEND_BOOL(&o4, "unique", true);
+    mongoc_index_model_t *m4 = mongoc_index_model_new(&k4, &o4);
+
+    mongoc_index_model_t *models[] = { m1, m2, m3, m4 };
+
+    bson_t create_opts; bson_init(&create_opts);
+    BSON_APPEND_UTF8(&create_opts, "commitQuorum", "majority");
+    BSON_APPEND_INT32(&create_opts, "maxTimeMS", 15000);
+
+    bson_t reply; bson_init(&reply);
+    if (!mongoc_collection_create_indexes_with_opts(coll, models, 4, &create_opts, &reply, &err)) {
+      ok = false;
+      char *json = bson_as_canonical_extended_json(&reply, NULL);
+      fprintf(stderr, "[indexes] delegates failed: %s\nDetails: %s\n",
+              err.message, json ? json : "(no reply)");
+      if (json) bson_free(json);
+    }
+
+    // cleanup
+    bson_destroy(&reply);
+    bson_destroy(&create_opts);
+    mongoc_index_model_destroy(m4); mongoc_index_model_destroy(m3);
+    mongoc_index_model_destroy(m2); mongoc_index_model_destroy(m1);
+    bson_destroy(&o4); bson_destroy(&k4);
+    bson_destroy(&coll3); bson_destroy(&o3); bson_destroy(&k3);
+    bson_destroy(&o2); bson_destroy(&k2);
+    bson_destroy(&o1); bson_destroy(&k1);
+    mongoc_collection_destroy(coll);
+  }
+
+
+  /* =========================
+   RESERVE_PROOFS COLLECTION
+   ========================= */
+  {
+    mongoc_collection_t* coll =
+        mongoc_client_get_collection(client, DATABASE_NAME, DB_COLLECTION_RESERVE_PROOFS);
+
+    // index on public_address_voted_for
+    bson_t k1, o1;
+    bson_init(&k1);
+    bson_init(&o1);
+    BSON_APPEND_INT32(&k1, "public_address_voted_for", 1);
+    BSON_APPEND_UTF8(&o1, "name", "idx_voted_for");
+    mongoc_index_model_t* m1 = mongoc_index_model_new(&k1, &o1);
+
+    mongoc_index_model_t* models[] = {m1};
+
+    bson_t create_opts;
+    bson_init(&create_opts);
+    BSON_APPEND_UTF8(&create_opts, "commitQuorum", "majority");
+    BSON_APPEND_INT32(&create_opts, "maxTimeMS", 15000);
+    // writeConcern: majority
+    bson_t wc;
+    bson_init(&wc);
+    BSON_APPEND_UTF8(&wc, "w", "majority");
+    BSON_APPEND_DOCUMENT(&create_opts, "writeConcern", &wc);
+
+    bson_t reply;
+    bson_error_t ierr;
+    bson_init(&reply);
+    if (!mongoc_collection_create_indexes_with_opts(
+            coll, models, (int)(sizeof(models) / sizeof(models[0])),
+            &create_opts, &reply, &ierr)) {
+      char* json = bson_as_canonical_extended_json(&reply, NULL);
+      if (!(strstr(ierr.message, "already exists") ||
+            (json && strstr(json, "already exists")))) {
+        ok = false;
+        fprintf(stderr, "[indexes] %s failed: %s\nDetails: %s\n",
+                DB_COLLECTION_RESERVE_PROOFS, ierr.message, json ? json : "(no reply)");
+      }
+      if (json) bson_free(json);
+    }
+
+    // cleanup
+    bson_destroy(&reply);
+    bson_destroy(&wc);
+    bson_destroy(&create_opts);
+
+    mongoc_index_model_destroy(m1);
+    bson_destroy(&o1);
+    bson_destroy(&k1);
+
+    mongoc_collection_destroy(coll);
+  }
+
+  mongoc_client_pool_push(database_client_thread_pool, client);
+  return ok;
+}
+
 
 
 

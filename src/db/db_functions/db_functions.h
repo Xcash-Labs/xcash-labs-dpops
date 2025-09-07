@@ -33,7 +33,8 @@ int get_data(mongoc_client_t *client, const char *db_name, const char *field_nam
 int get_statistics_totals_by_public_key(const char* public_key, uint64_t* block_verifier_total_rounds, uint64_t* block_verifier_online_total_rounds, 
     uint64_t* block_producer_total_rounds);
 bool is_replica_set_ready(void);
-bool add_indexes(void);
+bool add_seed_indexes(void);
+bool add_indexes(void)
 
 // from db_helpers
 int count_db_delegates(void);
