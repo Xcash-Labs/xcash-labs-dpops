@@ -83,7 +83,7 @@ int count_all_documents_in_collection(const char* DATABASE, const char* COLLECTI
 }
 
 // Function to insert a document into a collection
-int insert_document_into_collection_bson(const char* DATABASE, const char* COLLECTION, bson_t* document) {
+int insert_document_into_collection_bson__OLD__(const char* DATABASE, const char* COLLECTION, bson_t* document) {
   if (document == NULL) {
     ERROR_PRINT("BSON document is NULL.");
     return XCASH_ERROR;
@@ -123,6 +123,64 @@ int insert_document_into_collection_bson(const char* DATABASE, const char* COLLE
   }
 
   free_resources(NULL, NULL, collection, database_client_thread);
+  return XCASH_OK;
+}
+
+int insert_document_into_collection_bson(const char* DATABASE, const char* COLLECTION, bson_t* document) {
+  if (!DATABASE || !COLLECTION || !document) {
+    ERROR_PRINT("insert_document_into_collection_bson: bad params (db=%p coll=%p doc=%p)",
+                (void*)DATABASE, (void*)COLLECTION, (void*)document);
+    return XCASH_ERROR;
+  }
+
+  if (strstr(COLLECTION, "delegates")) {
+    bson_iter_t it;
+    bool has_id = bson_iter_init_find(&it, document, "_id");
+
+    if (!has_id) {
+      const char* id_src = NULL;
+
+      if (bson_iter_init_find(&it, document, "public_key") && BSON_ITER_HOLDS_UTF8(&it)) {
+        id_src = bson_iter_utf8(&it, NULL);
+      }
+
+      if (id_src && *id_src) {
+        if (!BSON_APPEND_UTF8(document, "_id", id_src)) {
+          ERROR_PRINT("Failed to append _id to BSON document.");
+          return XCASH_ERROR;
+        }
+      }
+      // if no id_src found, we let the server auto-generate _id (ObjectId)
+    }
+  }
+
+  mongoc_client_t* client = get_temporary_connection();
+  if (!client) {
+    ERROR_PRINT("Failed to get temporary MongoDB client.");
+    return XCASH_ERROR;
+  }
+
+  mongoc_collection_t* coll = mongoc_client_get_collection(client, DATABASE, COLLECTION);
+  if (!coll) {
+    ERROR_PRINT("Failed to get collection '%s.%s'", DATABASE, COLLECTION);
+    mongoc_client_destroy(client);
+    return XCASH_ERROR;
+  }
+
+  bson_error_t err;
+  bool ok = mongoc_collection_insert_one(coll, document, NULL, NULL, &err);
+
+  if (!ok) {
+    // Duplicate key? (E11000 / code 11000) — caller can decide how to handle
+    ERROR_PRINT("Insert failed for %s.%s: domain=%d code=%d msg=%s",
+                DATABASE, COLLECTION, err.domain, err.code, err.message);
+    mongoc_collection_destroy(coll);
+    mongoc_client_destroy(client);
+    return XCASH_ERROR;
+  }
+
+  mongoc_collection_destroy(coll);
+  mongoc_client_destroy(client);
   return XCASH_OK;
 }
 
@@ -980,75 +1038,7 @@ bool add_indexes(void) {
 
 
 
-
-
 // db helpers
-
-bson_t *assign_ids(bson_t *docs, xcash_dbs_t collection_id) {
-    const char *key_name = NULL;
-    const char *key_name_fmt = NULL;
-    char id_value[ID_MAX_SIZE];
-    bson_iter_t iter;
-    int index = 0;
-    char str_index[16];  // for converting integer to string just placeholder for 16 digits index
-
-    switch (collection_id) {
-        case XCASH_DB_DELEGATES:
-            key_name = "public_key";
-            key_name_fmt = "0000000000000000000000000000000000000000000000000000000000000000%s";
-            break;
-
-        case XCASH_DB_STATISTICS:
-            key_name = "__placeholder__";
-            key_name_fmt =
-                "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
-                "00000000000000000000000000";
-            break;
-
-        case XCASH_DB_RESERVE_PROOFS:
-            key_name = "public_address_created_reserve_proof";
-            key_name_fmt = "000000000000000000000000000000%s";
-            break;
-
-        case XCASH_DB_RESERVE_BYTES:
-            key_name = "reserve_bytes_data_hash";
-            key_name_fmt = "%s";
-            break;
-
-        default:
-            break;
-    };
-
-    bson_t *new_docs = bson_new();
-
-    if (bson_iter_init(&iter, docs)) {
-        while (bson_iter_next(&iter)) {
-            const uint8_t *data;
-            uint32_t len;
-
-            bson_iter_document(&iter, &len, &data);
-            bson_t *sub_doc = bson_new_from_data(data, len);
-
-            bson_iter_t sub_iter;
-            if (bson_iter_init_find(&sub_iter, sub_doc, key_name)) {
-                const char *key_value = bson_iter_utf8(&sub_iter, NULL);
-                snprintf(id_value, sizeof(id_value), key_name_fmt, key_value);
-
-                bson_append_utf8(sub_doc, "_id", -1, id_value, -1);
-            } else {
-                if (collection_id == XCASH_DB_STATISTICS) {
-                    bson_append_utf8(sub_doc, "_id", -1, key_name_fmt, -1);
-                }
-            }
-            snprintf(str_index, sizeof(str_index), "%d", index);
-            bson_append_document(new_docs, str_index, -1, sub_doc);
-            bson_destroy(sub_doc);
-        }
-    }
-
-    return new_docs;
-}
-
 
 int remove_reserve_byte_duplicates(const char *db_name, const char *collection_name, bson_t *docs) {
     mongoc_client_t *client;
