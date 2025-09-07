@@ -34,7 +34,7 @@ int get_statistics_totals_by_public_key(const char* public_key, uint64_t* block_
     uint64_t* block_producer_total_rounds);
 bool is_replica_set_ready(void);
 bool add_seed_indexes(void);
-bool add_indexes(void)
+bool add_indexes(void);
 
 // from db_helpers
 int count_db_delegates(void);
