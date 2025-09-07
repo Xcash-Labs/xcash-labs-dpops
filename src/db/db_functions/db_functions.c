@@ -128,8 +128,7 @@ int insert_document_into_collection_bson__OLD__(const char* DATABASE, const char
 
 int insert_document_into_collection_bson(const char* DATABASE, const char* COLLECTION, bson_t* document) {
   if (!DATABASE || !COLLECTION || !document) {
-    ERROR_PRINT("insert_document_into_collection_bson: bad params (db=%p coll=%p doc=%p)",
-                (void*)DATABASE, (void*)COLLECTION, (void*)document);
+    ERROR_PRINT("insert_document_into_collection_bson: bad params");
     return XCASH_ERROR;
   }
 
