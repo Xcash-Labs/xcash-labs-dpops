@@ -132,7 +132,7 @@ int insert_document_into_collection_bson(const char* DATABASE, const char* COLLE
     return XCASH_ERROR;
   }
 
-  if (strstr(COLLECTION, "delegates")) {
+  if (strstr(COLLECTION, DB_COLLECTION_DELEGATES) || strstr(COLLECTION, DB_COLLECTION_STATISTICS)) {
     bson_iter_t it;
     bool has_id = bson_iter_init_find(&it, document, "_id");
 
