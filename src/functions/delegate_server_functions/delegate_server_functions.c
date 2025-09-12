@@ -715,7 +715,7 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
   char voted_for_public_address[XCASH_WALLET_LENGTH + 1] = {0};
   char proof_str[BUFFER_SIZE_RESERVE_PROOF] = {0};
   char json_filter[256] = {0};
-  char json_buf[256] = {0}
+  char json_buf[256] = {0};
 
   // Parsed numeric
   uint64_t vote_amount_atomic = 0;
