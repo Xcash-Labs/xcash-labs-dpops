@@ -707,7 +707,6 @@ Parameters:
   CLIENT_SOCKET - The socket to send data to
   MESSAGE - The message
 ----------------------------------------------------------------------------------------------------------- */
-/*
 void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server_client_t *client, const char *MESSAGE)
 {
   // ---- Buffers ----
@@ -715,14 +714,11 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
   char delegate_name_or_address[MAXIMUM_BUFFER_SIZE_DELEGATES_NAME + 1] = {0};
   char voted_for_public_address[XCASH_WALLET_LENGTH + 1] = {0};
   char proof_str[BUFFER_SIZE_RESERVE_PROOF] = {0};
-
-  // JSON build buffers
-  char json_buf[SMALL_BUFFER_SIZE + BUFFER_SIZE_RESERVE_PROOF + 256] = {0};
   char json_filter[256] = {0};
+  char json_buf[256] = {0}
 
   // Parsed numeric
   uint64_t vote_amount_atomic = 0;
-  const uint64_t MIN_VOTE_ATOMIC = 2000000000000ULL;
 
   // ---- Parse JSON ----
   if (!MESSAGE || !*MESSAGE) {
@@ -782,7 +778,15 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
     // Enforce per-vote minimum on the server too
     if (vote_amount_atomic < MIN_VOTE_ATOMIC) {
       cJSON_Delete(root);
-      SERVER_ERROR("0|Each vote must be at least 2,000,000 XCA");
+
+      const unsigned long long min_vote_display =
+          (unsigned long long)(MIN_VOTE_ATOMIC / XCASH_ATOMIC_UNITS);
+
+      char err_msg[128];
+      snprintf(err_msg, sizeof(err_msg),
+               "0|Each vote must be at least %llu XCA", min_vote_display);
+
+      SERVER_ERROR(err_msg);
     }
   }
 
@@ -804,11 +808,28 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
       strncmp(delegate_name_or_address, XCASH_WALLET_PREFIX, sizeof(XCASH_WALLET_PREFIX) - 1) == 0) {
     memcpy(voted_for_public_address, delegate_name_or_address, XCASH_WALLET_LENGTH);
   } else {
-    // lookup by name
+    // lookup by name (validate the name)
+    size_t name_len = strnlen(delegate_name_or_address, sizeof(delegate_name_or_address));
+    if (name_len == 0) {
+      cJSON_Delete(root);
+      SERVER_ERROR("0|delegate_name_or_address is empty");
+    }
+
+    // allow-list simple charset: letters, digits, underscore, hyphen, dot
+    for (size_t i = 0; i < name_len; ++i) {
+      unsigned char ch = (unsigned char)delegate_name_or_address[i];
+      if (!((ch >= 'A' && ch <= 'Z') ||
+            (ch >= 'a' && ch <= 'z') ||
+            (ch >= '0' && ch <= '9') ||
+            ch == '_' || ch == '-' || ch == '.')) {
+        cJSON_Delete(root);
+        SERVER_ERROR("0|delegate_name_or_address contains invalid characters");
+      }
+    }
+
     snprintf(json_buf, sizeof(json_buf),
              "{\"delegate_name\":\"%.*s\"}",
-             (int)strnlen(delegate_name_or_address, sizeof(delegate_name_or_address)),
-             delegate_name_or_address);
+             (int)name_len, delegate_name_or_address);
 
     char addr_buf[XCASH_WALLET_LENGTH + 1] = {0};
     if (read_document_field_from_collection(database_name, "delegates",
@@ -834,36 +855,47 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
   (void)delete_document_from_collection(database_name, DB_COLLECTION_RESERVE_PROOFS, json_filter);
 
   // ---- Insert/replace into single collection: reserve_proofs ----
-  // Store amount as NumberLong via Extended JSON; include _id and received_at
-  // NOTE: received_at is milliseconds since epoch
-  const unsigned long long now_ms =
+  // (Using BSON types; include _id and received_at)
   unsigned long long now_ms = (unsigned long long)time(NULL) * 1000ULL;
 
-  snprintf(json_buf, sizeof(json_buf),
-    "{"
-      "\"_id\":\"%.*s\","
-      "\"public_address_created_reserve_proof\":\"%.*s\","
-      "\"public_address_voted_for\":\"%.*s\","
-      "\"total\":{\"$numberLong\":\"%llu\"},"
-      "\"reserve_proof\":\"%s\","
-      "\"received_at\":{\"$date\":{\"$numberLong\":\"%llu\"}}"
-    "}",
-    XCASH_WALLET_LENGTH, voter_public_address,
-    XCASH_WALLET_LENGTH, voter_public_address,
-    XCASH_WALLET_LENGTH, voted_for_public_address,
-    (unsigned long long)vote_amount_atomic,
-    proof_str,
-    now_ms
-  );
+  // Build BSON document
+  bson_t doc;
+  bson_init(&doc);
 
-  if (insert_document_into_collection_json(database_name, DB_COLLECTION_RESERVE_PROOFS, json_buf) != 1) {
+  // _id
+  bson_append_utf8(&doc, "_id", -1, voter_public_address, XCASH_WALLET_LENGTH);
+
+  // public_address_created_reserve_proof
+  bson_append_utf8(&doc, "public_address_created_reserve_proof", -1,
+                   voter_public_address, XCASH_WALLET_LENGTH);
+
+  // public_address_voted_for
+  bson_append_utf8(&doc, "public_address_voted_for", -1,
+                   voted_for_public_address, XCASH_WALLET_LENGTH);
+
+  // total (64-bit int instead of "$numberLong")
+  BSON_APPEND_INT64(&doc, "total", (int64_t)vote_amount_atomic);
+
+  // reserve_proof
+  BSON_APPEND_UTF8(&doc, "reserve_proof", proof_str);
+
+  // received_at (Date in ms since epoch)
+  BSON_APPEND_DATE_TIME(&doc, "received_at", (int64_t)now_ms);
+
+  // Insert into Mongo
+  if (insert_document_into_collection_bson(database_name, DB_COLLECTION_RESERVE_PROOFS, &doc) != 1) {
+    bson_destroy(&doc);
     cJSON_Delete(root);
     SERVER_ERROR("0|The vote could not be added to the database");
   }
 
+  // Always free resources
+  bson_destroy(&doc);
+
   // Done: hourly job will revalidate & aggregate totals
   cJSON_Delete(root);
-  send_data(CLIENT_SOCKET, (unsigned char*)"1|The vote was successfully added to the database", 0, 0, "");
+  const char *ok = "1|The vote was successfully added to the database";
+  send_data(client, (unsigned char*)ok, strlen(ok));
+
   return;
 }
-*/
