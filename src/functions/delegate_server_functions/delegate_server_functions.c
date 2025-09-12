@@ -832,7 +832,7 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
              (int)name_len, delegate_name_or_address);
 
     char addr_buf[XCASH_WALLET_LENGTH + 1] = {0};
-    if (read_document_field_from_collection(database_name, "delegates",
+    if (read_document_field_from_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES,
                                             json_buf, "public_address", addr_buf) == 0 ||
         strnlen(addr_buf, sizeof(addr_buf)) != XCASH_WALLET_LENGTH) {
       cJSON_Delete(root);
@@ -852,7 +852,7 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
   snprintf(json_filter, sizeof(json_filter),
            "{\"_id\":\"%.*s\"}", XCASH_WALLET_LENGTH, voter_public_address);
   // Best-effort delete; don't hard-fail if not present
-  (void)delete_document_from_collection(database_name, DB_COLLECTION_RESERVE_PROOFS, json_filter);
+  (void)delete_document_from_collection(DATABASE_NAME, DB_COLLECTION_RESERVE_PROOFS, json_filter);
 
   // ---- Insert/replace into single collection: reserve_proofs ----
   // (Using BSON types; include _id and received_at)
@@ -883,7 +883,7 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
   BSON_APPEND_DATE_TIME(&doc, "received_at", (int64_t)now_ms);
 
   // Insert into Mongo
-  if (insert_document_into_collection_bson(database_name, DB_COLLECTION_RESERVE_PROOFS, &doc) != 1) {
+  if (insert_document_into_collection_bson(DATABASE_NAME, DB_COLLECTION_RESERVE_PROOFS, &doc) != 1) {
     bson_destroy(&doc);
     cJSON_Delete(root);
     SERVER_ERROR("0|The vote could not be added to the database");
