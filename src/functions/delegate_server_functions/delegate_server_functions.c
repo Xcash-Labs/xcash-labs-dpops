@@ -862,6 +862,23 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
   bson_t doc;
   bson_init(&doc);
 
+
+
+
+
+
+
+
+
+  use date time from vote
+
+
+
+
+
+
+
+
   // _id
   bson_append_utf8(&doc, "_id", -1, voter_public_address, XCASH_WALLET_LENGTH);
 
@@ -894,8 +911,7 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
 
   // Done: hourly job will revalidate & aggregate totals
   cJSON_Delete(root);
-  const char *ok = "1|The vote was successfully added to the database";
-  send_data(client, (unsigned char*)ok, strlen(ok));
+  send_data(client, "1|The vote was successfully added to the database", strlen("1|The vote was successfully added to the database"));
 
   return;
 }
