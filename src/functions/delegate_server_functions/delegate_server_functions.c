@@ -715,7 +715,6 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
   char voted_for_public_address[XCASH_WALLET_LENGTH + 1] = {0};
   char proof_str[BUFFER_SIZE_RESERVE_PROOF] = {0};
   char json_filter[256] = {0};
-  char json_buf[256] = {0};
 
   // Parsed numeric
   uint64_t vote_amount_atomic = 0;
@@ -827,17 +826,18 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
       }
     }
 
-    snprintf(json_buf, sizeof(json_buf),
+    snprintf(json_filter, sizeof(json_filter),
              "{\"delegate_name\":\"%.*s\"}",
              (int)name_len, delegate_name_or_address);
 
     char addr_buf[XCASH_WALLET_LENGTH + 1] = {0};
-    if (read_document_field_from_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES,
-                                            json_buf, "public_address", addr_buf) == 0 ||
+    if (read_document_field_from_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, json_filter, 
+      "public_address", addr_buf,sizeof(addr_buf) ) == XCASH_OK ||
         strnlen(addr_buf, sizeof(addr_buf)) != XCASH_WALLET_LENGTH) {
       cJSON_Delete(root);
       SERVER_ERROR("0|The delegate voted for is invalid");
     }
+
     memcpy(voted_for_public_address, addr_buf, XCASH_WALLET_LENGTH);
   }
 
