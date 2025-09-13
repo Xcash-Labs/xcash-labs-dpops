@@ -208,8 +208,7 @@
 #define NETWORK_NODE_0 "xcashseeds_us" // Network node 0
 #define PRODUCER_REF_COUNT 1  // Main + 0 backups for now
 #define MAJORITY_PERCENT 70
-
-
+#define SEED_REGISTRATION_TIME_UTC 1756684860ULL  // 2025-09-01 00:01:00 UTC
 
 #define MAX_ACTIVE_CLIENTS 200
 

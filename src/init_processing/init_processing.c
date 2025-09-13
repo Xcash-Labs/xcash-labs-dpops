@@ -32,7 +32,7 @@ bool init_processing(const arg_config_t *arg_config) {
         if (*p == '.') *p = '_';
       }
 
-      uint64_t registration_time = (uint64_t)time(NULL);
+      uint64_t registration_time = SEED_REGISTRATION_TIME_UTC;
       double set_delegate_fee = 0.00;
 
       bson_t bson;
