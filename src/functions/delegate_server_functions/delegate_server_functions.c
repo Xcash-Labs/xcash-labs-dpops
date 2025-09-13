@@ -525,8 +525,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
   cJSON *js_reg_time = cJSON_GetObjectItemCaseSensitive(root, "registration_timestamp");
 
   if (!cJSON_IsNumber(js_reg_time) || !isfinite(js_reg_time->valuedouble) ||
-      js_reg_time->valuedouble < 0.0 ||
-      (double)((uint64_t)js_reg_time->valuedouble) != js_reg_time->valuedouble) {
+      js_reg_time->valuedouble < 0.0) {
     cJSON_Delete(root);
     SERVER_ERROR("0|registration_timestamp invalid");
   }
