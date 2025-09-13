@@ -687,19 +687,6 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
   return;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 /* -----------------------------------------------------------------------------------------_---------------
 Name: server_receive_data_socket_node_to_block_verifiers_add_reserve_proof
 Description: Runs the code when the server receives the NODE_TO_BLOCK_VERIFIERS_ADD_RESERVE_PROOF message
@@ -707,14 +694,14 @@ Parameters:
   CLIENT_SOCKET - The socket to send data to
   MESSAGE - The message
 ----------------------------------------------------------------------------------------------------------- */
-void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server_client_t *client, const char *MESSAGE)
-{
+void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server_client_t *client, const char *MESSAGE) {
   // ---- Buffers ----
   char voter_public_address[XCASH_WALLET_LENGTH + 1] = {0};
   char delegate_name_or_address[MAXIMUM_BUFFER_SIZE_DELEGATES_NAME + 1] = {0};
   char voted_for_public_address[XCASH_WALLET_LENGTH + 1] = {0};
   char proof_str[BUFFER_SIZE_RESERVE_PROOF] = {0};
   unsigned long long vote_timestamp_sec = 0ULL;
+  unsigned long long vote_ts_ms = vote_timestamp_sec * 1000ULL;
   char json_filter[256] = {0};
 
   // Parsed numeric
@@ -768,11 +755,17 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
   {
     const char *anum = j_amount->valuestring;
     for (const char *p = anum; *p; ++p) {
-      if (*p < '0' || *p > '9') { cJSON_Delete(root); SERVER_ERROR("0|vote_amount must contain only digits (atomic units)"); }
+      if (*p < '0' || *p > '9') {
+        cJSON_Delete(root);
+        SERVER_ERROR("0|vote_amount must contain only digits (atomic units)");
+      }
     }
     errno = 0;
     unsigned long long tmp = strtoull(anum, NULL, 10);
-    if (errno != 0 || tmp == 0ULL) { cJSON_Delete(root); SERVER_ERROR("0|Invalid vote_amount"); }
+    if (errno != 0 || tmp == 0ULL) {
+      cJSON_Delete(root);
+      SERVER_ERROR("0|Invalid vote_amount");
+    }
     vote_amount_atomic = (uint64_t)tmp;
 
     // Enforce per-vote minimum on the server too
@@ -816,18 +809,16 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
       cJSON_Delete(root);
       SERVER_ERROR("0|Invalid vote_timestamp");
     }
-    vote_timestamp_sec = (unsigned long long)d;   /* seconds */
-  }
-  else if (cJSON_IsString(j_ts) && j_ts->valuestring[0] != '\0') {
+    vote_timestamp_sec = (unsigned long long)d; /* seconds */
+  } else if (cJSON_IsString(j_ts) && j_ts->valuestring[0] != '\0') {
     errno = 0;
     tmp = strtoull(j_ts->valuestring, NULL, 10);
     if (errno != 0 || tmp == 0ULL) {
       cJSON_Delete(root);
       SERVER_ERROR("0|vote_timestamp is invalid");
     }
-    vote_timestamp_sec = tmp;           /* seconds */
-  }
-  else {
+    vote_timestamp_sec = tmp; /* seconds */
+  } else {
     cJSON_Delete(root);
     SERVER_ERROR("0|vote_timestamp must be a number or numeric string");
   }
@@ -861,8 +852,8 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
              (int)name_len, delegate_name_or_address);
 
     char addr_buf[XCASH_WALLET_LENGTH + 1] = {0};
-    if (read_document_field_from_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, json_filter, 
-      "public_address", addr_buf,sizeof(addr_buf) ) == XCASH_OK ||
+    if (read_document_field_from_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, json_filter,
+                                            "public_address", addr_buf, sizeof(addr_buf)) == XCASH_OK ||
         strnlen(addr_buf, sizeof(addr_buf)) != XCASH_WALLET_LENGTH) {
       cJSON_Delete(root);
       SERVER_ERROR("0|The delegate voted for is invalid");
@@ -909,7 +900,6 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
   // reserve_proof
   BSON_APPEND_UTF8(&doc, "reserve_proof", proof_str);
 
-  unsigned long long vote_ts_ms = vote_timestamp_sec * 1000ULL;
   BSON_APPEND_DATE_TIME(&doc, "vote_timestamp", (int64_t)vote_ts_ms);
 
   // Insert into Mongo
@@ -924,7 +914,7 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
 
   // Done: hourly job will revalidate & aggregate totals
   cJSON_Delete(root);
-  send_data(client, "1|The vote was successfully added to the database", strlen("1|The vote was successfully added to the database"));
+  send_data(client, (unsigned char *)"1|The vote was successfully added to the database", strlen("1|The vote was successfully added to the database"));
 
   return;
 }
