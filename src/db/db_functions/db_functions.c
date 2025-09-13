@@ -1029,7 +1029,9 @@ bool add_indexes(void) {
 
     bson_t create_opts;
     bson_init(&create_opts);
-    BSON_APPEND_UTF8(&create_opts, "commitQuorum", "majority");
+    if (is_seed_node) {
+      BSON_APPEND_UTF8(&create_opts, "commitQuorum", "majority");
+    }
     BSON_APPEND_INT32(&create_opts, "maxTimeMS", 15000);
 
     // writeConcern: majority
