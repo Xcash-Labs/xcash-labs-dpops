@@ -488,6 +488,7 @@ Parameters:
 ---------------------------------------------------------------------------------------------------------*/
 void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server_client_t *client, const char *MESSAGE) {
   char delegate_public_address[XCASH_WALLET_LENGTH + 1];
+  uint64_t registration_time = 0;
   memset(delegate_public_address, 0, sizeof(delegate_public_address));
 
   // 1) Parse JSON
@@ -520,6 +521,16 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
     SERVER_ERROR("0|Invalid public_address (wrong length or prefix)");
   }
   memcpy(delegate_public_address, jaddr->valuestring, XCASH_WALLET_LENGTH);
+
+  cJSON *js_reg_time = cJSON_GetObjectItemCaseSensitive(root, "registration_timestamp");
+
+  if (!cJSON_IsNumber(js_reg_time) || !isfinite(js_reg_time->valuedouble) ||
+      js_reg_time->valuedouble < 0.0 ||
+      (double)((uint64_t)js_reg_time->valuedouble) != js_reg_time->valuedouble) {
+    cJSON_Delete(root);
+    SERVER_ERROR("0|registration_timestamp invalid");
+  }
+  registration_time = (uint64_t)js_reg_time->valuedouble;
 
   // updates object (required)
   cJSON *updates = cJSON_GetObjectItemCaseSensitive(root, "updates");
@@ -662,6 +673,8 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
 
     ++valid_kv_count;
   }
+
+  BSON_APPEND_INT64(setdoc_bson, "registration_timestamp", (int64_t)registration_time);
 
   if (valid_kv_count == 0) {
     bson_destroy(setdoc_bson);
