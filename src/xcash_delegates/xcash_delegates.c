@@ -120,7 +120,7 @@ int read_organize_delegates(delegates_t* delegates, size_t* delegates_count_resu
           } else if (strcmp(db_key, "registration_timestamp") == 0) {
             if (BSON_ITER_HOLDS_INT64(&record_iter) || BSON_ITER_HOLDS_INT32(&record_iter)) {
               time_t reg_time = bson_iter_as_int64(&record_iter);
-              if (now - reg_time < 300) {
+              if (now - reg_time < 599) {      // 10 mins
                 skip_delegate = true;
               }
               delegates[delegate_index].registration_timestamp = reg_time;

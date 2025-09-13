@@ -82,50 +82,6 @@ int count_all_documents_in_collection(const char* DATABASE, const char* COLLECTI
   return count;
 }
 
-// Function to insert a document into a collection
-int insert_document_into_collection_bson__OLD__(const char* DATABASE, const char* COLLECTION, bson_t* document) {
-  if (document == NULL) {
-    ERROR_PRINT("BSON document is NULL.");
-    return XCASH_ERROR;
-  }
-
-  // Extract or create a hash-based _id if needed
-  char data_hash[DATA_HASH_LENGTH + 1] = {0};
-
-  // Optionally extract a key from the BSON document for consistent _id (like public_key)
-  bson_iter_t iter;
-  if (strstr(COLLECTION, "delegates") && bson_iter_init_find(&iter, document, "public_key") && BSON_ITER_HOLDS_UTF8(&iter)) {
-    const char* public_key = bson_iter_utf8(&iter, NULL);
-    snprintf(data_hash, sizeof(data_hash), "0000000000000000000000000000000000000000000000000000000000000000%.*s", DATA_HASH_LENGTH - 64, public_key);
-
-    if (strlen(data_hash) != DATA_HASH_LENGTH) {
-      ERROR_PRINT("Invalid data hash length.");
-      return XCASH_ERROR;
-    }
-
-    // Add the _id field
-    bson_append_utf8(document, "_id", -1, data_hash, -1);
-
-  }
-
-  // Setup MongoDB connection
-  mongoc_client_t* database_client_thread = get_temporary_connection();
-  if (!database_client_thread) return XCASH_ERROR;
-
-  mongoc_collection_t* collection = mongoc_client_get_collection(database_client_thread, DATABASE, COLLECTION);
-  if (!collection) return handle_error("Failed to get collection", NULL, NULL, NULL, database_client_thread);
-
-  bson_error_t error;
-  if (!mongoc_collection_insert_one(collection, document, NULL, NULL, &error)) {
-    ERROR_PRINT("Could not insert BSON document: %s", error.message);
-    free_resources(NULL, NULL, collection, database_client_thread);
-    return XCASH_ERROR;
-  }
-
-  free_resources(NULL, NULL, collection, database_client_thread);
-  return XCASH_OK;
-}
-
 int insert_document_into_collection_bson(const char* DATABASE, const char* COLLECTION, bson_t* document) {
   if (!DATABASE || !COLLECTION || !document) {
     ERROR_PRINT("insert_document_into_collection_bson: bad params");
@@ -1020,7 +976,9 @@ bool add_indexes(void) {
     mongoc_index_model_t *models[] = { m1, m2, m3, m4 };
 
     bson_t create_opts; bson_init(&create_opts);
-    BSON_APPEND_UTF8(&create_opts, "commitQuorum", "majority");
+    if (is_seed_node) {
+      BSON_APPEND_UTF8(&create_opts, "commitQuorum", "majority");
+    }
     BSON_APPEND_INT32(&create_opts, "maxTimeMS", 15000);
 
     bson_t reply; bson_init(&reply);

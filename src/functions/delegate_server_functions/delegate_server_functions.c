@@ -695,7 +695,6 @@ Parameters:
   MESSAGE - The message
 ----------------------------------------------------------------------------------------------------------- */
 void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server_client_t *client, const char *MESSAGE) {
-  // ---- Buffers ----
   char voter_public_address[XCASH_WALLET_LENGTH + 1] = {0};
   char delegate_name_or_address[MAXIMUM_BUFFER_SIZE_DELEGATES_NAME + 1] = {0};
   char voted_for_public_address[XCASH_WALLET_LENGTH + 1] = {0};
