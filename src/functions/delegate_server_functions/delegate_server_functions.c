@@ -714,6 +714,7 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
   char delegate_name_or_address[MAXIMUM_BUFFER_SIZE_DELEGATES_NAME + 1] = {0};
   char voted_for_public_address[XCASH_WALLET_LENGTH + 1] = {0};
   char proof_str[BUFFER_SIZE_RESERVE_PROOF] = {0};
+  unsigned long long vote_timestamp_sec = 0ULL;
   char json_filter[256] = {0};
 
   // Parsed numeric
@@ -802,6 +803,35 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
   }
   memcpy(proof_str, j_proof->valuestring, proof_len);
 
+  const cJSON *j_ts = cJSON_GetObjectItemCaseSensitive(root, "vote_timestamp");
+  double d = 0.0;
+  unsigned long long tmp = 0ULL;
+  if (!j_ts) {
+    cJSON_Delete(root);
+    SERVER_ERROR("0|Field vote_timestamp is required");
+  }
+  if (cJSON_IsNumber(j_ts)) {
+    d = j_ts->valuedouble;
+    if (d <= 0.0) {
+      cJSON_Delete(root);
+      SERVER_ERROR("0|Invalid vote_timestamp");
+    }
+    vote_timestamp_sec = (unsigned long long)d;   /* seconds */
+  }
+  else if (cJSON_IsString(j_ts) && j_ts->valuestring[0] != '\0') {
+    errno = 0;
+    tmp = strtoull(j_ts->valuestring, NULL, 10);
+    if (errno != 0 || tmp == 0ULL) {
+      cJSON_Delete(root);
+      SERVER_ERROR("0|vote_timestamp is invalid");
+    }
+    vote_timestamp_sec = tmp;           /* seconds */
+  }
+  else {
+    cJSON_Delete(root);
+    SERVER_ERROR("0|vote_timestamp must be a number or numeric string");
+  }
+
   // ---- Resolve delegate target → public address ----
   if (strnlen(delegate_name_or_address, sizeof(delegate_name_or_address)) == XCASH_WALLET_LENGTH &&
       strncmp(delegate_name_or_address, XCASH_WALLET_PREFIX, sizeof(XCASH_WALLET_PREFIX) - 1) == 0) {
@@ -862,23 +892,6 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
   bson_t doc;
   bson_init(&doc);
 
-
-
-
-
-
-
-
-
-  use date time from vote
-
-
-
-
-
-
-
-
   // _id
   bson_append_utf8(&doc, "_id", -1, voter_public_address, XCASH_WALLET_LENGTH);
 
@@ -896,8 +909,8 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
   // reserve_proof
   BSON_APPEND_UTF8(&doc, "reserve_proof", proof_str);
 
-  // received_at (Date in ms since epoch)
-  BSON_APPEND_DATE_TIME(&doc, "received_at", (int64_t)now_ms);
+  unsigned long long vote_ts_ms = vote_timestamp_sec * 1000ULL;
+  BSON_APPEND_DATE_TIME(&doc, "vote_timestamp", (int64_t)vote_ts_ms);
 
   // Insert into Mongo
   if (insert_document_into_collection_bson(DATABASE_NAME, DB_COLLECTION_RESERVE_PROOFS, &doc) != 1) {

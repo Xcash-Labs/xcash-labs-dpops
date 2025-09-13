@@ -1044,7 +1044,6 @@ bool add_indexes(void) {
     mongoc_collection_destroy(coll);
   }
 
-
   /* =========================
    RESERVE_PROOFS COLLECTION
    ========================= */
@@ -1052,7 +1051,7 @@ bool add_indexes(void) {
     mongoc_collection_t* coll =
         mongoc_client_get_collection(client, DATABASE_NAME, DB_COLLECTION_RESERVE_PROOFS);
 
-    // index on public_address_voted_for
+    // --- index on public_address_voted_for ---
     bson_t k1, o1;
     bson_init(&k1);
     bson_init(&o1);
@@ -1060,12 +1059,21 @@ bool add_indexes(void) {
     BSON_APPEND_UTF8(&o1, "name", "idx_voted_for");
     mongoc_index_model_t* m1 = mongoc_index_model_new(&k1, &o1);
 
-    mongoc_index_model_t* models[] = {m1};
+    // --- index on vote_timestamp (Date) ---
+    bson_t k2, o2;
+    bson_init(&k2);
+    bson_init(&o2);
+    BSON_APPEND_INT32(&k2, "vote_timestamp", 1);
+    BSON_APPEND_UTF8(&o2, "name", "idx_vote_timestamp");
+    mongoc_index_model_t* m2 = mongoc_index_model_new(&k2, &o2);
+
+    mongoc_index_model_t* models[] = {m1, m2};
 
     bson_t create_opts;
     bson_init(&create_opts);
     BSON_APPEND_UTF8(&create_opts, "commitQuorum", "majority");
     BSON_APPEND_INT32(&create_opts, "maxTimeMS", 15000);
+
     // writeConcern: majority
     bson_t wc;
     bson_init(&wc);
@@ -1075,6 +1083,7 @@ bool add_indexes(void) {
     bson_t reply;
     bson_error_t ierr;
     bson_init(&reply);
+
     if (!mongoc_collection_create_indexes_with_opts(
             coll, models, (int)(sizeof(models) / sizeof(models[0])),
             &create_opts, &reply, &ierr)) {
@@ -1092,6 +1101,10 @@ bool add_indexes(void) {
     bson_destroy(&reply);
     bson_destroy(&wc);
     bson_destroy(&create_opts);
+
+    mongoc_index_model_destroy(m2);
+    bson_destroy(&o2);
+    bson_destroy(&k2);
 
     mongoc_index_model_destroy(m1);
     bson_destroy(&o1);
