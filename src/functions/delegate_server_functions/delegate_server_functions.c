@@ -875,10 +875,6 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
   // Best-effort delete; don't hard-fail if not present
   (void)delete_document_from_collection(DATABASE_NAME, DB_COLLECTION_RESERVE_PROOFS, json_filter);
 
-  // ---- Insert/replace into single collection: reserve_proofs ----
-  // (Using BSON types; include _id and received_at)
-  unsigned long long now_ms = (unsigned long long)time(NULL) * 1000ULL;
-
   // Build BSON document
   bson_t doc;
   bson_init(&doc);
