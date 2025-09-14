@@ -88,7 +88,7 @@ int insert_document_into_collection_bson(const char* DATABASE, const char* COLLE
     return XCASH_ERROR;
   }
 
-  if (strcmp(COLLECTION, DB_COLLECTION_DELEGATES) == 0 || strcmp(COLLECTION, DB_COLLECTION_STATISTICS) == 0) {
+  if (strstr(COLLECTION, DB_COLLECTION_DELEGATES) || strstr(COLLECTION, DB_COLLECTION_STATISTICS)) {
     bson_iter_t it;
     bool has_id = bson_iter_init_find(&it, document, "_id");
 
@@ -123,24 +123,20 @@ int insert_document_into_collection_bson(const char* DATABASE, const char* COLLE
   }
 
   bson_error_t err;
-  int rc = XCASH_OK;
   bool ok = mongoc_collection_insert_one(coll, document, NULL, NULL, &err);
 
   if (!ok) {
-    const bool is_dup = (err.domain == MONGOC_ERROR_SERVER && err.code == 11000);
-    const bool ignore_dup_for_delegates = (strcmp(COLLECTION, DB_COLLECTION_DELEGATES) == 0);
-    if (is_dup && ignore_dup_for_delegates) {
-      rc = XCASH_OK;  // Ok for seed node due to replication
-    } else {
-      ERROR_PRINT("Insert failed for %s.%s: domain=%d code=%d msg=%s",
-        DATABASE, COLLECTION, err.domain, err.code, err.message);
-      rc = XCASH_ERROR;
-    }
+    // Duplicate key? (E11000 / code 11000) — caller can decide how to handle
+    ERROR_PRINT("Insert failed for %s.%s: domain=%d code=%d msg=%s",
+                DATABASE, COLLECTION, err.domain, err.code, err.message);
+    mongoc_collection_destroy(coll);
+    mongoc_client_destroy(client);
+    return XCASH_ERROR;
   }
 
   mongoc_collection_destroy(coll);
   mongoc_client_destroy(client);
-  return rc;
+  return XCASH_OK;
 }
 
 /*-----------------------------------------------------------------------------------------------------------
