@@ -826,7 +826,6 @@ bool add_seed_indexes(void) {
     BSON_APPEND_INT32(&create_opts, "maxTimeMS", 15000);
 
     bson_t reply;
-    bson_error_t err;
     bson_init(&reply);
     if (!mongoc_collection_create_indexes_with_opts(coll, &m, 1, &create_opts, &reply, &err)) {
       char* json = bson_as_canonical_extended_json(&reply, NULL);
