@@ -806,33 +806,30 @@ bool add_seed_indexes(void) {
      STATISTICS COLLECTION
      ========================= */
   {
-    mongoc_collection_t *coll =
+    mongoc_collection_t* coll =
         mongoc_client_get_collection(client, DATABASE_NAME, DB_COLLECTION_STATISTICS);
 
-    // models
-    bson_t keys1, opts1; bson_init(&keys1); bson_init(&opts1);
-    BSON_APPEND_INT32(&keys1, "public_key", 1);
-    BSON_APPEND_UTF8(&opts1, "name", "uniq_public_key");
-    BSON_APPEND_BOOL(&opts1, "unique", true);
-    mongoc_index_model_t *m1 = mongoc_index_model_new(&keys1, &opts1);
+    // compound index: {_id:1, last_counted_block:1}
+    bson_t keys, opts;
+    bson_init(&keys);
+    bson_init(&opts);
+    BSON_APPEND_INT32(&keys, "_id", 1);
+    BSON_APPEND_INT32(&keys, "last_counted_block", 1);
+    BSON_APPEND_UTF8(&opts, "name", "idx_id_last_counted_block");
 
-    bson_t keys2, opts2; bson_init(&keys2); bson_init(&opts2);
-    BSON_APPEND_INT32(&keys2, "public_key", 1);
-    BSON_APPEND_INT32(&keys2, "last_counted_block", 1);
-    BSON_APPEND_UTF8(&opts2, "name", "idx_public_key_last_counted_block");
-    mongoc_index_model_t *m2 = mongoc_index_model_new(&keys2, &opts2);
+    mongoc_index_model_t* m = mongoc_index_model_new(&keys, &opts);
 
-    mongoc_index_model_t *models[2] = { m1, m2 };
-
-    // createIndexes opts
-    bson_t create_opts; bson_init(&create_opts);
+    bson_t create_opts;
+    bson_init(&create_opts);
+    // keep these if you're on a replica set; omit commitQuorum on standalone
     BSON_APPEND_UTF8(&create_opts, "commitQuorum", "majority");
     BSON_APPEND_INT32(&create_opts, "maxTimeMS", 15000);
 
-    bson_t reply; bson_init(&reply);
-    if (!mongoc_collection_create_indexes_with_opts(coll, models, 2, &create_opts, &reply, &err)) {
-      ok = false;
-      char *json = bson_as_canonical_extended_json(&reply, NULL);
+    bson_t reply;
+    bson_error_t err;
+    bson_init(&reply);
+    if (!mongoc_collection_create_indexes_with_opts(coll, &m, 1, &create_opts, &reply, &err)) {
+      char* json = bson_as_canonical_extended_json(&reply, NULL);
       fprintf(stderr, "[indexes] statistics failed: %s\nDetails: %s\n",
               err.message, json ? json : "(no reply)");
       if (json) bson_free(json);
@@ -841,10 +838,9 @@ bool add_seed_indexes(void) {
     // cleanup
     bson_destroy(&reply);
     bson_destroy(&create_opts);
-    mongoc_index_model_destroy(m2);
-    mongoc_index_model_destroy(m1);
-    bson_destroy(&opts2); bson_destroy(&keys2);
-    bson_destroy(&opts1); bson_destroy(&keys1);
+    mongoc_index_model_destroy(m);
+    bson_destroy(&opts);
+    bson_destroy(&keys);
     mongoc_collection_destroy(coll);
   }
 
