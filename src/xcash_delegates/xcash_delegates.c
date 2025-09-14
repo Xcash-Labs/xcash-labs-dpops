@@ -41,18 +41,12 @@ int compare_delegates(const void* a, const void* b) {
 int read_organize_delegates(delegates_t* delegates, size_t* delegates_count_result) {
 
   bson_error_t error;
-  int delegates_count;
-
   bson_t* delegates_db_data = bson_new();
+
   if (!db_find_all_doc(DATABASE_NAME, DB_COLLECTION_DELEGATES, delegates_db_data, &error)) {
     ERROR_PRINT("Failed to read delegates from db. %s", error.message);
     bson_destroy(delegates_db_data);
     return XCASH_ERROR;
-  }
-
-  delegates_count = count_recs(delegates_db_data);
-  if (delegates_count == 0 || delegates_count < 20) {
-    INFO_PRINT("delegates db has only %d delegates", delegates_count);
   }
 
   memset(delegates, 0, sizeof(delegates_t) * BLOCK_VERIFIERS_TOTAL_AMOUNT);
