@@ -70,7 +70,7 @@ bool init_processing(const arg_config_t *arg_config) {
       bson_init(&bson_statistics);
 
       // Strings
-      bson_append_utf8(&bson_statistics, "_id", network_nodes[i].seed_public_key);
+      BSON_APPEND_UTF8(&bson_statistics, "_id", network_nodes[i].seed_public_key);
 
       // Numbers
       bson_append_int64(&bson_statistics, "block_verifier_total_rounds", -1, set_counts);
