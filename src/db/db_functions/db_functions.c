@@ -88,25 +88,29 @@ int insert_document_into_collection_bson(const char* DATABASE, const char* COLLE
     return XCASH_ERROR;
   }
 
-  if (strstr(COLLECTION, DB_COLLECTION_DELEGATES) || strstr(COLLECTION, DB_COLLECTION_STATISTICS)) {
+  if (strcmp(COLLECTION, DB_COLLECTION_DELEGATES) == 0) {
     bson_iter_t it;
-    bool has_id = bson_iter_init_find(&it, document, "_id");
-
-    if (!has_id) {
-      const char* id_src = NULL;
-
-      if (bson_iter_init_find(&it, document, "public_key") && BSON_ITER_HOLDS_UTF8(&it)) {
-        id_src = bson_iter_utf8(&it, NULL);
-      }
-
-      if (id_src && *id_src) {
-        if (!BSON_APPEND_UTF8(document, "_id", id_src)) {
-          ERROR_PRINT("Failed to append _id to BSON document.");
-          return XCASH_ERROR;
-        }
-      }
-      // if no id_src found, we let the server auto-generate _id (ObjectId)
+    const char* id_src = NULL;
+ 
+    if (bson_iter_init_find(&it, document, "_id")) {
+      ERROR_PRINT("Delegates already had _id field, Failed to append BSON document");
+      return XCASH_ERROR;
     }
+
+    if (bson_iter_init_find(&it, document, "public_key") && BSON_ITER_HOLDS_UTF8(&it)) {
+      id_src = bson_iter_utf8(&it, NULL);
+    } else {
+      ERROR_PRINT("The public_key field not found, Failed to append BSON document");
+      return XCASH_ERROR;
+    }
+
+    if (id_src && *id_src) {
+      if (!BSON_APPEND_UTF8(document, "_id", id_src)) {
+        ERROR_PRINT("Failed to append _id to BSON document.");
+        return XCASH_ERROR;
+      }
+    }
+
   }
 
   mongoc_client_t* client = get_temporary_connection();
@@ -126,7 +130,7 @@ int insert_document_into_collection_bson(const char* DATABASE, const char* COLLE
   bool ok = mongoc_collection_insert_one(coll, document, NULL, NULL, &err);
 
   if (!ok) {
-    // Duplicate key? (E11000 / code 11000) — caller can decide how to handle
+    // Duplicate key? (E11000 / code 11000)
     ERROR_PRINT("Insert failed for %s.%s: domain=%d code=%d msg=%s",
                 DATABASE, COLLECTION, err.domain, err.code, err.message);
     mongoc_collection_destroy(coll);

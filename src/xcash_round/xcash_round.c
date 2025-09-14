@@ -618,7 +618,7 @@ void start_block_production(void) {
             // Filter: by public_key AND only if we haven't counted this height yet
             bson_t filter;
             bson_init(&filter);
-            BSON_APPEND_UTF8(&filter, "public_key", delegates_all[i].public_key);
+            BSON_APPEND_UTF8(&filter, "_id", delegates_all[i].public_key);
 
             bson_t arr, or0, or1, lt, exists;
             bson_append_array_begin(&filter, "$or", -1, &arr);
