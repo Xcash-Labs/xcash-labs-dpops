@@ -85,10 +85,14 @@ xcash_round_result_t process_round(void) {
   INFO_STAGE_PRINT("Part 2 - Check Delegates, Get Previous Block Hash, and Delegates Collection Hash");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 2);
   // delegates_all is loaded prior to start of round due to node timing issues
+  bool delegate_not_found = true;
   total_delegates = 0;
   for (size_t x = 0; x < BLOCK_VERIFIERS_TOTAL_AMOUNT; x++) {
     if (strlen(delegates_all[x].public_address) > 0) {
       total_delegates++;
+      if (strcmp(delegates_all[x].public_address, xcash_wallet_public_address) == 0) {
+        delegate_not_found = false;
+      }
     }
   }
   if (total_delegates == 0) {
@@ -96,6 +100,12 @@ xcash_round_result_t process_round(void) {
     return ROUND_ERROR;
   }
   DEBUG_PRINT("Found %d active delegates out of %d total slots", total_delegates, BLOCK_VERIFIERS_TOTAL_AMOUNT);
+
+  // Check if this node is active
+  if (delegate_not_found) {
+    WARNING_PRINT("This delegate was not found in delegates_all. If recently registered or updated, activation can take up to 10 minutes.");
+    return ROUND_SKIP;
+  }
 
   if (last_round_success) {
     // Get the previous block hash and check to make sure it changed from last round
@@ -235,7 +245,7 @@ xcash_round_result_t process_round(void) {
     return ROUND_ERROR;
   }
 
-  INFO_PRINT_STATUS_OK("Data majority reached. Online Nodes / Required Majority: [%d/%d]", nodes_majority_count, required_majority);
+  INFO_PRINT_STATUS_OK("Data majority reached. Required Majority / Online Nodes: [%d/%d]", required_majority, nodes_majority_count);
 
   INFO_STAGE_PRINT("Part 6 - Select Block Creator From VRF Data");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 6);

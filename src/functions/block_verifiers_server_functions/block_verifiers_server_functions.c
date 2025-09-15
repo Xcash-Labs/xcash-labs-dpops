@@ -118,7 +118,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
   }
   pthread_mutex_unlock(&delegates_all_lock);
   if (!found) {
-    WARNING_PRINT("Delegate %s not found in delegates_all. If recently registered or updated, activation can take up to 10 minutes.", public_address);
+    WARNING_PRINT("Delegate %s not found in delegates_all.", public_address);
   }
 
   return;
