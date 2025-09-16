@@ -864,7 +864,7 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
 
     char addr_buf[XCASH_WALLET_LENGTH + 1] = {0};
     if (read_document_field_from_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, json_filter,
-                                            "public_address", addr_buf, sizeof(addr_buf)) == XCASH_OK ||
+                                            "public_address", addr_buf, sizeof(addr_buf)) != XCASH_OK ||
         strnlen(addr_buf, sizeof(addr_buf)) != XCASH_WALLET_LENGTH) {
       cJSON_Delete(root);
       SERVER_ERROR("0|The delegate voted for is invalid");
