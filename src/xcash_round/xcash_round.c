@@ -87,6 +87,7 @@ xcash_round_result_t process_round(void) {
   // delegates_all is loaded prior to start of round due to node timing issues
   bool delegate_not_found = true;
   total_delegates = 0;
+  pthread_mutex_lock(&delegates_all_lock);
   for (size_t x = 0; x < BLOCK_VERIFIERS_TOTAL_AMOUNT; x++) {
     if (strlen(delegates_all[x].public_address) > 0) {
       total_delegates++;
@@ -95,6 +96,7 @@ xcash_round_result_t process_round(void) {
       }
     }
   }
+  pthread_mutex_unlock(&delegates_all_lock);
   if (total_delegates == 0) {
     ERROR_PRINT("No delegates were loaded from the database");
     return ROUND_ERROR;
