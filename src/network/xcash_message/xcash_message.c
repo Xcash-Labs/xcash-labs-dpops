@@ -10,6 +10,8 @@ const size_t WALLET_SIGN_MESSAGES_COUNT = ARRAY_SIZE(WALLET_SIGN_MESSAGES) - 1;
 const xcash_msg_t WALLET_SIGN_ACTION_MESSAGES[] = {
     XMSG_NODES_TO_BLOCK_VERIFIERS_REGISTER_DELEGATE,
     XMSG_NODES_TO_BLOCK_VERIFIERS_UPDATE_DELEGATE,
+    XMSG_NODES_TO_BLOCK_VERIFIERS_VOTE,
+    XMSG_NODES_TO_BLOCK_VERIFIERS_REVOTE,
     XMSG_NONE};
 const size_t WALLET_SIGN_ACTION_MESSAGES_COUNT = ARRAY_SIZE(WALLET_SIGN_ACTION_MESSAGES) - 1;
 
@@ -232,7 +234,8 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
   xcash_msg_t msg_type = get_message_type(trans_type);
 
   if ((msg_type != XMSG_NODES_TO_BLOCK_VERIFIERS_REGISTER_DELEGATE) && 
-    (msg_type != XMSG_NODE_TO_NETWORK_DATA_NODES_GET_CURRENT_BLOCK_VERIFIERS_LIST)) {
+    (msg_type != XMSG_NODE_TO_NETWORK_DATA_NODES_GET_CURRENT_BLOCK_VERIFIERS_LIST) &&
+    (msg_type != XMSG_NODES_TO_BLOCK_VERIFIERS_VOTE)) {
     if (verify_the_ip(data, client->client_ip) != XCASH_OK) {
       ERROR_PRINT("IP check failed for msg_type=%d from %s", (int)msg_type, client->client_ip);
       return;
@@ -283,10 +286,16 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
       }
       break;
 
-
-    case XMSG_NODES_TO_BLOCK_VERIFIERS_UPDATE_DELEGATE:
+    case XMSG_NODES_TO_BLOCK_VERIFIERS_REGISTER_DELEGATE:
       if (server_limit_public_addresses(LIMIT_CHECK, data) == 1) {
-        server_receive_data_socket_nodes_to_block_verifiers_update_delegates(client, data);
+        server_receive_data_socket_nodes_to_block_verifiers_register_delegates(client, data);
+        server_limit_public_addresses(LIMIT_REMOVE, data);
+      }
+      break;
+
+      case XMSG_NODES_TO_BLOCK_VERIFIERS_VOTE:
+      if (server_limit_public_addresses(LIMIT_CHECK, data) == 1) {
+        server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(client, data);
         server_limit_public_addresses(LIMIT_REMOVE, data);
       }
       break;
