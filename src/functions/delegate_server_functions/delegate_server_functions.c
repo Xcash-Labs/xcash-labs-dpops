@@ -730,9 +730,9 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
   // message_settings
   const cJSON *j_msg = cJSON_GetObjectItemCaseSensitive(root, "message_settings");
   if (!cJSON_IsString(j_msg) ||
-      strcmp(j_msg->valuestring, "NODE_TO_BLOCK_VERIFIERS_ADD_RESERVE_PROOF") != 0) {
+      strcmp(j_msg->valuestring, "NODES_TO_BLOCK_VERIFIERS_VOTE") != 0) {
     cJSON_Delete(root);
-    SERVER_ERROR("0|Invalid message settings");
+    SERVER_ERROR("0|Invalid message transaction type");
   }
 
   // public_address (voter)
