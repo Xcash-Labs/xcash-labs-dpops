@@ -25,6 +25,7 @@ int check_for_valid_ip_or_hostname(const char *host);
 void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(server_client_t* client, const char* MESSAGE);
 void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server_client_t* client, const char* MESSAGE);
 void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_client_t *client, const char *MESSAGE);
+void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server_client_t *client, const char *MESSAGE);
 //int check_for_valid_delegate_fee(const char* MESSAGE);
 //void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(const int CLIENT_SOCKET, const char* MESSAGE);
 //void server_receive_data_socket_nodes_to_block_verifiers_recover_delegates(const int CLIENT_SOCKET, const char* MESSAGE);
