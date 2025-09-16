@@ -506,7 +506,7 @@ void start_block_production(void) {
 
     // Skip production if outside initial window
     if (seconds_within_block > 1) {
-      if (seconds_within_block % 5 == 0) {
+      if (seconds_within_block % 2 == 0) {
         INFO_PRINT("Next round starts in [%ld:%02ld]",
                    0L, 59 - (current_time.tv_sec % 60));
       }
