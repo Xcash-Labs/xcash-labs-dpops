@@ -502,18 +502,36 @@ void start_block_production(void) {
   }
 
   // Start production loop
+  static bool printed_on_enter = false;
+  static time_t last_log_sec = 0;
   while (true) {
     gettimeofday(&current_time, NULL);
     size_t seconds_within_block = current_time.tv_sec % (BLOCK_TIME * 60);
 
     // Skip production if outside initial window
+//    if (seconds_within_block > 1) {
+//      if (seconds_within_block % 2 == 0) {
+//        INFO_PRINT("Next round starts in [%ld:%02ld]", 0L, 59 - (current_time.tv_sec % 60));
+//      }
+//      sleep(1);
+//      continue;
+//    }
+
     if (seconds_within_block > 1) {
-      if (seconds_within_block % 2 == 0) {
-        INFO_PRINT("Next round starts in [%ld:%02ld]",
-                   0L, 59 - (current_time.tv_sec % 60));
+      time_t now = current_time.tv_sec;
+      if (!printed_on_enter) {
+        INFO_PRINT("Next round starts in [%ld:%02ld]", 0L, 59 - (now % 60));
+        printed_on_enter = true;
+        last_log_sec = now;
+      } else if (now - last_log_sec >= 10) {
+        INFO_PRINT("Next round starts in [%ld:%02ld]", 0L, 59 - (now % 60));
+        last_log_sec = now;
       }
+
       sleep(1);
       continue;
+    } else {
+      printed_on_enter = false;
     }
 
     current_block_height[0] = '\0';
