@@ -233,7 +233,6 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
  
   xcash_msg_t msg_type = get_message_type(trans_type);
 
-  
   if ((msg_type != XMSG_NODES_TO_BLOCK_VERIFIERS_REGISTER_DELEGATE) && 
     (msg_type != XMSG_NODE_TO_NETWORK_DATA_NODES_GET_CURRENT_BLOCK_VERIFIERS_LIST) &&
     (msg_type != XMSG_NODES_TO_BLOCK_VERIFIERS_VOTE) &&
