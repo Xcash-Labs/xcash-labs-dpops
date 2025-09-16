@@ -66,8 +66,6 @@ typedef struct {
     char block_verifiers_selected_public_address[BLOCK_VERIFIERS_AMOUNT][XCASH_WALLET_LENGTH+1];
 } block_verifiers_list_t;
 
-Name: server_receive_data_socket_node_to_block_verifiers_add_reserve_proof
-
 typedef enum {
     XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_VRF_DATA,
     XMSG_NODES_TO_NODES_VOTE_MAJORITY_RESULTS,
