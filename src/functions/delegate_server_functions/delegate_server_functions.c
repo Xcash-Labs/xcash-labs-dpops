@@ -884,7 +884,7 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
   BSON_APPEND_UTF8(&doc, "reserve_proof", proof_str);
 
   // vote_timestamp
-  BSON_APPEND_INT64(setdoc_bson, "vote_timestamp", (int64_t)vote_time);
+  BSON_APPEND_INT64(&doc, "vote_timestamp", (int64_t)vote_timestamp);
 
   // Insert into Mongo
   if (insert_document_into_collection_bson(DATABASE_NAME, DB_COLLECTION_RESERVE_PROOFS, &doc) != 1) {
