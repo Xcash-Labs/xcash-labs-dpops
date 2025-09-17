@@ -117,7 +117,11 @@ bool create_delegate_online_ip_list(char* out_data, size_t out_data_size)
     }
 
     query = BCON_NEW("online_status", BCON_UTF8("true"));
-    opts = BCON_NEW("sort", "{", "_id", BCON_INT32(1), "}");
+    opts = BCON_NEW("sort", "{",
+                  "delegate_type", BCON_INT32(1),
+                  "_id",           BCON_INT32(1),
+                "}");
+    { delegate_type: 1, _id: 1 }
 
     if (!query || !opts) {
         ERROR_PRINT("%s: Failed to build query or opts", __func__);

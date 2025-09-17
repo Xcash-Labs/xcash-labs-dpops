@@ -629,13 +629,14 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
       }
       BSON_APPEND_UTF8(setdoc_bson, key, val);
     } else if (strncmp(key, "shared_delegate_status", BUFFER_SIZE) == 0) {
+      // the names are used in a sort and seed type needs to come
       if (strncmp(val, "solo", BUFFER_SIZE) != 0 &&
           strncmp(val, "shared", BUFFER_SIZE) != 0 &&
-          strncmp(val, "group", BUFFER_SIZE) != 0) {
+          strncmp(val, "team", BUFFER_SIZE) != 0) {
         bson_destroy(setdoc_bson);
         bson_destroy(filter_bson);
         cJSON_Delete(root);
-        SERVER_ERROR("0|shared_delegate_status must be one of: solo, shared, or group");
+        SERVER_ERROR("0|shared_delegate_status must be one of: solo, shared, or team");
       }
       BSON_APPEND_UTF8(setdoc_bson, key, val);
     } else if (strncmp(key, "delegate_fee", BUFFER_SIZE) == 0) {
@@ -859,6 +860,8 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
     SERVER_ERROR("0|Cannot vote for a network data node");
   }
 
+#ifdef SEED_NODE_ON
+  // only add on seed
   // ---- One vote per wallet: delete previous (single collection) ----
   // Prefer _id == voter address for global uniqueness
   snprintf(json_filter, sizeof(json_filter),
@@ -895,6 +898,8 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
 
   // Always free resources
   bson_destroy(&doc);
+
+#endif
 
   // Done: hourly job will revalidate & aggregate totals
   cJSON_Delete(root);

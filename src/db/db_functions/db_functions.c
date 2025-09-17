@@ -29,6 +29,11 @@ static inline mongoc_client_t* get_temporary_connection(void) {
   return mongoc_client_pool_pop(database_client_thread_pool);
 }
 
+// Helper function to release a temporary connection
+static inline void release_temporary_connection(mongoc_client_t* c) {
+  if (c) mongoc_client_pool_push(database_client_thread_pool, c);
+}
+
 // Helper function to create a BSON document from JSON
 static inline bson_t* create_bson_document(const char* DATA, bson_error_t* error) {
   return bson_new_from_json((const uint8_t*)DATA, -1, error);
@@ -82,6 +87,15 @@ int count_all_documents_in_collection(const char* DATABASE, const char* COLLECTI
   return count;
 }
 
+/*-----------------------------------------------------------------------------------------------------------
+Name: insert_document_into_collection_bson
+Description: inserts a document into an collection
+Parameters:
+  DATABASE - The database name.
+  COLLECTION - The collection name.
+  document - document to insert
+Return: 0 if an error has occurred or collection does not exist, 1 if successful.
+-----------------------------------------------------------------------------------------------------------*/
 int insert_document_into_collection_bson(const char* DATABASE, const char* COLLECTION, bson_t* document) {
   if (!DATABASE || !COLLECTION || !document) {
     ERROR_PRINT("insert_document_into_collection_bson: bad params");
@@ -110,7 +124,6 @@ int insert_document_into_collection_bson(const char* DATABASE, const char* COLLE
         return XCASH_ERROR;
       }
     }
-
   }
 
   mongoc_client_t* client = get_temporary_connection();
@@ -122,7 +135,7 @@ int insert_document_into_collection_bson(const char* DATABASE, const char* COLLE
   mongoc_collection_t* coll = mongoc_client_get_collection(client, DATABASE, COLLECTION);
   if (!coll) {
     ERROR_PRINT("Failed to get collection '%s.%s'", DATABASE, COLLECTION);
-    mongoc_client_destroy(client);
+    release_temporary_connection(client);
     return XCASH_ERROR;
   }
 
@@ -134,13 +147,88 @@ int insert_document_into_collection_bson(const char* DATABASE, const char* COLLE
     ERROR_PRINT("Insert failed for %s.%s: domain=%d code=%d msg=%s",
                 DATABASE, COLLECTION, err.domain, err.code, err.message);
     mongoc_collection_destroy(coll);
-    mongoc_client_destroy(client);
+    release_temporary_connection(client);
     return XCASH_ERROR;
   }
 
   mongoc_collection_destroy(coll);
-  mongoc_client_destroy(client);
+  release_temporary_connection(client);
   return XCASH_OK;
+}
+
+/*-----------------------------------------------------------------------------------------------------------
+Name: delegates_apply_vote_delta
+Description: increment a delegate's vote_total_atomic by delta (can be negative)
+Parameters:
+  DATABASE - The database name.
+  COLLECTION - The collection name.
+Return: 0 if an error has occurred or collection does not exist, 1 if successful.
+-----------------------------------------------------------------------------------------------------------*/
+bool delegates_apply_vote_delta(const char* delegate_pubaddr, int64_t delta) {
+  if (!delegate_pubaddr || !*delegate_pubaddr || delta == 0) {
+    ERROR_PRINT("delegates_apply_vote_delta: bad params");
+    return false;
+  }
+
+  mongoc_client_t* client = get_temporary_connection(); // pool_pop
+  if (!client) {
+    ERROR_PRINT("Mongo client pool pop failed");
+    return false;
+  }
+
+  bool ok = false;
+  mongoc_collection_t* coll =
+      mongoc_client_get_collection(client, DATABASE_NAME, DB_COLLECTION_DELEGATES);
+  if (!coll) {
+    ERROR_PRINT("get_collection failed for %s.%s", DATABASE_NAME, DB_COLLECTION_DELEGATES);
+    release_temporary_connection(client);
+    return false;
+  }
+
+  // filter: { public_address: <delegate_pubaddr> }
+  bson_t filter; bson_init(&filter);
+  BSON_APPEND_UTF8(&filter, "public_address", delegate_pubaddr);
+
+  // update: { $inc: { vote_total_atomic: delta } }  <-- adjust field name if yours is different
+  bson_t update; bson_init(&update);
+  bson_t inc; bson_init(&inc);
+  BSON_APPEND_INT64(&inc, "vote_total_atomic", delta);
+  BSON_APPEND_DOCUMENT(&update, "$inc", &inc);
+
+  // No upsert → we want to fail if the doc doesn't exist
+  bson_t* opts = NULL; // (optionally add writeConcern below)
+
+  bson_error_t err;
+  bson_t reply; bson_init(&reply);
+  if (!mongoc_collection_update_one(coll, &filter, &update, opts, &reply, &err)) {
+    ERROR_PRINT("update_one failed: domain=%d code=%d msg=%s", err.domain, err.code, err.message);
+    goto done;
+  }
+
+  // Check matchedCount to ensure the row existed
+  int64_t matched = 0;
+  {
+    bson_iter_t it;
+    if (bson_iter_init_find(&it, &reply, "matchedCount")) {
+      if (BSON_ITER_HOLDS_INT32(&it)) matched = bson_iter_int32(&it);
+      else if (BSON_ITER_HOLDS_INT64(&it)) matched = bson_iter_int64(&it);
+    }
+  }
+  if (matched == 0) {
+    ERROR_PRINT("Delegate not found for vote delta: %s", delegate_pubaddr);
+    goto done;
+  }
+
+  ok = true;
+
+done:
+  bson_destroy(&reply);
+  bson_destroy(&inc);
+  bson_destroy(&update);
+  bson_destroy(&filter);
+  mongoc_collection_destroy(coll);
+  release_temporary_connection(client); // pool_push
+  return ok;
 }
 
 /*-----------------------------------------------------------------------------------------------------------
@@ -172,41 +260,6 @@ int check_if_database_collection_exist(const char* DATABASE, const char* COLLECT
     }
     return XCASH_ERROR;
   }
-  return XCASH_OK;
-}
-
-// Function to read a document from collection
-int read_document_from_collection(const char* DATABASE, const char* COLLECTION, const char* DATA, char* result) {
-  (void)result;
-  const bson_t* current_document;
-  mongoc_client_t* database_client_thread = get_temporary_connection();
-  if (!database_client_thread) return XCASH_ERROR;
-
-  mongoc_collection_t* collection = mongoc_client_get_collection(database_client_thread, DATABASE, COLLECTION);
-  if (!check_if_database_collection_exist(DATABASE, COLLECTION)) {
-    free_resources(NULL, NULL, collection, database_client_thread);
-    return XCASH_ERROR;
-  }
-
-  bson_error_t error;
-  bson_t* document = create_bson_document(DATA, &error);
-  if (!document) return handle_error("Invalid JSON format", NULL, NULL, collection, database_client_thread);
-
-  mongoc_cursor_t* document_settings = mongoc_collection_find_with_opts(collection, document, NULL, NULL);
-  char* message = NULL;
-  int count = 0;
-
-  while (mongoc_cursor_next(document_settings, &current_document)) {
-    message = bson_as_canonical_extended_json(current_document, NULL);
-    result = message;
-    bson_free(message);
-    count = 1;
-  }
-
-  mongoc_cursor_destroy(document_settings);
-  if (count != 1) return handle_error("Document not found", document, NULL, collection, database_client_thread);
-
-  free_resources(document, NULL, collection, database_client_thread);
   return XCASH_OK;
 }
 
@@ -262,164 +315,6 @@ int read_document_field_from_collection(const char* DATABASE, const char* COLLEC
   return XCASH_OK;
 }
 
-// Function to parse JSON data
-int database_document_parse_json_data(const char* DATA, struct database_document_fields* result) {
-  if (!strstr(DATA, ",")) {
-    ERROR_PRINT("Invalid JSON data");
-    return XCASH_ERROR;
-  }
-
-  char* data2 = strstr(DATA, ",") + 3;
-  char* data3 = strstr(data2, "\"");
-  if (!data3) {
-    ERROR_PRINT("Invalid JSON format");
-    return XCASH_ERROR;
-  }
-
-  strncpy(result->item[0], data2, data3 - data2);
-  for (size_t count = 0; count < result->count; count++) {
-    data2 = data3 + 5;
-    data3 = strstr(data2, "\"");
-    if (!data3) {
-      ERROR_PRINT("Invalid JSON format");
-      return XCASH_ERROR;
-    }
-    strncpy(result->value[count], data2, data3 - data2);
-
-    if (count + 1 != result->count) {
-      data2 = data3 + 4;
-      data3 = strstr(data2, "\"");
-      if (!data3) {
-        ERROR_PRINT("Invalid JSON format");
-        return XCASH_ERROR;
-      }
-      strncpy(result->item[count + 1], data2, data3 - data2);
-    }
-  }
-  return XCASH_OK;
-}
-
-// Function to parse multiple documents from JSON
-int database_multiple_documents_parse_json_data(const char* data, struct database_multiple_documents_fields* result, const int document_count) {
-  char* data2 = strstr(data, ",") + 3;
-  char* data3 = strstr(data2, "\"");
-  if (!data2 || !data3) {
-    ERROR_PRINT("Invalid JSON format");
-    return XCASH_ERROR;
-  }
-
-  strncpy(result->item[document_count][0], data2, data3 - data2);
-  for (size_t count = 0; count < result->database_fields_count; count++) {
-    data2 = data3 + 5;
-    data3 = strstr(data2, "\"");
-    if (!data3) {
-      ERROR_PRINT("Invalid JSON format");
-      return XCASH_ERROR;
-    }
-    strncpy(result->value[document_count][count], data2, data3 - data2);
-
-    if (count + 1 != result->database_fields_count) {
-      data2 = data3 + 4;
-      data3 = strstr(data2, "\"");
-      if (!data3) {
-        ERROR_PRINT("Invalid JSON format");
-        return XCASH_ERROR;
-      }
-      strncpy(result->item[document_count][count + 1], data2, data3 - data2);
-    }
-  }
-  return XCASH_OK;
-}
-
-// Function to read all fields from a document
-int read_document_all_fields_from_collection(const char* DATABASE, const char* COLLECTION, const char* DATA, struct database_document_fields* result) {
-  mongoc_client_t* database_client_thread = get_temporary_connection();
-  if (!database_client_thread) return XCASH_ERROR;
-
-  mongoc_collection_t* collection = mongoc_client_get_collection(database_client_thread, DATABASE, COLLECTION);
-  if (!check_if_database_collection_exist(DATABASE, COLLECTION)) {
-    free_resources(NULL, NULL, collection, database_client_thread);
-    return XCASH_ERROR;
-  }
-
-  bson_error_t error;
-  bson_t* document = create_bson_document(DATA, &error);
-  if (!document) return handle_error("Invalid JSON format", NULL, NULL, collection, database_client_thread);
-
-  mongoc_cursor_t* document_settings = mongoc_collection_find_with_opts(collection, document, NULL, NULL);
-  const bson_t* current_document;
-  char* message = NULL;
-  int count = 0;
-
-  while (mongoc_cursor_next(document_settings, &current_document)) {
-    message = bson_as_canonical_extended_json(current_document, NULL);
-    if (!message) {
-      handle_error("Failed to convert BSON to JSON", document, NULL, collection, database_client_thread);
-    }
-    if (database_document_parse_json_data(message, result) == XCASH_ERROR) {
-      bson_free(message);
-      return handle_error("JSON parsing failed", document, NULL, collection, database_client_thread);
-    }
-    bson_free(message);
-    count = 1;
-  }
-
-  mongoc_cursor_destroy(document_settings);
-  if (count != 1) return handle_error("Document not found", document, NULL, collection, database_client_thread);
-
-  free_resources(document, NULL, collection, database_client_thread);
-  return XCASH_OK;
-}
-
-// Function to read multiple documents from a collection
-int read_multiple_documents_all_fields_from_collection(const char* DATABASE, const char* COLLECTION, const char* DATA, struct database_multiple_documents_fields* result, const size_t DOCUMENT_COUNT_START, const size_t DOCUMENT_COUNT_TOTAL, const int DOCUMENT_OPTIONS, const char* DOCUMENT_OPTIONS_DATA) {
-  mongoc_client_t* database_client_thread = get_temporary_connection();
-  if (!database_client_thread) return XCASH_ERROR;
-
-  mongoc_collection_t* collection = mongoc_client_get_collection(database_client_thread, DATABASE, COLLECTION);
-  if (!check_if_database_collection_exist(DATABASE, COLLECTION)) {
-    free_resources(NULL, NULL, collection, database_client_thread);
-    return XCASH_ERROR;
-  }
-
-  bson_error_t error;
-  bson_t* document = create_bson_document(DATA, &error);
-  if (!document) return handle_error("Invalid JSON format", NULL, NULL, collection, database_client_thread);
-
-  bson_t* document_options = NULL;
-  if (DOCUMENT_OPTIONS == 1) {
-    document_options = BCON_NEW("sort", "{", DOCUMENT_OPTIONS_DATA, BCON_INT32(-1), "}");
-  }
-
-  mongoc_cursor_t* document_settings = mongoc_collection_find_with_opts(collection, document, document_options, NULL);
-  const bson_t* current_document;
-  char* message = NULL;
-  size_t count = 1;
-  size_t counter = 0;
-
-  while (mongoc_cursor_next(document_settings, &current_document)) {
-    if (count >= DOCUMENT_COUNT_START) {
-      message = bson_as_canonical_extended_json(current_document, NULL);
-      if (database_multiple_documents_parse_json_data(message, result, (int)counter) == XCASH_ERROR) {
-        bson_free(message);
-        return handle_error("JSON parsing failed", document, NULL, collection, database_client_thread);
-      }
-      bson_free(message);
-      counter++;
-      result->document_count++;
-      if (counter == DOCUMENT_COUNT_TOTAL) break;
-    }
-    count++;
-  }
-
-  bson_destroy(document_options);
-  mongoc_cursor_destroy(document_settings);
-  if (counter == 0) return handle_error("No documents found", document, NULL, collection, database_client_thread);
-
-  free_resources(document, NULL, collection, database_client_thread);
-  return XCASH_OK;
-}
-
 // Function to update a single document in a collection
 int update_document_from_collection_bson(const char* DATABASE, const char* COLLECTION, const bson_t* filter, const bson_t* update_fields) {
   mongoc_client_t* database_client_thread = get_temporary_connection();
@@ -446,72 +341,6 @@ int update_document_from_collection_bson(const char* DATABASE, const char* COLLE
   return XCASH_OK;
 }
 
-// Function to update multiple documents in a collection
-int update_multiple_documents_from_collection(const char* DATABASE, const char* COLLECTION, const char* DATA, const char* FIELD_NAME_AND_DATA) {
-  if (strlen(FIELD_NAME_AND_DATA) > MAXIMUM_DATABASE_WRITE_SIZE) {
-    ERROR_PRINT("Data exceeds maximum write size.");
-    return XCASH_ERROR;
-  }
-
-  mongoc_client_t* database_client_thread = get_temporary_connection();
-  if (!database_client_thread) return XCASH_ERROR;
-
-  mongoc_collection_t* collection = mongoc_client_get_collection(database_client_thread, DATABASE, COLLECTION);
-  if (!check_if_database_collection_exist(DATABASE, COLLECTION)) {
-    return handle_error("Collection does not exist", NULL, NULL, collection, database_client_thread);
-  }
-
-  bson_error_t error;
-  bson_t* update = create_bson_document(DATA, &error);
-  if (!update) return handle_error("Invalid JSON format", NULL, NULL, collection, database_client_thread);
-
-  char data2[BUFFER_SIZE];
-  snprintf(data2, sizeof(data2), "{\"$set\":%s}", FIELD_NAME_AND_DATA);
-
-  bson_t* update_settings = create_bson_document(data2, &error);
-  if (!update_settings) return handle_error("Invalid update settings format", update, NULL, collection, database_client_thread);
-
-  if (!mongoc_collection_update_many(collection, update, update_settings, NULL, NULL, &error)) {
-    return handle_error("Failed to update documents", update, update_settings, collection, database_client_thread);
-  }
-
-  free_resources(update, update_settings, collection, database_client_thread);
-  return XCASH_OK;
-}
-
-// Function to update all documents in a collection
-int update_all_documents_from_collection(const char* DATABASE, const char* COLLECTION, const char* DATA) {
-  if (strlen(DATA) > MAXIMUM_DATABASE_WRITE_SIZE) {
-    ERROR_PRINT("Data exceeds maximum write size.");
-    return XCASH_ERROR;
-  }
-
-  mongoc_client_t* database_client_thread = get_temporary_connection();
-  if (!database_client_thread) return XCASH_ERROR;
-
-  mongoc_collection_t* collection = mongoc_client_get_collection(database_client_thread, DATABASE, COLLECTION);
-  if (!check_if_database_collection_exist(DATABASE, COLLECTION)) {
-    return handle_error("Collection does not exist", NULL, NULL, collection, database_client_thread);
-  }
-
-  bson_error_t error;
-  bson_t* update = bson_new();  // Empty BSON to match all documents
-  if (!update) return handle_error("Failed to create empty BSON", NULL, NULL, collection, database_client_thread);
-
-  char data2[BUFFER_SIZE];
-  snprintf(data2, sizeof(data2), "{\"$set\":%s}", DATA);
-
-  bson_t* update_settings = create_bson_document(data2, &error);
-  if (!update_settings) return handle_error("Invalid update settings format", update, NULL, collection, database_client_thread);
-
-  if (!mongoc_collection_update_many(collection, update, update_settings, NULL, NULL, &error)) {
-    return handle_error("Failed to update all documents", update, update_settings, collection, database_client_thread);
-  }
-
-  free_resources(update, update_settings, collection, database_client_thread);
-  return XCASH_OK;
-}
-
 // Function to delete a document from a collection
 int delete_document_from_collection(const char* DATABASE, const char* COLLECTION, const char* DATA) {
   mongoc_client_t* database_client_thread = get_temporary_connection();
@@ -531,91 +360,6 @@ int delete_document_from_collection(const char* DATABASE, const char* COLLECTION
   }
 
   free_resources(document, NULL, collection, database_client_thread);
-  return XCASH_OK;
-}
-
-// Function to delete a collection from a database
-int delete_collection_from_database(const char* DATABASE, const char* COLLECTION) {
-  mongoc_client_t* database_client_thread = get_temporary_connection();
-  if (!database_client_thread) return XCASH_ERROR;
-
-  mongoc_collection_t* collection = mongoc_client_get_collection(database_client_thread, DATABASE, COLLECTION);
-  if (!check_if_database_collection_exist(DATABASE, COLLECTION)) {
-    return handle_error("Collection does not exist", NULL, NULL, collection, database_client_thread);
-  }
-
-  bson_error_t error;
-  if (!mongoc_collection_drop(collection, &error)) {
-    return handle_error("Failed to delete collection", NULL, NULL, collection, database_client_thread);
-  }
-
-  free_resources(NULL, NULL, collection, database_client_thread);
-  return XCASH_OK;
-}
-
-// Function to get database collection size
-size_t get_database_collection_size(const char* DATABASE, const char* COLLECTION) {
-    if (!check_if_database_collection_exist(DATABASE, COLLECTION)) return 0;
-
-    mongoc_client_t* database_client_thread = get_temporary_connection();
-    if (!database_client_thread) return 0;
-
-    mongoc_collection_t* collection = mongoc_client_get_collection(database_client_thread, DATABASE, COLLECTION);
-    bson_t* command = BCON_NEW("collStats", BCON_UTF8(COLLECTION));
-    bson_t document;
-    bson_error_t error;
-    size_t size = 0;
-
-    if (!mongoc_collection_command_simple(collection, command, NULL, &document, &error)) {
-        handle_error("Failed to get collection stats", command, NULL, collection, database_client_thread);
-        return 0;
-    }
-
-    bson_iter_t iter;
-    if (bson_iter_init_find(&iter, &document, "size") && BSON_ITER_HOLDS_DOUBLE(&iter)) {
-        size = (size_t)bson_iter_double(&iter);
-    } else if (bson_iter_init_find(&iter, &document, "size") && BSON_ITER_HOLDS_INT64(&iter)) {
-        size = (size_t)bson_iter_int64(&iter);
-    } else if (bson_iter_init_find(&iter, &document, "size") && BSON_ITER_HOLDS_INT32(&iter)) {
-        size = (size_t)bson_iter_int32(&iter);
-    }
-
-    free_resources(command, NULL, collection, database_client_thread);
-    return size;
-}
-
-// Function to get database data
-int get_database_data(char* database_data, const char* DATABASE, const char* COLLECTION) {
-  mongoc_client_t* database_client_thread = get_temporary_connection();
-  if (!database_client_thread) return XCASH_ERROR;
-
-  mongoc_collection_t* collection = mongoc_client_get_collection(database_client_thread, DATABASE, COLLECTION);
-  if (!check_if_database_collection_exist(DATABASE, COLLECTION)) {
-    return handle_error("Collection does not exist", NULL, NULL, collection, database_client_thread);
-  }
-
-  bson_t* document = bson_new();
-  bson_t* document_options = BCON_NEW("sort", "{", "_id", BCON_INT32(1), "}");
-  mongoc_cursor_t* cursor = mongoc_collection_find_with_opts(collection, document, document_options, NULL);
-  const bson_t* current_document;
-  char* message;
-  int count = 0;
-
-  memset(database_data, 0, MAXIMUM_BUFFER_SIZE);
-  while (mongoc_cursor_next(cursor, &current_document)) {
-    message = bson_as_canonical_extended_json(current_document, NULL);
-    if (count == 0)
-      strcat(database_data, "{");
-    else
-      strcat(database_data, ",{");
-    strncat(database_data, message + 142, strlen(message) - 142);
-    bson_free(message);
-    count++;
-  }
-
-  if (count == 0) strcpy(database_data, DATABASE_EMPTY_STRING);
-  free_resources(document, document_options, collection, database_client_thread);
-  if (cursor) mongoc_cursor_destroy(cursor);
   return XCASH_OK;
 }
 
@@ -703,68 +447,6 @@ int get_data(mongoc_client_t *client, const char *db_name, const char *field_nam
     free_resources(query, opts, collection, NULL);
 
     return result;
-}
-
-int get_statistics_totals_by_public_key(
-    const char* public_key,
-    uint64_t* block_verifier_total_rounds,
-    uint64_t* block_verifier_online_total_rounds,
-    uint64_t* block_producer_total_rounds)
-{
-  // Defensive default
-  *block_verifier_total_rounds = 0;
-  *block_verifier_online_total_rounds = 0;
-  *block_producer_total_rounds = 0;
-
-  // Get MongoDB client
-  mongoc_client_t* database_client_thread = get_temporary_connection();
-  if (!database_client_thread) return XCASH_ERROR;
-
-  // Get collection
-  mongoc_collection_t* collection = mongoc_client_get_collection(
-      database_client_thread, DATABASE_NAME, DB_COLLECTION_STATISTICS);
-
-  // Build query using safe stack-based BSON
-  bson_t query;
-  bson_init(&query);
-  BSON_APPEND_UTF8(&query, "public_key", public_key);
-
-  mongoc_cursor_t* cursor = mongoc_collection_find_with_opts(collection, &query, NULL, NULL);
-
-  const bson_t* doc;
-  bson_iter_t iter;
-  bool success = false;
-
-  // Search the first matched document
-  if (mongoc_cursor_next(cursor, &doc)) {
-    if (bson_iter_init(&iter, doc)) {
-      while (bson_iter_next(&iter)) {
-        const char* key = bson_iter_key(&iter);
-
-        if ((strcmp(key, "block_verifier_total_rounds") == 0) &&
-            BSON_ITER_HOLDS_NUMBER(&iter)) {
-          *block_verifier_total_rounds = bson_iter_as_int64(&iter);
-        } else if ((strcmp(key, "block_verifier_online_total_rounds") == 0) &&
-                   BSON_ITER_HOLDS_NUMBER(&iter)) {
-          *block_verifier_online_total_rounds = bson_iter_as_int64(&iter);
-        } else if ((strcmp(key, "block_producer_total_rounds") == 0) &&
-                   BSON_ITER_HOLDS_NUMBER(&iter)) {
-          *block_producer_total_rounds = bson_iter_as_int64(&iter);
-        }
-      }
-      success = true;
-    }
-  }
-
-  // Clean up
-  bson_destroy(&query);
-  mongoc_cursor_destroy(cursor);
-  mongoc_collection_destroy(collection);
-
-  if (database_client_thread)
-    mongoc_client_pool_push(database_client_thread_pool, database_client_thread);
-
-  return success ? XCASH_OK : XCASH_ERROR;
 }
 
 bool is_replica_set_ready(void) {
@@ -983,8 +665,6 @@ bool add_seed_indexes(void) {
   return ok;
 }
 
-
-
 bool add_indexes(void) {
   bson_error_t err;
   bool ok = true;
@@ -1063,112 +743,12 @@ bool add_indexes(void) {
   return ok;
 }
 
-// db helpers
-
-int remove_reserve_byte_duplicates(const char *db_name, const char *collection_name, bson_t *docs) {
-    mongoc_client_t *client;
-    mongoc_collection_t *collection;
-    bson_iter_t iter;
-    bson_error_t error;
-    int removed_count = 0;
-
-    // Pop a client from the pool
-    client = mongoc_client_pool_pop(database_client_thread_pool);
-    if (!client) {
-        DEBUG_PRINT("Failed to pop client from pool");
-        return -1;
-    }
-
-    // Get the collection
-    collection = mongoc_client_get_collection(client, db_name, collection_name);
-    if (!collection) {
-        DEBUG_PRINT("Failed to get collection: %s", collection_name);
-        mongoc_client_pool_push(database_client_thread_pool, client);
-        return -1;
-    }
-
-    // Iterate through the docs array
-    bson_iter_t child;
-    if (bson_iter_init(&iter, docs)) {
-        while (bson_iter_next(&iter)) {
-            bson_t doc;
-            bson_t query = BSON_INITIALIZER;
-            const uint8_t *data = NULL;
-            uint32_t len = 0;
-
-            // Get the current document
-            bson_iter_document(&iter, &len, &data);
-            bson_init_static(&doc, data, len);
-
-            // Extract block_height and _id from the current document
-            const char *block_height = NULL;
-            const char *doc_id = NULL;
-            if (bson_iter_init_find(&child, &doc, "block_height") && BSON_ITER_HOLDS_UTF8(&child)) {
-                block_height = bson_iter_utf8(&child, NULL);
-            }
-            if (bson_iter_init_find(&child, &doc, "_id") && BSON_ITER_HOLDS_UTF8(&child)) {
-                doc_id = bson_iter_utf8(&child, NULL);
-            }
-
-            if (block_height && doc_id) {
-                BSON_APPEND_UTF8(&query, "block_height", block_height);
-            }
-
-            // Find documents with the same block_height and _id
-            mongoc_cursor_t *cursor = mongoc_collection_find_with_opts(collection, &query, NULL, NULL);
-            const bson_t *result;
-            while (mongoc_cursor_next(cursor, &result)) {
-                const char *result_id = NULL;
-                if (bson_iter_init_find(&child, result, "_id") && BSON_ITER_HOLDS_UTF8(&child)) {
-                    result_id = bson_iter_utf8(&child, NULL);
-                }
-                if (result_id && strcmp(result_id, doc_id) != 0) {
-                    // Delete the duplicate document from the collection
-                    if (!mongoc_collection_delete_one(collection, result, NULL, NULL, &error)) {
-                        DEBUG_PRINT("Failed to delete duplicate from collection: %s. Error: %s", collection_name, error.message);
-
-                        mongoc_cursor_destroy(cursor);
-                        bson_destroy(&query);
-
-                        mongoc_collection_destroy(collection);
-                        mongoc_client_pool_push(database_client_thread_pool, client);
-
-                        return -1;
-                    }
-                    removed_count++;
-                }
-            }
-            mongoc_cursor_destroy(cursor);
-            bson_destroy(&query);
-            // bson_destroy(&doc);
-        }
-    }
-
-    // Cleanup
-    mongoc_collection_destroy(collection);
-    mongoc_client_pool_push(database_client_thread_pool, client);
-
-    return removed_count;
-}
-
 int count_db_delegates(void) {
     bson_error_t error;
     bool result = false;
     int64_t count;
 
     result = db_count_doc(DATABASE_NAME, collection_names[XCASH_DB_DELEGATES], &count, &error);
-    if (!result) {
-        count = -1;
-    }
-    return count;
-}
-
-int count_db_statistics(void) {
-    bson_error_t error;
-    bool result = false;
-    int64_t count;
-
-    result = db_count_doc(DATABASE_NAME, collection_names[XCASH_DB_STATISTICS], &count, &error);
     if (!result) {
         count = -1;
     }
@@ -1186,34 +766,6 @@ int count_recs(const bson_t *recs) {
     }
     return count;
 }
-
-int32_t
-bson_lookup_int32 (const bson_t *b, const char *key)
-{
-   bson_iter_t iter;
-   bson_iter_t descendent;
-
-   bson_iter_init (&iter, b);
-   BSON_ASSERT (bson_iter_find_descendant (&iter, key, &descendent));
-   BSON_ASSERT (BSON_ITER_HOLDS_INT32 (&descendent));
-
-   return bson_iter_int32 (&descendent);
-}
-
-
-const char *
-bson_lookup_utf8 (const bson_t *b, const char *key)
-{
-   bson_iter_t iter;
-   bson_iter_t descendent;
-
-   bson_iter_init (&iter, b);
-   BSON_ASSERT (bson_iter_find_descendant (&iter, key, &descendent));
-   BSON_ASSERT (BSON_ITER_HOLDS_UTF8 (&descendent));
-
-   return bson_iter_utf8 (&descendent, NULL);
-}
-
 
 // from db_operations
 
@@ -1530,44 +1082,4 @@ bool db_count_doc(const char *db_name, const char *collection_name, int64_t *res
 
   *result_count = count;
   return true;
-}
-
-/// @brief Get multi data db hash
-/// @param collection collection name prefix. in case if reserve_proofs and reserve_bytes calculates hash for all dbs
-/// @param db_hash_result pointer to buffer to receive result hash
-/// @return true or false in case of error
-bool db_copy_collection(const char *db_name, const char *src_collection, const char *dst_collection, bson_error_t *error) {
-  bson_t filter = BSON_INITIALIZER;
-  bson_t reply = BSON_INITIALIZER;
-
-  if (!db_find_doc(db_name, src_collection, &filter, &reply, error, true)) {
-    bson_destroy(&filter);
-    return false;
-  }
-
-  bson_iter_t iter;
-  if (!bson_iter_init(&iter, &reply)) {
-    bson_destroy(&reply);
-    bson_destroy(&filter);
-    return false;
-  }
-
-  bool success = true;
-  while (bson_iter_next(&iter)) {
-    const uint8_t *doc_data;
-    uint32_t doc_len;
-    bson_t doc;
-
-    bson_iter_document(&iter, &doc_len, &doc_data);
-    bson_init_static(&doc, doc_data, doc_len);
-
-    if (!db_upsert_doc(db_name, dst_collection, &doc, error)) {
-      success = false;
-      break;
-    }
-  }
-
-  bson_destroy(&reply);
-  bson_destroy(&filter);
-  return success;
 }
