@@ -107,29 +107,28 @@ bool create_delegate_online_ip_list(char* out_data, size_t out_data_size)
     }
 
     collection = mongoc_client_get_collection(
-                     db_client,
-                     DATABASE_NAME,
-                     DB_COLLECTION_DELEGATES);
+        db_client,
+        DATABASE_NAME,
+        DB_COLLECTION_DELEGATES);
     if (!collection) {
-        ERROR_PRINT("%s: Failed to get collection", __func__);
-        mongoc_client_pool_push(database_client_thread_pool, db_client);
-        return false;
+      ERROR_PRINT("%s: Failed to get collection", __func__);
+      mongoc_client_pool_push(database_client_thread_pool, db_client);
+      return false;
     }
 
     query = BCON_NEW("online_status", BCON_UTF8("true"));
     opts = BCON_NEW("sort", "{",
-                  "delegate_type", BCON_INT32(1),
-                  "_id",           BCON_INT32(1),
-                "}");
-    { delegate_type: 1, _id: 1 }
+                    "delegate_type", BCON_INT32(1),
+                    "_id", BCON_INT32(1),
+                    "}");
 
     if (!query || !opts) {
-        ERROR_PRINT("%s: Failed to build query or opts", __func__);
-        if (query) bson_destroy(query);
-        if (opts) bson_destroy(opts);
-        mongoc_collection_destroy(collection);
-        mongoc_client_pool_push(database_client_thread_pool, db_client);
-        return false;
+      ERROR_PRINT("%s: Failed to build query or opts", __func__);
+      if (query) bson_destroy(query);
+      if (opts) bson_destroy(opts);
+      mongoc_collection_destroy(collection);
+      mongoc_client_pool_push(database_client_thread_pool, db_client);
+      return false;
     }
 
     cursor = mongoc_collection_find_with_opts(collection, query, opts, NULL);
