@@ -712,7 +712,6 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
   char delegate_name_or_address[MAXIMUM_BUFFER_SIZE_DELEGATES_NAME + 1] = {0};
   char voted_for_public_address[XCASH_WALLET_LENGTH + 1] = {0};
   char proof_str[BUFFER_SIZE_RESERVE_PROOF] = {0};
-  uint64_t vote_timestamp = 0;
   char json_filter[256] = {0};
 
   // Parsed numeric
@@ -806,14 +805,6 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
     SERVER_ERROR("0|reserve_proof too large");
   }
   memcpy(proof_str, j_proof->valuestring, proof_len);
-// jed
-  const cJSON *j_ts = cJSON_GetObjectItemCaseSensitive(root, "vote_timestamp");
-  if (!cJSON_IsNumber(j_ts) || !isfinite(j_ts->valuedouble) ||
-      j_ts->valuedouble < 0.0) {
-    cJSON_Delete(root);
-    SERVER_ERROR("0|vote_timestamp invalid");
-  }
-  vote_timestamp = (uint64_t)j_ts->valuedouble;
 
   // ---- Resolve delegate target → public address ----
   if (strnlen(delegate_name_or_address, sizeof(delegate_name_or_address)) == XCASH_WALLET_LENGTH &&
@@ -861,7 +852,7 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
   }
 
 #ifdef SEED_NODE_ON
-  // only add on seed
+  // only add on seed node
   // ---- One vote per wallet: delete previous (single collection) ----
   // Prefer _id == voter address for global uniqueness
   snprintf(json_filter, sizeof(json_filter),
@@ -885,9 +876,6 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
 
   // reserve_proof
   BSON_APPEND_UTF8(&doc, "reserve_proof", proof_str);
-
-  // vote_timestamp
-  BSON_APPEND_INT64(&doc, "vote_timestamp", (int64_t)vote_timestamp);
 
   // Insert into Mongo
   if (insert_document_into_collection_bson(DATABASE_NAME, DB_COLLECTION_RESERVE_PROOFS, &doc) != 1) {
