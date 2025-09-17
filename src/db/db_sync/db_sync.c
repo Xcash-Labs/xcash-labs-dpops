@@ -76,9 +76,12 @@ cleanup:
   if (collection) mongoc_collection_destroy(collection);
   if (client) mongoc_client_pool_push(database_client_thread_pool, client);
 
+  if(add_indexes()) {
+    result = XCASH_ERROR;
+  }
+
   return result;
 }
-
 
 // Caller provides `out_data` with capacity `out_data_size`.
 // On success, this function writes the complete JSON message into `out_data`

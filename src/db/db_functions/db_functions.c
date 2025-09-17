@@ -921,11 +921,69 @@ bool add_seed_indexes(void) {
     }
   }
 
+  /* =========================
+   RESERVE_PROOFS COLLECTION
+   ========================= */
+  {
+    mongoc_collection_t* coll =
+        mongoc_client_get_collection(client, DATABASE_NAME, DB_COLLECTION_RESERVE_PROOFS);
+
+    // --- compound index: { public_address_voted_for: 1, vote_timestamp: 1 } ---
+    bson_t k, o;
+    bson_init(&k);
+    bson_init(&o);
+    BSON_APPEND_INT32(&k, "public_address_voted_for", 1);
+    BSON_APPEND_INT32(&k, "vote_timestamp", 1);
+    BSON_APPEND_UTF8(&o, "name", "idx_delegate_matured");
+    mongoc_index_model_t* m = mongoc_index_model_new(&k, &o);
+
+    mongoc_index_model_t* models[] = {m};
+
+    bson_t create_opts;
+    bson_init(&create_opts);
+    if (is_seed_node) {
+      BSON_APPEND_UTF8(&create_opts, "commitQuorum", "majority");
+    }
+    BSON_APPEND_INT32(&create_opts, "maxTimeMS", 15000);
+
+    // writeConcern: majority
+    bson_t wc;
+    bson_init(&wc);
+    BSON_APPEND_UTF8(&wc, "w", "majority");
+    BSON_APPEND_DOCUMENT(&create_opts, "writeConcern", &wc);
+
+    bson_t reply;
+    bson_error_t ierr;
+    bson_init(&reply);
+
+    if (!mongoc_collection_create_indexes_with_opts(
+            coll, models, (int)(sizeof(models) / sizeof(models[0])),
+            &create_opts, &reply, &ierr)) {
+      char* json = bson_as_canonical_extended_json(&reply, NULL);
+      if (!(strstr(ierr.message, "already exists") ||
+            (json && strstr(json, "already exists")))) {
+        ok = false;
+        fprintf(stderr, "[indexes] %s failed: %s\nDetails: %s\n",
+                DB_COLLECTION_RESERVE_PROOFS, ierr.message, json ? json : "(no reply)");
+      }
+      if (json) bson_free(json);
+    }
+
+    // cleanup
+    bson_destroy(&reply);
+    bson_destroy(&wc);
+    bson_destroy(&create_opts);
+
+    mongoc_index_model_destroy(m);
+    bson_destroy(&o);
+    bson_destroy(&k);
+
+    mongoc_collection_destroy(coll);
+  }
+
   mongoc_client_pool_push(database_client_thread_pool, client);
   return ok;
 }
-
-
 
 bool add_indexes(void) {
   bson_error_t err;
@@ -1001,83 +1059,9 @@ bool add_indexes(void) {
     mongoc_collection_destroy(coll);
   }
 
-  /* =========================
-   RESERVE_PROOFS COLLECTION
-   ========================= */
-  {
-    mongoc_collection_t* coll =
-        mongoc_client_get_collection(client, DATABASE_NAME, DB_COLLECTION_RESERVE_PROOFS);
-
-    // --- index on public_address_voted_for ---
-    bson_t k1, o1;
-    bson_init(&k1);
-    bson_init(&o1);
-    BSON_APPEND_INT32(&k1, "public_address_voted_for", 1);
-    BSON_APPEND_UTF8(&o1, "name", "idx_voted_for");
-    mongoc_index_model_t* m1 = mongoc_index_model_new(&k1, &o1);
-
-    // --- index on vote_timestamp (Date) ---
-    bson_t k2, o2;
-    bson_init(&k2);
-    bson_init(&o2);
-    BSON_APPEND_INT32(&k2, "vote_timestamp", 1);
-    BSON_APPEND_UTF8(&o2, "name", "idx_vote_timestamp");
-    mongoc_index_model_t* m2 = mongoc_index_model_new(&k2, &o2);
-
-    mongoc_index_model_t* models[] = {m1, m2};
-
-    bson_t create_opts;
-    bson_init(&create_opts);
-    if (is_seed_node) {
-      BSON_APPEND_UTF8(&create_opts, "commitQuorum", "majority");
-    }
-    BSON_APPEND_INT32(&create_opts, "maxTimeMS", 15000);
-
-    // writeConcern: majority
-    bson_t wc;
-    bson_init(&wc);
-    BSON_APPEND_UTF8(&wc, "w", "majority");
-    BSON_APPEND_DOCUMENT(&create_opts, "writeConcern", &wc);
-
-    bson_t reply;
-    bson_error_t ierr;
-    bson_init(&reply);
-
-    if (!mongoc_collection_create_indexes_with_opts(
-            coll, models, (int)(sizeof(models) / sizeof(models[0])),
-            &create_opts, &reply, &ierr)) {
-      char* json = bson_as_canonical_extended_json(&reply, NULL);
-      if (!(strstr(ierr.message, "already exists") ||
-            (json && strstr(json, "already exists")))) {
-        ok = false;
-        fprintf(stderr, "[indexes] %s failed: %s\nDetails: %s\n",
-                DB_COLLECTION_RESERVE_PROOFS, ierr.message, json ? json : "(no reply)");
-      }
-      if (json) bson_free(json);
-    }
-
-    // cleanup
-    bson_destroy(&reply);
-    bson_destroy(&wc);
-    bson_destroy(&create_opts);
-
-    mongoc_index_model_destroy(m2);
-    bson_destroy(&o2);
-    bson_destroy(&k2);
-
-    mongoc_index_model_destroy(m1);
-    bson_destroy(&o1);
-    bson_destroy(&k1);
-
-    mongoc_collection_destroy(coll);
-  }
-
   mongoc_client_pool_push(database_client_thread_pool, client);
   return ok;
 }
-
-
-
 
 // db helpers
 
