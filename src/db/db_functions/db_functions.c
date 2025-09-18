@@ -158,7 +158,7 @@ int insert_document_into_collection_bson(const char* DATABASE, const char* COLLE
 
 /*-----------------------------------------------------------------------------------------------------------
 Name: delegates_apply_vote_delta
-Description: increment a delegate's vote_total_atomic by delta (can be negative)
+Description: increment a delegate's total_vote_count by delta (can be negative)
 Parameters:
   DATABASE - The database name.
   COLLECTION - The collection name.
