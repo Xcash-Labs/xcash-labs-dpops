@@ -7,31 +7,27 @@ Parameters:
   DELEGATE_NAME - The delegate name
 Return: 0 if the delegate name is not valid, 1 if the delegate name is valid
 ---------------------------------------------------------------------------------------------------------*/
-int check_for_valid_delegate_name(const char* DELEGATE_NAME)
-{
-  #define VALID_DATA "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._-"
+int check_for_valid_delegate_name(const char *DELEGATE_NAME) {
+#define VALID_DATA "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._-"
 
   size_t length = strlen(DELEGATE_NAME);
 
   // Check name length bounds
   if (length > MAXIMUM_BUFFER_SIZE_DELEGATES_NAME ||
-      length < MINIMUM_BUFFER_SIZE_DELEGATES_NAME)
-  {
+      length < MINIMUM_BUFFER_SIZE_DELEGATES_NAME) {
     WARNING_PRINT("Attempt to register a delegate whose name is either too short or too long");
     return XCASH_ERROR;
   }
 
   // Validate all characters
-  for (size_t i = 0; i < length; i++)
-  {
-    if (strchr(VALID_DATA, DELEGATE_NAME[i]) == NULL)
-    {
+  for (size_t i = 0; i < length; i++) {
+    if (strchr(VALID_DATA, DELEGATE_NAME[i]) == NULL) {
       return XCASH_ERROR;
     }
   }
 
   return XCASH_OK;
-  #undef VALID_DATA
+#undef VALID_DATA
 }
 
 /*---------------------------------------------------------------------------------------------------------
@@ -108,7 +104,7 @@ Notes:
 int check_for_valid_ip_or_hostname(const char *host) {
   if (!host || !*host) return XCASH_ERROR;
   struct addrinfo hints = {0}, *res = NULL;
-  hints.ai_family = AF_UNSPEC;   // v4 or v6
+  hints.ai_family = AF_UNSPEC;  // v4 or v6
   int rc = getaddrinfo(host, NULL, &hints, &res);
   if (rc != 0 || !res) return XCASH_ERROR;
   freeaddrinfo(res);
@@ -122,203 +118,196 @@ Parameters:
   CLIENT_SOCKET - The socket to send data to
   MESSAGE - The message
 ---------------------------------------------------------------------------------------------------------*/
-void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(server_client_t* client, const char* MESSAGE)
-{
-    char data[SMALL_BUFFER_SIZE]                     = {0};
-    char delegate_name[MAXIMUM_BUFFER_SIZE_DELEGATES_NAME]     = {0};
-    char delegate_public_address[XCASH_WALLET_LENGTH + 1]      = {0};
-    char delegate_public_key[VRF_PUBLIC_KEY_LENGTH + 1]        = {0};
-    unsigned char delegate_public_key_data[crypto_vrf_PUBLICKEYBYTES + 1] = {0};
-    char delegates_IP_address[BLOCK_VERIFIERS_IP_ADDRESS_TOTAL_LENGTH + 1] = {0};
-    uint64_t registration_time = 0;
+void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(server_client_t *client, const char *MESSAGE) {
+  char data[SMALL_BUFFER_SIZE] = {0};
+  char delegate_name[MAXIMUM_BUFFER_SIZE_DELEGATES_NAME] = {0};
+  char delegate_public_address[XCASH_WALLET_LENGTH + 1] = {0};
+  char delegate_public_key[VRF_PUBLIC_KEY_LENGTH + 1] = {0};
+  unsigned char delegate_public_key_data[crypto_vrf_PUBLICKEYBYTES + 1] = {0};
+  char delegates_IP_address[BLOCK_VERIFIERS_IP_ADDRESS_TOTAL_LENGTH + 1] = {0};
+  uint64_t registration_time = 0;
 
-    // 1) Parse incoming MESSAGE as JSON
-    cJSON *root = cJSON_Parse(MESSAGE);
-    if (!root) {
-        SERVER_ERROR("0|Could not verify the message");
-    }
+  // 1) Parse incoming MESSAGE as JSON
+  cJSON *root = cJSON_Parse(MESSAGE);
+  if (!root) {
+    SERVER_ERROR("0|Could not verify the message");
+  }
 
-    // 2) Extract and validate each required field
-    cJSON *msg_settings = cJSON_GetObjectItemCaseSensitive(root, "message_settings");
-    cJSON *js_name      = cJSON_GetObjectItemCaseSensitive(root, "delegate_name");
-    cJSON *js_ip        = cJSON_GetObjectItemCaseSensitive(root, "delegate_IP");
-    cJSON *js_pubkey    = cJSON_GetObjectItemCaseSensitive(root, "delegate_public_key");
-    cJSON *js_address   = cJSON_GetObjectItemCaseSensitive(root, "public_address");
-    cJSON *js_reg_time  = cJSON_GetObjectItemCaseSensitive(root, "registration_timestamp");
+  // 2) Extract and validate each required field
+  cJSON *msg_settings = cJSON_GetObjectItemCaseSensitive(root, "message_settings");
+  cJSON *js_name = cJSON_GetObjectItemCaseSensitive(root, "delegate_name");
+  cJSON *js_ip = cJSON_GetObjectItemCaseSensitive(root, "delegate_IP");
+  cJSON *js_pubkey = cJSON_GetObjectItemCaseSensitive(root, "delegate_public_key");
+  cJSON *js_address = cJSON_GetObjectItemCaseSensitive(root, "public_address");
+  cJSON *js_reg_time = cJSON_GetObjectItemCaseSensitive(root, "registration_timestamp");
 
-    if (!cJSON_IsString(msg_settings)     || (msg_settings->valuestring == NULL) ||
-        !cJSON_IsString(js_name)          || (js_name->valuestring == NULL)      ||
-        !cJSON_IsString(js_ip)            || (js_ip->valuestring == NULL)        ||
-        !cJSON_IsString(js_pubkey)        || (js_pubkey->valuestring == NULL)    ||
-        !cJSON_IsString(js_address)       || (js_address->valuestring == NULL)  ||
-        !cJSON_IsNumber(js_reg_time))
-    {
-        cJSON_Delete(root);
-        SERVER_ERROR("0|Could not verify the message");
-    }
+  if (!cJSON_IsString(msg_settings) || (msg_settings->valuestring == NULL) ||
+      !cJSON_IsString(js_name) || (js_name->valuestring == NULL) ||
+      !cJSON_IsString(js_ip) || (js_ip->valuestring == NULL) ||
+      !cJSON_IsString(js_pubkey) || (js_pubkey->valuestring == NULL) ||
+      !cJSON_IsString(js_address) || (js_address->valuestring == NULL) ||
+      !cJSON_IsNumber(js_reg_time)) {
+    cJSON_Delete(root);
+    SERVER_ERROR("0|Could not verify the message");
+  }
 
-    // 2a) Ensure message_settings matches exactly
-    if (strcmp(msg_settings->valuestring, "NODES_TO_BLOCK_VERIFIERS_REGISTER_DELEGATE") != 0) {
-        cJSON_Delete(root);
-        SERVER_ERROR("0|Invalid message_settings");
-    }
+  // 2a) Ensure message_settings matches exactly
+  if (strcmp(msg_settings->valuestring, "NODES_TO_BLOCK_VERIFIERS_REGISTER_DELEGATE") != 0) {
+    cJSON_Delete(root);
+    SERVER_ERROR("0|Invalid message_settings");
+  }
 
-    // 2b) Copy them into our local buffers (including null terminators)
-    size_t name_len    = strlen(js_name->valuestring);
-    size_t ip_len      = strlen(js_ip->valuestring);
-    size_t pubkey_len  = strlen(js_pubkey->valuestring);
-    size_t address_len = strlen(js_address->valuestring);
+  // 2b) Copy them into our local buffers (including null terminators)
+  size_t name_len = strlen(js_name->valuestring);
+  size_t ip_len = strlen(js_ip->valuestring);
+  size_t pubkey_len = strlen(js_pubkey->valuestring);
+  size_t address_len = strlen(js_address->valuestring);
 
-    if (name_len == 0 || name_len >= sizeof(delegate_name) ||
-        ip_len == 0   || ip_len >= sizeof(delegates_IP_address) ||
-        pubkey_len != VRF_PUBLIC_KEY_LENGTH ||
-        address_len != XCASH_WALLET_LENGTH)
-    {
-        cJSON_Delete(root);
-        SERVER_ERROR("0|Invalid length for delegate name, delegate ip, public key, or public wallet address");
-    }
+  if (name_len == 0 || name_len >= sizeof(delegate_name) ||
+      ip_len == 0 || ip_len >= sizeof(delegates_IP_address) ||
+      pubkey_len != VRF_PUBLIC_KEY_LENGTH ||
+      address_len != XCASH_WALLET_LENGTH) {
+    cJSON_Delete(root);
+    SERVER_ERROR("0|Invalid length for delegate name, delegate ip, public key, or public wallet address");
+  }
 
-    memcpy(delegate_name,        js_name->valuestring,    name_len);
-    memcpy(delegates_IP_address, js_ip->valuestring,      ip_len);
-    memcpy(delegate_public_key,  js_pubkey->valuestring,  pubkey_len);
-    memcpy(delegate_public_address, js_address->valuestring, address_len);
-    registration_time = (uint64_t)js_reg_time->valuedouble;
+  memcpy(delegate_name, js_name->valuestring, name_len);
+  memcpy(delegates_IP_address, js_ip->valuestring, ip_len);
+  memcpy(delegate_public_key, js_pubkey->valuestring, pubkey_len);
+  memcpy(delegate_public_address, js_address->valuestring, address_len);
+  registration_time = (uint64_t)js_reg_time->valuedouble;
 
-    // 3) Convert hex string → raw bytes for VRF public key
-    //    (each two hex chars → one byte)
-    for (int i = 0, j = 0; i < (int)pubkey_len; i += 2, j++) {
-        char byte_hex[3] = { delegate_public_key[i], delegate_public_key[i+1], 0 };
-        delegate_public_key_data[j] = (unsigned char)strtol(byte_hex, NULL, 16);
-    }
-    delegate_public_key_data[crypto_vrf_PUBLICKEYBYTES] = 0; // just in case
+  // 3) Convert hex string → raw bytes for VRF public key
+  //    (each two hex chars → one byte)
+  for (int i = 0, j = 0; i < (int)pubkey_len; i += 2, j++) {
+    char byte_hex[3] = {delegate_public_key[i], delegate_public_key[i + 1], 0};
+    delegate_public_key_data[j] = (unsigned char)strtol(byte_hex, NULL, 16);
+  }
+  delegate_public_key_data[crypto_vrf_PUBLICKEYBYTES] = 0;  // just in case
 
-    // 4) Validate ranges and formats
-    if (check_for_valid_delegate_name(delegate_name) == 0) {
-      cJSON_Delete(root);
-      SERVER_ERROR("0|Invalid delegate_name");
-    }
-    if (strlen(delegate_public_address) != XCASH_WALLET_LENGTH) {
-      cJSON_Delete(root);
-      SERVER_ERROR("0|Invalid public_address length");
-    }
-    if (strncmp(delegate_public_address, XCASH_WALLET_PREFIX,
-                sizeof(XCASH_WALLET_PREFIX) - 1) != 0) {
-      cJSON_Delete(root);
-      SERVER_ERROR("0|Invalid public_address prefix");
-    }
-    if (check_for_valid_ip_or_hostname(delegates_IP_address) == XCASH_ERROR) {
-      cJSON_Delete(root);
-      SERVER_ERROR("0|Invalid delegate_IP (must be IP or resolvable hostname)");
-    }
-    if (crypto_vrf_is_valid_key(delegate_public_key_data) != 1) {
-      cJSON_Delete(root);
-      SERVER_ERROR("0|Invalid delegate_public_key");
-    }
+  // 4) Validate ranges and formats
+  if (check_for_valid_delegate_name(delegate_name) == 0) {
+    cJSON_Delete(root);
+    SERVER_ERROR("0|Invalid delegate_name");
+  }
+  if (strlen(delegate_public_address) != XCASH_WALLET_LENGTH) {
+    cJSON_Delete(root);
+    SERVER_ERROR("0|Invalid public_address length");
+  }
+  if (strncmp(delegate_public_address, XCASH_WALLET_PREFIX,
+              sizeof(XCASH_WALLET_PREFIX) - 1) != 0) {
+    cJSON_Delete(root);
+    SERVER_ERROR("0|Invalid public_address prefix");
+  }
+  if (check_for_valid_ip_or_hostname(delegates_IP_address) == XCASH_ERROR) {
+    cJSON_Delete(root);
+    SERVER_ERROR("0|Invalid delegate_IP (must be IP or resolvable hostname)");
+  }
+  if (crypto_vrf_is_valid_key(delegate_public_key_data) != 1) {
+    cJSON_Delete(root);
+    SERVER_ERROR("0|Invalid delegate_public_key");
+  }
 
-    cJSON_Delete(root); // we no longer need the JSON tree
+  cJSON_Delete(root);  // we no longer need the JSON tree
 
-    // 5) Check uniqueness in database
-    // 5a) public_address
-    snprintf(data, sizeof(data), "{\"public_address\":\"%s\"}", delegate_public_address);
-    if (count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, data) != 0)
-    {
-      if (is_seed_node) {
+  // 5) Check uniqueness in database
+  // 5a) public_address
+  snprintf(data, sizeof(data), "{\"public_address\":\"%s\"}", delegate_public_address);
+  if (count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, data) != 0) {
+    if (is_seed_node) {
       // Seed node db uses replication so it alreay exists it has already been added
-        send_data(client, (unsigned char *)"1|Registered the delegate}", strlen("1|Registered the delegate}"));
-        return;
-      } else {
-        SERVER_ERROR("0|The delegates public address is already registered");
-      }
+      send_data(client, (unsigned char *)"1|Registered the delegate}", strlen("1|Registered the delegate}"));
+      return;
+    } else {
+      SERVER_ERROR("0|The delegates public address is already registered");
     }
+  }
 
-    // 5b) IP_address
-    snprintf(data, sizeof(data), "{\"IP_address\":\"%s\"}", delegates_IP_address);
-    if (count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, data) != 0)
-    {
-        SERVER_ERROR("0|The delegates IP address is already registered");
-    }
+  // 5b) IP_address
+  snprintf(data, sizeof(data), "{\"IP_address\":\"%s\"}", delegates_IP_address);
+  if (count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, data) != 0) {
+    SERVER_ERROR("0|The delegates IP address is already registered");
+  }
 
-    // 5c) public_key
-    snprintf(data, sizeof(data), "{\"public_key\":\"%s\"}", delegate_public_key);
-    if (count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, data) != 0)
-    {
-        SERVER_ERROR("0|The delegates public key is already registered");
-    }
+  // 5c) public_key
+  snprintf(data, sizeof(data), "{\"public_key\":\"%s\"}", delegate_public_key);
+  if (count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, data) != 0) {
+    SERVER_ERROR("0|The delegates public key is already registered");
+  }
 
-    // 5d) delegate_name
-    snprintf(data, sizeof(data), "{\"delegate_name\":\"%s\"}", delegate_name);
-    if (count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, data) != 0)
-    {
-        SERVER_ERROR("0|The delegates name is already registered");
-    }
+  // 5d) delegate_name
+  snprintf(data, sizeof(data), "{\"delegate_name\":\"%s\"}", delegate_name);
+  if (count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, data) != 0) {
+    SERVER_ERROR("0|The delegates name is already registered");
+  }
 
-    // 6) Check overall delegate count
-    int delegate_count = count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, "{}");
-    if (delegate_count >= BLOCK_VERIFIERS_TOTAL_AMOUNT) {
-      SERVER_ERROR("0|The maximum amount of delegates has been reached");
-    }
+  // 6) Check overall delegate count
+  int delegate_count = count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, "{}");
+  if (delegate_count >= BLOCK_VERIFIERS_TOTAL_AMOUNT) {
+    SERVER_ERROR("0|The maximum amount of delegates has been reached");
+  }
 
-    // 7) Finally insert a new document
-    double set_delegate_fee = 0.00;
-    uint64_t set_counts = 0;
+  // 7) Finally insert a new document
+  double set_delegate_fee = 0.00;
+  uint64_t set_counts = 0;
 
-    bson_t bson;
-    bson_init(&bson);
+  bson_t bson;
+  bson_init(&bson);
 
-    // Strings
-    bson_append_utf8(&bson, "public_address", -1, delegate_public_address, -1);
-    bson_append_utf8(&bson, "IP_address", -1, delegates_IP_address, -1);
-    bson_append_utf8(&bson, "delegate_name", -1, delegate_name, -1);
-    bson_append_utf8(&bson, "about", -1, "", -1);
-    bson_append_utf8(&bson, "website", -1, "", -1);
-    bson_append_utf8(&bson, "team", -1, "", -1);
-    bson_append_utf8(&bson, "delegate_type", -1, "shared", -1);
-    bson_append_utf8(&bson, "server_specs", -1, "", -1);
-    bson_append_utf8(&bson, "online_status", -1, "false", -1);
-    bson_append_utf8(&bson, "public_key", -1, delegate_public_key, -1);
+  // Strings
+  bson_append_utf8(&bson, "public_address", -1, delegate_public_address, -1);
+  bson_append_utf8(&bson, "IP_address", -1, delegates_IP_address, -1);
+  bson_append_utf8(&bson, "delegate_name", -1, delegate_name, -1);
+  bson_append_utf8(&bson, "about", -1, "", -1);
+  bson_append_utf8(&bson, "website", -1, "", -1);
+  bson_append_utf8(&bson, "team", -1, "", -1);
+  bson_append_utf8(&bson, "delegate_type", -1, "shared", -1);
+  bson_append_utf8(&bson, "server_specs", -1, "", -1);
+  bson_append_utf8(&bson, "online_status", -1, "false", -1);
+  bson_append_utf8(&bson, "public_key", -1, delegate_public_key, -1);
 
-    // Numbers
-    bson_append_int64(&bson, "total_vote_count", -1, set_counts);
-    bson_append_double(&bson, "delegate_fee", -1, set_delegate_fee);
-    bson_append_int64(&bson, "registration_timestamp", -1, registration_time);
+  // Numbers
+  bson_append_int64(&bson, "total_vote_count", -1, set_counts);
+  bson_append_double(&bson, "delegate_fee", -1, set_delegate_fee);
+  bson_append_int64(&bson, "registration_timestamp", -1, registration_time);
 
-    if (insert_document_into_collection_bson(DATABASE_NAME, DB_COLLECTION_DELEGATES, &bson) != XCASH_OK) {
-      bson_destroy(&bson);
-      SERVER_ERROR("0|Failed to insert the delegate document");
-    }
-
+  if (insert_document_into_collection_bson(DATABASE_NAME, DB_COLLECTION_DELEGATES, &bson) != XCASH_OK) {
     bson_destroy(&bson);
+    SERVER_ERROR("0|Failed to insert the delegate document");
+  }
+
+  bson_destroy(&bson);
 
 // Only update statics on seed nodes
 #ifdef SEED_NODE_ON
 
-      bson_t bson_statistics;
-      bson_init(&bson_statistics);
+  bson_t bson_statistics;
+  bson_init(&bson_statistics);
 
-      // Strings
-      BSON_APPEND_UTF8(&bson_statistics, "_id", delegate_public_key);
+  // Strings
+  BSON_APPEND_UTF8(&bson_statistics, "_id", delegate_public_key);
 
-      // Numbers
-      bson_append_int64(&bson_statistics, "block_verifier_total_rounds", -1, set_counts);
-      bson_append_int64(&bson_statistics, "block_verifier_online_total_rounds", -1, set_counts);
-      bson_append_int64(&bson_statistics, "block_producer_total_rounds", -1, set_counts);
+  // Numbers
+  bson_append_int64(&bson_statistics, "block_verifier_total_rounds", -1, set_counts);
+  bson_append_int64(&bson_statistics, "block_verifier_online_total_rounds", -1, set_counts);
+  bson_append_int64(&bson_statistics, "block_producer_total_rounds", -1, set_counts);
 
-      // Guard watermark for exactly-once counting:
-      bson_append_int64(&bson_statistics, "last_counted_block", -1, (int64_t)-1);
+  // Guard watermark for exactly-once counting:
+  bson_append_int64(&bson_statistics, "last_counted_block", -1, (int64_t)-1);
 
-      // Insert into "statistics" collection
-      if (insert_document_into_collection_bson(DATABASE_NAME, DB_COLLECTION_STATISTICS, &bson_statistics) != XCASH_OK) {
-        bson_destroy(&bson_statistics);
-        SERVER_ERROR("0|Failed to insert the statistics document");
-      }
+  // Insert into "statistics" collection
+  if (insert_document_into_collection_bson(DATABASE_NAME, DB_COLLECTION_STATISTICS, &bson_statistics) != XCASH_OK) {
+    bson_destroy(&bson_statistics);
+    SERVER_ERROR("0|Failed to insert the statistics document");
+  }
 
-      bson_destroy(&bson_statistics);
+  bson_destroy(&bson_statistics);
 
 #endif
 
-    // 8) Success: reply back to the client
-    send_data(client, (unsigned char *)"1|Registered the delegate", strlen("1|Registered the delegate"));
-    return;
+  // 8) Success: reply back to the client
+  send_data(client, (unsigned char *)"1|Registered the delegate", strlen("1|Registered the delegate"));
+  return;
 }
 
 /*---------------------------------------------------------------------------------------------------------
@@ -335,7 +324,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
 
   // early at the top, before parsing JSON
   if (strcmp(client->client_ip, "127.0.0.1") != 0 && strcmp(client->client_ip, "::1") != 0) {
-    send_data(client, (unsigned char*)"0|FORBIDDEN_NON_LOCAL", strlen("0|FORBIDDEN_NON_LOCAL"));
+    send_data(client, (unsigned char *)"0|FORBIDDEN_NON_LOCAL", strlen("0|FORBIDDEN_NON_LOCAL"));
     INFO_PRINT("Non local");
     return;
   }
@@ -361,7 +350,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
       !cJSON_IsString(js_vrf_proof) || !cJSON_IsString(js_vrf_beta) || !cJSON_IsString(js_vrf_pubkey) ||
       !cJSON_IsString(js_vote_hash) || !cJSON_IsNumber(js_height) || !cJSON_IsString(js_prev_hash)) {
     cJSON_Delete(root);
-    send_data(client, (unsigned char*)"0|BAD_FIELDS", strlen("0|BAD_FIELDS"));
+    send_data(client, (unsigned char *)"0|BAD_FIELDS", strlen("0|BAD_FIELDS"));
     INFO_PRINT("Bad field fields");
     return;
   }
@@ -369,8 +358,8 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
   // Extract strings and height
   const char *vrf_proof_str = js_vrf_proof->valuestring;
   const char *vrf_beta_str = js_vrf_beta->valuestring;
-  const char *vrf_pubkey_str = js_vrf_pubkey->valuestring; 
-  const char *vote_hash_str   = js_vote_hash->valuestring;
+  const char *vrf_pubkey_str = js_vrf_pubkey->valuestring;
+  const char *vote_hash_str = js_vote_hash->valuestring;
   const char *prev_hash_str = js_prev_hash->valuestring;
   uint64_t height = (uint64_t)js_height->valuedouble;
 
@@ -391,18 +380,18 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
 
   pthread_mutex_lock(&producer_refs_lock);
   bool election_state_ready = is_hex_len(producer_refs[0].vrf_public_key, VRF_PUBLIC_KEY_LENGTH) &&
-    is_hex_len(producer_refs[0].vote_hash_hex,  VOTE_HASH_LEN);
+                              is_hex_len(producer_refs[0].vote_hash_hex, VOTE_HASH_LEN);
   pthread_mutex_unlock(&producer_refs_lock);
 
   DEBUG_PRINT("DPOPS dbg: height=%" PRIu64 " cheight=%llu live=%d state_ready=%d prev_in=%.*s prev_local=%.*s round_part %s",
-           (uint64_t)height,
-           (unsigned long long)cheight,
-           is_live_round ? 1 : 0,
-           election_state_ready ? 1 : 0,
-           64, prev_hash_str,
-           64, previous_block_hash,
-           current_round_part);
-     
+              (uint64_t)height,
+              (unsigned long long)cheight,
+              is_live_round ? 1 : 0,
+              election_state_ready ? 1 : 0,
+              64, prev_hash_str,
+              64, previous_block_hash,
+              current_round_part);
+
   if (is_live_round && strcmp(current_round_part, "12")) {
     if (election_state_ready) {
       if (strncmp(prev_hash_str, previous_block_hash, 64) != 0) {
@@ -461,7 +450,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
 
   // Verify VRF
   bool valid_block = (crypto_vrf_verify(computed_beta, pk_bin, proof_bin, alpha_input, sizeof(alpha_input)) == 0) &&
-    (memcmp(computed_beta, beta_bin, sizeof(beta_bin)) == 0);
+                     (memcmp(computed_beta, beta_bin, sizeof(beta_bin)) == 0);
 
   if (valid_block) {
     snprintf(response, sizeof(response),
@@ -700,10 +689,10 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
   return;
 }
 
-/* -----------------------------------------------------------------------------------------_---------------
-Name: server_receive_data_socket_node_to_block_verifiers_add_reserve_proof
-Description: Runs the code when the server receives the NODE_TO_BLOCK_VERIFIERS_ADD_RESERVE_PROOF message
-Parameters:
+/* --------------------------------------------------------------------------------------------------------
+  Name: server_receive_data_socket_node_to_block_verifiers_add_reserve_proof
+  Description: Runs the code when the server receives the NODE_TO_BLOCK_VERIFIERS_ADD_RESERVE_PROOF message is received.
+  Parameters:
   CLIENT_SOCKET - The socket to send data to
   MESSAGE - The message
 ----------------------------------------------------------------------------------------------------------- */
@@ -845,16 +834,16 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
     memcpy(voted_for_public_address, addr_buf, XCASH_WALLET_LENGTH);
   }
 
-    // ---- Disallow votes for seed/network data nodes ----
-    if (is_seed_address(voted_for_public_address)) {
-      cJSON_Delete(root);
-      SERVER_ERROR("0|Cannot vote for a network seed node");
-    }
+  // ---- Disallow votes for seed/network data nodes ----
+  if (is_seed_address(voted_for_public_address)) {
+    cJSON_Delete(root);
+    SERVER_ERROR("0|Cannot vote for a network seed node");
+  }
 
-    if (check_reserve_proofs(vote_amount_atomic, voter_public_address, proof_str)) {
-      cJSON_Delete(root);
-      SERVER_ERROR("0|Invalid reserve proof");
-    }
+  if (check_reserve_proofs(vote_amount_atomic, voter_public_address, proof_str)) {
+    cJSON_Delete(root);
+    SERVER_ERROR("0|Invalid reserve proof");
+  }
 
 #ifdef SEED_NODE_ON
 
@@ -870,7 +859,7 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
   bson_t doc;
   bson_init(&doc);
 
-  // store _id as the public wallet address 
+  // store _id as the public wallet address
   bson_append_utf8(&doc, "_id", -1, voter_public_address, XCASH_WALLET_LENGTH);
 
   // public_address_voted_for
@@ -905,4 +894,20 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
   send_data(client, (unsigned char *)"1|The vote was successfully added to the database", strlen("1|The vote was successfully added to the database"));
 
   return;
+}
+
+/* --------------------------------------------------------------------------------------------------------
+  Name: server_receive_data_socket_node_to_block_verifiers_check_vote_status
+  Description: Runs the code when the server receives the NODE_TO_BLOCK_VERIFIERS_CHECK_VOTE_STATUS message is received
+  Parameters:
+  CLIENT_SOCKET - The socket to send data to
+  MESSAGE - The message
+----------------------------------------------------------------------------------------------------------- */
+void server_receive_data_socket_node_to_block_verifiers_check_vote_status(server_client_t *client, const char *MESSAGE) {
+  if (!MESSAGE || !*MESSAGE) {
+    SERVER_ERROR("0|Invalid message payload");
+    return;
   }
+
+  return;
+}
