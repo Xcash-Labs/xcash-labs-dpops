@@ -9,18 +9,27 @@ void sync_minutes_and_seconds(int target_min, int target_sec) {
   struct tm tm_now, tm_target;
   localtime_r(&now.tv_sec, &tm_now);
   tm_target = tm_now;
-  tm_target.tm_min = target_min;
-  tm_target.tm_sec = target_sec;
+  tm_target.tm_min  = target_min;
+  tm_target.tm_sec  = target_sec;
+  tm_target.tm_isdst = -1; // let mktime figure DST
   time_t t_target = mktime(&tm_target);
 
   if (t_target <= now.tv_sec) {              // already passed this hour → next hour
     tm_target.tm_hour += 1;
+    tm_target.tm_isdst = -1;
     t_target = mktime(&tm_target);
   }
+
+  // compute seconds to sleep (fractional)
+  double sleep_seconds = (double)(t_target - now.tv_sec) - (now.tv_nsec / 1e9);
+  if (sleep_seconds < 0) sleep_seconds = 0.0; // guard in case clock skewed
+
+  INFO_PRINT("Sleeping for %.3f seconds to sync to target time...", sleep_seconds);
 
   struct timespec abs_ts = { .tv_sec = t_target, .tv_nsec = 0 };
   while (clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &abs_ts, NULL) == EINTR) {}
 }
+
 
 /*---------------------------------------------------------------------------------------------------------
 Name: init_processing
@@ -128,9 +137,8 @@ bool init_processing(const arg_config_t *arg_config) {
 
   }
 
-  INFO_PRINT("SYNCING NODE....................");
   if (!is_seed_node) {
-    INFO_PRINT("SYNCING NODE waiting until.... 40 after");
+    INFO_PRINT("Waiting for DB syncto start");
     sync_minutes_and_seconds(0, 40);
     int selected_index;
     pthread_mutex_lock(&delegates_all_lock);
@@ -138,8 +146,10 @@ bool init_processing(const arg_config_t *arg_config) {
     pthread_mutex_unlock(&delegates_all_lock);
     if (create_sync_token() == XCASH_OK) {
       if (create_delegates_db_sync_request(selected_index)) {
-        ERROR_PRINT("Waiting for DB sync");
-        sync_block_verifiers_minutes_and_seconds(0, 55);
+        INFO_PRINT("Waiting for DB sync");
+        if (sync_block_verifiers_minutes_and_seconds(0, 57) == XCASH_ERROR) {
+          INFO_PRINT("Failed to sync delegates in the allotted time");
+        }
       } else {
         ERROR_PRINT("Error occured while syncing delegates");
         return false;

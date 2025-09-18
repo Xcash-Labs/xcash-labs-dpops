@@ -935,9 +935,8 @@ void start_block_production(void) {
             if (create_sync_token() == XCASH_OK) {
               if (create_delegates_db_sync_request(selected_index)) {
                 INFO_PRINT("Waiting for DB sync");
-                sync_block_verifiers_minutes_and_seconds(0, 57);
                 if (sync_block_verifiers_minutes_and_seconds(0, 57) == XCASH_ERROR) {
-                  INFO_PRINT("Failed to sync delegates in the allotted time,");
+                  INFO_PRINT("Failed to sync delegates in the allotted time");
                 }
               } else {
                 ERROR_PRINT("Error occured while syncing delegates");
