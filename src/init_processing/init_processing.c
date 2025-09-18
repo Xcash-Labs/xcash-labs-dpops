@@ -36,7 +36,7 @@ bool init_processing(const arg_config_t *arg_config) {
     sleep(5);
   }
 
-  #endif
+#endif
 
   network_data_nodes_amount = get_seed_node_count();
 
@@ -128,7 +128,9 @@ bool init_processing(const arg_config_t *arg_config) {
 
   }
 
+  INFO_PRINT("SYNCING NODE....................");
   if (!is_seed_node) {
+    INFO_PRINT("SYNCING NODE waiting until.... 40 after");
     sync_minutes_and_seconds(0, 40);
     int selected_index;
     pthread_mutex_lock(&delegates_all_lock);
