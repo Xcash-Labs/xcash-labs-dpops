@@ -937,7 +937,7 @@ void server_receive_data_socket_node_to_block_verifiers_check_vote_status(server
   char delegate_name[MAXIMUM_BUFFER_SIZE_DELEGATES_NAME + 1] = {0};
 
   if (!get_vote_total_and_delegate_name(public_address, &total_atomic, delegate_name)) {
-    send_data(client, "0|No vote found for your address", strlen("0|No vote found for your address"));
+    send_data(client, (unsigned char *)"0|No vote found for your address", strlen("0|No vote found for your address"));
     cJSON_Delete(root);
     return;
   }
