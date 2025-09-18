@@ -246,5 +246,10 @@ void server_receive_data_socket_node_to_node_db_sync_data(const char *MESSAGE) {
   pthread_mutex_unlock(&delegates_all_lock);
   bson_destroy(doc);
 
+  if(add_indexes()) {
+    ERROR_PRINT("Failed to create index on ")
+    result = XCASH_ERROR;
+  }
+
   INFO_PRINT("Successfully updated delegates database from sync message");
 }

@@ -28,10 +28,8 @@ bool hash_delegates_collection(char *out_hash_hex) {
   if (!cursor) goto cleanup;
 
   // Step 4: Initialize hash
-    INFO_PRINT("HERE.....................");
   ctx = EVP_MD_CTX_new();
   if (!ctx || EVP_DigestInit_ex(ctx, EVP_md5(), NULL) != 1) goto cleanup;
-  INFO_PRINT("HERE.....................");
 
   // Step 5: Feed documents into hash
   while (mongoc_cursor_next(cursor, &doc)) {
@@ -77,10 +75,6 @@ cleanup:
   if (query) bson_destroy(query);
   if (collection) mongoc_collection_destroy(collection);
   if (client) mongoc_client_pool_push(database_client_thread_pool, client);
-
-  if(add_indexes()) {
-    result = XCASH_ERROR;
-  }
 
   return result;
 }
