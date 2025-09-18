@@ -799,16 +799,16 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
     cJSON_Delete(root);
     SERVER_ERROR("0|reserve_proof must be a non-empty string");
   }
+  const size_t proof_len = strnlen(j_proof->valuestring, sizeof(proof_str));
+  if (proof_len == sizeof(proof_str)) {
+    cJSON_Delete(root);
+    SERVER_ERROR("0|reserve_proof too large");
+  }
   for (size_t i = 0; i < proof_len; ++i) {
     unsigned char c = (unsigned char)proof_str[i];
     if (c < 0x20 || c == 0x7F) {
       SERVER_ERROR("0|reserve_proof has invalid characters");
     }
-  }
-  const size_t proof_len = strnlen(j_proof->valuestring, sizeof(proof_str));
-  if (proof_len == sizeof(proof_str)) {
-    cJSON_Delete(root);
-    SERVER_ERROR("0|reserve_proof too large");
   }
   memcpy(proof_str, j_proof->valuestring, proof_len);
 
@@ -851,16 +851,16 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
     memcpy(voted_for_public_address, addr_buf, XCASH_WALLET_LENGTH);
   }
 
-  // ---- Disallow votes for seed/network data nodes ----
-  if (is_seed_address(voted_for_public_address)) {
-    cJSON_Delete(root);
-    SERVER_ERROR("0|Cannot vote for a network seed node");
-  }
+    // ---- Disallow votes for seed/network data nodes ----
+    if (is_seed_address(voted_for_public_address)) {
+      cJSON_Delete(root);
+      SERVER_ERROR("0|Cannot vote for a network seed node");
+    }
 
-  if(check_reserve_proofs(vote_amount_atomic, voter_public_address, proof_str) {
-    cJSON_Delete(root);
-    SERVER_ERROR("0|Invalid reserve proof");
-  }
+    if (check_reserve_proofs(vote_amount_atomic, voter_public_address, proof_str)) {
+      cJSON_Delete(root);
+      SERVER_ERROR("0|Invalid reserve proof");
+    }
 
 #ifdef SEED_NODE_ON
 
@@ -911,4 +911,4 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
   send_data(client, (unsigned char *)"1|The vote was successfully added to the database", strlen("1|The vote was successfully added to the database"));
 
   return;
-}
+  }
