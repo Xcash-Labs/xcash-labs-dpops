@@ -890,7 +890,7 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
 
 #endif
 
-  if (delegates_apply_vote_delta(voted_for_public_address, vote_amount_atomic)) {
+  if (!delegates_apply_vote_delta(voted_for_public_address, vote_amount_atomic)) {
     cJSON_Delete(root);
     SERVER_ERROR("0|Could not increment the vote count in the delegates collection");
   }
