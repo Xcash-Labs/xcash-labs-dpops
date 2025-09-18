@@ -34,6 +34,6 @@ bool db_upsert_doc(const char *db_name, const char *collection_name, const bson_
 bool db_delete_doc(const char *db_name, const char *collection_name, const bson_t *query, bson_error_t *error);
 bool db_drop(const char *db_name, const char *collection_name, bson_error_t *error);
 bool db_count_doc(const char *db_name, const char *collection_name, int64_t *result_count, bson_error_t *error);
-bool get_vote_total_and_delegate_name(const char* voter_id, int64_t* total_out, char delegate_name_out);
+bool get_vote_total_and_delegate_name(const char* voter_id, int64_t* total_out, char delegate_name_out[MAXIMUM_BUFFER_SIZE_DELEGATES_NAME + 1]);
 
 #endif
