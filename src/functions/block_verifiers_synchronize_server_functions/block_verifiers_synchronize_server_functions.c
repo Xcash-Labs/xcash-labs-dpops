@@ -1,54 +1,5 @@
 #include "block_verifiers_synchronize_server_functions.h"
 
-bool get_block_hash(unsigned long block_height, char* block_hash, size_t block_hash_size) {
-  char db_collection_name[DB_COLLECTION_NAME_SIZE];
-  char block_height_str[32]; // block height is a number, doesn't need large buffer
-  bool result = false;
-
-  // Calculate reserve bytes DB index
-  unsigned long reserve_bytes_db_index = ((block_height - XCASH_PROOF_OF_STAKE_BLOCK_HEIGHT) / BLOCKS_PER_DAY_FIVE_MINUTE_BLOCK_TIME) + 1;
-
-  // Safer string formatting
-  snprintf(db_collection_name, sizeof(db_collection_name), "reserve_bytes_%lu", reserve_bytes_db_index);
-  snprintf(block_height_str, sizeof(block_height_str), "%lu", block_height);
-
-  // Create BSON filter
-  bson_error_t error;
-  bson_t *filter = BCON_NEW("block_height", BCON_UTF8(block_height_str));
-  bson_t *doc = bson_new();
-
-  if (!filter || !doc) {
-    ERROR_PRINT("Failed to allocate BSON filter or document");
-    goto cleanup;
-  }
-
-  // Query MongoDB
-  if (!db_find_doc(DATABASE_NAME, db_collection_name, filter, doc, &error, true)) {
-    ERROR_PRINT("Failed to find document: %s", error.message);
-    goto cleanup;
-  }
-
-  // Extract block hash
-  bson_iter_t iter;
-  if (bson_iter_init(&iter, doc)) {
-    bson_iter_t sub_iter;
-    if (bson_iter_find_descendant(&iter, "0.reserve_bytes_data_hash", &sub_iter) && BSON_ITER_HOLDS_UTF8(&sub_iter)) {
-      const char *hash = bson_iter_utf8(&sub_iter, NULL);
-      strncpy(block_hash, hash, block_hash_size - 1);
-      block_hash[block_hash_size - 1] = '\0';
-      result = true;
-      goto cleanup;
-    }
-  }
-
-  ERROR_PRINT("block_hash not found in document");
-
-cleanup:
-  if (filter) bson_destroy(filter);
-  if (doc) bson_destroy(doc);
-  return result;
-}
-
 /*---------------------------------------------------------------------------------------------------------
 Name: server_receive_data_socket_node_to_network_data_nodes_get_current_block_verifiers_list
 Description: Runs the code when the server receives the NODE_TO_NETWORK_DATA_NODES_GET_CURRENT_BLOCK_VERIFIERS_LIST message
