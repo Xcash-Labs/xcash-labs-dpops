@@ -248,7 +248,7 @@ void server_receive_data_socket_node_to_node_db_sync_data(const char *MESSAGE) {
 
   if(add_indexes()) {
     ERROR_PRINT("Failed to create index on ")
-    result = XCASH_ERROR;
+    return;
   }
 
   INFO_PRINT("Successfully updated delegates database from sync message");
