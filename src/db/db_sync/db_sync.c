@@ -18,10 +18,14 @@ bool hash_delegates_collection(char *out_hash_hex) {
   collection = mongoc_client_get_collection(client, DATABASE_NAME, DB_COLLECTION_DELEGATES);
   if (!collection) goto cleanup;
 
+  INFO_PRINT("HERE.....................");
+
   // Step 2: Build query and sort options
   query = bson_new();
   opts = BCON_NEW("sort", "{", "_id", BCON_INT32(1), "}");
   if (!query || !opts) goto cleanup;
+
+  INFO_PRINT("HERE.....................");
 
   // Step 3: Create cursor
   cursor = mongoc_collection_find_with_opts(collection, query, opts, NULL);

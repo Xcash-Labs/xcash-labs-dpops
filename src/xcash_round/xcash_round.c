@@ -491,7 +491,6 @@ void start_block_production(void) {
         snprintf(target_disp, sizeof(target_disp), "%llu", target_h);
       }
       WARNING_PRINT("Delegate is still syncing, node is at %llu and the target height is %s", node_h, target_disp);
-      INFO_PRINT("2 Current_block_height: %s", current_block_height);
       sleep(5);
     }
   }
