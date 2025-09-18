@@ -88,7 +88,7 @@ int read_organize_delegates(delegates_t* delegates, size_t* delegates_count_resu
           } else if (strcmp(db_key, "delegate_name") == 0 && BSON_ITER_HOLDS_UTF8(&record_iter)) {
             strncpy(delegates[delegate_index].delegate_name, bson_iter_utf8(&record_iter, NULL), MAXIMUM_BUFFER_SIZE_DELEGATES_NAME);
           } else if (strcmp(db_key, "about") == 0 && BSON_ITER_HOLDS_UTF8(&record_iter)) {
-            strncpy(delegates[delegate_index].about, bson_iter_utf8(&record_iter, NULL), 512);
+            strncpy(delegates[delegate_index].about, bson_iter_utf8(&record_iter, NULL), 511);
           } else if (strcmp(db_key, "website") == 0 && BSON_ITER_HOLDS_UTF8(&record_iter)) {
             strncpy(delegates[delegate_index].website, bson_iter_utf8(&record_iter, NULL), 255);
           } else if (strcmp(db_key, "team") == 0 && BSON_ITER_HOLDS_UTF8(&record_iter)) {
