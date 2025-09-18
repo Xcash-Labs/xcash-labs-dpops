@@ -25,12 +25,12 @@ typedef struct  {
     uint64_t total_vote_count;
     char IP_address[IP_LENGTH+1];
     char delegate_name[MAXIMUM_BUFFER_SIZE_DELEGATES_NAME+1];
-    char about[1025];
+    char about[512];
     char website[256];
     char team[256];
     char delegate_type[10];
     float delegate_fee; 
-    char server_specs[1025];
+    char server_specs[256];
     char online_status[11];
     char public_key[VRF_PUBLIC_KEY_LENGTH+1];
     uint64_t registration_timestamp;

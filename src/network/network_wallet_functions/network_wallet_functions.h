@@ -19,5 +19,6 @@ Function prototypes
 int get_public_address(void);
 // long long int get_total_amount(void);
 // int send_payment(const char* DATA, char *tx_hash, char *tx_key, const int SETTINGS);
-// int check_reserve_proofs(char *result, const char* public_address, const char* reserve_proof);
+int check_reserve_proofs(uint64_t vote_atomic_amount, const char* PUBLIC_ADDRESS, const char* RESERVE_PROOF);
+
 #endif

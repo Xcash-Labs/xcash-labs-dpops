@@ -574,7 +574,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
     // allowlist check
     int ok_key = 0;
     for (size_t i = 0; i < allowed_fields_count; ++i) {
-      if (strncmp(key, allowed_fields[i], BUFFER_SIZE) == 0) {
+      if (strncmp(key, allowed_fields[i], VSMALL_BUFFER_SIZE) == 0) {
         ok_key = 1;
         break;
       }
@@ -596,7 +596,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
     const char *val = it->valuestring;
 
     // Per-field constraints and storage
-    if (strncmp(key, "IP_address", BUFFER_SIZE) == 0) {
+    if (strncmp(key, "IP_address", VSMALL_BUFFER_SIZE) == 0) {
       if (check_for_valid_ip_or_hostname(val) == 0) {
         bson_destroy(setdoc_bson);
         bson_destroy(filter_bson);
@@ -604,15 +604,15 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
         SERVER_ERROR("0|Invalid IP_address (must be IPv4 or domain, <=255 chars)");
       }
       BSON_APPEND_UTF8(setdoc_bson, key, val);
-    } else if (strncmp(key, "about", BUFFER_SIZE) == 0) {
-      if (strnlen(val, 1025) > 1024) {
+    } else if (strncmp(key, "about", VSMALL_BUFFER_SIZE) == 0) {
+      if (strnlen(val, 511) > 512) {
         bson_destroy(setdoc_bson);
         bson_destroy(filter_bson);
         cJSON_Delete(root);
-        SERVER_ERROR("0|'about' too long (max 1024)");
+        SERVER_ERROR("0|'about' too long (max 512)");
       }
       BSON_APPEND_UTF8(setdoc_bson, key, val);
-    } else if (strncmp(key, "website", BUFFER_SIZE) == 0) {
+    } else if (strncmp(key, "website", VSMALL_BUFFER_SIZE) == 0) {
       if (strnlen(val, 256) > 255) {
         bson_destroy(setdoc_bson);
         bson_destroy(filter_bson);
@@ -620,7 +620,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
         SERVER_ERROR("0|'website' too long (max 255)");
       }
       BSON_APPEND_UTF8(setdoc_bson, key, val);
-    } else if (strncmp(key, "team", BUFFER_SIZE) == 0) {
+    } else if (strncmp(key, "team", VSMALL_BUFFER_SIZE) == 0) {
       if (strnlen(val, 256) > 255) {
         bson_destroy(setdoc_bson);
         bson_destroy(filter_bson);
@@ -628,18 +628,18 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
         SERVER_ERROR("0|'team' too long (max 255)");
       }
       BSON_APPEND_UTF8(setdoc_bson, key, val);
-    } else if (strncmp(key, "shared_delegate_status", BUFFER_SIZE) == 0) {
+    } else if (strncmp(key, "shared_delegate_status", VSMALL_BUFFER_SIZE) == 0) {
       // the names are used in a sort and seed type needs to come
-      if (strncmp(val, "solo", BUFFER_SIZE) != 0 &&
-          strncmp(val, "shared", BUFFER_SIZE) != 0 &&
-          strncmp(val, "team", BUFFER_SIZE) != 0) {
+      if (strncmp(val, "solo", VSMALL_BUFFER_SIZE) != 0 &&
+          strncmp(val, "shared", VSMALL_BUFFER_SIZE) != 0 &&
+          strncmp(val, "team", VSMALL_BUFFER_SIZE) != 0) {
         bson_destroy(setdoc_bson);
         bson_destroy(filter_bson);
         cJSON_Delete(root);
         SERVER_ERROR("0|shared_delegate_status must be one of: solo, shared, or team");
       }
       BSON_APPEND_UTF8(setdoc_bson, key, val);
-    } else if (strncmp(key, "delegate_fee", BUFFER_SIZE) == 0) {
+    } else if (strncmp(key, "delegate_fee", VSMALL_BUFFER_SIZE) == 0) {
       // Must be string on the wire; parse to number and store numeric
       if (check_for_valid_delegate_fee(val) == 0) {
         bson_destroy(setdoc_bson);
@@ -658,7 +658,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
       }
       // Store as numeric (Double). Switch to Decimal128 if you prefer exact fixed precision.
       BSON_APPEND_DOUBLE(setdoc_bson, "delegate_fee", d);
-    } else if (strncmp(key, "server_specs", BUFFER_SIZE) == 0) {
+    } else if (strncmp(key, "server_specs", VSMALL_BUFFER_SIZE) == 0) {
       if (strnlen(val, 256) > 255) {
         bson_destroy(setdoc_bson);
         bson_destroy(filter_bson);
@@ -711,7 +711,7 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
   char voter_public_address[XCASH_WALLET_LENGTH + 1] = {0};
   char delegate_name_or_address[MAXIMUM_BUFFER_SIZE_DELEGATES_NAME + 1] = {0};
   char voted_for_public_address[XCASH_WALLET_LENGTH + 1] = {0};
-  char proof_str[BUFFER_SIZE_RESERVE_PROOF] = {0};
+  char proof_str[BUFFER_SIZE_RESERVE_PROOF + 1] = {0};
   char json_filter[256] = {0};
 
   // Parsed numeric
@@ -799,6 +799,12 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
     cJSON_Delete(root);
     SERVER_ERROR("0|reserve_proof must be a non-empty string");
   }
+  for (size_t i = 0; i < proof_len; ++i) {
+    unsigned char c = (unsigned char)proof_str[i];
+    if (c < 0x20 || c == 0x7F) {
+      SERVER_ERROR("0|reserve_proof has invalid characters");
+    }
+  }
   const size_t proof_len = strnlen(j_proof->valuestring, sizeof(proof_str));
   if (proof_len == sizeof(proof_str)) {
     cJSON_Delete(root);
@@ -849,6 +855,11 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
   if (is_seed_address(voted_for_public_address)) {
     cJSON_Delete(root);
     SERVER_ERROR("0|Cannot vote for a network seed node");
+  }
+
+  if(check_reserve_proofs(vote_amount_atomic, voter_public_address, proof_str) {
+    cJSON_Delete(root);
+    SERVER_ERROR("0|Invalid reserve proof");
   }
 
 #ifdef SEED_NODE_ON
