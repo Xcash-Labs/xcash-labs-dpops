@@ -4,6 +4,7 @@ producer_ref_t producer_refs[] = {0};
 static int total_delegates = 0;
 static char previous_round_block_hash[BLOCK_HASH_LENGTH + 1] = {0};
 static bool last_round_success = false;
+static bool need_sync = true;
 
 /**
  * @brief Selects the block producer from the current round’s verifiers using VRF beta comparison.
@@ -80,6 +81,13 @@ xcash_round_result_t process_round(void) {
   if (strlen(vrf_public_key) == 0) {
     WARNING_PRINT("Failed to read vrf_public_key, has this delegate been registered?");
     return ROUND_SKIP;
+  }
+
+  // lets sync the non-seed nodes delegates collection on startup
+  if (!is_seed_node && need_sync) {
+      need_sync = false;
+      delegate_db_hash_mismatch = 50;
+      return ROUND_ERROR;
   }
 
   INFO_STAGE_PRINT("Part 2 - Check Delegates, Get Previous Block Hash, and Delegates Collection Hash");
@@ -540,7 +548,7 @@ void start_block_production(void) {
       wait_min = 40;
     }
     if (round_result == ROUND_SKIP || round_result == ROUND_ERROR) {
-      INFO_STAGE_PRINT("Part 12 - Wait for Node Clean-up");
+      INFO_STAGE_PRINT("Part 12 - Wait for Node clean-up / sync");
     } else {
       INFO_STAGE_PRINT("Part 12 - Wait for Block Creation");
     }

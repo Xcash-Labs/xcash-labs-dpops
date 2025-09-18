@@ -1,40 +1,5 @@
 #include "init_processing.h"
 
-// Sleep until (now + target_min minutes) at target_sec.
-// If that instant already passed, sleep until the same second in the *next* minute.
-void sync_minutes_and_seconds(int target_min, int target_sec) {
-  if (target_min < 0 || target_min > 59 || target_sec < 0 || target_sec > 59) return;
-
-  struct timespec now;
-  clock_gettime(CLOCK_REALTIME, &now);
-
-  struct tm tm_now, tm_target;
-  localtime_r(&now.tv_sec, &tm_now);
-
-  tm_target = tm_now;
-  tm_target.tm_min += target_min;  // minute offset from "now"
-  tm_target.tm_sec = target_sec;   // target second within that minute
-  tm_target.tm_isdst = -1;         // let mktime resolve DST
-  time_t t_target = mktime(&tm_target);
-
-  // If target is not strictly in the future (including sub-second), roll forward 1 minute.
-  if (t_target < now.tv_sec || (t_target == now.tv_sec && now.tv_nsec > 0)) {
-    tm_target.tm_min += 1;
-    tm_target.tm_isdst = -1;
-    t_target = mktime(&tm_target);
-  }
-
-  double sleep_seconds = (double)(t_target - now.tv_sec) - (now.tv_nsec / 1e9);
-  if (sleep_seconds < 0) sleep_seconds = 0.0;
-
-  INFO_PRINT("Sleeping for %.3f seconds to sync to %02d:%02d:%02d...",
-             sleep_seconds, tm_target.tm_hour, tm_target.tm_min, tm_target.tm_sec);
-
-  struct timespec abs_ts = {.tv_sec = t_target, .tv_nsec = 0};
-  while (clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &abs_ts, NULL) == EINTR) {
-  }
-}
-
 /*---------------------------------------------------------------------------------------------------------
 Name: init_processing
 Description: Initialize globals and print program start header.
@@ -139,29 +104,6 @@ bool init_processing(const arg_config_t *arg_config) {
       return false;
     }
 
-  }
-
-  if (!is_seed_node) {
-    INFO_PRINT("Waiting for DB sync to start");
-    sync_minutes_and_seconds(0, 40);
-    int selected_index;
-    pthread_mutex_lock(&delegates_all_lock);
-    selected_index = select_random_online_delegate();
-    pthread_mutex_unlock(&delegates_all_lock);
-    if (create_sync_token() == XCASH_OK) {
-      if (create_delegates_db_sync_request(selected_index)) {
-        INFO_PRINT("Waiting for DB sync");
-        if (sync_block_verifiers_minutes_and_seconds(0, 57) == XCASH_ERROR) {
-          INFO_PRINT("Failed to sync delegates in the allotted time");
-        }
-      } else {
-        ERROR_PRINT("Error occured while syncing delegates");
-        return false;
-      }
-    } else {
-      ERROR_PRINT("Error creating sync token");
-      return false;
-    }
   }
 
   return true;
