@@ -1,5 +1,27 @@
 #include "init_processing.h"
 
+void sync_minutes_and_seconds(int target_min, int target_sec) {
+  if (target_min < 0 || target_min > 59 || target_sec < 0 || target_sec > 59) return;
+
+  struct timespec now;
+  clock_gettime(CLOCK_REALTIME, &now);
+
+  struct tm tm_now, tm_target;
+  localtime_r(&now.tv_sec, &tm_now);
+  tm_target = tm_now;
+  tm_target.tm_min = target_min;
+  tm_target.tm_sec = target_sec;
+  time_t t_target = mktime(&tm_target);
+
+  if (t_target <= now.tv_sec) {              // already passed this hour → next hour
+    tm_target.tm_hour += 1;
+    t_target = mktime(&tm_target);
+  }
+
+  struct timespec abs_ts = { .tv_sec = t_target, .tv_nsec = 0 };
+  while (clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &abs_ts, NULL) == EINTR) {}
+}
+
 /*---------------------------------------------------------------------------------------------------------
 Name: init_processing
 Description: Initialize globals and print program start header.
@@ -58,7 +80,7 @@ bool init_processing(const arg_config_t *arg_config) {
       if (insert_document_into_collection_bson(DATABASE_NAME, DB_COLLECTION_DELEGATES, &bson) != XCASH_OK) {
         ERROR_PRINT("Failed to insert delegate document.");
         bson_destroy(&bson);
-        return XCASH_ERROR;
+        return false;
       }
 
       bson_destroy(&bson);
@@ -84,28 +106,49 @@ bool init_processing(const arg_config_t *arg_config) {
       if (insert_document_into_collection_bson(DATABASE_NAME, DB_COLLECTION_STATISTICS, &bson_statistics) != XCASH_OK) {
         ERROR_PRINT("Failed to insert statistics document during initialization.");
         bson_destroy(&bson_statistics);
-        return XCASH_ERROR;
+        return false;
       }
 
       bson_destroy(&bson_statistics);
 
       if (i == 0) {
         if (!add_seed_indexes()) {
-          FATAL_ERROR_EXIT("Failed to add seed indexes to database!");
+          ERROR_PRINT("Failed to add seed indexes to database!");
+          return false;
         }
       }
 
 #endif
 
     }
-
     if (!add_indexes()) {
-      FATAL_ERROR_EXIT("Failed to add indexes to database!");
+      ERROR_PRINT("Failed to add indexes to database!");
+      return false;
     }
 
   }
 
-  return XCASH_OK;
+  if (!is_seed_node) {
+    sync_minutes_and_seconds(0, 40);
+    int selected_index;
+    pthread_mutex_lock(&delegates_all_lock);
+    selected_index = select_random_online_delegate();
+    pthread_mutex_unlock(&delegates_all_lock);
+    if (create_sync_token() == XCASH_OK) {
+      if (create_delegates_db_sync_request(selected_index)) {
+        ERROR_PRINT("Waiting for DB sync");
+        sync_block_verifiers_minutes_and_seconds(0, 55);
+      } else {
+        ERROR_PRINT("Error occured while syncing delegates");
+        return false;
+      }
+    } else {
+      ERROR_PRINT("Error creating sync token");
+      return false;
+    }
+  }
+
+  return true;
 }
 
 /*---------------------------------------------------------------------------------------------------------

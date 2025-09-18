@@ -536,9 +536,9 @@ void start_block_production(void) {
 
     // Final step - Wait for block creation and DB Updates or Node clean-up
     snprintf(current_round_part, sizeof(current_round_part), "%d", 12);
-    int wait_min = 55;
+    int wait_min = 57;
     if (round_result == ROUND_ERROR) {
-      wait_min = 45;
+      wait_min = 40;
     }
     if (round_result == ROUND_SKIP || round_result == ROUND_ERROR) {
       INFO_STAGE_PRINT("Part 12 - Wait for Node Clean-up");
@@ -547,7 +547,7 @@ void start_block_production(void) {
     }
 
     if (sync_block_verifiers_minutes_and_seconds(0, wait_min) == XCASH_ERROR) {
-      INFO_PRINT("Failed to Confirm Block Creator in the allotted time, skipping round");
+      INFO_PRINT("Failed to create block in the allotted time, skipping round");
       goto end_of_round_skip_block;
     }
 
@@ -936,7 +936,10 @@ void start_block_production(void) {
             if (create_sync_token() == XCASH_OK) {
               if (create_delegates_db_sync_request(selected_index)) {
                 INFO_PRINT("Waiting for DB sync");
-                sync_block_verifiers_minutes_and_seconds(0, 55);
+                sync_block_verifiers_minutes_and_seconds(0, 57);
+                if (sync_block_verifiers_minutes_and_seconds(0, 57) == XCASH_ERROR) {
+                  INFO_PRINT("Failed to sync delegates in the allotted time,");
+                }
               } else {
                 ERROR_PRINT("Error occured while syncing delegates");
               }
