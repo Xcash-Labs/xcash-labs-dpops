@@ -848,10 +848,11 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
   // ---- Disallow votes for seed/network data nodes ----
   if (is_seed_address(voted_for_public_address)) {
     cJSON_Delete(root);
-    SERVER_ERROR("0|Cannot vote for a network data node");
+    SERVER_ERROR("0|Cannot vote for a network seed node");
   }
 
 #ifdef SEED_NODE_ON
+
   // only add on seed node
   // ---- One vote per wallet: delete previous (single collection) ----
   // Prefer _id == voter address for global uniqueness
@@ -888,6 +889,11 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
   bson_destroy(&doc);
 
 #endif
+
+  if (delegates_apply_vote_delta(voted_for_public_address, vote_amount_atomic)) {
+    cJSON_Delete(root);
+    SERVER_ERROR("0|Could not increment the vote count in the delegates collection");
+  }
 
   // Done: hourly job will revalidate & aggregate totals
   cJSON_Delete(root);
