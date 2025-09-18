@@ -804,12 +804,6 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
     cJSON_Delete(root);
     SERVER_ERROR("0|reserve_proof too large");
   }
-  for (size_t i = 0; i < proof_len; ++i) {
-    unsigned char c = (unsigned char)proof_str[i];
-    if (c < 0x20 || c == 0x7F) {
-      SERVER_ERROR("0|reserve_proof has invalid characters");
-    }
-  }
   memcpy(proof_str, j_proof->valuestring, proof_len);
 
   // ---- Resolve delegate target → public address ----
