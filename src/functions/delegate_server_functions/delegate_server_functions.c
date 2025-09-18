@@ -605,7 +605,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
       }
       BSON_APPEND_UTF8(setdoc_bson, key, val);
     } else if (strncmp(key, "about", VSMALL_BUFFER_SIZE) == 0) {
-      if (strnlen(val, 511) > 512) {
+      if (strnlen(val, 512) > 511) {
         bson_destroy(setdoc_bson);
         bson_destroy(filter_bson);
         cJSON_Delete(root);
