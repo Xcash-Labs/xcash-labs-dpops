@@ -944,15 +944,9 @@ void server_receive_data_socket_node_to_block_verifiers_check_vote_status(server
 
   // Build success message
   char out[256];
-  if (delegate_name[0] == '\0') {
-    snprintf(out, sizeof(out),
-             "1|Vote found: total=%lld atomic, delegate=%s",
-             (long long)total_atomic, "(error)");
-  } else {
-    snprintf(out, sizeof(out),
-             "1|Vote found: total=%lld atomic, delegate=%s",
-             (long long)total_atomic, delegate_name);
-  }
+  const char* name = (delegate_name[0] ? delegate_name : "(error)");
+  double total_xca = (double)total_atomic / (double)ATOMIC_UNITS_PER_XCA;
+  snprintf(out, sizeof(out), "1|Vote found: total=%.6f XCA, delegate=%s", total_xca, name);
 
   send_data(client, (unsigned char*)out, strlen(out));
   cJSON_Delete(root);
