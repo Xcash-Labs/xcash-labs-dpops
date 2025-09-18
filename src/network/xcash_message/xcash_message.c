@@ -296,7 +296,7 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
       }
       break;
 
-    case XMSG_NODES_TO_BLOCK_VERIFIERS_VOTE:
+    case XMSG_NODES_TO_BLOCK_VERIFIERS_CHECK_VOTE_STATUS:
       if (server_limit_public_addresses(LIMIT_CHECK, data) == 1) {
         server_receive_data_socket_node_to_block_verifiers_check_vote_status(client, data);
         server_limit_public_addresses(LIMIT_REMOVE, data);
