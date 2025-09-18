@@ -189,10 +189,9 @@ bool delegates_apply_vote_delta(const char* delegate_pubaddr, int64_t delta) {
   bson_t filter; bson_init(&filter);
   BSON_APPEND_UTF8(&filter, "public_address", delegate_pubaddr);
 
-  // update: { $inc: { vote_total_atomic: delta } }  <-- adjust field name if yours is different
   bson_t update; bson_init(&update);
   bson_t inc; bson_init(&inc);
-  BSON_APPEND_INT64(&inc, "vote_total_atomic", delta);
+  BSON_APPEND_INT64(&inc, "total_vote_count", delta);
   BSON_APPEND_DOCUMENT(&update, "$inc", &inc);
 
   // No upsert → we want to fail if the doc doesn't exist
