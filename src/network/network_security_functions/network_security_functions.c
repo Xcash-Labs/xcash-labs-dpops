@@ -291,11 +291,13 @@ int verify_action_data(const char *message, const char *client_ip, xcash_msg_t m
     return XCASH_ERROR;
   }
 
+  INFO_PRINT("Raw: %s", raw_data);
+
   char escaped[MEDIUM_BUFFER_SIZE] = {0};
   strncpy(escaped, raw_data, MEDIUM_BUFFER_SIZE);
   string_replace(escaped, MEDIUM_BUFFER_SIZE, "\"", "\\\"");
 
-  INFO_PRINT("Escaped: %s", escaped );
+  INFO_PRINT("Escaped: %s", escaped);
 
   // Prepare wallet verify request
   snprintf(request, sizeof(request),
