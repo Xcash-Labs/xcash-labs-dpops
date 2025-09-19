@@ -295,6 +295,8 @@ int verify_action_data(const char *message, const char *client_ip, xcash_msg_t m
   strncpy(escaped, raw_data, MEDIUM_BUFFER_SIZE);
   string_replace(escaped, MEDIUM_BUFFER_SIZE, "\"", "\\\"");
 
+  INFO_PRINT("Escaped: %s", escaped );
+
   // Prepare wallet verify request
   snprintf(request, sizeof(request),
            "{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"verify\",\"params\":{"
