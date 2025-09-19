@@ -35,5 +35,6 @@ int get_random_bytes(unsigned char *buf, size_t len);
 bool base64_decode(const char* input, uint8_t* output, size_t max_output, size_t* decoded_len);
 int check_for_invalid_strings(const char* MESSAGE);
 int create_sync_token(void);
+bool str_is_base58(const char* s);
 
 #endif

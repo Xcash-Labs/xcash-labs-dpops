@@ -906,21 +906,18 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
 void server_receive_data_socket_node_to_block_verifiers_check_vote_status(server_client_t *client, const char *MESSAGE) {
   if (!MESSAGE || !*MESSAGE) {
     SERVER_ERROR("0|Invalid message payload");
-    return;
   }
 
   // Parse JSON
   cJSON *root = cJSON_Parse(MESSAGE);
   if (!root) {
     SERVER_ERROR("0|Invalid JSON");
-    return;
   }
 
   const cJSON *addr = cJSON_GetObjectItemCaseSensitive(root, "public_address");
   if (!cJSON_IsString(addr) || !addr->valuestring || !*addr->valuestring) {
     cJSON_Delete(root);
     SERVER_ERROR("0|Missing public_address");
-    return;
   }
   const char *public_address = addr->valuestring;
 
@@ -929,7 +926,12 @@ void server_receive_data_socket_node_to_block_verifiers_check_vote_status(server
       strncmp(public_address, XCASH_WALLET_PREFIX, strlen(XCASH_WALLET_PREFIX)) != 0) {
     cJSON_Delete(root);
     SERVER_ERROR("0|Invalid XCA public address");
-    return;
+  }
+
+  // Basic sanity: prefix and length (adjust macros to your config)
+  if (str_is_base58(public_address)) {
+    cJSON_Delete(root);
+    SERVER_ERROR("0|Invalid XCA public address, not base58");
   }
 
   // Query Mongo via helper
@@ -937,9 +939,8 @@ void server_receive_data_socket_node_to_block_verifiers_check_vote_status(server
   char delegate_name[MAXIMUM_BUFFER_SIZE_DELEGATES_NAME + 1] = {0};
 
   if (!get_vote_total_and_delegate_name(public_address, &total_atomic, delegate_name)) {
-    send_data(client, (unsigned char *)"0|No vote found for your address", strlen("0|No vote found for your address"));
     cJSON_Delete(root);
-    return;
+    SERVER_ERROR("0|No vote found for your address");
   }
 
   // Build success message
@@ -950,4 +951,5 @@ void server_receive_data_socket_node_to_block_verifiers_check_vote_status(server
 
   send_data(client, (unsigned char*)out, strlen(out));
   cJSON_Delete(root);
+  return;
 }
