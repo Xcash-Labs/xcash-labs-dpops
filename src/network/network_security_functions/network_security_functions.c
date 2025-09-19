@@ -148,12 +148,12 @@ int verify_data(const char *message) {
   }
 
   if (strcmp(current_round_part, ck_round_part) != 0) {
-    INFO_PRINT("Failed Signature Verification, round part timing issue: current round %s - message round %s.", current_round_part, ck_round_part);
+    ERROR_PRINT("Failed Signature Verification, round part timing issue: current round %s - message round %s.", current_round_part, ck_round_part);
     return XCASH_ERROR;
   }
 
   if (strcmp(previous_block_hash, ck_previous_block_hash) != 0) {
-    INFO_PRINT("Failed Signature Verification, previous block hash is not valid");
+    ERROR_PRINT("Failed Signature Verification, previous block hash is not valid");
     return XCASH_ERROR;
   }
 
@@ -268,10 +268,6 @@ int verify_action_data(const char *message, const char *client_ip, xcash_msg_t m
     return XCASH_ERROR;
   }
 
-  INFO_PRINT("message: %s", message);
-  INFO_PRINT("signature: %s", signature);
-  INFO_PRINT("public_address: %s", ck_public_address);
-
   // allow local: loopback or any interface on this host, can't check sign due to wallet process being down for delegate registration
   if ((msg_type == XMSG_NODES_TO_BLOCK_VERIFIERS_REGISTER_DELEGATE ||
      msg_type == XMSG_NODES_TO_BLOCK_VERIFIERS_UPDATE_DELEGATE) 
@@ -291,13 +287,9 @@ int verify_action_data(const char *message, const char *client_ip, xcash_msg_t m
     return XCASH_ERROR;
   }
 
-  INFO_PRINT("Raw: %s", raw_data);
-
   char escaped[MEDIUM_BUFFER_SIZE] = {0};
   strncpy(escaped, raw_data, MEDIUM_BUFFER_SIZE);
   string_replace(escaped, MEDIUM_BUFFER_SIZE, "\"", "\\\"");
-
-  INFO_PRINT("Escaped: %s", escaped);
 
   // Prepare wallet verify request
   snprintf(request, sizeof(request),
