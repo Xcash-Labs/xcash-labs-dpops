@@ -268,6 +268,10 @@ int verify_action_data(const char *message, const char *client_ip, xcash_msg_t m
     return XCASH_ERROR;
   }
 
+  INFO_PRINT("message: %s", message);
+  INFO_PRINT("signature: %s", signature);
+  INFO_PRINT("public_address: %s", ck_public_address);
+
   // allow local: loopback or any interface on this host, can't check sign due to wallet process being down for delegate registration
   if ((msg_type == XMSG_NODES_TO_BLOCK_VERIFIERS_REGISTER_DELEGATE ||
      msg_type == XMSG_NODES_TO_BLOCK_VERIFIERS_UPDATE_DELEGATE) 
