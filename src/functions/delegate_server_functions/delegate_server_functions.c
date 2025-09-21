@@ -940,14 +940,14 @@ void server_receive_data_socket_node_to_block_verifiers_check_vote_status(server
 
   if (!get_vote_total_and_delegate_name(public_address, &total_atomic, delegate_name)) {
     cJSON_Delete(root);
-    SERVER_ERROR("0|No vote found for your address");
+    send_data(client, (unsigned char*)"1|No Vote Found", strlen("1|No Vote Found"));
   }
 
   // Build success message
   char out[256];
   const char* name = (delegate_name[0] ? delegate_name : "(error)");
   double total_xca = (double)total_atomic / (double)ATOMIC_UNITS_PER_XCA;
-  snprintf(out, sizeof(out), "1|Vote found: total=%.6f XCA, delegate=%s", total_xca, name);
+  snprintf(out, sizeof(out), "1|Vote found: total:%.6f XCA, delegate:%s", total_xca, name);
 
   send_data(client, (unsigned char*)out, strlen(out));
   cJSON_Delete(root);
