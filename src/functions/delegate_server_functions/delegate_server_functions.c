@@ -817,7 +817,7 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
       old_vote_amount_atomic = (uint64_t)tmp;
     }
 
-    if ((vote_amount_atomic - old_vote_atomic) <= 0) {
+    if ((vote_amount_atomic - old_vote_amount_atomic) <= 0) {
       cJSON_Delete(root);
       SERVER_ERROR("0|Revote must be greater than the original vote");
     }
@@ -929,10 +929,10 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
 
   vote_diff_atomic = vote_amount_atomic;
   if (is_revote) {
-      vote_diff_atomic = vote_amount_atomic - old_vote_atomic;
+      vote_diff_atomic = vote_amount_atomic - old_vote_amount_atomic;
   }
 
-  if (vote_diff_atomic > 0) {
+  if (vote_diff_atomic > 0) {     // should never happen
     if (!delegates_apply_vote_delta(voted_for_public_address, vote_diff_atomic)) {
       cJSON_Delete(root);
       SERVER_ERROR("0|Could not increment the vote count in the delegates collection");
