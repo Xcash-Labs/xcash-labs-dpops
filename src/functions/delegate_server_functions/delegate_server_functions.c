@@ -794,21 +794,21 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
 
   if (is_revote) {
     // old_vote_amount (STRING; atomic units)
-    const cJSON *j_amount = cJSON_GetObjectItemCaseSensitive(root, "old_vote_amount");
-    if (!cJSON_IsString(j_amount) || j_amount->valuestring[0] == '\0') {
+    const cJSON *j_oldamount = cJSON_GetObjectItemCaseSensitive(root, "old_vote_amount");
+    if (!cJSON_IsString(j_oldamount) || j_oldamount->valuestring[0] == '\0') {
       cJSON_Delete(root);
       SERVER_ERROR("0|old_vote_amount must be a non-empty string (atomic units)");
     }
     {
-      const char *anum = j_amount->valuestring;
-      for (const char *p = anum; *p; ++p) {
+      const char *anumold = j_oldamount->valuestring;
+      for (const char *p = anumold; *p; ++p) {
         if (*p < '0' || *p > '9') {
           cJSON_Delete(root);
           SERVER_ERROR("0|old_vote_amount must contain only digits (atomic units)");
         }
       }
       errno = 0;
-      unsigned long long tmp = strtoull(anum, NULL, 10);
+      unsigned long long tmp = strtoull(anumold, NULL, 10);
       if (errno != 0 || tmp == 0ULL) {
         cJSON_Delete(root);
         SERVER_ERROR("0|Invalid old_vote_amount");
