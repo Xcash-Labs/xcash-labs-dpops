@@ -702,9 +702,9 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
   char voted_for_public_address[XCASH_WALLET_LENGTH + 1] = {0};
   char proof_str[BUFFER_SIZE_RESERVE_PROOF + 1] = {0};
   char json_filter[256] = {0};
-
-  // Parsed numeric
   uint64_t vote_amount_atomic = 0;
+  uint64_t old_vote_amount_atomic = 0;
+  uint64_t vote_diff_atomic = 0;
 
   // ---- Parse JSON ----
   if (!MESSAGE || !*MESSAGE) {
@@ -717,10 +717,20 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
 
   // message_settings
   const cJSON *j_msg = cJSON_GetObjectItemCaseSensitive(root, "message_settings");
-  if (!cJSON_IsString(j_msg) ||
-      strcmp(j_msg->valuestring, "NODES_TO_BLOCK_VERIFIERS_VOTE") != 0) {
+  if (!j_msg || !cJSON_IsString(j_msg)) {
     cJSON_Delete(root);
     SERVER_ERROR("0|Invalid message transaction type");
+    return;
+  }
+
+  const char *ms = j_msg->valuestring;
+  const bool is_vote = (strcmp(ms, "NODES_TO_BLOCK_VERIFIERS_VOTE") == 0);
+  const bool is_revote = (strcmp(ms, "NODES_TO_BLOCK_VERIFIERS_REVOTE") == 0);
+
+  if (!(is_vote || is_revote)) {
+    cJSON_Delete(root);
+    SERVER_ERROR("0|Invalid message transaction type");
+    return;
   }
 
   // public_address (voter)
@@ -779,6 +789,37 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
                "0|Each vote must be at least %llu XCA", min_vote_display);
 
       SERVER_ERROR(err_msg);
+    }
+  }
+
+  if (is_revote) {
+    // old_vote_amount (STRING; atomic units)
+    const cJSON *j_amount = cJSON_GetObjectItemCaseSensitive(root, "old_vote_amount");
+    if (!cJSON_IsString(j_amount) || j_amount->valuestring[0] == '\0') {
+      cJSON_Delete(root);
+      SERVER_ERROR("0|old_vote_amount must be a non-empty string (atomic units)");
+    }
+    {
+      const char *anum = j_amount->valuestring;
+      for (const char *p = anum; *p; ++p) {
+        if (*p < '0' || *p > '9') {
+          cJSON_Delete(root);
+          SERVER_ERROR("0|old_vote_amount must contain only digits (atomic units)");
+        }
+      }
+      errno = 0;
+      unsigned long long tmp = strtoull(anum, NULL, 10);
+      if (errno != 0 || tmp == 0ULL) {
+        cJSON_Delete(root);
+        SERVER_ERROR("0|Invalid old_vote_amount");
+      }
+
+      old_vote_amount_atomic = (uint64_t)tmp;
+    }
+
+    if ((vote_amount_atomic - old_vote_atomic) <= 0) {
+      cJSON_Delete(root);
+      SERVER_ERROR("0|Revote must be greater than the original vote");
     }
   }
 
@@ -884,17 +925,28 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
 
 #endif
 
-  if (!delegates_apply_vote_delta(voted_for_public_address, vote_amount_atomic)) {
-    cJSON_Delete(root);
-    SERVER_ERROR("0|Could not increment the vote count in the delegates collection");
+// if revote need to deduct the old amount and add new amount
+
+  vote_diff_atomic = vote_amount_atomic;
+  if (is_revote) {
+      vote_diff_atomic = vote_amount_atomic - old_vote_atomic;
+  }
+
+  if (vote_diff_atomic > 0) {
+    if (!delegates_apply_vote_delta(voted_for_public_address, vote_diff_atomic)) {
+      cJSON_Delete(root);
+      SERVER_ERROR("0|Could not increment the vote count in the delegates collection");
+    }
   }
 
   // Done: hourly job will revalidate & aggregate totals
   cJSON_Delete(root);
-  send_data(client, (unsigned char *)"1|The vote was successfully added to the database", strlen("1|The vote was successfully added to the database"));
-
+  if (is_vote) {
+    send_data(client, (unsigned char *)"1|The vote was successfully added to the database", strlen("1|The vote was successfully added to the database"));
+  } else {
+    send_data(client, (unsigned char *)"1|The revote was successful", strlen("1|The revote was successful"));
+  }
   return;
-}
 
 /* --------------------------------------------------------------------------------------------------------
   Name: server_receive_data_socket_node_to_block_verifiers_check_vote_status
