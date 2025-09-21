@@ -947,7 +947,7 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
     send_data(client, (unsigned char *)"1|The revote was successful", strlen("1|The revote was successful"));
   }
   return;
-
+}
 /* --------------------------------------------------------------------------------------------------------
   Name: server_receive_data_socket_node_to_block_verifiers_check_vote_status
   Description: Runs the code when the server receives the NODE_TO_BLOCK_VERIFIERS_CHECK_VOTE_STATUS message is received
