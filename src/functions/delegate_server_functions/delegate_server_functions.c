@@ -892,7 +892,7 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
                dbvoted_for, (long long)dbtotal_vote, strlen(dbreserve_proof));
     if (strcmp(dbvoted_for, voted_for_public_address) == 0 &&
       strcmp(dbreserve_proof, proof_str) == 0 &&
-      dbtotal_vote == vote_amount_atomic)
+      (uint64_t)dbtotal_vote == vote_amount_atomic)
     {
       // exact vote already exists, no need to continue
       cJSON_Delete(root);
