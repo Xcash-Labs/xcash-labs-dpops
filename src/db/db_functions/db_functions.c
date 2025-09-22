@@ -1111,3 +1111,87 @@ CLEANUP:
   mongoc_client_pool_push(database_client_thread_pool, c);
   return ok;
 }
+
+// Gets public_address_voted_for, total_vote, and reserve_proof for a voter _id.
+// Returns true on success (doc found), false otherwise.
+bool fetch_reserve_proof_fields_by_id(
+    const char* voter_public_address,
+    char* voted_for_out, size_t voted_for_sz,
+    int64_t* total_out,
+    char* reserve_proof_out, size_t rp_sz,
+    bson_error_t* err)
+{
+  if (!voter_public_address || !voted_for_out || !total_out || !reserve_proof_out) return false;
+
+  mongoc_client_t* c = mongoc_client_pool_pop(database_client_thread_pool);
+  if (!c) return false;
+
+  bool ok = false;
+  mongoc_collection_t* coll =
+      mongoc_client_get_collection(c, DATABASE_NAME, DB_COLLECTION_RESERVE_PROOFS);
+
+  bson_t filter = BSON_INITIALIZER;
+  BSON_APPEND_UTF8(&filter, "_id", voter_public_address);
+
+  // Projection: only what you need
+  bson_t proj = BSON_INITIALIZER;
+  BSON_APPEND_BOOL(&proj, "public_address_voted_for", true);
+  BSON_APPEND_BOOL(&proj, "total_vote", true);
+  BSON_APPEND_BOOL(&proj, "reserve_proof", true);
+  BSON_APPEND_BOOL(&proj, "_id", false);
+
+  bson_t opts = BSON_INITIALIZER;
+  BSON_APPEND_DOCUMENT(&opts, "projection", &proj);
+  BSON_APPEND_INT64(&opts, "limit", 1);            // we only need one
+
+  mongoc_cursor_t* cur = mongoc_collection_find_with_opts(coll, &filter, &opts, NULL);
+
+  const bson_t* doc = NULL;
+  if (cur && mongoc_cursor_next(cur, &doc)) {
+    bson_iter_t it;
+
+    // public_address_voted_for
+    if (bson_iter_init_find(&it, doc, "public_address_voted_for") && BSON_ITER_HOLDS_UTF8(&it)) {
+      const char* s = bson_iter_utf8(&it, NULL);
+      if (s) snprintf(voted_for_out, voted_for_sz, "%s", s);
+    } else {
+      voted_for_out[0] = '\0';
+    }
+
+    // total (or total_vote)
+    if (bson_iter_init_find(&it, doc, "total") &&
+        (BSON_ITER_HOLDS_INT64(&it) || BSON_ITER_HOLDS_INT32(&it))) {
+      *total_out = BSON_ITER_HOLDS_INT64(&it) ? bson_iter_int64(&it) : bson_iter_int32(&it);
+    } else if (bson_iter_init_find(&it, doc, "total_vote") &&
+               (BSON_ITER_HOLDS_INT64(&it) || BSON_ITER_HOLDS_INT32(&it))) {
+      *total_out = BSON_ITER_HOLDS_INT64(&it) ? bson_iter_int64(&it) : bson_iter_int32(&it);
+    } else {
+      *total_out = 0;
+    }
+
+    // reserve_proof
+    if (bson_iter_init_find(&it, doc, "reserve_proof") && BSON_ITER_HOLDS_UTF8(&it)) {
+      const char* rp = bson_iter_utf8(&it, NULL);
+      if (rp) {
+        strncpy(reserve_proof_out, rp, rp_sz - 1);
+        reserve_proof_out[rp_sz - 1] = '\0';
+      } else {
+        reserve_proof_out[0] = '\0';
+      }
+    } else {
+      reserve_proof_out[0] = '\0';
+    }
+
+    ok = true;
+  }
+
+  if (cur && !ok && err) mongoc_cursor_error(cur, err);
+
+  if (cur) mongoc_cursor_destroy(cur);
+  bson_destroy(&opts);
+  bson_destroy(&proj);
+  bson_destroy(&filter);
+  mongoc_collection_destroy(coll);
+  mongoc_client_pool_push(database_client_thread_pool, c);
+  return ok;
+}

@@ -698,14 +698,23 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
   MESSAGE - The message
 ----------------------------------------------------------------------------------------------------------- */
 void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server_client_t *client, const char *MESSAGE) {
+
+#ifndef SEED_NODE_ON
+
+  (void)MESSAGE;
+  SERVER_ERROR("0|Transaction only available for seed nodes");
+
+#else
+
   char voter_public_address[XCASH_WALLET_LENGTH + 1] = {0};
   char delegate_name_or_address[MAXIMUM_BUFFER_SIZE_DELEGATES_NAME + 1] = {0};
   char voted_for_public_address[XCASH_WALLET_LENGTH + 1] = {0};
   char proof_str[BUFFER_SIZE_RESERVE_PROOF + 1] = {0};
+  char dbvoted_for[XCASH_WALLET_LENGTH + 1] = {0};
+  char dbreserve_proof[BUFFER_SIZE_RESERVE_PROOF + 1] = {0};
   char json_filter[256] = {0};
   uint64_t vote_amount_atomic = 0;
-
-#ifdef SEED_NODE_ON
+  int64_t dbtotal_vote = 0;
 
   // ---- Parse JSON ----
   if (!MESSAGE || !*MESSAGE) {
@@ -721,7 +730,6 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
   if (!j_msg || !cJSON_IsString(j_msg)) {
     cJSON_Delete(root);
     SERVER_ERROR("0|Invalid message transaction type");
-    return;
   }
 
   const char *ms = j_msg->valuestring;
@@ -731,7 +739,6 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
   if (!(is_vote || is_revote)) {
     cJSON_Delete(root);
     SERVER_ERROR("0|Invalid message transaction type");
-    return;
   }
 
   // public_address (voter)
@@ -837,7 +844,8 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
     char addr_buf[XCASH_WALLET_LENGTH + 1] = {0};
     if (read_document_field_from_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, json_filter,
                                             "public_address", addr_buf, sizeof(addr_buf)) != XCASH_OK ||
-        strnlen(addr_buf, sizeof(addr_buf)) != XCASH_WALLET_LENGTH) {
+        strnlen(addr_buf, sizeof(addr_buf)) != XCASH_WALLET_LENGTH ||
+        strncmp(addr_buf, XCASH_WALLET_PREFIX, sizeof(XCASH_WALLET_PREFIX) - 1) != 0) {
       cJSON_Delete(root);
       SERVER_ERROR("0|The delegate voted for is invalid");
     }
@@ -851,20 +859,49 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
     SERVER_ERROR("0|Cannot vote for a network seed node");
   }
 
-  if (check_reserve_proofs(vote_amount_atomic, voter_public_address, proof_str)) {
+  if (check_reserve_proofs(vote_amount_atomic, voter_public_address, proof_str) != XCASH_OK) {
     cJSON_Delete(root);
     SERVER_ERROR("0|Invalid reserve proof");
   }
 
-  snprintf(json_filter, sizeof(json_filter), "{\"_id\":\"%s\"}", voter_public_address);
+  bson_error_t err;
+  memset(&err, 0, sizeof(err));
 
-  // Check for original vote if revote
-  if (count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_RESERVE_PROOFS, json_filter) == 0) {
-    if (is_revote) {
+  bool ok = fetch_reserve_proof_fields_by_id(
+      voter_public_address,
+      dbvoted_for, sizeof(dbvoted_for),
+      &dbtotal_vote,
+      dbreserve_proof, sizeof(dbreserve_proof),
+      &err);
+
+  if (!ok) {
+    if (err.code != 0) {
+      // A Mongo/cursor error occurred
+      ERROR_PRINT("fetch_reserve_proof_fields_by_id failed: %s (%d)", err.message, err.code);
       cJSON_Delete(root);
-      SERVER_ERROR("0|No orginal vote exists for revote");
+      SERVER_ERROR("0|Database error fetching reserve_proof");
+    } else {
+      // Not found (doc missing)
+      if (is_revote) {
+        cJSON_Delete(root);
+        SERVER_ERROR("0|No original vote exists for revote");
+      }
+    }
+  } else {
+    INFO_PRINT("voted_for=%s, total_vote=%lld, reserve_proof_len=%zu",
+               dbvoted_for, (long long)dbtotal_vote, strlen(dbreserve_proof));
+    if (strcmp(dbvoted_for, voted_for_public_address) == 0 &&
+      strcmp(dbreserve_proof, proof_str) == 0 &&
+      dbtotal_vote == vote_amount_atomic)
+    {
+      // exact vote already exists, no need to continue
+      cJSON_Delete(root);
+      send_data(client, (unsigned char *)"1|This vote already exists", strlen("1|This vote already exists"));
+      return;
     }
   }
+
+  snprintf(json_filter, sizeof(json_filter), "{\"_id\":\"%s\"}", voter_public_address);
 
   // One vote per wallet: delete previous (single collection)
   (void)delete_document_from_collection(DATABASE_NAME, DB_COLLECTION_RESERVE_PROOFS, json_filter);
@@ -896,12 +933,6 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
   // Always free resources
   bson_destroy(&doc);
 
-#endif
-
-  if (!is_seed_node) {
-    SERVER_ERROR("0|Transaction only available for seed nodes");
-  }
-
   // Done: hourly job will revalidate & aggregate totals
   cJSON_Delete(root);
   if (is_vote) {
@@ -910,6 +941,9 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
     send_data(client, (unsigned char *)"1|The revote was successful", strlen("1|The revote was successful"));
   }
   return;
+
+  #endif  // SEED_NODE_ON
+
 }
 /* --------------------------------------------------------------------------------------------------------
   Name: server_receive_data_socket_node_to_block_verifiers_check_vote_status

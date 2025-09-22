@@ -143,10 +143,18 @@
         fprintf(stderr, "%s%s\033[0m\n", color_code, string); \
     } while (0)
 
-#define SERVER_ERROR(rmess)                                     \
-  do {                                                          \
-    send_data(client, (unsigned char *)(rmess), strlen(rmess)); \
-    return;                                                     \
+//#define SERVER_ERROR(rmess)                                     \
+//  do {                                                          \
+//    send_data(client, (unsigned char *)(rmess), strlen(rmess)); \
+//    return;                                                     \
+//  } while (0)
+
+#define SERVER_ERROR(msg_)                                                \
+  do {                                                                    \
+    const char* _msg = (msg_);                                            \
+    size_t _len = strlen(_msg); /* or strnlen(_msg, SOME_MAX) */          \
+    send_data(client, (const unsigned char*)_msg, _len);                  \
+    return;                                                               \
   } while (0)
 
 #endif
