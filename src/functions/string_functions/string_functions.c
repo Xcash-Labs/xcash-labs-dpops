@@ -101,7 +101,123 @@ Return:
   - XCASH_OK (1) if successful.
   - XCASH_ERROR (0) if an error occurred.
 ---------------------------------------------------------------------------------------------------------*/
+// Helper: is the double an integer value within 64-bit range?
+static inline int is_integral_double(double d) {
+  if (!isfinite(d)) return 0;
+  double r = floor(d);
+  return (d == r) && (d >= -(double)INT64_MAX - 1.0) && (d <= (double)UINT64_MAX);
+}
+
+// Helper: format number as int when possible; else trim trailing zeros
+static void format_number_into(char* out, size_t out_sz, double d) {
+  if (out_sz == 0) return;
+  if (is_integral_double(d)) {
+    // Safe: integer-valued; print without decimals
+    // NOTE: doubles are exact for integers up to 2^53 (~9e15)
+    // If you expect > 9e15, consider server returning strings for big ints.
+    snprintf(out, out_sz, "%.0f", d);
+  } else {
+    // Print with up to 6 decimals, then trim trailing zeros and optional dot
+    char buf[64];
+    snprintf(buf, sizeof(buf), "%.6f", d);
+    // trim trailing zeros
+    char* p = buf + strlen(buf) - 1;
+    while (p > buf && *p == '0') --p;
+    if (*p == '.') --p;      // drop trailing dot
+    *(p + 1) = '\0';
+    snprintf(out, out_sz, "%s", buf);
+  }
+}
+
 int parse_json_data(const char *data, const char *field_name, char *result, size_t result_size) {
+  if (!data || !field_name || !result || result_size == 0) {
+    ERROR_PRINT("Invalid parameters");
+    return XCASH_ERROR;
+  }
+  result[0] = '\0';
+
+  // Parse JSON
+  cJSON *json = cJSON_Parse(data);
+  if (!json) {
+    const char *error_ptr = cJSON_GetErrorPtr();
+    ERROR_PRINT("JSON parsing error near: %s", error_ptr ? error_ptr : "unknown location");
+    return XCASH_ERROR;
+  }
+
+  // Handle nested JSON paths with array support (e.g., "result.addresses[0].address")
+  char path_copy[256];
+  strncpy(path_copy, field_name, sizeof(path_copy) - 1);
+  path_copy[sizeof(path_copy) - 1] = '\0';
+
+  cJSON *current_obj = json;
+  char *saveptr = NULL;
+  char *token = strtok_r(path_copy, ".", &saveptr);
+  while (token != NULL) {
+    // Check for array access syntax (e.g., addresses[0])
+    char *bracket_pos = strchr(token, '[');
+    if (bracket_pos) {
+      *bracket_pos = '\0';  // Split field name and index part
+
+      current_obj = cJSON_GetObjectItemCaseSensitive(current_obj, token);
+      if (!current_obj || !cJSON_IsArray(current_obj)) {
+        ERROR_PRINT("Field '%s' not found or is not an array", token);
+        cJSON_Delete(json);
+        return XCASH_ERROR;
+      }
+
+      // Extract the index safely
+      char *endptr = NULL;
+      long idx = strtol(bracket_pos + 1, &endptr, 10);
+      if (!endptr || *endptr != ']') {
+        ERROR_PRINT("Invalid array index syntax in '%s'", token);
+        cJSON_Delete(json);
+        return XCASH_ERROR;
+      }
+      if (idx < 0 || idx >= (long)cJSON_GetArraySize(current_obj)) {
+        ERROR_PRINT("Index %ld out of range for field '%s'", idx, token);
+        cJSON_Delete(json);
+        return XCASH_ERROR;
+      }
+      current_obj = cJSON_GetArrayItem(current_obj, (int)idx);
+      if (!current_obj) {
+        ERROR_PRINT("Index %ld out of range for field '%s'", idx, token);
+        cJSON_Delete(json);
+        return XCASH_ERROR;
+      }
+    } else {
+      current_obj = cJSON_GetObjectItemCaseSensitive(current_obj, token);
+      if (!current_obj) {
+        ERROR_PRINT("Field '%s' not found in JSON", field_name);
+        // Avoid leak: cJSON_PrintUnformatted allocates
+        char *dbg = cJSON_PrintUnformatted(json);
+        if (dbg) { DEBUG_PRINT("Parsed JSON structure: %s", dbg); cJSON_free(dbg); }
+        cJSON_Delete(json);
+        return XCASH_ERROR;
+      }
+    }
+    token = strtok_r(NULL, ".", &saveptr);
+  }
+
+  // Extract and store the field value
+  if (cJSON_IsString(current_obj) && current_obj->valuestring) {
+    strncpy(result, current_obj->valuestring, result_size - 1);
+    result[result_size - 1] = '\0';
+  } else if (cJSON_IsNumber(current_obj)) {
+    // Format numbers robustly: integers with no decimals; else trimmed decimals
+    format_number_into(result, result_size, current_obj->valuedouble);
+  } else if (cJSON_IsBool(current_obj)) {
+    snprintf(result, result_size, "%s", cJSON_IsTrue(current_obj) ? "true" : "false");
+  } else {
+    ERROR_PRINT("Field '%s' has unsupported data type", field_name);
+    cJSON_Delete(json);
+    return XCASH_ERROR;
+  }
+
+  cJSON_Delete(json);
+  return XCASH_OK;
+}
+
+/* int parse_json_data(const char *data, const char *field_name, char *result, size_t result_size) {
     if (!data || !field_name || !result) {
         ERROR_PRINT("Invalid parameters");
         return XCASH_ERROR;
@@ -176,7 +292,7 @@ int parse_json_data(const char *data, const char *field_name, char *result, size
     cJSON_Delete(json);
     return XCASH_OK;
 }
-
+*/
 /*---------------------------------------------------------------------------------------------------------
 Name: string_replace
 Description: String replace
