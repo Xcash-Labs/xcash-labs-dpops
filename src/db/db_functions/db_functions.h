@@ -20,7 +20,6 @@ int read_document_field_from_collection(const char* DATABASE, const char* COLLEC
 int update_document_from_collection_bson(const char* DATABASE, const char* COLLECTION, const bson_t* filter, const bson_t* update_fields);
 int delete_document_from_collection(const char* DATABASE, const char* COLLECTION, const char* DATA);
 int check_if_database_collection_exist(const char* DATABASE, const char* COLLECTION);
-int get_data(mongoc_client_t *client, const char *db_name, const char *field_name, char *data);
 bool is_replica_set_ready(void);
 bool add_seed_indexes(void);
 bool add_indexes(void);

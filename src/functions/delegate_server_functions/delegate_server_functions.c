@@ -691,7 +691,8 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
 
 /* --------------------------------------------------------------------------------------------------------
   Name: server_receive_data_socket_node_to_block_verifiers_add_reserve_proof
-  Description: Runs the code when the server receives the NODE_TO_BLOCK_VERIFIERS_ADD_RESERVE_PROOF message is received.
+  Description: Runs the code when the server receives the NODE_TO_BLOCK_VERIFIERS_ADD_RESERVE_PROOF message 
+    is received.
   Parameters:
   CLIENT_SOCKET - The socket to send data to
   MESSAGE - The message
@@ -703,8 +704,11 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
   char proof_str[BUFFER_SIZE_RESERVE_PROOF + 1] = {0};
   char json_filter[256] = {0};
   uint64_t vote_amount_atomic = 0;
-  uint64_t old_vote_amount_atomic = 0;
-  uint64_t vote_diff_atomic = 0;
+
+
+  if (!is_seed_node) {
+    SERVER_ERROR("0|Transaction only available for seed node");
+  }
 
   // ---- Parse JSON ----
   if (!MESSAGE || !*MESSAGE) {
@@ -747,7 +751,7 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
   }
   memcpy(voter_public_address, j_addr->valuestring, XCASH_WALLET_LENGTH);
 
-  // delegate_name_or_address
+    // delegate_name_or_address
   const cJSON *j_target = cJSON_GetObjectItemCaseSensitive(root, "delegate_name_or_address");
   if (!cJSON_IsString(j_target) || j_target->valuestring[0] == '\0') {
     cJSON_Delete(root);
@@ -789,37 +793,6 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
                "0|Each vote must be at least %llu XCA", min_vote_display);
 
       SERVER_ERROR(err_msg);
-    }
-  }
-
-  if (is_revote) {
-    // old_vote_amount (STRING; atomic units)
-    const cJSON *j_oldamount = cJSON_GetObjectItemCaseSensitive(root, "old_vote_amount");
-    if (!cJSON_IsString(j_oldamount) || j_oldamount->valuestring[0] == '\0') {
-      cJSON_Delete(root);
-      SERVER_ERROR("0|old_vote_amount must be a non-empty string (atomic units)");
-    }
-    {
-      const char *anumold = j_oldamount->valuestring;
-      for (const char *p = anumold; *p; ++p) {
-        if (*p < '0' || *p > '9') {
-          cJSON_Delete(root);
-          SERVER_ERROR("0|old_vote_amount must contain only digits (atomic units)");
-        }
-      }
-      errno = 0;
-      unsigned long long tmp = strtoull(anumold, NULL, 10);
-      if (errno != 0 || tmp == 0ULL) {
-        cJSON_Delete(root);
-        SERVER_ERROR("0|Invalid old_vote_amount");
-      }
-
-      old_vote_amount_atomic = (uint64_t)tmp;
-    }
-
-    if ((vote_amount_atomic - old_vote_amount_atomic) <= 0) {
-      cJSON_Delete(root);
-      SERVER_ERROR("0|Revote must be greater than the original vote");
     }
   }
 
@@ -888,12 +861,23 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
 
 #ifdef SEED_NODE_ON
 
+
+
+
+
   // only add on seed node
+  snprintf(json_filter, sizeof(json_filter), "{\"_id\":\"%.*s\"}", XCASH_WALLET_LENGTH, voter_public_address);
+
+//  if (read_document_field_from_collection(DATABASE_NAME, DB_COLLECTION_RESERVE_PROOFS, filter_json, "public_key", vrf_public_key,
+//    sizeof(vrf_public_key)) != XCASH_OK)
+//  {
+
+//  }
+
+
+
+
   // ---- One vote per wallet: delete previous (single collection) ----
-  // Prefer _id == voter address for global uniqueness
-  snprintf(json_filter, sizeof(json_filter),
-           "{\"_id\":\"%.*s\"}", XCASH_WALLET_LENGTH, voter_public_address);
-  // Best-effort delete; don't hard-fail if not present
   (void)delete_document_from_collection(DATABASE_NAME, DB_COLLECTION_RESERVE_PROOFS, json_filter);
 
   // Build BSON document
@@ -924,20 +908,6 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
   bson_destroy(&doc);
 
 #endif
-
-// if revote need to deduct the old amount and add new amount
-
-  vote_diff_atomic = vote_amount_atomic;
-  if (is_revote) {
-      vote_diff_atomic = vote_amount_atomic - old_vote_amount_atomic;
-  }
-
-  if (vote_diff_atomic > 0) {     // should never happen
-    if (!delegates_apply_vote_delta(voted_for_public_address, vote_diff_atomic)) {
-      cJSON_Delete(root);
-      SERVER_ERROR("0|Could not increment the vote count in the delegates collection");
-    }
-  }
 
   // Done: hourly job will revalidate & aggregate totals
   cJSON_Delete(root);
@@ -981,7 +951,7 @@ void server_receive_data_socket_node_to_block_verifiers_check_vote_status(server
   }
 
   // Basic sanity: prefix and length (adjust macros to your config)
-  if (str_is_base58(public_address)) {
+  if (!str_is_base58(public_address)) {
     cJSON_Delete(root);
     SERVER_ERROR("0|Invalid XCA public address, not base58");
   }
