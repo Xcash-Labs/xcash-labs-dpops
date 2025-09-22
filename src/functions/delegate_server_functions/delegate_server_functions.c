@@ -856,10 +856,10 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
     SERVER_ERROR("0|Invalid reserve proof");
   }
 
-  snprintf(data, sizeof(data), "{\"public_address\":\"%s\"}", delegate_public_address);
+  snprintf(json_filter, sizeof(json_filter), "{\"_id\":\"%s\"}", voter_public_address);
 
   // Check for original vote if revote
-  if (count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_RESERVE_PROOFS, data) == 0) {
+  if (count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_RESERVE_PROOFS, json_filter) == 0) {
     if (is_revote) {
       cJSON_Delete(root);
       SERVER_ERROR("0|No orginal vote exists for revote");
