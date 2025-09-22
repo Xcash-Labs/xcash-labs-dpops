@@ -104,8 +104,11 @@ Return:
 // Helper: is the double an integer value within 64-bit range?
 static inline int is_integral_double(double d) {
   if (!isfinite(d)) return 0;
-  double r = floor(d);
-  return (d == r) && (d >= -(double)INT64_MAX - 1.0) && (d <= (double)UINT64_MAX);
+  // Keep within 64-bit integer range you care about
+  if (d < -(double)INT64_MAX - 1.0 || d > (double)UINT64_MAX) return 0;
+  double ipart;
+  double frac = modf(d, &ipart);
+  return fabs(frac) <= DBL_EPSILON * fmax(1.0, fabs(d));
 }
 
 // Helper: format number as int when possible; else trim trailing zeros
