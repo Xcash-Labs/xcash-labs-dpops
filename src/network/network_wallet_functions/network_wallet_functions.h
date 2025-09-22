@@ -11,6 +11,6 @@
 #include "string_functions.h"
 
 int get_public_address(void);
-int check_reserve_proofs(uint64_t vote_atomic_amount, const char* PUBLIC_ADDRESS, const char* RESERVE_PROOF);
+int check_reserve_proofs(uint64_t vote_amount_atomic, const char* PUBLIC_ADDRESS, const char* RESERVE_PROOF);
 
 #endif

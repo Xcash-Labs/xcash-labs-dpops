@@ -54,7 +54,7 @@ Parameters:
   RESERVE_PROOF - The reserve proof
 Return:  0 if the reserve proof is invalid, 1 if the reserve proof is valid
 ---------------------------------------------------------------------------------------------------------*/
-int check_reserve_proofs(uint64_t vote_atomic_amount, const char* PUBLIC_ADDRESS, const char* RESERVE_PROOF) {
+int check_reserve_proofs(uint64_t vote_amount_atomic, const char* PUBLIC_ADDRESS, const char* RESERVE_PROOF) {
   if (!PUBLIC_ADDRESS || !RESERVE_PROOF) {
     ERROR_PRINT("check_reserve_proofs: invalid arguments");
     return XCASH_ERROR;
@@ -95,8 +95,9 @@ int check_reserve_proofs(uint64_t vote_atomic_amount, const char* PUBLIC_ADDRESS
   }
 
   // Must be good and unspent
-  if (good[0] != 't' || strcmp(spent, "0") != 0) {
-    WARNING_PRINT("Reserve proof invalid or indicates spent outputs");
+  if (strcmp(good, "true") != 0 || strcmp(spent, "0") != 0) {
+    WARNING_PRINT("Reserve proof invalid or indicates spent outputs (good=%s, spent=%s)",
+                  good, spent);
     return XCASH_ERROR;
   }
 
@@ -110,10 +111,10 @@ int check_reserve_proofs(uint64_t vote_atomic_amount, const char* PUBLIC_ADDRESS
   }
   uint64_t proven_atomic = (uint64_t)total_val_ull;
 
-  // Compare against requested amount
-  if (proven_atomic < vote_atomic_amount) {
+  // Compare against requested amount (ensure you use the correct var name)
+  if (proven_atomic < vote_amount_atomic) {
     WARNING_PRINT("Proof insufficient: proven=%" PRIu64 " requested=%" PRIu64,
-                  proven_atomic, vote_atomic_amount);
+                  proven_atomic, vote_amount_atomic);
     return XCASH_ERROR;
   }
 
