@@ -705,10 +705,7 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
   char json_filter[256] = {0};
   uint64_t vote_amount_atomic = 0;
 
-
-  if (!is_seed_node) {
-    SERVER_ERROR("0|Transaction only available for seed node");
-  }
+#ifdef SEED_NODE_ON
 
   // ---- Parse JSON ----
   if (!MESSAGE || !*MESSAGE) {
@@ -859,25 +856,17 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
     SERVER_ERROR("0|Invalid reserve proof");
   }
 
-#ifdef SEED_NODE_ON
+  snprintf(data, sizeof(data), "{\"public_address\":\"%s\"}", delegate_public_address);
 
+  // Check for original vote if revote
+  if (count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_RESERVE_PROOFS, data) == 0) {
+    if (is_revote) {
+      cJSON_Delete(root);
+      SERVER_ERROR("0|No orginal vote exists for revote");
+    }
+  }
 
-
-
-
-  // only add on seed node
-  snprintf(json_filter, sizeof(json_filter), "{\"_id\":\"%.*s\"}", XCASH_WALLET_LENGTH, voter_public_address);
-
-//  if (read_document_field_from_collection(DATABASE_NAME, DB_COLLECTION_RESERVE_PROOFS, filter_json, "public_key", vrf_public_key,
-//    sizeof(vrf_public_key)) != XCASH_OK)
-//  {
-
-//  }
-
-
-
-
-  // ---- One vote per wallet: delete previous (single collection) ----
+  // One vote per wallet: delete previous (single collection)
   (void)delete_document_from_collection(DATABASE_NAME, DB_COLLECTION_RESERVE_PROOFS, json_filter);
 
   // Build BSON document
@@ -892,7 +881,7 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
                    voted_for_public_address, XCASH_WALLET_LENGTH);
 
   // total (64-bit int instead of "$numberLong")
-  BSON_APPEND_INT64(&doc, "total", (int64_t)vote_amount_atomic);
+  BSON_APPEND_INT64(&doc, "total_vote", (int64_t)vote_amount_atomic);
 
   // reserve_proof
   BSON_APPEND_UTF8(&doc, "reserve_proof", proof_str);
@@ -908,6 +897,10 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
   bson_destroy(&doc);
 
 #endif
+
+  if (!is_seed_node) {
+    SERVER_ERROR("0|Transaction only available for seed nodes");
+  }
 
   // Done: hourly job will revalidate & aggregate totals
   cJSON_Delete(root);
