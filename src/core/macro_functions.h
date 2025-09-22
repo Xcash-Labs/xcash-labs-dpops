@@ -143,12 +143,6 @@
         fprintf(stderr, "%s%s\033[0m\n", color_code, string); \
     } while (0)
 
-//#define SERVER_ERROR(rmess)                                     \
-//  do {                                                          \
-//    send_data(client, (unsigned char *)(rmess), strlen(rmess)); \
-//    return;                                                     \
-//  } while (0)
-
 #define SERVER_ERROR(msg_)                                                \
   do {                                                                    \
     const char* _msg = (msg_);                                            \
