@@ -15,7 +15,6 @@
 #include <zlib.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <math.h>
 #include "config.h"
 #include "globals.h"
 #include "macro_functions.h"
