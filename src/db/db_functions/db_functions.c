@@ -1032,7 +1032,7 @@ bool get_vote_total_and_delegate_name(
 
   bson_t* opts = BCON_NEW(
       "projection", "{",
-      "total", BCON_BOOL(true),
+      "total_vote", BCON_BOOL(true),
       "public_address_voted_for", BCON_BOOL(true),
       "_id", BCON_BOOL(false),
       "}");
@@ -1051,7 +1051,7 @@ bool get_vote_total_and_delegate_name(
   // extract total + delegate address
   {
     bson_iter_t it;
-    if (bson_iter_init_find(&it, doc, "total") && BSON_ITER_HOLDS_INT64(&it))
+    if (bson_iter_init_find(&it, doc, "total_vote") && BSON_ITER_HOLDS_INT64(&it))
       *total_out = bson_iter_int64(&it);
 
     if (bson_iter_init_find(&it, doc, "public_address_voted_for") && BSON_ITER_HOLDS_UTF8(&it)) {
@@ -1159,11 +1159,8 @@ bool fetch_reserve_proof_fields_by_id(
     }
 
     // total (or total_vote)
-    if (bson_iter_init_find(&it, doc, "total") &&
+    if (bson_iter_init_find(&it, doc, "total_vote") &&
         (BSON_ITER_HOLDS_INT64(&it) || BSON_ITER_HOLDS_INT32(&it))) {
-      *total_out = BSON_ITER_HOLDS_INT64(&it) ? bson_iter_int64(&it) : bson_iter_int32(&it);
-    } else if (bson_iter_init_find(&it, doc, "total_vote") &&
-               (BSON_ITER_HOLDS_INT64(&it) || BSON_ITER_HOLDS_INT32(&it))) {
       *total_out = BSON_ITER_HOLDS_INT64(&it) ? bson_iter_int64(&it) : bson_iter_int32(&it);
     } else {
       *total_out = 0;
