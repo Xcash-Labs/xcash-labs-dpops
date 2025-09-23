@@ -161,11 +161,8 @@ int parse_json_data(const char *data, const char *field_name, char *result, size
     } else if (cJSON_IsNumber(current_obj)) {
         if (strcmp(field_name, "result.count") == 0) {
             snprintf(result, result_size, "%d", current_obj->valueint);
-        } else if (cJSON_IsNumber(current_obj)) {
-            if (strcmp(field_name, "result.spent") == 0 ||
-                strcmp(field_name, "result.total") == 0) {
-                snprintf(result, result_size, "%.0f", current_obj->valuedouble);  
-            }
+        } else if (strcmp(field_name, "result.spent") == 0 || strcmp(field_name, "result.total") == 0) {
+            snprintf(result, result_size, "%.0f", current_obj->valuedouble);  
         } else {
             snprintf(result, result_size, "%.6f", current_obj->valuedouble);
         }
