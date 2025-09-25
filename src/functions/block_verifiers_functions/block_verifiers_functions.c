@@ -219,10 +219,10 @@ int sync_block_verifiers_minutes_and_seconds__OLD__(const int MINUTES, const int
 
   struct timespec req = {
       .tv_sec = (time_t)sleep_seconds,
-      .tv_nsec = (long)((sleep_seconds - (time_t)sleep_seconds) * 1e9)}, rem;
+      .tv_nsec = (long)((sleep_seconds - (time_t)sleep_seconds) * 1e9)};
 
   INFO_PRINT("Sleeping for %.3f seconds to sync to target time...", sleep_seconds);
-
+  
   if (nanosleep(&req, NULL) != 0) {
     ERROR_PRINT("nanosleep interrupted: %s", strerror(errno));
     return XCASH_ERROR;
@@ -232,20 +232,35 @@ int sync_block_verifiers_minutes_and_seconds__OLD__(const int MINUTES, const int
 }
 
 
-// Drop-in: sync to MINUTES:SECONDS within the BLOCK_TIME-minute cycle.
-// Sleeps until the *next* occurrence; SIGINT/SIGTERM interruptions are retried.
-// Returns XCASH_OK on success, XCASH_ERROR on failure.
 
 
+#include <time.h>
+#include <errno.h>
+#include <string.h>
+#include <math.h>    // for floor()
 
+// optional: tiny helper to normalize tv_nsec into [0,1e9)
+static inline void normalize_timespec(struct timespec* ts) {
+  if (ts->tv_nsec >= 1000000000L) {
+    ts->tv_sec  += ts->tv_nsec / 1000000000L;
+    ts->tv_nsec  = ts->tv_nsec % 1000000000L;
+  } else if (ts->tv_nsec < 0) {
+    long borrow = (-(ts->tv_nsec) + 999999999L) / 1000000000L;
+    ts->tv_sec  -= borrow;
+    ts->tv_nsec += borrow * 1000000000L;
+  }
+}
+
+/*---------------------------------------------------------------------------------------------------------
+Name: sync_block_verifiers_minutes_and_seconds
+Description: Syncs to MINUTES:SECONDS within the *current* BLOCK_TIME-minute cycle.
+             If already past that point, returns XCASH_ERROR (like original).
+---------------------------------------------------------------------------------------------------------*/
 int sync_block_verifiers_minutes_and_seconds(const int MINUTES, const int SECONDS) {
   if (MINUTES < 0 || SECONDS < 0 || SECONDS >= 60 || MINUTES >= BLOCK_TIME) {
     ERROR_PRINT("Invalid sync time: MINUTES must be < BLOCK_TIME and SECONDS < 60");
     return XCASH_ERROR;
   }
-
-  const time_t SLOT_SEC   = (time_t)BLOCK_TIME * 60;                // e.g., 60 for 1-min slots
-  const time_t TARGET_OFF = (time_t)MINUTES * 60 + (time_t)SECONDS; // offset within slot
 
   struct timespec now;
   if (clock_gettime(CLOCK_REALTIME, &now) != 0) {
@@ -253,36 +268,42 @@ int sync_block_verifiers_minutes_and_seconds(const int MINUTES, const int SECOND
     return XCASH_ERROR;
   }
 
-  // Start of the current slot aligned to SLOT_SEC (wall-clock)
-  const time_t slot_start = now.tv_sec - (now.tv_sec % SLOT_SEC);
+  const long seconds_per_block = (long)BLOCK_TIME * 60L;
 
-  // Target in this slot; if already passed, roll to the next slot
-  time_t target_sec = slot_start + TARGET_OFF;
-  if (target_sec < now.tv_sec || (target_sec == now.tv_sec && now.tv_nsec > 0)) {
-    target_sec += SLOT_SEC;
+  // precise position inside current block window (add fractional seconds)
+  double current_in_block =
+      (double)(now.tv_sec % seconds_per_block) + (double)now.tv_nsec / 1e9;
+
+  const double target_in_block = (double)(MINUTES * 60 + SECONDS);
+  double sleep_seconds = target_in_block - current_in_block;
+
+  // original behavior: if we've missed the point in THIS window, bail
+  if (sleep_seconds <= 0.0) {
+    WARNING_PRINT("Missed sync point by %.3f seconds", -sleep_seconds);
+    return XCASH_ERROR;
   }
 
-  const struct timespec deadline = { .tv_sec = target_sec, .tv_nsec = 0 };
+  // build a relative timespec from the double, with rounding + normalization
+  time_t sec  = (time_t)floor(sleep_seconds);
+  long   nsec = (long)((sleep_seconds - (double)sec) * 1000000000.0 + 0.5); // round
+  struct timespec req = { .tv_sec = sec, .tv_nsec = nsec };
+  normalize_timespec(&req);
 
-  // Optional: nice log for visibility
-  const time_t delta = deadline.tv_sec - now.tv_sec;
-  INFO_PRINT("Syncing to %d:%02d in %lds cycle (sleep ~%ld.%03lds)...",
-             MINUTES, SECONDS, (long)SLOT_SEC,
-             (long)delta, (now.tv_nsec ? (1000 - now.tv_nsec/1000000L) % 1000 : 0L));
+  INFO_PRINT("Sleeping for %.3f seconds to sync to %d:%02d...", sleep_seconds, MINUTES, SECONDS);
 
-  // Absolute sleep; on EINTR just try again until we hit the deadline.
+  // resume after EINTR so Ctrl+C doesn't abort the wait
+  struct timespec rem;
   for (;;) {
-    int rc = clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &deadline, NULL);
-    if (rc == 0) break;                  // reached exact target
-    if (rc == EINTR) continue;           // interrupted by signal -> keep waiting
-    errno = rc;
-    ERROR_PRINT("clock_nanosleep failed: %s", strerror(errno));
-    return XCASH_ERROR;
+    if (nanosleep(&req, &rem) == 0) break;       // slept fully
+    if (errno != EINTR) {
+      ERROR_PRINT("nanosleep failed: %s", strerror(errno));
+      return XCASH_ERROR;
+    }
+    req = rem;                                    // continue remaining time
   }
 
   return XCASH_OK;
 }
-
 
 
 
