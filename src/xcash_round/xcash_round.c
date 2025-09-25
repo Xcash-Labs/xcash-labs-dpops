@@ -472,6 +472,7 @@ Returns:
 ---------------------------------------------------------------------------------------------------------*/
 void start_block_production(void) {
   INFO_PRINT("Waiting for block production to start");
+  // If interval is missed don't print message
   sync_block_verifiers_minutes_and_seconds(0, 57);
   struct timeval current_time;
   xcash_round_result_t round_result;
@@ -513,6 +514,31 @@ void start_block_production(void) {
     // Skip production if outside initial window
     if (seconds_within_block > 1) {
       time_t now = current_time.tv_sec;
+      long remain = 60 - (now % 60);  // correct countdown to the next boundary
+
+      if (!printed_on_enter) {
+        INFO_PRINT("Next round starts in [%ld:%02ld]", remain / 60, remain % 60);
+        printed_on_enter = true;
+        last_log_sec = now;
+      } else if (now - last_log_sec >= 10) {
+        INFO_PRINT("Next round starts in [%ld:%02ld]", remain / 60, remain % 60);
+        last_log_sec = now;
+      }
+
+      // Robust 1-second sleep that resumes if interrupted
+      unsigned int left = 1;
+      while ((left = sleep(left)) > 0) { /* resume if EINTR */
+      }
+
+      continue;
+    } else {
+      printed_on_enter = false;  // we’re in the 0–1s window; let the round start
+    }
+
+
+/*
+    if (seconds_within_block > 1) {
+      time_t now = current_time.tv_sec;
       if (!printed_on_enter) {
         INFO_PRINT("Next round starts in [%ld:%02ld]", 0L, 59 - (now % 60));
         printed_on_enter = true;
@@ -527,6 +553,7 @@ void start_block_production(void) {
     } else {
       printed_on_enter = false;
     }
+*/
 
     current_block_height[0] = '\0';
     delegate_db_hash_mismatch = 0;
