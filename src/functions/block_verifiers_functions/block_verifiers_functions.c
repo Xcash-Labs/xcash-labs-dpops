@@ -191,7 +191,7 @@ Parameters:
   minutes - The minutes
   seconds - The seconds
 ---------------------------------------------------------------------------------------------------------*/
-int sync_block_verifiers_minutes_and_seconds(const int MINUTES, const int SECONDS) {
+int sync_block_verifiers_minutes_and_seconds__OLD__(const int MINUTES, const int SECONDS) {
   if (MINUTES >= BLOCK_TIME || SECONDS >= 60) {
     ERROR_PRINT("Invalid sync time: MINUTES must be < BLOCK_TIME and SECONDS < 60");
     return XCASH_ERROR;
@@ -222,21 +222,63 @@ int sync_block_verifiers_minutes_and_seconds(const int MINUTES, const int SECOND
       .tv_nsec = (long)((sleep_seconds - (time_t)sleep_seconds) * 1e9)}, rem;
 
   INFO_PRINT("Sleeping for %.3f seconds to sync to target time...", sleep_seconds);
-
-
-//  if (nanosleep(&req, NULL) != 0) {
-//    ERROR_PRINT("nanosleep interrupted: %s", strerror(errno));
-//    return XCASH_ERROR;
-//  }
-
-  for (;;) {
-    if (nanosleep(&req, &rem) == 0) return 0;
-    if (errno != EINTR) return -1;     // real error
-    req = rem;                         // interrupted by signal -> continue
+  
+  if (nanosleep(&req, NULL) != 0) {
+    ERROR_PRINT("nanosleep interrupted: %s", strerror(errno));
+    return XCASH_ERROR;
   }
 
   return XCASH_OK;
 }
+
+
+int sync_block_verifiers_minutes_and_seconds(const int MINUTES, const int SECONDS) {
+  if (MINUTES < 0 || SECONDS < 0 || SECONDS >= 60 || MINUTES >= BLOCK_TIME) {
+    ERROR_PRINT("Invalid sync time: MINUTES must be < BLOCK_TIME and SECONDS < 60");
+    return XCASH_ERROR;
+  }
+
+  const time_t SLOT_SEC = (time_t)BLOCK_TIME * 60;
+  const time_t TARGET_OFF = (time_t)MINUTES * 60 + (time_t)SECONDS;
+
+  struct timespec now;
+  if (clock_gettime(CLOCK_REALTIME, &now) != 0) {
+    ERROR_PRINT("clock_gettime failed: %s", strerror(errno));
+    return XCASH_ERROR;
+  }
+
+  // Start of current slot (aligned to SLOT_SEC)
+  time_t slot_start = now.tv_sec - (now.tv_sec % SLOT_SEC);
+
+  // Pick this slot’s target or the next slot’s if already passed
+  time_t target_sec = slot_start + TARGET_OFF;
+  if (target_sec < now.tv_sec || (target_sec == now.tv_sec && now.tv_nsec > 0)) {
+    target_sec += SLOT_SEC;
+  }
+
+  struct timespec deadline = { .tv_sec = target_sec, .tv_nsec = 0 };
+
+  // Nice log
+  time_t dsec = deadline.tv_sec - now.tv_sec;
+  INFO_PRINT("Syncing to %d:%02d within %lds cycle (sleep ~%ld.%03lds)...",
+             MINUTES, SECONDS, (long)SLOT_SEC,
+             (long)dsec, (now.tv_nsec ? (1000 - now.tv_nsec/1000000L) % 1000 : 0L));
+
+  // Absolute sleep. If interrupted, loop until deadline is reached.
+  for (;;) {
+    int rc = clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &deadline, NULL);
+    if (rc == 0) break;           // reached the exact target time
+    if (rc == EINTR) continue;    // interrupted by signal -> keep waiting
+    errno = rc;
+    ERROR_PRINT("clock_nanosleep failed: %s", strerror(errno));
+    return XCASH_ERROR;
+  }
+
+  return XCASH_OK;
+}
+
+
+
 
 /*---------------------------------------------------------------------------------------------------------
 Name: generate_and_request_vrf_data_sync
