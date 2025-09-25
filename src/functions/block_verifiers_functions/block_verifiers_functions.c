@@ -234,76 +234,56 @@ int sync_block_verifiers_minutes_and_seconds__OLD__(const int MINUTES, const int
 
 
 
-#include <time.h>
-#include <errno.h>
-#include <string.h>
-#include <math.h>    // for floor()
-
-// optional: tiny helper to normalize tv_nsec into [0,1e9)
-static inline void normalize_timespec(struct timespec* ts) {
-  if (ts->tv_nsec >= 1000000000L) {
-    ts->tv_sec  += ts->tv_nsec / 1000000000L;
-    ts->tv_nsec  = ts->tv_nsec % 1000000000L;
-  } else if (ts->tv_nsec < 0) {
-    long borrow = (-(ts->tv_nsec) + 999999999L) / 1000000000L;
-    ts->tv_sec  -= borrow;
-    ts->tv_nsec += borrow * 1000000000L;
-  }
-}
-
-/*---------------------------------------------------------------------------------------------------------
-Name: sync_block_verifiers_minutes_and_seconds
-Description: Syncs to MINUTES:SECONDS within the *current* BLOCK_TIME-minute cycle.
-             If already past that point, returns XCASH_ERROR (like original).
----------------------------------------------------------------------------------------------------------*/
 int sync_block_verifiers_minutes_and_seconds(const int MINUTES, const int SECONDS) {
-  if (MINUTES < 0 || SECONDS < 0 || SECONDS >= 60 || MINUTES >= BLOCK_TIME) {
+  if (MINUTES >= BLOCK_TIME || SECONDS >= 60) {
     ERROR_PRINT("Invalid sync time: MINUTES must be < BLOCK_TIME and SECONDS < 60");
     return XCASH_ERROR;
   }
 
-  struct timespec now;
-  if (clock_gettime(CLOCK_REALTIME, &now) != 0) {
-    ERROR_PRINT("clock_gettime failed: %s", strerror(errno));
+  struct timespec now_ts;
+  if (clock_gettime(CLOCK_REALTIME, &now_ts) != 0) {
+    ERROR_PRINT("Failed to get high-resolution time");
     return XCASH_ERROR;
   }
 
-  const long seconds_per_block = (long)BLOCK_TIME * 60L;
+  time_t now_sec = now_ts.tv_sec;
+  long   now_nsec = now_ts.tv_nsec;
 
-  // precise position inside current block window (add fractional seconds)
-  double current_in_block =
-      (double)(now.tv_sec % seconds_per_block) + (double)now.tv_nsec / 1e9;
+  size_t seconds_per_block = (size_t)BLOCK_TIME * 60;
+  size_t seconds_within_block = (size_t)(now_sec % (time_t)seconds_per_block);
 
-  const double target_in_block = (double)(MINUTES * 60 + SECONDS);
-  double sleep_seconds = target_in_block - current_in_block;
+  double target_seconds = (double)(MINUTES * 60 + SECONDS);
+  double current_time_in_block = (double)seconds_within_block + (double)now_nsec / 1e9;
+  double sleep_seconds = target_seconds - current_time_in_block;
 
-  // original behavior: if we've missed the point in THIS window, bail
   if (sleep_seconds <= 0.0) {
     WARNING_PRINT("Missed sync point by %.3f seconds", -sleep_seconds);
-    return XCASH_ERROR;
+    return XCASH_ERROR;                       // same as original
   }
 
-  // build a relative timespec from the double, with rounding + normalization
-  time_t sec  = (time_t)floor(sleep_seconds);
-  long   nsec = (long)((sleep_seconds - (double)sec) * 1000000000.0 + 0.5); // round
+  // Build relative timespec (no libm needed)
+  time_t sec  = (time_t)sleep_seconds;        // floor for positive values
+  double frac = sleep_seconds - (double)sec;
+  long   nsec = (long)(frac * 1000000000.0);  // truncate to < 1e9
+
   struct timespec req = { .tv_sec = sec, .tv_nsec = nsec };
-  normalize_timespec(&req);
-
-  INFO_PRINT("Sleeping for %.3f seconds to sync to %d:%02d...", sleep_seconds, MINUTES, SECONDS);
-
-  // resume after EINTR so Ctrl+C doesn't abort the wait
   struct timespec rem;
+
+  INFO_PRINT("Sleeping for %.3f seconds to sync to target time...", sleep_seconds);
+
+  // Resume remaining time on EINTR so signals don't abort the wait
   for (;;) {
-    if (nanosleep(&req, &rem) == 0) break;       // slept fully
+    if (nanosleep(&req, &rem) == 0) break;    // slept fully
     if (errno != EINTR) {
       ERROR_PRINT("nanosleep failed: %s", strerror(errno));
       return XCASH_ERROR;
     }
-    req = rem;                                    // continue remaining time
+    req = rem;                                // continue sleeping the remainder
   }
 
   return XCASH_OK;
 }
+
 
 
 
