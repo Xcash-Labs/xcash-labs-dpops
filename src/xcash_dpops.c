@@ -110,6 +110,11 @@ Description: Shuts program down on signal
 void sigint_handler(int sig_num) {
  (void)sig_num;
   sig_requests++;
+  if (sig_requests == 1) {
+    static const char msg[] =
+      "\nShutdown request received. Finishing current round, please wait...\n";
+    (void)write(STDERR_FILENO, msg, sizeof(msg) - 1);
+  }
   atomic_store(&shutdown_requested, true);
   if (sig_requests >= 2) {
     _exit(0);
