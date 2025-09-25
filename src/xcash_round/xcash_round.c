@@ -471,6 +471,8 @@ Returns:
   None
 ---------------------------------------------------------------------------------------------------------*/
 void start_block_production(void) {
+  INFO_PRINT("Waiting for block production to start");
+  sync_block_verifiers_minutes_and_seconds(0, 57);
   struct timeval current_time;
   xcash_round_result_t round_result;
   char target_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
