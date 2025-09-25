@@ -235,7 +235,7 @@ int sync_block_verifiers_minutes_and_seconds(const int MINUTES, const int SECOND
       ERROR_PRINT("nanosleep failed: %s", strerror(errno));
       return XCASH_ERROR;
     }
-    req = rem;                                // continue sleeping the remainder
+    req = rem;
   }
 
   return XCASH_OK;
