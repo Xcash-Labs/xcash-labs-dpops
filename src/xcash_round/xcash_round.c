@@ -503,8 +503,8 @@ void start_block_production(void) {
   // Start production loop
   static bool printed_on_enter = false;
   static time_t last_log_sec = 0;
-  
-  while (!shutdown_requested)
+
+  while (!shutdown_requested) {
     gettimeofday(&current_time, NULL);
     size_t seconds_within_block = current_time.tv_sec % (BLOCK_TIME * 60);
 
