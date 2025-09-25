@@ -263,3 +263,97 @@ Parameters:
 Return:
   XCASH_OK on success, XCASH_ERROR on failure
 ---------------------------------------------------------------------------------------------------------*/
+int get_block_info_by_height(uint64_t height,
+                             char *out_hash, size_t out_hash_len,
+                             uint64_t *out_reward,
+                             uint64_t *out_timestamp,
+                             bool *out_orphan)
+{
+    if (!out_hash || out_hash_len < (BLOCK_HASH_LENGTH + 1)) {
+        ERROR_PRINT("get_block_info_by_height: invalid hash buffer");
+        return XCASH_ERROR;
+    }
+
+    // ---- Constants / request setup ----
+    const char *HTTP_HEADERS[] = {"Content-Type: application/json", "Accept: application/json"};
+    const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0]);
+
+    char request_payload[256] = {0};
+    // {"jsonrpc":"2.0","id":"0","method":"get_block","params":{"height":<height>}}
+    int n = snprintf(request_payload, sizeof(request_payload),
+                     "{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"get_block\","
+                     "\"params\":{\"height\":%" PRIu64 "}}", height);
+    if (n < 0 || (size_t)n >= sizeof(request_payload)) {
+        ERROR_PRINT("get_block_info_by_height: payload too large");
+        return XCASH_ERROR;
+    }
+
+    char response_data[MEDIUM_BUFFER_SIZE] = {0};
+    if (send_http_request(response_data, sizeof(response_data),
+                          XCASH_DAEMON_IP, "/json_rpc", XCASH_DAEMON_PORT,
+                          "POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH,
+                          request_payload, HTTP_TIMEOUT_SETTINGS) != XCASH_OK) {
+        ERROR_PRINT("get_block_info_by_height: HTTP request failed");
+        return XCASH_ERROR;
+    }
+
+    // ---- Parse fields from response ----
+
+    // hash (string)
+    if (parse_json_data(response_data, "result.block_header.hash",
+                        out_hash, out_hash_len) != XCASH_OK) {
+        ERROR_PRINT("get_block_info_by_height: missing result.block_header.hash");
+        return XCASH_ERROR;
+    }
+
+    // reward (uint64)
+    if (out_reward) {
+        char tmp[64] = {0};
+        if (parse_json_data(response_data, "result.block_header.reward", tmp, sizeof(tmp)) != XCASH_OK) {
+            ERROR_PRINT("get_block_info_by_height: missing result.block_header.reward");
+            return XCASH_ERROR;
+        }
+        char *endp = NULL;
+        unsigned long long v = strtoull(tmp, &endp, 10);
+        if (!endp || *endp != '\0') {  // tmp should be an integer string (no .000000)
+            ERROR_PRINT("get_block_info_by_height: invalid reward value '%s'", tmp);
+            return XCASH_ERROR;
+        }
+        *out_reward = (uint64_t)v;
+    }
+
+    // timestamp (uint64)
+    if (out_timestamp) {
+        char tmp[32] = {0};
+        if (parse_json_data(response_data, "result.block_header.timestamp", tmp, sizeof(tmp)) != XCASH_OK) {
+            ERROR_PRINT("get_block_info_by_height: missing result.block_header.timestamp");
+            return XCASH_ERROR;
+        }
+        char *endp = NULL;
+        unsigned long long v = strtoull(tmp, &endp, 10);
+        if (!endp || *endp != '\0') {
+            ERROR_PRINT("get_block_info_by_height: invalid timestamp value '%s'", tmp);
+            return XCASH_ERROR;
+        }
+        *out_timestamp = (uint64_t)v;
+    }
+
+    // orphan_status (bool)
+    if (out_orphan) {
+        char tmp[8] = {0};
+        if (parse_json_data(response_data, "result.block_header.orphan_status", tmp, sizeof(tmp)) != XCASH_OK) {
+            ERROR_PRINT("get_block_info_by_height: missing result.block_header.orphan_status");
+            return XCASH_ERROR;
+        }
+        if (strcmp(tmp, "true") == 0 || strcmp(tmp, "TRUE") == 0 || strcmp(tmp, "1") == 0) {
+            *out_orphan = true;
+        } else if (strcmp(tmp, "false") == 0 || strcmp(tmp, "FALSE") == 0 || strcmp(tmp, "0") == 0) {
+            *out_orphan = false;
+        } else {
+            ERROR_PRINT("get_block_info_by_height: invalid orphan_status '%s'", tmp);
+            return XCASH_ERROR;
+        }
+    }
+
+    return XCASH_OK;
+}

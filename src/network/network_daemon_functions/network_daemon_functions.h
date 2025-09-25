@@ -10,14 +10,12 @@
 #include "network_functions.h"
 #include "string_functions.h"
 
-//int check_if_blockchain_is_fully_synced(void);
-//int get_current_block_height_network_data_nodes(void);
 int get_block_template(char* result, size_t result_size, size_t* reserved_offset_out);
 bool submit_block_template(const char* DATA);
-//int get_block_reserve_byte_data_hash(char *reserve_byte_data_hash, const char* BLOCK_HEIGHT);
 int get_current_block_height(char *result);
 int get_current_block_hash(char *result_hash);
 int get_previous_block_hash(char *result);
 bool is_blockchain_synced(char *target_height, char *height);
-//int get_previous_block_information(char *block_hash, char *block_reward, char *block_date_and_time);
+int get_block_info_by_height(uint64_t height, char *out_hash, size_t out_hash_len, uint64_t *out_reward, uint64_t *out_timestamp, bool *out_orphan);
+
 #endif

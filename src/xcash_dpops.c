@@ -2,7 +2,7 @@
 
 static bool show_help = false;
 static bool create_key = false;
-static int sig_requests = 0;
+static volatile sig_atomic_t sig_requests = 0;
 
 static char doc[] =
 "\n"
@@ -107,15 +107,32 @@ void cleanup_data_structures(void) {
 Name: sigint_handler
 Description: Shuts program down on signal
 ---------------------------------------------------------------------------------------------------------*/
-void sigint_handler(int sig_num) {
+//void sigint_handler(int sig_num) {
+//  sig_requests++;
+//  shutdown_db();
+//  stop_tcp_server();
+//  cleanup_data_structures();
+//  exit(0);
+//}
+
+static void sigint_handler(int signum) {
   sig_requests++;
-  DEBUG_PRINT("Termination signal %d received [%d] times. Shutting down...", sig_num, sig_requests);
-  shutdown_db();
-  stop_tcp_server();
-  cleanup_data_structures();
-  fprintf(stderr, "Daemon is shutting down...\n");
-  exit(0);
+  atomic_store(&shutdown_requested, true);
+  if (sig_requests >= 2) {
+    _exit(1);
+  }
 }
+
+
+static void install_signal_handlers(void) {
+  struct sigaction sa = {0};
+  sa.sa_handler = sigint_handler;
+  sigemptyset(&sa.sa_mask);
+  sa.sa_flags = SA_RESTART; // restart some interrupted syscalls
+  sigaction(SIGINT,  &sa, NULL);  // Ctrl+C in foreground
+  sigaction(SIGTERM, &sa, NULL);  // systemd/service stop
+}
+
 
 /*---------------------------------------------------------------------------------------------------------
 Name: is_ntp_enabled
@@ -169,6 +186,7 @@ Parameters:
 Return: 0 if an error has occured, 1 if successfull
 ---------------------------------------------------------------------------------------------------------*/
 int main(int argc, char *argv[]) {
+  install_signal_handlers();
   arg_config_t arg_config = {0};
   init_globals();
   setenv("ARGP_HELP_FMT", "rmargin=120", 1);
@@ -205,7 +223,7 @@ int main(int argc, char *argv[]) {
     FATAL_ERROR_EXIT("Failed to convert the block-verifiers-secret-key to a byte array: %s", arg_config.block_verifiers_secret_key);
   }
 
-  signal(SIGINT, sigint_handler);
+//  signal(SIGINT, sigint_handler);
 
   if (start_tcp_server(XCASH_DPOPS_PORT)) {
 //    pthread_join(server_thread, NULL);
@@ -225,6 +243,7 @@ int main(int argc, char *argv[]) {
   if (get_node_data()) {
     print_starter_state(&arg_config);
     start_block_production();
+    fprintf(stderr, "Daemon is shutting down...\n");
   } else {
     FATAL_ERROR_EXIT("Failed to get the nodes public wallet address"); 
   }
