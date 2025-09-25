@@ -219,12 +219,20 @@ int sync_block_verifiers_minutes_and_seconds(const int MINUTES, const int SECOND
 
   struct timespec req = {
       .tv_sec = (time_t)sleep_seconds,
-      .tv_nsec = (long)((sleep_seconds - (time_t)sleep_seconds) * 1e9)};
+      .tv_nsec = (long)((sleep_seconds - (time_t)sleep_seconds) * 1e9)}, rem;
 
   INFO_PRINT("Sleeping for %.3f seconds to sync to target time...", sleep_seconds);
-  if (nanosleep(&req, NULL) != 0) {
-    ERROR_PRINT("nanosleep interrupted: %s", strerror(errno));
-    return XCASH_ERROR;
+
+
+//  if (nanosleep(&req, NULL) != 0) {
+//    ERROR_PRINT("nanosleep interrupted: %s", strerror(errno));
+//    return XCASH_ERROR;
+//  }
+
+  for (;;) {
+    if (nanosleep(&req, &rem) == 0) return 0;
+    if (errno != EINTR) return -1;     // real error
+    req = rem;                         // interrupted by signal -> continue
   }
 
   return XCASH_OK;
