@@ -120,7 +120,7 @@ int parse_json_data(const char *data, const char *field_name, char *result, size
     strncpy(path_copy, field_name, sizeof(path_copy) - 1);
     path_copy[sizeof(path_copy) - 1] = '\0';
 
-    cJSON *current_obj = json;
+/*
     char *token = strtok(path_copy, ".");
     while (token != NULL) {
         // Check for array access syntax (e.g., addresses[0])
@@ -153,13 +153,47 @@ int parse_json_data(const char *data, const char *field_name, char *result, size
         }
         token = strtok(NULL, ".");
     }
+*/
+
+    cJSON *current_obj = json;
+    char *saveptr = NULL;
+    char *token = strtok_r(path_copy, ".", &saveptr);
+    while (token != NULL) {
+      char *bracket_pos = strchr(token, '[');
+      if (bracket_pos) {
+        *bracket_pos = '\0';
+
+        current_obj = cJSON_GetObjectItemCaseSensitive(current_obj, token);
+        if (!current_obj || !cJSON_IsArray(current_obj)) {
+          ERROR_PRINT("Field '%s' not found or is not an array", token);
+          cJSON_Delete(json);
+          return XCASH_ERROR;
+        }
+
+        int index = atoi(bracket_pos + 1);
+        current_obj = cJSON_GetArrayItem(current_obj, index);
+        if (!current_obj) {
+          ERROR_PRINT("Index %d out of range for field '%s'", index, token);
+          cJSON_Delete(json);
+          return XCASH_ERROR;
+        }
+      } else {
+        current_obj = cJSON_GetObjectItemCaseSensitive(current_obj, token);
+        if (!current_obj) {
+          ERROR_PRINT("Field '%s' not found in JSON", field_name);
+          cJSON_Delete(json);
+          return XCASH_ERROR;
+        }
+      }
+      token = strtok_r(NULL, ".", &saveptr);
+    }
 
     // Extract and store the field value
     if (cJSON_IsString(current_obj) && current_obj->valuestring) {
         strncpy(result, current_obj->valuestring, result_size - 1);
         result[result_size - 1] = '\0';
     } else if (cJSON_IsNumber(current_obj)) {
-        if (strcmp(field_name, "result.count") == 0) {
+        if (strcmp(field_name, "result.count") == 0 || strcmp(field_name, "result.block_header.reward") == 0) {
             snprintf(result, result_size, "%d", current_obj->valueint);
         } else if (strcmp(field_name, "result.spent") == 0 || strcmp(field_name, "result.total") == 0) {
             snprintf(result, result_size, "%.0f", current_obj->valuedouble);  

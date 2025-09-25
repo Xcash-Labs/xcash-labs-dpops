@@ -204,8 +204,8 @@ int get_block_template(char* result, size_t result_size, size_t* reserved_offset
 }
 
 /*---------------------------------------------------------------------------------------------------------
-Name: submit_block_template
-Description: Submits the final block blob to the xcashd daemon via JSON-RPC using `submit_block`.
+Name: get_block_by_height
+Description: Gets the current block info by height
 Parameters:
   DATA - Hex-encoded block blob string to be submitted.
 Return:
@@ -247,3 +247,19 @@ bool submit_block_template(const char* DATA)
   ERROR_PRINT("Could not submit the block template.");
   return XCASH_ERROR;
 }
+
+
+/*---------------------------------------------------------------------------------------------------------
+Name: get_block_info_by_height
+Description: Fetches block info at a given height via daemon JSON-RPC get_block:
+             returns hash, reward (atomic units), timestamp, and orphan_status.
+Parameters:
+  height         - Block height to query
+  out_hash       - Buffer to receive the block hash (size >= BLOCK_HASH_LENGTH+1)
+  out_hash_len   - Size of out_hash buffer
+  out_reward     - (optional) pointer to uint64_t for block reward
+  out_timestamp  - (optional) pointer to uint64_t for block timestamp
+  out_orphan     - (optional) pointer to bool/int for orphan status (true/1 or false/0)
+Return:
+  XCASH_OK on success, XCASH_ERROR on failure
+---------------------------------------------------------------------------------------------------------*/
