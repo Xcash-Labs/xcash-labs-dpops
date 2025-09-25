@@ -125,8 +125,6 @@ void install_signal_handlers(void) {
   sigaction(SIGTERM, &sa, NULL);
 }
 
-//  signal(SIGINT, sigint_handler);
-
 /*---------------------------------------------------------------------------------------------------------
 Name: is_ntp_enabled
 Description: Checks if ntp is enabled for the server
@@ -219,12 +217,7 @@ int main(int argc, char *argv[]) {
     FATAL_ERROR_EXIT("Failed to convert the block-verifiers-secret-key to a byte array: %s", arg_config.block_verifiers_secret_key);
   }
 
-  INFO_PRINT("Waiting for block production to start");
-  sync_block_verifiers_minutes_and_seconds(0, 57);
-
-  if (start_tcp_server(XCASH_DPOPS_PORT)) {
-//    pthread_join(server_thread, NULL);
-  } else {
+  if (!start_tcp_server(XCASH_DPOPS_PORT)) {
     FATAL_ERROR_EXIT("Failed to start TCP server.");
   }
 
