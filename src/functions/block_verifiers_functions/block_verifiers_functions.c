@@ -257,8 +257,8 @@ int sync_block_verifiers_minutes_and_seconds(const int MINUTES, const int SECOND
   double sleep_seconds = target_seconds - current_time_in_block;
 
   if (sleep_seconds <= 0.0) {
-    WARNING_PRINT("Missed sync point by %.3f seconds", -sleep_seconds);
-    return XCASH_ERROR;                       // same as original
+    DEBUG_PRINT("Missed sync point by %.3f seconds", -sleep_seconds);
+    return XCASH_ERROR;
   }
 
   // Build relative timespec (no libm needed)
@@ -283,10 +283,6 @@ int sync_block_verifiers_minutes_and_seconds(const int MINUTES, const int SECOND
 
   return XCASH_OK;
 }
-
-
-
-
 
 /*---------------------------------------------------------------------------------------------------------
 Name: generate_and_request_vrf_data_sync
