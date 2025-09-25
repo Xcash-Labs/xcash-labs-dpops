@@ -178,6 +178,7 @@ int block_verifiers_create_block(const char* vote_hash_hex, uint8_t total_vote, 
     if (!submit_block_template(block_blob)) {
       return ROUND_ERROR;
     }
+    
     INFO_PRINT_STATUS_OK("Block signature sent");
   }
 
