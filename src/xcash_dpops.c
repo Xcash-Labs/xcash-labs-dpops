@@ -107,32 +107,13 @@ void cleanup_data_structures(void) {
 Name: sigint_handler
 Description: Shuts program down on signal
 ---------------------------------------------------------------------------------------------------------*/
-//void sigint_handler(int sig_num) {
-//  sig_requests++;
-//  shutdown_db();
-//  stop_tcp_server();
-//  cleanup_data_structures();
-//  exit(0);
-//}
-
-static void sigint_handler(int signum) {
+void sigint_handler(int sig_num) {
   sig_requests++;
   atomic_store(&shutdown_requested, true);
   if (sig_requests >= 2) {
-    _exit(1);
+    _exit(0);
   }
 }
-
-
-static void install_signal_handlers(void) {
-  struct sigaction sa = {0};
-  sa.sa_handler = sigint_handler;
-  sigemptyset(&sa.sa_mask);
-  sa.sa_flags = SA_RESTART; // restart some interrupted syscalls
-  sigaction(SIGINT,  &sa, NULL);  // Ctrl+C in foreground
-  sigaction(SIGTERM, &sa, NULL);  // systemd/service stop
-}
-
 
 /*---------------------------------------------------------------------------------------------------------
 Name: is_ntp_enabled
@@ -186,9 +167,9 @@ Parameters:
 Return: 0 if an error has occured, 1 if successfull
 ---------------------------------------------------------------------------------------------------------*/
 int main(int argc, char *argv[]) {
-  install_signal_handlers();
   arg_config_t arg_config = {0};
   init_globals();
+  signal(SIGINT, sigint_handler);
   setenv("ARGP_HELP_FMT", "rmargin=120", 1);
 
   if (argc == 1) {
