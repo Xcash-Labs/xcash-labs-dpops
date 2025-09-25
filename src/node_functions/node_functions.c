@@ -1,31 +1,30 @@
 #include "node_functions.h"
 
 bool get_node_data(void) {
-  // Get the wallet's public address
-  const int MAX_WAIT_SEC = 300;
-  const int SLEEP_SEC = 5;
-  time_t t0 = time(NULL);
+  // --- Wait for wallet public address to be available (from wallet process) ---
+  const int SLEEP_SEC = 10;
   int attempt = 0;
 
-  while (!get_public_address()) {
-    if (difftime(time(NULL), t0) >= MAX_WAIT_SEC) {
-      FATAL_ERROR_EXIT("Could not get the wallet's public address within %d seconds", MAX_WAIT_SEC);
-      return XCASH_ERROR;
+  for (;;) {
+    if (get_public_address() && xcash_wallet_public_address[0] != '\0') {
+      INFO_PRINT("Wallet is ready after %d attempt(s).", attempt);
+      break;
     }
-    attempt++;
+    ++attempt;
     WARNING_PRINT("Wallet not ready yet (attempt %d). Retrying in %ds...", attempt, SLEEP_SEC);
     sleep(SLEEP_SEC);
   }
 
   if (xcash_wallet_public_address[0] == '\0') {
-    ERROR_PRINT("Wallet public address is empty");
-    return XCASH_ERROR;
+    FATAL_ERROR_EXIT("Wallet public address is empty");
   }
 
+  // --- Load VRF public key (may be empty if delegate not registered yet) ---
   get_vrf_public_key();
   if (vrf_public_key[0] == '\0') {
-    WARNING_PRINT("Failed to read vrf_public_key for delegate, has this delegate been registered?");
+    WARNING_PRINT("Failed to read vrf_public_key for delegate; has this delegate been registered?");
   }
+
   return XCASH_OK;
 }
 
