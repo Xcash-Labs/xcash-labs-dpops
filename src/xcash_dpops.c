@@ -108,12 +108,14 @@ Name: sigint_handler
 Description: Shuts program down on signal
 ---------------------------------------------------------------------------------------------------------*/
 void sigint_handler(int sig_num) {
+  void(sig_num);
   sig_requests++;
   atomic_store(&shutdown_requested, true);
   if (sig_requests >= 2) {
     _exit(0);
   }
 }
+
 
 /*---------------------------------------------------------------------------------------------------------
 Name: is_ntp_enabled
