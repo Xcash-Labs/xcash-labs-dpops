@@ -116,6 +116,16 @@ void sigint_handler(int sig_num) {
   }
 }
 
+void install_signal_handlers(void) {
+  struct sigaction sa = {0};
+  sa.sa_handler = sigint_handler;
+  sigemptyset(&sa.sa_mask);
+  sa.sa_flags = SA_RESTART;
+  sigaction(SIGINT,  &sa, NULL);
+  sigaction(SIGTERM, &sa, NULL);
+}
+
+//  signal(SIGINT, sigint_handler);
 
 /*---------------------------------------------------------------------------------------------------------
 Name: is_ntp_enabled
@@ -171,7 +181,10 @@ Return: 0 if an error has occured, 1 if successfull
 int main(int argc, char *argv[]) {
   arg_config_t arg_config = {0};
   init_globals();
-  signal(SIGINT, sigint_handler);
+//  signal(SIGINT, sigint_handler);
+  install_signal_handlers();
+
+
   setenv("ARGP_HELP_FMT", "rmargin=120", 1);
 
   if (argc == 1) {
@@ -206,7 +219,8 @@ int main(int argc, char *argv[]) {
     FATAL_ERROR_EXIT("Failed to convert the block-verifiers-secret-key to a byte array: %s", arg_config.block_verifiers_secret_key);
   }
 
-//  signal(SIGINT, sigint_handler);
+  INFO_PRINT("Waiting for block production to start");
+  sync_block_verifiers_minutes_and_seconds(0, 57);
 
   if (start_tcp_server(XCASH_DPOPS_PORT)) {
 //    pthread_join(server_thread, NULL);
