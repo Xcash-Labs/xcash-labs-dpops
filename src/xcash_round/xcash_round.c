@@ -535,26 +535,6 @@ void start_block_production(void) {
       printed_on_enter = false;  // we’re in the 0–1s window; let the round start
     }
 
-
-/*
-    if (seconds_within_block > 1) {
-      time_t now = current_time.tv_sec;
-      if (!printed_on_enter) {
-        INFO_PRINT("Next round starts in [%ld:%02ld]", 0L, 59 - (now % 60));
-        printed_on_enter = true;
-        last_log_sec = now;
-      } else if (now - last_log_sec >= 10) {
-        INFO_PRINT("Next round starts in [%ld:%02ld]", 0L, 59 - (now % 60));
-        last_log_sec = now;
-      }
-
-      sleep(1);
-      continue;
-    } else {
-      printed_on_enter = false;
-    }
-*/
-
     current_block_height[0] = '\0';
     delegate_db_hash_mismatch = 0;
     atomic_store(&wait_for_vrf_init, true);
