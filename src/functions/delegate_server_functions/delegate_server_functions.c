@@ -270,7 +270,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
   bson_append_int64(&bson, "total_vote_count", -1, set_counts);
   bson_append_double(&bson, "delegate_fee", -1, set_delegate_fee);
   int64_t ms = (int64_t)registration_time * 1000;
-  bson_append_date_time(&bson, "registration_timestamp", -1, ms)
+  bson_append_date_time(&bson, "registration_timestamp", -1, ms);
 
   if (insert_document_into_collection_bson(DATABASE_NAME, DB_COLLECTION_DELEGATES, &bson) != XCASH_OK) {
     bson_destroy(&bson);
