@@ -193,7 +193,8 @@ int parse_json_data(const char *data, const char *field_name, char *result, size
         strncpy(result, current_obj->valuestring, result_size - 1);
         result[result_size - 1] = '\0';
     } else if (cJSON_IsNumber(current_obj)) {
-        if (strcmp(field_name, "result.count") == 0 || strcmp(field_name, "result.block_header.reward") == 0) {
+        if (strcmp(field_name, "result.count") == 0 || strcmp(field_name, "result.block_header.reward") == 0 ||
+          strcmp(field_name, "result.block_header.timestamp") == 0) {
             snprintf(result, result_size, "%d", current_obj->valueint);
         } else if (strcmp(field_name, "result.spent") == 0 || strcmp(field_name, "result.total") == 0) {
             snprintf(result, result_size, "%.0f", current_obj->valuedouble);  
