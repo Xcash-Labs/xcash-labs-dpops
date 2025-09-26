@@ -288,8 +288,6 @@ int get_block_info_by_height(uint64_t height,
         return XCASH_ERROR;
     }
 
-    INFO_PRINT("Payload: %s", request_payload);
-
     char response_data[MEDIUM_BUFFER_SIZE] = {0};
     if (send_http_request(response_data, sizeof(response_data),
                           XCASH_DAEMON_IP, "/json_rpc", XCASH_DAEMON_PORT,
@@ -298,10 +296,6 @@ int get_block_info_by_height(uint64_t height,
         ERROR_PRINT("get_block_info_by_height: HTTP request failed");
         return XCASH_ERROR;
     }
-
-    INFO_PRINT("Payload: %s", response_data);  
-
-    // ---- Parse fields from response ----
 
     // hash (string)
     if (parse_json_data(response_data, "result.block_header.hash",
