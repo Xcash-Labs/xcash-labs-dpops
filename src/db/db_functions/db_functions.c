@@ -652,7 +652,6 @@ bool add_indexes(void) {
     mongoc_collection_destroy(coll);
   }
 
-  
   /* =========================
      BLOCKS_FOUND COLLECTION
      ========================= */
@@ -666,24 +665,17 @@ bool add_indexes(void) {
     bson_t k1, o1;
     bson_init(&k1);
     bson_init(&o1);
-    BSON_APPEND_INT32(&k1, "block_height", 1);  // key: block_height ascending
-    BSON_APPEND_UTF8(&o1, "name", "u_block_height");
-    BSON_APPEND_BOOL(&o1, "unique", true);
+    BSON_APPEND_INT32(&k1, "block_height", 1);        // key: block_height ascending
+    BSON_APPEND_UTF8(&o1, "name", "u_block_height");  // index name
+    BSON_APPEND_BOOL(&o1, "unique", true);            // unique constraint
     mongoc_index_model_t* m1 = mongoc_index_model_new(&k1, &o1);
 
     mongoc_index_model_t* models[] = {m1};
 
-    // createIndexes options
+    // createIndexes options (standalone: no commitQuorum / writeConcern)
     bson_t create_opts;
     bson_init(&create_opts);
-    BSON_APPEND_UTF8(&create_opts, "commitQuorum", "majority");
     BSON_APPEND_INT32(&create_opts, "maxTimeMS", 15000);
-
-    // writeConcern: majority
-    bson_t wc;
-    bson_init(&wc);
-    BSON_APPEND_UTF8(&wc, "w", "majority");
-    BSON_APPEND_DOCUMENT(&create_opts, "writeConcern", &wc);
 
     // run createIndexes
     bson_t reply;
@@ -705,7 +697,6 @@ bool add_indexes(void) {
 
     // cleanup
     bson_destroy(&reply);
-    bson_destroy(&wc);
     bson_destroy(&create_opts);
 
     mongoc_index_model_destroy(m1);
