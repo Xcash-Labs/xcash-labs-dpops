@@ -508,31 +508,28 @@ void start_block_production(void) {
   static time_t last_log_sec = 0;
 
   while (!shutdown_requested) {
-    gettimeofday(&current_time, NULL);
-    size_t seconds_within_block = current_time.tv_sec % (BLOCK_TIME * 60);
 
-    // Skip production if outside initial window
-    if (seconds_within_block > 1) {
-      time_t now = current_time.tv_sec;
-      long remain = 60 - (now % 60);  // correct countdown to the next boundary
+    for (;;) {
+      gettimeofday(&current_time, NULL);
+      long within = current_time.tv_sec % BLOCK_TIME_SEC;
 
-      if (!printed_on_enter) {
+      if (within <= 1) {  // entry window: 0..1 sec
+        printed_on_enter = false;
+        break;
+      }
+
+      long remain = BLOCK_TIME_SEC - within;  // time until boundary
+
+      if (!printed_on_enter || (current_time.tv_sec - last_log_sec) >= 1) {
         INFO_PRINT("Next round starts in [%ld:%02ld]", remain / 60, remain % 60);
         printed_on_enter = true;
-        last_log_sec = now;
-      } else if (now - last_log_sec >= 10) {
-        INFO_PRINT("Next round starts in [%ld:%02ld]", remain / 60, remain % 60);
-        last_log_sec = now;
+        last_log_sec = current_time.tv_sec;
       }
 
-      // Robust 1-second sleep that resumes if interrupted
+      // 1s sleep that resumes after EINTR
       unsigned int left = 1;
-      while ((left = sleep(left)) > 0) { /* resume if EINTR */
+      while ((left = sleep(left)) > 0) { /* continue on signal */
       }
-
-      continue;
-    } else {
-      printed_on_enter = false;  // we’re in the 0–1s window; let the round start
     }
 
     current_block_height[0] = '\0';
