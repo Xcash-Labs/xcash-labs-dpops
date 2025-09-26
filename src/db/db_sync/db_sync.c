@@ -112,7 +112,13 @@ bool create_delegate_online_ip_list(char* out_data, size_t out_data_size)
       return false;
     }
 
-    query = BCON_NEW("online_status", BCON_UTF8("true"));
+    // Special case on first pos block when nothing marked online yet
+    if (current_block_height == XCASH_PROOF_OF_STAKE_BLOCK_HEIGHT) {
+      query = bson_new();
+    } else {
+      query = BCON_NEW("online_status", BCON_UTF8("true"));
+    }
+
     opts = BCON_NEW("sort", "{",
                     "delegate_type", BCON_INT32(1),
                     "_id", BCON_INT32(1),

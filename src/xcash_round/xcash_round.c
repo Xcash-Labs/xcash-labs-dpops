@@ -617,7 +617,7 @@ void start_block_production(void) {
       }
 
 #ifndef SEED_NODE_ON
-      // Add block record only on delegate that found block 
+      // Add block record only on delegate that found block.  Seed nodes should not be part of block create process
       if (update_needed) {
         const bool block_found = (strcmp(xcash_wallet_public_address, producer_refs[0].public_address) == 0);
         if (block_found && !is_orphan) {
