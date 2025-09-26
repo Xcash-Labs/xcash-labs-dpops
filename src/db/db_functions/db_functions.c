@@ -652,6 +652,70 @@ bool add_indexes(void) {
     mongoc_collection_destroy(coll);
   }
 
+  
+  /* =========================
+     BLOCKS_FOUND COLLECTION
+     ========================= */
+  // don't add to seed nodes
+#ifndef SEED_NODE_ON
+  {
+    mongoc_collection_t* coll =
+        mongoc_client_get_collection(client, DATABASE_NAME, DB_COLLECTION_BLOCKS_FOUND);
+
+    // --- unique index on block_height ---
+    bson_t k1, o1;
+    bson_init(&k1);
+    bson_init(&o1);
+    BSON_APPEND_INT32(&k1, "block_height", 1);  // key: block_height ascending
+    BSON_APPEND_UTF8(&o1, "name", "u_block_height");
+    BSON_APPEND_BOOL(&o1, "unique", true);
+    mongoc_index_model_t* m1 = mongoc_index_model_new(&k1, &o1);
+
+    mongoc_index_model_t* models[] = {m1};
+
+    // createIndexes options
+    bson_t create_opts;
+    bson_init(&create_opts);
+    BSON_APPEND_UTF8(&create_opts, "commitQuorum", "majority");
+    BSON_APPEND_INT32(&create_opts, "maxTimeMS", 15000);
+
+    // writeConcern: majority
+    bson_t wc;
+    bson_init(&wc);
+    BSON_APPEND_UTF8(&wc, "w", "majority");
+    BSON_APPEND_DOCUMENT(&create_opts, "writeConcern", &wc);
+
+    // run createIndexes
+    bson_t reply;
+    bson_error_t ierr;
+    bson_init(&reply);
+
+    if (!mongoc_collection_create_indexes_with_opts(
+            coll, models, (int)(sizeof(models) / sizeof(models[0])),
+            &create_opts, &reply, &ierr)) {
+      char* json = bson_as_canonical_extended_json(&reply, NULL);
+      if (!(strstr(ierr.message, "already exists") ||
+            (json && strstr(json, "already exists")))) {
+        ok = false;  // assumes 'ok' exists in your surrounding scope
+        fprintf(stderr, "[indexes] %s failed: %s\nDetails: %s\n",
+                DB_COLLECTION_BLOCKS_FOUND, ierr.message, json ? json : "(no reply)");
+      }
+      if (json) bson_free(json);
+    }
+
+    // cleanup
+    bson_destroy(&reply);
+    bson_destroy(&wc);
+    bson_destroy(&create_opts);
+
+    mongoc_index_model_destroy(m1);
+    bson_destroy(&o1);
+    bson_destroy(&k1);
+
+    mongoc_collection_destroy(coll);
+  }
+#endif
+
   mongoc_client_pool_push(database_client_thread_pool, client);
   return ok;
 }

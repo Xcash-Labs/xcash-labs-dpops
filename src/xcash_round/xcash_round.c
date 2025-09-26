@@ -983,7 +983,8 @@ void start_block_production(void) {
     // set up delegates for next round
     pthread_mutex_lock(&delegates_all_lock);
     if (!fill_delegates_from_db()) {
-      FATAL_ERROR_EXIT("Failed to load and organize delegates for next round, Possible problem with Mongodb");
+      ERROR_PRINT("Failed to load and organize delegates for next round, Possible problem with Mongodb");
+      atomic_store(&shutdown_requested, true);
     }
     pthread_mutex_unlock(&delegates_all_lock);
   }

@@ -112,14 +112,15 @@ int read_organize_delegates(delegates_t* delegates, size_t* delegates_count_resu
           } else if (strcmp(db_key, "public_key") == 0 && BSON_ITER_HOLDS_UTF8(&record_iter)) {
             strncpy(delegates[delegate_index].public_key, bson_iter_utf8(&record_iter, NULL), VRF_PUBLIC_KEY_LENGTH);
           } else if (strcmp(db_key, "registration_timestamp") == 0) {
-            if (BSON_ITER_HOLDS_INT64(&record_iter) || BSON_ITER_HOLDS_INT32(&record_iter)) {
-              time_t reg_time = bson_iter_as_int64(&record_iter);
-              if (now - reg_time < 599) {      // 10 mins
+            if (BSON_ITER_HOLDS_DATE_TIME(&record_iter)) {
+              int64_t ms = bson_iter_date_time(&record_iter);
+              time_t reg_time = (time_t)(ms / 1000);
+              if (reg_time >= (now - 600)) {  // 600s = 10 min, Skip if within last 10 minutes
                 skip_delegate = true;
               }
-              delegates[delegate_index].registration_timestamp = reg_time;
+              delegates[delegate_index].registration_timestamp = reg_time;  // store as seconds
             } else {
-              WARNING_PRINT("Unexpected type for registration_timestamp: %d", bson_iter_type(&record_iter));
+              WARNING_PRINT("registration_timestamp is not a BSON Date; ignoring field");
             }
           }
         }

@@ -269,7 +269,8 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
   // Numbers
   bson_append_int64(&bson, "total_vote_count", -1, set_counts);
   bson_append_double(&bson, "delegate_fee", -1, set_delegate_fee);
-  bson_append_int64(&bson, "registration_timestamp", -1, registration_time);
+  int64_t ms = (int64_t)registration_time * 1000;
+  bson_append_date_time(&bson, "registration_timestamp", -1, ms)
 
   if (insert_document_into_collection_bson(DATABASE_NAME, DB_COLLECTION_DELEGATES, &bson) != XCASH_OK) {
     bson_destroy(&bson);
@@ -663,7 +664,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
     ++valid_kv_count;
   }
 
-  BSON_APPEND_INT64(setdoc_bson, "registration_timestamp", (int64_t)registration_time);
+  BSON_APPEND_DATE_TIME(setdoc_bson, "registration_timestamp", (int64_t)registration_time * 1000);
 
   if (valid_kv_count == 0) {
     bson_destroy(setdoc_bson);
