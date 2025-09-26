@@ -570,8 +570,6 @@ void start_block_production(void) {
       bool update_needed = false;
       char ck_block_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
       char current_block_hash[BLOCK_HASH_LENGTH + 1] = {0};
-      uint64_t t_height = {0};
-      char tmphash[BLOCK_HASH_LENGTH + 1] = {0};
       uint64_t reward_atomic = 0;
       uint64_t ts_epoch = 0;
       bool is_orphan = false;
@@ -581,30 +579,20 @@ void start_block_production(void) {
         goto end_of_round_skip_block;
       }
 
-      if (get_current_block_hash(current_block_hash) != XCASH_OK) {
-        ERROR_PRINT("Can't get current block hash");
-        goto end_of_round_skip_block;
-      }
-
-      INFO_PRINT("CURRENT_HASH: %s", current_block_hash);
-
       uint64_t ck_height = strtoull(ck_block_height, NULL, 10);
       uint64_t cur_height = strtoull(current_block_height, NULL, 10);
-      t_height = ck_height;
 
-      bool rc = get_block_info_by_height(cur_height, tmphash, sizeof(tmphash), &reward_atomic, &ts_epoch, &is_orphan);
+      bool rc = get_block_info_by_height(cur_height, current_block_hash, sizeof(current_block_hash), &reward_atomic, &ts_epoch, &is_orphan);
       if (rc != XCASH_OK) {
           ERROR_PRINT("get_block_info_by_height(%llu) failed", (unsigned long long)t_height);
+          goto end_of_round_skip_block;
       } else {
           INFO_PRINT("h=%llu hash=%s reward=%llu orphan=%s ts=%llu",
-             (unsigned long long)t_height, tmphash,
+             (unsigned long long)t_height, current_block_hash,
              (unsigned long long)reward_atomic,
              is_orphan ? "true" : "false",
              (unsigned long long)ts_epoch);
       }
-
-
-
 
       if (ck_height == cur_height + 1) {
         update_needed = true;
