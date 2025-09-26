@@ -588,7 +588,7 @@ void start_block_production(void) {
           goto end_of_round_skip_block;
       } else {
           INFO_PRINT("h=%llu hash=%s reward=%llu orphan=%s ts=%llu",
-             (unsigned long long)t_height, current_block_hash,
+             (unsigned long long)cur_height, current_block_hash,
              (unsigned long long)reward_atomic,
              is_orphan ? "true" : "false",
              (unsigned long long)ts_epoch);
