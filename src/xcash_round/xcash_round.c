@@ -617,7 +617,7 @@ void start_block_production(void) {
       }
 
       // Add block record only on delegate that found block 
-      if (update_needed) {
+      if (update_needed && !is_seed_node) {
         const bool block_found = (strcmp(xcash_wallet_public_address, producer_refs[0].public_address) == 0);
         if (block_found && !is_orphan) {
           bson_t doc;
