@@ -584,20 +584,16 @@ void start_block_production(void) {
 
       bool rc = get_block_info_by_height(cur_height, current_block_hash, sizeof(current_block_hash), &reward_atomic, &ts_epoch, &is_orphan);
       if (rc != XCASH_OK) {
-          ERROR_PRINT("get_block_info_by_height(%llu) failed", (unsigned long long)cur_height);
-          goto end_of_round_skip_block;
-      } else {
-          INFO_PRINT("h=%llu hash=%s reward=%llu orphan=%s ts=%llu",
-             (unsigned long long)cur_height, current_block_hash,
-             (unsigned long long)reward_atomic,
-             is_orphan ? "true" : "false",
-             (unsigned long long)ts_epoch);
+        ERROR_PRINT("get_block_info_by_height(%llu) failed", (unsigned long long)cur_height);
+        goto end_of_round_skip_block;
       }
 
+      // New block was created
       if (ck_height == cur_height + 1) {
         update_needed = true;
       }
 
+      // Update online status
       for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
         if (strlen(delegates_all[i].public_address) > 0 && strlen(delegates_all[i].public_key) > 0) {
           if (strcmp(delegates_all[i].online_status, delegates_all[i].online_status_orginal) != 0) {
@@ -614,6 +610,7 @@ void start_block_production(void) {
             BSON_APPEND_UTF8(&update_fields, "online_status", tmp_status);
             if (update_document_from_collection_bson(DATABASE_NAME, DB_COLLECTION_DELEGATES, &filter, &update_fields) != XCASH_OK) {
               ERROR_PRINT("Failed to update online_status for delegate %s", delegates_all[i].public_address);
+              goto end_of_round_skip_block;
             }
 
             bson_destroy(&filter);
@@ -622,8 +619,27 @@ void start_block_production(void) {
         }
       }
 
+      // Add block record only on delegate that found block 
       if (update_needed) {
+        const bool block_found = strcmp(xcash_wallet_public_address, producer_refs[0].public_address == 0);
+        if (block_found && !is_orphan) {
+          bson_t doc;
+          bson_init(&doc);
+          BSON_APPEND_UTF8(&doc, "_id", current_block_hash);
+          BSON_APPEND_INT64(&doc, "block_height", (int64_t)cur_height);
+          BSON_APPEND_INT64(&doc, "block_reward", (int64_t)reward_atomic);
+          BSON_APPEND_DATE_TIME(&doc, "timestamp", (int64_t)ts_epoch * 1000);
 
+          if (insert_document_into_collection_bson(DATABASE_NAME, DB_COLLECTION_BLOCKS_FOUND, &doc) != 1) {
+            ERROR_PRINT("Failed to record block: hash=%s height=%llu reward=%llu (epoch=%llu) collection=%s",
+                current_block_hash, (unsigned long long)cur_height, (unsigned long long)reward_atomic,
+                (unsigned long long)ts_epoch,
+                DB_COLLECTION_BLOCKS_FOUND);
+            bson_destroy(&doc);
+          }
+
+          bson_destroy(&doc);
+        }
       }
 
 #ifdef SEED_NODE_ON
