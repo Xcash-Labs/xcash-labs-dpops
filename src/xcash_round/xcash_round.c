@@ -590,13 +590,14 @@ void start_block_production(void) {
 
       uint64_t ck_height = strtoull(ck_block_height, NULL, 10);
       uint64_t cur_height = strtoull(current_block_height, NULL, 10);
+      t_height = ck_height;
 
-      bool rc = get_block_info_by_height(ht, tmphash, sizeof(tmphash), &reward_atomic, &ts_epoch, &is_orphan);
+      bool rc = get_block_info_by_height(t_height), tmphash, sizeof(tmphash), &reward_atomic, &ts_epoch, &is_orphan);
       if (rc != XCASH_OK) {
           ERROR_PRINT("get_block_info_by_height(%llu) failed", (unsigned long long)h);
       } else {
-          INFO_PRINT("h=%llu tmphash=%s reward=%llu orphan=%s ts=%llu",
-             (unsigned long long)h, hash,
+          INFO_PRINT("h=%llu hash=%s reward=%llu orphan=%s ts=%llu",
+             (unsigned long long)t_height, tmphash,
              (unsigned long long)reward_atomic,
              is_orphan ? "true" : "false",
              (unsigned long long)ts_epoch);
