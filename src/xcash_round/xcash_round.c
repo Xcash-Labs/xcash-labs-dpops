@@ -545,17 +545,14 @@ void start_block_production(void) {
 
     // Final step - Wait for block creation and DB Updates or Node clean-up
     snprintf(current_round_part, sizeof(current_round_part), "%d", 12);
-    int wait_min = 57;
-    if (round_result == ROUND_ERROR) {
-      wait_min = 40;
-    }
     if (round_result == ROUND_SKIP || round_result == ROUND_ERROR) {
       INFO_STAGE_PRINT("Part 12 - Wait for Node clean-up / sync");
     } else {
       INFO_STAGE_PRINT("Part 12 - Wait for Block Creation");
     }
 
-    if (sync_block_verifiers_minutes_and_seconds(0, wait_min) == XCASH_ERROR) {
+    // 10 secs to perform cleanup or add stats and other info
+    if (sync_block_verifiers_minutes_and_seconds(0, 50) == XCASH_ERROR) {
       INFO_PRINT("Failed to create block in the allotted time, skipping round");
       goto end_of_round_skip_block;
     }
@@ -570,11 +567,14 @@ void start_block_production(void) {
 
     if (round_result == ROUND_OK) {
       last_round_success = true;
-
-#ifdef SEED_NODE_ON
-      bool update_stats = false;
+      bool update_needed = false;
       char ck_block_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
       char current_block_hash[BLOCK_HASH_LENGTH + 1] = {0};
+      uint64_t t_height = {0};
+      char tmphash[BLOCK_HASH_LENGTH + 1] = {0};
+      uint64_t reward_atomic = 0;
+      uint64_t ts_epoch = 0;
+      bool is_orphan = false;
 
       if (get_current_block_height(ck_block_height) != XCASH_OK) {
         ERROR_PRINT("Can't get current block height");
@@ -586,13 +586,28 @@ void start_block_production(void) {
         goto end_of_round_skip_block;
       }
 
+      INFO_PRINT("CURRENT_HASH: %s", current_block_hash);
+
       uint64_t ck_height = strtoull(ck_block_height, NULL, 10);
       uint64_t cur_height = strtoull(current_block_height, NULL, 10);
 
-      if (ck_height == cur_height + 1) {
-        update_stats = true;
+      rc = get_block_info_by_height(ht, tmphash, sizeof(tmphash), &reward_atomic, &ts_epoch, &is_orphan);
+      if (rc != XCASH_OK) {
+          ERROR_PRINT("get_block_info_by_height(%llu) failed", (unsigned long long)h);
+      } else {
+          INFO_PRINT("h=%llu tmphash=%s reward=%llu orphan=%s ts=%llu",
+             (unsigned long long)h, hash,
+             (unsigned long long)reward_atomic,
+             is_orphan ? "true" : "false",
+             (unsigned long long)ts_epoch);
       }
-#endif
+
+
+
+
+      if (ck_height == cur_height + 1) {
+        update_needed = true;
+      }
 
       for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
         if (strlen(delegates_all[i].public_address) > 0 && strlen(delegates_all[i].public_key) > 0) {
@@ -618,8 +633,12 @@ void start_block_production(void) {
         }
       }
 
+      if (update_needed) {
+
+      }
+
 #ifdef SEED_NODE_ON
-      if (update_stats) {
+      if (update_needed) {
         unsigned long long cbheight = strtoull(current_block_height, NULL, 10);
         mongoc_client_t* c = mongoc_client_pool_pop(database_client_thread_pool);
         if (!c) {
@@ -945,9 +964,6 @@ void start_block_production(void) {
             if (create_sync_token() == XCASH_OK) {
               if (create_delegates_db_sync_request(selected_index)) {
                 INFO_PRINT("Waiting for DB sync");
-                if (sync_block_verifiers_minutes_and_seconds(0, 57) == XCASH_ERROR) {
-                  INFO_PRINT("Failed to sync delegates in the allotted time");
-                }
               } else {
                 ERROR_PRINT("Error occured while syncing delegates");
               }
@@ -960,6 +976,8 @@ void start_block_production(void) {
     }
 
   end_of_round_skip_block:
+    sync_block_verifiers_minutes_and_seconds(0, 57);
+
     // set up delegates for next round
     pthread_mutex_lock(&delegates_all_lock);
     if (!fill_delegates_from_db()) {
