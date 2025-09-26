@@ -584,7 +584,7 @@ void start_block_production(void) {
 
       bool rc = get_block_info_by_height(cur_height, current_block_hash, sizeof(current_block_hash), &reward_atomic, &ts_epoch, &is_orphan);
       if (rc != XCASH_OK) {
-          ERROR_PRINT("get_block_info_by_height(%llu) failed", (unsigned long long)t_height);
+          ERROR_PRINT("get_block_info_by_height(%llu) failed", (unsigned long long)cur_height);
           goto end_of_round_skip_block;
       } else {
           INFO_PRINT("h=%llu hash=%s reward=%llu orphan=%s ts=%llu",
