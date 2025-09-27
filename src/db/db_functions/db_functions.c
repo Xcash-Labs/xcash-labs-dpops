@@ -392,7 +392,7 @@ bool is_replica_set_ready(void) {
 
 bool seed_is_primary(void) {
   bson_t reply;
-  bson_error_t error;
+  //bson_error_t error;
   bool is_ready = false;
 
   mongoc_client_t *client = mongoc_client_pool_pop(database_client_thread_pool);
@@ -417,7 +417,7 @@ bool seed_is_primary(void) {
   }
 
   bson_destroy(&reply);
-  bson_destroy(cmd);
+//  bson_destroy(cmd);
   mongoc_client_pool_push(database_client_thread_pool, client);
   return is_ready;
 }
