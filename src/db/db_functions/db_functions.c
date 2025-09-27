@@ -392,6 +392,7 @@ bool is_replica_set_ready(void) {
 
 bool seed_is_primary(void) {
   char ip_address [IP_LENGTH + 1] = {0};
+  size_t i = 0;
   while (i < network_data_nodes_amount) {
     if (strcmp(network_nodes[i].seed_public_address, xcash_wallet_public_address) == 0) {
       if (!hostname_to_ip(network_nodes[i].ip_address, ip_address, sizeof(ip_address))) {
