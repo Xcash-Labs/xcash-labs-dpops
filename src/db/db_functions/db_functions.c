@@ -406,6 +406,9 @@ bool seed_is_primary(void) {
           // MongoDB states: 1 = PRIMARY, 2 = SECONDARY
           if (state == 1) {
             is_primary = true;
+            INFO_PRINT ("IS PRIMARY");
+          } else {
+            INFO_PRINT ("IS NOT PRIMARY");  
           }
         }
     }
