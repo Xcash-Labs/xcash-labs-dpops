@@ -391,58 +391,42 @@ bool is_replica_set_ready(void) {
 }
 
 bool seed_is_primary(void) {
-    INFO_PRINT("CHECKING PRIMARY");
-    bool is_primary = false;
+  bson_t reply;
+  bson_error_t error;
+  bool is_ready = false;
 
-    char uri[256];
-    // If your server requires TLS, add: "?tls=true" (and, for local/self-signed only, "&tlsAllowInvalidCertificates=true")
-    snprintf(uri, sizeof uri, "%s?directConnection=true", DATABASE_CONNECTION);
-    INFO_PRINT("CONNNECT: %s", uri);
+  mongoc_client_t *client = mongoc_client_pool_pop(database_client_thread_pool);
+  if (!client) return false;
 
-    mongoc_uri_t* u = mongoc_uri_new(uri);
-    mongoc_client_t* c = u ? mongoc_client_new_from_uri(u) : NULL;
-    if (!c) { if (u) mongoc_uri_destroy(u); INFO_PRINT("Error creating client"); return false; }
-
-    bson_error_t err;
-    bson_t reply;
-    bson_t* cmd = BCON_NEW("hello", BCON_INT32(1));
-
-    bool ok = mongoc_client_command_simple(c, "admin", cmd, NULL, &reply, &err);
-    if (!ok) {
-        INFO_PRINT("hello failed: %s (domain=%d code=%d). Retrying with isMaster...", err.message, err.domain, err.code);
-        bson_destroy(cmd);
-        cmd = BCON_NEW("isMaster", BCON_INT32(1));  // fallback for older mongod
-        ok = mongoc_client_command_simple(c, "admin", cmd, NULL, &reply, &err);
+  bson_t *cmd = BCON_NEW("replSetGetStatus", BCON_INT32(1));
+  if (mongoc_client_command_simple(client, "admin", cmd, NULL, &reply, &error)) {
+    bson_iter_t iter;
+    if (bson_iter_init_find(&iter, &reply, "me") && BSON_ITER_HOLDS_UTF8(&iter)) {
+      const char* me = bson_iter_utf8(&iter, NULL);
+      char ip[256];
+      size_t n;
+      if (me[0] == '[') {
+        const char* rb = strchr(me, ']');
+        n = rb ? (size_t)(rb - me - 1) : 0;
+        memcpy(ip, me + 1, n);
+      } else {
+        const char* c = strrchr(me, ':');
+        n = c ? (size_t)(c - me) : strlen(me);
+        memcpy(ip, me, n);
+      }
+      ip[n] = '\0';
+      INFO_PRINT("IP: %s", ip);
     }
 
-    if (ok) {
-        bson_iter_t it;
-        // Prefer "isWritablePrimary" if present (hello), else "ismaster" (isMaster).
-        if (bson_iter_init(&it, &reply)) {
-            bool primary = false;
-            if (bson_iter_find_case(&it, "isWritablePrimary") && BSON_ITER_HOLDS_BOOL(&it)) {
-                primary = bson_iter_bool(&it);
-            } else if (bson_iter_init(&it, &reply) &&
-                       bson_iter_find_case(&it, "ismaster") && BSON_ITER_HOLDS_BOOL(&it)) {
-                primary = bson_iter_bool(&it);
-            } else {
-                INFO_PRINT("Reply missing isWritablePrimary/ismaster");
-            }
-            is_primary = primary;
-            INFO_PRINT(is_primary ? "IS PRIMARY" : "IS NOT PRIMARY");
-        }
-        bson_destroy(&reply);
-    } else {
-        INFO_PRINT("command failed: %s (domain=%d code=%d)", err.message, err.domain, err.code);
-    }
+  } else {
+    WARNING_PRINT("Could not run replSetGetStatus: %s", error.message);
+  }
 
-    bson_destroy(cmd);
-    mongoc_client_destroy(c);
-    mongoc_uri_destroy(u);
-    return is_primary;
+  bson_destroy(&reply);
+  bson_destroy(cmd);
+  mongoc_client_pool_push(database_client_thread_pool, client);
+  return is_ready;
 }
-
-
 
 
 bool add_seed_indexes(void) {
