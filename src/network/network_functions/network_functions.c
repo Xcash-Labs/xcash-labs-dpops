@@ -24,6 +24,35 @@ int check_if_IP_address_or_hostname(const char *HOST)
     // Otherwise, it's a hostname
     return IS_HOSTNAME;
 }
+
+/*---------------------------------------------------------------------------------------------------------
+Name: hostname_to_ip
+Description: Resolves a hostname or IP literal to a numeric IP string (IPv4 or IPv6).
+Parameters:
+  name      - Hostname or IP literal to resolve.
+  ip_out    - Output buffer to receive the numeric IP (no port).
+  ip_out_len- Size of ip_out.
+Return: true on success (resolved or already numeric), false on failure.
+---------------------------------------------------------------------------------------------------------*/
+bool hostname_to_ip(const char* name, char* ip_out, size_t ip_out_len) {
+  struct in_addr a4;
+  struct in6_addr a6;
+  if (inet_pton(AF_INET, name, &a4) == 1 || inet_pton(AF_INET6, name, &a6) == 1) {
+    snprintf(ip_out, ip_out_len, "%s", name);
+    return true;
+  }
+  struct addrinfo hints = {0}, *res = NULL;
+  hints.ai_family = AF_UNSPEC;      // allow v4 or v6
+  hints.ai_socktype = SOCK_STREAM;  // any
+  if (getaddrinfo(name, NULL, &hints, &res) != 0 || !res) return false;
+
+  char buf[NI_MAXHOST];
+  bool ok = getnameinfo(res->ai_addr, res->ai_addrlen, buf, sizeof(buf), NULL, 0, NI_NUMERICHOST) == 0;
+  if (ok) snprintf(ip_out, ip_out_len, "%s", buf);
+  freeaddrinfo(res);
+  return ok;
+}
+
 /*---------------------------------------------------------------------------------------------------------
 Name: write_callback
 Description: Callback function to handle response data

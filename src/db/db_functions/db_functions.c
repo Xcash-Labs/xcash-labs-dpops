@@ -391,6 +391,21 @@ bool is_replica_set_ready(void) {
 }
 
 bool seed_is_primary(void) {
+  char ip_address [IP_LENGTH + 1] = {0};
+  while (i < network_data_nodes_amount) {
+    if (strcmp(network_nodes[i].seed_public_address, xcash_wallet_public_address) == 0) {
+      if (!hostname_to_ip(network_nodes[i].ip_address, ip_address, sizeof(ip_address))) {
+        ERROR_PRINT("Could not resolve %s", network_nodes[i].ip_address);
+        return false;
+      }
+      break;
+    }
+    i++;
+  }
+
+  INFO_PRINT("IP of server = %s", ip_address);
+
+
   mongoc_client_t *client = mongoc_client_pool_pop(database_client_thread_pool);
   if (!client) return false;
 
@@ -411,7 +426,9 @@ bool seed_is_primary(void) {
 
       ip[n] = '\0';
       INFO_PRINT("IP: %s", ip);
-      ok = true;
+      if (strcmp(ip, ip_address) == 0) {
+        ok = true;
+      }
     }
     bson_destroy(&reply);
   } else {
