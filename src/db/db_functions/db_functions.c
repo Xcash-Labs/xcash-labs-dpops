@@ -390,33 +390,31 @@ bool is_replica_set_ready(void) {
   return is_ready;
 }
 
-
 bool seed_is_primary(void) {
-  bson_t reply;
-  bson_error_t err;
-  bool is_primary = false;
-
-  mongoc_client_t *client = mongoc_client_pool_pop(database_client_thread_pool);
-  if (!client) return false;
-
-
-  bool ok = false;
-  bson_t* cmd = BCON_NEW("hello", BCON_INT32(1));
-  if (mongoc_client_command_simple(client, "admin", cmd, NULL, &reply, &err)) {
-    bson_iter_t it;
-    if (bson_iter_init(&it, &reply) &&
-        bson_iter_find_case(&it, "me") && BSON_ITER_HOLDS_UTF8(&it)) {
-      const char* me = bson_iter_utf8(&it, NULL);
-      INFO_PRINT("Current connected ip: %s", me);
+    bool is_primary = false;
+    char uri[128];
+    snprintf(uri, sizeof uri, "%s?directConnection=true", DATABASE_CONNECTION);
+    mongoc_uri_t* u = mongoc_uri_new(uri);
+    mongoc_client_t* c = u ? mongoc_client_new_from_uri(u) : NULL;
+    if (!c) { if (u) mongoc_uri_destroy(u); return false; }
+    bson_error_t err; bson_t reply; bool ok = false;
+    bson_t *cmd = BCON_NEW("replSetGetStatus", BCON_INT32(1));
+    if (mongoc_client_command_simple(c, "admin", cmd, NULL, &reply, &err)) {
+        bson_iter_t it;
+        if (bson_iter_init_find(&iter, &reply, "myState")) {
+          int32_t state = bson_iter_int32(&iter);
+          // MongoDB states: 1 = PRIMARY, 2 = SECONDARY
+          if (state == 1) {
+            is_primary = true;
+          }
+        }
     }
-  }
-
-  bson_destroy(&reply);
-  bson_destroy(cmd);
-  mongoc_client_pool_push(database_client_thread_pool, client);
-  return is_primary;
-
+    bson_destroy(cmd);
+    mongoc_client_destroy(c);
+    mongoc_uri_destroy(u);
+    return is_prmary;
 }
+
 
 bool add_seed_indexes(void) {
   bson_error_t err;
