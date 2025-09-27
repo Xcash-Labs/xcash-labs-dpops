@@ -391,13 +391,14 @@ bool is_replica_set_ready(void) {
 }
 
 bool seed_is_primary(void) {
-
+    INFO_PRINT ("CHECKING PRIMARY"); 
     bool is_primary = false;
     char uri[128];
     snprintf(uri, sizeof uri, "%s?directConnection=true", DATABASE_CONNECTION);
+    INFO_PRINT ("CONNNECT: &s", uri);
     mongoc_uri_t* u = mongoc_uri_new(uri);
     mongoc_client_t* c = u ? mongoc_client_new_from_uri(u) : NULL;
-    if (!c) { if (u) mongoc_uri_destroy(u); return false; INFO_PRINT ("Error");}
+    if (!c) { if (u) mongoc_uri_destroy(u); INFO_PRINT ("Error"); return false; }
     bson_error_t err; bson_t reply;
     bson_t *cmd = BCON_NEW("replSetGetStatus", BCON_INT32(1));
     if (mongoc_client_command_simple(c, "admin", cmd, NULL, &reply, &err)) {
