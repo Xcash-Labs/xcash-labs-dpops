@@ -75,6 +75,14 @@ static int compare_hashes(const void* a, const void* b) {
 xcash_round_result_t process_round(void) {
   memset(&producer_refs, 0, sizeof(producer_refs));
 
+  if (is_seed_node) {
+    if (is_seed_delegate_primary()) {
+      INFO_PRINT("Primary Node");
+    } else {
+      INFO_PRINT("Not Primary Node");
+    }
+  }
+
   INFO_STAGE_PRINT("Part 1 - Check Delegate Registration");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 1);
   if (strlen(vrf_public_key) == 0) {
