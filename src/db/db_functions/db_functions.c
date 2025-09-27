@@ -391,35 +391,44 @@ bool is_replica_set_ready(void) {
 }
 
 bool seed_is_primary(void) {
-    INFO_PRINT ("CHECKING PRIMARY"); 
+    INFO_PRINT("CHECKING PRIMARY");
     bool is_primary = false;
-    char uri[128];
+
+    char uri[256];
     snprintf(uri, sizeof uri, "%s?directConnection=true", DATABASE_CONNECTION);
-    INFO_PRINT ("CONNNECT: %s", uri);
+    INFO_PRINT("CONNNECT: %s", uri);
+
     mongoc_uri_t* u = mongoc_uri_new(uri);
     mongoc_client_t* c = u ? mongoc_client_new_from_uri(u) : NULL;
-    if (!c) { if (u) mongoc_uri_destroy(u); INFO_PRINT ("Error"); return false; }
-    bson_error_t err; bson_t reply;
-    bson_t *cmd = BCON_NEW("replSetGetStatus", BCON_INT32(1));
+    if (!c) { if (u) mongoc_uri_destroy(u); INFO_PRINT("Error creating client"); return false; }
+
+    bson_error_t err;
+    bson_t reply;
+    bson_t* cmd = BCON_NEW("hello", BCON_INT32(1));  // <- use hello instead of replSetGetStatus
+
     if (mongoc_client_command_simple(c, "admin", cmd, NULL, &reply, &err)) {
-        bson_iter_t iter;
-        if (bson_iter_init_find(&iter, &reply, "myState")) {
-          int32_t state = bson_iter_int32(&iter);
-          // MongoDB states: 1 = PRIMARY, 2 = SECONDARY
-          INFO_PRINT ("Checking %d", state); 
-          if (state == 1) {
-            is_primary = true;
-            INFO_PRINT ("IS PRIMARY");
-          } else {
-            INFO_PRINT ("IS NOT PRIMARY");  
-          }
+        bson_iter_t it;
+        // "isWritablePrimary" is true on the primary
+        if (bson_iter_init(&it, &reply) &&
+            bson_iter_find_case(&it, "isWritablePrimary") &&
+            BSON_ITER_HOLDS_BOOL(&it))
+        {
+            is_primary = bson_iter_bool(&it);
+            INFO_PRINT(is_primary ? "IS PRIMARY" : "IS NOT PRIMARY");
+        } else {
+            INFO_PRINT("hello reply missing isWritablePrimary");
         }
+        bson_destroy(&reply);
+    } else {
+        INFO_PRINT("hello command failed: %s (domain=%d code=%d)", err.message, err.domain, err.code);
     }
+
     bson_destroy(cmd);
     mongoc_client_destroy(c);
     mongoc_uri_destroy(u);
     return is_primary;
 }
+
 
 
 bool add_seed_indexes(void) {
