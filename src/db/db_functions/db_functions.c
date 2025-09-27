@@ -398,28 +398,22 @@ bool seed_is_primary(void) {
   mongoc_client_t *client = mongoc_client_pool_pop(database_client_thread_pool);
   if (!client) return false;
 
-  bson_t *cmd = BCON_NEW("replSetGetStatus", BCON_INT32(1));
-  if (mongoc_client_command_simple(client, "admin", cmd, NULL, &reply, &error)) {
-    bson_iter_t iter;
-    if (bson_iter_init_find(&iter, &reply, "me") && BSON_ITER_HOLDS_UTF8(&iter)) {
-      const char* me = bson_iter_utf8(&iter, NULL);
-      char ip[256];
-      size_t n;
-      if (me[0] == '[') {
-        const char* rb = strchr(me, ']');
-        n = rb ? (size_t)(rb - me - 1) : 0;
-        memcpy(ip, me + 1, n);
-      } else {
-        const char* c = strrchr(me, ':');
-        n = c ? (size_t)(c - me) : strlen(me);
-        memcpy(ip, me, n);
-      }
-      ip[n] = '\0';
-      INFO_PRINT("IP: %s", ip);
+  bson_iter_t iter;
+  if (bson_iter_init_find(&iter, &reply, "me") && BSON_ITER_HOLDS_UTF8(&iter)) {
+    const char* me = bson_iter_utf8(&iter, NULL);
+    char ip[256];
+    size_t n;
+    if (me[0] == '[') {
+      const char* rb = strchr(me, ']');
+      n = rb ? (size_t)(rb - me - 1) : 0;
+      memcpy(ip, me + 1, n);
+    } else {
+      const char* c = strrchr(me, ':');
+      n = c ? (size_t)(c - me) : strlen(me);
+      memcpy(ip, me, n);
     }
-
-  } else {
-    WARNING_PRINT("Could not run replSetGetStatus: %s", error.message);
+    ip[n] = '\0';
+    INFO_PRINT("IP: %s", ip);
   }
 
   bson_destroy(&reply);
