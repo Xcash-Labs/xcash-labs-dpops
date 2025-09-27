@@ -36,5 +36,6 @@ bool db_count_doc(const char *db_name, const char *collection_name, int64_t *res
 bool get_vote_total_and_delegate_name(const char* voter_id, int64_t* total_out, char delegate_name_out[MAXIMUM_BUFFER_SIZE_DELEGATES_NAME + 1]);
 bool fetch_reserve_proof_fields_by_id(const char* voter_public_address, char* voted_for_out, size_t voted_for_sz, int64_t* total_out,
  char* reserve_proof_out, size_t rp_sz, bson_error_t* err);
+bool seed_is_primary(void);
  
 #endif
