@@ -393,14 +393,13 @@ bool is_replica_set_ready(void) {
 
 bool seed_is_primary(void) {
   bson_t reply;
-  bson_error_t error;
+  bson_error_t err;
   bool is_primary = false;
 
   mongoc_client_t *client = mongoc_client_pool_pop(database_client_thread_pool);
   if (!client) return false;
 
-  bson_error_t err;
-  bson_t reply;
+
   bool ok = false;
   bson_t* cmd = BCON_NEW("hello", BCON_INT32(1));
   if (mongoc_client_command_simple(c, "admin", cmd, NULL, &reply, &err)) {
