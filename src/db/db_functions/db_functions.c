@@ -395,7 +395,7 @@ bool seed_is_primary(void) {
     bool is_primary = false;
     char uri[128];
     snprintf(uri, sizeof uri, "%s?directConnection=true", DATABASE_CONNECTION);
-    INFO_PRINT ("CONNNECT: &s", uri);
+    INFO_PRINT ("CONNNECT: %s", uri);
     mongoc_uri_t* u = mongoc_uri_new(uri);
     mongoc_client_t* c = u ? mongoc_client_new_from_uri(u) : NULL;
     if (!c) { if (u) mongoc_uri_destroy(u); INFO_PRINT ("Error"); return false; }
