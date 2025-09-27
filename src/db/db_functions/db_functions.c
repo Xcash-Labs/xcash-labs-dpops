@@ -391,7 +391,7 @@ bool is_replica_set_ready(void) {
 }
 
 
-bool current_server_hostport(void) {
+bool seed_is_primary(void) {
   bson_t reply;
   bson_error_t error;
   bool is_primary = false;
