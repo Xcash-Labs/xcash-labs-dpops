@@ -76,7 +76,7 @@ xcash_round_result_t process_round(void) {
   memset(&producer_refs, 0, sizeof(producer_refs));
 
   if (is_seed_node) {
-    if (is_seed_delegate_primary()) {
+    if (is_primary_node()) {
       INFO_PRINT("Primary Node");
     } else {
       INFO_PRINT("Not Primary Node");

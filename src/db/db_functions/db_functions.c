@@ -390,34 +390,35 @@ bool is_replica_set_ready(void) {
   return is_ready;
 }
 
-bool is_seed_delegate_primary(void) {
+bool is_primary_node(void) {
+  bson_t command = BSON_INITIALIZER;
   bson_t reply;
   bson_error_t error;
   bool is_primary = false;
 
-  mongoc_client_t *client = mongoc_client_pool_pop(database_client_thread_pool);
-  if (!client) return false;
-
-  bson_t *cmd = BCON_NEW("replSetGetStatus", BCON_INT32(1));
-  if (mongoc_client_command_simple(client, "admin", cmd, NULL, &reply, &error)) {
-    bson_iter_t iter;
-    if (bson_iter_init_find(&iter, &reply, "myState")) {
-      int32_t state = bson_iter_int32(&iter);
-      // MongoDB states: 1 = PRIMARY, 2 = SECONDARY
-      if (state == 1) {
-        is_primary = true;
-      }
-    }
-  } else {
-    WARNING_PRINT("Could not run replSetGetStatus: %s", error.message);
+  mongoc_client_t* client = mongoc_client_pool_pop(database_client_thread_pool);
+  if (!client) {
+    fprintf(stderr, "Failed to pop client from pool\n");
+    return false;
   }
 
+  BSON_APPEND_INT32(&command, "hello", 1);
+
+  if (mongoc_client_command_simple(client, "admin", &command, NULL, &reply, &error)) {
+    bson_iter_t iter;
+    if (bson_iter_init_find_case(&iter, &reply, "isWritablePrimary") &&
+        BSON_ITER_HOLDS_BOOL(&iter)) {
+      is_primary = bson_iter_bool(&iter);
+    }
+  } else {
+    fprintf(stderr, "Command failed: %s\n", error.message);
+  }
+
+  bson_destroy(&command);
   bson_destroy(&reply);
-  bson_destroy(cmd);
   mongoc_client_pool_push(database_client_thread_pool, client);
   return is_primary;
 }
-
 
 bool add_seed_indexes(void) {
   bson_error_t err;
