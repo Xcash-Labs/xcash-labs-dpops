@@ -392,105 +392,43 @@ bool is_replica_set_ready(void) {
 
 
 
-
-
-
 bool is_primary_node(void) {
-    bool is_primary = false;
-
-    mongoc_client_t *client = mongoc_client_pool_pop(database_client_thread_pool);
-    if (!client) {
-        fprintf(stderr, "is_primary_node: failed to pop client\n");
-        return false;
-    }
-
-    bson_error_t err;
-    bson_t reply;
-
-    // --- 1) hello (preferred on modern servers) ---
-    {
-        bson_t *cmd = BCON_NEW("hello", BCON_INT32(1));
-        if (mongoc_client_command_simple(client, "admin", cmd, NULL, &reply, &err)) {
-            bson_iter_t it;
-            if (bson_iter_init(&it, &reply)) {
-                // Modern field
-                if (bson_iter_find_case(&it, "isWritablePrimary") && BSON_ITER_HOLDS_BOOL(&it)) {
-                    is_primary = bson_iter_bool(&it);
-                }
-                // Older aliases that may still appear in hello results
-                else if (bson_iter_init(&it, &reply) &&
-                         (bson_iter_find_case(&it, "ismaster") || bson_iter_find_case(&it, "isMaster")) &&
-                         BSON_ITER_HOLDS_BOOL(&it)) {
-                    is_primary = bson_iter_bool(&it);
-                }
-            }
-            bson_destroy(&reply);
-        } else {
-            // hello not supported or failed; continue to fallback
-            // fprintf(stderr, "hello failed: %s\n", err.message);
-        }
-        bson_destroy(cmd);
-    }
-
-    // --- 2) Fallback: isMaster command (older servers) ---
-    if (!is_primary) {
-        bson_t *cmd2 = BCON_NEW("isMaster", BCON_INT32(1)); // "ismaster" also works; server aliases it
-        if (mongoc_client_command_simple(client, "admin", cmd2, NULL, &reply, &err)) {
-            bson_iter_t it;
-            if (bson_iter_init(&it, &reply) &&
-                (bson_iter_find_case(&it, "ismaster") || bson_iter_find_case(&it, "isMaster")) &&
-                BSON_ITER_HOLDS_BOOL(&it)) {
-                is_primary = bson_iter_bool(&it);
-            }
-            bson_destroy(&reply);
-        } else {
-            // fprintf(stderr, "isMaster failed: %s\n", err.message);
-        }
-        bson_destroy(cmd2);
-    }
-
-    mongoc_client_pool_push(database_client_thread_pool, client);
-    return is_primary;
-}
-
-
-
-
-
-
-
-
-
-
-bool is_primary_node__OLD__(void) {
-  bson_t command = BSON_INITIALIZER;
   bson_t reply;
   bson_error_t error;
   bool is_primary = false;
 
-  mongoc_client_t* client = mongoc_client_pool_pop(database_client_thread_pool);
-  if (!client) {
-    fprintf(stderr, "Failed to pop client from pool\n");
-    return false;
-  }
+  mongoc_client_t *client = mongoc_client_pool_pop(database_client_thread_pool);
+  if (!client) return false;
 
-  BSON_APPEND_INT32(&command, "hello", 1);
-
-  if (mongoc_client_command_simple(client, "admin", &command, NULL, &reply, &error)) {
+  bson_t *cmd = BCON_NEW("replSetGetStatus", BCON_INT32(1));
+  if (mongoc_client_command_simple(client, "admin", cmd, NULL, &reply, &error)) {
     bson_iter_t iter;
-    if (bson_iter_init_find_case(&iter, &reply, "isWritablePrimary") &&
-        BSON_ITER_HOLDS_BOOL(&iter)) {
-      is_primary = bson_iter_bool(&iter);
+    if (bson_iter_init_find(&iter, &reply, "myState")) {
+      int32_t state = bson_iter_int32(&iter);
+      // MongoDB states: 1 = PRIMARY, 2 = SECONDARY
+
+      IINFO_PRINT("State: %" PRId32, state); 
+
+      if (state == 1) {
+        is_primary = true;
+      }
     }
   } else {
-    fprintf(stderr, "Command failed: %s\n", error.message);
+    WARNING_PRINT("Could not run replSetGetStatus: %s", error.message);
   }
 
-  bson_destroy(&command);
   bson_destroy(&reply);
+  bson_destroy(cmd);
   mongoc_client_pool_push(database_client_thread_pool, client);
   return is_primary;
 }
+
+
+
+
+
+
+
 
 bool add_seed_indexes(void) {
   bson_error_t err;
