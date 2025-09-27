@@ -402,7 +402,7 @@ bool seed_is_primary(void) {
 
   bool ok = false;
   bson_t* cmd = BCON_NEW("hello", BCON_INT32(1));
-  if (mongoc_client_command_simple(c, "admin", cmd, NULL, &reply, &err)) {
+  if (mongoc_client_command_simple(client, "admin", cmd, NULL, &reply, &err)) {
     bson_iter_t it;
     if (bson_iter_init(&it, &reply) &&
         bson_iter_find_case(&it, "me") && BSON_ITER_HOLDS_UTF8(&it)) {
