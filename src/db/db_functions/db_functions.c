@@ -390,6 +390,7 @@ bool is_replica_set_ready(void) {
   return is_ready;
 }
 
+// Function to determin if this seed delegate is the primary mongodb node
 bool seed_is_primary(void) {
   char ip_address [IP_LENGTH + 1] = {0};
   int i = 0;
@@ -403,9 +404,6 @@ bool seed_is_primary(void) {
     }
     i++;
   }
-
-  INFO_PRINT("IP of server = %s", ip_address);
-
 
   mongoc_client_t *client = mongoc_client_pool_pop(database_client_thread_pool);
   if (!client) return false;
@@ -426,22 +424,19 @@ bool seed_is_primary(void) {
       else { const char *c = strrchr(me, ':'); n = c ? (size_t)(c - me) : strlen(me); memcpy(ip, me, n); }
 
       ip[n] = '\0';
-      INFO_PRINT("IP: %s", ip);
       if (strcmp(ip, ip_address) == 0) {
         ok = true;
       }
     }
     bson_destroy(&reply);
   } else {
-    WARNING_PRINT("hello failed: %s", err.message);
+    ERROR_PRINT("hello failed: %s", err.message);
   }
 
   bson_destroy(cmd);
   mongoc_client_pool_push(database_client_thread_pool, client);
   return ok;
 }
-
-
 
 bool add_seed_indexes(void) {
   bson_error_t err;
