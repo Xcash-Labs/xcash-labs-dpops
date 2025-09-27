@@ -390,6 +390,78 @@ bool is_replica_set_ready(void) {
   return is_ready;
 }
 
+
+
+
+
+
+bool is_primary_node(void) {
+    bool is_primary = false;
+
+    mongoc_client_t *client = mongoc_client_pool_pop(database_client_thread_pool);
+    if (!client) {
+        fprintf(stderr, "is_primary_node: failed to pop client\n");
+        return false;
+    }
+
+    bson_error_t err;
+    bson_t reply;
+
+    // --- 1) hello (preferred on modern servers) ---
+    {
+        bson_t *cmd = BCON_NEW("hello", BCON_INT32(1));
+        if (mongoc_client_command_simple(client, "admin", cmd, NULL, &reply, &err)) {
+            bson_iter_t it;
+            if (bson_iter_init(&it, &reply)) {
+                // Modern field
+                if (bson_iter_find_case(&it, "isWritablePrimary") && BSON_ITER_HOLDS_BOOL(&it)) {
+                    is_primary = bson_iter_bool(&it);
+                }
+                // Older aliases that may still appear in hello results
+                else if (bson_iter_init(&it, &reply) &&
+                         (bson_iter_find_case(&it, "ismaster") || bson_iter_find_case(&it, "isMaster")) &&
+                         BSON_ITER_HOLDS_BOOL(&it)) {
+                    is_primary = bson_iter_bool(&it);
+                }
+            }
+            bson_destroy(&reply);
+        } else {
+            // hello not supported or failed; continue to fallback
+            // fprintf(stderr, "hello failed: %s\n", err.message);
+        }
+        bson_destroy(cmd);
+    }
+
+    // --- 2) Fallback: isMaster command (older servers) ---
+    if (!is_primary) {
+        bson_t *cmd2 = BCON_NEW("isMaster", BCON_INT32(1)); // "ismaster" also works; server aliases it
+        if (mongoc_client_command_simple(client, "admin", cmd2, NULL, &reply, &err)) {
+            bson_iter_t it;
+            if (bson_iter_init(&it, &reply) &&
+                (bson_iter_find_case(&it, "ismaster") || bson_iter_find_case(&it, "isMaster")) &&
+                BSON_ITER_HOLDS_BOOL(&it)) {
+                is_primary = bson_iter_bool(&it);
+            }
+            bson_destroy(&reply);
+        } else {
+            // fprintf(stderr, "isMaster failed: %s\n", err.message);
+        }
+        bson_destroy(cmd2);
+    }
+
+    mongoc_client_pool_push(database_client_thread_pool, client);
+    return is_primary;
+}
+
+
+
+
+
+
+
+
+
+
 bool is_primary_node(void) {
   bson_t command = BSON_INITIALIZER;
   bson_t reply;
