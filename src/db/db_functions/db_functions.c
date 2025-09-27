@@ -400,7 +400,7 @@ bool seed_is_primary(void) {
     bson_error_t err; bson_t reply; bool ok = false;
     bson_t *cmd = BCON_NEW("replSetGetStatus", BCON_INT32(1));
     if (mongoc_client_command_simple(c, "admin", cmd, NULL, &reply, &err)) {
-        bson_iter_t it;
+        bson_iter_t iter;
         if (bson_iter_init_find(&iter, &reply, "myState")) {
           int32_t state = bson_iter_int32(&iter);
           // MongoDB states: 1 = PRIMARY, 2 = SECONDARY
@@ -412,7 +412,7 @@ bool seed_is_primary(void) {
     bson_destroy(cmd);
     mongoc_client_destroy(c);
     mongoc_uri_destroy(u);
-    return is_prmary;
+    return is_primary;
 }
 
 
