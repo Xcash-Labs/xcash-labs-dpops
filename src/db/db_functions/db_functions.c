@@ -390,6 +390,39 @@ bool is_replica_set_ready(void) {
   return is_ready;
 }
 
+bool is_seed_delegate_primary(void) {
+    bool is_primary = false;
+
+    mongoc_client_t *client = mongoc_client_pool_pop(database_client_thread_pool);
+    if (!client) {
+        WARNING_PRINT("%s: failed to pop Mongo client", __func__);
+        return false;
+    }
+
+    bson_error_t err;
+    bson_t reply; bson_init(&reply);
+    bson_t *cmd = BCON_NEW("hello", BCON_INT32(1));
+
+    if (mongoc_client_command_simple(client, "admin", cmd, NULL, &reply, &err)) {
+        bson_iter_t it;
+        // Modern servers: isWritablePrimary (bool)
+        if (bson_iter_init_find(&it, &reply, "isWritablePrimary") && BSON_ITER_HOLDS_BOOL(&it)) {
+          is_primary = bson_iter_bool(&it);
+        }
+    } else {
+        WARNING_PRINT("%s: hello failed: %s", __func__, err.message);
+    }
+
+    bson_destroy(cmd);
+    bson_destroy(&reply);
+
+    mongoc_client_pool_push(database_client_thread_pool, client);
+    return is_primary;
+}
+
+
+
+
 bool add_seed_indexes(void) {
   bson_error_t err;
   bool ok = true;
