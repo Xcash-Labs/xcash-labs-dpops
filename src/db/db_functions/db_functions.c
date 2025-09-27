@@ -395,6 +395,7 @@ bool seed_is_primary(void) {
     bool is_primary = false;
 
     char uri[256];
+    // If your server requires TLS, add: "?tls=true" (and, for local/self-signed only, "&tlsAllowInvalidCertificates=true")
     snprintf(uri, sizeof uri, "%s?directConnection=true", DATABASE_CONNECTION);
     INFO_PRINT("CONNNECT: %s", uri);
 
@@ -404,23 +405,35 @@ bool seed_is_primary(void) {
 
     bson_error_t err;
     bson_t reply;
-    bson_t* cmd = BCON_NEW("hello", BCON_INT32(1));  // <- use hello instead of replSetGetStatus
+    bson_t* cmd = BCON_NEW("hello", BCON_INT32(1));
 
-    if (mongoc_client_command_simple(c, "admin", cmd, NULL, &reply, &err)) {
+    bool ok = mongoc_client_command_simple(c, "admin", cmd, NULL, &reply, &err);
+    if (!ok) {
+        INFO_PRINT("hello failed: %s (domain=%d code=%d). Retrying with isMaster...", err.message, err.domain, err.code);
+        bson_destroy(cmd);
+        cmd = BCON_NEW("isMaster", BCON_INT32(1));  // fallback for older mongod
+        ok = mongoc_client_command_simple(c, "admin", cmd, NULL, &reply, &err);
+    }
+
+    if (ok) {
         bson_iter_t it;
-        // "isWritablePrimary" is true on the primary
-        if (bson_iter_init(&it, &reply) &&
-            bson_iter_find_case(&it, "isWritablePrimary") &&
-            BSON_ITER_HOLDS_BOOL(&it))
-        {
-            is_primary = bson_iter_bool(&it);
+        // Prefer "isWritablePrimary" if present (hello), else "ismaster" (isMaster).
+        if (bson_iter_init(&it, &reply)) {
+            bool primary = false;
+            if (bson_iter_find_case(&it, "isWritablePrimary") && BSON_ITER_HOLDS_BOOL(&it)) {
+                primary = bson_iter_bool(&it);
+            } else if (bson_iter_init(&it, &reply) &&
+                       bson_iter_find_case(&it, "ismaster") && BSON_ITER_HOLDS_BOOL(&it)) {
+                primary = bson_iter_bool(&it);
+            } else {
+                INFO_PRINT("Reply missing isWritablePrimary/ismaster");
+            }
+            is_primary = primary;
             INFO_PRINT(is_primary ? "IS PRIMARY" : "IS NOT PRIMARY");
-        } else {
-            INFO_PRINT("hello reply missing isWritablePrimary");
         }
         bson_destroy(&reply);
     } else {
-        INFO_PRINT("hello command failed: %s (domain=%d code=%d)", err.message, err.domain, err.code);
+        INFO_PRINT("command failed: %s (domain=%d code=%d)", err.message, err.domain, err.code);
     }
 
     bson_destroy(cmd);
@@ -428,6 +441,7 @@ bool seed_is_primary(void) {
     mongoc_uri_destroy(u);
     return is_primary;
 }
+
 
 
 
