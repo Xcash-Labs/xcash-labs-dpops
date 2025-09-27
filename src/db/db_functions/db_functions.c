@@ -390,46 +390,6 @@ bool is_replica_set_ready(void) {
   return is_ready;
 }
 
-
-
-bool is_primary_node(void) {
-  bson_t reply;
-  bson_error_t error;
-  bool is_primary = false;
-
-  mongoc_client_t *client = mongoc_client_pool_pop(database_client_thread_pool);
-  if (!client) return false;
-
-  bson_t *cmd = BCON_NEW("replSetGetStatus", BCON_INT32(1));
-  if (mongoc_client_command_simple(client, "admin", cmd, NULL, &reply, &error)) {
-    bson_iter_t iter;
-    if (bson_iter_init_find(&iter, &reply, "myState")) {
-      int32_t state = bson_iter_int32(&iter);
-      // MongoDB states: 1 = PRIMARY, 2 = SECONDARY
-
-      INFO_PRINT("State: %" PRId32, state); 
-
-      if (state == 1) {
-        is_primary = true;
-      }
-    }
-  } else {
-    WARNING_PRINT("Could not run replSetGetStatus: %s", error.message);
-  }
-
-  bson_destroy(&reply);
-  bson_destroy(cmd);
-  mongoc_client_pool_push(database_client_thread_pool, client);
-  return is_primary;
-}
-
-
-
-
-
-
-
-
 bool add_seed_indexes(void) {
   bson_error_t err;
   bool ok = true;
