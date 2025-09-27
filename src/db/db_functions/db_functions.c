@@ -462,7 +462,7 @@ bool is_primary_node(void) {
 
 
 
-bool is_primary_node(void) {
+bool is_primary_node__OLD__(void) {
   bson_t command = BSON_INITIALIZER;
   bson_t reply;
   bson_error_t error;
