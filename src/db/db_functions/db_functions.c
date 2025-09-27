@@ -391,6 +391,7 @@ bool is_replica_set_ready(void) {
 }
 
 bool seed_is_primary(void) {
+
     bool is_primary = false;
     char uri[128];
     snprintf(uri, sizeof uri, "%s?directConnection=true", DATABASE_CONNECTION);
@@ -404,6 +405,7 @@ bool seed_is_primary(void) {
         if (bson_iter_init_find(&iter, &reply, "myState")) {
           int32_t state = bson_iter_int32(&iter);
           // MongoDB states: 1 = PRIMARY, 2 = SECONDARY
+          INFO_PRINT ("Checking %d", state); 
           if (state == 1) {
             is_primary = true;
             INFO_PRINT ("IS PRIMARY");
