@@ -407,7 +407,7 @@ bool is_primary_node(void) {
       int32_t state = bson_iter_int32(&iter);
       // MongoDB states: 1 = PRIMARY, 2 = SECONDARY
 
-      IINFO_PRINT("State: %" PRId32, state); 
+      INFO_PRINT("State: %" PRId32, state); 
 
       if (state == 1) {
         is_primary = true;
