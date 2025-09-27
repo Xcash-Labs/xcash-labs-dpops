@@ -391,36 +391,38 @@ bool is_replica_set_ready(void) {
 }
 
 bool seed_is_primary(void) {
-  bson_t reply;
-  //bson_error_t error;
-  bool is_ready = false;
-
   mongoc_client_t *client = mongoc_client_pool_pop(database_client_thread_pool);
   if (!client) return false;
 
-  bson_iter_t iter;
-  if (bson_iter_init_find(&iter, &reply, "me") && BSON_ITER_HOLDS_UTF8(&iter)) {
-    const char* me = bson_iter_utf8(&iter, NULL);
-    char ip[256];
-    size_t n;
-    if (me[0] == '[') {
-      const char* rb = strchr(me, ']');
-      n = rb ? (size_t)(rb - me - 1) : 0;
-      memcpy(ip, me + 1, n);
-    } else {
-      const char* c = strrchr(me, ':');
-      n = c ? (size_t)(c - me) : strlen(me);
-      memcpy(ip, me, n);
+  bool ok = false;
+  bson_error_t err;
+  bson_t reply;
+  bson_t *cmd = BCON_NEW("hello", BCON_INT32(1));  // ask the node who it is
+
+  if (mongoc_client_command_simple(client, "admin", cmd, NULL, &reply, &err)) {
+    bson_iter_t iter;
+    if (bson_iter_init(&iter, &reply) &&
+        bson_iter_find_case(&iter, "me") && BSON_ITER_HOLDS_UTF8(&iter)) {
+      const char *me = bson_iter_utf8(&iter, NULL);     // e.g. "10.0.0.5:27017" or "[::1]:27017"
+      char ip[256]; size_t n = 0;
+
+      if (me[0] == '[') { const char *rb = strchr(me, ']'); n = rb ? (size_t)(rb - me - 1) : 0; memcpy(ip, me + 1, n); }
+      else { const char *c = strrchr(me, ':'); n = c ? (size_t)(c - me) : strlen(me); memcpy(ip, me, n); }
+
+      ip[n] = '\0';
+      INFO_PRINT("IP: %s", ip);
+      ok = true;
     }
-    ip[n] = '\0';
-    INFO_PRINT("IP: %s", ip);
+    bson_destroy(&reply);
+  } else {
+    WARNING_PRINT("hello failed: %s", err.message);
   }
 
-  bson_destroy(&reply);
-//  bson_destroy(cmd);
+  bson_destroy(cmd);
   mongoc_client_pool_push(database_client_thread_pool, client);
-  return is_ready;
+  return ok;
 }
+
 
 
 bool add_seed_indexes(void) {
