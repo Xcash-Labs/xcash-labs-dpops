@@ -10,6 +10,7 @@
 #include <openssl/sha.h>
 #include <openssl/evp.h>
 #include <stdlib.h> 
+#include <pthread.h>
 #include "config.h"
 #include "globals.h"
 #include "macro_functions.h"
