@@ -163,3 +163,15 @@ response_t** send_multi_request(const char** hosts, int port, const char* messag
     free(z);
     return responses;
 }
+
+
+void cleanup_responses(response_t** responses) {
+  int i = 0;
+  while (responses && responses[i] != NULL) {
+    free(responses[i]->host);
+    free(responses[i]->data); // Will be NULL, still safe to free
+    free(responses[i]);
+    i++;
+  }
+  free(responses);
+}
