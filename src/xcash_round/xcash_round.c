@@ -576,17 +576,18 @@ void start_block_production(void) {
         goto end_of_round_skip_block;
       }
 
-      uint64_t ck_height = strtoull(ck_block_height, NULL, 10);
-      uint64_t cur_height = strtoull(current_block_height, NULL, 10);
+      uint64_t ck_height = strtoull(ck_block_height, NULL, 10);                 // should be the new height after block creation
+      uint64_t block_create_height = strtoull(current_block_height, NULL, 10);  // block that was just created
 
-      bool rc = get_block_info_by_height(cur_height, current_block_hash, sizeof(current_block_hash), &reward_atomic, &ts_epoch, &is_orphan);
+      bool rc = get_block_info_by_height(block_create_height, current_block_hash, sizeof(current_block_hash), &reward_atomic, &ts_epoch, &is_orphan);
       if (rc != XCASH_OK) {
-        ERROR_PRINT("get_block_info_by_height(%llu) failed", (unsigned long long)cur_height);
+        ERROR_PRINT("get_block_info_by_height(%llu) failed", (unsigned long long)block_create_height);
         goto end_of_round_skip_block;
       }
 
       // New block was created
-      if (ck_height == cur_height + 1) {
+      if (ck_height == block_create_height + 1) {
+        INFO_PRINT("Update needed.....");
         update_needed = true;
       }
 
