@@ -573,7 +573,7 @@ void start_block_production(void) {
       uint64_t reward_atomic = 0;
       uint64_t ts_epoch = 0;
       bool is_orphan = false;
-      uint64_t block_create_height;  // block that was just created
+      uint64_t block_create_height = strtoull(current_block_height, NULL, 10);  // block that was just created
 
       // If success then the block has been created and propagated
       int rc;
@@ -622,7 +622,7 @@ void start_block_production(void) {
 
 // If not a seed node - Add block record only on delegate that found block.  Seed nodes should not be part of block create process
 #ifndef SEED_NODE_ON
-
+    if (update_needed) {
       const bool block_found = (strcmp(xcash_wallet_public_address, producer_refs[0].public_address) == 0);
       if (block_found && !is_orphan) {
         bson_t doc;
@@ -642,7 +642,7 @@ void start_block_production(void) {
 
         bson_destroy(&doc);
       }
-
+    }
 #endif
 
 #ifdef SEED_NODE_ON
