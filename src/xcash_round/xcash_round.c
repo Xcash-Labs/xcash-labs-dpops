@@ -199,7 +199,7 @@ xcash_round_result_t process_round(void) {
   }
 
   INFO_STAGE_PRINT("Waiting for Sync and VRF Data from all nodes...");
-  if (sync_block_verifiers_minutes_and_seconds(0, 20) == XCASH_ERROR) {
+  if (sync_block_verifiers_minutes_and_seconds(0, 15) == XCASH_ERROR) {
     INFO_PRINT("Failed to sync Delegates in the allotted  time, skipping round");
     return ROUND_SKIP;
   }
@@ -302,7 +302,7 @@ xcash_round_result_t process_round(void) {
   }
 
   // Sync start
-  if (sync_block_verifiers_minutes_and_seconds(0, 35) == XCASH_ERROR) {
+  if (sync_block_verifiers_minutes_and_seconds(0, 30) == XCASH_ERROR) {
     INFO_PRINT("Failed to Confirm Block Creator in the allotted  time, skipping round");
     return ROUND_SKIP;
   }
@@ -473,7 +473,7 @@ Returns:
 void start_block_production(void) {
   INFO_PRINT("Waiting for block production to start");
   // If interval is missed don't print message
-  sync_block_verifiers_minutes_and_seconds(0, 57);
+  sync_block_verifiers_minutes_and_seconds(0, 58);
   struct timeval current_time;
   xcash_round_result_t round_result;
   char target_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
@@ -540,12 +540,14 @@ void start_block_production(void) {
 
     round_result = process_round();
 
-    // Final step - Wait for block creation and DB Updates or Node clean-up
+    // Final step - Wait for block creation/DB Updates or Node clean-up
     snprintf(current_round_part, sizeof(current_round_part), "%d", 12);
-    if (round_result == ROUND_SKIP || round_result == ROUND_ERROR) {
-      INFO_STAGE_PRINT("Part 12 - Wait for Node clean-up / sync");
-    } else {
+    if (round_result == ROUND_OK) {
+      last_round_success = true;
       INFO_STAGE_PRINT("Part 12 - Wait for Block Creation");
+    } else  {
+      last_round_success = false;
+      INFO_STAGE_PRINT("Part 12 - Wait for Node clean-up / sync");
     }
 
     // 10 secs to perform cleanup or add stats and other info
@@ -555,42 +557,43 @@ void start_block_production(void) {
     }
 
     if (round_result == ROUND_SKIP) {
-      last_round_success = false;
       if (strlen(vrf_public_key) == 0) {
         get_vrf_public_key();
       }
       goto end_of_round_skip_block;
     }
 
+
+// jed  --------------------------------------------------------------------
+
+
     if (round_result == ROUND_OK) {
-      last_round_success = true;
       bool update_needed = false;
-      char ck_block_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
       char current_block_hash[BLOCK_HASH_LENGTH + 1] = {0};
       uint64_t reward_atomic = 0;
       uint64_t ts_epoch = 0;
       bool is_orphan = false;
+      uint64_t block_create_height;  // block that was just created
 
-      if (get_current_block_height(ck_block_height) != XCASH_OK) {
-        ERROR_PRINT("Can't get current block height");
-        goto end_of_round_skip_block;
+      // If success then the block has been created and propagated
+      int rc;
+      for (int k = 0; k < 2; k++) {
+        rc = get_block_info_by_height(block_create_height, current_block_hash, sizeof(current_block_hash), &reward_atomic, &ts_epoch, &is_orphan);
+        if (rc == XCASH_OK) {
+          INFO_PRINT("Update needed.....");
+          update_needed = true;
+          break;
+        } else {
+          if (k == 0) {
+            WARNING_PRINT("Get_block_info_by_height(%llu) failed, retrying...", (unsigned long long)block_create_height);
+            sleep(5);
+          } else {
+            ERROR_PRINT("get_block_info_by_height(%llu) failed", (unsigned long long)block_create_height);
+            goto end_of_round_skip_block;           
+          }
+        }
       }
-
-      uint64_t ck_height = strtoull(ck_block_height, NULL, 10);                 // should be the new height after block creation
-      uint64_t block_create_height = strtoull(current_block_height, NULL, 10);  // block that was just created
-
-      bool rc = get_block_info_by_height(block_create_height, current_block_hash, sizeof(current_block_hash), &reward_atomic, &ts_epoch, &is_orphan);
-      if (rc != XCASH_OK) {
-        ERROR_PRINT("get_block_info_by_height(%llu) failed", (unsigned long long)block_create_height);
-        goto end_of_round_skip_block;
-      }
-
-      // New block was created
-      if (ck_height == block_create_height + 1) {
-        INFO_PRINT("Update needed.....");
-        update_needed = true;
-      }
-
+  
       // Update online status
       for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
         if (strlen(delegates_all[i].public_address) > 0 && strlen(delegates_all[i].public_key) > 0) {
@@ -617,29 +620,29 @@ void start_block_production(void) {
         }
       }
 
+// If not a seed node - Add block record only on delegate that found block.  Seed nodes should not be part of block create process
 #ifndef SEED_NODE_ON
-      // Add block record only on delegate that found block.  Seed nodes should not be part of block create process
-      if (update_needed) {
-        const bool block_found = (strcmp(xcash_wallet_public_address, producer_refs[0].public_address) == 0);
-        if (block_found && !is_orphan) {
-          bson_t doc;
-          bson_init(&doc);
-          BSON_APPEND_UTF8(&doc, "_id", current_block_hash);
-          BSON_APPEND_INT64(&doc, "block_height", (int64_t)cur_height);
-          BSON_APPEND_INT64(&doc, "block_reward", (int64_t)reward_atomic);
-          BSON_APPEND_DATE_TIME(&doc, "timestamp", (int64_t)ts_epoch * 1000);
 
-          if (insert_document_into_collection_bson(DATABASE_NAME, DB_COLLECTION_BLOCKS_FOUND, &doc) != 1) {
-            ERROR_PRINT("Failed to record block: hash=%s height=%llu reward=%llu (epoch=%llu) collection=%s",
-                current_block_hash, (unsigned long long)cur_height, (unsigned long long)reward_atomic,
-                (unsigned long long)ts_epoch,
-                DB_COLLECTION_BLOCKS_FOUND);
-            bson_destroy(&doc);
-          }
+      const bool block_found = (strcmp(xcash_wallet_public_address, producer_refs[0].public_address) == 0);
+      if (block_found && !is_orphan) {
+        bson_t doc;
+        bson_init(&doc);
+        BSON_APPEND_UTF8(&doc, "_id", current_block_hash);
+        BSON_APPEND_INT64(&doc, "block_height", (int64_t)cur_height);
+        BSON_APPEND_INT64(&doc, "block_reward", (int64_t)reward_atomic);
+        BSON_APPEND_DATE_TIME(&doc, "timestamp", (int64_t)ts_epoch * 1000);
 
+        if (insert_document_into_collection_bson(DATABASE_NAME, DB_COLLECTION_BLOCKS_FOUND, &doc) != 1) {
+          ERROR_PRINT("Failed to record block: hash=%s height=%llu reward=%llu (epoch=%llu) collection=%s",
+                      current_block_hash, (unsigned long long)cur_height, (unsigned long long)reward_atomic,
+                      (unsigned long long)ts_epoch,
+                      DB_COLLECTION_BLOCKS_FOUND);
           bson_destroy(&doc);
         }
+
+        bson_destroy(&doc);
       }
+
 #endif
 
 #ifdef SEED_NODE_ON
@@ -954,7 +957,6 @@ void start_block_production(void) {
 #endif
 
     } else {
-      last_round_success = false;
       // If >20% of delegates report a DB hash mismatch, trigger a resync.
       if (delegate_db_hash_mismatch > 0) {
         if ((delegate_db_hash_mismatch * 100) > (total_delegates * 20)) {
@@ -981,7 +983,7 @@ void start_block_production(void) {
     }
 
   end_of_round_skip_block:
-    sync_block_verifiers_minutes_and_seconds(0, 57);
+    sync_block_verifiers_minutes_and_seconds(0, 58);
 
     // set up delegates for next round
     pthread_mutex_lock(&delegates_all_lock);

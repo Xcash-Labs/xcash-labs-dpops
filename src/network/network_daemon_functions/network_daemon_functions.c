@@ -300,7 +300,7 @@ int get_block_info_by_height(uint64_t height,
     // hash (string)
     if (parse_json_data(response_data, "result.block_header.hash",
                         out_hash, out_hash_len) != XCASH_OK) {
-        ERROR_PRINT("get_block_info_by_height: missing result.block_header.hash");
+        ERROR_PRINT("get_block_info_by_height: missing result.block_header.hash, Response: %s", response_data);
         return XCASH_ERROR;
     }
 
