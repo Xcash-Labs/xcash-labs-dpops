@@ -1,10 +1,22 @@
 #include "net_multi.h"
 
+static int send_all_with_timeout(int fd, const uint8_t* buf, size_t len, int ms_timeout) {
+    size_t off = 0;
+    while (off < len) {
+        struct timeval tv = { ms_timeout/1000, (ms_timeout%1000)*1000 };
+        fd_set wfds; FD_ZERO(&wfds); FD_SET(fd, &wfds);
+        int r = select(fd+1, NULL, &wfds, NULL, &tv);
+        if (r <= 0) return -1; // timeout or error
+        ssize_t n = send(fd, buf + off, len - off, 0);
+        if (n < 0) return -1;
+        off += (size_t)n;
+    }
+    return 0;
+}
 
 
-#define WORKERS 12
 
-static int send_all_with_timeout(int fd, const uint8_t* buf, size_t len, int ms_timeout);
+#define WORKERS 10
 
 /* ---- factor the body of your for-loop into this helper ---- */
 static response_t* send_to_one_host(const char* host, int port,
