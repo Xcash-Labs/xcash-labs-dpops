@@ -16,8 +16,6 @@ static int send_all_with_timeout(int fd, const uint8_t* buf, size_t len, int ms_
   return 0;
 }
 
-#define WORKERS 10
-
 /* ---- factor the body of your for-loop into this helper ---- */
 static response_t* send_to_one_host(const char* host, int port,
                                     const uint8_t* z, size_t zlen) {
@@ -159,10 +157,10 @@ response_t** send_multi_request(const char** hosts, int port, const char* messag
   work_ctx_t ctx = {
       .hosts = hosts, .total = total_hosts, .port = port, .z = z, .zlen = zlen, .responses = responses, .next_idx = 0, .mu = PTHREAD_MUTEX_INITIALIZER};
 
-  size_t nworkers = WORKERS;
+  size_t nworkers = NET_MULTI_WORKERS;
   if (nworkers > total_hosts) nworkers = total_hosts ? total_hosts : 1;
 
-  pthread_t th[WORKERS];
+  pthread_t th[NET_MULTI_WORKERS];
   for (size_t t = 0; t < nworkers; ++t) {
     pthread_create(&th[t], NULL, worker_fn, &ctx);
   }

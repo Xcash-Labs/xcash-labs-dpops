@@ -195,8 +195,11 @@
 #define MIN_VOTE_ATOMIC 4000000000000ULL
 #define ATOMIC_UNITS_PER_XCA 1000000LL
 
+
 #define BLOCK_VERIFIERS_IP_ADDRESS_TOTAL_LENGTH 255 // was 100 changed to match delegates table
 #define IP_LENGTH 255  //combine with above
+
+
 
 #define DELEGATES_ONLINE_BUFFER ((IP_LENGTH * BLOCK_VERIFIERS_TOTAL_AMOUNT) + 512)
 
@@ -211,7 +214,7 @@
 #define SEED_REGISTRATION_TIME_UTC 1756684860ULL  // 2025-09-01 00:01:00 UTC
 
 #define MAX_ACTIVE_CLIENTS 200
-
+#define NET_MULTI_WORKERS 12
 
 // ===================== Constants =====================
 #define ALPHANUM_STRING "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
