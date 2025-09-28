@@ -472,8 +472,7 @@ Returns:
 ---------------------------------------------------------------------------------------------------------*/
 void start_block_production(void) {
   INFO_PRINT("Waiting for block production to start");
-  // If interval is missed don't print message
-  sync_block_verifiers_minutes_and_seconds(0, 58);
+  sync_block_verifiers_minutes_and_seconds(0, 55);
   struct timeval current_time;
   xcash_round_result_t round_result;
   char target_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
@@ -563,15 +562,7 @@ void start_block_production(void) {
       goto end_of_round_skip_block;
     }
 
-
     if (round_result == ROUND_OK) {
-      bool update_needed = false;
-      char current_block_hash[BLOCK_HASH_LENGTH + 1] = {0};
-
-
-
-
-  
       // Update online status
       for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
         if (strlen(delegates_all[i].public_address) > 0 && strlen(delegates_all[i].public_key) > 0) {
@@ -637,7 +628,6 @@ void start_block_production(void) {
 
 #ifdef SEED_NODE_ON
 
-    // If block fails to advance on first try, try again
     char current_block_hash[BLOCK_HASH_LENGTH + 1] = {0};
     char ck_block_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
     unsigned long long cbheight = strtoull(current_block_height, NULL, 10);
