@@ -116,7 +116,6 @@
 #define RECEIVE_TIMEOUT_SEC 3
 #define SEND_TIMEOUT_MS 3000
 #define NET_MULTI_WORKERS 12
-#define MSG_NOSIGNAL 0
 
 // ===================== Hash and Key Lengths =====================
 #define DATA_HASH_LENGTH 128
