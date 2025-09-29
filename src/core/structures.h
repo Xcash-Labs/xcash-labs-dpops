@@ -54,6 +54,10 @@ struct database_multiple_documents_fields {
 };
 
 typedef struct {
+  mongoc_client_pool_t *pool;
+} sched_ctx_t;
+
+typedef struct {
     char block_verifiers_name[BLOCK_VERIFIERS_AMOUNT][MAXIMUM_BUFFER_SIZE_DELEGATES_NAME+1]; // The block verifiers name
     char block_verifiers_public_address[BLOCK_VERIFIERS_AMOUNT][XCASH_WALLET_LENGTH+1]; // The block verifiers public address
     char block_verifiers_public_key[BLOCK_VERIFIERS_AMOUNT][VRF_PUBLIC_KEY_LENGTH+1]; // The block verifiers public key

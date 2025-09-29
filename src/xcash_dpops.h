@@ -17,6 +17,7 @@
 #include "net_server.h"
 #include "node_functions.h"
 #include "init_processing.h"
+#include "xcash_timer_thread.h"
 
 // Define an enum for option IDs
 typedef enum {

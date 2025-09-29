@@ -506,7 +506,7 @@ void start_block_production(void) {
   static bool printed_on_enter = false;
   static time_t last_log_sec = 0;
 
-  while (!shutdown_requested) {
+  while (!atomic_load(shutdown_requested, memory_order_relaxed)) {
 
     for (;;) {
       gettimeofday(&current_time, NULL);

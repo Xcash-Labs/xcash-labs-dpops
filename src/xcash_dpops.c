@@ -185,8 +185,6 @@ int main(int argc, char *argv[]) {
   init_globals();
 //  signal(SIGINT, sigint_handler);
   install_signal_handlers();
-
-
   setenv("ARGP_HELP_FMT", "rmargin=120", 1);
 
   if (argc == 1) {
@@ -234,12 +232,40 @@ int main(int argc, char *argv[]) {
     FATAL_ERROR_EXIT("Failed server initialization.");
   }
 
+// start the daily scheduler (ONE thread)
+  pthread_t timer_tid = 0;
+  bool sched_started = false;
+  sched_ctx_t *sched_ctx = NULL;
+  {
+    // scheduler needs the pool; initialize_database() has created database_client_thread_pool
+    sched_ctx = malloc(sizeof *sched_ctx);
+    if (!sched_ctx) {
+      FATAL_ERROR_EXIT("Scheduler: malloc failed; can not continue without scheduled jobs");
+    } else {
+      sched_ctx->pool = database_client_thread_pool;
+      if (pthread_create(&timer_tid, NULL, timer_thread, sched_ctx) != 0) {
+        FATAL_ERROR_EXIT("Scheduler: pthread_create failed; can not continue without scheduled jobs");
+        free(sched_ctx); 
+        sched_ctx = NULL;
+      } else {
+        sched_started = true;
+        INFO_PRINT("Scheduler thread started");
+      }
+    }
+  }
+
   if (get_node_data()) {
     print_starter_state(&arg_config);
     start_block_production();
     fprintf(stderr, "Daemon is shutting down...\n");
   } else {
     FATAL_ERROR_EXIT("Failed to get the nodes public wallet address"); 
+  }
+
+  // Signal scheduler to stop and join it
+  if (sched_started) {
+    pthread_join(timer_tid, NULL);
+    free(sched_ctx);
   }
 
   shutdown_db();

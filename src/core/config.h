@@ -211,6 +211,9 @@
 
 #define MAX_ACTIVE_CLIENTS 200
 
+#define WAKEUP_SKEW_SEC 10 
+
+
 
 // ===================== Constants =====================
 #define ALPHANUM_STRING "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
