@@ -57,6 +57,24 @@ typedef struct {
   mongoc_client_pool_t *pool;
 } sched_ctx_t;
 
+// ---- jobs ----
+typedef enum { JOB_PROOF, JOB_PAYOUT } job_kind_t;
+
+typedef struct {
+  int hour;  // 0..23 local time
+  int min;   // 0..59
+  job_kind_t kind;
+} sched_slot_t;
+
+// 3:00 AM & 3:00 PM → PROOF; 6:00 AM & 6:00 PM → PAYOUT
+static const sched_slot_t SLOTS[] = {
+  {3,  0, JOB_PROOF},
+  {15, 0, JOB_PROOF},
+  {6,  0, JOB_PAYOUT},
+  {18, 0, JOB_PAYOUT},
+};
+static const size_t NSLOTS = sizeof(SLOTS)/sizeof(SLOTS[0]);
+
 typedef struct {
     char block_verifiers_name[BLOCK_VERIFIERS_AMOUNT][MAXIMUM_BUFFER_SIZE_DELEGATES_NAME+1]; // The block verifiers name
     char block_verifiers_public_address[BLOCK_VERIFIERS_AMOUNT][XCASH_WALLET_LENGTH+1]; // The block verifiers public address
