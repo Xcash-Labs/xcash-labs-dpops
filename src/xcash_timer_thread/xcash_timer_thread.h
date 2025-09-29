@@ -1,6 +1,7 @@
 #ifndef XCASH_TIMER_THREAD_H
 #define XCASH_TIMER_THREAD_H
 
+#define _GNU_SOURCE
 #include <pthread.h>
 #include <sched.h>
 #include <sys/resource.h>
