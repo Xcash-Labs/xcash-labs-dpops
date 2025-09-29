@@ -1,6 +1,18 @@
 #include "xcash_timer_thread.h"
 
 // ---- helpers ----
+static void lower_thread_priority_batch(void) {
+  // Best-effort: reduce CPU weight via niceness (works even if sched change fails)
+  if (setpriority(PRIO_PROCESS, 0, 10) == -1) {
+    WARNING_PRINT("setpriority failed: %s", strerror(errno));
+  }
+  struct sched_param sp;
+  memset(&sp, 0, sizeof sp);  // priority must be 0 for BATCH
+  if (sched_setscheduler(0, SCHED_BATCH, &sp) == -1) {
+    WARNING_PRINT("sched_setscheduler(SCHED_BATCH) failed: %s", strerror(errno));
+  }
+}
+
 static time_t mk_local_next(int hour, int minute, time_t now) {
   struct tm lt;
   localtime_r(&now, &lt);
@@ -58,6 +70,7 @@ static void run_payout(sched_ctx_t* ctx) {
 
 // ---- single scheduler thread ----
 void* timer_thread(void* arg) {
+  lower_thread_priority_batch();
   sched_ctx_t* ctx = (sched_ctx_t*)arg;
   for (;;) {
     if (atomic_load_explicit(&shutdown_requested, memory_order_relaxed)) break;

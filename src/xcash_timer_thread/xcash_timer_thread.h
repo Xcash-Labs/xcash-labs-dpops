@@ -2,6 +2,9 @@
 #define XCASH_TIMER_THREAD_H
 
 #include <pthread.h>
+#include <sched.h>
+#include <sys/resource.h>
+#include <errno.h>
 #include "config.h"
 #include "globals.h"
 #include "macro_functions.h"
