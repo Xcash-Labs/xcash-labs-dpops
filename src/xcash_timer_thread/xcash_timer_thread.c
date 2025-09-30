@@ -80,55 +80,6 @@ static void add_vote_sum(/*in/out*/ char addrs[][XCASH_WALLET_LENGTH + 1],
   ++(*pcount);
 }
 
-
-
-
-
-
-
-#ifndef DB_COLLECTION_RESERVE_PROOFS
-#define DB_COLLECTION_RESERVE_PROOFS "reserve_proofs"
-#endif
-#ifndef DB_COLLECTION_DELEGATES
-#define DB_COLLECTION_DELEGATES "delegates"
-#endif
-#ifndef DELEGATE_TOTAL_FIELD
-#define DELEGATE_TOTAL_FIELD "total_vote_count"
-#endif
-
-// Your existing boolean validator (returns XCASH_OK/XCASH_ERROR)
-extern int check_reserve_proofs(uint64_t vote_amount_atomic,
-                                const char* PUBLIC_ADDRESS,
-                                const char* RESERVE_PROOF);
-
-static void add_vote_sum(/*in/out*/char addrs[][XCASH_WALLET_LENGTH + 1],
-                         /*in/out*/int64_t totals[],
-                         /*in/out*/size_t *pcount,
-                         const char* addr, int64_t amt)
-{
-  // Try to find existing bucket
-  for (size_t i = 0; i < *pcount; ++i) {
-    if (strcmp(addrs[i], addr) == 0) {
-      totals[i] += amt;
-      return;
-    }
-  }
-  // New bucket
-  if (*pcount >= BLOCK_VERIFIERS_TOTAL_AMOUNT) {
-    WARNING_PRINT("vote_sums full; dropping contribution for %.12s…", addr);
-    return;
-  }
-  size_t n = strnlen(addr, XCASH_WALLET_LENGTH + 1);
-  if (n == 0 || n > XCASH_WALLET_LENGTH) {
-    WARNING_PRINT("bad delegate address length=%zu, skipping", n);
-    return;
-  }
-  memcpy(addrs[*pcount], addr, n);
-  addrs[*pcount][n] = '\0';
-  totals[*pcount] = amt;
-  ++(*pcount);
-}
-
 static void run_proof_check(sched_ctx_t* ctx) {
   mongoc_client_t* c = mongoc_client_pool_pop(ctx->pool);
   if (!c) {
