@@ -221,7 +221,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
         BSON_APPEND_UTF8(&filter, "public_address", agg_addr[i]);
 
         bson_t set, update; bson_init(&set); bson_init(&update);
-        BSON_APPEND_INT64(&set, DELEGATE_TOTAL_FIELD, (int64_t)agg_total[i]);
+        BSON_APPEND_INT64(&set, "total_vote_count", (int64_t)agg_total[i]);
         BSON_APPEND_DOCUMENT(&update, "$set", &set);
 
         bson_error_t uerr;
@@ -242,9 +242,6 @@ static void run_proof_check(sched_ctx_t* ctx) {
   }
 
   mongoc_client_pool_push(ctx->pool, c);
-
-
-
 }
 
 
