@@ -55,17 +55,17 @@ static void sleep_until(time_t when) {
 
 // ---- your actual work (fill these) ----
 static void run_proof_check(sched_ctx_t* ctx) {
-  mongoc_client_t* c = mongoc_client_pool_pop(ctx->pool);
-  if (!c) return;
+//  mongoc_client_t* c = mongoc_client_pool_pop(ctx->pool);
+//  if (!c) return;
   // TODO: revalidate proofs / prune invalid
-  mongoc_client_pool_push(ctx->pool, c);
+//  mongoc_client_pool_push(ctx->pool, c);
 }
 
 static void run_payout(sched_ctx_t* ctx) {
-  mongoc_client_t* c = mongoc_client_pool_pop(ctx->pool);
-  if (!c) return;
+//  mongoc_client_t* c = mongoc_client_pool_pop(ctx->pool);
+//  if (!c) return;
   // TODO: build & send payouts (with confirmations, thresholds, idempotency)
-  mongoc_client_pool_push(ctx->pool, c);
+//  mongoc_client_pool_push(ctx->pool, c);
 }
 
 // ---- single scheduler thread ----
