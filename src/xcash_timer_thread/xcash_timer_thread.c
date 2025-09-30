@@ -291,6 +291,7 @@ void* timer_thread(void* arg) {
 
     if (slot->kind == JOB_PROOF) {
       if (is_seed_node) {
+        INFO_PRINT("Checking for Primary");
         if (seed_is_primary()) {
           INFO_PRINT("Scheduler: running PROOF CHECK at %02d:%02d", slot->hour, slot->min);
           run_proof_check(ctx);
