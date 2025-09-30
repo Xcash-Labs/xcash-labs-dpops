@@ -1,5 +1,7 @@
 #include "xcash_timer_thread.h"
 
+#define SCHED_TEST_EVERY_MIN   10
+
 // ---- helpers ----
 static void lower_thread_priority_batch(void) {
   // Best-effort: reduce CPU weight via niceness (works even if sched change fails)
