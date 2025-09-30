@@ -10,6 +10,7 @@
 #include "globals.h"
 #include "macro_functions.h"
 #include "structures.h"
+#include "db_functions.h"
 
 void* timer_thread(void* arg);
 
