@@ -55,10 +55,14 @@ static void sleep_until(time_t when) {
 
 // ---- your actual work (fill these) ----
 static void run_proof_check(sched_ctx_t* ctx) {
-//  mongoc_client_t* c = mongoc_client_pool_pop(ctx->pool);
-//  if (!c) return;
+  mongoc_client_t* c = mongoc_client_pool_pop(ctx->pool);
+  if (!c) return;
   // TODO: revalidate proofs / prune invalid
-//  mongoc_client_pool_push(ctx->pool, c);
+
+
+
+
+  mongoc_client_pool_push(ctx->pool, c);
 }
 
 static void run_payout(sched_ctx_t* ctx) {
@@ -73,6 +77,9 @@ void* timer_thread(void* arg) {
   lower_thread_priority_batch();
   sched_ctx_t* ctx = (sched_ctx_t*)arg;
   for (;;) {
+
+    INFO_PRINT("Timer_thread........................");
+
     if (atomic_load_explicit(&shutdown_requested, memory_order_relaxed)) break;
 
     time_t now = time(NULL), run_at;
