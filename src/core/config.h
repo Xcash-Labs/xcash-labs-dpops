@@ -43,7 +43,7 @@
 #define XCASH_DAEMON_IP "127.0.0.1"
 #define XCASH_WALLET_IP "127.0.0.1"
 #define XCASH_DPOPS_IP "127.0.0.1"
-#define MAXIMUM_CONNECTIONS_IP_ADDRESS_OR_PUBLIC_ADDRESS 20
+#define MAXIMUM_CONNECTIONS_IP_ADDRESS_OR_PUBLIC_ADDRESS 128
 
 // ===================== Network Block String =====================
 #define NETWORK_VERSION "0d0d"
