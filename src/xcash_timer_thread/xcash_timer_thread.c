@@ -287,10 +287,10 @@ static void run_proof_check(sched_ctx_t* ctx) {
         if (!cur_ck) {
           WARNING_PRINT("delegate total read failed addr=%.12s… (cursor init)", agg_addr[i]);
         } else {
-          const bson_t* doc;
-          if (mongoc_cursor_next(cur_ck, &doc)) {
+          const bson_t* doc_ck;
+          if (mongoc_cursor_next(cur_ck, &doc_ck)) {
             bson_iter_t it;
-            if (bson_iter_init_find(&it, doc, "total_vote_count") &&
+            if (bson_iter_init_find(&it, doc_ck, "total_vote_count") &&
                 (BSON_ITER_HOLDS_INT32(&it) || BSON_ITER_HOLDS_INT64(&it))) {
               current_total = bson_iter_as_int64(&it);
               have_current = true;
