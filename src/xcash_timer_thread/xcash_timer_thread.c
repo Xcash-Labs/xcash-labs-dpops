@@ -230,7 +230,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
                    voter, delegate);
       } else {
         WARNING_PRINT("Failed to delete invalid reserve_proof id=%.12s… : %s",
-                      voter, derr.message);
+                      voter, derr.message); 
       }
       bson_destroy(&del_filter);
       continue;
@@ -306,7 +306,11 @@ static void run_proof_check(sched_ctx_t* ctx) {
         // --- Compare and skip update if no change
         int64_t new_total = (int64_t)agg_total[i];
         if (have_current && current_total == new_total) {
-          DEBUG_PRINT("delegate total unchanged addr=%.12s… total=%lld (skip)",
+
+
+
+            
+          WARNING_PRINT("delegate total unchanged addr=%.12s… total=%lld (skip)",
                       agg_addr[i], (long long)new_total);
           bson_destroy(&filter);
           continue;
