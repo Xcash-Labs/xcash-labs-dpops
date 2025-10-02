@@ -99,7 +99,7 @@
 
 
 
-#define PRINT_ERROR(fmt, ...) do { \
+#define TEST_PRINT(fmt, ...) do { \
     if (log_level >= LOG_LEVEL_CRITICAL) { \
         time_t raw_time = time(NULL); \
         struct tm *tm_info = localtime(&raw_time); \
