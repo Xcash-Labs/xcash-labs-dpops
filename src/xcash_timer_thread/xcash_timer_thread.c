@@ -226,7 +226,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
       bson_error_t derr;
       if (mongoc_collection_delete_one(coll, &del_filter, NULL, NULL, &derr)) {
         ++deleted;
-        TEST_PRINT("Deleted invalid reserve_proof id=%.12s… (delegate=%.12s…)",
+        WARNING_PRINT("Deleted invalid reserve_proof id=%.12s… (delegate=%.12s…)",
                    voter, delegate);
       } else {
         WARNING_PRINT("Failed to delete invalid reserve_proof id=%.12s… : %s",
@@ -243,7 +243,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
   if (mongoc_cursor_error(cur, &cerr)) {
     ERROR_PRINT("reserve_proofs cursor error: %s", cerr.message);
   } else {
-    TEST_PRINT("reserve_proofs scan complete: seen=%zu invalid=%zu deleted=%zu skipped=%zu",
+    WARNING_PRINT("reserve_proofs scan complete: seen=%zu invalid=%zu deleted=%zu skipped=%zu",
                seen, invalid, deleted, skipped);
   }
 
@@ -369,8 +369,6 @@ static time_t mk_local_next_every_minutes(int step_min, time_t now) {
 
 // ---- single scheduler thread ----
 void* timer_thread(void* arg) {
-  TEST_PRINT("Starting Timer thread..................");
-
   lower_thread_priority_batch();
   sched_ctx_t* ctx = (sched_ctx_t*)arg;
 
@@ -386,7 +384,12 @@ void* timer_thread(void* arg) {
 #else
     // --- test mode: run every N minutes (local time) ---
     run_at = mk_local_next_every_minutes(SCHED_TEST_EVERY_MIN, now);
-    TEST_PRINT("Test mode..................");
+
+
+    WARNING_PRINT("Test mode..................");
+
+
+
 #endif
 
     time_t wake = run_at - WAKEUP_SKEW_SEC;
@@ -404,15 +407,14 @@ void* timer_thread(void* arg) {
 
     if (slot->kind == JOB_PROOF) {
       if (is_seed_node) {
-        TEST_PRINT("Checking for Primary");
         if (seed_is_primary()) {
-          TEST_PRINT("Scheduler: running PROOF CHECK at %02d:%02d", slot->hour, slot->min);
+          INFO_PRINT("Scheduler: running PROOF CHECK at %02d:%02d", slot->hour, slot->min);
           run_proof_check(ctx);
         }
       }
     } else {
       if (!is_seed_node) {
-        TEST_PRINT("Scheduler: running PAYOUT at %02d:%02d", slot->hour, slot->min);
+        INFO_PRINT("Scheduler: running PAYOUT at %02d:%02d", slot->hour, slot->min);
         run_payout(ctx);
       }
     }
@@ -421,13 +423,13 @@ void* timer_thread(void* arg) {
     // ---- test dispatch every N minutes ----
     if (is_seed_node) {
       if (seed_is_primary()) {
-        TEST_PRINT("Test scheduler: PROOF CHECK (every %d min)", SCHED_TEST_EVERY_MIN);
+        WARNING_PRINT("Test scheduler: PROOF CHECK (every %d min)", SCHED_TEST_EVERY_MIN);
         run_proof_check(ctx);
       } else {
         DEBUG_PRINT("Test scheduler: not primary seed — skip proof");
       }
     } else {
-      TEST_PRINT("Test scheduler: PAYOUT (every %d min)", SCHED_TEST_EVERY_MIN);
+      WARNING_PRINT("Test scheduler: PAYOUT (every %d min)", SCHED_TEST_EVERY_MIN);
       run_payout(ctx);
     }
 #endif
