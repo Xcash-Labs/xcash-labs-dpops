@@ -56,11 +56,19 @@ static void sleep_until(time_t when) {
   }
 }
 
-static void add_vote_sum(/*in/out*/ char addrs[][XCASH_WALLET_LENGTH + 1],
-                         /*in/out*/ int64_t totals[],
-                         /*in/out*/ size_t* pcount,
-                         const char* addr, int64_t amt) {
-  // Try to find existing bucket
+
+
+
+
+
+// Small helper to keep per-delegate running totals
+static void add_vote_sum(char addrs[][XCASH_WALLET_LENGTH + 1],
+                         int64_t totals[],
+                         size_t *pcount,
+                         const char* addr,
+                         int64_t amt)
+{
+  // Find existing bucket
   for (size_t i = 0; i < *pcount; ++i) {
     if (strcmp(addrs[i], addr) == 0) {
       totals[i] += amt;
@@ -83,6 +91,27 @@ static void add_vote_sum(/*in/out*/ char addrs[][XCASH_WALLET_LENGTH + 1],
   ++(*pcount);
 }
 
+/*---------------------------------------------------------------------------------------------------------
+Name: add_vote_sum
+Description:
+  Accumulates a vote amount into the per-delegate running totals. If the delegate
+  already has a bucket, increments it; otherwise creates a new bucket as long as
+  the array capacity (BLOCK_VERIFIERS_TOTAL_AMOUNT) is not exceeded.
+
+Parameters:
+  addrs   - (IN/OUT) Array of delegate addresses; each slot is a null-terminated string.
+  totals  - (IN/OUT) Parallel array of 64-bit running totals for each address.
+  pcount  - (IN/OUT) Current number of active buckets; incremented when a new bucket is added.
+  addr    - (IN)     Delegate address to accumulate into.
+  amt     - (IN)     Amount to add (must be ≥ 0; caller ensures semantics).
+
+Returns:
+  void
+
+Notes:
+  - If capacity is reached, logs a warning and drops the contribution.
+  - Truncates/guards address length to XCASH_WALLET_LENGTH.
+---------------------------------------------------------------------------------------------------------*/
 static void run_proof_check(sched_ctx_t* ctx) {
   mongoc_client_t* c = mongoc_client_pool_pop(ctx->pool);
   if (!c) {
@@ -98,7 +127,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
     return;
   }
 
-  // Projection: only fields we need
+  // Build query/projection options
   bson_t* query = bson_new();  // {}
   bson_t* opts  = BCON_NEW(
       "projection", "{",
@@ -109,6 +138,14 @@ static void run_proof_check(sched_ctx_t* ctx) {
       "}",
       "noCursorTimeout", BCON_BOOL(true)
   );
+  if (!query || !opts) {
+    ERROR_PRINT("reserve_proofs: OOM building query/options");
+    if (opts)  bson_destroy(opts);
+    if (query) bson_destroy(query);
+    mongoc_collection_destroy(coll);
+    mongoc_client_pool_push(ctx->pool, c);
+    return;
+  }
 
   mongoc_cursor_t* cur = mongoc_collection_find_with_opts(coll, query, opts, NULL);
   if (!cur) {
@@ -120,7 +157,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
     return;
   }
 
-  // --- per-delegate aggregators (small, fixed upper bound) ---
+  // Per-delegate aggregators (bounded by number of delegates)
   char    agg_addr[BLOCK_VERIFIERS_TOTAL_AMOUNT][XCASH_WALLET_LENGTH + 1];
   int64_t agg_total[BLOCK_VERIFIERS_TOTAL_AMOUNT];
   memset(agg_addr,  0, sizeof agg_addr);
@@ -136,7 +173,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
     if (atomic_load_explicit(&shutdown_requested, memory_order_relaxed)) break;
 
     bson_iter_t it;
-    const char* voter    = NULL;  // _id
+    const char* voter    = NULL;  // _id (voter public address)
     const char* delegate = NULL;  // public_address_voted_for
     const char* proof    = NULL;  // reserve_proof
     int64_t claimed_total = 0;
@@ -150,7 +187,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
     if (bson_iter_init_find(&it, doc, "reserve_proof") && BSON_ITER_HOLDS_UTF8(&it))
       proof = bson_iter_utf8(&it, NULL);
 
-    // total_vote must be an integer
+    // total_vote must be integer and positive
     if (bson_iter_init_find(&it, doc, "total_vote")) {
       if (BSON_ITER_HOLDS_INT64(&it))       claimed_total = bson_iter_int64(&it);
       else if (BSON_ITER_HOLDS_INT32(&it))  claimed_total = (int64_t)bson_iter_int32(&it);
@@ -163,6 +200,13 @@ static void run_proof_check(sched_ctx_t* ctx) {
     } else {
       ERROR_PRINT("reserve_proofs: missing total_vote for id=%.12s…",
                   voter ? voter : "(unknown)");
+      ++skipped;
+      continue;
+    }
+
+    if (claimed_total <= 0) {
+      WARNING_PRINT("reserve_proofs: non-positive total_vote=%lld for id=%.12s… — skipping",
+                    (long long)claimed_total, voter ? voter : "(unknown)");
       ++skipped;
       continue;
     }
@@ -180,13 +224,13 @@ static void run_proof_check(sched_ctx_t* ctx) {
     if (!ok) {
       ++invalid;
 
-      // delete by _id (voter)
+      // delete invalid proof by _id (voter)
       bson_t del_filter; bson_init(&del_filter);
       BSON_APPEND_UTF8(&del_filter, "_id", voter);
       bson_error_t derr;
       if (mongoc_collection_delete_one(coll, &del_filter, NULL, NULL, &derr)) {
         ++deleted;
-        INFO_PRINT("Deleted invalid reserve_proof id=%.12s… (delegate=%.12s…)",
+        TEST_PRINT("Deleted invalid reserve_proof id=%.12s… (delegate=%.12s…)",
                    voter, delegate);
       } else {
         WARNING_PRINT("Failed to delete invalid reserve_proof id=%.12s… : %s",
@@ -203,17 +247,19 @@ static void run_proof_check(sched_ctx_t* ctx) {
   if (mongoc_cursor_error(cur, &cerr)) {
     ERROR_PRINT("reserve_proofs cursor error: %s", cerr.message);
   } else {
-    INFO_PRINT("reserve_proofs scan complete: seen=%zu invalid=%zu deleted=%zu skipped=%zu",
+    TEST_PRINT("reserve_proofs scan complete: seen=%zu invalid=%zu deleted=%zu skipped=%zu",
                seen, invalid, deleted, skipped);
   }
+
+  bool stop_after_scan = atomic_load_explicit(&shutdown_requested, memory_order_relaxed);
 
   mongoc_cursor_destroy(cur);
   bson_destroy(opts);
   bson_destroy(query);
   mongoc_collection_destroy(coll);
 
-  // --- Apply per-delegate totals back to delegates collection ---
-  if (agg_count > 0) {
+  // Apply per-delegate totals only if not shutting down
+  if (!stop_after_scan && agg_count > 0) {
     mongoc_collection_t* dcoll =
         mongoc_client_get_collection(c, DATABASE_NAME, DB_COLLECTION_DELEGATES);
     if (!dcoll) {
@@ -246,6 +292,10 @@ static void run_proof_check(sched_ctx_t* ctx) {
 
   mongoc_client_pool_push(ctx->pool, c);
 }
+
+
+
+
 
 
 static void run_payout(sched_ctx_t* ctx) {
@@ -319,15 +369,15 @@ void* timer_thread(void* arg) {
 
     if (slot->kind == JOB_PROOF) {
       if (is_seed_node) {
-        INFO_PRINT("Checking for Primary");
+        TEST_PRINT("Checking for Primary");
         if (seed_is_primary()) {
-          INFO_PRINT("Scheduler: running PROOF CHECK at %02d:%02d", slot->hour, slot->min);
+          TEST_PRINT("Scheduler: running PROOF CHECK at %02d:%02d", slot->hour, slot->min);
           run_proof_check(ctx);
         }
       }
     } else {
       if (!is_seed_node) {
-        INFO_PRINT("Scheduler: running PAYOUT at %02d:%02d", slot->hour, slot->min);
+        TEST_PRINT("Scheduler: running PAYOUT at %02d:%02d", slot->hour, slot->min);
         run_payout(ctx);
       }
     }
@@ -342,7 +392,7 @@ void* timer_thread(void* arg) {
         DEBUG_PRINT("Test scheduler: not primary seed — skip proof");
       }
     } else {
-      INFO_PRINT("Test scheduler: PAYOUT (every %d min)", SCHED_TEST_EVERY_MIN);
+      TEST_PRINT("Test scheduler: PAYOUT (every %d min)", SCHED_TEST_EVERY_MIN);
       run_payout(ctx);
     }
 #endif
