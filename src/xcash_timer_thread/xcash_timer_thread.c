@@ -46,7 +46,6 @@ static int pick_next_slot(time_t now, time_t* out_when) {
 
 static void sleep_until(time_t when) {
   for (;;) {
-    TEST_PRINT("TEST...............................");
     if (atomic_load_explicit(&shutdown_requested, memory_order_relaxed)) return;
     time_t now = time(NULL);
     if (now >= when) return;
@@ -284,6 +283,9 @@ static time_t mk_local_next_every_minutes(int step_min, time_t now) {
 
 // ---- single scheduler thread ----
 void* timer_thread(void* arg) {
+
+   TEST_PRINT("Starting Timer thread..................");
+
   lower_thread_priority_batch();
   sched_ctx_t* ctx = (sched_ctx_t*)arg;
 
@@ -299,6 +301,7 @@ void* timer_thread(void* arg) {
 #else
     // --- test mode: run every N minutes (local time) ---
     run_at = mk_local_next_every_minutes(SCHED_TEST_EVERY_MIN, now);
+       TEST_PRINT("Test mode..................");
 #endif
 
     time_t wake = run_at - WAKEUP_SKEW_SEC;
