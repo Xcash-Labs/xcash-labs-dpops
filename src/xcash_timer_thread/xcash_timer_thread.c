@@ -268,22 +268,22 @@ static void run_proof_check(sched_ctx_t* ctx) {
         BSON_APPEND_UTF8(&filter, "public_address", agg_addr[i]);
 
         // --- Projection: only fetch total_vote_count
-        bson_t opts;
-        bson_init(&opts);
+        bson_t opts_ck;
+        bson_init(&opts_ck);
         bson_t proj;
         bson_init(&proj);
         BSON_APPEND_INT32(&proj, "total_vote_count", 1);
-        BSON_APPEND_DOCUMENT(&opts, "projection", &proj);
+        BSON_APPEND_DOCUMENT(&opts_ck, "projection", &proj);
         // (Optional) Limit 1 (find options only; server will stop after first)
         bson_t limit_doc;
         bson_init(&limit_doc);
-        BSON_APPEND_INT64(&opts, "limit", 1);
+        BSON_APPEND_INT64(&opts_ck, "limit", 1);
 
         // --- Query current value
         int64_t current_total = -1;  // -1 => "missing/unknown"
         bool have_current = false;
 
-        mongoc_cursor_t* cur = mongoc_collection_find_with_opts(dcoll, &filter, &opts, NULL);
+        mongoc_cursor_t* cur = mongoc_collection_find_with_opts(dcoll, &filter, &opts_ck, NULL);
         if (!cur) {
           WARNING_PRINT("delegate total read failed addr=%.12s… (cursor init)", agg_addr[i]);
         } else {
@@ -304,7 +304,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
         if (cur) mongoc_cursor_destroy(cur);
         bson_destroy(&limit_doc);
         bson_destroy(&proj);
-        bson_destroy(&opts);
+        bson_destroy(&opts_ck);
 
         // --- Compare and skip update if no change
         int64_t new_total = (int64_t)agg_total[i];
