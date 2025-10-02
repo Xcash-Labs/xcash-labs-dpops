@@ -46,7 +46,7 @@ static int pick_next_slot(time_t now, time_t* out_when) {
 
 static void sleep_until(time_t when) {
   for (;;) {
-    PRINT_ERROR("TEST...............................");
+    TEST_PRINT("TEST...............................");
     if (atomic_load_explicit(&shutdown_requested, memory_order_relaxed)) return;
     time_t now = time(NULL);
     if (now >= when) return;
@@ -305,9 +305,9 @@ void* timer_thread(void* arg) {
 
 #else
     // ---- test dispatch every N minutes ----
-    if (is_seed_node()) {
+    if (is_seed_node) {
       if (seed_is_primary()) {
-        INFO_PRINT("Test scheduler: PROOF CHECK (every %d min)", SCHED_TEST_EVERY_MIN);
+        TEST_PRINT("Test scheduler: PROOF CHECK (every %d min)", SCHED_TEST_EVERY_MIN);
         run_proof_check(ctx);
       } else {
         DEBUG_PRINT("Test scheduler: not primary seed — skip proof");
