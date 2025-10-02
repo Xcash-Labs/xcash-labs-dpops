@@ -256,6 +256,32 @@ static void run_payout(sched_ctx_t* ctx) {
   //  mongoc_client_pool_push(ctx->pool, c);
 }
 
+
+
+
+
+
+
+
+// Just for test
+static time_t mk_local_next_every_minutes(int step_min, time_t now) {
+  struct tm lt;
+  localtime_r(&now, &lt);
+  lt.tm_sec = 0;
+  int mod = lt.tm_min % step_min;
+  int add = (mod == 0) ? step_min : (step_min - mod);
+  lt.tm_min += add;
+  return mktime(&lt);
+}
+
+
+
+
+
+
+
+
+
 // ---- single scheduler thread ----
 void* timer_thread(void* arg) {
   lower_thread_priority_batch();
