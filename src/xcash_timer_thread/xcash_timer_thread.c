@@ -1,7 +1,7 @@
 #include "xcash_timer_thread.h"
 
-#define SCHED_TEST_EVERY_MIN   10
-#define SCHED_TEST_MODE        1
+#define SCHED_TEST_EVERY_MIN 10
+#define SCHED_TEST_MODE 1
 
 // ---- helpers ----
 static void lower_thread_priority_batch(void) {
@@ -56,18 +56,12 @@ static void sleep_until(time_t when) {
   }
 }
 
-
-
-
-
-
 // Small helper to keep per-delegate running totals
 static void add_vote_sum(char addrs[][XCASH_WALLET_LENGTH + 1],
                          int64_t totals[],
-                         size_t *pcount,
+                         size_t* pcount,
                          const char* addr,
-                         int64_t amt)
-{
+                         int64_t amt) {
   // Find existing bucket
   for (size_t i = 0; i < *pcount; ++i) {
     if (strcmp(addrs[i], addr) == 0) {
@@ -129,18 +123,17 @@ static void run_proof_check(sched_ctx_t* ctx) {
 
   // Build query/projection options
   bson_t* query = bson_new();  // {}
-  bson_t* opts  = BCON_NEW(
+  bson_t* opts = BCON_NEW(
       "projection", "{",
-        "_id",                      BCON_INT32(1),
-        "public_address_voted_for", BCON_INT32(1),
-        "total_vote",               BCON_INT32(1),
-        "reserve_proof",            BCON_INT32(1),
+      "_id", BCON_INT32(1),
+      "public_address_voted_for", BCON_INT32(1),
+      "total_vote", BCON_INT32(1),
+      "reserve_proof", BCON_INT32(1),
       "}",
-      "noCursorTimeout", BCON_BOOL(true)
-  );
+      "noCursorTimeout", BCON_BOOL(true));
   if (!query || !opts) {
     ERROR_PRINT("reserve_proofs: OOM building query/options");
-    if (opts)  bson_destroy(opts);
+    if (opts) bson_destroy(opts);
     if (query) bson_destroy(query);
     mongoc_collection_destroy(coll);
     mongoc_client_pool_push(ctx->pool, c);
@@ -158,11 +151,11 @@ static void run_proof_check(sched_ctx_t* ctx) {
   }
 
   // Per-delegate aggregators (bounded by number of delegates)
-  char    agg_addr[BLOCK_VERIFIERS_TOTAL_AMOUNT][XCASH_WALLET_LENGTH + 1];
+  char agg_addr[BLOCK_VERIFIERS_TOTAL_AMOUNT][XCASH_WALLET_LENGTH + 1];
   int64_t agg_total[BLOCK_VERIFIERS_TOTAL_AMOUNT];
-  memset(agg_addr,  0, sizeof agg_addr);
+  memset(agg_addr, 0, sizeof agg_addr);
   memset(agg_total, 0, sizeof agg_total);
-  size_t  agg_count = 0;
+  size_t agg_count = 0;
 
   const bson_t* doc = NULL;
   bson_error_t cerr;
@@ -173,9 +166,9 @@ static void run_proof_check(sched_ctx_t* ctx) {
     if (atomic_load_explicit(&shutdown_requested, memory_order_relaxed)) break;
 
     bson_iter_t it;
-    const char* voter    = NULL;  // _id (voter public address)
+    const char* voter = NULL;     // _id (voter public address)
     const char* delegate = NULL;  // public_address_voted_for
-    const char* proof    = NULL;  // reserve_proof
+    const char* proof = NULL;     // reserve_proof
     int64_t claimed_total = 0;
 
     if (bson_iter_init_find(&it, doc, "_id") && BSON_ITER_HOLDS_UTF8(&it))
@@ -189,8 +182,10 @@ static void run_proof_check(sched_ctx_t* ctx) {
 
     // total_vote must be integer and positive
     if (bson_iter_init_find(&it, doc, "total_vote")) {
-      if (BSON_ITER_HOLDS_INT64(&it))       claimed_total = bson_iter_int64(&it);
-      else if (BSON_ITER_HOLDS_INT32(&it))  claimed_total = (int64_t)bson_iter_int32(&it);
+      if (BSON_ITER_HOLDS_INT64(&it))
+        claimed_total = bson_iter_int64(&it);
+      else if (BSON_ITER_HOLDS_INT32(&it))
+        claimed_total = (int64_t)bson_iter_int32(&it);
       else {
         ERROR_PRINT("reserve_proofs: total_vote has unexpected type=%d for id=%.12s…",
                     (int)bson_iter_type(&it), voter ? voter : "(unknown)");
@@ -225,7 +220,8 @@ static void run_proof_check(sched_ctx_t* ctx) {
       ++invalid;
 
       // delete invalid proof by _id (voter)
-      bson_t del_filter; bson_init(&del_filter);
+      bson_t del_filter;
+      bson_init(&del_filter);
       BSON_APPEND_UTF8(&del_filter, "_id", voter);
       bson_error_t derr;
       if (mongoc_collection_delete_one(coll, &del_filter, NULL, NULL, &derr)) {
@@ -266,26 +262,79 @@ static void run_proof_check(sched_ctx_t* ctx) {
       ERROR_PRINT("delegates: get_collection failed; cannot write totals");
     } else {
       for (size_t i = 0; i < agg_count; ++i) {
-        bson_t filter; bson_init(&filter);
+        // --- Build filter: delegates.public_address == agg_addr[i]
+        bson_t filter;
+        bson_init(&filter);
         BSON_APPEND_UTF8(&filter, "public_address", agg_addr[i]);
 
-        bson_t set, update; bson_init(&set); bson_init(&update);
-        BSON_APPEND_INT64(&set, "total_vote_count", (int64_t)agg_total[i]);
+        // --- Projection: only fetch total_vote_count
+        bson_t opts;
+        bson_init(&opts);
+        bson_t proj;
+        bson_init(&proj);
+        BSON_APPEND_INT32(&proj, "total_vote_count", 1);
+        BSON_APPEND_DOCUMENT(&opts, "projection", &proj);
+        // (Optional) Limit 1 (find options only; server will stop after first)
+        bson_t limit_doc;
+        bson_init(&limit_doc);
+        BSON_APPEND_INT64(&opts, "limit", 1);
+
+        // --- Query current value
+        int64_t current_total = -1;  // -1 => "missing/unknown"
+        bool have_current = false;
+
+        mongoc_cursor_t* cur = mongoc_collection_find_with_opts(dcoll, &filter, &opts, NULL);
+        if (!cur) {
+          WARNING_PRINT("delegate total read failed addr=%.12s… (cursor init)", agg_addr[i]);
+        } else {
+          const bson_t* doc;
+          if (mongoc_cursor_next(cur, &doc)) {
+            bson_iter_t it;
+            if (bson_iter_init_find(&it, doc, "total_vote_count") &&
+                (BSON_ITER_HOLDS_INT32(&it) || BSON_ITER_HOLDS_INT64(&it))) {
+              current_total = bson_iter_as_int64(&it);
+              have_current = true;
+            }
+          }
+          if (mongoc_cursor_error(cur, NULL)) {
+            WARNING_PRINT("delegate total read failed addr=%.12s… (cursor err)", agg_addr[i]);
+          }
+        }
+
+        if (cur) mongoc_cursor_destroy(cur);
+        bson_destroy(&limit_doc);
+        bson_destroy(&proj);
+        bson_destroy(&opts);
+
+        // --- Compare and skip update if no change
+        int64_t new_total = (int64_t)agg_total[i];
+        if (have_current && current_total == new_total) {
+          DEBUG_PRINT("delegate total unchanged addr=%.12s… total=%lld (skip)",
+                      agg_addr[i], (long long)new_total);
+          bson_destroy(&filter);
+          continue;
+        }
+
+        // --- Apply update only when needed
+        bson_t set;
+        bson_init(&set);
+        BSON_APPEND_INT64(&set, "total_vote_count", new_total);
+
+        bson_t update;
+        bson_init(&update);
         BSON_APPEND_DOCUMENT(&update, "$set", &set);
 
         bson_error_t uerr;
         if (!mongoc_collection_update_one(dcoll, &filter, &update, NULL, NULL, &uerr)) {
           WARNING_PRINT("delegate total update failed addr=%.12s… : %s",
                         agg_addr[i], uerr.message);
-        } else {
-          DEBUG_PRINT("delegate total updated addr=%.12s… total=%lld",
-                      agg_addr[i], (long long)agg_total[i]);
         }
 
         bson_destroy(&update);
         bson_destroy(&set);
         bson_destroy(&filter);
       }
+
       mongoc_collection_destroy(dcoll);
     }
   }
@@ -293,24 +342,12 @@ static void run_proof_check(sched_ctx_t* ctx) {
   mongoc_client_pool_push(ctx->pool, c);
 }
 
-
-
-
-
-
 static void run_payout(sched_ctx_t* ctx) {
   //  mongoc_client_t* c = mongoc_client_pool_pop(ctx->pool);
   //  if (!c) return;
   // TODO: build & send payouts (with confirmations, thresholds, idempotency)
   //  mongoc_client_pool_push(ctx->pool, c);
 }
-
-
-
-
-
-
-
 
 // Just for test
 static time_t mk_local_next_every_minutes(int step_min, time_t now) {
@@ -323,18 +360,9 @@ static time_t mk_local_next_every_minutes(int step_min, time_t now) {
   return mktime(&lt);
 }
 
-
-
-
-
-
-
-
-
 // ---- single scheduler thread ----
 void* timer_thread(void* arg) {
-
-   TEST_PRINT("Starting Timer thread..................");
+  TEST_PRINT("Starting Timer thread..................");
 
   lower_thread_priority_batch();
   sched_ctx_t* ctx = (sched_ctx_t*)arg;
@@ -351,7 +379,7 @@ void* timer_thread(void* arg) {
 #else
     // --- test mode: run every N minutes (local time) ---
     run_at = mk_local_next_every_minutes(SCHED_TEST_EVERY_MIN, now);
-       TEST_PRINT("Test mode..................");
+    TEST_PRINT("Test mode..................");
 #endif
 
     time_t wake = run_at - WAKEUP_SKEW_SEC;
@@ -396,8 +424,6 @@ void* timer_thread(void* arg) {
       run_payout(ctx);
     }
 #endif
-
-
   }
   return NULL;
 }
