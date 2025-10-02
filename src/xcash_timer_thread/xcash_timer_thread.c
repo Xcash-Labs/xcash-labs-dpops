@@ -267,16 +267,13 @@ static void run_proof_check(sched_ctx_t* ctx) {
         bson_init(&filter);
         BSON_APPEND_UTF8(&filter, "public_address", agg_addr[i]);
 
-        // --- Projection: only fetch total_vote_count
+        // --- Projection: only fetch total_vote_count, and limit 1
         bson_t opts_ck;
         bson_init(&opts_ck);
         bson_t proj;
         bson_init(&proj);
         BSON_APPEND_INT32(&proj, "total_vote_count", 1);
         BSON_APPEND_DOCUMENT(&opts_ck, "projection", &proj);
-        // (Optional) Limit 1 (find options only; server will stop after first)
-        bson_t limit_doc;
-        bson_init(&limit_doc);
         BSON_APPEND_INT64(&opts_ck, "limit", 1);
 
         // --- Query current value
@@ -296,13 +293,13 @@ static void run_proof_check(sched_ctx_t* ctx) {
               have_current = true;
             }
           }
-          if (mongoc_cursor_error(cur_ck, NULL)) {
-            WARNING_PRINT("delegate total read failed addr=%.12s… (cursor err)", agg_addr[i]);
+          bson_error_t ck_err;
+          if (mongoc_cursor_error(cur_ck, &ck_err)) {
+            WARNING_PRINT("delegate total read failed addr=%.12s… : %s", agg_addr[i], ck_err.message);
           }
+          mongoc_cursor_destroy(cur_ck);
         }
 
-        if (cur_ck) mongoc_cursor_destroy(cur_ck);
-        bson_destroy(&limit_doc);
         bson_destroy(&proj);
         bson_destroy(&opts_ck);
 
@@ -324,12 +321,22 @@ static void run_proof_check(sched_ctx_t* ctx) {
         bson_init(&update);
         BSON_APPEND_DOCUMENT(&update, "$set", &set);
 
+        // (Optional) upsert if a delegate doc might not exist yet
+        // bson_t uopts; bson_init(&uopts);
+        // BSON_APPEND_BOOL(&uopts, "upsert", true);
+
         bson_error_t uerr;
-        if (!mongoc_collection_update_one(dcoll, &filter, &update, NULL, NULL, &uerr)) {
+        if (!mongoc_collection_update_one(dcoll, &filter, &update,
+                                          /*opts=*/NULL, /*reply=*/NULL, &uerr)) {
           WARNING_PRINT("delegate total update failed addr=%.12s… : %s",
                         agg_addr[i], uerr.message);
+        } else {
+          DEBUG_PRINT("delegate total %s addr=%.12s… total=%lld",
+                      have_current ? "updated" : "initialized",
+                      agg_addr[i], (long long)new_total);
         }
 
+        // if you used uopts: bson_destroy(&uopts);
         bson_destroy(&update);
         bson_destroy(&set);
         bson_destroy(&filter);
