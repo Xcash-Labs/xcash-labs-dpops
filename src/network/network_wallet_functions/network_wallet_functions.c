@@ -73,6 +73,13 @@ int check_reserve_proofs(uint64_t vote_amount_atomic, const char* PUBLIC_ADDRESS
     return XCASH_ERROR;
   }
 
+
+
+  TEST_PRINT("Payload: %s", request_payload);
+
+
+
+
   // Send
   char response[SMALL_BUFFER_SIZE] = {0};
   if (send_http_request(response, sizeof(response),
@@ -82,6 +89,13 @@ int check_reserve_proofs(uint64_t vote_amount_atomic, const char* PUBLIC_ADDRESS
     ERROR_PRINT("Could not validate the reserve proof (HTTP error)");
     return XCASH_ERROR;
   }
+
+
+
+  TEST_PRINT("Transaction: %s", response);
+
+
+
 
   // Parse required fields
   char good[8] = {0};
