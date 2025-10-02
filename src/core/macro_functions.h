@@ -91,6 +91,30 @@
     } \
 } while (0)
 
+
+
+
+
+
+
+
+
+#define PRINT_ERROR(fmt, ...) do { \
+    if (log_level >= LOG_LEVEL_CRITICAL) { \
+        time_t raw_time = time(NULL); \
+        struct tm *tm_info = localtime(&raw_time); \
+        char time_buf[20]; \
+        strftime(time_buf, sizeof(time_buf), "%Y-%m-%d %H:%M:%S", tm_info); \
+        fprintf(stderr, "\033[1;31m[%s] FATAL: " fmt "\033[0m\n", time_buf, ##__VA_ARGS__); \
+    } \
+} while (0)
+
+
+
+
+
+
+
 #define INFO_PRINT_STATUS_OK(fmt, ...) do { \
     if (log_level >= LOG_LEVEL_INFO) { \
         time_t raw_time = time(NULL); \

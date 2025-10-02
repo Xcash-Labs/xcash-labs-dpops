@@ -1,6 +1,7 @@
 #include "xcash_timer_thread.h"
 
 #define SCHED_TEST_EVERY_MIN   10
+#define SCHED_TEST_MODE        1
 
 // ---- helpers ----
 static void lower_thread_priority_batch(void) {
@@ -45,6 +46,7 @@ static int pick_next_slot(time_t now, time_t* out_when) {
 
 static void sleep_until(time_t when) {
   for (;;) {
+    PRINT_ERROR("TEST...............................");
     if (atomic_load_explicit(&shutdown_requested, memory_order_relaxed)) return;
     time_t now = time(NULL);
     if (now >= when) return;
@@ -263,11 +265,6 @@ void* timer_thread(void* arg) {
     if (atomic_load_explicit(&shutdown_requested, memory_order_relaxed)) break;
 
     time_t now = time(NULL), run_at;
-
-
-//    int idx = pick_next_slot(now, &run_at);
-//    if (idx < 0) break;  // shouldn't happen
-
 
 #ifndef SCHED_TEST_MODE
     // --- normal: pick next slot from SLOTS ---
