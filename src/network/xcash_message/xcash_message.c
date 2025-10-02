@@ -352,12 +352,12 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
 
 
 
-    case XMSG_SEED_TO_NODES_UPDATE_VOTE_COUNT:
-      if (server_limit_IP_addresses(LIMIT_CHECK, client->client_ip) == 1) {
-        server_receive_data_socket_nodes_to_block_verifiers_validate_block(client, data);
-        server_limit_IP_addresses(LIMIT_REMOVE, client->client_ip);
-      }
-      break;
+//    case XMSG_SEED_TO_NODES_UPDATE_VOTE_COUNT:
+//      if (server_limit_IP_addresses(LIMIT_CHECK, client->client_ip) == 1) {
+//        server_receive_data_socket_nodes_to_block_verifiers_validate_block(client, data);
+//        server_limit_IP_addresses(LIMIT_REMOVE, client->client_ip);
+//      }
+//      break;
 
 
     default:
