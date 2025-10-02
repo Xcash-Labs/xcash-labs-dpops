@@ -283,12 +283,12 @@ static void run_proof_check(sched_ctx_t* ctx) {
         int64_t current_total = -1;  // -1 => "missing/unknown"
         bool have_current = false;
 
-        mongoc_cursor_t* cur = mongoc_collection_find_with_opts(dcoll, &filter, &opts_ck, NULL);
-        if (!cur) {
+        mongoc_cursor_t* cur_ck = mongoc_collection_find_with_opts(dcoll, &filter, &opts_ck, NULL);
+        if (!cur_ck) {
           WARNING_PRINT("delegate total read failed addr=%.12s… (cursor init)", agg_addr[i]);
         } else {
           const bson_t* doc;
-          if (mongoc_cursor_next(cur, &doc)) {
+          if (mongoc_cursor_next(cur_ck, &doc)) {
             bson_iter_t it;
             if (bson_iter_init_find(&it, doc, "total_vote_count") &&
                 (BSON_ITER_HOLDS_INT32(&it) || BSON_ITER_HOLDS_INT64(&it))) {
@@ -296,12 +296,12 @@ static void run_proof_check(sched_ctx_t* ctx) {
               have_current = true;
             }
           }
-          if (mongoc_cursor_error(cur, NULL)) {
+          if (mongoc_cursor_error(cur_ck, NULL)) {
             WARNING_PRINT("delegate total read failed addr=%.12s… (cursor err)", agg_addr[i]);
           }
         }
 
-        if (cur) mongoc_cursor_destroy(cur);
+        if (cur_ck) mongoc_cursor_destroy(cur_ck);
         bson_destroy(&limit_doc);
         bson_destroy(&proj);
         bson_destroy(&opts_ck);
