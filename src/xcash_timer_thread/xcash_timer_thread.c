@@ -219,7 +219,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
 
     // Validate the proof against the voter address & claimed amount
     int rc = check_reserve_proofs((uint64_t)claimed_total, voter, proof);
-    bool ok = (rc =    int rc = check_reserve_proofs((uint64_t)claimed_total, delegate, proof);= XCASH_OK);
+    bool ok = (rc == XCASH_OK);
 
     if (!ok) {
       ++invalid;
