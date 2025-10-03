@@ -45,8 +45,6 @@ void server_receive_data_socket_node_to_node_db_sync_req(server_client_t *client
   bson_error_t error;
   char incoming_token[SYNC_TOKEN_LEN + 1] = {0};
 
-  INFO_PRINT("Req Message: %s", MESSAGE);
-
   // Extract sync_token from the incoming MESSAGE
   cJSON *root = cJSON_Parse(MESSAGE);
   if (root) {
@@ -256,9 +254,6 @@ void server_receive_data_socket_node_to_node_db_sync_data(const char *MESSAGE) {
   INFO_PRINT("Successfully updated delegates database from sync message");
 }
 
-
-
-
 /*---------------------------------------------------------------------------------------------------------*
  * Builds a seed→nodes "update vote count" message.
  *
@@ -323,4 +318,54 @@ bool build_seed_to_nodes_vote_count_update(const char* public_address,
 
   *upd_vote_message = msg;
   return true;
+}
+
+/*---------------------------------------------------------------------------------------------------------
+Name: server_receive_update_delegate_vote_count
+Description: Runs the code when the server receives the SEED_TO_NODES_UPDATE_VOTE_COUNT message.  This _Function_class
+  updates the vote count in the delegates record
+Parameters:
+  MESSAGE - The message
+---------------------------------------------------------------------------------------------------------*/
+void server_receive_update_delegate_vote_count(const char* MESSAGE) {
+  char public_address[XCASH_WALLET_LENGTH + 1] = {0};
+  char vote_buf[32] = {0};
+
+  DEBUG_PRINT("received %s: %s", __func__, MESSAGE ? MESSAGE : "(null)");
+
+  if (!MESSAGE) {
+    ERROR_PRINT("update_delegate_vote_count: MESSAGE is NULL");
+    return;
+  }
+
+  // Parse required fields
+  if (parse_json_data(MESSAGE, "public_address", public_address, sizeof(public_address)) == XCASH_ERROR ||
+      parse_json_data(MESSAGE, "vote_count_atomic", vote_buf, sizeof(vote_buf)) == XCASH_ERROR) {
+    ERROR_PRINT("update_delegate_vote_count: parse failed");
+    return;
+  }
+
+  if (strlen(public_address) != XCASH_WALLET_LENGTH) {
+    ERROR_PRINT("update_delegate_vote_count: invalid address length for %.12s…", public_address);
+    return;
+  }
+
+  // Parse vote_count_atomic as non-negative 64-bit integer
+  errno = 0;
+  char* endp = NULL;
+  long long vll = strtoll(vote_buf, &endp, 10);
+  if (errno != 0 || endp == vote_buf || *endp != '\0' || vll < 0) {
+    ERROR_PRINT("update_delegate_vote_count: invalid vote_count_atomic='%s'", vote_buf);
+    return;
+  }
+  int64_t new_total = (int64_t)vll;
+
+  // Set absolute total in DB (no upsert)
+  if (!delegates_apply_vote_total(public_address, new_total)) {
+    ERROR_PRINT("update_delegate_vote_count: DB update failed for %.12s…", public_address);
+    return;
+  }
+
+  DEBUG_PRINT("update_delegate_vote_count: set total_vote_count=%lld for %.12s…",
+              (long long)new_total, public_address);
 }

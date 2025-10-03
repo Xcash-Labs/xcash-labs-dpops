@@ -349,7 +349,7 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
 
     case XMSG_SEED_TO_NODES_UPDATE_VOTE_COUNT:
       if (server_limit_IP_addresses(LIMIT_CHECK, client->client_ip) == 1) {
-//        server_receive_update_delegate_vote_count(client, data);
+        server_receive_update_delegate_vote_count(data);
         ERROR_PRINT("Message: %s", data);
         server_limit_IP_addresses(LIMIT_REMOVE, client->client_ip);
       }

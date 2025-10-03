@@ -15,7 +15,7 @@
 int count_documents_in_collection(const char* DATABASE, const char* COLLECTION, const char* DATA);
 int count_all_documents_in_collection(const char* DATABASE, const char* COLLECTION);
 int insert_document_into_collection_bson(const char* DATABASE, const char* COLLECTION, bson_t* document);
-bool delegates_apply_vote_delta(const char* delegate_pubaddr, int64_t delta);
+bool delegates_apply_vote_total(const char* delegate_pubaddr, int64_t new_total);
 int check_if_database_collection_exist(const char* DATABASE, const char* COLLECTION);
 int read_document_field_from_collection(const char* DATABASE, const char* COLLECTION, const char* DATA, const char* FIELD_NAME, char* result, size_t result_size);
 int update_document_from_collection_bson(const char* DATABASE, const char* COLLECTION, const bson_t* filter, const bson_t* update_fields);

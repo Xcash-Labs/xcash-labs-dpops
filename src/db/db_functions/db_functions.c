@@ -157,20 +157,41 @@ int insert_document_into_collection_bson(const char* DATABASE, const char* COLLE
 }
 
 /*-----------------------------------------------------------------------------------------------------------
-Name: delegates_apply_vote_delta
-Description: increment a delegate's total_vote_count by delta (can be negative)
+Name: delegates_apply_vote_total
+Description: set the delegate's total_vote_count to the new_total
 Parameters:
   DATABASE - The database name.
   COLLECTION - The collection name.
 Return: 0 if an error has occurred or collection does not exist, 1 if successful.
 -----------------------------------------------------------------------------------------------------------*/
-bool delegates_apply_vote_delta(const char* delegate_pubaddr, int64_t delta) {
-  if (!delegate_pubaddr || !*delegate_pubaddr || delta == 0) {
-    ERROR_PRINT("delegates_apply_vote_delta: bad params");
+/*-----------------------------------------------------------------------------------------------------------
+Name: delegates_apply_vote_total
+Description: Set the delegate's total_vote_count to new_total (no upsert).
+Parameters:
+  delegate_pubaddr - delegate public address (string key)
+  new_total        - absolute total to store (will be clamped to >= 0)
+Return:
+  true  on success (row existed and was updated or unchanged)
+  false on error (DB error or row not found)
+-----------------------------------------------------------------------------------------------------------*/
+bool delegates_apply_vote_total(const char* delegate_pubaddr, int64_t new_total) {
+  if (!delegate_pubaddr || delegate_pubaddr[0] == '\0') {
+    ERROR_PRINT("delegates_apply_vote_total: bad params (empty address)");
     return false;
   }
 
-  mongoc_client_t* client = get_temporary_connection(); // pool_pop
+  if (strlen(delegate_pubaddr) != XCASH_WALLET_LENGTH) {
+    ERROR_PRINT("delegates_apply_vote_total: invalid address length");
+    return false;
+  }
+
+  if (new_total < 0) {
+    ERROR_PRINT("delegates_apply_vote_total: negative new_total (%lld) clamped to 0",
+                  (long long)new_total);
+    new_total = 0;
+  }
+
+  mongoc_client_t* client = get_temporary_connection();  // pool_pop
   if (!client) {
     ERROR_PRINT("Mongo client pool pop failed");
     return false;
@@ -185,48 +206,50 @@ bool delegates_apply_vote_delta(const char* delegate_pubaddr, int64_t delta) {
     return false;
   }
 
-  // filter: { public_address: <delegate_pubaddr> }
-  bson_t filter; bson_init(&filter);
+  bson_t filter;
+  bson_init(&filter);
   BSON_APPEND_UTF8(&filter, "public_address", delegate_pubaddr);
 
-  bson_t update; bson_init(&update);
-  bson_t inc; bson_init(&inc);
-  BSON_APPEND_INT64(&inc, "total_vote_count", delta);
-  BSON_APPEND_DOCUMENT(&update, "$inc", &inc);
-
-  // No upsert → we want to fail if the doc doesn't exist
-  bson_t* opts = NULL; // (optionally add writeConcern below)
+  bson_t update;
+  bson_init(&update);
+  bson_t set;
+  bson_init(&set);
+  BSON_APPEND_INT64(&set, "total_vote_count", new_total);
+  BSON_APPEND_DOCUMENT(&update, "$set", &set);
 
   bson_error_t err;
-  bson_t reply; bson_init(&reply);
-  if (!mongoc_collection_update_one(coll, &filter, &update, opts, &reply, &err)) {
-    ERROR_PRINT("update_one failed: domain=%d code=%d msg=%s", err.domain, err.code, err.message);
-    goto done;
+  bson_t reply;
+  bson_init(&reply);
+
+  if (!mongoc_collection_update_one(coll, &filter, &update,
+                                    /*opts=*/NULL, &reply, &err)) {
+    ERROR_PRINT("update_one $set failed: domain=%d code=%d msg=%s",
+                err.domain, err.code, err.message);
+    goto cleanup;
   }
 
-  // Check matchedCount to ensure the row existed
+  // Ensure a row matched (no upsert)
   int64_t matched = 0;
-  {
-    bson_iter_t it;
-    if (bson_iter_init_find(&it, &reply, "matchedCount")) {
-      if (BSON_ITER_HOLDS_INT32(&it)) matched = bson_iter_int32(&it);
-      else if (BSON_ITER_HOLDS_INT64(&it)) matched = bson_iter_int64(&it);
-    }
+  bson_iter_t it;
+  if (bson_iter_init_find(&it, &reply, "matchedCount")) {
+    matched = (BSON_ITER_HOLDS_INT64(&it))   ? bson_iter_int64(&it)
+              : (BSON_ITER_HOLDS_INT32(&it)) ? bson_iter_int32(&it) : 0;
   }
   if (matched == 0) {
-    ERROR_PRINT("Delegate not found for vote delta: %s", delegate_pubaddr);
-    goto done;
+    ERROR_PRINT("Delegate not found for absolute vote set: %.12s…", delegate_pubaddr);
+    goto cleanup;
   }
 
   ok = true;
 
-done:
+cleanup:
   bson_destroy(&reply);
-  bson_destroy(&inc);
+  bson_destroy(&set);
   bson_destroy(&update);
   bson_destroy(&filter);
   mongoc_collection_destroy(coll);
-  release_temporary_connection(client); // pool_push
+
+  release_temporary_connection(client);  // pool_push
   return ok;
 }
 
