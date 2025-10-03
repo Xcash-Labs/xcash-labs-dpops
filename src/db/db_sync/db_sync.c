@@ -42,6 +42,7 @@ bool hash_delegates_collection(char *out_hash_hex) {
       while (bson_iter_next(&iter)) {
         const char *key = bson_iter_key(&iter);
         if (strcmp(key, "registration_timestamp") != 0 &&
+          strcmp(key, "total_vote_count") != 0 &&
           strcmp(key, "online_status") != 0) {
             bson_append_value(&filtered, key, -1, bson_iter_value(&iter));
         }
