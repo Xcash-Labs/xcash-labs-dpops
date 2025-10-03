@@ -24,6 +24,19 @@ int sign_data(char *message) {
   char *request = calloc(MEDIUM_BUFFER_SIZE * 2, sizeof(char));
   char response[MEDIUM_BUFFER_SIZE] = {0};
   char random_data[RANDOM_STRING_LENGTH + 1] = {0};
+  char cur_round_part[3] = {0};
+  char trans_type[128] = {0};
+
+  // Extract all required fields
+  if (parse_json_data(message, "message_settings", trans_type, sizeof(trans_type)) != 1) {
+    ERROR_PRINT("sign_data: Failed to parse the message_settings fields.");
+    return XCASH_ERROR;
+  }
+
+  strcpy(cur_round_part, current_round_part);
+  if (trans_type == "SEED_TO_NODES_UPDATE_VOTE_COUNT") {
+    snprintf(cur_round_part, sizeof cur_round_part, "70");
+  }
 
   if (!signature || !payload || !request) {
     FATAL_ERROR_EXIT("sign_data: Memory allocation failed");
@@ -42,7 +55,7 @@ int sign_data(char *message) {
            "\"v_random_data\":\"%.*s\""
            "}",
            previous_block_hash,
-           current_round_part,
+           cur_round_part,
            RANDOM_STRING_LENGTH, random_data);
 
   // Step 2: Escape the message for the JSON-RPC request
@@ -125,7 +138,7 @@ bool sign_block_blob(const char *block_blob_hex, char *signature_out, size_t sig
  * Return:
  *   0 if the signed data is not verified, 1 if successfull
 ---------------------------------------------------------------------------------------------------------*/
-int verify_data(const char *message) {
+int verify_data(const char *message, const char *msg_type) {
   const char *HTTP_HEADERS[] = {"Content-Type: application/json", "Accept: application/json"};
   const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0]);
 
@@ -137,6 +150,12 @@ int verify_data(const char *message) {
   char raw_data[MEDIUM_BUFFER_SIZE] = {0};
   char request[MEDIUM_BUFFER_SIZE * 2] = {0};
   char response[MEDIUM_BUFFER_SIZE] = {0};
+  char cur_round_part[3] = {0};
+
+  strcpy(cur_round_part, current_round_part);
+  if (msg_type == XMSG_SEED_TO_NODES_UPDATE_VOTE_COUNT) {
+    snprintf(cur_round_part, sizeof cur_round_part, "70");
+  }
 
   // Extract all required fields
   if (parse_json_data(message, "XCASH_DPOPS_signature", signature, sizeof(signature)) != 1 ||
@@ -147,8 +166,8 @@ int verify_data(const char *message) {
     return XCASH_ERROR;
   }
 
-  if (strcmp(current_round_part, ck_round_part) != 0) {
-    ERROR_PRINT("Failed Signature Verification, round part timing issue: current round %s - message round %s.", current_round_part, ck_round_part);
+  if (strcmp(cur_round_part, ck_round_part) != 0) {
+    ERROR_PRINT("Failed Signature Verification, round part timing issue: current round %s - message round %s.", cur_round_part, ck_round_part);
     return XCASH_ERROR;
   }
 
