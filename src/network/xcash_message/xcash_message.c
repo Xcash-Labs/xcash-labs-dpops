@@ -277,17 +277,12 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
       }
       break;
 
-// change to IP
-
     case XMSG_NODES_TO_NODES_VOTE_MAJORITY_RESULTS:
       if (server_limit_IP_addresses(LIMIT_CHECK, client->client_ip) == 1) {        
         server_receive_data_socket_node_to_node_vote_majority(data);
         server_limit_IP_addresses(LIMIT_REMOVE, data);
       }
       break;
-
-
-//  change to public address ??
 
     case XMSG_NODE_TO_NETWORK_DATA_NODES_GET_CURRENT_BLOCK_VERIFIERS_LIST:
       if (server_limit_public_addresses(LIMIT_CHECK, data) == 1) {
