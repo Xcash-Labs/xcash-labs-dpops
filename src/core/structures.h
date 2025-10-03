@@ -39,6 +39,11 @@ typedef struct  {
     char verifiers_vrf_beta_hex[VRF_BETA_LENGTH + 1];
 } delegates_t;
 
+typedef struct {
+    char public_address[XCASH_WALLET_LENGTH+1];
+    char IP_address[IP_LENGTH+1];
+} delegates_timer_t
+
 // database struct
 struct database_document_fields {
     size_t count; // The amount of items in the database_document_fields struct
@@ -103,6 +108,7 @@ typedef enum {
     XMSG_XCASHD_TO_DPOPS_VERIFY,
     XMSG_DPOPS_TO_XCASHD_VERIFY,
     XMSG_MESSAGES_COUNT,
+    XMSG_SEED_TO_NODES_UPDATE_VOTE_COUNT,
     XMSG_NONE = XMSG_MESSAGES_COUNT
 } xcash_msg_t;
 

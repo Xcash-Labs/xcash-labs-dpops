@@ -12,6 +12,9 @@
 #include "structures.h"
 #include "db_functions.h"
 #include "network_wallet_functions.h"
+#include "xcash_net.h"
+#include "block_verifiers_functions.h"
+#include "block_verifiers_synchronize_server_functions.h"
 
 void* timer_thread(void* arg);
 

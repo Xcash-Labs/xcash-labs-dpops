@@ -255,3 +255,72 @@ void server_receive_data_socket_node_to_node_db_sync_data(const char *MESSAGE) {
 
   INFO_PRINT("Successfully updated delegates database from sync message");
 }
+
+
+
+
+/*---------------------------------------------------------------------------------------------------------*
+ * Builds a seed→nodes "update vote count" message.
+ *
+ * INPUTS:
+ *   public_address     - delegate's public address to update
+ *   vote_count_atomic  - new total vote count (atomic units)
+ *   upd_vote_message   - [out] on success, set to heap-allocated message string
+ *                        (caller must free(*upd_vote_message))
+ *
+ * RETURNS:
+ *   true  - message created and *upd_vote_message set
+ *   false - error (logs explain why; *upd_vote_message left NULL)
+ *
+ * Notes:
+ * - Uses create_message_param_list(XMSG_SEED_TO_NODES_UPDATE_VOTE_COUNT, params)
+ *   where params is a NULL-terminated list of key,value C-strings.
+ * - We stringify vote_count_atomic for the param list.
+ * - This function ONLY builds the message. Sending is the caller’s job.
+ *---------------------------------------------------------------------------------------------------------*/
+bool build_seed_to_nodes_vote_count_update(const char* public_address,
+                                           uint64_t vote_count_atomic,
+                                           char** upd_vote_message)
+{
+  if (upd_vote_message) *upd_vote_message = NULL;
+
+  if (!public_address || public_address[0] == '\0') {
+    ERROR_PRINT("build_seed_to_nodes_vote_count_update: public_address is empty");
+    return false;
+  }
+
+  if (strlen(public_address) != XCASH_WALLET_LENGTH) {
+    WARNING_PRINT("build_seed_to_nodes_vote_count_update: public_address length (%zu) != XCASH_WALLET_LENGTH (%d)",
+                  strlen(public_address), XCASH_WALLET_LENGTH);
+    return false;
+  }
+
+  if (!upd_vote_message) {
+    ERROR_PRINT("build_seed_to_nodes_vote_count_update: upd_vote_message out-param is NULL");
+    return false;
+  }
+
+  // Stringify vote_count_atomic
+  char vote_buf[32];
+  int n = snprintf(vote_buf, sizeof(vote_buf), "%" PRIu64, vote_count_atomic);
+  if (n < 0 || (size_t)n >= sizeof(vote_buf)) {
+    ERROR_PRINT("build_seed_to_nodes_vote_count_update: failed to format vote_count_atomic");
+    return false;
+  }
+
+  const char* params[] = {
+    "public_address",   public_address,
+    "vote_count_atomic", vote_buf,
+    NULL
+  };
+
+  // Build message with your existing helper
+  char* msg = create_message_param_list(XMSG_SEED_TO_NODES_UPDATE_VOTE_COUNT, params);
+  if (!msg) {
+    WARNING_PRINT("create_message_param_list returned NULL for XMSG_SEED_TO_NODES_UPDATE_VOTE_COUNT");
+    return false;
+  }
+
+  *upd_vote_message = msg;
+  return true;
+}

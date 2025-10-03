@@ -254,6 +254,21 @@ static void run_proof_check(sched_ctx_t* ctx) {
   bson_destroy(query);
   mongoc_collection_destroy(coll);
 
+  memset(delegates_timer_all, 0, sizeof delegates_timer_all);
+  // Wait for correct time to load from delegates_all
+  sync_block_verifiers_minutes_and_seconds(0, 45);
+  pthread_mutex_lock(&current_block_verifiers_lock);
+  for (size_t i = 0, j = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
+    if (delegates_all[i].public_address[0] != '\0' && delegates_all[i].IP_address[0] != '\0') {
+      if (strcmp(delegates_all[i].online_status, "true") == 0) {
+        strcpy(delegates_timer_all[j].public_address, delegates_all[i].public_address);
+        strcpy(delegates_timer_all[j].IP_address, delegates_all[i].IP_address);
+        j++;
+      }
+    }
+  }
+  pthread_mutex_unlock(&current_block_verifiers_lock);
+
   // Apply per-delegate totals only if not shutting down
   if (!stop_after_scan && agg_count > 0) {
     mongoc_collection_t* dcoll =
@@ -262,7 +277,6 @@ static void run_proof_check(sched_ctx_t* ctx) {
       ERROR_PRINT("delegates: get_collection failed; cannot write totals");
     } else {
       for (size_t i = 0; i < agg_count; ++i) {
-        // --- Build filter: delegates.public_address == agg_addr[i]
         bson_t filter;
         bson_init(&filter);
         BSON_APPEND_UTF8(&filter, "public_address", agg_addr[i]);
@@ -309,9 +323,12 @@ static void run_proof_check(sched_ctx_t* ctx) {
 
 
 
-            
+
           WARNING_PRINT("delegate total unchanged addr=%.12s… total=%lld (skip)",
                       agg_addr[i], (long long)new_total);
+
+
+
           bson_destroy(&filter);
           continue;
         }
@@ -325,25 +342,42 @@ static void run_proof_check(sched_ctx_t* ctx) {
         bson_init(&update);
         BSON_APPEND_DOCUMENT(&update, "$set", &set);
 
-        // (Optional) upsert if a delegate doc might not exist yet
-        // bson_t uopts; bson_init(&uopts);
-        // BSON_APPEND_BOOL(&uopts, "upsert", true);
-
         bson_error_t uerr;
+        bool update_ok = false;
         if (!mongoc_collection_update_one(dcoll, &filter, &update,
                                           /*opts=*/NULL, /*reply=*/NULL, &uerr)) {
           WARNING_PRINT("delegate total update failed addr=%.12s… : %s",
                         agg_addr[i], uerr.message);
         } else {
+          update_ok = true;
           DEBUG_PRINT("delegate total %s addr=%.12s… total=%lld",
                       have_current ? "updated" : "initialized",
                       agg_addr[i], (long long)new_total);
         }
 
-        // if you used uopts: bson_destroy(&uopts);
         bson_destroy(&update);
         bson_destroy(&set);
         bson_destroy(&filter);
+
+        if (update_ok) {
+          response_t** responses = NULL;
+          char* upd_vote_message = NULL;
+          if (build_seed_to_nodes_vote_count_update(agg_addr[i], new_total, &upd_vote_message)) {
+          if (xnet_send_data_multi(XNET_DELEGATES_ALL_ONLINE_NOSEEDS, upd_vote_message, &responses)) {
+            free(upd_vote_message);
+              cleanup_responses(responses);
+            } else {
+              ERROR_PRINT("Failed to send vote count update message.");
+              free(upd_vote_message);
+              cleanup_responses(responses);
+            }
+          } else {
+            ERROR_PRINT("Failed to generate vote count update message");
+              if (upd_vote_message != NULL) {
+                free(upd_vote_message);
+              }
+          }
+        }
       }
 
       mongoc_collection_destroy(dcoll);

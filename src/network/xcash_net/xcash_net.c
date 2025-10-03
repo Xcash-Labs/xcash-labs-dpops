@@ -40,26 +40,28 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
       hosts = all_hosts;     // Assign heap-allocated array to hosts
     } break;
 
-    case XNET_SEEDS_ALL_ONLINE: {
-      const char **online_hosts = malloc((network_data_nodes_amount + 1) * sizeof(char *));
-      if (!online_hosts) {
-        ERROR_PRINT("Failed to allocate memory for online_hosts");
-        return false;  // Handle memory allocation failure
+    case XNET_DELEGATES_ALL_ONLINE_NOSEEDS : {
+      const char **delegates_online_hosts_xseeds = malloc((BLOCK_VERIFIERS_TOTAL_AMOUNT + 1) * sizeof(char *));
+      if (!delegates_online_hosts_xseeds) {
+        ERROR_PRINT("Failed to allocate memory for delegates_online_hosts");
+        return false;
       }
 
-      int si = 0, di = 0;
-      while (si < network_data_nodes_amount) {
-        if (network_nodes[si].online_status == 1) {
-          if (!network_nodes[si].ip_address) {  // Check for NULL IP address
-            ERROR_PRINT("IP address is NULL for node %d", si);
-            continue;  // Skip to next node
-          }
-          online_hosts[di++] = network_nodes[si].ip_address;  // Assign IP if online
+      size_t host_index = 0;
+      for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT && delegates_timer_all[i].public_address[0] != '\0';++i) {
+        bool not_seed = (!is_seed_address(delegates_timer_all[i].public_address));
+
+        const char *ip = delegates_timer_all[i].IP_address;
+        bool has_ip = (ip && ip[0] != '\0');
+        if (!has_ip) continue;
+
+        if (not_seed) {
+          delegates_online_hosts_xseeds[host_index++] = delegates_timer_all[i].IP_address;
         }
-        si++;
       }
-      online_hosts[di] = NULL;  // Null-terminate the array
-      hosts = online_hosts;     // Assign heap-allocated array to hosts
+
+      delegates_online_hosts_xseeds[host_index] = NULL;
+      hosts = delegates_online_hosts_xseeds;
     } break;
 
     case XNET_DELEGATES_ALL: {

@@ -7,6 +7,7 @@ bool is_seed_node = false;
 int network_data_nodes_amount = 0;
 
 delegates_t delegates_all[BLOCK_VERIFIERS_TOTAL_AMOUNT] = {0};
+delegates_timer_t delegates_timer_all[BLOCK_VERIFIERS_TOTAL_AMOUNT] = {0};
 
 char xcash_wallet_public_address[XCASH_WALLET_LENGTH + 1] = {0};
 char current_block_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
@@ -76,7 +77,8 @@ const char* xcash_net_messages[] = {
     "NODES_TO_NODES_DATABASE_SYNC_REQ",
     "NODES_TO_NODES_DATABASE_SYNC_DATA",
     "XCASHD_TO_DPOPS_VERIFY",
-    "DPOPS_TO_XCASHD_VERIFY"};
+    "DPOPS_TO_XCASHD_VERIFY",
+    "SEED_TO_NODES_UPDATE_VOTE_COUNT"};
 
 // initialize the global variables
 void init_globals(void) {

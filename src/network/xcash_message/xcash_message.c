@@ -4,6 +4,7 @@ const xcash_msg_t WALLET_SIGN_MESSAGES[] = {
     XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_VRF_DATA,
     XMSG_NODES_TO_NODES_VOTE_MAJORITY_RESULTS,
     XMSG_NODES_TO_NODES_DATABASE_SYNC_REQ,
+    XMSG_SEED_TO_NODES_UPDATE_VOTE_COUNT,
     XMSG_NONE};
 const size_t WALLET_SIGN_MESSAGES_COUNT = ARRAY_SIZE(WALLET_SIGN_MESSAGES) - 1;
 
@@ -343,22 +344,12 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
       }
       break;
 
-
-
-
-
-
-
-
-
-
-//    case XMSG_SEED_TO_NODES_UPDATE_VOTE_COUNT:
-//      if (server_limit_IP_addresses(LIMIT_CHECK, client->client_ip) == 1) {
-//        server_receive_data_socket_nodes_to_block_verifiers_validate_block(client, data);
-//        server_limit_IP_addresses(LIMIT_REMOVE, client->client_ip);
-//      }
-//      break;
-
+    case XMSG_SEED_TO_NODES_UPDATE_VOTE_COUNT:
+      if (server_limit_IP_addresses(LIMIT_CHECK, client->client_ip) == 1) {
+        server_receive_update_delegate_vote_count(client, data);
+        server_limit_IP_addresses(LIMIT_REMOVE, client->client_ip);
+      }
+      break;
 
     default:
       ERROR_PRINT("Unknown message type received: %s", data);

@@ -18,5 +18,6 @@
 void server_receive_data_socket_node_to_network_data_nodes_get_current_block_verifiers_list(server_client_t* client);
 void server_receive_data_socket_node_to_node_db_sync_req(server_client_t *client, const char *MESSAGE);
 void server_receive_data_socket_node_to_node_db_sync_data(const char *MESSAGE);
+bool build_seed_to_nodes_vote_count_update(const char* public_address, uint64_t vote_count_atomic, char** upd_vote_message);
 
 #endif
