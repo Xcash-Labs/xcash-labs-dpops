@@ -620,9 +620,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
       BSON_APPEND_UTF8(setdoc_bson, key, val);
     } else if (strncmp(key, "shared_delegate_status", VSMALL_BUFFER_SIZE) == 0) {
       // the names are used in a sort and seed type needs to come
-      if (strncmp(val, "solo", VSMALL_BUFFER_SIZE) != 0 &&
-          strncmp(val, "shared", VSMALL_BUFFER_SIZE) != 0 &&
-          strncmp(val, "team", VSMALL_BUFFER_SIZE) != 0) {
+      if (strncmp(val, "shared", VSMALL_BUFFER_SIZE) != 0) {
         bson_destroy(setdoc_bson);
         bson_destroy(filter_bson);
         cJSON_Delete(root);
