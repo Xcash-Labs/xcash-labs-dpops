@@ -390,7 +390,7 @@ int verify_the_ip(const char *message, const char *client_ip, bool seed_only) {
 
   if (seed_only) {
     if(!is_seed_address(ck_public_address)) {
-      ERROR_PRINT("verify_ip: The public_address for this ip must bee a seed delegate");
+      ERROR_PRINT("verify_ip: The public_address for this ip must be a seed delegate");
       return XCASH_ERROR;
     }
   }
