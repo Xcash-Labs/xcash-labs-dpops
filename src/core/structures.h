@@ -42,7 +42,7 @@ typedef struct  {
 typedef struct {
     char public_address[XCASH_WALLET_LENGTH+1];
     char IP_address[IP_LENGTH+1];
-} delegates_timer_t
+} delegates_timer_t;
 
 // database struct
 struct database_document_fields {
