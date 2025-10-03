@@ -34,7 +34,7 @@ int sign_data(char *message) {
   }
 
   strcpy(cur_round_part, current_round_part);
-  if (trans_type == "SEED_TO_NODES_UPDATE_VOTE_COUNT") {
+  if (strcmp(trans_type, "SEED_TO_NODES_UPDATE_VOTE_COUNT") == 0) {
     snprintf(cur_round_part, sizeof cur_round_part, "70");
   }
 
