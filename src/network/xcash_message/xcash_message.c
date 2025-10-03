@@ -240,8 +240,16 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
     (msg_type != XMSG_NODES_TO_BLOCK_VERIFIERS_VOTE) &&
     (msg_type != XMSG_NODES_TO_BLOCK_VERIFIERS_REVOTE) &&
     (msg_type != XMSG_NODES_TO_BLOCK_VERIFIERS_CHECK_VOTE_STATUS)) {
-    if (verify_the_ip(data, client->client_ip) != XCASH_OK) {
+    if (verify_the_ip(data, client->client_ip, false) != XCASH_OK) {
       ERROR_PRINT("IP check failed for msg_type=%d from %s", (int)msg_type, client->client_ip);
+      return;
+    }
+  }
+
+  // Must come from seed
+  if ((msg_type == XMSG_SEED_TO_NODES_UPDATE_VOTE_COUNT)) {
+    if (verify_the_ip(data, client->client_ip, true) != XCASH_OK) {
+      ERROR_PRINT("IP seed check failed for msg_type=%d from %s", (int)msg_type, client->client_ip);
       return;
     }
   }
@@ -346,7 +354,7 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
 
     case XMSG_SEED_TO_NODES_UPDATE_VOTE_COUNT:
       if (server_limit_IP_addresses(LIMIT_CHECK, client->client_ip) == 1) {
-        server_receive_update_delegate_vote_count(client, data);
+//        server_receive_update_delegate_vote_count(client, data);
         server_limit_IP_addresses(LIMIT_REMOVE, client->client_ip);
       }
       break;

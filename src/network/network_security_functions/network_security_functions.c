@@ -352,15 +352,20 @@ static int sockaddr_to_numhost(const struct sockaddr *sa, char *out, size_t outs
  *   of a known delegate from the current verifier list.
  *
  * Parameters:
- *   message - The complete signed message (in JSON or delimited key-value format).
+ *   message - The complete message (in JSON or delimited key-value format).
  *   client_ip - The IP address from which the message was received.
  *
  * Return:
  *   XCASH_OK (1) if the IP matches a known delegate and (optionally) round part is valid.
  *   XCASH_ERROR (0) if the delegate is unknown, the IP does not match, or data is invalid.
 ---------------------------------------------------------------------------------------------------------*/
-int verify_the_ip(const char *message, const char *client_ip) {
+int verify_the_ip(const char *message, const char *client_ip, bool seed_only) {
   if (!message || !client_ip || *client_ip == 0) {
+    ERROR_PRINT("verify_ip: Null or empty client_ip passed");
+    return XCASH_ERROR;
+  }
+
+  if (!message || !client_ip || client_ip[0] == '\0') {
     ERROR_PRINT("verify_ip: Null or empty client_ip passed");
     return XCASH_ERROR;
   }
@@ -381,6 +386,13 @@ int verify_the_ip(const char *message, const char *client_ip) {
   if (parse_json_data(message, "public_address", ck_public_address, sizeof(ck_public_address)) != XCASH_OK) {
     ERROR_PRINT("verify_ip: Failed to parse public_address field");
     return XCASH_ERROR;
+  }
+
+  if (seed_only) {
+    if(!is_seed_address(ck_public_address)) {
+      ERROR_PRINT("verify_ip: The public_address for this ip must bee a seed delegate");
+      return XCASH_ERROR;
+    }
   }
 
   // Get the IP/hostname from DB
