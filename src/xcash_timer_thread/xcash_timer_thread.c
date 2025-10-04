@@ -1,37 +1,5 @@
 #include "xcash_timer_thread.h"
 
-
-// ---- jobs ----
-typedef enum { JOB_PROOF, JOB_PAYOUT } job_kind_t;
-
-typedef struct {
-  int hour;  // 0..23 local time
-  int min;   // 0..59
-  job_kind_t kind;
-} sched_slot_t;
-
-// 3:00 AM & 3:00 PM → PROOF; 6:00 AM & 6:00 PM → PAYOUT
-static const sched_slot_t SLOTS[] = {
-  {3,  0, JOB_PROOF},
-  {15, 0, JOB_PROOF},
-  {6,  0, JOB_PAYOUT},
-  {18, 0, JOB_PAYOUT},
-};
-static const size_t NSLOTS = sizeof(SLOTS)/sizeof(SLOTS[0]);
-
-typedef struct {
-  char     a[XCASH_WALLET_LENGTH + 1];  // voter wallet address
-  uint64_t v;                            // vote total (atomic)
-} payout_output_t;
-
-typedef struct {
-  char           delegate[XCASH_WALLET_LENGTH + 1];  // delegate address (key)
-  payout_output_t *outs;                              // dynamic array of outputs
-  size_t         count;                               // used entries
-  size_t         cap;                                 // allocated entries
-  uint64_t       total_votes_atomic;                  // running sum (optional)
-} payout_bucket_t;
-
 #define SCHED_TEST_EVERY_MIN 10
 #define SCHED_TEST_MODE 1
 
@@ -87,61 +55,6 @@ static void sleep_until(time_t when) {
     nanosleep(&ts, NULL);
   }
 }
-
-// Helpers to find or create a bucket by delegate
-static int get_bucket_index(payout_bucket_t buckets[],
-                            size_t *bucket_count,
-                            const char *delegate) {
-  for (size_t i = 0; i < *bucket_count; ++i) {
-    if (strcmp(buckets[i].delegate, delegate) == 0) return (int)i;
-  }
-  if (*bucket_count >= BLOCK_VERIFIERS_TOTAL_AMOUNT) {
-    return -1; // too many delegates (shouldn't happen if capped)
-  }
-  // create new bucket
-  payout_bucket_t *b = &buckets[*bucket_count];
-  memset(b, 0, sizeof *b);
-  strncpy(b->delegate, delegate, XCASH_WALLET_LENGTH);
-  b->delegate[XCASH_WALLET_LENGTH] = '\0';
-  b->outs = NULL; b->count = 0; b->cap = 0; b->total_votes_atomic = 0;
-  return (int)(*bucket_count)++;
-}
-
-static int bucket_push_output(payout_bucket_t *b,
-                              const char *voter_addr,
-                              uint64_t amount_atomic) {
-  if (b->count == b->cap) {
-    size_t new_cap = (b->cap == 0) ? 256 : (b->cap * 2);
-    payout_output_t *p = (payout_output_t*)realloc(b->outs, new_cap * sizeof(*p));
-    if (!p) return 0;
-    b->outs = p;
-    b->cap  = new_cap;
-  }
-  payout_output_t *o = &b->outs[b->count++];
-  strncpy(o->a, voter_addr, XCASH_WALLET_LENGTH);
-  o->a[XCASH_WALLET_LENGTH] = '\0';
-  o->v = amount_atomic;
-  b->total_votes_atomic += amount_atomic;
-  return 1;
-}
-
-static void free_buckets(payout_bucket_t buckets[], size_t bucket_count) {
-  for (size_t i = 0; i < bucket_count; ++i) {
-    free(buckets[i].outs);
-    buckets[i].outs = NULL;
-    buckets[i].cap = buckets[i].count = 0;
-  }
-}
-
-
-
-
-
-
-
-
-
-
 
 // Small helper to keep per-delegate running totals
 static void add_vote_sum(char addrs[][XCASH_WALLET_LENGTH + 1],
@@ -477,7 +390,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
 /*
 height - block-block hash total vote
 {
-  "type": "SEED_TO_NODES_PAYOUT",
+  "type": "PAYOUT_INSTRUCTION",
   "cutoff": "height": 123456,
   "delegat_wallet_address": XCA..,
   "entries_count": 12345,
