@@ -388,20 +388,6 @@ static void run_proof_check(sched_ctx_t* ctx) {
 }
 
 
-height - block-block hash total vote
-{
-  "type": "PAYOUT_INSTRUCTION",
-  "cutoff": "height": 123456,
-  "delegat_wallet_address": XCA..,
-  "entries_count": 12345,
-  "XCASH_DPOPS_signature": "",
-  "outputs": [ {"a":"XCA...","v":12345678}, ... ]
-}
-
-
-
-
-
 // Just for test
 static time_t mk_local_next_every_minutes(int step_min, time_t now) {
   struct tm lt;
