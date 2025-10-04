@@ -78,7 +78,8 @@ const char* xcash_net_messages[] = {
     "NODES_TO_NODES_DATABASE_SYNC_DATA",
     "XCASHD_TO_DPOPS_VERIFY",
     "DPOPS_TO_XCASHD_VERIFY",
-    "SEED_TO_NODES_UPDATE_VOTE_COUNT"};
+    "SEED_TO_NODES_UPDATE_VOTE_COUNT",
+    "SEED_TO_NODES_PAYOUT" };
 
 // initialize the global variables
 void init_globals(void) {

@@ -1,5 +1,24 @@
 #include "xcash_timer_thread.h"
 
+
+// ---- jobs ----
+typedef enum { JOB_PROOF, JOB_PAYOUT } job_kind_t;
+
+typedef struct {
+  int hour;  // 0..23 local time
+  int min;   // 0..59
+  job_kind_t kind;
+} sched_slot_t;
+
+// 3:00 AM & 3:00 PM → PROOF; 6:00 AM & 6:00 PM → PAYOUT
+static const sched_slot_t SLOTS[] = {
+  {3,  0, JOB_PROOF},
+  {15, 0, JOB_PROOF},
+  {6,  0, JOB_PAYOUT},
+  {18, 0, JOB_PAYOUT},
+};
+static const size_t NSLOTS = sizeof(SLOTS)/sizeof(SLOTS[0]);
+
 #define SCHED_TEST_EVERY_MIN 10
 #define SCHED_TEST_MODE 1
 
@@ -55,6 +74,71 @@ static void sleep_until(time_t when) {
     nanosleep(&ts, NULL);
   }
 }
+
+
+
+typedef struct {
+  char           delegate[XCASH_WALLET_LENGTH + 1];  // delegate address (key)
+  payout_output_t *outs;                              // dynamic array of outputs
+  size_t         count;                               // used entries
+  size_t         cap;                                 // allocated entries
+  uint64_t       total_votes_atomic;                  // running sum (optional)
+} payout_bucket_t;
+
+// Find or create a bucket by delegate
+static int get_bucket_index(payout_bucket_t buckets[],
+                            size_t *bucket_count,
+                            const char *delegate) {
+  for (size_t i = 0; i < *bucket_count; ++i) {
+    if (strcmp(buckets[i].delegate, delegate) == 0) return (int)i;
+  }
+  if (*bucket_count >= BLOCK_VERIFIERS_TOTAL_AMOUNT) {
+    return -1; // too many delegates (shouldn't happen if capped)
+  }
+  // create new bucket
+  payout_bucket_t *b = &buckets[*bucket_count];
+  memset(b, 0, sizeof *b);
+  strncpy(b->delegate, delegate, XCASH_WALLET_LENGTH);
+  b->delegate[XCASH_WALLET_LENGTH] = '\0';
+  b->outs = NULL; b->count = 0; b->cap = 0; b->total_votes_atomic = 0;
+  return (int)(*bucket_count)++;
+}
+
+static int bucket_push_output(payout_bucket_t *b,
+                              const char *voter_addr,
+                              uint64_t amount_atomic) {
+  if (b->count == b->cap) {
+    size_t new_cap = (b->cap == 0) ? 256 : (b->cap * 2);
+    payout_output_t *p = (payout_output_t*)realloc(b->outs, new_cap * sizeof(*p));
+    if (!p) return 0;
+    b->outs = p;
+    b->cap  = new_cap;
+  }
+  payout_output_t *o = &b->outs[b->count++];
+  strncpy(o->a, voter_addr, XCASH_WALLET_LENGTH);
+  o->a[XCASH_WALLET_LENGTH] = '\0';
+  o->v = amount_atomic;
+  b->total_votes_atomic += amount_atomic;
+  return 1;
+}
+
+static void free_buckets(payout_bucket_t buckets[], size_t bucket_count) {
+  for (size_t i = 0; i < bucket_count; ++i) {
+    free(buckets[i].outs);
+    buckets[i].outs = NULL;
+    buckets[i].cap = buckets[i].count = 0;
+  }
+}
+
+
+
+
+
+
+
+
+
+
 
 // Small helper to keep per-delegate running totals
 static void add_vote_sum(char addrs[][XCASH_WALLET_LENGTH + 1],
@@ -256,7 +340,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
 
   memset(delegates_timer_all, 0, sizeof delegates_timer_all);
   // Wait for correct time to load from delegates_all
-  sync_block_verifiers_minutes_and_seconds(0, 45);
+  sync_block_verifiers_minutes_and_seconds(0, 51);
   pthread_mutex_lock(&current_block_verifiers_lock);
   for (size_t i = 0, j = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
     if (delegates_all[i].public_address[0] != '\0' && delegates_all[i].IP_address[0] != '\0') {
@@ -387,12 +471,20 @@ static void run_proof_check(sched_ctx_t* ctx) {
   mongoc_client_pool_push(ctx->pool, c);
 }
 
-static void run_payout(sched_ctx_t* ctx) {
-  //  mongoc_client_t* c = mongoc_client_pool_pop(ctx->pool);
-  //  if (!c) return;
-  // TODO: build & send payouts (with confirmations, thresholds, idempotency)
-  //  mongoc_client_pool_push(ctx->pool, c);
+/*
+height - block-block hash total vote
+{
+  "type": "SEED_TO_NODES_PAYOUT",
+  "cutoff": "height": 123456,
+  "delegat_wallet_address": XCA..,
+  "entries_count": 12345,
+  "XCASH_DPOPS_signature": "",
+  "outputs": [ {"a":"XCA...","v":12345678}, ... ]
 }
+*/
+
+
+
 
 // Just for test
 static time_t mk_local_next_every_minutes(int step_min, time_t now) {
@@ -446,16 +538,10 @@ void* timer_thread(void* arg) {
     if (slot->kind == JOB_PROOF) {
       if (is_seed_node) {
         if (seed_is_primary()) {
-          INFO_PRINT("Scheduler: running PROOF CHECK at %02d:%02d", slot->hour, slot->min);
+          WARNING_PRINT("Scheduler: running PROOF CHECK at %02d:%02d", slot->hour, slot->min);
           run_proof_check(ctx);
         }
       }
-    } else {
-      if (!is_seed_node) {
-        INFO_PRINT("Scheduler: running PAYOUT at %02d:%02d", slot->hour, slot->min);
-        run_payout(ctx);
-      }
-    }
 
 #else
     // ---- test dispatch every N minutes ----
@@ -464,12 +550,8 @@ void* timer_thread(void* arg) {
         WARNING_PRINT("Test scheduler: PROOF CHECK (every %d min)", SCHED_TEST_EVERY_MIN);
         run_proof_check(ctx);
       } else {
-        DEBUG_PRINT("Test scheduler: not primary seed — skip proof");
+        WARNING_PRINT("Test scheduler: not primary seed — skip proof");
       }
-    } else {
-      WARNING_PRINT("Test scheduler: PAYOUT (every %d min)", SCHED_TEST_EVERY_MIN);
-      run_payout(ctx);
-    }
 #endif
   }
   return NULL;

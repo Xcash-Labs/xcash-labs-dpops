@@ -120,3 +120,33 @@ int check_reserve_proofs(uint64_t vote_amount_atomic, const char* PUBLIC_ADDRESS
 
   return XCASH_OK;
 }
+
+
+/*----------------------------------------------------------------------------------------------------------
+Name: send_payment
+Description: Sends a payment
+Parameters:
+  DATA - The data
+  tx_hash - The transaction hash of the payment
+  tx_key - The transaction key of the payment
+Return: 0 if an error has occured, 1 if successfull
+----------------------------------------------------------------------------------------------------------*/
+/*int send_payment(const char* DATA, char* tx_hash, char* tx_key) {
+  // Constants
+  const char* HTTP_HEADERS[] = {"Content-Type: application/json", "Accept: application/json"};
+  const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0]);
+
+  // Variables
+  char data[BUFFER_SIZE];
+  char message[BUFFER_SIZE];
+
+  memset(data, 0, sizeof(data));
+  memset(message, 0, sizeof(message));
+
+  memcpy(message, DATA, strnlen(DATA, sizeof(message)) - 2);
+  memcpy(message + strlen(message), ",\"do_not_relay\":false}}", 23);
+
+  return send_http_request(data, XCASH_wallet_IP_address, "/json_rpc", xcash_wallet_port, "POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH, message,
+    SEND_PAYMENT_TIMEOUT_SETTINGS) <= 0 || parse_json_data(data, "tx_hash_list", tx_hash, BUFFER_SIZE) == 0 
+    || parse_json_data(data, "tx_key_list", tx_key, BUFFER_SIZE) == 0 ? 0 : 1;
+}*/
