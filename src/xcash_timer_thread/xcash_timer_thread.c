@@ -3,6 +3,17 @@
 #define SCHED_TEST_EVERY_MIN 10
 #define SCHED_TEST_MODE 1
 
+
+typedef struct {
+  char           delegate[XCASH_WALLET_LENGTH + 1];  // delegate address (key)
+  payout_output_t *outs;                              // dynamic array of outputs
+  size_t         count;                               // used entries
+  size_t         cap;                                 // allocated entries
+} payout_bucket_t;
+
+
+
+
 // ---- helpers ----
 static void lower_thread_priority_batch(void) {
   // Best-effort: reduce CPU weight via niceness (works even if sched change fails)
@@ -75,7 +86,7 @@ static int get_bucket_index(payout_bucket_t buckets[],
   memset(b, 0, sizeof *b);
   strncpy(b->delegate, delegate, XCASH_WALLET_LENGTH);
   b->delegate[XCASH_WALLET_LENGTH] = '\0';
-  b->outs = NULL; b->count = 0; b->cap = 0; b->total_votes_atomic = 0;
+  b->outs = NULL; b->count = 0; b->cap = 0;
   return (int)(*bucket_count)++;
 }
 
@@ -93,7 +104,6 @@ static int bucket_push_output(payout_bucket_t *b,
   strncpy(o->a, voter_addr, XCASH_WALLET_LENGTH);
   o->a[XCASH_WALLET_LENGTH] = '\0';
   o->v = amount_atomic;
-  b->total_votes_atomic += amount_atomic;
   return 1;
 }
 
@@ -224,6 +234,19 @@ static void run_proof_check(sched_ctx_t* ctx) {
   bson_error_t cerr;
   size_t seen = 0, invalid = 0, deleted = 0, skipped = 0;
 
+
+
+
+
+payout_bucket_t pay_buckets[BLOCK_VERIFIERS_TOTAL_AMOUNT];
+memset(pay_buckets, 0, sizeof pay_buckets);
+size_t pay_bucket_count = 0;
+
+
+
+
+
+
   while (mongoc_cursor_next(cur, &doc)) {
     ++seen;
     if (atomic_load_explicit(&shutdown_requested, memory_order_relaxed)) break;
@@ -301,6 +324,17 @@ static void run_proof_check(sched_ctx_t* ctx) {
 
     // Valid proof → accumulate into delegate bucket
     add_vote_sum(agg_addr, agg_total, &agg_count, delegate, claimed_total);
+
+    // Also accumulate per-voter outputs for this delegate
+    int idx = get_bucket_index(pay_buckets, &pay_bucket_count, delegate);
+    if (idx < 0) {
+      ERROR_PRINT("Too many delegate buckets while collecting outputs; skipping one entry");
+    } else {
+      if (!bucket_push_output(&pay_buckets[idx], voter, (uint64_t)claimed_total)) {
+        ERROR_PRINT("OOM while appending payout output; skipping one entry");
+      }
+    }
+
   }
 
   if (mongoc_cursor_error(cur, &cerr)) {
@@ -384,13 +418,8 @@ static void run_proof_check(sched_ctx_t* ctx) {
         int64_t new_total = (int64_t)agg_total[i];
         if (have_current && current_total == new_total) {
 
-
-
-
           WARNING_PRINT("delegate total unchanged addr=%.12s… total=%lld (skip)",
                       agg_addr[i], (long long)new_total);
-
-
 
           bson_destroy(&filter);
           continue;
@@ -448,6 +477,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
   }
 
   mongoc_client_pool_push(ctx->pool, c);
+  free_buckets(pay_buckets, pay_bucket_count);
 }
 
 
