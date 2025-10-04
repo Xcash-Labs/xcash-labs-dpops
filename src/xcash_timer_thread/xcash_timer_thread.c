@@ -19,6 +19,19 @@ static const sched_slot_t SLOTS[] = {
 };
 static const size_t NSLOTS = sizeof(SLOTS)/sizeof(SLOTS[0]);
 
+typedef struct {
+  char     a[XCASH_WALLET_LENGTH + 1];  // voter wallet address
+  uint64_t v;                            // vote total (atomic)
+} payout_output_t;
+
+typedef struct {
+  char           delegate[XCASH_WALLET_LENGTH + 1];  // delegate address (key)
+  payout_output_t *outs;                              // dynamic array of outputs
+  size_t         count;                               // used entries
+  size_t         cap;                                 // allocated entries
+  uint64_t       total_votes_atomic;                  // running sum (optional)
+} payout_bucket_t;
+
 #define SCHED_TEST_EVERY_MIN 10
 #define SCHED_TEST_MODE 1
 
@@ -75,17 +88,7 @@ static void sleep_until(time_t when) {
   }
 }
 
-
-
-typedef struct {
-  char           delegate[XCASH_WALLET_LENGTH + 1];  // delegate address (key)
-  payout_output_t *outs;                              // dynamic array of outputs
-  size_t         count;                               // used entries
-  size_t         cap;                                 // allocated entries
-  uint64_t       total_votes_atomic;                  // running sum (optional)
-} payout_bucket_t;
-
-// Find or create a bucket by delegate
+// Helpers to find or create a bucket by delegate
 static int get_bucket_index(payout_bucket_t buckets[],
                             size_t *bucket_count,
                             const char *delegate) {
