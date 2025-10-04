@@ -56,6 +56,69 @@ static void sleep_until(time_t when) {
   }
 }
 
+
+
+
+
+// Helpers to rind or create a bucket by delegate
+static int get_bucket_index(payout_bucket_t buckets[],
+                            size_t *bucket_count,
+                            const char *delegate) {
+  for (size_t i = 0; i < *bucket_count; ++i) {
+    if (strcmp(buckets[i].delegate, delegate) == 0) return (int)i;
+  }
+  if (*bucket_count >= BLOCK_VERIFIERS_TOTAL_AMOUNT) {
+    return -1; // too many delegates (shouldn't happen if capped)
+  }
+  // create new bucket
+  payout_bucket_t *b = &buckets[*bucket_count];
+  memset(b, 0, sizeof *b);
+  strncpy(b->delegate, delegate, XCASH_WALLET_LENGTH);
+  b->delegate[XCASH_WALLET_LENGTH] = '\0';
+  b->outs = NULL; b->count = 0; b->cap = 0; b->total_votes_atomic = 0;
+  return (int)(*bucket_count)++;
+}
+
+static int bucket_push_output(payout_bucket_t *b,
+                              const char *voter_addr,
+                              uint64_t amount_atomic) {
+  if (b->count == b->cap) {
+    size_t new_cap = (b->cap == 0) ? 256 : (b->cap * 2);
+    payout_output_t *p = (payout_output_t*)realloc(b->outs, new_cap * sizeof(*p));
+    if (!p) return 0;
+    b->outs = p;
+    b->cap  = new_cap;
+  }
+  payout_output_t *o = &b->outs[b->count++];
+  strncpy(o->a, voter_addr, XCASH_WALLET_LENGTH);
+  o->a[XCASH_WALLET_LENGTH] = '\0';
+  o->v = amount_atomic;
+  b->total_votes_atomic += amount_atomic;
+  return 1;
+}
+
+static void free_buckets(payout_bucket_t buckets[], size_t bucket_count) {
+  for (size_t i = 0; i < bucket_count; ++i) {
+    free(buckets[i].outs);
+    buckets[i].outs = NULL;
+    buckets[i].cap = buckets[i].count = 0;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // Small helper to keep per-delegate running totals
 static void add_vote_sum(char addrs[][XCASH_WALLET_LENGTH + 1],
                          int64_t totals[],
