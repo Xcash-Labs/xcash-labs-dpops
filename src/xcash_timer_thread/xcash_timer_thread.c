@@ -3,17 +3,6 @@
 #define SCHED_TEST_EVERY_MIN 10
 #define SCHED_TEST_MODE 1
 
-
-typedef struct {
-  char           delegate[XCASH_WALLET_LENGTH + 1];  // delegate address (key)
-  payout_output_t *outs;                              // dynamic array of outputs
-  size_t         count;                               // used entries
-  size_t         cap;                                 // allocated entries
-} payout_bucket_t;
-
-
-
-
 // ---- helpers ----
 static void lower_thread_priority_batch(void) {
   // Best-effort: reduce CPU weight via niceness (works even if sched change fails)

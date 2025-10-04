@@ -44,7 +44,6 @@ typedef struct {
   payout_output_t *outs;                              // dynamic array of outputs
   size_t         count;                               // used entries
   size_t         cap;                                 // allocated entries
-  uint64_t       total_votes_atomic;                  // running sum (optional)
 } payout_bucket_t;
 
 void* timer_thread(void* arg);
