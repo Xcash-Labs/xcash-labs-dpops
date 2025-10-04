@@ -387,7 +387,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
   mongoc_client_pool_push(ctx->pool, c);
 }
 
-/*
+
 height - block-block hash total vote
 {
   "type": "PAYOUT_INSTRUCTION",
@@ -397,7 +397,7 @@ height - block-block hash total vote
   "XCASH_DPOPS_signature": "",
   "outputs": [ {"a":"XCA...","v":12345678}, ... ]
 }
-*/
+
 
 
 
@@ -454,10 +454,11 @@ void* timer_thread(void* arg) {
     if (slot->kind == JOB_PROOF) {
       if (is_seed_node) {
         if (seed_is_primary()) {
-          WARNING_PRINT("Scheduler: running PROOF CHECK at %02d:%02d", slot->hour, slot->min);
+          INFO_PRINT("Scheduler: running PROOF CHECK at %02d:%02d", slot->hour, slot->min);
           run_proof_check(ctx);
         }
       }
+    }
 
 #else
     // ---- test dispatch every N minutes ----
@@ -466,8 +467,9 @@ void* timer_thread(void* arg) {
         WARNING_PRINT("Test scheduler: PROOF CHECK (every %d min)", SCHED_TEST_EVERY_MIN);
         run_proof_check(ctx);
       } else {
-        WARNING_PRINT("Test scheduler: not primary seed — skip proof");
+        DEBUG_PRINT("Test scheduler: not primary seed — skip proof");
       }
+    }
 #endif
   }
   return NULL;
