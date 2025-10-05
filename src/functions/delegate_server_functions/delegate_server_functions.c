@@ -1192,7 +1192,7 @@ void server_receive_payout(const char* MESSAGE) {
   }
 
   WARNING_PRINT("Parsed payout header ok: delegate=%s height=%s hash=%s",
-              in_delegate_wallet_address, in_block_height, in_outputs_hash);
+                in_delegate_wallet_address, in_block_height, in_outputs_hash);
 
   uint8_t out_hash[MD5_HASH_SIZE];
   outputs_digest_sha256(parsed, entries_count, out_hash);
@@ -1217,42 +1217,70 @@ void server_receive_payout(const char* MESSAGE) {
     return;
   }
 
-WARNING_PRINT("Previous Block Hash: %s", ck_block_hash);
+  char* sign_str = NULL;
+  {
+    const char* fmt_sign = "SEED_TO_NODES_PAYOUT|%s|%s|%s|%zu|%s";
+    int need = snprintf(NULL, 0, fmt_sign,
+                        in_block_height,
+                        ck_block_hash,
+                        in_delegate_wallet_address,
+                        entries_count,
+                        in_outputs_hash);
+    if (need < 0) {
+      ERROR_PRINT("Failed to size signable string");
+      free(parsed);
+      return;
+    }
+    size_t len = (size_t)need + 1;
+    sign_str = (char*)malloc(len);
+    if (!sign_str) {
+      ERROR_PRINT("malloc(%zu) failed for signable string", len);
+      free(parsed);
+      return;
+    }
+    int wrote = snprintf(sign_str, len, fmt_sign,
+                         in_block_height, ck_block_hash, in_delegate_wallet_address, entries_count, in_outputs_hash);
+    if (wrote < 0 || (size_t)wrote >= len) {
+      ERROR_PRINT("snprintf(write) failed or truncated");
+      free(parsed);
+      free(sign_str);
+      return;
+    }
+  }
 
-  /*
-    char* sign_str = NULL;
-    {
-      const char* fmt_sign = "SEED_TO_NODES_PAYOUT|%s|%s|%s|%zu|%s";
-      int need = snprintf(NULL, 0, fmt_sign,
-                          in_block_height,
+  // Prepare wallet verify request
+  snprintf(request, sizeof(request),
+           "{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"verify\",\"params\":{"
+           "\"data\":\"%s\","
+           "\"address\":\"%s\","
+           "\"signature\":\"%s\"}}",
+           sign_str, in_public_address, XCASH_DPOPS_signature);
 
-                          save_block_hash,   == meed tp retroeve tjos
+  if (send_http_request(response, sizeof(response), XCASH_WALLET_IP, "/json_rpc", XCASH_WALLET_PORT,
+   "POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH, request, SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) <= 0) {
+    ERROR_PRINT("server_receive_payout: HTTP request failed trying to check signature");
+    return;
+  }
+
+  char result[8] = {0};
+  int parsed = parse_json_data(response, "result.good", result, sizeof(result));
+  if (parsed != 1) {
+    ERROR_PRINT("server_receive_payout: verify response missing/invalid");
+    return;
+  }
+  if (strcmp(result, "true") != 0) {
+    ERROR_PRINT("server_receive_payout: signature verification failed (result.good=%s)", result);
+    return;
+  }
 
 
-                          in_delegate_wallet_address,
-                          entries_count,
-                          in_outputs_hash);
-      if (need < 0) {
-        ERROR_PRINT("Failed to size signable string");
-        continue;
-      }
-      size_t len = (size_t)need + 1;
-      sign_str = (char*)malloc(len);
-      if (!sign_str) {
-        ERROR_PRINT("malloc(%zu) failed for signable string", len);
-        continue;
-      }
-      int wrote = snprintf(sign_str, len, fmt_sign,
-                           save_block_height, save_block_hash, delegate_addr, B->count, out_hash_hex);
-      if (wrote < 0 || (size_t)wrote >= len) {
-        ERROR_PRINT("snprintf(write) failed or truncated");
-        free(sign_str);
-        sign_str = NULL;
-        continue;
-      }
-      }
-  */
 
+
+
+
+  
+
+  free(sign_str);
   free(parsed);
   return;
 }
