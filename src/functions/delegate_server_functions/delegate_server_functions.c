@@ -1081,7 +1081,7 @@ void server_receive_payout(const char* MESSAGE) {
 
     uint64_t u = (uint64_t)v;
     double diff = v - (double)u;
-    if (diff < -JSON_INT_EPS || diff > JSON_INT_EPS) {
+    if (diff < -1e-9 || diff > 1e-9) {
       ERROR_PRINT("'entries_count' must be an integer JSON number");
       cJSON_Delete(root);
       return;
@@ -1160,7 +1160,7 @@ void server_receive_payout(const char* MESSAGE) {
 
     uint64_t amt_u64 = (uint64_t)dv;
     double diff = dv - (double)amt_u64;
-    if (diff < -1e-9 || diff > 1e-9) {  // small tolerance
+    if (diff < -1e-9 || diff > 1e-9) {
       ERROR_PRINT("outputs[%zu].v must be an integer JSON number", i);
       free(parsed);
       cJSON_Delete(root);
