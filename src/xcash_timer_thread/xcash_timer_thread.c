@@ -609,12 +609,12 @@ static void run_proof_check(sched_ctx_t* ctx) {
 
     // 5) send
     {
-      response_t* resp = NULL;
-      if (!xnet_send_to_host(ip, sb.buf, &resp)) {
-        WARNING_PRINT("send failed to %s for delegate %.12s…", ip, delegate_addr);
-      }
+//      response_t* resp = NULL;
+//      if (!xnet_send_to_host(ip, sb.buf, &resp)) {
+//        WARNING_PRINT("send failed to %s for delegate %.12s…", ip, delegate_addr);
+//      }
       free(sb.buf);
-      cleanup_response(resp);
+//      cleanup_response(resp);
     }
 
   // fall-through;
