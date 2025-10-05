@@ -1256,6 +1256,8 @@ void server_receive_payout(const char* MESSAGE) {
            "\"signature\":\"%s\"}}",
            sign_str, in_public_address, XCASH_DPOPS_signature);
 
+  const char* HTTP_HEADERS[] = {"Content-Type: application/json", "Accept: application/json"};
+  const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0]);
   if (send_http_request(response, sizeof(response), XCASH_WALLET_IP, "/json_rpc", XCASH_WALLET_PORT,
    "POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH, request, SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) <= 0) {
     ERROR_PRINT("server_receive_payout: HTTP request failed trying to check signature");
@@ -1278,7 +1280,7 @@ void server_receive_payout(const char* MESSAGE) {
 
 
 
-  
+
 
   free(sign_str);
   free(parsed);
