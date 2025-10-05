@@ -1151,13 +1151,24 @@ void server_receive_payout(const char* MESSAGE) {
     }
     double dv = jv->valuedouble;
     double ip;
-    if (dv < 0.0 || dv > 9007199254740991.0 || modf(dv, &ip) != 0.0) {
-      ERROR_PRINT("outputs[%zu].v out of range or non-integer", i);
+
+    if (!(dv >= 0.0) || dv > 9007199254740991.0) {
+      ERROR_PRINT("outputs[%zu].v out of range", i);
       free(parsed);
       cJSON_Delete(root);
       return;
     }
-    parsed[i].v = (uint64_t)dv;
+
+    uint64_t amt_u64 = (uint64_t)dv;
+    double diff = dv - (double)amt_u64;
+    if (diff < -1e-9 || diff > 1e-9) {  // small tolerance
+      ERROR_PRINT("outputs[%zu].v must be an integer JSON number", i);
+      free(parsed);
+      cJSON_Delete(root);
+      return;
+    }
+
+    parsed[i].v = amt_u64;  // or wallet_add_payout_output(addr, amt_u64);
   }
 
   // At this point `parsed[0..entries_count-1]` holds the outputs.
