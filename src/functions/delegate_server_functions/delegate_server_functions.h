@@ -25,5 +25,6 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
 void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_client_t *client, const char *MESSAGE);
 void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server_client_t *client, const char *MESSAGE);
 void server_receive_data_socket_node_to_block_verifiers_check_vote_status(server_client_t *client, const char *MESSAGE);
+void server_receive_payout(const char *MESSAGE);
 
 #endif

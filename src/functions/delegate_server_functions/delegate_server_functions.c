@@ -1002,6 +1002,6 @@ void server_receive_data_socket_node_to_block_verifiers_check_vote_status(server
   return;
 }
 
-server_receive_payout(char *MESSAGE) {
-  
+void server_receive_payout(const char *MESSAGE) {
+
 }
