@@ -604,7 +604,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
 
     if (!sbuf_addf(&sb,
                    "{"
-                   "\"type\":\"SEED_TO_NODES_PAYOUT\","
+                   "\"message_settings\":\"SEED_TO_NODES_PAYOUT\","
                    "\"block_cutoff\":{\"height\":%s},"
                    "\"delegate_wallet_address\":\"%s\","
                    "\"entries_count\":%zu,"
