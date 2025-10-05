@@ -237,7 +237,7 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
   // Must come from seed
   if ((msg_type == XMSG_SEED_TO_NODES_UPDATE_VOTE_COUNT || msg_type == XMSG_SEED_TO_NODES_PAYOUT)) {
     if (verify_the_ip(data, client->client_ip, true) != XCASH_OK) {
-      ERROR_PRINT("IP seed check failed for msg_type=%d from %s", (int)msg_type, client->client_ip);
+      ERROR_PRINT("IP seed check failed for msg_type=%s from %s", trans_type, client->client_ip);
       return;
     }
   // These messages can come from non-delegate wallets so the IP can not be verified
@@ -247,7 +247,7 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
     (msg_type != XMSG_NODES_TO_BLOCK_VERIFIERS_REVOTE) &&
     (msg_type != XMSG_NODES_TO_BLOCK_VERIFIERS_CHECK_VOTE_STATUS)) {
     if (verify_the_ip(data, client->client_ip, false) != XCASH_OK) {
-      ERROR_PRINT("IP check failed for msg_type=%d from %s", (int)msg_type, client->client_ip);
+      ERROR_PRINT("IP check failed for msg_type=%s from %s", trans_type, client->client_ip);
       return;
     }
   }

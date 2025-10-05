@@ -304,7 +304,8 @@ bool build_seed_to_nodes_vote_count_update(const char* public_address,
   }
 
   const char* params[] = {
-    "public_address",   public_address,
+    "public_address",   xcash_wallet_public_address,
+    "public_address_upd", public_address,
     "vote_count_atomic", vote_buf,
     NULL
   };
@@ -329,6 +330,7 @@ Parameters:
 ---------------------------------------------------------------------------------------------------------*/
 void server_receive_update_delegate_vote_count(const char* MESSAGE) {
   char public_address[XCASH_WALLET_LENGTH + 1] = {0};
+  char public_address_upd[XCASH_WALLET_LENGTH + 1] = {0};
   char vote_buf[32] = {0};
 
   DEBUG_PRINT("received %s: %s", __func__, MESSAGE ? MESSAGE : "(null)");
@@ -340,13 +342,19 @@ void server_receive_update_delegate_vote_count(const char* MESSAGE) {
 
   // Parse required fields
   if (parse_json_data(MESSAGE, "public_address", public_address, sizeof(public_address)) == XCASH_ERROR ||
-      parse_json_data(MESSAGE, "vote_count_atomic", vote_buf, sizeof(vote_buf)) == XCASH_ERROR) {
+    parse_json_data(MESSAGE, "public_address_upd", public_address_upd, sizeof(public_address_upd)) == XCASH_ERROR ||
+    parse_json_data(MESSAGE, "vote_count_atomic", vote_buf, sizeof(vote_buf)) == XCASH_ERROR) {
     ERROR_PRINT("update_delegate_vote_count: parse failed");
     return;
   }
 
   if (strlen(public_address) != XCASH_WALLET_LENGTH) {
     ERROR_PRINT("update_delegate_vote_count: invalid address length for %.12s…", public_address);
+    return;
+  }
+
+  if (strlen(public_address_upd) != XCASH_WALLET_LENGTH) {
+    ERROR_PRINT("update_delegate_vote_count: invalid address length used for update %.12s…", public_address_upd);
     return;
   }
 
@@ -361,7 +369,7 @@ void server_receive_update_delegate_vote_count(const char* MESSAGE) {
   int64_t new_total = (int64_t)vll;
 
   // Set absolute total in DB (no upsert)
-  if (!delegates_apply_vote_total(public_address, new_total)) {
+  if (!delegates_apply_vote_total(public_address_upd, new_total)) {
     ERROR_PRINT("update_delegate_vote_count: DB update failed for %.12s…", public_address);
     return;
   }
