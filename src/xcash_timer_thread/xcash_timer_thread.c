@@ -627,7 +627,6 @@ static void run_proof_check(sched_ctx_t* ctx) {
 
     if (!sbuf_addf(&sb, "]}")) {
       free(sb.buf);
-      free(sb.buf);
     }
 
     // 5) send
