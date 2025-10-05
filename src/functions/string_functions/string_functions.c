@@ -616,3 +616,50 @@ bool str_is_base58(const char* s) {
   }
   return true;
 }
+
+/* 
+   Compute SHA-256 over the canonical encoding of an outputs array.
+   Canonical bytes per entry:
+     - uint16 LE length of address (len16)
+     - address bytes (ASCII, exactly 'len16' bytes; no NUL included)
+     - uint64 LE amount
+   The order of 'outs' MUST be deterministic across nodes.
+   out32: receives 32 bytes of the SHA-256 digest.
+*/
+void outputs_digest_sha256(const payout_output_t *outs, size_t n, uint8_t out32[32]) {
+  EVP_MD_CTX *ctx = EVP_MD_CTX_new();
+  if (!ctx) { memset(out32, 0, 32); return; }
+
+  if (EVP_DigestInit_ex(ctx, EVP_sha256(), NULL) != 1) {
+    EVP_MD_CTX_free(ctx);
+    memset(out32, 0, 32);
+    return;
+  }
+
+  for (size_t i = 0; i < n; ++i) {
+    /* address length (uint16 LE) */
+    uint16_t alen = (uint16_t)strnlen(outs[i].a, XCASH_WALLET_LENGTH);
+    uint8_t le16[2] = { (uint8_t)(alen & 0xFF), (uint8_t)((alen >> 8) & 0xFF) };
+    EVP_DigestUpdate(ctx, le16, sizeof le16);
+
+    /* address bytes (no NUL) */
+    if (alen > 0) {
+      EVP_DigestUpdate(ctx, (const unsigned char*)outs[i].a, (size_t)alen);
+    }
+
+    /* amount (uint64 LE) */
+    uint8_t le64[8];
+    for (int b = 0; b < 8; ++b) le64[b] = (uint8_t)((outs[i].v >> (8 * b)) & 0xFF);
+    EVP_DigestUpdate(ctx, le64, sizeof le64);
+  }
+
+  unsigned int md_len = 0;
+  unsigned char md[EVP_MAX_MD_SIZE];
+  if (EVP_DigestFinal_ex(ctx, md, &md_len) != 1 || md_len != 32) {
+    memset(out32, 0, 32);
+  } else {
+    memcpy(out32, md, 32);
+  }
+
+  EVP_MD_CTX_free(ctx);
+}
