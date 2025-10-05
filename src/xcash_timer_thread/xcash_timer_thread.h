@@ -6,7 +6,6 @@
 #include <sched.h>
 #include <sys/resource.h>
 #include <sodium.h>
-#include "sbuf.h"
 #include <errno.h>
 #include "config.h"
 #include "globals.h"
@@ -36,6 +35,12 @@ static const sched_slot_t SLOTS[] = {
   {18, 0, JOB_PAYOUT},
 };
 static const size_t NSLOTS = sizeof(SLOTS)/sizeof(SLOTS[0]);
+
+typedef struct {
+  char   *buf;
+  size_t  len;
+  size_t  cap;
+} sbuf_t;
 
 typedef struct {
   char     a[XCASH_WALLET_LENGTH + 1];  // voter wallet address
