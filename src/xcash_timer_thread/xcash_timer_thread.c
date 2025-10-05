@@ -632,7 +632,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
 
     // 5) send
     if (send_message_to_ip_or_hostname(ip, XCASH_DPOPS_PORT, sb.buf) != XCASH_OK) {
-      ERROR_PRINT("Failed to send the payment message to %s", client->client_ip);
+      ERROR_PRINT("Failed to send the payment message to %s", ip);
     }
     free(sb.buf);
 
