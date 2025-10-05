@@ -588,7 +588,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
                    "\"outputs_hash\":\"%s\","
                    "\"XCASH_DPOPS_signature\":\"%s\","
                    "\"outputs\":[",
-                   save_block_height, delegate_addr, B->count, out_hash_hex, sig_hex)) {
+                   save_block_height, delegate_addr, B->count, out_hash_hex, signature)) {
       free(sb.buf);
       continue;
     }
