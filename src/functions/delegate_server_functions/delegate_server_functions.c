@@ -1177,16 +1177,17 @@ void server_receive_payout(const char* MESSAGE) {
   }
 
   // Cleanup
-  free(parsed);
   cJSON_Delete(root);
 
   if (strlen(in_outputs_hash) != TRANSACTION_HASH_LENGTH || !is_hex_string(in_outputs_hash)) {
     ERROR_PRINT("outputs_hash must be %d hex chars", TRANSACTION_HASH_LENGTH);
+    free(parsed);
     return;
   }
 
   if (strcmp(in_delegate_wallet_address, xcash_wallet_public_address) != 0) {
     ERROR_PRINT("Payout transaction is not for this delegate");
+    free(parsed);
     return;
   }
 
@@ -1199,6 +1200,7 @@ void server_receive_payout(const char* MESSAGE) {
   bin_to_hex(out_hash, MD5_HASH_SIZE, out_hash_hex);
   if (strcmp(out_hash_hex, in_outputs_hash) != 0) {
     ERROR_PRINT("outputs_hash mismatch for payout trans");
+    free(parsed);
     return;
   }
 
@@ -1233,6 +1235,7 @@ void server_receive_payout(const char* MESSAGE) {
       }
   */
 
+  free(parsed);
   return;
 }
 
