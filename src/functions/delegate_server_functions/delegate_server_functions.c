@@ -1150,7 +1150,6 @@ void server_receive_payout(const char* MESSAGE) {
       return;
     }
     double dv = jv->valuedouble;
-    double ip;
 
     if (!(dv >= 0.0) || dv > 9007199254740991.0) {
       ERROR_PRINT("outputs[%zu].v out of range", i);
