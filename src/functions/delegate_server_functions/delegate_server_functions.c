@@ -1076,11 +1076,17 @@ void server_receive_payout(const char *MESSAGE) {
     }
 
     double v = jcnt->valuedouble;
-    if (!(v >= 0.0) || v > (double)MAX_OUTPUTS_PER_BATCH) { /* reject */
+    if (!(v >= 0.0) || v > (double)MAX_PROOFS_PER_DELEGATE_HARD) {
+      ERROR_PRINT("Entries_count is not a valid value");
+      cJSON_Delete(root);
+      return;
     }
 
-    uint64_t u = (uint64_t)v;               // truncate
-    if ((double)u != v) { /* non-integer */ /* reject */
+    uint64_t u = (uint64_t)v;
+    if ((double)u != v) {
+      ERROR_PRINT("Entries_count is not a valid value");
+      cJSON_Delete(root);
+      return;
     }
 
     size_t entries_count = (size_t)u;
