@@ -1010,6 +1010,18 @@ static int is_hex_string(const char *s) {
   return 1;
 }
 
+static bool get_string(cJSON *obj, const char *key, char **out, bool required) {
+  cJSON *it = cJSON_GetObjectItemCaseSensitive(obj, key);
+  if (!it || !cJSON_IsString(it) || !it->valuestring) {
+    if (required) ERROR_PRINT("Missing or invalid string for '%s'", key);
+    *out = NULL;
+    return !required;
+  }
+  *out = strdup(it->valuestring);
+  if (!*out) { ERROR_PRINT("OOM duplicating '%s'", key); return false; }
+  return true;
+}
+
 /* --------------------------------------------------------------------------------------------------------
   Name: server_receive_payout
   Description: Runs the code when the server receives the NODE_TO_BLOCK_VERIFIERS_CHECK_VOTE_STATUS message is received
