@@ -1145,13 +1145,13 @@ size_t entries_count = (size_t)u;
       return;
     }
     size_t alen = strlen(ja->valuestring);
-    if (alen >= sizeof(parsed[i].address)) {
-      ERROR_PRINT("outputs[%zu].a too long (%zu >= %zu)", i, alen, sizeof(parsed[i].address));
+    if (alen >= sizeof(parsed[i].a)) {
+      ERROR_PRINT("outputs[%zu].a too long (%zu >= %zu)", i, alen, sizeof(parsed[i].a));
       free(parsed);
       cJSON_Delete(root);
       return;
     }
-    memcpy(parsed[i].address, ja->valuestring, alen + 1);
+    memcpy(parsed[i].a, ja->valuestring, alen + 1);
 
     // amount (uint64_t via cJSON number -> double guard)
     cJSON* jv = cJSON_GetObjectItemCaseSensitive(elem, "v");
@@ -1169,13 +1169,13 @@ size_t entries_count = (size_t)u;
       cJSON_Delete(root);
       return;
     }
-    parsed[i].amount = (uint64_t)dv;
+    parsed[i].v = (uint64_t)dv;
   }
 
   // At this point `parsed[0..entries_count-1]` holds the outputs.
   // Example: log them.
   for (size_t k = 0; k < entries_count; ++k) {
-    DEBUG_PRINT("out[%zu]: %s -> %" PRIu64, k, parsed[k].address, parsed[k].amount);
+    DEBUG_PRINT("out[%zu]: %s -> %" PRIu64, k, parsed[k].a, parsed[k].v);
   }
 
   // ... continue (verify outputs_hash, signature, build tx, etc.)
