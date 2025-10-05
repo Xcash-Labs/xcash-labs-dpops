@@ -564,7 +564,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
 
     // 3) sign
     char signature[XCASH_SIGN_DATA_LENGTH + 1] = {0};
-    if (!sign_block_blob(sign_str, signature, sizeof signature)) {
+    if (!sign_txt_string(sign_str, signature, sizeof signature)) {
       ERROR_PRINT("Failed to sign the payout message for %.12s…", delegate_addr);
       free(sign_str);
       continue;
