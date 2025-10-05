@@ -42,11 +42,6 @@ typedef struct {
 } sbuf_t;
 
 typedef struct {
-  char     a[XCASH_WALLET_LENGTH + 1];  // voter wallet address
-  uint64_t v;                           // vote total (atomic)
-} payout_output_t;
-
-typedef struct {
   char           delegate[XCASH_WALLET_LENGTH + 1]; // delegate address (key)
   payout_output_t *outs;                            // dynamic array of outputs
   size_t         count;                             // used entries
