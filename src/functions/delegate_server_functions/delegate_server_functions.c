@@ -1173,10 +1173,8 @@ void server_receive_payout(const char* MESSAGE) {
   // At this point `parsed[0..entries_count-1]` holds the outputs.
   // Example: log them.
   for (size_t k = 0; k < entries_count; ++k) {
-    DEBUG_PRINT("out[%zu]: %s -> %" PRIu64, k, parsed[k].a, parsed[k].v);
+    WARNING_PRINT("out[%zu]: %s -> %" PRIu64, k, parsed[k].a, parsed[k].v);
   }
-
-  // ... continue (verify outputs_hash, signature, build tx, etc.)
 
   // Cleanup
   free(parsed);
@@ -1192,8 +1190,17 @@ void server_receive_payout(const char* MESSAGE) {
     return;
   }
 
-  DEBUG_PRINT("Parsed payout header ok: delegate=%s height=%s hash=%s",
+  WARNING_PRINT("Parsed payout header ok: delegate=%s height=%s hash=%s",
               in_delegate_wallet_address, in_block_height, in_outputs_hash);
+
+  uint8_t out_hash[MD5_HASH_SIZE];
+  outputs_digest_sha256(parsed, entries_count, out_hash);
+  char out_hash_hex[TRANSACTION_HASH_LENGTH + 1];
+  bin_to_hex(out_hash, MD5_HASH_SIZE, out_hash_hex);
+  if (strcmp(out_hash_hex, in_outputs_hash) != 0) {
+    ERROR_PRINT("outputs_hash mismatch for payout trans");
+    return;
+  }
 
   /*
     char* sign_str = NULL;
