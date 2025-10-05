@@ -5,7 +5,6 @@
 #include <pthread.h>
 #include <sched.h>
 #include <sys/resource.h>
-#include <sodium.h>
 #include <errno.h>
 #include "config.h"
 #include "globals.h"
