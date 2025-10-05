@@ -213,7 +213,7 @@
 #define MAX_ACTIVE_CLIENTS 200
 
 #define WAKEUP_SKEW_SEC 10 
-
+#define JSON_INT_EPS 1e-9   /* small tolerance to treat numbers as integers */
 
 
 // ===================== Constants =====================
