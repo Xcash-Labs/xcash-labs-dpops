@@ -7,7 +7,7 @@ Parameters:
   DELEGATE_NAME - The delegate name
 Return: 0 if the delegate name is not valid, 1 if the delegate name is valid
 ---------------------------------------------------------------------------------------------------------*/
-int check_for_valid_delegate_name(const char *DELEGATE_NAME) {
+int check_for_valid_delegate_name(const char* DELEGATE_NAME) {
 #define VALID_DATA "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._-"
 
   size_t length = strlen(DELEGATE_NAME);
@@ -37,9 +37,9 @@ Parameters:
   DELEGATE_NAME - The delegate name
 Return: 0 if the delegate fee is not valid, 1 if the delegate fee is valid
 ---------------------------------------------------------------------------------------------------------*/
-int check_for_valid_delegate_fee(const char *MESSAGE) {
+int check_for_valid_delegate_fee(const char* MESSAGE) {
   const char *p, *q;
-  char *endptr;
+  char* endptr;
   int dot_seen = 0;
   int decimals = 0;
   double number;
@@ -101,7 +101,7 @@ Notes:
   - This performs DNS resolution and may block; call off the hot path.
   - Security enforcement (e.g., public-routable requirement) should be done on the server/seed.
 ---------------------------------------------------------------------------------------------------------*/
-int check_for_valid_ip_or_hostname(const char *host) {
+int check_for_valid_ip_or_hostname(const char* host) {
   if (!host || !*host) return XCASH_ERROR;
   struct addrinfo hints = {0}, *res = NULL;
   hints.ai_family = AF_UNSPEC;  // v4 or v6
@@ -118,7 +118,7 @@ Parameters:
   CLIENT_SOCKET - The socket to send data to
   MESSAGE - The message
 ---------------------------------------------------------------------------------------------------------*/
-void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(server_client_t *client, const char *MESSAGE) {
+void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(server_client_t* client, const char* MESSAGE) {
   char data[SMALL_BUFFER_SIZE] = {0};
   char delegate_name[MAXIMUM_BUFFER_SIZE_DELEGATES_NAME] = {0};
   char delegate_public_address[XCASH_WALLET_LENGTH + 1] = {0};
@@ -128,18 +128,18 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
   uint64_t registration_time = 0;
 
   // 1) Parse incoming MESSAGE as JSON
-  cJSON *root = cJSON_Parse(MESSAGE);
+  cJSON* root = cJSON_Parse(MESSAGE);
   if (!root) {
     SERVER_ERROR("0|Could not verify the message");
   }
 
   // 2) Extract and validate each required field
-  cJSON *msg_settings = cJSON_GetObjectItemCaseSensitive(root, "message_settings");
-  cJSON *js_name = cJSON_GetObjectItemCaseSensitive(root, "delegate_name");
-  cJSON *js_ip = cJSON_GetObjectItemCaseSensitive(root, "delegate_IP");
-  cJSON *js_pubkey = cJSON_GetObjectItemCaseSensitive(root, "delegate_public_key");
-  cJSON *js_address = cJSON_GetObjectItemCaseSensitive(root, "public_address");
-  cJSON *js_reg_time = cJSON_GetObjectItemCaseSensitive(root, "registration_timestamp");
+  cJSON* msg_settings = cJSON_GetObjectItemCaseSensitive(root, "message_settings");
+  cJSON* js_name = cJSON_GetObjectItemCaseSensitive(root, "delegate_name");
+  cJSON* js_ip = cJSON_GetObjectItemCaseSensitive(root, "delegate_IP");
+  cJSON* js_pubkey = cJSON_GetObjectItemCaseSensitive(root, "delegate_public_key");
+  cJSON* js_address = cJSON_GetObjectItemCaseSensitive(root, "public_address");
+  cJSON* js_reg_time = cJSON_GetObjectItemCaseSensitive(root, "registration_timestamp");
 
   if (!cJSON_IsString(msg_settings) || (msg_settings->valuestring == NULL) ||
       !cJSON_IsString(js_name) || (js_name->valuestring == NULL) ||
@@ -216,7 +216,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
   if (count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, data) != 0) {
     if (is_seed_node) {
       // Seed node db uses replication so it alreay exists it has already been added
-      send_data(client, (unsigned char *)"1|Registered the delegate}", strlen("1|Registered the delegate}"));
+      send_data(client, (unsigned char*)"1|Registered the delegate}", strlen("1|Registered the delegate}"));
       return;
     } else {
       SERVER_ERROR("0|The delegates public address is already registered");
@@ -307,7 +307,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
 #endif
 
   // 8) Success: reply back to the client
-  send_data(client, (unsigned char *)"1|Registered the delegate", strlen("1|Registered the delegate"));
+  send_data(client, (unsigned char*)"1|Registered the delegate", strlen("1|Registered the delegate"));
   return;
 }
 
@@ -320,48 +320,48 @@ Parameters:
   CLIENT_SOCKET - The socket to send data to
   MESSAGE - The JSON message containing the VRF proof, beta, public key, block height, and previous hash
 ---------------------------------------------------------------------------------------------------------*/
-void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_client_t *client, const char *MESSAGE) {
+void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_client_t* client, const char* MESSAGE) {
   char response[VSMALL_BUFFER_SIZE] = {0};
 
   // early at the top, before parsing JSON
   if (strcmp(client->client_ip, "127.0.0.1") != 0 && strcmp(client->client_ip, "::1") != 0) {
-    send_data(client, (unsigned char *)"0|FORBIDDEN_NON_LOCAL", strlen("0|FORBIDDEN_NON_LOCAL"));
+    send_data(client, (unsigned char*)"0|FORBIDDEN_NON_LOCAL", strlen("0|FORBIDDEN_NON_LOCAL"));
     INFO_PRINT("Non local");
     return;
   }
 
   // Parse the incoming JSON message
-  cJSON *root = cJSON_Parse(MESSAGE);
+  cJSON* root = cJSON_Parse(MESSAGE);
   if (!root) {
-    send_data(client, (unsigned char *)"0|INVALID_JSON", strlen("0|INVALID_JSON"));
+    send_data(client, (unsigned char*)"0|INVALID_JSON", strlen("0|INVALID_JSON"));
     INFO_PRINT("Invalid json");
     return;
   }
 
   // Extract fields
-  cJSON *msg_settings = cJSON_GetObjectItemCaseSensitive(root, "message_settings");
-  cJSON *js_vrf_proof = cJSON_GetObjectItemCaseSensitive(root, "vrf_proof");
-  cJSON *js_vrf_beta = cJSON_GetObjectItemCaseSensitive(root, "vrf_beta");
-  cJSON *js_vrf_pubkey = cJSON_GetObjectItemCaseSensitive(root, "vrf_pubkey");
-  cJSON *js_vote_hash = cJSON_GetObjectItemCaseSensitive(root, "vote_hash");
-  cJSON *js_height = cJSON_GetObjectItemCaseSensitive(root, "height");
-  cJSON *js_prev_hash = cJSON_GetObjectItemCaseSensitive(root, "prev_block_hash");
+  cJSON* msg_settings = cJSON_GetObjectItemCaseSensitive(root, "message_settings");
+  cJSON* js_vrf_proof = cJSON_GetObjectItemCaseSensitive(root, "vrf_proof");
+  cJSON* js_vrf_beta = cJSON_GetObjectItemCaseSensitive(root, "vrf_beta");
+  cJSON* js_vrf_pubkey = cJSON_GetObjectItemCaseSensitive(root, "vrf_pubkey");
+  cJSON* js_vote_hash = cJSON_GetObjectItemCaseSensitive(root, "vote_hash");
+  cJSON* js_height = cJSON_GetObjectItemCaseSensitive(root, "height");
+  cJSON* js_prev_hash = cJSON_GetObjectItemCaseSensitive(root, "prev_block_hash");
 
   if (!cJSON_IsString(msg_settings) || strcmp(msg_settings->valuestring, "XCASHD_TO_DPOPS_VERIFY") != 0 ||
       !cJSON_IsString(js_vrf_proof) || !cJSON_IsString(js_vrf_beta) || !cJSON_IsString(js_vrf_pubkey) ||
       !cJSON_IsString(js_vote_hash) || !cJSON_IsNumber(js_height) || !cJSON_IsString(js_prev_hash)) {
     cJSON_Delete(root);
-    send_data(client, (unsigned char *)"0|BAD_FIELDS", strlen("0|BAD_FIELDS"));
+    send_data(client, (unsigned char*)"0|BAD_FIELDS", strlen("0|BAD_FIELDS"));
     INFO_PRINT("Bad field fields");
     return;
   }
 
   // Extract strings and height
-  const char *vrf_proof_str = js_vrf_proof->valuestring;
-  const char *vrf_beta_str = js_vrf_beta->valuestring;
-  const char *vrf_pubkey_str = js_vrf_pubkey->valuestring;
-  const char *vote_hash_str = js_vote_hash->valuestring;
-  const char *prev_hash_str = js_prev_hash->valuestring;
+  const char* vrf_proof_str = js_vrf_proof->valuestring;
+  const char* vrf_beta_str = js_vrf_beta->valuestring;
+  const char* vrf_pubkey_str = js_vrf_pubkey->valuestring;
+  const char* vote_hash_str = js_vote_hash->valuestring;
+  const char* prev_hash_str = js_prev_hash->valuestring;
   uint64_t height = (uint64_t)js_height->valuedouble;
 
   if (!is_hex_len(vrf_proof_str, VRF_PROOF_LENGTH) ||
@@ -370,7 +370,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
       !is_hex_len(vote_hash_str, VOTE_HASH_LEN) ||
       !is_hex_len(prev_hash_str, BLOCK_HASH_LENGTH)) {
     cJSON_Delete(root);
-    send_data(client, (unsigned char *)"0|BAD_FIELD_LEN_OR_NONHEX", strlen("0|BAD_FIELD_LEN_OR_NONHEX"));
+    send_data(client, (unsigned char*)"0|BAD_FIELD_LEN_OR_NONHEX", strlen("0|BAD_FIELD_LEN_OR_NONHEX"));
     INFO_PRINT("Bad field lenght");
     return;
   }
@@ -399,7 +399,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
         cJSON_Delete(root);
         INFO_PRINT("Prev Hash mismatch: expected %s, got %s",
                    previous_block_hash, prev_hash_str);
-        send_data(client, (unsigned char *)"0|PARENT_HASH_MISMATCH", strlen("0|PARENT_HASH_MISMATCH"));
+        send_data(client, (unsigned char*)"0|PARENT_HASH_MISMATCH", strlen("0|PARENT_HASH_MISMATCH"));
         return;
       }
 
@@ -407,20 +407,20 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
       if (strncmp(producer_refs[0].vrf_public_key, vrf_pubkey_str, VRF_PUBLIC_KEY_LENGTH) != 0) {
         INFO_PRINT("Public key mismatch: expected %s, got %s", producer_refs[0].vrf_public_key, vrf_pubkey_str);
         cJSON_Delete(root);
-        send_data(client, (unsigned char *)"0|VRF_PUBKEY_MISMATCH", strlen("0|VRF_PUBKEY_MISMATCH"));
+        send_data(client, (unsigned char*)"0|VRF_PUBKEY_MISMATCH", strlen("0|VRF_PUBKEY_MISMATCH"));
         return;
       }
       if (strncmp(producer_refs[0].vote_hash_hex, vote_hash_str, VOTE_HASH_LEN) != 0) {
         INFO_PRINT("Vote hash mismatch");
         cJSON_Delete(root);
-        send_data(client, (unsigned char *)"0|VOTE_HASH_MISMATCH", strlen("0|VOTE_HASH_MISMATCH"));
+        send_data(client, (unsigned char*)"0|VOTE_HASH_MISMATCH", strlen("0|VOTE_HASH_MISMATCH"));
         return;
       }
 
     } else {
       INFO_PRINT("No delegated selected, took too long");
       cJSON_Delete(root);
-      send_data(client, (unsigned char *)"0|DELEGATE_SELECTION_TIMEOUT", strlen("0|DELEGATE_SELECTION_TIMEOUT"));
+      send_data(client, (unsigned char*)"0|DELEGATE_SELECTION_TIMEOUT", strlen("0|DELEGATE_SELECTION_TIMEOUT"));
       return;
     }
   }
@@ -439,7 +439,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
       !hex_to_byte_array(vrf_beta_str, beta_bin, sizeof(beta_bin)) ||
       !hex_to_byte_array(prev_hash_str, prev_hash_bin, sizeof(prev_hash_bin))) {
     cJSON_Delete(root);
-    send_data(client, (unsigned char *)"0|HEX_DECODING_FAIL", strlen("0|HEX_DECODING_FAIL"));
+    send_data(client, (unsigned char*)"0|HEX_DECODING_FAIL", strlen("0|HEX_DECODING_FAIL"));
     return;
   }
 
@@ -457,12 +457,12 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
     snprintf(response, sizeof(response),
              "1|OK|%s",
              vote_hash_str);
-    send_data(client, (unsigned char *)response, strlen(response));
+    send_data(client, (unsigned char*)response, strlen(response));
   } else {
     snprintf(response, sizeof(response),
              "0|VERIFY_FAIL|%s",
              vote_hash_str);
-    send_data(client, (unsigned char *)response, strlen(response));
+    send_data(client, (unsigned char*)response, strlen(response));
   }
 
   cJSON_Delete(root);
@@ -476,7 +476,7 @@ Parameters:
   CLIENT_SOCKET - The socket to send data to
   MESSAGE - The message
 ---------------------------------------------------------------------------------------------------------*/
-void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server_client_t *client, const char *MESSAGE) {
+void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server_client_t* client, const char* MESSAGE) {
   char delegate_public_address[XCASH_WALLET_LENGTH + 1];
   uint64_t registration_time = 0;
   memset(delegate_public_address, 0, sizeof(delegate_public_address));
@@ -485,13 +485,13 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
   if (MESSAGE == NULL || MESSAGE[0] == '\0') {
     SERVER_ERROR("0|Invalid message payload");
   }
-  cJSON *root = cJSON_Parse(MESSAGE);
+  cJSON* root = cJSON_Parse(MESSAGE);
   if (!root) {
     SERVER_ERROR("0|Invalid JSON");
   }
 
   // Optional sanity: message_settings
-  const cJSON *msg_settings = cJSON_GetObjectItemCaseSensitive(root, "message_settings");
+  const cJSON* msg_settings = cJSON_GetObjectItemCaseSensitive(root, "message_settings");
   if (!cJSON_IsString(msg_settings) ||
       strncmp(msg_settings->valuestring, "NODES_TO_BLOCK_VERIFIERS_UPDATE_DELEGATE", 40) != 0) {
     cJSON_Delete(root);
@@ -499,7 +499,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
   }
 
   // public_address
-  const cJSON *jaddr = cJSON_GetObjectItemCaseSensitive(root, "public_address");
+  const cJSON* jaddr = cJSON_GetObjectItemCaseSensitive(root, "public_address");
   if (!cJSON_IsString(jaddr)) {
     cJSON_Delete(root);
     SERVER_ERROR("0|public_address must be a string");
@@ -512,7 +512,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
   }
   memcpy(delegate_public_address, jaddr->valuestring, XCASH_WALLET_LENGTH);
 
-  cJSON *js_reg_time = cJSON_GetObjectItemCaseSensitive(root, "registration_timestamp");
+  cJSON* js_reg_time = cJSON_GetObjectItemCaseSensitive(root, "registration_timestamp");
 
   if (!cJSON_IsNumber(js_reg_time) || !isfinite(js_reg_time->valuedouble) ||
       js_reg_time->valuedouble < 0.0) {
@@ -522,20 +522,20 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
   registration_time = (uint64_t)js_reg_time->valuedouble;
 
   // updates object (required)
-  cJSON *updates = cJSON_GetObjectItemCaseSensitive(root, "updates");
+  cJSON* updates = cJSON_GetObjectItemCaseSensitive(root, "updates");
   if (!cJSON_IsObject(updates)) {
     cJSON_Delete(root);
     SERVER_ERROR("0|'updates' must be an object");
   }
 
   // 2) Validate each field and build the BSON update doc
-  static const char *const allowed_fields[] = {
+  static const char* const allowed_fields[] = {
       "IP_address", "about", "website", "team",
       "shared_delegate_status", "delegate_fee", "server_specs"};
   const size_t allowed_fields_count = sizeof(allowed_fields) / sizeof(allowed_fields[0]);
 
   // filter: { "public_address": "<addr>" }
-  bson_t *filter_bson = bson_new();
+  bson_t* filter_bson = bson_new();
   if (!filter_bson) {
     cJSON_Delete(root);
     SERVER_ERROR("0|Internal error (alloc filter)");
@@ -543,7 +543,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
   BSON_APPEND_UTF8(filter_bson, "public_address", delegate_public_address);
 
   // setdoc: fields to set
-  bson_t *setdoc_bson = bson_new();
+  bson_t* setdoc_bson = bson_new();
   if (!setdoc_bson) {
     bson_destroy(filter_bson);
     cJSON_Delete(root);
@@ -552,8 +552,8 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
 
   size_t valid_kv_count = 0;
 
-  for (cJSON *it = updates->child; it != NULL; it = it->next) {
-    const char *key = it->string;
+  for (cJSON* it = updates->child; it != NULL; it = it->next) {
+    const char* key = it->string;
     if (!key) {
       bson_destroy(setdoc_bson);
       bson_destroy(filter_bson);
@@ -583,7 +583,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
       cJSON_Delete(root);
       SERVER_ERROR("0|Value for update field must be a string");
     }
-    const char *val = it->valuestring;
+    const char* val = it->valuestring;
 
     // Per-field constraints and storage
     if (strncmp(key, "IP_address", VSMALL_BUFFER_SIZE) == 0) {
@@ -636,7 +636,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
         SERVER_ERROR("0|Invalid delegate_fee (bad format or out of range)");
       }
       errno = 0;
-      char *endp = NULL;
+      char* endp = NULL;
       double d = strtod(val, &endp);
       if (errno != 0 || endp == val || *endp != '\0' || !isfinite(d) || d < 0.0 || d > 100.0) {
         bson_destroy(setdoc_bson);
@@ -684,20 +684,19 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
   cJSON_Delete(root);
 
   // 4) Success
-  send_data(client, (unsigned char *)"1|Updated the delegate", strlen("1|Updated the delegate"));
+  send_data(client, (unsigned char*)"1|Updated the delegate", strlen("1|Updated the delegate"));
   return;
 }
 
 /* --------------------------------------------------------------------------------------------------------
   Name: server_receive_data_socket_node_to_block_verifiers_add_reserve_proof
-  Description: Runs the code when the server receives the NODE_TO_BLOCK_VERIFIERS_ADD_RESERVE_PROOF message 
+  Description: Runs the code when the server receives the NODE_TO_BLOCK_VERIFIERS_ADD_RESERVE_PROOF message
     is received.
   Parameters:
   CLIENT_SOCKET - The socket to send data to
   MESSAGE - The message
 ----------------------------------------------------------------------------------------------------------- */
-void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server_client_t *client, const char *MESSAGE) {
-
+void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server_client_t* client, const char* MESSAGE) {
 #ifndef SEED_NODE_ON
 
   (void)MESSAGE;
@@ -719,19 +718,19 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
   if (!MESSAGE || !*MESSAGE) {
     SERVER_ERROR("0|Invalid message payload");
   }
-  cJSON *root = cJSON_Parse(MESSAGE);
+  cJSON* root = cJSON_Parse(MESSAGE);
   if (!root) {
     SERVER_ERROR("0|Invalid JSON");
   }
 
   // message_settings
-  const cJSON *j_msg = cJSON_GetObjectItemCaseSensitive(root, "message_settings");
+  const cJSON* j_msg = cJSON_GetObjectItemCaseSensitive(root, "message_settings");
   if (!j_msg || !cJSON_IsString(j_msg)) {
     cJSON_Delete(root);
     SERVER_ERROR("0|Invalid message transaction type");
   }
 
-  const char *ms = j_msg->valuestring;
+  const char* ms = j_msg->valuestring;
   const bool is_vote = (strcmp(ms, "NODES_TO_BLOCK_VERIFIERS_VOTE") == 0);
   const bool is_revote = (strcmp(ms, "NODES_TO_BLOCK_VERIFIERS_REVOTE") == 0);
 
@@ -741,7 +740,7 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
   }
 
   // public_address (voter)
-  const cJSON *j_addr = cJSON_GetObjectItemCaseSensitive(root, "public_address");
+  const cJSON* j_addr = cJSON_GetObjectItemCaseSensitive(root, "public_address");
   if (!cJSON_IsString(j_addr)) {
     cJSON_Delete(root);
     SERVER_ERROR("0|public_address must be a string");
@@ -754,8 +753,8 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
   }
   memcpy(voter_public_address, j_addr->valuestring, XCASH_WALLET_LENGTH);
 
-    // delegate_name_or_address
-  const cJSON *j_target = cJSON_GetObjectItemCaseSensitive(root, "delegate_name_or_address");
+  // delegate_name_or_address
+  const cJSON* j_target = cJSON_GetObjectItemCaseSensitive(root, "delegate_name_or_address");
   if (!cJSON_IsString(j_target) || j_target->valuestring[0] == '\0') {
     cJSON_Delete(root);
     SERVER_ERROR("0|delegate_name_or_address must be a non-empty string");
@@ -763,14 +762,14 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
   strncpy(delegate_name_or_address, j_target->valuestring, sizeof(delegate_name_or_address) - 1);
 
   // vote_amount (STRING; atomic units)
-  const cJSON *j_amount = cJSON_GetObjectItemCaseSensitive(root, "vote_amount");
+  const cJSON* j_amount = cJSON_GetObjectItemCaseSensitive(root, "vote_amount");
   if (!cJSON_IsString(j_amount) || j_amount->valuestring[0] == '\0') {
     cJSON_Delete(root);
     SERVER_ERROR("0|vote_amount must be a non-empty string (atomic units)");
   }
   {
-    const char *anum = j_amount->valuestring;
-    for (const char *p = anum; *p; ++p) {
+    const char* anum = j_amount->valuestring;
+    for (const char* p = anum; *p; ++p) {
       if (*p < '0' || *p > '9') {
         cJSON_Delete(root);
         SERVER_ERROR("0|vote_amount must contain only digits (atomic units)");
@@ -800,7 +799,7 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
   }
 
   // reserve_proof
-  const cJSON *j_proof = cJSON_GetObjectItemCaseSensitive(root, "reserve_proof");
+  const cJSON* j_proof = cJSON_GetObjectItemCaseSensitive(root, "reserve_proof");
   if (!cJSON_IsString(j_proof) || j_proof->valuestring[0] == '\0') {
     cJSON_Delete(root);
     SERVER_ERROR("0|reserve_proof must be a non-empty string");
@@ -888,14 +887,13 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
     }
   } else {
     DEBUG_PRINT("voted_for=%s, total_vote=%lld, reserve_proof_len=%zu",
-               dbvoted_for, (long long)dbtotal_vote, strlen(dbreserve_proof));
+                dbvoted_for, (long long)dbtotal_vote, strlen(dbreserve_proof));
     if (strcmp(dbvoted_for, voted_for_public_address) == 0 &&
-      strcmp(dbreserve_proof, proof_str) == 0 &&
-      (uint64_t)dbtotal_vote == vote_amount_atomic)
-    {
+        strcmp(dbreserve_proof, proof_str) == 0 &&
+        (uint64_t)dbtotal_vote == vote_amount_atomic) {
       // exact vote already exists, no need to continue (will only occur when checking for seed node replication)
       cJSON_Delete(root);
-      send_data(client, (unsigned char *)"1|This vote already exists", strlen("1|This vote already exists"));
+      send_data(client, (unsigned char*)"1|This vote already exists", strlen("1|This vote already exists"));
       return;
     }
   }
@@ -935,14 +933,13 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
   // Done: hourly job will revalidate & aggregate totals
   cJSON_Delete(root);
   if (is_vote) {
-    send_data(client, (unsigned char *)"1|The vote was successfully added to the database", strlen("1|The vote was successfully added to the database"));
+    send_data(client, (unsigned char*)"1|The vote was successfully added to the database", strlen("1|The vote was successfully added to the database"));
   } else {
-    send_data(client, (unsigned char *)"1|The revote was successful", strlen("1|The revote was successful"));
+    send_data(client, (unsigned char*)"1|The revote was successful", strlen("1|The revote was successful"));
   }
   return;
 
-  #endif  // SEED_NODE_ON
-
+#endif  // SEED_NODE_ON
 }
 /* --------------------------------------------------------------------------------------------------------
   Name: server_receive_data_socket_node_to_block_verifiers_check_vote_status
@@ -951,23 +948,23 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
   CLIENT_SOCKET - The socket to send data to
   MESSAGE - The message
 ----------------------------------------------------------------------------------------------------------- */
-void server_receive_data_socket_node_to_block_verifiers_check_vote_status(server_client_t *client, const char *MESSAGE) {
+void server_receive_data_socket_node_to_block_verifiers_check_vote_status(server_client_t* client, const char* MESSAGE) {
   if (!MESSAGE || !*MESSAGE) {
     SERVER_ERROR("0|Invalid message payload");
   }
 
   // Parse JSON
-  cJSON *root = cJSON_Parse(MESSAGE);
+  cJSON* root = cJSON_Parse(MESSAGE);
   if (!root) {
     SERVER_ERROR("0|Invalid JSON");
   }
 
-  const cJSON *addr = cJSON_GetObjectItemCaseSensitive(root, "public_address");
+  const cJSON* addr = cJSON_GetObjectItemCaseSensitive(root, "public_address");
   if (!cJSON_IsString(addr) || !addr->valuestring || !*addr->valuestring) {
     cJSON_Delete(root);
     SERVER_ERROR("0|Missing public_address");
   }
-  const char *public_address = addr->valuestring;
+  const char* public_address = addr->valuestring;
 
   // Basic sanity: prefix and length (adjust macros to your config)
   if (strlen(public_address) != XCASH_WALLET_LENGTH ||
@@ -1003,18 +1000,18 @@ void server_receive_data_socket_node_to_block_verifiers_check_vote_status(server
 }
 
 // helper hex checker
-static int is_hex_string(const char *s) {
+static int is_hex_string(const char* s) {
   if (!s) return 0;
-  for (const unsigned char *p = (const unsigned char*)s; *p; ++p)
+  for (const unsigned char* p = (const unsigned char*)s; *p; ++p)
     if (!isxdigit(*p)) return 0;
   return 1;
 }
 
 // length-checked copy: JSON string -> fixed buffer
-static int json_get_string_into(cJSON *root, const char *key, char *out, size_t outsz, int required) {
+static int json_get_string_into(cJSON* root, const char* key, char* out, size_t outsz, int required) {
   if (!out || outsz == 0) return 0;
   out[0] = '\0';
-  cJSON *it = cJSON_GetObjectItemCaseSensitive(root, key);
+  cJSON* it = cJSON_GetObjectItemCaseSensitive(root, key);
   if (!it || !cJSON_IsString(it) || !it->valuestring) {
     if (required) ERROR_PRINT("Missing/invalid '%s'", key);
     return required ? 0 : 1;
@@ -1031,10 +1028,10 @@ static int json_get_string_into(cJSON *root, const char *key, char *out, size_t 
   Name: server_receive_payout
   Description: Runs the code when the server receives the NODE_TO_BLOCK_VERIFIERS_CHECK_VOTE_STATUS message is received
   Parameters:
-  
+
   MESSAGE - The message
 ----------------------------------------------------------------------------------------------------------- */
-void server_receive_payout(const char *MESSAGE) {
+void server_receive_payout(const char* MESSAGE) {
   if (!MESSAGE || !*MESSAGE) {
     ERROR_PRINT("Invalid message parameter passed to server_receive_payout");
     return;
@@ -1042,9 +1039,9 @@ void server_receive_payout(const char *MESSAGE) {
 
   WARNING_PRINT("Message: %s", MESSAGE);
 
-  cJSON *root = cJSON_Parse(MESSAGE);
+  cJSON* root = cJSON_Parse(MESSAGE);
   if (!root) {
-    const char *ep = cJSON_GetErrorPtr();
+    const char* ep = cJSON_GetErrorPtr();
     ERROR_PRINT("cJSON parse error near: %s", ep ? ep : "(unknown)");
     return;
   }
@@ -1083,9 +1080,9 @@ void server_receive_payout(const char *MESSAGE) {
     }
 
     uint64_t u = (uint64_t)v;
-//    if ((double)u != v) {
-    if (fabs(v - (double)u) > DBL_EPSILON) {
-      ERROR_PRINT("Entries_count is not a valid value");
+    double diff = v - (double)u;
+    if (diff < -JSON_INT_EPS || diff > JSON_INT_EPS) {
+      ERROR_PRINT("'entries_count' must be an integer JSON number");
       cJSON_Delete(root);
       return;
     }
@@ -1171,7 +1168,7 @@ void server_receive_payout(const char *MESSAGE) {
 
   // ... continue (verify outputs_hash, signature, build tx, etc.)
 
-  // Cleanup 
+  // Cleanup
   free(parsed);
   cJSON_Delete(root);
 
@@ -1188,44 +1185,39 @@ void server_receive_payout(const char *MESSAGE) {
   DEBUG_PRINT("Parsed payout header ok: delegate=%s height=%s hash=%s",
               in_delegate_wallet_address, in_block_height, in_outputs_hash);
 
-/*              
-  char* sign_str = NULL;
-  {
-    const char* fmt_sign = "SEED_TO_NODES_PAYOUT|%s|%s|%s|%zu|%s";
-    int need = snprintf(NULL, 0, fmt_sign,
-                        save_block_height,
-                        save_block_hash,
-                        delegate_addr,
-                        B->count,
-                        out_hash_hex);
-    if (need < 0) {
-      ERROR_PRINT("Failed to size signable string");
-      continue;
-    }
-    size_t len = (size_t)need + 1;
-    sign_str = (char*)malloc(len);
-    if (!sign_str) {
-      ERROR_PRINT("malloc(%zu) failed for signable string", len);
-      continue;
-    }
-    int wrote = snprintf(sign_str, len, fmt_sign,
-                         save_block_height, save_block_hash, delegate_addr, B->count, out_hash_hex);
-    if (wrote < 0 || (size_t)wrote >= len) {
-      ERROR_PRINT("snprintf(write) failed or truncated");
-      free(sign_str);
-      sign_str = NULL;
-      continue;
-    }
-    }
-*/
-
+  /*
+    char* sign_str = NULL;
+    {
+      const char* fmt_sign = "SEED_TO_NODES_PAYOUT|%s|%s|%s|%zu|%s";
+      int need = snprintf(NULL, 0, fmt_sign,
+                          save_block_height,
+                          save_block_hash,
+                          delegate_addr,
+                          B->count,
+                          out_hash_hex);
+      if (need < 0) {
+        ERROR_PRINT("Failed to size signable string");
+        continue;
+      }
+      size_t len = (size_t)need + 1;
+      sign_str = (char*)malloc(len);
+      if (!sign_str) {
+        ERROR_PRINT("malloc(%zu) failed for signable string", len);
+        continue;
+      }
+      int wrote = snprintf(sign_str, len, fmt_sign,
+                           save_block_height, save_block_hash, delegate_addr, B->count, out_hash_hex);
+      if (wrote < 0 || (size_t)wrote >= len) {
+        ERROR_PRINT("snprintf(write) failed or truncated");
+        free(sign_str);
+        sign_str = NULL;
+        continue;
+      }
+      }
+  */
 
   return;
 }
-
-
-
-
 
 /*
  Message: {"message_settings":"SEED_TO_NODES_PAYOUT",
