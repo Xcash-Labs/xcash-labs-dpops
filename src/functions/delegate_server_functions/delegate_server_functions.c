@@ -1036,7 +1036,7 @@ void server_receive_payout(const char *MESSAGE) {
   char in_public_address[XCASH_WALLET_LENGTH + 1] = {0};
   char in_block_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
   char in_delegate_wallet_address[XCASH_WALLET_LENGTH + 1] = {0};
-  char in_outputs_hash[OUTPUTS_HASH_HEX_LEN + 1] = {0};
+  char in_outputs_hash[TRANSACTION_HASH_LENGTH + 1] = {0};
   char in_signature[XCASH_SIGN_DATA_LENGTH + 1] = {0};
 
   int ok = 1;
@@ -1051,8 +1051,8 @@ void server_receive_payout(const char *MESSAGE) {
     return;
   }
 
-  if (strlen(in_outputs_hash) != OUTPUTS_HASH_HEX_LEN || !is_hex_string(in_outputs_hash)) {
-    ERROR_PRINT("outputs_hash must be %d hex chars", OUTPUTS_HASH_HEX_LEN);
+  if (strlen(in_outputs_hash) != TRANSACTION_HASH_LENGTH || !is_hex_string(in_outputs_hash)) {
+    ERROR_PRINT("outputs_hash must be %d hex chars", TRANSACTION_HASH_LENGTH);
     cJSON_Delete(root);
     return;
   }
