@@ -1089,7 +1089,7 @@ void server_receive_payout(const char *MESSAGE) {
       return;
     }
 
-    size_t entries_count = (size_t)u;
+    entries_count = (size_t)u;
   }
 
   // outputs (array)
