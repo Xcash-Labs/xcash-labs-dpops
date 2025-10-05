@@ -56,40 +56,38 @@ static void sleep_until(time_t when) {
   }
 }
 
-
-
-
-
 // Helpers to rind or create a bucket by delegate
 static int get_bucket_index(payout_bucket_t buckets[],
-                            size_t *bucket_count,
-                            const char *delegate) {
+                            size_t* bucket_count,
+                            const char* delegate) {
   for (size_t i = 0; i < *bucket_count; ++i) {
     if (strcmp(buckets[i].delegate, delegate) == 0) return (int)i;
   }
   if (*bucket_count >= BLOCK_VERIFIERS_TOTAL_AMOUNT) {
-    return -1; // too many delegates (shouldn't happen if capped)
+    return -1;  // too many delegates (shouldn't happen if capped)
   }
   // create new bucket
-  payout_bucket_t *b = &buckets[*bucket_count];
+  payout_bucket_t* b = &buckets[*bucket_count];
   memset(b, 0, sizeof *b);
   strncpy(b->delegate, delegate, XCASH_WALLET_LENGTH);
   b->delegate[XCASH_WALLET_LENGTH] = '\0';
-  b->outs = NULL; b->count = 0; b->cap = 0;
+  b->outs = NULL;
+  b->count = 0;
+  b->cap = 0;
   return (int)(*bucket_count)++;
 }
 
-static int bucket_push_output(payout_bucket_t *b,
-                              const char *voter_addr,
+static int bucket_push_output(payout_bucket_t* b,
+                              const char* voter_addr,
                               uint64_t amount_atomic) {
   if (b->count == b->cap) {
     size_t new_cap = (b->cap == 0) ? 256 : (b->cap * 2);
-    payout_output_t *p = (payout_output_t*)realloc(b->outs, new_cap * sizeof(*p));
+    payout_output_t* p = (payout_output_t*)realloc(b->outs, new_cap * sizeof(*p));
     if (!p) return 0;
     b->outs = p;
-    b->cap  = new_cap;
+    b->cap = new_cap;
   }
-  payout_output_t *o = &b->outs[b->count++];
+  payout_output_t* o = &b->outs[b->count++];
   strncpy(o->a, voter_addr, XCASH_WALLET_LENGTH);
   o->a[XCASH_WALLET_LENGTH] = '\0';
   o->v = amount_atomic;
@@ -103,20 +101,6 @@ static void free_buckets(payout_bucket_t buckets[], size_t bucket_count) {
     buckets[i].cap = buckets[i].count = 0;
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 // Small helper to keep per-delegate running totals
 static void add_vote_sum(char addrs[][XCASH_WALLET_LENGTH + 1],
@@ -145,6 +129,43 @@ static void add_vote_sum(char addrs[][XCASH_WALLET_LENGTH + 1],
   addrs[*pcount][n] = '\0';
   totals[*pcount] = amt;
   ++(*pcount);
+}
+
+static int sbuf_init(sbuf_t* s, size_t cap) {
+  s->cap = cap ? cap : 4096;
+  s->len = 0;
+  s->buf = (char*)malloc(s->cap);
+  if (!s->buf) return 0;
+  s->buf[0] = '\0';
+  return 1;
+}
+
+static int sbuf_ensure(sbuf_t* s, size_t need) {
+  if (s->len + need + 1 <= s->cap) return 1;
+  size_t nc = s->cap * 2;
+  while (nc < s->len + need + 1) nc *= 2;
+  char* p = (char*)realloc(s->buf, nc);
+  if (!p) return 0;
+  s->buf = p;
+  s->cap = nc;
+  return 1;
+}
+
+static int sbuf_addf(sbuf_t* s, const char* fmt, ...) {
+  va_list ap;
+  va_start(ap, fmt);
+  va_list ap2;
+  va_copy(ap2, ap);
+  int need = vsnprintf(NULL, 0, fmt, ap);  // how many bytes
+  va_end(ap);
+  if (need < 0 || !sbuf_ensure(s, (size_t)need)) {
+    va_end(ap2);
+    return 0;
+  }
+  vsnprintf(s->buf + s->len, s->cap - s->len, fmt, ap2);
+  va_end(ap2);
+  s->len += (size_t)need;
+  return 1;
 }
 
 /*---------------------------------------------------------------------------------------------------------
@@ -223,18 +244,9 @@ static void run_proof_check(sched_ctx_t* ctx) {
   bson_error_t cerr;
   size_t seen = 0, invalid = 0, deleted = 0, skipped = 0;
 
-
-
-
-
-payout_bucket_t pay_buckets[BLOCK_VERIFIERS_TOTAL_AMOUNT];
-memset(pay_buckets, 0, sizeof pay_buckets);
-size_t pay_bucket_count = 0;
-
-
-
-
-
+  payout_bucket_t pay_buckets[BLOCK_VERIFIERS_TOTAL_AMOUNT];
+  memset(pay_buckets, 0, sizeof pay_buckets);
+  size_t pay_bucket_count = 0;
 
   while (mongoc_cursor_next(cur, &doc)) {
     ++seen;
@@ -302,10 +314,10 @@ size_t pay_bucket_count = 0;
       if (mongoc_collection_delete_one(coll, &del_filter, NULL, NULL, &derr)) {
         ++deleted;
         WARNING_PRINT("Deleted invalid reserve_proof id=%.12s… (delegate=%.12s…)",
-                   voter, delegate);
+                      voter, delegate);
       } else {
         WARNING_PRINT("Failed to delete invalid reserve_proof id=%.12s… : %s",
-                      voter, derr.message); 
+                      voter, derr.message);
       }
       bson_destroy(&del_filter);
       continue;
@@ -323,14 +335,13 @@ size_t pay_bucket_count = 0;
         ERROR_PRINT("OOM while appending payout output; skipping one entry");
       }
     }
-
   }
 
   if (mongoc_cursor_error(cur, &cerr)) {
     ERROR_PRINT("reserve_proofs cursor error: %s", cerr.message);
   } else {
     WARNING_PRINT("reserve_proofs scan complete: seen=%zu invalid=%zu deleted=%zu skipped=%zu",
-               seen, invalid, deleted, skipped);
+                  seen, invalid, deleted, skipped);
   }
 
   bool stop_after_scan = atomic_load_explicit(&shutdown_requested, memory_order_relaxed);
@@ -340,17 +351,23 @@ size_t pay_bucket_count = 0;
   bson_destroy(query);
   mongoc_collection_destroy(coll);
 
-  memset(delegates_timer_all, 0, sizeof delegates_timer_all);
   // Wait for correct time to load from delegates_all
   sync_block_verifiers_minutes_and_seconds(0, 51);
+  char save_block_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
+  char save_block_hash[BLOCK_HASH_LENGTH + 1] = {0};
+  snprintf(save_block_height, sizeof save_block_height, "%" PRIu64, (uint64_t)current_block_height);
+  strncpy(save_block_hash, current_block_hash, sizeof save_block_hash - 1);
+  save_block_hash[sizeof save_block_hash - 1] = '\0';
+  size_t online_count = 0;
   pthread_mutex_lock(&current_block_verifiers_lock);
-  for (size_t i = 0, j = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
-    if (delegates_all[i].public_address[0] != '\0' && delegates_all[i].IP_address[0] != '\0') {
-      if (strcmp(delegates_all[i].online_status, "true") == 0) {
-        strcpy(delegates_timer_all[j].public_address, delegates_all[i].public_address);
-        strcpy(delegates_timer_all[j].IP_address, delegates_all[i].IP_address);
-        j++;
-      }
+  memset(delegates_timer_all, 0, sizeof delegates_timer_all);
+  for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; ++i) {
+    if (delegates_all[i].public_address[0] == '\0' ||
+        delegates_all[i].IP_address[0] == '\0') continue;
+    if (strcmp(delegates_all[i].online_status, "true") == 0) {
+      strcpy(delegates_timer_all[online_count].public_address, delegates_all[i].public_address);
+      strcpy(delegates_timer_all[online_count].IP_address, delegates_all[i].IP_address);
+      online_count++;
     }
   }
   pthread_mutex_unlock(&current_block_verifiers_lock);
@@ -406,9 +423,8 @@ size_t pay_bucket_count = 0;
         // --- Compare and skip update if no change
         int64_t new_total = (int64_t)agg_total[i];
         if (have_current && current_total == new_total) {
-
           WARNING_PRINT("delegate total unchanged addr=%.12s… total=%lld (skip)",
-                      agg_addr[i], (long long)new_total);
+                        agg_addr[i], (long long)new_total);
 
           bson_destroy(&filter);
           continue;
@@ -444,8 +460,8 @@ size_t pay_bucket_count = 0;
           response_t** responses = NULL;
           char* upd_vote_message = NULL;
           if (build_seed_to_nodes_vote_count_update(agg_addr[i], new_total, &upd_vote_message)) {
-          if (xnet_send_data_multi(XNET_DELEGATES_ALL_ONLINE_NOSEEDS, upd_vote_message, &responses)) {
-            free(upd_vote_message);
+            if (xnet_send_data_multi(XNET_DELEGATES_ALL_ONLINE_NOSEEDS, upd_vote_message, &responses)) {
+              free(upd_vote_message);
               cleanup_responses(responses);
             } else {
               ERROR_PRINT("Failed to send vote count update message.");
@@ -454,9 +470,9 @@ size_t pay_bucket_count = 0;
             }
           } else {
             ERROR_PRINT("Failed to generate vote count update message");
-              if (upd_vote_message != NULL) {
-                free(upd_vote_message);
-              }
+            if (upd_vote_message != NULL) {
+              free(upd_vote_message);
+            }
           }
         }
       }
@@ -465,10 +481,107 @@ size_t pay_bucket_count = 0;
     }
   }
 
+  // ****************************************
+
+  for (size_t i = 0; i < pay_bucket_count; ++i) {
+    const payout_bucket_t* B = &pay_buckets[i];
+    const char* delegate_addr = B->delegate;
+    const char* ip = NULL;
+
+    for (size_t k = 0; k < online_count; ++k) {
+      if (strcmp(delegates_timer_all[k].public_address, delegate_addr) == 0) {
+        ip = delegates_timer_all[k].IP_address;
+        break;
+      }
+    }
+    if (!ip) {
+      WARNING_PRINT("No online IP for delegate %.12s…; skipping PAYOUT_INSTRUCTION", delegate_addr);
+      continue;
+    }
+    if (B->count == 0) {
+      WARNING_PRINT("No outputs for delegate %.12s…; skipping", delegate_addr);
+      continue;
+    }
+
+    uint8_t out_hash[32];
+    outputs_digest_sha256(B->outs, B->count, out_hash);
+    char out_hash_hex[65];
+    bin_to_hex(out_hash, 32, out_hash_hex);
+
+    char* sign_str = NULL;
+    int need = snprintf(NULL, 0, "SEED_TO_NODES_PAYOUT|%s|%s|%s|%zu|%s|%s", save_block_height, block_hash_hex, delegate_addr,
+                        B->count, out_hash_hex, save_block_hash);
+    if (need < 0) {
+      ERROR_PRINT("Failed to build string to sign");
+      continue;
+
+    } else {
+      size_t len = (size_t)need + 1;
+      sign_str = (char*)malloc(len);
+      if (!sign_str) {
+        ERROR_PRINT("malloc(%zu) failed for signable string", len);
+        continue;
+      } else {
+        int wrote = snprintf(sign_str, len, fmt,
+                             save_block_height, block_hash_hex, delegate_addr, B->count, out_hash_hex, save_block_hash);
+        if (wrote < 0 || (size_t)wrote >= len) {
+          ERROR_PRINT("snprintf write failed/truncated");
+          free(sign_str);
+          sign_str = NULL;
+          continue;
+        }
+      }
+    }
+
+    if (sign_txt_string(sign_str, signature_out, sig_out_len)) {
+      ERROR_PRINT("Failed to sign the payment message");
+      continue;
+    }
+
+    // build delegate payout trans and send...
+
+    sbuf_t sb;
+    if (!sbuf_init(&sb, 4096)) {
+      ERROR_PRINT("alloc failed building PAYOUT_INSTRUCTION");
+      continue;
+    }
+
+    // Header (height as string you already captured in save_block_height)
+    if (!sbuf_addf(&sb,
+                   "{"
+                   "\"type\":\"SEED_TO_NODES_PAYOUT\","
+                   "\"block_cutoff\":{\"height\":%s},"
+                   "\"delegate_wallet_address\":\"%s\","
+                   "\"entries_count\":%zu,"
+                   "\"outputs_hash\":\"%s\","
+                   "\"XCASH_DPOPS_signature\":\"\","
+                   "\"outputs\":[",
+                   save_block_height, delegate_addr, B->count, out_hash_hex)) {
+      free(sb.buf);
+      continue;
+    }
+
+    // Outputs array
+    for (size_t oi = 0; oi < B->count; ++oi) {
+      const payout_output_t* o = &B->outs[oi];
+      if (!sbuf_addf(&sb, "%s{\"a\":\"%s\",\"v\":%" PRIu64 "}",
+                     (oi ? "," : ""), o->a, (uint64_t)o->v)) {
+        free(sb.buf);
+        goto next_delegate;  // bail on this one
+      }
+    }
+
+    // Close JSON
+    if (!sbuf_addf(&sb, "]}")) {
+      free(sb.buf);
+      goto next_delegate;
+    }
+  }
+  // **********************************************
+
   mongoc_client_pool_push(ctx->pool, c);
   free_buckets(pay_buckets, pay_bucket_count);
 }
-
 
 // Just for test
 static time_t mk_local_next_every_minutes(int step_min, time_t now) {
@@ -499,10 +612,7 @@ void* timer_thread(void* arg) {
     // --- test mode: run every N minutes (local time) ---
     run_at = mk_local_next_every_minutes(SCHED_TEST_EVERY_MIN, now);
 
-
     WARNING_PRINT("Test mode..................");
-
-
 
 #endif
 

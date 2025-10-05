@@ -616,3 +616,26 @@ bool str_is_base58(const char* s) {
   }
   return true;
 }
+
+/* Compute SHA-256 over the canonical encoding of an outputs array.
+   Canonical bytes per entry:
+     - uint16 LE length of address (len16)
+     - address bytes (ASCII, exactly 'len16' bytes; no NUL included)
+     - uint64 LE amount
+   The order of 'outs' MUST be deterministic across nodes.
+   out32: receives 32 bytes of the SHA-256 digest.
+*/
+void outputs_digest_sha256(const payout_output_t *outs, size_t n, uint8_t out32[32]) {
+  crypto_hash_sha256_state st;
+  crypto_hash_sha256_init(&st);
+  for (size_t i = 0; i < n; ++i) {
+    uint16_t alen = (uint16_t)strnlen(outs[i].a, XCASH_WALLET_LENGTH);
+    uint8_t le16[2] = { (uint8_t)(alen & 0xFF), (uint8_t)((alen >> 8) & 0xFF) };
+    crypto_hash_sha256_update(&st, le16, 2);
+    crypto_hash_sha256_update(&st, (const unsigned char*)outs[i].a, alen);
+    uint8_t le64[8];
+    for (int b = 0; b < 8; ++b) le64[b] = (outs[i].v >> (8*b)) & 0xFF;
+    crypto_hash_sha256_update(&st, le64, 8);
+  }
+  crypto_hash_sha256_final(&st, out32);
+}

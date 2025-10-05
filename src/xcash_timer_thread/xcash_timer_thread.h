@@ -12,6 +12,7 @@
 #include "structures.h"
 #include "db_functions.h"
 #include "network_wallet_functions.h"
+#include "network_security_functions.h"
 #include "xcash_net.h"
 #include "block_verifiers_functions.h"
 #include "block_verifiers_synchronize_server_functions.h"
@@ -36,14 +37,14 @@ static const size_t NSLOTS = sizeof(SLOTS)/sizeof(SLOTS[0]);
 
 typedef struct {
   char     a[XCASH_WALLET_LENGTH + 1];  // voter wallet address
-  uint64_t v;                            // vote total (atomic)
+  uint64_t v;                           // vote total (atomic)
 } payout_output_t;
 
 typedef struct {
-  char           delegate[XCASH_WALLET_LENGTH + 1];  // delegate address (key)
-  payout_output_t *outs;                              // dynamic array of outputs
-  size_t         count;                               // used entries
-  size_t         cap;                                 // allocated entries
+  char           delegate[XCASH_WALLET_LENGTH + 1]; // delegate address (key)
+  payout_output_t *outs;                            // dynamic array of outputs
+  size_t         count;                             // used entries
+  size_t         cap;                               // allocated entries
 } payout_bucket_t;
 
 void* timer_thread(void* arg);

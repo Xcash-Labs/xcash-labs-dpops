@@ -1,7 +1,7 @@
 #include "network_security_functions.h"
 
 // Helper function for error handling
-void handle_error(const char *function_name, const char *message, char *buf1, char *buf2, char *buf3) {
+void handle_error(const char* function_name, const char* message, char* buf1, char* buf2, char* buf3) {
   ERROR_PRINT("%s: %s", function_name, message);
   if (buf1) free(buf1);
   if (buf2) free(buf2);
@@ -16,12 +16,12 @@ Parameters:
   message - The sign_data
 Return: 0 if an error has occured, 1 if successfull
 ---------------------------------------------------------------------------------------------------------*/
-int sign_data(char *message) {
-  const char *HTTP_HEADERS[] = {"Content-Type: application/json", "Accept: application/json"};
+int sign_data(char* message) {
+  const char* HTTP_HEADERS[] = {"Content-Type: application/json", "Accept: application/json"};
   const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0]);
-  char *signature = calloc(XCASH_SIGN_DATA_LENGTH+1, sizeof(char));
-  char *payload = calloc(MEDIUM_BUFFER_SIZE, sizeof(char));
-  char *request = calloc(MEDIUM_BUFFER_SIZE * 2, sizeof(char));
+  char* signature = calloc(XCASH_SIGN_DATA_LENGTH + 1, sizeof(char));
+  char* payload = calloc(MEDIUM_BUFFER_SIZE, sizeof(char));
+  char* request = calloc(MEDIUM_BUFFER_SIZE * 2, sizeof(char));
   char response[MEDIUM_BUFFER_SIZE] = {0};
   char random_data[RANDOM_STRING_LENGTH + 1] = {0};
   char cur_round_part[3] = {0};
@@ -70,7 +70,7 @@ int sign_data(char *message) {
   if (send_http_request(response, MEDIUM_BUFFER_SIZE, XCASH_WALLET_IP, "/json_rpc", XCASH_WALLET_PORT,
                         "POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH,
                         request, SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) <= 0 ||
-      !parse_json_data(response, "result.signature", signature, XCASH_SIGN_DATA_LENGTH+1)) {
+      !parse_json_data(response, "result.signature", signature, XCASH_SIGN_DATA_LENGTH + 1)) {
     handle_error("sign_data", "Wallet signature failed", signature, payload, request);
     return XCASH_ERROR;
   }
@@ -83,7 +83,7 @@ int sign_data(char *message) {
 
   // Step 4: Append the signature to the original message
   snprintf(message + strlen(message) - 1, MEDIUM_BUFFER_SIZE - strlen(message),
-    ",\"XCASH_DPOPS_signature\":\"%s\"}", signature);
+           ",\"XCASH_DPOPS_signature\":\"%s\"}", signature);
 
   free(signature);
   free(payload);
@@ -91,14 +91,13 @@ int sign_data(char *message) {
   return XCASH_OK;
 }
 /*-----------------------------------------------------------------------------------------------------------
-Name: sign_block_blob
+Name: sign_txt_string
 Description:
-  Signs a given block blob (hex-encoded string) using the X-Cash wallet RPC. This function sends the blob
-  to the wallet daemon over JSON-RPC and retrieves the cryptographic signature. The signature can then be
-  embedded in the block as part of the `extra` field or used for block verification.
+  Signs a given text string using the X-Cash wallet RPC. This function sends the blob
+  to the wallet daemon over JSON-RPC and retrieves the cryptographic signature.
 
 Parameters:
-  block_blob_hex   - A null-terminated string containing the block blob in hex format.
+  txt_string       - A null-terminated string containing the block blob in hex format.
   signature_out    - A buffer to store the resulting signature string.
   sig_out_len      - The size of the signature_out buffer (should be at least XCASH_SIGN_DATA_LENGTH + 1).
 
@@ -106,21 +105,61 @@ Returns:
   true  - If the signing process succeeds and the signature is extracted successfully.
   false - If the HTTP request fails, the response is invalid, or the signature cannot be parsed.
 -----------------------------------------------------------------------------------------------------------*/
-bool sign_block_blob(const char *block_blob_hex, char *signature_out, size_t sig_out_len) {
-  char request_json[BUFFER_SIZE + 256];
-  char response[SMALL_BUFFER_SIZE];
+bool sign_txt_string(const char* txt_string, char* signature_out, size_t sig_out_len) {
+  if (!txt_string || !signature_out || sig_out_len == 0) return false;
 
-  snprintf(request_json, sizeof(request_json),
-           "{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"sign\",\"params\":{\"data\":\"%s\"}}",
-           block_blob_hex);
-
-  const char *headers[] = {"Content-Type: application/json", "Accept: application/json"};
-  if (send_http_request(response, SMALL_BUFFER_SIZE, XCASH_WALLET_IP, "/json_rpc", XCASH_WALLET_PORT,
-                        "POST", headers, 2, request_json, HTTP_TIMEOUT_SETTINGS) <= 0) {
+  // Compute required length first (snprintf with NULL just counts)
+  int need = snprintf(NULL, 0,
+                      "{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"sign\",\"params\":{\"data\":\"%s\"}}",
+                      txt_string);
+  if (need < 0) {
+    ERROR_PRINT("sign_block_blob: snprintf(size) failed while sizing JSON request");
     return false;
   }
 
-  return parse_json_data(response, "result.signature", signature_out, sig_out_len);
+  // Overflow/sanity guard (e.g., cap at 5 MiB)
+  size_t req_len = (size_t)need + 1;
+  if (req_len < (size_t)need || req_len > (BUFFER_SIZE)) {
+    ERROR_PRINT("sign_block_blob: request size suspicious (%zu bytes)", req_len);
+    return false;
+  }
+
+  char* request_json = (char*)malloc(req_len);
+  if (!request_json) {
+    ERROR_PRINT("sign_block_blob: allocating %zu bytes failed", req_len);
+    return false;
+  }
+
+  int wrote = snprintf(request_json, req_len,
+                       "{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"sign\",\"params\":{\"data\":\"%s\"}}",
+                       txt_string);
+  if (wrote < 0 || (size_t)wrote >= req_len) {  // truncated or error
+    free(request_json);
+    return false;
+  }
+
+  const char* headers[] = {
+      "Content-Type: application/json",
+      "Accept: application/json"};
+
+  char response[SMALL_BUFFER_SIZE];
+  int http_ok = send_http_request(response, sizeof response,
+                                  XCASH_WALLET_IP, "/json_rpc", XCASH_WALLET_PORT,
+                                  "POST", headers, 2, request_json, HTTP_TIMEOUT_SETTINGS);
+
+  free(request_json);
+
+  if (http_ok <= 0) {
+    ERROR_PRINT("sign_block_blob: HTTP request failed");
+    return false;
+  }
+
+  if (!parse_json_data(response, "result.signature", signature_out, sig_out_len)) {
+    ERROR_PRINT("sign_block_blob: signature not found/parsed");
+    return false;
+  }
+
+  return true;
 }
 
 /*---------------------------------------------------------------------------------------------------------
@@ -138,8 +177,8 @@ bool sign_block_blob(const char *block_blob_hex, char *signature_out, size_t sig
  * Return:
  *   0 if the signed data is not verified, 1 if successfull
 ---------------------------------------------------------------------------------------------------------*/
-int verify_data(const char *message, xcash_msg_t msg_type) {
-  const char *HTTP_HEADERS[] = {"Content-Type: application/json", "Accept: application/json"};
+int verify_data(const char* message, xcash_msg_t msg_type) {
+  const char* HTTP_HEADERS[] = {"Content-Type: application/json", "Accept: application/json"};
   const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0]);
 
   char data[SMALL_BUFFER_SIZE] = {0};
@@ -184,7 +223,7 @@ int verify_data(const char *message, xcash_msg_t msg_type) {
 
   snprintf(raw_data, sizeof(raw_data), "%s", message);
 
-  char *sig_pos = strstr(raw_data, ",\"XCASH_DPOPS_signature\"");
+  char* sig_pos = strstr(raw_data, ",\"XCASH_DPOPS_signature\"");
   if (sig_pos) {
     *sig_pos = '}';         // Replace start of signature field with closing brace
     *(sig_pos + 1) = '\0';  // Null-terminate the string
@@ -227,7 +266,7 @@ static bool is_local_address(const char* ip) {
   if (!ip) return false;
 
   // Loopback quick checks
-  if (strncmp(ip, "127.", 4) == 0) return true;   // 127.0.0.0/8
+  if (strncmp(ip, "127.", 4) == 0) return true;  // 127.0.0.0/8
   if (strcmp(ip, "::1") == 0) return true;
 
   struct ifaddrs *ifaddr = NULL, *ifa = NULL;
@@ -244,7 +283,10 @@ static bool is_local_address(const char* ip) {
                     (family == AF_INET) ? sizeof(struct sockaddr_in)
                                         : sizeof(struct sockaddr_in6),
                     host, sizeof(host), NULL, 0, NI_NUMERICHOST) == 0) {
-      if (strcmp(host, ip) == 0) { match = true; break; }
+      if (strcmp(host, ip) == 0) {
+        match = true;
+        break;
+      }
     }
   }
   freeifaddrs(ifaddr);
@@ -270,8 +312,8 @@ static bool is_local_address(const char* ip) {
  *
  * @return XCASH_OK if the signature is valid, otherwise XCASH_ERROR.
 ---------------------------------------------------------------------------------------------------------*/
-int verify_action_data(const char *message, const char *client_ip, xcash_msg_t msg_type) {
-  const char *HTTP_HEADERS[] = {"Content-Type: application/json", "Accept: application/json"};
+int verify_action_data(const char* message, const char* client_ip, xcash_msg_t msg_type) {
+  const char* HTTP_HEADERS[] = {"Content-Type: application/json", "Accept: application/json"};
   const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0]);
 
   char signature[XCASH_SIGN_DATA_LENGTH + 1] = {0};
@@ -289,15 +331,15 @@ int verify_action_data(const char *message, const char *client_ip, xcash_msg_t m
 
   // allow local: loopback or any interface on this host, can't check sign due to wallet process being down for delegate registration
   if ((msg_type == XMSG_NODES_TO_BLOCK_VERIFIERS_REGISTER_DELEGATE ||
-     msg_type == XMSG_NODES_TO_BLOCK_VERIFIERS_UPDATE_DELEGATE) 
-     && is_local_address(client_ip)) {
+       msg_type == XMSG_NODES_TO_BLOCK_VERIFIERS_UPDATE_DELEGATE) &&
+      is_local_address(client_ip)) {
     DEBUG_PRINT("Internal loopback connection ok from: %s", client_ip);
     return XCASH_OK;
   }
 
   snprintf(raw_data, sizeof(raw_data), "%s", message);
 
-  char *sig_pos = strstr(raw_data, ",\"signature\"");
+  char* sig_pos = strstr(raw_data, ",\"signature\"");
   if (sig_pos) {
     *sig_pos = '}';         // Replace start of signature field with closing brace
     *(sig_pos + 1) = '\0';  // Null-terminate the string
@@ -336,7 +378,7 @@ int verify_action_data(const char *message, const char *client_ip, xcash_msg_t m
 }
 
 // helper: sockaddr -> numeric string
-static int sockaddr_to_numhost(const struct sockaddr *sa, char *out, size_t outsz) {
+static int sockaddr_to_numhost(const struct sockaddr* sa, char* out, size_t outsz) {
   if (!sa || !out || outsz == 0) return 0;
   int rc = getnameinfo(sa,
                        (sa->sa_family == AF_INET) ? sizeof(struct sockaddr_in)
@@ -359,7 +401,7 @@ static int sockaddr_to_numhost(const struct sockaddr *sa, char *out, size_t outs
  *   XCASH_OK (1) if the IP matches a known delegate and (optionally) round part is valid.
  *   XCASH_ERROR (0) if the delegate is unknown, the IP does not match, or data is invalid.
 ---------------------------------------------------------------------------------------------------------*/
-int verify_the_ip(const char *message, const char *client_ip, bool seed_only) {
+int verify_the_ip(const char* message, const char* client_ip, bool seed_only) {
   if (!message || !client_ip || *client_ip == 0) {
     ERROR_PRINT("verify_ip: Null or empty client_ip passed");
     return XCASH_ERROR;
@@ -389,7 +431,7 @@ int verify_the_ip(const char *message, const char *client_ip, bool seed_only) {
   }
 
   if (seed_only) {
-    if(!is_seed_address(ck_public_address)) {
+    if (!is_seed_address(ck_public_address)) {
       ERROR_PRINT("verify_ip: The public_address for this ip must be sent from a seed delegate");
       return XCASH_ERROR;
     }
@@ -430,10 +472,13 @@ int verify_the_ip(const char *message, const char *client_ip, bool seed_only) {
 
   if (gai_ret == 0 && res != NULL) {
     // check ALL results, not just the first
-    for (struct addrinfo *p = res; p; p = p->ai_next) {
+    for (struct addrinfo* p = res; p; p = p->ai_next) {
       if (!p->ai_addr || p->ai_addr->sa_family != AF_INET) continue;
       if (!sockaddr_to_numhost(p->ai_addr, resolved_ip, sizeof(resolved_ip))) continue;
-      if (strcmp(resolved_ip, client_canon) == 0) { match = true; break; }
+      if (strcmp(resolved_ip, client_canon) == 0) {
+        match = true;
+        break;
+      }
     }
     freeaddrinfo(res);
   } else {

@@ -20,11 +20,9 @@
 #include "xcash_round.h"
 #include "blockchain_functions.h"
 
-//bool generate_and_request_vrf_data_msg(char** message);
 bool generate_and_request_vrf_data_sync(char** message);
 int block_verifiers_create_block(const char* final_vote_hash_hex, uint8_t total_vote, uint8_t winning_vote);
 int sync_block_verifiers_minutes_and_seconds(const int MINUTES, const int SECONDS);
-//bool create_sync_msg(char** message);
 bool block_verifiers_create_vote_majority_result(char **message, int producer_indx);
 bool create_delegates_db_sync_request(int selected_index);
 
