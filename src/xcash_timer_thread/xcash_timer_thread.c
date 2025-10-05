@@ -353,7 +353,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
   sync_block_verifiers_minutes_and_seconds(0, 51);
   char save_block_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
   char save_block_hash[BLOCK_HASH_LENGTH + 1] = {0};
-  strncpy(save_block_height, current_block_height, sizeof save_block_height - 1)
+  strncpy(save_block_height, current_block_height, sizeof save_block_height - 1);
   save_block_height[sizeof save_block_height - 1] = '\0';
   strncpy(save_block_hash, previous_block_hash, sizeof save_block_hash - 1);
   save_block_hash[sizeof save_block_hash - 1] = '\0';
