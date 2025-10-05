@@ -1001,3 +1001,7 @@ void server_receive_data_socket_node_to_block_verifiers_check_vote_status(server
   cJSON_Delete(root);
   return;
 }
+
+server_receive_payout(char *MESSAGE) {
+  
+}
