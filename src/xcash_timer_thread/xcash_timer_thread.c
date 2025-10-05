@@ -627,18 +627,14 @@ static void run_proof_check(sched_ctx_t* ctx) {
 
     if (!sbuf_addf(&sb, "]}")) {
       free(sb.buf);
-      goto next_delegate;
+      free(sb.buf);
     }
 
     // 5) send
-    {
-//      response_t* resp = NULL;
-//      if (!xnet_send_to_host(ip, sb.buf, &resp)) {
-//        WARNING_PRINT("send failed to %s for delegate %.12s…", ip, delegate_addr);
-//      }
-      free(sb.buf);
-//      cleanup_response(resp);
+    if (send_message_to_ip_or_hostname(ip, XCASH_DPOPS_PORT, sb.buf) != XCASH_OK) {
+      ERROR_PRINT("Failed to send the payment message to %s", client->client_ip);
     }
+    free(sb.buf);
 
   // fall-through;
   next_delegate:
