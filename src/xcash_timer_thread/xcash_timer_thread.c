@@ -56,6 +56,29 @@ static void sleep_until(time_t when) {
   }
 }
 
+/* Compute SHA-256 over the canonical encoding of an outputs array.
+   Canonical bytes per entry:
+     - uint16 LE length of address (len16)
+     - address bytes (ASCII, exactly 'len16' bytes; no NUL included)
+     - uint64 LE amount
+   The order of 'outs' MUST be deterministic across nodes.
+   out32: receives 32 bytes of the SHA-256 digest.
+*/
+void outputs_digest_sha256(const payout_output_t *outs, size_t n, uint8_t out32[32]) {
+  crypto_hash_sha256_state st;
+  crypto_hash_sha256_init(&st);
+  for (size_t i = 0; i < n; ++i) {
+    uint16_t alen = (uint16_t)strnlen(outs[i].a, XCASH_WALLET_LENGTH);
+    uint8_t le16[2] = { (uint8_t)(alen & 0xFF), (uint8_t)((alen >> 8) & 0xFF) };
+    crypto_hash_sha256_update(&st, le16, 2);
+    crypto_hash_sha256_update(&st, (const unsigned char*)outs[i].a, alen);
+    uint8_t le64[8];
+    for (int b = 0; b < 8; ++b) le64[b] = (outs[i].v >> (8*b)) & 0xFF;
+    crypto_hash_sha256_update(&st, le64, 8);
+  }
+  crypto_hash_sha256_final(&st, out32);
+}
+
 // Helpers to rind or create a bucket by delegate
 static int get_bucket_index(payout_bucket_t buckets[],
                             size_t* bucket_count,
@@ -481,13 +504,12 @@ static void run_proof_check(sched_ctx_t* ctx) {
     }
   }
 
-  // ****************************************
-
   for (size_t i = 0; i < pay_bucket_count; ++i) {
     const payout_bucket_t* B = &pay_buckets[i];
     const char* delegate_addr = B->delegate;
     const char* ip = NULL;
 
+    // find delegate IP from your online snapshot
     for (size_t k = 0; k < online_count; ++k) {
       if (strcmp(delegates_timer_all[k].public_address, delegate_addr) == 0) {
         ip = delegates_timer_all[k].IP_address;
@@ -503,50 +525,60 @@ static void run_proof_check(sched_ctx_t* ctx) {
       continue;
     }
 
+    // 1) hash outputs
     uint8_t out_hash[32];
     outputs_digest_sha256(B->outs, B->count, out_hash);
     char out_hash_hex[65];
-    bin_to_hex(out_hash, 32, out_hash_hex);
+    bin_to_hex(out_hash, 32, out_hash_hex);  // must NUL-terminate
 
+    // 2) build canonical signable string:
+    //    SEED_TO_NODES_PAYOUT|<height>|<blockhash>|<delegate>|<entries>|<outputs_hash>
     char* sign_str = NULL;
-    int need = snprintf(NULL, 0, "SEED_TO_NODES_PAYOUT|%s|%s|%s|%zu|%s|%s", save_block_height, block_hash_hex, delegate_addr,
-                        B->count, out_hash_hex, save_block_hash);
-    if (need < 0) {
-      ERROR_PRINT("Failed to build string to sign");
-      continue;
-
-    } else {
+    {
+      const char* fmt_sign = "SEED_TO_NODES_PAYOUT|%s|%s|%s|%zu|%s";
+      int need = snprintf(NULL, 0, fmt_sign,
+                          save_block_height,  // e.g. "123456"
+                          save_block_hash,    // 64-hex (captured earlier)
+                          delegate_addr,
+                          B->count,
+                          out_hash_hex);
+      if (need < 0) {
+        ERROR_PRINT("Failed to size signable string");
+        continue;
+      }
       size_t len = (size_t)need + 1;
       sign_str = (char*)malloc(len);
       if (!sign_str) {
         ERROR_PRINT("malloc(%zu) failed for signable string", len);
         continue;
-      } else {
-        int wrote = snprintf(sign_str, len, fmt,
-                             save_block_height, block_hash_hex, delegate_addr, B->count, out_hash_hex, save_block_hash);
-        if (wrote < 0 || (size_t)wrote >= len) {
-          ERROR_PRINT("snprintf write failed/truncated");
-          free(sign_str);
-          sign_str = NULL;
-          continue;
-        }
+      }
+      int wrote = snprintf(sign_str, len, fmt_sign,
+                           save_block_height, save_block_hash, delegate_addr, B->count, out_hash_hex);
+      if (wrote < 0 || (size_t)wrote >= len) {
+        ERROR_PRINT("snprintf(write) failed or truncated");
+        free(sign_str);
+        sign_str = NULL;
+        continue;
       }
     }
 
-    if (sign_txt_string(sign_str, signature_out, sig_out_len)) {
-      ERROR_PRINT("Failed to sign the payment message");
+    // 3) sign
+    char signature[XCASH_SIGN_DATA_LENGTH + 1] = {0};
+    if (!sign_block_blob(sign_str, signature, sizeof signature)) {
+      ERROR_PRINT("Failed to sign the payout message for %.12s…", delegate_addr);
+      free(sign_str);
       continue;
     }
+    free(sign_str);
+    sign_str = NULL;
 
-    // build delegate payout trans and send...
-
+    // 4) build JSON
     sbuf_t sb;
     if (!sbuf_init(&sb, 4096)) {
       ERROR_PRINT("alloc failed building PAYOUT_INSTRUCTION");
       continue;
     }
 
-    // Header (height as string you already captured in save_block_height)
     if (!sbuf_addf(&sb,
                    "{"
                    "\"type\":\"SEED_TO_NODES_PAYOUT\","
@@ -554,30 +586,41 @@ static void run_proof_check(sched_ctx_t* ctx) {
                    "\"delegate_wallet_address\":\"%s\","
                    "\"entries_count\":%zu,"
                    "\"outputs_hash\":\"%s\","
-                   "\"XCASH_DPOPS_signature\":\"\","
+                   "\"XCASH_DPOPS_signature\":\"%s\","
                    "\"outputs\":[",
-                   save_block_height, delegate_addr, B->count, out_hash_hex)) {
+                   save_block_height, delegate_addr, B->count, out_hash_hex, sig_hex)) {
       free(sb.buf);
       continue;
     }
 
-    // Outputs array
     for (size_t oi = 0; oi < B->count; ++oi) {
       const payout_output_t* o = &B->outs[oi];
       if (!sbuf_addf(&sb, "%s{\"a\":\"%s\",\"v\":%" PRIu64 "}",
                      (oi ? "," : ""), o->a, (uint64_t)o->v)) {
         free(sb.buf);
-        goto next_delegate;  // bail on this one
+        goto next_delegate;
       }
     }
 
-    // Close JSON
     if (!sbuf_addf(&sb, "]}")) {
       free(sb.buf);
       goto next_delegate;
     }
+
+    // 5) send
+    {
+      response_t* resp = NULL;
+      if (!xnet_send_to_host(ip, sb.buf, &resp)) {
+        WARNING_PRINT("send failed to %s for delegate %.12s…", ip, delegate_addr);
+      }
+      free(sb.buf);
+      cleanup_response(resp);
+    }
+
+  // fall-through;
+  next_delegate:
+    ;
   }
-  // **********************************************
 
   mongoc_client_pool_push(ctx->pool, c);
   free_buckets(pay_buckets, pay_bucket_count);
