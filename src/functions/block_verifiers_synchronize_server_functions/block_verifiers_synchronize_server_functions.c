@@ -304,7 +304,7 @@ bool build_seed_to_nodes_vote_count_update(const char* public_address,
   }
 
   const char* params[] = {
-    "public_address",   xcash_wallet_public_address,
+    "public_address", xcash_wallet_public_address,
     "public_address_upd", public_address,
     "vote_count_atomic", vote_buf,
     NULL
