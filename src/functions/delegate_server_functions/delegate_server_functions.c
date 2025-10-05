@@ -1199,10 +1199,12 @@ void server_receive_payout(const char* MESSAGE) {
   char out_hash_hex[TRANSACTION_HASH_LENGTH + 1];
   bin_to_hex(out_hash, MD5_HASH_SIZE, out_hash_hex);
   if (strcmp(out_hash_hex, in_outputs_hash) != 0) {
-    ERROR_PRINT("outputs_hash mismatch for payout trans");
+    WARNING_PRINT("outputs_hash mismatch for payout trans");
     free(parsed);
     return;
   }
+
+
 
   /*
     char* sign_str = NULL;
