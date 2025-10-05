@@ -1071,6 +1071,21 @@ void server_receive_payout(const char *MESSAGE) {
 
   size_t entries_count = 0;
   {
+
+cJSON *jcnt = cJSON_GetObjectItemCaseSensitive(root, "entries_count");
+if (!jcnt || !cJSON_IsNumber(jcnt)) { /* ... */ }
+
+double v = jcnt->valuedouble;
+if (!(v >= 0.0) || v > (double)MAX_OUTPUTS_PER_BATCH) { /* reject */ }
+
+uint64_t u = (uint64_t)v;          // truncate
+if ((double)u != v) { /* non-integer */ /* reject */ }
+
+size_t entries_count = (size_t)u;
+
+
+
+
     cJSON* jcnt = cJSON_GetObjectItemCaseSensitive(root, "entries_count");
     if (!jcnt || !cJSON_IsNumber(jcnt)) {
       ERROR_PRINT("Missing/invalid 'entries_count'");
@@ -1079,7 +1094,7 @@ void server_receive_payout(const char *MESSAGE) {
     }
     double v = jcnt->valuedouble;
     double ip;
-    if (v < 0.0 || v > MAX_PROOFS_PER_DELEGATE_HARD || modf(v, &ip) != 0.0) {
+    if (v < 0.0 || v > (double)MAX_PROOFS_PER_DELEGATE_HARD || modf(v, &ip) != 0.0) {
       ERROR_PRINT("'entries_count' out of range or non-integer");
       cJSON_Delete(root);
       return;
@@ -1214,7 +1229,7 @@ void server_receive_payout(const char *MESSAGE) {
 */
 
 
-  reture;
+  return;
 }
 
 
