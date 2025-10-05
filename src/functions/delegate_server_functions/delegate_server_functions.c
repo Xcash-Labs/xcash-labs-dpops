@@ -1083,7 +1083,8 @@ void server_receive_payout(const char *MESSAGE) {
     }
 
     uint64_t u = (uint64_t)v;
-    if ((double)u != v) {
+//    if ((double)u != v) {
+    if (fabs(v - (double)u) > DBL_EPSILON) {
       ERROR_PRINT("Entries_count is not a valid value");
       cJSON_Delete(root);
       return;
