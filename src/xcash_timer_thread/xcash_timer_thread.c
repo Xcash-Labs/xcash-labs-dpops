@@ -605,13 +605,14 @@ static void run_proof_check(sched_ctx_t* ctx) {
     if (!sbuf_addf(&sb,
                    "{"
                    "\"message_settings\":\"SEED_TO_NODES_PAYOUT\","
+                   "\"public_address\":\"%s\","
                    "\"block_cutoff\":{\"height\":%s},"
                    "\"delegate_wallet_address\":\"%s\","
                    "\"entries_count\":%zu,"
                    "\"outputs_hash\":\"%s\","
                    "\"XCASH_DPOPS_signature\":\"%s\","
                    "\"outputs\":[",
-                   save_block_height, delegate_addr, B->count, out_hash_hex, signature)) {
+                   save_block_height, xcash_wallet_public_address, delegate_addr, B->count, out_hash_hex, signature)) {
       free(sb.buf);
       continue;
     }
