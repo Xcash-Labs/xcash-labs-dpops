@@ -56,54 +56,6 @@ static void sleep_until(time_t when) {
   }
 }
 
-/* 
-   Compute SHA-256 over the canonical encoding of an outputs array.
-   Canonical bytes per entry:
-     - uint16 LE length of address (len16)
-     - address bytes (ASCII, exactly 'len16' bytes; no NUL included)
-     - uint64 LE amount
-   The order of 'outs' MUST be deterministic across nodes.
-   out32: receives 32 bytes of the SHA-256 digest.
-*/
-void outputs_digest_sha256(const payout_output_t *outs, size_t n, uint8_t out32[32]) {
-  EVP_MD_CTX *ctx = EVP_MD_CTX_new();
-  if (!ctx) { memset(out32, 0, 32); return; }
-
-  if (EVP_DigestInit_ex(ctx, EVP_sha256(), NULL) != 1) {
-    EVP_MD_CTX_free(ctx);
-    memset(out32, 0, 32);
-    return;
-  }
-
-  for (size_t i = 0; i < n; ++i) {
-    /* address length (uint16 LE) */
-    uint16_t alen = (uint16_t)strnlen(outs[i].a, XCASH_WALLET_LENGTH);
-    uint8_t le16[2] = { (uint8_t)(alen & 0xFF), (uint8_t)((alen >> 8) & 0xFF) };
-    EVP_DigestUpdate(ctx, le16, sizeof le16);
-
-    /* address bytes (no NUL) */
-    if (alen > 0) {
-      EVP_DigestUpdate(ctx, (const unsigned char*)outs[i].a, (size_t)alen);
-    }
-
-    /* amount (uint64 LE) */
-    uint8_t le64[8];
-    for (int b = 0; b < 8; ++b) le64[b] = (uint8_t)((outs[i].v >> (8 * b)) & 0xFF);
-    EVP_DigestUpdate(ctx, le64, sizeof le64);
-  }
-
-  unsigned int md_len = 0;
-  unsigned char md[EVP_MAX_MD_SIZE];
-  if (EVP_DigestFinal_ex(ctx, md, &md_len) != 1 || md_len != 32) {
-    memset(out32, 0, 32);
-  } else {
-    memcpy(out32, md, 32);
-  }
-
-  EVP_MD_CTX_free(ctx);
-}
-
-
 // Helpers to rind or create a bucket by delegate
 static int get_bucket_index(payout_bucket_t buckets[],
                             size_t* bucket_count,
@@ -401,7 +353,8 @@ static void run_proof_check(sched_ctx_t* ctx) {
   sync_block_verifiers_minutes_and_seconds(0, 51);
   char save_block_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
   char save_block_hash[BLOCK_HASH_LENGTH + 1] = {0};
-  snprintf(save_block_height, sizeof save_block_height, "%" PRIu64, (uint64_t)current_block_height);
+  strncpy(save_block_height, current_block_height, sizeof save_block_height - 1)
+  save_block_height[sizeof save_block_height - 1] = '\0';
   strncpy(save_block_hash, previous_block_hash, sizeof save_block_hash - 1);
   save_block_hash[sizeof save_block_hash - 1] = '\0';
   size_t online_count = 0;
@@ -560,8 +513,8 @@ static void run_proof_check(sched_ctx_t* ctx) {
     {
       const char* fmt_sign = "SEED_TO_NODES_PAYOUT|%s|%s|%s|%zu|%s";
       int need = snprintf(NULL, 0, fmt_sign,
-                          save_block_height,  // e.g. "123456"
-                          save_block_hash,    // 64-hex (captured earlier)
+                          save_block_height,
+                          save_block_hash,
                           delegate_addr,
                           B->count,
                           out_hash_hex);
