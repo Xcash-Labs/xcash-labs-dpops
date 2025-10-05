@@ -35,6 +35,7 @@
         "system_error": "c",
         "block_verifiers_synchronize_server_functions.h": "c",
         "block_verifiers_server_functions.h": "c",
-        "ctype.h": "c"
+        "ctype.h": "c",
+        "network_wallet_functions.h": "c"
     }
 }
