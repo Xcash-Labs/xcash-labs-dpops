@@ -1010,18 +1010,23 @@ static int is_hex_string(const char *s) {
   return 1;
 }
 
-static bool get_string(cJSON *obj, const char *key, char **out, bool required) {
-  cJSON *it = cJSON_GetObjectItemCaseSensitive(obj, key);
+// length-checked copy: JSON string -> fixed buffer
+static int json_get_string_into(cJSON *root, const char *key, char *out, size_t outsz, int required) {
+  if (!out || outsz == 0) return 0;
+  out[0] = '\0';
+  cJSON *it = cJSON_GetObjectItemCaseSensitive(root, key);
   if (!it || !cJSON_IsString(it) || !it->valuestring) {
-    if (required) ERROR_PRINT("Missing or invalid string for '%s'", key);
-    *out = NULL;
-    return !required;
+    if (required) ERROR_PRINT("Missing/invalid '%s'", key);
+    return required ? 0 : 1;
   }
-  *out = strdup(it->valuestring);
-  if (!*out) { ERROR_PRINT("OOM duplicating '%s'", key); return false; }
-  return true;
+  size_t len = strlen(it->valuestring);
+  if (len >= outsz) {
+    ERROR_PRINT("Field '%s' too long (%zu >= %zu)", key, len, outsz);
+    return 0;
+  }
+  memcpy(out, it->valuestring, len + 1);
+  return 1;
 }
-
 /* --------------------------------------------------------------------------------------------------------
   Name: server_receive_payout
   Description: Runs the code when the server receives the NODE_TO_BLOCK_VERIFIERS_CHECK_VOTE_STATUS message is received
@@ -1051,14 +1056,16 @@ void server_receive_payout(const char *MESSAGE) {
   char in_outputs_hash[TRANSACTION_HASH_LENGTH + 1] = {0};
   char in_signature[XCASH_SIGN_DATA_LENGTH + 1] = {0};
 
+
   int ok = 1;
-  ok = ok && GET_STR(root, "public_address",          in_public_address,          1);
-  ok = ok && GET_STR(root, "block_height",            in_block_height,            1);
-  ok = ok && GET_STR(root, "delegate_wallet_address", in_delegate_wallet_address, 1);
-  ok = ok && GET_STR(root, "outputs_hash",            in_outputs_hash,            1);
-  ok = ok && GET_STR(root, "XCASH_DPOPS_signature",   in_signature,               1);
+  ok &= json_get_string_into(root, "public_address", in_public_address, sizeof in_public_address, 1);
+  ok &= json_get_string_into(root, "block_height", in_block_height, sizeof in_block_height, 1);
+  ok &= json_get_string_into(root, "delegate_wallet_address", in_delegate_wallet_address, sizeof in_delegate_wallet_address, 1);
+  ok &= json_get_string_into(root, "outputs_hash", in_outputs_hash, sizeof in_outputs_hash, 1);
+  ok &= json_get_string_into(root, "XCASH_DPOPS_signature", in_signature, sizeof in_signature, 1);
 
   if (!ok) {
+    ERROR_PRINT("Failed to parse json fields in server_receive_payout");
     cJSON_Delete(root);
     return;
   }
