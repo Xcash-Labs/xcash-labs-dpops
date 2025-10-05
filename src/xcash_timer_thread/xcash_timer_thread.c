@@ -217,25 +217,23 @@ static int sbuf_addf(sbuf_t* s, const char* fmt, ...) {
 }
 
 /*---------------------------------------------------------------------------------------------------------
-Name: add_vote_sum
+Name: run_proof_check
+
 Description:
-  Accumulates a vote amount into the per-delegate running totals. If the delegate
-  already has a bucket, increments it; otherwise creates a new bucket as long as
-  the array capacity (BLOCK_VERIFIERS_TOTAL_AMOUNT) is not exceeded.
+  Periodic scheduler task that:
+    1) Scans the `reserve_proofs` collection, validates each proof, and prunes invalid entries.
+    2) Aggregates per-delegate vote totals from valid proofs.
+    3) Snapshots the currently-online delegates (address/IP) at a fixed clock boundary.
+    4) Writes updated `total_vote_count` values into the `delegates` collection (skip if unchanged).
+    5) Broadcasts a seed→nodes vote-count update message on successful DB updates.
+    6) (Per delegate) Builds payout instructions from collected voter outputs, hashes/signs the payload,
+       and prepares a JSON message for network transmission.
 
 Parameters:
-  addrs   - (IN/OUT) Array of delegate addresses; each slot is a null-terminated string.
-  totals  - (IN/OUT) Parallel array of 64-bit running totals for each address.
-  pcount  - (IN/OUT) Current number of active buckets; incremented when a new bucket is added.
-  addr    - (IN)     Delegate address to accumulate into.
-  amt     - (IN)     Amount to add (must be ≥ 0; caller ensures semantics).
+  ctx  - (IN) Scheduler context providing access to the MongoDB client pool and shutdown flag.
 
 Returns:
   void
-
-Notes:
-  - If capacity is reached, logs a warning and drops the contribution.
-  - Truncates/guards address length to XCASH_WALLET_LENGTH.
 ---------------------------------------------------------------------------------------------------------*/
 static void run_proof_check(sched_ctx_t* ctx) {
   mongoc_client_t* c = mongoc_client_pool_pop(ctx->pool);
