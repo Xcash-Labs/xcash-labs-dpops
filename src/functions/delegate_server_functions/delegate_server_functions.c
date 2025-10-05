@@ -1056,7 +1056,6 @@ void server_receive_payout(const char *MESSAGE) {
   char in_outputs_hash[TRANSACTION_HASH_LENGTH + 1] = {0};
   char in_signature[XCASH_SIGN_DATA_LENGTH + 1] = {0};
 
-
   int ok = 1;
   ok &= json_get_string_into(root, "public_address", in_public_address, sizeof in_public_address, 1);
   ok &= json_get_string_into(root, "block_height", in_block_height, sizeof in_block_height, 1);
@@ -1070,23 +1069,152 @@ void server_receive_payout(const char *MESSAGE) {
     return;
   }
 
+  size_t entries_count = 0;
+  {
+    cJSON* jcnt = cJSON_GetObjectItemCaseSensitive(root, "entries_count");
+    if (!jcnt || !cJSON_IsNumber(jcnt)) {
+      ERROR_PRINT("Missing/invalid 'entries_count'");
+      cJSON_Delete(root);
+      return;
+    }
+    double v = jcnt->valuedouble;
+    double ip;
+    if (v < 0.0 || v > MAX_PROOFS_PER_DELEGATE_HARD || modf(v, &ip) != 0.0) {
+      ERROR_PRINT("'entries_count' out of range or non-integer");
+      cJSON_Delete(root);
+      return;
+    }
+    entries_count = (size_t)(uint64_t)v;
+  }
+
+  // outputs (array)
+  cJSON* outs = cJSON_GetObjectItemCaseSensitive(root, "outputs");
+  if (!outs || !cJSON_IsArray(outs)) {
+    ERROR_PRINT("Missing/invalid 'outputs' array");
+    cJSON_Delete(root);
+    return;
+  }
+
+  size_t n = (size_t)cJSON_GetArraySize(outs);
+  if (entries_count != n) {
+    WARNING_PRINT("entries_count (%zu) != outputs length (%zu) — using outputs length", entries_count, n);
+    entries_count = n;
+  }
+
+  payout_output_t* parsed = NULL;
+  if (entries_count > 0) {
+    parsed = (payout_output_t*)calloc(entries_count, sizeof(*parsed));
+    if (!parsed) {
+      ERROR_PRINT("OOM allocating outputs array");
+      cJSON_Delete(root);
+      return;
+    }
+  }
+
+  // Iterate and extract each element: { "a": "<addr>", "v": <number> }
+  size_t i = 0;
+  for (cJSON* elem = outs->child; elem && i < entries_count; elem = elem->next, ++i) {
+    if (!cJSON_IsObject(elem)) {
+      ERROR_PRINT("outputs[%zu] is not an object", i);
+      free(parsed);
+      cJSON_Delete(root);
+      return;
+    }
+
+    // address
+    cJSON* ja = cJSON_GetObjectItemCaseSensitive(elem, "a");
+    if (!ja || !cJSON_IsString(ja) || !ja->valuestring) {
+      ERROR_PRINT("outputs[%zu].a missing/invalid", i);
+      free(parsed);
+      cJSON_Delete(root);
+      return;
+    }
+    size_t alen = strlen(ja->valuestring);
+    if (alen >= sizeof(parsed[i].address)) {
+      ERROR_PRINT("outputs[%zu].a too long (%zu >= %zu)", i, alen, sizeof(parsed[i].address));
+      free(parsed);
+      cJSON_Delete(root);
+      return;
+    }
+    memcpy(parsed[i].address, ja->valuestring, alen + 1);
+
+    // amount (uint64_t via cJSON number -> double guard)
+    cJSON* jv = cJSON_GetObjectItemCaseSensitive(elem, "v");
+    if (!jv || !cJSON_IsNumber(jv)) {
+      ERROR_PRINT("outputs[%zu].v missing/invalid", i);
+      free(parsed);
+      cJSON_Delete(root);
+      return;
+    }
+    double dv = jv->valuedouble;
+    double ip;
+    if (dv < 0.0 || dv > 9007199254740991.0 || modf(dv, &ip) != 0.0) {
+      ERROR_PRINT("outputs[%zu].v out of range or non-integer", i);
+      free(parsed);
+      cJSON_Delete(root);
+      return;
+    }
+    parsed[i].amount = (uint64_t)dv;
+  }
+
+  // At this point `parsed[0..entries_count-1]` holds the outputs.
+  // Example: log them.
+  for (size_t k = 0; k < entries_count; ++k) {
+    DEBUG_PRINT("out[%zu]: %s -> %" PRIu64, k, parsed[k].address, parsed[k].amount);
+  }
+
+  // ... continue (verify outputs_hash, signature, build tx, etc.)
+
+  // Cleanup 
+  free(parsed);
+  cJSON_Delete(root);
+
   if (strlen(in_outputs_hash) != TRANSACTION_HASH_LENGTH || !is_hex_string(in_outputs_hash)) {
     ERROR_PRINT("outputs_hash must be %d hex chars", TRANSACTION_HASH_LENGTH);
-    cJSON_Delete(root);
     return;
   }
 
   if (strcmp(in_delegate_wallet_address, xcash_wallet_public_address) != 0) {
     ERROR_PRINT("Payout transaction is not for this delegate");
-    cJSON_Delete(root);
     return;
   }
 
   DEBUG_PRINT("Parsed payout header ok: delegate=%s height=%s hash=%s",
               in_delegate_wallet_address, in_block_height, in_outputs_hash);
 
+/*              
+  char* sign_str = NULL;
+  {
+    const char* fmt_sign = "SEED_TO_NODES_PAYOUT|%s|%s|%s|%zu|%s";
+    int need = snprintf(NULL, 0, fmt_sign,
+                        save_block_height,
+                        save_block_hash,
+                        delegate_addr,
+                        B->count,
+                        out_hash_hex);
+    if (need < 0) {
+      ERROR_PRINT("Failed to size signable string");
+      continue;
+    }
+    size_t len = (size_t)need + 1;
+    sign_str = (char*)malloc(len);
+    if (!sign_str) {
+      ERROR_PRINT("malloc(%zu) failed for signable string", len);
+      continue;
+    }
+    int wrote = snprintf(sign_str, len, fmt_sign,
+                         save_block_height, save_block_hash, delegate_addr, B->count, out_hash_hex);
+    if (wrote < 0 || (size_t)wrote >= len) {
+      ERROR_PRINT("snprintf(write) failed or truncated");
+      free(sign_str);
+      sign_str = NULL;
+      continue;
+    }
+    }
+*/
 
-  cJSON_Delete(root);
+
+  reture;
 }
 
 
