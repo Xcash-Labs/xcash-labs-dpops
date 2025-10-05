@@ -1199,23 +1199,39 @@ void server_receive_payout(const char* MESSAGE) {
   char out_hash_hex[TRANSACTION_HASH_LENGTH + 1];
   bin_to_hex(out_hash, MD5_HASH_SIZE, out_hash_hex);
   if (strcmp(out_hash_hex, in_outputs_hash) != 0) {
-    WARNING_PRINT("outputs_hash mismatch for payout trans");
+    ERROR_PRINT("outputs_hash mismatch for payout trans");
     free(parsed);
     return;
   }
 
+  char ck_block_hash[BLOCK_HASH_LENGTH + 1] = {0};
 
+  uint64_t reward_atomic = 0;
+  uint64_t ts_epoch = 0;
+  bool is_orphan = false;
+  uint64_t block_create_height = strtoull(in_block_height, NULL, 10) - 1;
+  int rc = get_block_info_by_height(block_create_height, ck_block_hash, sizeof(ck_block_hash), &reward_atomic, &ts_epoch, &is_orphan);
+  if (rc != XCASH_OK) {
+    ERROR_PRINT("Error getting  for payout trans");
+    free(parsed);
+    return;
+  }
+
+WARNING_PRINT("Previous Block Hash: %s", ck_block_hash);
 
   /*
     char* sign_str = NULL;
     {
       const char* fmt_sign = "SEED_TO_NODES_PAYOUT|%s|%s|%s|%zu|%s";
       int need = snprintf(NULL, 0, fmt_sign,
-                          save_block_height,
-                          save_block_hash,
-                          delegate_addr,
-                          B->count,
-                          out_hash_hex);
+                          in_block_height,
+
+                          save_block_hash,   == meed tp retroeve tjos
+
+
+                          in_delegate_wallet_address,
+                          entries_count,
+                          in_outputs_hash);
       if (need < 0) {
         ERROR_PRINT("Failed to size signable string");
         continue;
