@@ -1002,6 +1002,85 @@ void server_receive_data_socket_node_to_block_verifiers_check_vote_status(server
   return;
 }
 
-void server_receive_payout(const char *MESSAGE) {
-  WARNING_PRINT("Message: %s", MESSAGE);
+// helper hex checker
+static int is_hex_string(const char *s) {
+  if (!s) return 0;
+  for (const unsigned char *p = (const unsigned char*)s; *p; ++p)
+    if (!isxdigit(*p)) return 0;
+  return 1;
 }
+
+/* --------------------------------------------------------------------------------------------------------
+  Name: server_receive_payout
+  Description: Runs the code when the server receives the NODE_TO_BLOCK_VERIFIERS_CHECK_VOTE_STATUS message is received
+  Parameters:
+  
+  MESSAGE - The message
+----------------------------------------------------------------------------------------------------------- */
+void server_receive_payout(const char *MESSAGE) {
+  if (!MESSAGE || !*MESSAGE) {
+    ERROR_PRINT("Invalid message parameter passed to server_receive_payout");
+    return;
+  }
+
+  WARNING_PRINT("Message: %s", MESSAGE);
+
+  cJSON *root = cJSON_Parse(MESSAGE);
+  if (!root) {
+    const char *ep = cJSON_GetErrorPtr();
+    ERROR_PRINT("cJSON parse error near: %s", ep ? ep : "(unknown)");
+    return;
+  }
+
+  // Parsed fields
+  char in_public_address[XCASH_WALLET_LENGTH + 1] = {0};
+  char in_block_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
+  char in_delegate_wallet_address[XCASH_WALLET_LENGTH + 1] = {0};
+  char in_outputs_hash[OUTPUTS_HASH_HEX_LEN + 1] = {0};
+  char in_signature[XCASH_SIGN_DATA_LENGTH + 1] = {0};
+
+  int ok = 1;
+  ok = ok && GET_STR(root, "public_address",          in_public_address,          1);
+  ok = ok && GET_STR(root, "block_height",            in_block_height,            1);
+  ok = ok && GET_STR(root, "delegate_wallet_address", in_delegate_wallet_address, 1);
+  ok = ok && GET_STR(root, "outputs_hash",            in_outputs_hash,            1);
+  ok = ok && GET_STR(root, "XCASH_DPOPS_signature",   in_signature,               1);
+
+  if (!ok) {
+    cJSON_Delete(root);
+    return;
+  }
+
+  if (strlen(in_outputs_hash) != OUTPUTS_HASH_HEX_LEN || !is_hex_string(in_outputs_hash)) {
+    ERROR_PRINT("outputs_hash must be %d hex chars", OUTPUTS_HASH_HEX_LEN);
+    cJSON_Delete(root);
+    return;
+  }
+
+  if (strcmp(in_delegate_wallet_address, xcash_wallet_public_address) != 0) {
+    ERROR_PRINT("Payout transaction is not for this delegate");
+    cJSON_Delete(root);
+    return;
+  }
+
+  DEBUG_PRINT("Parsed payout header ok: delegate=%s height=%s hash=%s",
+              in_delegate_wallet_address, in_block_height, in_outputs_hash);
+
+
+  cJSON_Delete(root);
+}
+
+
+
+
+
+/*
+ Message: {"message_settings":"SEED_TO_NODES_PAYOUT",
+  "public_address":"XCA1T1uxPiS8oprWpaCrUiiFcQB3KEriiUVqeeqnVtiKakSZmrZhoXKGbzqn4wj3EXY4JFPdJHqGr7iRHVxF4yyE28NvzLQgZf",
+  "block_height":"93878780600000",
+  "delegate_wallet_address":"XCA1sHbEth6Wd57C1FrKZp4cpov34nPV46JYXWH1HFRKjPLMYyAmnWiWDKrfWafcx5RMMoLjdqj9jjn86GFZ5R1b1dAkPPnKKt",
+  "entries_count":1,
+  "outputs_hash":"ee3adb66614304039f16e75d0f7ca1436119614d4466ad9743687aa85614f548",
+  "XCASH_DPOPS_signature":"SigV2Yiv1UHvoKsCabAcx8MeR8U2PfkFtrziuRSkqXcVF9NtgfudYUVqSk6Ui9KuxoV9kuBcrkFyJ294eAgtRuP2Cuz1H",
+  "outputs":[{"a":"XCA1WbS8xjs3WXgjGSG7Vp5mxbcJ7tBAtHP8TnwS7mcf3KAgXiEh66KLAdzarehQZFXxbVmWKeaqYUG5jbgnvL2C9zoqXsSHAJ","v":5000000000000}]
+*/
