@@ -1290,7 +1290,7 @@ void server_receive_payout(const char* MESSAGE) {
     return;
   }
 
-  INFO_PRINT("Unlocked balance: %" PRIu64 " atomic (%.6f XCA)",
+  WARNING_PRINT("Unlocked balance: %" PRIu64 " atomic (%.6f XCA)",
              unlocked,
              (double)unlocked / (double)XCASH_ATOMIC_UNITS);
 
