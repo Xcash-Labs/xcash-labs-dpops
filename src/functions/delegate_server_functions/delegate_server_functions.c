@@ -1285,7 +1285,7 @@ void server_receive_payout(const char* MESSAGE) {
 
 
 
-  WARNING_PRINT("Success of far.......");
+
 
 
 
@@ -1293,14 +1293,3 @@ void server_receive_payout(const char* MESSAGE) {
   free(sign_str);
   return;
 }
-
-/*
- Message: {"message_settings":"SEED_TO_NODES_PAYOUT",
-  "public_address":"XCA1T1uxPiS8oprWpaCrUiiFcQB3KEriiUVqeeqnVtiKakSZmrZhoXKGbzqn4wj3EXY4JFPdJHqGr7iRHVxF4yyE28NvzLQgZf",
-  "block_height":"93878780600000",
-  "delegate_wallet_address":"XCA1sHbEth6Wd57C1FrKZp4cpov34nPV46JYXWH1HFRKjPLMYyAmnWiWDKrfWafcx5RMMoLjdqj9jjn86GFZ5R1b1dAkPPnKKt",
-  "entries_count":1,
-  "outputs_hash":"ee3adb66614304039f16e75d0f7ca1436119614d4466ad9743687aa85614f548",
-  "XCASH_DPOPS_signature":"SigV2Yiv1UHvoKsCabAcx8MeR8U2PfkFtrziuRSkqXcVF9NtgfudYUVqSk6Ui9KuxoV9kuBcrkFyJ294eAgtRuP2Cuz1H",
-  "outputs":[{"a":"XCA1WbS8xjs3WXgjGSG7Vp5mxbcJ7tBAtHP8TnwS7mcf3KAgXiEh66KLAdzarehQZFXxbVmWKeaqYUG5jbgnvL2C9zoqXsSHAJ","v":5000000000000}]
-*/

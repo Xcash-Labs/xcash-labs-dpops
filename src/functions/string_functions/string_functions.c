@@ -76,19 +76,123 @@ Return:
   the function writes an empty string to hex_out.
 ---------------------------------------------------------------------------------------------------------*/
 void bytes_to_hex(const unsigned char* bytes, size_t byte_len, char* hex_out, size_t hex_out_len) {
-    if (!bytes || !hex_out || hex_out_len < (byte_len * 2 + 1)) {
-      if (hex_out && hex_out_len > 0) {
-        hex_out[0] = '\0';
-      }
-      return;
+  if (!bytes || !hex_out || hex_out_len < (byte_len * 2 + 1)) {
+    if (hex_out && hex_out_len > 0) {
+      hex_out[0] = '\0';
     }
-  
-    for (size_t i = 0; i < byte_len; i++) {
-      snprintf(hex_out + (i * 2), hex_out_len - (i * 2), "%02x", bytes[i]);
-    }
-    hex_out[byte_len * 2] = '\0';
+    return;
   }
   
+  for (size_t i = 0; i < byte_len; i++) {
+    snprintf(hex_out + (i * 2), hex_out_len - (i * 2), "%02x", bytes[i]);
+  }
+  hex_out[byte_len * 2] = '\0';
+}
+
+/* Helper to find the "result": { ... } bounds in raw JSON */
+static int json_find_result_object(const char* json, const char** out_start, const char** out_end) {
+  const char* p = strstr(json, "\"result\"");
+  if (!p) return 0;
+  p = strchr(p, '{'); if (!p) return 0;
+  int depth = 1, in_str = 0;
+  const char* q = p + 1;
+  while (*q && depth > 0) {
+    unsigned char c = (unsigned char)*q;
+    if (in_str) { if (c == '"' && q[-1] != '\\') in_str = 0; }
+    else { if (c == '"') in_str = 1; else if (c == '{') depth++; else if (c == '}') depth--; }
+    q++;
+  }
+  if (depth != 0) return 0;
+  *out_start = p; *out_end = q - 1;
+  return 1;
+}
+
+/* Helper to find key "<key>": <value> inside [obj_start, obj_end]; return ptr to value start */
+static const char* json_find_key_value_in_object(const char* obj_start, const char* obj_end, const char* key) {
+  char needle[128];
+  int n = snprintf(needle, sizeof needle, "\"%s\"", key);
+  if (n <= 0 || (size_t)n >= sizeof needle) return NULL;
+
+  const char* pos = obj_start;
+  while ((pos = strstr(pos, needle)) && pos < obj_end) {
+    const char* colon = strchr(pos + n, ':');
+    if (!colon || colon >= obj_end) return NULL;
+    const char* v = colon + 1;
+    while (v < obj_end && isspace((unsigned char)*v)) v++;
+    return (v < obj_end) ? v : NULL;
+  }
+  return NULL;
+}
+
+/* Helper to given value starting at '{', get its matching '}' */
+static int json_object_bounds_from_value(const char* v, const char* limit, const char** out_start, const char** out_end) {
+  if (!v || v >= limit || *v != '{') return 0;
+  int depth = 1, in_str = 0;
+  const char* p = v + 1;
+  while (p < limit && depth > 0) {
+    unsigned char c = (unsigned char)*p;
+    if (in_str) { if (c == '"' && p[-1] != '\\') in_str = 0; }
+    else { if (c == '"') in_str = 1; else if (c == '{') depth++; else if (c == '}') depth--; }
+    p++;
+  }
+  if (depth != 0) return 0;
+  *out_start = v; *out_end = p - 1;
+  return 1;
+}
+
+/* Extract decimal digits (optionally quoted) for a dot-path under "result": e.g. "count", "block_header.timestamp" */
+static int json_result_path_digits(const char* json, const char* path, char* out, size_t outsz) {
+  if (!json || !path || !out || outsz == 0) return 0;
+  out[0] = '\0';
+
+  const char *rs, *re;
+  if (!json_find_result_object(json, &rs, &re)) return 0;
+
+  char tmp[160];
+  strncpy(tmp, path, sizeof tmp - 1);
+  tmp[sizeof tmp - 1] = '\0';
+
+  const char* cur_s = rs;
+  const char* cur_e = re;
+  char* save = NULL;
+  for (char* tok = strtok_r(tmp, ".", &save); tok; tok = strtok_r(NULL, ".", &save)) {
+    const char* v = json_find_key_value_in_object(cur_s, cur_e, tok);
+    if (!v) return 0;
+
+    char* next = strtok_r(NULL, ".", &save);
+    if (next) {
+      /* Descend into object value */
+      const char *os, *oe;
+      if (!json_object_bounds_from_value(v, cur_e, &os, &oe)) return 0;
+      cur_s = os; cur_e = oe;
+      /* restore next for next loop iteration */
+      size_t nextlen = strlen(next);
+      memmove(next - 1, next, nextlen + 1); // put back strtok's consumed token boundary
+      continue;
+    }
+
+    /* Last token: extract digits (optionally quoted) */
+    while (v < cur_e && isspace((unsigned char)*v)) v++;
+    int quoted = 0;
+    if (v < cur_e && *v == '"') { quoted = 1; v++; }
+    if (v >= cur_e || !isdigit((unsigned char)*v)) return 0;
+
+    size_t w = 0;
+    while (v < cur_e && isdigit((unsigned char)*v)) {
+      if (w + 1 >= outsz) return 0;
+      out[w++] = *v++;
+    }
+    out[w] = '\0';
+
+    if (quoted) {
+      while (v < cur_e && isspace((unsigned char)*v)) v++;
+      if (v >= cur_e || *v != '"') return 0;
+    }
+    return (w > 0);
+  }
+  return 0;
+}
+
 /*---------------------------------------------------------------------------------------------------------
 Name: parse_json_data
 Description: Parses JSON data safely using cJSON, supporting both root-level and "result" fields.
@@ -119,41 +223,6 @@ int parse_json_data(const char *data, const char *field_name, char *result, size
     char path_copy[256];
     strncpy(path_copy, field_name, sizeof(path_copy) - 1);
     path_copy[sizeof(path_copy) - 1] = '\0';
-
-/*
-    char *token = strtok(path_copy, ".");
-    while (token != NULL) {
-        // Check for array access syntax (e.g., addresses[0])
-        char *bracket_pos = strchr(token, '[');
-        if (bracket_pos) {
-            *bracket_pos = '\0';  // Split field name and index part
-
-            current_obj = cJSON_GetObjectItemCaseSensitive(current_obj, token);
-            if (!current_obj || !cJSON_IsArray(current_obj)) {
-                ERROR_PRINT("Field '%s' not found or is not an array", token);
-                cJSON_Delete(json);
-                return XCASH_ERROR;
-            }
-
-            // Extract the index
-            int index = atoi(bracket_pos + 1);
-            current_obj = cJSON_GetArrayItem(current_obj, index);
-            if (!current_obj) {
-                ERROR_PRINT("Index %d out of range for field '%s'", index, token);
-                cJSON_Delete(json);
-                return XCASH_ERROR;
-            }
-        } else {
-            current_obj = cJSON_GetObjectItemCaseSensitive(current_obj, token);
-            if (!current_obj) {
-                ERROR_PRINT("Field '%s' not found in JSON", field_name);
-                cJSON_Delete(json);
-                return XCASH_ERROR;
-            }
-        }
-        token = strtok(NULL, ".");
-    }
-*/
 
     cJSON *current_obj = json;
     char *saveptr = NULL;
@@ -193,14 +262,10 @@ int parse_json_data(const char *data, const char *field_name, char *result, size
         strncpy(result, current_obj->valuestring, result_size - 1);
         result[result_size - 1] = '\0';
     } else if (cJSON_IsNumber(current_obj)) {
-        if (strcmp(field_name, "result.count") == 0 || strcmp(field_name, "result.block_header.reward") == 0 ||
-          strcmp(field_name, "result.block_header.timestamp") == 0) {
-            snprintf(result, result_size, "%d", current_obj->valueint);
-        } else if (strcmp(field_name, "result.spent") == 0 || strcmp(field_name, "result.total") == 0) {
-            snprintf(result, result_size, "%.0f", current_obj->valuedouble);  
-        } else {
-            snprintf(result, result_size, "%.6f", current_obj->valuedouble);
-        }
+      const char* path_in_result = (strncmp(field_name, "result.", 7) == 0) ? field_name + 7 : field_name;
+      if (!json_result_path_digits(data, path_in_result, result, result_size)) {
+        snprintf(result, result_size, "%.0f", current_obj->valuedouble);
+      }
     } else if (cJSON_IsBool(current_obj)) {
         snprintf(result, result_size, "%s", cJSON_IsTrue(current_obj) ? "true" : "false");
     } else {
