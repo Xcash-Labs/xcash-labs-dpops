@@ -728,54 +728,61 @@ bool add_indexes(void) {
      ========================= */
   // don't add to seed nodes
 #ifndef SEED_NODE_ON
-  {
-    mongoc_collection_t* coll =
-        mongoc_client_get_collection(client, DATABASE_NAME, DB_COLLECTION_BLOCKS_FOUND);
+{
+  mongoc_collection_t* coll =
+      mongoc_client_get_collection(client, DATABASE_NAME, DB_COLLECTION_BLOCKS_FOUND);
 
-    // --- unique index on block_height ---
-    bson_t k1, o1;
-    bson_init(&k1);
-    bson_init(&o1);
-    BSON_APPEND_INT32(&k1, "block_height", 1);        // key: block_height ascending
-    BSON_APPEND_UTF8(&o1, "name", "u_block_height");  // index name
-    BSON_APPEND_BOOL(&o1, "unique", true);            // unique constraint
-    mongoc_index_model_t* m1 = mongoc_index_model_new(&k1, &o1);
+  // --- unique index on block_height ---
+  bson_t k1, o1; bson_init(&k1); bson_init(&o1);
+  BSON_APPEND_INT32(&k1, "block_height", 1);        // key: block_height ascending
+  BSON_APPEND_UTF8(&o1, "name", "u_block_height");  // index name
+  BSON_APPEND_BOOL(&o1, "unique", true);            // unique constraint
+  mongoc_index_model_t* m1 = mongoc_index_model_new(&k1, &o1);
 
-    mongoc_index_model_t* models[] = {m1};
+  // --- compound index: (processed, block_height) for fast "next unprocessed" scans ---
+  // Query pattern this supports well:
+  //   { processed: false } .sort({ block_height: 1 }).limit(1)
+  bson_t k2, o2; bson_init(&k2); bson_init(&o2);
+  BSON_APPEND_INT32(&k2, "processed", 1);
+  BSON_APPEND_INT32(&k2, "block_height", 1);
+  BSON_APPEND_UTF8(&o2, "name", "processed_block_height_idx");
+  mongoc_index_model_t* m2 = mongoc_index_model_new(&k2, &o2);
 
-    // createIndexes options (standalone: no commitQuorum / writeConcern)
-    bson_t create_opts;
-    bson_init(&create_opts);
-    BSON_APPEND_INT32(&create_opts, "maxTimeMS", 15000);
+  mongoc_index_model_t* models[] = { m1, m2 };
 
-    // run createIndexes
-    bson_t reply;
-    bson_error_t ierr;
-    bson_init(&reply);
+  // createIndexes options (standalone: no commitQuorum / writeConcern)
+  bson_t create_opts; bson_init(&create_opts);
+  BSON_APPEND_INT32(&create_opts, "maxTimeMS", 15000);
 
-    if (!mongoc_collection_create_indexes_with_opts(
-            coll, models, (int)(sizeof(models) / sizeof(models[0])),
-            &create_opts, &reply, &ierr)) {
-      char* json = bson_as_canonical_extended_json(&reply, NULL);
-      if (!(strstr(ierr.message, "already exists") ||
-            (json && strstr(json, "already exists")))) {
-        ok = false;  // assumes 'ok' exists in your surrounding scope
-        fprintf(stderr, "[indexes] %s failed: %s\nDetails: %s\n",
-                DB_COLLECTION_BLOCKS_FOUND, ierr.message, json ? json : "(no reply)");
-      }
-      if (json) bson_free(json);
+  // run createIndexes
+  bson_t reply; bson_error_t ierr; bson_init(&reply);
+  if (!mongoc_collection_create_indexes_with_opts(
+          coll,
+          (const mongoc_index_model_t* const*)models,
+          (int)(sizeof(models) / sizeof(models[0])),
+          &create_opts, &reply, &ierr)) {
+    char* json = bson_as_canonical_extended_json(&reply, NULL);
+    if (!(strstr(ierr.message, "already exists") ||
+          (json && strstr(json, "already exists")))) {
+      ok = false;  // assumes 'ok' exists in your surrounding scope
+      fprintf(stderr, "[indexes] %s failed: %s\nDetails: %s\n",
+              DB_COLLECTION_BLOCKS_FOUND, ierr.message, json ? json : "(no reply)");
     }
-
-    // cleanup
-    bson_destroy(&reply);
-    bson_destroy(&create_opts);
-
-    mongoc_index_model_destroy(m1);
-    bson_destroy(&o1);
-    bson_destroy(&k1);
-
-    mongoc_collection_destroy(coll);
+    if (json) bson_free(json);
   }
+
+  // cleanup
+  bson_destroy(&reply);
+  bson_destroy(&create_opts);
+
+  mongoc_index_model_destroy(m2);
+  bson_destroy(&o2); bson_destroy(&k2);
+
+  mongoc_index_model_destroy(m1);
+  bson_destroy(&o1); bson_destroy(&k1);
+
+  mongoc_collection_destroy(coll);
+}
 #endif
 
   mongoc_client_pool_push(database_client_thread_pool, client);

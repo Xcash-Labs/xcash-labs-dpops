@@ -607,8 +607,8 @@ void start_block_production(void) {
           BSON_APPEND_UTF8(&doc, "_id", nblock_hash);
           BSON_APPEND_INT64(&doc, "block_height", (int64_t)block_create_height);
           BSON_APPEND_INT64(&doc, "block_reward", (int64_t)reward_atomic);
+          BSON_APPEND_BOOL(doc, "processed", false);
           BSON_APPEND_DATE_TIME(&doc, "timestamp", (int64_t)ts_epoch * 1000);
-
           if (insert_document_into_collection_bson(DATABASE_NAME, DB_COLLECTION_BLOCKS_FOUND, &doc) != 1) {
             ERROR_PRINT("Failed to record block: hash=%s height=%llu reward=%llu (epoch=%llu) collection=%s",
                         nblock_hash, (unsigned long long)block_create_height, (unsigned long long)reward_atomic,
