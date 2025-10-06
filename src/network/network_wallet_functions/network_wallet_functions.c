@@ -121,6 +121,60 @@ int check_reserve_proofs(uint64_t vote_amount_atomic, const char* PUBLIC_ADDRESS
   return XCASH_OK;
 }
 
+/*---------------------------------------------------------------------------------------------------------
+Name: get_unlocked_balance
+Description: Queries the wallet RPC `get_balance` (account_index = 0) and returns the unlocked balance.
+Parameters:
+  unlocked_balance_out - [out] Receives `result.unlocked_balance` (atomic units)
+Return:  XCASH_OK (1) on success, XCASH_ERROR (0) on failure
+---------------------------------------------------------------------------------------------------------*/
+int get_unlocked_balance(uint64_t* unlocked_balance_out)
+{
+  if (!unlocked_balance_out) {
+    ERROR_PRINT("get_unlocked_balance: unlocked_balance_out is NULL");
+    return XCASH_ERROR;
+  }
+
+  // Static headers & payload; no formatting or size computations needed.
+  static const char* HTTP_HEADERS[] = { "Content-Type: application/json", "Accept: application/json" };
+  static const size_t HTTP_HEADERS_LENGTH = 2;
+
+  // account_index hardcoded to 0; constant JSON payload
+  static const char* REQUEST_PAYLOAD =
+      "{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"get_balance\","
+      "\"params\":{\"account_index\":0}}";
+
+  char response[SMALL_BUFFER_SIZE] = {0};
+  if (send_http_request(response, sizeof(response),
+                        XCASH_WALLET_IP, "/json_rpc", XCASH_WALLET_PORT, "POST",
+                        HTTP_HEADERS, HTTP_HEADERS_LENGTH,
+                        REQUEST_PAYLOAD, HTTP_TIMEOUT_SETTINGS) != XCASH_OK) {
+    ERROR_PRINT("get_unlocked_balance: HTTP error");
+    return XCASH_ERROR;
+  }
+
+  // Parse result.unlocked_balance
+  char unlocked_str[64] = {0};
+  if (parse_json_data(response, "result.unlocked_balance", unlocked_str, sizeof(unlocked_str)) == 0) {
+    ERROR_PRINT("get_unlocked_balance: missing result.unlocked_balance");
+    return XCASH_ERROR;
+  }
+
+  errno = 0;
+  char* endp = NULL;
+  unsigned long long v_unlocked = strtoull(unlocked_str, &endp, 10);
+  if (errno != 0 || endp == unlocked_str || *endp != '\0') {
+    ERROR_PRINT("get_unlocked_balance: parse failed: '%s'", unlocked_str);
+    return XCASH_ERROR;
+  }
+
+  *unlocked_balance_out = (uint64_t)v_unlocked;
+  return XCASH_OK;
+}
+
+
+
+
 
 /*----------------------------------------------------------------------------------------------------------
 Name: send_payment

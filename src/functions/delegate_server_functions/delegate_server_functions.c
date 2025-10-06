@@ -1283,11 +1283,16 @@ void server_receive_payout(const char* MESSAGE) {
     return;
   }
 
+  uint64_t unlocked = 0;
 
+  if (get_unlocked_balance(&unlocked) != XCASH_OK) {
+    ERROR_PRINT("get_unlocked_balance failed");
+    return;
+  }
 
-
-
-
+  INFO_PRINT("Unlocked balance: %" PRIu64 " atomic (%.6f XCA)",
+             unlocked,
+             (double)unlocked / (double)XCASH_ATOMIC_UNITS);
 
   free(parsed);
   free(sign_str);
