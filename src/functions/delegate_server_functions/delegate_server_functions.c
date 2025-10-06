@@ -1249,15 +1249,19 @@ void server_receive_payout(const char* MESSAGE) {
   }
 
   // Prepare wallet verify request
+  const char* HTTP_HEADERS[] = {"Content-Type: application/json", "Accept: application/json"};
+  const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0])
+  char request[MEDIUM_BUFFER_SIZE * 2] = {0};
+  char response[MEDIUM_BUFFER_SIZE] = {0};
+
   snprintf(request, sizeof(request),
            "{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"verify\",\"params\":{"
            "\"data\":\"%s\","
            "\"address\":\"%s\","
            "\"signature\":\"%s\"}}",
-           sign_str, in_public_address, XCASH_DPOPS_signature);
+           sign_str, in_public_address, in_signature);
 
-  const char* HTTP_HEADERS[] = {"Content-Type: application/json", "Accept: application/json"};
-  const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0]);
+;
   if (send_http_request(response, sizeof(response), XCASH_WALLET_IP, "/json_rpc", XCASH_WALLET_PORT,
    "POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH, request, SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) <= 0) {
     ERROR_PRINT("server_receive_payout: HTTP request failed trying to check signature");
