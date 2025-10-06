@@ -1250,7 +1250,7 @@ void server_receive_payout(const char* MESSAGE) {
 
   // Prepare wallet verify request
   const char* HTTP_HEADERS[] = {"Content-Type: application/json", "Accept: application/json"};
-  const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0])
+  const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0]);
   char request[MEDIUM_BUFFER_SIZE * 2] = {0};
   char response[MEDIUM_BUFFER_SIZE] = {0};
 
