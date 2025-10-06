@@ -1261,21 +1261,26 @@ void server_receive_payout(const char* MESSAGE) {
            "\"signature\":\"%s\"}}",
            sign_str, in_public_address, in_signature);
 
-;
   if (send_http_request(response, sizeof(response), XCASH_WALLET_IP, "/json_rpc", XCASH_WALLET_PORT,
    "POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH, request, SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) <= 0) {
     ERROR_PRINT("server_receive_payout: HTTP request failed trying to check signature");
+    free(parsed);
+    free(sign_str);
     return;
   }
 
   char result[8] = {0};
-  int parsed = parse_json_data(response, "result.good", result, sizeof(result));
-  if (parsed != 1) {
+  int parsed_ok = parse_json_data(response, "result.good", result, sizeof(result));
+  if (parsed_ok != 1) {
     ERROR_PRINT("server_receive_payout: verify response missing/invalid");
+    free(parsed);
+    free(sign_str);
     return;
   }
   if (strcmp(result, "true") != 0) {
     ERROR_PRINT("server_receive_payout: signature verification failed (result.good=%s)", result);
+    free(parsed);
+    free(sign_str);
     return;
   }
 
@@ -1285,9 +1290,8 @@ void server_receive_payout(const char* MESSAGE) {
 
 
 
-
-  free(sign_str);
   free(parsed);
+  free(sign_str);
   return;
 }
 
