@@ -513,7 +513,7 @@ bool add_seed_indexes(void) {
      CONSENSUS_ROUNDS COLLECTION
      ========================= */
   {
-    const int32_t TTL_SEC = 60 * 60 * 24 * 365;  // 365 days
+    const int32_t TTL_SEC = 60 * 60 * 24 * 182;  // 182 days (6 months)
 
     mongoc_database_t* db = mongoc_client_get_database(client, DATABASE_NAME);
 
