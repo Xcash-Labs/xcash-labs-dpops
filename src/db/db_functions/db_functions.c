@@ -754,6 +754,7 @@ bool add_indexes(void) {
      ========================= */
   // don't add to seed nodes
 #ifndef SEED_NODE_ON
+
   {
     mongoc_collection_t* coll =
         mongoc_client_get_collection(client, DATABASE_NAME, DB_COLLECTION_BLOCKS_FOUND);
@@ -776,35 +777,33 @@ bool add_indexes(void) {
     BSON_APPEND_UTF8(&o2, "name", "processed_block_height_idx");
     mongoc_index_model_t* m2 = mongoc_index_model_new(&k2, &o2);
 
-    // NOTE: non-const array of pointers
+    // non-const array of pointers (matches API type)
     mongoc_index_model_t* models[] = {m1, m2};
-
     bson_t create_opts;
     bson_init(&create_opts);
     BSON_APPEND_INT32(&create_opts, "maxTimeMS", 15000);
 
-    bson_t reply;
-    bson_init(&reply);
-    if (!mongoc_collection_create_indexes_with_opts(coll, models, 4, &create_opts, &reply, &err)) {
-      ok = false;
-      char* json = bson_as_canonical_extended_json(&reply, NULL);
-      fprintf(stderr, "[indexes] delegates failed: %s\nDetails: %s\n",
-              err.message, json ? json : "(no reply)");
-      if (json) bson_free(json);
+    // create indexes
+    bson_error_t err;
+    if (!mongoc_collection_create_indexes_with_opts(
+            coll, models, (size_t)(sizeof(models) / sizeof(models[0])),
+            &create_opts, &err)) {
+      // ignore benign "already exists"
+      if (!strstr(err.message, "already exists")) {
+        ok = false;  // assumes 'ok' exists in the outer scope
+        fprintf(stderr, "[indexes] %s failed: %s\n",
+                DB_COLLECTION_BLOCKS_FOUND, err.message);
+      }
     }
 
     // cleanup
-    bson_destroy(&reply);
     bson_destroy(&create_opts);
-
     mongoc_index_model_destroy(m2);
     bson_destroy(&o2);
     bson_destroy(&k2);
-
     mongoc_index_model_destroy(m1);
     bson_destroy(&o1);
     bson_destroy(&k1);
-
     mongoc_collection_destroy(coll);
   }
 
