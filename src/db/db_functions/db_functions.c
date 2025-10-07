@@ -105,7 +105,7 @@ int insert_document_into_collection_bson(const char* DATABASE, const char* COLLE
   if (strcmp(COLLECTION, DB_COLLECTION_DELEGATES) == 0) {
     bson_iter_t it;
     const char* id_src = NULL;
- 
+
     if (bson_iter_init_find(&it, document, "_id")) {
       ERROR_PRINT("Delegates already had _id field, Failed to append BSON document");
       return XCASH_ERROR;
@@ -187,7 +187,7 @@ bool delegates_apply_vote_total(const char* delegate_pubaddr, int64_t new_total)
 
   if (new_total < 0) {
     ERROR_PRINT("delegates_apply_vote_total: negative new_total (%lld) clamped to 0",
-                  (long long)new_total);
+                (long long)new_total);
     new_total = 0;
   }
 
@@ -233,7 +233,8 @@ bool delegates_apply_vote_total(const char* delegate_pubaddr, int64_t new_total)
   bson_iter_t it;
   if (bson_iter_init_find(&it, &reply, "matchedCount")) {
     matched = (BSON_ITER_HOLDS_INT64(&it))   ? bson_iter_int64(&it)
-              : (BSON_ITER_HOLDS_INT32(&it)) ? bson_iter_int32(&it) : 0;
+              : (BSON_ITER_HOLDS_INT32(&it)) ? bson_iter_int32(&it)
+                                             : 0;
   }
   if (matched == 0) {
     ERROR_PRINT("Delegate not found for absolute vote set: %.12s…", delegate_pubaddr);
@@ -390,10 +391,10 @@ bool is_replica_set_ready(void) {
   bson_error_t error;
   bool is_ready = false;
 
-  mongoc_client_t *client = mongoc_client_pool_pop(database_client_thread_pool);
+  mongoc_client_t* client = mongoc_client_pool_pop(database_client_thread_pool);
   if (!client) return false;
 
-  bson_t *cmd = BCON_NEW("replSetGetStatus", BCON_INT32(1));
+  bson_t* cmd = BCON_NEW("replSetGetStatus", BCON_INT32(1));
   if (mongoc_client_command_simple(client, "admin", cmd, NULL, &reply, &error)) {
     bson_iter_t iter;
     if (bson_iter_init_find(&iter, &reply, "myState")) {
@@ -415,7 +416,7 @@ bool is_replica_set_ready(void) {
 
 // Function to determin if this seed delegate is the primary mongodb node
 bool seed_is_primary(void) {
-  char ip_address [IP_LENGTH + 1] = {0};
+  char ip_address[IP_LENGTH + 1] = {0};
   int i = 0;
   while (i < network_data_nodes_amount) {
     if (strcmp(network_nodes[i].seed_public_address, xcash_wallet_public_address) == 0) {
@@ -428,23 +429,31 @@ bool seed_is_primary(void) {
     i++;
   }
 
-  mongoc_client_t *client = mongoc_client_pool_pop(database_client_thread_pool);
+  mongoc_client_t* client = mongoc_client_pool_pop(database_client_thread_pool);
   if (!client) return false;
 
   bool ok = false;
   bson_error_t err;
   bson_t reply;
-  bson_t *cmd = BCON_NEW("hello", BCON_INT32(1));  // ask the node who it is
+  bson_t* cmd = BCON_NEW("hello", BCON_INT32(1));  // ask the node who it is
 
   if (mongoc_client_command_simple(client, "admin", cmd, NULL, &reply, &err)) {
     bson_iter_t iter;
     if (bson_iter_init(&iter, &reply) &&
         bson_iter_find_case(&iter, "me") && BSON_ITER_HOLDS_UTF8(&iter)) {
-      const char *me = bson_iter_utf8(&iter, NULL);     // e.g. "10.0.0.5:27017" or "[::1]:27017"
-      char ip[256]; size_t n = 0;
+      const char* me = bson_iter_utf8(&iter, NULL);  // e.g. "10.0.0.5:27017" or "[::1]:27017"
+      char ip[256];
+      size_t n = 0;
 
-      if (me[0] == '[') { const char *rb = strchr(me, ']'); n = rb ? (size_t)(rb - me - 1) : 0; memcpy(ip, me + 1, n); }
-      else { const char *c = strrchr(me, ':'); n = c ? (size_t)(c - me) : strlen(me); memcpy(ip, me, n); }
+      if (me[0] == '[') {
+        const char* rb = strchr(me, ']');
+        n = rb ? (size_t)(rb - me - 1) : 0;
+        memcpy(ip, me + 1, n);
+      } else {
+        const char* c = strrchr(me, ':');
+        n = c ? (size_t)(c - me) : strlen(me);
+        memcpy(ip, me, n);
+      }
 
       ip[n] = '\0';
       if (strcmp(ip, ip_address) == 0) {
@@ -465,7 +474,7 @@ bool add_seed_indexes(void) {
   bson_error_t err;
   bool ok = true;
 
-  mongoc_client_t *client = mongoc_client_pool_pop(database_client_thread_pool);
+  mongoc_client_t* client = mongoc_client_pool_pop(database_client_thread_pool);
   if (!client) return false;
 
   /* =========================
@@ -644,7 +653,6 @@ bool add_seed_indexes(void) {
     mongoc_collection_destroy(coll);
   }
 
-
   mongoc_client_pool_push(database_client_thread_pool, client);
   return ok;
 }
@@ -653,59 +661,70 @@ bool add_indexes(void) {
   bson_error_t err;
   bool ok = true;
 
-  mongoc_client_t *client = mongoc_client_pool_pop(database_client_thread_pool);
+  mongoc_client_t* client = mongoc_client_pool_pop(database_client_thread_pool);
   if (!client) return false;
 
   /* =========================
      DELEGATES COLLECTION
      ========================= */
   {
-    mongoc_collection_t *coll =
+    mongoc_collection_t* coll =
         mongoc_client_get_collection(client, DATABASE_NAME, DB_COLLECTION_DELEGATES);
 
     // 1) unique public_address
-    bson_t k1, o1; bson_init(&k1); bson_init(&o1);
+    bson_t k1, o1;
+    bson_init(&k1);
+    bson_init(&o1);
     BSON_APPEND_INT32(&k1, "public_address", 1);
     BSON_APPEND_UTF8(&o1, "name", "uniq_public_address");
     BSON_APPEND_BOOL(&o1, "unique", true);
-    mongoc_index_model_t *m1 = mongoc_index_model_new(&k1, &o1);
+    mongoc_index_model_t* m1 = mongoc_index_model_new(&k1, &o1);
 
     // 2) unique public_key
-    bson_t k2, o2; bson_init(&k2); bson_init(&o2);
+    bson_t k2, o2;
+    bson_init(&k2);
+    bson_init(&o2);
     BSON_APPEND_INT32(&k2, "public_key", 1);
     BSON_APPEND_UTF8(&o2, "name", "uniq_public_key");
     BSON_APPEND_BOOL(&o2, "unique", true);
-    mongoc_index_model_t *m2 = mongoc_index_model_new(&k2, &o2);
+    mongoc_index_model_t* m2 = mongoc_index_model_new(&k2, &o2);
 
     // 3) unique delegate_name (case-insensitive via collation)
-    bson_t k3, o3, coll3; bson_init(&k3); bson_init(&o3); bson_init(&coll3);
+    bson_t k3, o3, coll3;
+    bson_init(&k3);
+    bson_init(&o3);
+    bson_init(&coll3);
     BSON_APPEND_INT32(&k3, "delegate_name", 1);
     BSON_APPEND_UTF8(&o3, "name", "uniq_delegate_name_ci");
     BSON_APPEND_BOOL(&o3, "unique", true);
     BSON_APPEND_UTF8(&coll3, "locale", "en");
-    BSON_APPEND_INT32(&coll3, "strength", 2); // case-insensitive, diacritics-insensitive
+    BSON_APPEND_INT32(&coll3, "strength", 2);  // case-insensitive, diacritics-insensitive
     BSON_APPEND_DOCUMENT(&o3, "collation", &coll3);
-    mongoc_index_model_t *m3 = mongoc_index_model_new(&k3, &o3);
+    mongoc_index_model_t* m3 = mongoc_index_model_new(&k3, &o3);
 
     // 4) unique IP_address (only if you truly want one delegate per IP/host)
-    bson_t k4, o4; bson_init(&k4); bson_init(&o4);
+    bson_t k4, o4;
+    bson_init(&k4);
+    bson_init(&o4);
     BSON_APPEND_INT32(&k4, "IP_address", 1);
     BSON_APPEND_UTF8(&o4, "name", "uniq_IP_address");
     BSON_APPEND_BOOL(&o4, "unique", true);
-    mongoc_index_model_t *m4 = mongoc_index_model_new(&k4, &o4);
+    mongoc_index_model_t* m4 = mongoc_index_model_new(&k4, &o4);
 
-    mongoc_index_model_t *models[] = { m1, m2, m3, m4 };
+    mongoc_index_model_t* models[] = {m1, m2, m3, m4};
 
-    bson_t create_opts; bson_init(&create_opts);
+    bson_t create_opts;
+    bson_init(&create_opts);
     if (is_seed_node) {
       BSON_APPEND_UTF8(&create_opts, "commitQuorum", "majority");
     }
     BSON_APPEND_INT32(&create_opts, "maxTimeMS", 15000);
 
-    bson_t reply; bson_init(&reply);
+    bson_t reply;
+    bson_init(&reply);
     if (!mongoc_collection_create_indexes_with_opts(coll, models, 4, &create_opts, &reply, &err)) {
       ok = false;
-      char *json = bson_as_canonical_extended_json(&reply, NULL);
+      char* json = bson_as_canonical_extended_json(&reply, NULL);
       fprintf(stderr, "[indexes] delegates failed: %s\nDetails: %s\n",
               err.message, json ? json : "(no reply)");
       if (json) bson_free(json);
@@ -714,12 +733,19 @@ bool add_indexes(void) {
     // cleanup
     bson_destroy(&reply);
     bson_destroy(&create_opts);
-    mongoc_index_model_destroy(m4); mongoc_index_model_destroy(m3);
-    mongoc_index_model_destroy(m2); mongoc_index_model_destroy(m1);
-    bson_destroy(&o4); bson_destroy(&k4);
-    bson_destroy(&coll3); bson_destroy(&o3); bson_destroy(&k3);
-    bson_destroy(&o2); bson_destroy(&k2);
-    bson_destroy(&o1); bson_destroy(&k1);
+    mongoc_index_model_destroy(m4);
+    mongoc_index_model_destroy(m3);
+    mongoc_index_model_destroy(m2);
+    mongoc_index_model_destroy(m1);
+    bson_destroy(&o4);
+    bson_destroy(&k4);
+    bson_destroy(&coll3);
+    bson_destroy(&o3);
+    bson_destroy(&k3);
+    bson_destroy(&o2);
+    bson_destroy(&k2);
+    bson_destroy(&o1);
+    bson_destroy(&k1);
     mongoc_collection_destroy(coll);
   }
 
@@ -728,61 +754,65 @@ bool add_indexes(void) {
      ========================= */
   // don't add to seed nodes
 #ifndef SEED_NODE_ON
-{
-  mongoc_collection_t* coll =
-      mongoc_client_get_collection(client, DATABASE_NAME, DB_COLLECTION_BLOCKS_FOUND);
+  {
+    mongoc_collection_t* coll =
+        mongoc_client_get_collection(client, DATABASE_NAME, DB_COLLECTION_BLOCKS_FOUND);
 
-  // --- unique index on block_height ---
-  bson_t k1, o1; bson_init(&k1); bson_init(&o1);
-  BSON_APPEND_INT32(&k1, "block_height", 1);        // key: block_height ascending
-  BSON_APPEND_UTF8(&o1, "name", "u_block_height");  // index name
-  BSON_APPEND_BOOL(&o1, "unique", true);            // unique constraint
-  mongoc_index_model_t* m1 = mongoc_index_model_new(&k1, &o1);
+    // --- unique index on block_height ---
+    bson_t k1, o1;
+    bson_init(&k1);
+    bson_init(&o1);
+    BSON_APPEND_INT32(&k1, "block_height", 1);
+    BSON_APPEND_UTF8(&o1, "name", "u_block_height");
+    BSON_APPEND_BOOL(&o1, "unique", true);
+    mongoc_index_model_t* m1 = mongoc_index_model_new(&k1, &o1);
 
-  // --- compound index: (processed, block_height) for fast "next unprocessed" scans ---
-  // Query pattern this supports well:
-  //   { processed: false } .sort({ block_height: 1 }).limit(1)
-  bson_t k2, o2; bson_init(&k2); bson_init(&o2);
-  BSON_APPEND_INT32(&k2, "processed", 1);
-  BSON_APPEND_INT32(&k2, "block_height", 1);
-  BSON_APPEND_UTF8(&o2, "name", "processed_block_height_idx");
-  mongoc_index_model_t* m2 = mongoc_index_model_new(&k2, &o2);
+    // --- queue index: (processed, block_height) ---
+    bson_t k2, o2;
+    bson_init(&k2);
+    bson_init(&o2);
+    BSON_APPEND_INT32(&k2, "processed", 1);
+    BSON_APPEND_INT32(&k2, "block_height", 1);
+    BSON_APPEND_UTF8(&o2, "name", "processed_block_height_idx");
+    mongoc_index_model_t* m2 = mongoc_index_model_new(&k2, &o2);
 
-  mongoc_index_model_t* models[] = { m1, m2 };
+    // NOTE: non-const array of pointers
+    mongoc_index_model_t* models[] = {m1, m2};
 
-  // createIndexes options (standalone: no commitQuorum / writeConcern)
-  bson_t create_opts; bson_init(&create_opts);
-  BSON_APPEND_INT32(&create_opts, "maxTimeMS", 15000);
+    bson_t create_opts;
+    bson_init(&create_opts);
+    BSON_APPEND_INT32(&create_opts, "maxTimeMS", 15000);
 
-  // run createIndexes
-  bson_t reply; bson_error_t ierr; bson_init(&reply);
-  if (!mongoc_collection_create_indexes_with_opts(
-          coll,
-          (const mongoc_index_model_t* const*)models,
-          (int)(sizeof(models) / sizeof(models[0])),
-          &create_opts, &reply, &ierr)) {
-    char* json = bson_as_canonical_extended_json(&reply, NULL);
-    if (!(strstr(ierr.message, "already exists") ||
-          (json && strstr(json, "already exists")))) {
-      ok = false;  // assumes 'ok' exists in your surrounding scope
-      fprintf(stderr, "[indexes] %s failed: %s\nDetails: %s\n",
-              DB_COLLECTION_BLOCKS_FOUND, ierr.message, json ? json : "(no reply)");
+    bson_t reply;
+    bson_error_t ierr;
+    bson_init(&reply);
+    if (!mongoc_collection_create_indexes_with_opts(
+            coll, models, (int)(sizeof(models) / sizeof(models[0])),
+            &create_opts, &reply, &ierr)) {
+      char* json = bson_as_canonical_extended_json(&reply, NULL);
+      if (!(strstr(ierr.message, "already exists") || (json && strstr(json, "already exists")))) {
+        ok = false;
+        fprintf(stderr, "[indexes] %s failed: %s\nDetails: %s\n",
+                DB_COLLECTION_BLOCKS_FOUND, ierr.message, json ? json : "(no reply)");
+      }
+      if (json) bson_free(json);
     }
-    if (json) bson_free(json);
+
+    // cleanup
+    bson_destroy(&reply);
+    bson_destroy(&create_opts);
+
+    mongoc_index_model_destroy(m2);
+    bson_destroy(&o2);
+    bson_destroy(&k2);
+
+    mongoc_index_model_destroy(m1);
+    bson_destroy(&o1);
+    bson_destroy(&k1);
+
+    mongoc_collection_destroy(coll);
   }
 
-  // cleanup
-  bson_destroy(&reply);
-  bson_destroy(&create_opts);
-
-  mongoc_index_model_destroy(m2);
-  bson_destroy(&o2); bson_destroy(&k2);
-
-  mongoc_index_model_destroy(m1);
-  bson_destroy(&o1); bson_destroy(&k1);
-
-  mongoc_collection_destroy(coll);
-}
 #endif
 
   mongoc_client_pool_push(database_client_thread_pool, client);
@@ -790,27 +820,27 @@ bool add_indexes(void) {
 }
 
 int count_db_delegates(void) {
-    bson_error_t error;
-    bool result = false;
-    int64_t count;
+  bson_error_t error;
+  bool result = false;
+  int64_t count;
 
-    result = db_count_doc(DATABASE_NAME, collection_names[XCASH_DB_DELEGATES], &count, &error);
-    if (!result) {
-        count = -1;
-    }
-    return count;
+  result = db_count_doc(DATABASE_NAME, collection_names[XCASH_DB_DELEGATES], &count, &error);
+  if (!result) {
+    count = -1;
+  }
+  return count;
 }
 
-int count_recs(const bson_t *recs) {
-    bson_iter_t iter;
-    int count = 0;
+int count_recs(const bson_t* recs) {
+  bson_iter_t iter;
+  int count = 0;
 
-    if (bson_iter_init(&iter, recs)) {
-        while (bson_iter_next(&iter)) {
-            count++;
-        }
+  if (bson_iter_init(&iter, recs)) {
+    while (bson_iter_next(&iter)) {
+      count++;
     }
-    return count;
+  }
+  return count;
 }
 
 // from db_operations
@@ -829,26 +859,25 @@ bool db_export_collection_to_bson(const char* db_name, const char* collection_na
   return success;
 }
 
-bool db_find_all_doc(const char *db_name, const char *collection_name, bson_t *reply, bson_error_t *error) {
+bool db_find_all_doc(const char* db_name, const char* collection_name, bson_t* reply, bson_error_t* error) {
   bson_t filter = BSON_INITIALIZER;
   bool result = db_find_doc(db_name, collection_name, &filter, reply, error, true);
   bson_destroy(&filter);
   return result;
 }
 
-bool db_find_doc(const char *db_name, const char *collection_name, const bson_t *query, bson_t *reply,
-                 bson_error_t *error, bool exclude_id) {
-
+bool db_find_doc(const char* db_name, const char* collection_name, const bson_t* query, bson_t* reply,
+                 bson_error_t* error, bool exclude_id) {
   if (!reply) {
     ERROR_PRINT("db_find_doc: 'reply' is NULL");
     return false;
   }
 
-  mongoc_client_t *client;
-  mongoc_collection_t *collection;
-  mongoc_cursor_t *cursor;
-  const bson_t *doc = NULL;
-  bson_t *opts = NULL;
+  mongoc_client_t* client;
+  mongoc_collection_t* collection;
+  mongoc_cursor_t* cursor;
+  const bson_t* doc = NULL;
+  bson_t* opts = NULL;
 
   // Pop a client from the pool
   client = mongoc_client_pool_pop(database_client_thread_pool);
@@ -909,9 +938,9 @@ bool db_find_doc(const char *db_name, const char *collection_name, const bson_t 
   return true;
 }
 
-bool db_upsert_doc(const char *db_name, const char *collection_name, const bson_t *doc, bson_error_t *error) {
-  mongoc_client_t *client;
-  mongoc_collection_t *collection;
+bool db_upsert_doc(const char* db_name, const char* collection_name, const bson_t* doc, bson_error_t* error) {
+  mongoc_client_t* client;
+  mongoc_collection_t* collection;
   bson_iter_t iter;
   bool result = true;
 
@@ -930,7 +959,7 @@ bool db_upsert_doc(const char *db_name, const char *collection_name, const bson_
     return false;
   }
 
-  bson_t *opts = BCON_NEW("upsert", BCON_BOOL(true));
+  bson_t* opts = BCON_NEW("upsert", BCON_BOOL(true));
   bson_t query = BSON_INITIALIZER;
 
   // Check if the document is single record
@@ -942,7 +971,7 @@ bool db_upsert_doc(const char *db_name, const char *collection_name, const bson_
       result = false;
     }
   } else {
-    char *str = bson_as_legacy_extended_json(doc, NULL);
+    char* str = bson_as_legacy_extended_json(doc, NULL);
     DEBUG_PRINT("Failed to find '_id' in upsert document: %s", str);
     free(str);
 
@@ -958,9 +987,9 @@ bool db_upsert_doc(const char *db_name, const char *collection_name, const bson_
   return result;
 }
 
-bool db_upsert_multi_docs(const char *db_name, const char *collection_name, const bson_t *docs, bson_error_t *error) {
-  mongoc_client_t *client;
-  mongoc_collection_t *collection;
+bool db_upsert_multi_docs(const char* db_name, const char* collection_name, const bson_t* docs, bson_error_t* error) {
+  mongoc_client_t* client;
+  mongoc_collection_t* collection;
   bson_iter_t iter;
   bool result = true;
 
@@ -979,13 +1008,13 @@ bool db_upsert_multi_docs(const char *db_name, const char *collection_name, cons
     return false;
   }
 
-  bson_t *opts = BCON_NEW("upsert", BCON_BOOL(true));
+  bson_t* opts = BCON_NEW("upsert", BCON_BOOL(true));
 
   if (bson_iter_init(&iter, docs)) {
     bson_iter_t child;
     while (bson_iter_next(&iter)) {
       bson_t query = BSON_INITIALIZER;
-      const uint8_t *data;
+      const uint8_t* data;
       uint32_t len;
       bson_t sub_doc;
 
@@ -995,7 +1024,7 @@ bool db_upsert_multi_docs(const char *db_name, const char *collection_name, cons
       if (bson_iter_init_find(&child, &sub_doc, "_id")) {
         bson_append_value(&query, "_id", -1, bson_iter_value(&child));
       } else {
-        char *str = bson_as_legacy_extended_json(&sub_doc, NULL);
+        char* str = bson_as_legacy_extended_json(&sub_doc, NULL);
         DEBUG_PRINT("Failed to find '_id' in upsert document: %s", str);
         free(str);
 
@@ -1022,9 +1051,9 @@ bool db_upsert_multi_docs(const char *db_name, const char *collection_name, cons
   return result;
 }
 
-bool db_delete_doc(const char *db_name, const char *collection_name, const bson_t *query, bson_error_t *error) {
-  mongoc_client_t *client;
-  mongoc_collection_t *collection;
+bool db_delete_doc(const char* db_name, const char* collection_name, const bson_t* query, bson_error_t* error) {
+  mongoc_client_t* client;
+  mongoc_collection_t* collection;
   bson_t opts = BSON_INITIALIZER;
   bool result;
 
@@ -1059,9 +1088,9 @@ bool db_delete_doc(const char *db_name, const char *collection_name, const bson_
   return true;
 }
 
-bool db_drop(const char *db_name, const char *collection_name, bson_error_t *error) {
-  mongoc_client_t *client;
-  mongoc_collection_t *collection;
+bool db_drop(const char* db_name, const char* collection_name, bson_error_t* error) {
+  mongoc_client_t* client;
+  mongoc_collection_t* collection;
   bool result;
 
   // Pop a client from the pool
@@ -1090,9 +1119,9 @@ bool db_drop(const char *db_name, const char *collection_name, bson_error_t *err
   return result;
 }
 
-bool db_count_doc(const char *db_name, const char *collection_name, int64_t *result_count, bson_error_t *error) {
-  mongoc_client_t *client;
-  mongoc_collection_t *collection;
+bool db_count_doc(const char* db_name, const char* collection_name, int64_t* result_count, bson_error_t* error) {
+  mongoc_client_t* client;
+  mongoc_collection_t* collection;
   int64_t count;
 
   // Pop a client from the pool
@@ -1110,7 +1139,7 @@ bool db_count_doc(const char *db_name, const char *collection_name, int64_t *res
     return false;
   }
 
-  bson_t *filter = bson_new();  // empty filter
+  bson_t* filter = bson_new();  // empty filter
 
   count = mongoc_collection_count_documents(collection, filter, NULL, NULL, NULL, error);
   if (count < 0) {
@@ -1252,8 +1281,7 @@ bool fetch_reserve_proof_fields_by_id(
     char* voted_for_out, size_t voted_for_sz,
     int64_t* total_out,
     char* reserve_proof_out, size_t rp_sz,
-    bson_error_t* err)
-{
+    bson_error_t* err) {
   if (!voter_public_address || !voted_for_out || !total_out || !reserve_proof_out) return false;
 
   mongoc_client_t* c = mongoc_client_pool_pop(database_client_thread_pool);
@@ -1275,7 +1303,7 @@ bool fetch_reserve_proof_fields_by_id(
 
   bson_t opts = BSON_INITIALIZER;
   BSON_APPEND_DOCUMENT(&opts, "projection", &proj);
-  BSON_APPEND_INT64(&opts, "limit", 1);            // we only need one
+  BSON_APPEND_INT64(&opts, "limit", 1);  // we only need one
 
   mongoc_cursor_t* cur = mongoc_collection_find_with_opts(coll, &filter, &opts, NULL);
 
