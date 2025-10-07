@@ -784,17 +784,12 @@ bool add_indexes(void) {
     BSON_APPEND_INT32(&create_opts, "maxTimeMS", 15000);
 
     bson_t reply;
-    bson_error_t ierr;
     bson_init(&reply);
-    if (!mongoc_collection_create_indexes_with_opts(
-            coll, models, (int)(sizeof(models) / sizeof(models[0])),
-            &create_opts, &reply, &ierr)) {
+    if (!mongoc_collection_create_indexes_with_opts(coll, models, 4, &create_opts, &reply, &err)) {
+      ok = false;
       char* json = bson_as_canonical_extended_json(&reply, NULL);
-      if (!(strstr(ierr.message, "already exists") || (json && strstr(json, "already exists")))) {
-        ok = false;
-        fprintf(stderr, "[indexes] %s failed: %s\nDetails: %s\n",
-                DB_COLLECTION_BLOCKS_FOUND, ierr.message, json ? json : "(no reply)");
-      }
+      fprintf(stderr, "[indexes] delegates failed: %s\nDetails: %s\n",
+              err.message, json ? json : "(no reply)");
       if (json) bson_free(json);
     }
 
