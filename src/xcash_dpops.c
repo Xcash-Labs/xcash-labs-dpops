@@ -231,9 +231,9 @@ int main(int argc, char *argv[]) {
   pthread_t timer_tid = 0;
   bool sched_started = false;
   // scheduler needs the pool; initialize_database() has created database_client_thread_pool
+  sched_ctx_t* sched_ctx = NULL;
   sched_ctx = malloc(sizeof *sched_ctx);
   if (is_seed_node) {
-    sched_ctx_t* sched_ctx = NULL;
     {
       if (!sched_ctx) {
         FATAL_ERROR_EXIT("Scheduler: malloc failed; can not continue without scheduled jobs");
