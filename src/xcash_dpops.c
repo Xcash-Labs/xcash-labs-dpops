@@ -237,7 +237,7 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  if (!(init_processing(&arg_config, &fee))) {
+  if (!(init_processing(&arg_config))) {
     FATAL_ERROR_EXIT("Failed server initialization.");
   }
 
