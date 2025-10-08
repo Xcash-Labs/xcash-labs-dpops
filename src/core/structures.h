@@ -59,7 +59,6 @@ struct database_multiple_documents_fields {
 
 typedef struct {
   mongoc_client_pool_t *pool;
-  double fee_percent;
 } sched_ctx_t;
 
 typedef struct {

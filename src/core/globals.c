@@ -3,6 +3,7 @@
 // set globals defined in globals.h
 int log_level = 0;
 int delegate_db_hash_mismatch = 0;
+double delegate_fee_percent = 5.0;
 bool is_seed_node = false;
 int network_data_nodes_amount = 0;
 

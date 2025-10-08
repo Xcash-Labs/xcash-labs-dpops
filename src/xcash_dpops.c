@@ -223,39 +223,36 @@ int main(int argc, char *argv[]) {
     FATAL_ERROR_EXIT("Can't open mongo database");
   }
 
-  double fee = 5.0; // default, not used by seed node
-  if (!is_seed_node) {
-    if (get_delegate_fee(&fee) == XCASH_OK) {
-      INFO_PRINT("Delegate fee for %s: %.4f%%", xcash_wallet_public_address, fee);
-    } else {
-      WARNING_PRINT("Unable to read fee from database so using default");
-    }
-  }
-
   if (!(init_processing(&arg_config))) {
     FATAL_ERROR_EXIT("Failed server initialization.");
   }
 
-// start the daily scheduler (ONE thread)
-  pthread_t timer_tid = 0;
-  bool sched_started = false;
-  sched_ctx_t *sched_ctx = NULL;
-  {
-    // scheduler needs the pool; initialize_database() has created database_client_thread_pool
-    sched_ctx = malloc(sizeof *sched_ctx);
-    if (!sched_ctx) {
-      FATAL_ERROR_EXIT("Scheduler: malloc failed; can not continue without scheduled jobs");
-    } else {
-      sched_ctx->pool = database_client_thread_pool;
-      sched_ctx->fee_percent = fee;
-      if (pthread_create(&timer_tid, NULL, timer_thread, sched_ctx) != 0) {
-        FATAL_ERROR_EXIT("Scheduler: pthread_create failed; can not continue without scheduled jobs");
-        free(sched_ctx); 
-        sched_ctx = NULL;
+// start the daily scheduler on seeds (ONE thread)
+  if (is_seed_node) {
+    pthread_t timer_tid = 0;
+    bool sched_started = false;
+    sched_ctx_t* sched_ctx = NULL;
+    {
+      // scheduler needs the pool; initialize_database() has created database_client_thread_pool
+      sched_ctx = malloc(sizeof *sched_ctx);
+      if (!sched_ctx) {
+        FATAL_ERROR_EXIT("Scheduler: malloc failed; can not continue without scheduled jobs");
       } else {
-        sched_started = true;
-        INFO_PRINT("Scheduler thread started");
+        sched_ctx->pool = database_client_thread_pool;
+        sched_ctx->fee_percent = fee;
+        if (pthread_create(&timer_tid, NULL, timer_thread, sched_ctx) != 0) {
+          FATAL_ERROR_EXIT("Scheduler: pthread_create failed; can not continue without scheduled jobs");
+          free(sched_ctx);
+          sched_ctx = NULL;
+        } else {
+          sched_started = true;
+          INFO_PRINT("Scheduler thread started");
+        }
       }
+    }
+  } else {
+    if (!(get_delegate_fee(&delegate_fee_percent) == XCASH_OK)) {
+      WARNING_PRINT("Unable to read fee from database so using default");
     }
   }
 

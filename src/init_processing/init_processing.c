@@ -151,6 +151,8 @@ void print_starter_state(const arg_config_t *arg_config)
           XCASH_DPOPS_IP, XCASH_DPOPS_PORT,
           XCASH_WALLET_IP, XCASH_WALLET_PORT,
           DATABASE_CONNECTION, log_level);
-
+  if (!is_seed_node) {
+    fprintf(stderr, "Delegate fee for %s: %.4f%%", delegate_fee_percent);
+  }
   fprintf(stderr, "[%s] Daemon startup successful and is busy processing requests...\n\n", time_str);
 }
