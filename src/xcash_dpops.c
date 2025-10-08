@@ -228,7 +228,16 @@ int main(int argc, char *argv[]) {
     FATAL_ERROR_EXIT("Can't open mongo database");
   }
 
-  if (!(init_processing(&arg_config))) {
+  double fee = 5.0; // default
+  if (!is_seed_node) {
+    if (get_delegate_fee(&fee) == XCASH_OK) {
+      INFO_PRINT("Delegate fee for %s: %.4f%%", xcash_wallet_public_address, fee);
+    } else {
+      FATAL_ERROR_EXIT("Unable to read fee from database for non-seed node");
+    }
+  }
+
+  if (!(init_processing(&arg_config, &fee))) {
     FATAL_ERROR_EXIT("Failed server initialization.");
   }
 
@@ -243,6 +252,7 @@ int main(int argc, char *argv[]) {
       FATAL_ERROR_EXIT("Scheduler: malloc failed; can not continue without scheduled jobs");
     } else {
       sched_ctx->pool = database_client_thread_pool;
+      sched_ctx->fee_percent = fee;
       if (pthread_create(&timer_tid, NULL, timer_thread, sched_ctx) != 0) {
         FATAL_ERROR_EXIT("Scheduler: pthread_create failed; can not continue without scheduled jobs");
         free(sched_ctx); 

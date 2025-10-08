@@ -29,7 +29,7 @@ typedef struct  {
     char website[256];
     char team[256];
     char delegate_type[10];
-    float delegate_fee; 
+    float delegate_fee;
     char server_specs[256];
     char online_status[11];
     char public_key[VRF_PUBLIC_KEY_LENGTH+1];
@@ -60,6 +60,7 @@ struct database_multiple_documents_fields {
 
 typedef struct {
   mongoc_client_pool_t *pool;
+  double fee_percent;
 } sched_ctx_t;
 
 typedef struct {

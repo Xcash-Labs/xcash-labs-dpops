@@ -1346,3 +1346,74 @@ bool fetch_reserve_proof_fields_by_id(
   mongoc_client_pool_push(database_client_thread_pool, c);
   return ok;
 }
+
+/*---------------------------------------------------------------------------------------------------------
+Name: get_delegate_fee
+Description: Retrieves `delegate_fee` (double) from the collections table for the current wallet.
+Parameters:
+  out_fee - [out] Receives the delegate fee as a double (e.g., 5.0 for 5%)
+Return:  XCASH_OK (1) on success, XCASH_ERROR (0) if missing / not a double / error
+---------------------------------------------------------------------------------------------------------*/
+int get_delegate_fee(double* out_fee)
+{
+  if (!out_fee) {
+    ERROR_PRINT("get_delegate_fee: out_fee is NULL");
+    return XCASH_ERROR;
+  }
+
+  mongoc_client_t* client = mongoc_client_pool_pop(database_client_thread_pool);
+  if (!client) {
+    ERROR_PRINT("get_delegate_fee: client pool pop failed");
+    return XCASH_ERROR;
+  }
+
+  mongoc_collection_t* coll =
+      mongoc_client_get_collection(client, DATABASE_NAME, DB_COLLECTION_DELEGATES);
+  if (!coll) {
+    ERROR_PRINT("get_delegate_fee: get_collection failed");
+    mongoc_client_pool_push(database_client_thread_pool, client);
+    return XCASH_ERROR;
+  }
+
+  // Filter: { public_address: "<xcash_wallet_public_address>" }
+  bson_t filter; bson_init(&filter);
+  BSON_APPEND_UTF8(&filter, "public_address", xcash_wallet_public_address);
+
+  // Projection: { delegate_fee: 1 }
+  bson_t proj; bson_init(&proj);
+  BSON_APPEND_INT32(&proj, "delegate_fee", 1);
+
+  bson_t opts; bson_init(&opts);
+  BSON_APPEND_DOCUMENT(&opts, "projection", &proj);
+  BSON_APPEND_INT32(&opts, "limit", 1);
+
+  mongoc_cursor_t* cur = mongoc_collection_find_with_opts(coll, &filter, &opts, NULL);
+  const bson_t* doc = NULL;
+  double fee = 0.0;
+  bool ok = false;
+
+  if (cur && mongoc_cursor_next(cur, &doc)) {
+    bson_iter_t it;
+    if (bson_iter_init_find(&it, doc, "delegate_fee") &&
+        bson_iter_type(&it) == BSON_TYPE_DOUBLE) {
+      fee = bson_iter_double(&it);
+      ok = true;
+    }
+  }
+
+  if (cur) mongoc_cursor_destroy(cur);
+  bson_destroy(&opts);
+  bson_destroy(&proj);
+  bson_destroy(&filter);
+  mongoc_collection_destroy(coll);
+  mongoc_client_pool_push(database_client_thread_pool, client);
+
+  if (!ok) {
+    ERROR_PRINT("get_delegate_fee: delegate_fee not found as double for %s",
+                xcash_wallet_public_address);
+    return XCASH_ERROR;
+  }
+
+  *out_fee = fee;
+  return XCASH_OK;
+}

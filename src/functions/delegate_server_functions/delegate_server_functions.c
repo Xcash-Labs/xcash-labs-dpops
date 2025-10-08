@@ -248,7 +248,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
   }
 
   // 7) Finally insert a new document
-  double set_delegate_fee = 10.0;  // default value
+  double set_delegate_fee = 5.0;  // default value
   uint64_t set_counts = 0;
 
   bson_t bson;

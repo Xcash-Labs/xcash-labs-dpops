@@ -38,5 +38,6 @@ bool get_vote_total_and_delegate_name(const char* voter_id, int64_t* total_out, 
 bool fetch_reserve_proof_fields_by_id(const char* voter_public_address, char* voted_for_out, size_t voted_for_sz, int64_t* total_out,
  char* reserve_proof_out, size_t rp_sz, bson_error_t* err);
 bool seed_is_primary(void);
+int get_delegate_fee(double* out_fee);
  
 #endif
