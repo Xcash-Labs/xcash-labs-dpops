@@ -228,17 +228,18 @@ int main(int argc, char *argv[]) {
   }
 
 // start the daily scheduler on seeds (ONE thread)
+  pthread_t timer_tid = 0;
+  bool sched_started = false;
+  // scheduler needs the pool; initialize_database() has created database_client_thread_pool
+  sched_ctx = malloc(sizeof *sched_ctx);
   if (is_seed_node) {
-    pthread_t timer_tid = 0;
-    bool sched_started = false;
     sched_ctx_t* sched_ctx = NULL;
     {
-      // scheduler needs the pool; initialize_database() has created database_client_thread_pool
-      sched_ctx = malloc(sizeof *sched_ctx);
       if (!sched_ctx) {
         FATAL_ERROR_EXIT("Scheduler: malloc failed; can not continue without scheduled jobs");
       } else {
         sched_ctx->pool = database_client_thread_pool;
+        sched_ctx->fee_percent = fee;
         if (pthread_create(&timer_tid, NULL, timer_thread, sched_ctx) != 0) {
           FATAL_ERROR_EXIT("Scheduler: pthread_create failed; can not continue without scheduled jobs");
           free(sched_ctx);
