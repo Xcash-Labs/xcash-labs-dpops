@@ -574,23 +574,23 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
       BSON_APPEND_UTF8(setdoc_bson, key, val);
 
     } else if (strncmp(key, "delegate_fee", VSMALL_BUFFER_SIZE) == 0) {
-      // New format: integer basis points (0..10000). No decimals allowed.
+      // New format on the wire: integer basis points (0..10000). No decimals allowed.
       errno = 0;
       char* endp = NULL;
-      long bp = strtol(val, &endp, 10);
-
-      if (errno != 0 || endp == val || *endp != '\0' || bp < 0 || bp > 10000) {
+      long v = strtol(val, &endp, 10);
+      if (errno != 0 || endp == val || *endp != '\0' || v < 0 || v > 10000) {
         bson_destroy(setdoc_bson);
         bson_destroy(filter_bson);
         cJSON_Delete(root);
         SERVER_ERROR("0|Invalid delegate_fee. Expect integer basis points 0..10000");
       }
 
-      int32_t bp = (int32_t)v;
-      double pct = ((double)bp) / 100.0;  // e.g., 550 -> 5.50
+      int32_t bp_i32 = (int32_t)v;          // safe after 0..10000 check
+      double pct = (double)bp_i32 / 100.0;  // e.g., 550 -> 5.50
+
       // Store as DOUBLE (percent)
       BSON_APPEND_DOUBLE(setdoc_bson, "delegate_fee", pct);
-      
+
     } else if (strncmp(key, "server_specs", VSMALL_BUFFER_SIZE) == 0) {
       if (strnlen(val, 256) > 255) {
         bson_destroy(setdoc_bson);
