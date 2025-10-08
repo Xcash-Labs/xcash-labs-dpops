@@ -178,7 +178,6 @@ Return: 0 if an error has occured, 1 if successfull
 int main(int argc, char *argv[]) {
   arg_config_t arg_config = {0};
   init_globals();
-//  signal(SIGINT, sigint_handler);
   install_signal_handlers();
   setenv("ARGP_HELP_FMT", "rmargin=120", 1);
 
