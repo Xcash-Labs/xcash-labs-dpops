@@ -31,61 +31,6 @@ int check_for_valid_delegate_name(const char* DELEGATE_NAME) {
 }
 
 /*---------------------------------------------------------------------------------------------------------
-Name: check_for_valid_delegate_fee
-Description: Checks for a valid delegate fee
-Parameters:
-  DELEGATE_NAME - The delegate name
-Return: 0 if the delegate fee is not valid, 1 if the delegate fee is valid
----------------------------------------------------------------------------------------------------------*/
-int check_for_valid_delegate_fee(const char* MESSAGE) {
-  const char *p, *q;
-  char* endptr;
-  int dot_seen = 0;
-  int decimals = 0;
-  double number;
-
-  if (MESSAGE == NULL || *MESSAGE == '\0') {
-    return XCASH_ERROR;
-  }
-
-  p = MESSAGE;
-
-  /* 1) Format checks: only digits and at most one '.', not starting with '.' */
-  if (*p == '.') {
-    return XCASH_ERROR; /* disallow leading '.' */
-  }
-
-  for (q = p; *q; ++q) {
-    if (*q == '.') {
-      if (dot_seen) return 0; /* second dot -> invalid */
-      dot_seen = 1;
-      continue;
-    }
-    if (*q < '0' || *q > '9') {
-      return XCASH_ERROR; /* any non-digit/non-dot char -> invalid (no spaces/signs/exponent) */
-    }
-    if (dot_seen) {
-      ++decimals;
-      if (decimals > 6) return 0; /* too many fractional digits */
-    }
-  }
-
-  /* 2) Numeric parse (guaranteed to be plain decimal now) */
-  errno = 0;
-  number = strtod(p, &endptr);
-  if (errno != 0 || endptr == p || *endptr != '\0' || !isfinite(number)) {
-    return XCASH_ERROR;
-  }
-
-  /* 3) Range check: 0..100 inclusive */
-  if (number < 0.0 || number > 100.0) {
-    return XCASH_ERROR;
-  }
-
-  return XCASH_OK;
-}
-
-/*---------------------------------------------------------------------------------------------------------
 Name:        check_for_valid_ip_or_hostname
 Description: Quick sanity check that HOST is either:
                - a numeric IPv4/IPv6 literal, or
@@ -627,25 +572,25 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
         SERVER_ERROR("0|shared_delegate_status must be one of: solo, shared, or team");
       }
       BSON_APPEND_UTF8(setdoc_bson, key, val);
+
     } else if (strncmp(key, "delegate_fee", VSMALL_BUFFER_SIZE) == 0) {
-      // Must be string on the wire; parse to number and store numeric
-      if (check_for_valid_delegate_fee(val) == 0) {
-        bson_destroy(setdoc_bson);
-        bson_destroy(filter_bson);
-        cJSON_Delete(root);
-        SERVER_ERROR("0|Invalid delegate_fee (bad format or out of range)");
-      }
+      // New format: integer basis points (0..10000). No decimals allowed.
       errno = 0;
       char* endp = NULL;
-      double d = strtod(val, &endp);
-      if (errno != 0 || endp == val || *endp != '\0' || !isfinite(d) || d < 0.0 || d > 100.0) {
+      long bp = strtol(val, &endp, 10);
+
+      if (errno != 0 || endp == val || *endp != '\0' || bp < 0 || bp > 10000) {
         bson_destroy(setdoc_bson);
         bson_destroy(filter_bson);
         cJSON_Delete(root);
-        SERVER_ERROR("0|Invalid delegate_fee (not numeric or out of range)");
+        SERVER_ERROR("0|Invalid delegate_fee. Expect integer basis points 0..10000");
       }
-      // Store as numeric (Double). Switch to Decimal128 if you prefer exact fixed precision.
-      BSON_APPEND_DOUBLE(setdoc_bson, "delegate_fee", d);
+
+      int32_t bp = (int32_t)v;
+      double pct = ((double)bp) / 100.0;  // e.g., 550 -> 5.50
+      // Store as DOUBLE (percent)
+      BSON_APPEND_DOUBLE(setdoc_bson, "delegate_fee", pct);
+      
     } else if (strncmp(key, "server_specs", VSMALL_BUFFER_SIZE) == 0) {
       if (strnlen(val, 256) > 255) {
         bson_destroy(setdoc_bson);
