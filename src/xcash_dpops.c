@@ -228,12 +228,12 @@ int main(int argc, char *argv[]) {
     FATAL_ERROR_EXIT("Can't open mongo database");
   }
 
-  double fee = 5.0; // default
+  double fee = 5.0; // default, not used by seed node
   if (!is_seed_node) {
     if (get_delegate_fee(&fee) == XCASH_OK) {
       INFO_PRINT("Delegate fee for %s: %.4f%%", xcash_wallet_public_address, fee);
     } else {
-      FATAL_ERROR_EXIT("Unable to read fee from database for non-seed node");
+      WARNING_PRINT("Unable to read fee from database so using default");
     }
   }
 

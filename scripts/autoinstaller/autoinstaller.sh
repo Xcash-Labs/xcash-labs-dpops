@@ -26,7 +26,6 @@ BLOCK_VERIFIER_SECRET_KEY=""
 BLOCK_VERIFIER_PUBLIC_KEY=""
 BLOCK_VERIFIERS_SECRET_KEY_LENGTH=128
 BLOCK_VERIFIERS_PUBLIC_KEY_LENGTH=64
-DPOPS_FEE=0
 DPOPS_MINIMUM_AMOUNT=0
 XCASH_DPOPS_BLOCK_HEIGHT=3
 
@@ -124,7 +123,6 @@ RAM_CPU_RATIO_ALL_CPU_THREADS=4
 # Regex
 regex_XCASH_DPOPS_INSTALLATION_DIR="(^\/(.*?)\/$)|(^$)" # anything that starts with / and ends with / and does not contain a space
 regex_MNEMONIC_SEED="^\b([a-z]+\s+){24}\b([a-z]+)$" # 25 words exactly
-regex_DPOPS_FEE="\b(^[0-9]{1}[0-9]{0,1}.?[0-9]{0,6}$)\b$" # between 0 and 100 with up to 6 decimal places
 regex_DPOPS_MINIMUM_AMOUNT="\b(^[1-9]{1}[0-9]{4,6}$)\b$|^10000000$" # between 10000 and 10000000
 
 # Disable script execution with sudo and warns the user if root install
@@ -266,14 +264,7 @@ function get_shared_delegate_installation_settings()
   echo -ne "\r"
   echo
   if [ "${SHARED_DELEGATE^^}" == "YES" ]; then    
-    while
-      echo -ne "${COLOR_PRINT_YELLOW}Shared Delegate Fee (expressed as a percentage, ex: 1 or 1.52): ${END_COLOR_PRINT}"
-      read -r DPOPS_FEE
-      echo -ne "\r"
-      echo
-      [[ ! $DPOPS_FEE =~ $regex_DPOPS_FEE ]]
-    do true; done
-    
+
     while
       echo -ne "${COLOR_PRINT_YELLOW}Shared Delegate Minimum Payment Amount (whole number between 10000 and 10000000): ${END_COLOR_PRINT}"
       read -r DPOPS_MINIMUM_AMOUNT
@@ -321,7 +312,6 @@ SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SHARED_DELEGATE="${SYSTEMD_SERVICE_FILE_XCASH_D
 SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SHARED_DELEGATE="${SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SHARED_DELEGATE//'${XCASH_DPOPS_DIR}'/$XCASH_DPOPS_DIR}"
 SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SHARED_DELEGATE="${SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SHARED_DELEGATE//'${BLOCK_VERIFIER_SECRET_KEY}'/$BLOCK_VERIFIER_SECRET_KEY}"
 SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SHARED_DELEGATE="${SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SHARED_DELEGATE//'${BLOCK_VERIFIER_SECRET_KEY}'/$BLOCK_VERIFIER_SECRET_KEY}"
-SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SHARED_DELEGATE="${SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SHARED_DELEGATE//'${DPOPS_FEE}'/$DPOPS_FEE}"
 SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SHARED_DELEGATE="${SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SHARED_DELEGATE//'${DPOPS_MINIMUM_AMOUNT}'/$DPOPS_MINIMUM_AMOUNT}"
 
 SYSTEMD_TIMER_FILE_XCASH_DPOPS=$(cat <(curl -sSL $SYSTEMD_TIMER_FILE_XCASH_DPOPS_URL))
@@ -444,7 +434,6 @@ function print_installation_settings()
   echo -e "${COLOR_PRINT_GREEN}Create New Wallet: ${WALLET_SETTINGS} ${END_COLOR_PRINT}"
   echo -e "${COLOR_PRINT_GREEN}Wallet Password: ${WALLET_PASSWORD} ${END_COLOR_PRINT}"
   echo -e "${COLOR_PRINT_GREEN}User: ${USER} ${END_COLOR_PRINT}"
-  echo -e "${COLOR_PRINT_GREEN}DPOPS Fee: ${DPOPS_FEE} ${END_COLOR_PRINT}"
   echo -e "${COLOR_PRINT_GREEN}DPOPS Minimum Payment Amount: ${DPOPS_MINIMUM_AMOUNT} ${END_COLOR_PRINT}"
   echo -e "${COLOR_PRINT_GREEN}Autostart services when reboot: ${AUTOSTART_SETTINGS} ${END_COLOR_PRINT}"
   if [ ! "$container" == "lxc" ]; then
@@ -635,14 +624,6 @@ function check_if_upgrade_solo_delegate_and_shared_delegate()
     if [ "${data^^}" == "YES" ]; then
       SHARED_DELEGATE="YES"
 
-      while
-        echo -ne "${COLOR_PRINT_YELLOW}Shared Delegate Fee (in percentage ex: 1 or 1.5 etc): ${END_COLOR_PRINT}"
-        read -r DPOPS_FEE
-        echo -ne "\r"
-        echo
-        [[ ! $DPOPS_FEE =~ $regex_DPOPS_FEE ]]
-      do true; done
-    
       while
         echo -ne "${COLOR_PRINT_YELLOW}Shared Delegate Minimum Payment Amount, minimum is 10K, maximum is 10M (ex: 10000 in whole numbers and not atomic units etc): ${END_COLOR_PRINT}"
         read -r DPOPS_MINIMUM_AMOUNT
@@ -2167,13 +2148,6 @@ function edit_shared_delegate_settings()
 {
   # check if they are already a shared delegate
   if grep -q "shared-delegates-website" /lib/systemd/system/xcash-dpops.service; then
-    while
-      echo -ne "${COLOR_PRINT_YELLOW}Shared Delegate Fee (in percentage ex: 1 or 1.5 etc): ${END_COLOR_PRINT}"
-      read -r DPOPS_FEE
-      echo -ne "\r"
-      echo
-      [[ ! $DPOPS_FEE =~ $regex_DPOPS_FEE ]]
-    do true; done
     
     while
       echo -ne "${COLOR_PRINT_YELLOW}Shared Delegate Minimum Payment Amount, minimum is 10K, maximum is 10M (ex: 10000 in whole numbers and not atomic units etc): ${END_COLOR_PRINT}"
@@ -2184,7 +2158,6 @@ function edit_shared_delegate_settings()
     do true; done
 
     echo -ne "${COLOR_PRINT_YELLOW}Updating Shared Delegate Settings${END_COLOR_PRINT}"
-    sed_services "s/--fee.*--minimum-amount/--fee $DPOPS_FEE --minimum-amount/g" /lib/systemd/system/xcash-dpops.service
     sed_services "s/--minimum-amount.*/--minimum-amount $DPOPS_MINIMUM_AMOUNT/g" /lib/systemd/system/xcash-dpops.service
     sudo systemctl daemon-reload
     echo -ne "\r${COLOR_PRINT_GREEN}Updating Shared Delegate Settings${END_COLOR_PRINT}"
@@ -2258,10 +2231,6 @@ function register_update_delegate()
     read -r UPDATE_SHARED_DELEGATE_STATUS
     echo -ne "\r"
     echo
-    echo -ne "${COLOR_PRINT_YELLOW}Enter Shared delegate Fee (leave empty to skip): ${END_COLOR_PRINT}"
-    read -r UPDATE_SHARED_DELEGATE_FEE
-    echo -ne "\r"
-    echo
     echo -ne "${COLOR_PRINT_YELLOW}Enter Shared Delegate Team Info (leave empty to skip): ${END_COLOR_PRINT}"
     read -r UPDATE_TEAM
     echo -ne "\r"
@@ -2282,8 +2251,7 @@ function register_update_delegate()
     if [ ! "$UPDATE_ABOUT_DESCRIPTION" == "" ]; then COMMAND_STRING="${COMMAND_STRING}delegate_update about ${UPDATE_ABOUT_DESCRIPTION}\n"; fi
     if [ ! "$UPDATE_WEBSITE" == "" ]; then COMMAND_STRING="${COMMAND_STRING}delegate_update website ${UPDATE_WEBSITE}\n"; fi
     if [ ! "$UPDATE_SHARED_DELEGATE_STATUS" == "" ]; then COMMAND_STRING="${COMMAND_STRING}delegate_update shared_delegate_status ${UPDATE_SHARED_DELEGATE_STATUS}\n"; fi
-    if [ ! "$UPDATE_SHARED_DELEGATE_FEE" == "" ]; then COMMAND_STRING="${COMMAND_STRING}delegate_update delegate_fee ${UPDATE_SHARED_DELEGATE_FEE}\n"; fi
-    if [ ! "$UPDATE_TEAM" == "" ]; then COMMAND_STRING="${COMMAND_STRING}delegate_update team ${UPDATE_TEAM}\n"; fi
+      if [ ! "$UPDATE_TEAM" == "" ]; then COMMAND_STRING="${COMMAND_STRING}delegate_update team ${UPDATE_TEAM}\n"; fi
     if [ ! "$UPDATE_SERVER_SPECS" == "" ]; then COMMAND_STRING="${COMMAND_STRING}delegate_update server_specs ${UPDATE_SERVER_SPECS}\n"; fi
     COMMAND_STRING="${COMMAND_STRING}set ask-password 1\n${WALLET_PASSWORD}\n"
     # Run the wallet passing the registration information  
