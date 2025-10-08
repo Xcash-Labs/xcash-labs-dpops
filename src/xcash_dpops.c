@@ -239,7 +239,6 @@ int main(int argc, char *argv[]) {
         FATAL_ERROR_EXIT("Scheduler: malloc failed; can not continue without scheduled jobs");
       } else {
         sched_ctx->pool = database_client_thread_pool;
-        sched_ctx->fee_percent = fee;
         if (pthread_create(&timer_tid, NULL, timer_thread, sched_ctx) != 0) {
           FATAL_ERROR_EXIT("Scheduler: pthread_create failed; can not continue without scheduled jobs");
           free(sched_ctx);
