@@ -982,6 +982,11 @@ void server_receive_payout(const char* MESSAGE) {
     return;
   }
 
+  if(is_seed_node) {
+    ERROR_PRINT("Seed nodes should never recieve a server_receive_payout transaction");
+    return;
+  }
+
   WARNING_PRINT("Message: %s", MESSAGE);
 
   cJSON* root = cJSON_Parse(MESSAGE);
@@ -1239,6 +1244,13 @@ void server_receive_payout(const char* MESSAGE) {
              unlocked,
              (double)unlocked / (double)XCASH_ATOMIC_UNITS);
 
+
+
+
+
+
+
+             
   free(parsed);
   free(sign_str);
   return;
