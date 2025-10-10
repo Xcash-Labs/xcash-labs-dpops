@@ -1417,3 +1417,151 @@ int get_delegate_fee(double* out_fee)
   *out_fee = fee;
   return XCASH_OK;
 }
+
+/*---------------------------------------------------------------------------------------------------------
+Name: compute_payouts_due
+Description: 
+Parameters:
+
+Return:  XCASH_OK (1) on success, XCASH_ERROR (0) if error
+---------------------------------------------------------------------------------------------------------*/
+int compute_payouts_due(payout_output_t parsed, uint64_t in_block_height, int64_t in_unlocked_balance, size_t entries_count)
+{
+  int rc = XCASH_OK;
+  mongoc_client_t* client = NULL;
+  mongoc_collection_t* coll = NULL;
+  mongoc_cursor_t* cur = NULL;
+  bson_t* pipeline = NULL;
+  const bson_t* doc = NULL;
+
+  client = mongoc_client_pool_pop(database_client_thread_pool);
+  if (!client) {
+    ERROR_PRINT("compute_payouts_due: mongoc_client_pool_pop failed");
+    return XCASH_ERROR;
+  }
+
+  coll = mongoc_client_get_collection(client, DATABASE_NAME, DB_COLLECTION_BLOCKS_FOUND);
+  if (!coll) {
+    ERROR_PRINT("compute_payouts_due: get_collection '%s.%s' failed", DATABASE_NAME, DB_COLLECTION_BLOCKS_FOUND);
+    rc = XCASH_ERROR;
+    goto cleanup;
+  }
+  
+  pipeline = BCON_NEW(
+    "[",
+      "{",
+        "$match", "{",
+          "block_height", "{", "$lt", BCON_INT64((int64_t)in_block_height), "}",
+          "processed", BCON_BOOL(false),
+        "}",
+      "}",
+      "{",
+        "$group", "{",
+          "_id", BCON_NULL,
+          "total", "{", "$sum", BCON_UTF8("$" "block_reward"), "}",
+        "}",
+      "}",
+    "]"
+  );
+  if (!pipeline) {
+    ERROR_PRINT("compute_payouts_due: failed to build aggregation pipeline");
+    rc = XCASH_ERROR;
+    goto cleanup;
+  }
+
+  cur = mongoc_collection_aggregate(coll, MONGOC_QUERY_NONE, pipeline, NULL, NULL);
+  if (!cur) {
+    ERROR_PRINT("compute_payouts_due: aggregate cursor creation failed");
+    rc = XCASH_ERROR;
+    goto cleanup;
+  }
+
+  int64_t sum = 0;
+  if (mongoc_cursor_next(cur, &doc)) {
+    bson_iter_t it;
+    if (!bson_iter_init_find(&it, doc, "total")) {
+      ERROR_PRINT("compute_payouts_due: aggregation missing 'total'");
+      rc = XCASH_ERROR;
+      goto cleanup;
+    }
+    sum = bson_iter_as_int64(&it);
+    if (sum < 0) sum = 0; /* defensive */
+  }
+
+  {
+    bson_error_t err;
+    if (mongoc_cursor_error(cur, &err)) {
+      ERROR_PRINT("compute_payouts_due: MongoDB error: %s", err.message);
+      rc = XCASH_ERROR;
+      goto cleanup;
+    }
+  }
+
+  if (sum > in_unlocked_balance) {
+    ERROR_PRINT("compute_payouts_due: Not enough funds to cover payouts");
+    rc = XCASH_ERROR;
+    goto cleanup;
+  }
+
+  uint64_t total_delegate_votes = 0;
+  for (size_t k = 0; k < entries_count; ++k) {
+    // overflow check: total_delegate_votes + parsed[k].v
+    if (UINT64_MAX - total_delegate_votes < parsed[k].v) {
+      ERROR_PRINT("vote sum overflow at index %zu", k);
+      return XCASH_ERROR;
+    }
+    total_delegate_votes += parsed[k].v;
+  }
+
+  if (entries_count == 0 || total_delegate_votes == 0) {
+    ERROR_PRINT("No entries or total_delegate_votes == 0");
+    return XCASH_ERROR;
+  }
+
+  /* cap by unlocked balance */
+  uint64_t safe_unlocked = (in_unlocked_balance > 0) ? (uint64_t)in_unlocked_balance : 0;
+  uint64_t pending_sum = (sum > 0) ? (uint64_t)sum : 0;
+  uint64_t sum_atomic = (pending_sum < safe_unlocked) ? pending_sum : safe_unlocked;
+  if (sum_atomic == 0) {
+    WARNING_PRINT("Nothing to pay (sum_atomic == 0)");
+    return XCASH_OK;
+  }
+
+  /* allocate one-field array */
+  if (entries_count > SIZE_MAX / sizeof(uint64_t)) {
+    ERROR_PRINT("entries_count too large");
+    return XCASH_ERROR;
+  }
+  uint64_t *payout_for_address = calloc(entries_count, sizeof *payout_for_address);
+  if (!payout_for_address) {
+    ERROR_PRINT("OOM error in compute_payouts_due");
+    return XCASH_ERROR;
+  }
+
+  /* floor split using 128-bit intermediate */
+  uint64_t base_sum = 0;
+  for (size_t k = 0; k < entries_count; ++k) {
+    WARNING_PRINT("out[%zu]: %s -> %" PRIu64, k, parsed[k].a, parsed[k].v);
+    uint64_t pay = (uint64_t)(((__uint128_t)sum_atomic * parsed[k].v) / total_delegate_votes);
+    payout_for_address[k] = pay;
+
+    if (UINT64_MAX - base_sum < pay) {
+      free(payout_for_address);
+      ERROR_PRINT("payout accumulation overflow");
+      return XCASH_ERROR;
+    }
+    base_sum += pay;
+  }
+
+  /* ... use payout_for_address[] ... */
+
+  free(payout_for_address);
+
+
+cleanup:
+  if (cur) mongoc_cursor_destroy(cur);
+  if (pipeline) bson_destroy(pipeline);
+  if (coll) mongoc_collection_destroy(coll);
+  if (client) mongoc_client_pool_push(database_client_thread_pool, client);
+  return rc;
+}

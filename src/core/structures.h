@@ -7,7 +7,7 @@ typedef struct {
     char *block_verifiers_secret_key;
     bool delegates_website;
     bool shared_delegates_website;
-    unsigned long long minimum_amount;
+    uint64_t minimum_amount;
 } arg_config_t;
 
 // Define a struct to store network node data
@@ -99,8 +99,8 @@ typedef enum {
 } limit_action_t;
 
 typedef struct {
-  char     a[XCASH_WALLET_LENGTH + 1];  // voter wallet address
-  uint64_t v;                           // vote total (atomic)
+  char     a[XCASH_WALLET_LENGTH + 1]; // voter wallet address
+  uint64_t v;                          // vote total (atomic)
 } payout_output_t;
 
 #endif

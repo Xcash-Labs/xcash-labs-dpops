@@ -215,6 +215,7 @@
 
 #define WAKEUP_SKEW_SEC 10 
 
+#define CRYPTONOTE_MINED_MONEY_UNLOCK_WINDOW 60
 
 // ===================== Constants =====================
 #define ALPHANUM_STRING "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"

@@ -1120,12 +1120,6 @@ void server_receive_payout(const char* MESSAGE) {
     parsed[i].v = amt_u64;  // or wallet_add_payout_output(addr, amt_u64);
   }
 
-  // At this point `parsed[0..entries_count-1]` holds the outputs.
-  // Example: log them.
-  for (size_t k = 0; k < entries_count; ++k) {
-    WARNING_PRINT("out[%zu]: %s -> %" PRIu64, k, parsed[k].a, parsed[k].v);
-  }
-
   // Cleanup
   cJSON_Delete(root);
 
@@ -1140,9 +1134,6 @@ void server_receive_payout(const char* MESSAGE) {
     free(parsed);
     return;
   }
-
-  WARNING_PRINT("Parsed payout header ok: delegate=%s height=%s hash=%s",
-                in_delegate_wallet_address, in_block_height, in_outputs_hash);
 
   uint8_t out_hash[SHA256_HASH_SIZE];
   outputs_digest_sha256(parsed, entries_count, out_hash);
@@ -1234,7 +1225,6 @@ void server_receive_payout(const char* MESSAGE) {
   }
 
   uint64_t unlocked = 0;
-
   if (get_unlocked_balance(&unlocked) != XCASH_OK) {
     ERROR_PRINT("get_unlocked_balance failed");
     return;
@@ -1244,13 +1234,16 @@ void server_receive_payout(const char* MESSAGE) {
              unlocked,
              (double)unlocked / (double)XCASH_ATOMIC_UNITS);
 
+  uint64_t in_num_block_height = strtoull(in_block_height, NULL, 10);
+  uint64_t pass_block_height = in_num_block_height - CRYPTONOTE_MINED_MONEY_UNLOCK_WINDOW;
+
+  // convert in_block_height to number then - unlock time + some amount to be sure funds are availbe to pay
 
 
+// size_t entries_count = 0;
+// payout_output_t* parsed = NULL;
+//   char in_block_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
 
-
-
-
-             
   free(parsed);
   free(sign_str);
   return;

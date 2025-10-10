@@ -16,6 +16,7 @@ Global Variables
 extern int log_level;  // Log level for display log messages
 extern int delegate_db_hash_mismatch; 
 extern double delegate_fee_percent;
+extern uint64_t minimum_payout;
 
 
 extern bool is_seed_node;   // True if node is a seed node - network_data_node_settings is same as seed node, removed
