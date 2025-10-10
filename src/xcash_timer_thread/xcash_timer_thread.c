@@ -572,7 +572,8 @@ static void run_proof_check(sched_ctx_t* ctx) {
 
     for (size_t oi = 0; oi < B->count; ++oi) {
       const payout_output_t* o = &B->outs[oi];
-      if (!sbuf_addf(&sb, "%s{\"a\":\"%s\",\"v\":%" PRIu64 "}",
+      if (!sbuf_addf(&sb,
+                     "%s{\"a\":\"%s\",\"v\":\"%" PRIu64 "\"}",
                      (oi ? "," : ""), o->a, (uint64_t)o->v)) {
         free(sb.buf);
         goto next_delegate;

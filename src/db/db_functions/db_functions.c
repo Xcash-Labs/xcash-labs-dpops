@@ -1457,8 +1457,7 @@ int compute_payouts_due(payout_output_t *parsed, uint64_t in_block_height, int64
 
   if (!parsed || entries_count == 0) {
     WARNING_PRINT("No parsed entries");
-    rc = XCASH_OK;
-    goto done;
+    return XCASH_ERROR;
   }
 
   mongoc_client_t* client = NULL;

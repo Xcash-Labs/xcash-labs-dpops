@@ -1019,12 +1019,15 @@ void server_receive_payout(const char* MESSAGE) {
   size_t entries_count = 0;
   {
     cJSON* jcnt = cJSON_GetObjectItemCaseSensitive(root, "entries_count");
-    if (!jcnt || !cJSON_IsNumber(jcnt)) { /* ... */
+    if (!jcnt || !cJSON_IsNumber(jcnt)) {
+      ERROR_PRINT("Missing/invalid 'entries_count'");
+      cJSON_Delete(root);
+      return;
     }
 
     double v = jcnt->valuedouble;
     if (!(v >= 0.0) || v > (double)MAX_PROOFS_PER_DELEGATE_HARD) {
-      ERROR_PRINT("Entries_count is not a valid value");
+      ERROR_PRINT("'entries_count' out of range");
       cJSON_Delete(root);
       return;
     }
@@ -1091,33 +1094,27 @@ void server_receive_payout(const char* MESSAGE) {
     }
     memcpy(parsed[i].a, ja->valuestring, alen + 1);
 
-    // amount (uint64_t via cJSON number -> double guard)
+    // amount (uint64_t from JSON string)
     cJSON* jv = cJSON_GetObjectItemCaseSensitive(elem, "v");
-    if (!jv || !cJSON_IsNumber(jv)) {
-      ERROR_PRINT("outputs[%zu].v missing/invalid", i);
-      free(parsed);
-      cJSON_Delete(root);
-      return;
-    }
-    double dv = jv->valuedouble;
-
-    if (!(dv >= 0.0) || dv > 9007199254740991.0) {
-      ERROR_PRINT("outputs[%zu].v out of range", i);
+    if (!jv || !cJSON_IsString(jv) || !jv->valuestring || jv->valuestring[0] == '\0') {
+      ERROR_PRINT("outputs[%zu].v missing/invalid (must be string)", i);
       free(parsed);
       cJSON_Delete(root);
       return;
     }
 
-    uint64_t amt_u64 = (uint64_t)dv;
-    double diff = dv - (double)amt_u64;
-    if (diff < -1e-9 || diff > 1e-9) {
-      ERROR_PRINT("outputs[%zu].v must be an integer JSON number", i);
+    /* strict decimal parse */
+    errno = 0;
+    char* end = NULL;
+    unsigned long long tmp = strtoull(jv->valuestring, &end, 10);
+    if (errno == ERANGE || end == jv->valuestring || *end != '\0') {
+      ERROR_PRINT("outputs[%zu].v invalid uint64 string '%s'", i, jv->valuestring);
       free(parsed);
       cJSON_Delete(root);
       return;
     }
 
-    parsed[i].v = amt_u64;  // or wallet_add_payout_output(addr, amt_u64);
+    parsed[i].v = (uint64_t)tmp;
   }
 
   // Cleanup
@@ -1152,7 +1149,7 @@ void server_receive_payout(const char* MESSAGE) {
   uint64_t block_create_height = strtoull(in_block_height, NULL, 10) - 1;
   int rc = get_block_info_by_height(block_create_height, ck_block_hash, sizeof(ck_block_hash), &reward_atomic, &ts_epoch, &is_orphan);
   if (rc != XCASH_OK) {
-    ERROR_PRINT("Error getting  for payout trans");
+    ERROR_PRINT("get_block_info_by_height(%" PRIu64 ") failed", block_create_height);
     free(parsed);
     return;
   }
@@ -1227,6 +1224,8 @@ void server_receive_payout(const char* MESSAGE) {
   uint64_t unlocked = 0;
   if (get_unlocked_balance(&unlocked) != XCASH_OK) {
     ERROR_PRINT("get_unlocked_balance failed");
+    free(parsed);
+    free(sign_str);
     return;
   }
 
@@ -1234,15 +1233,15 @@ void server_receive_payout(const char* MESSAGE) {
              unlocked,
              (double)unlocked / (double)XCASH_ATOMIC_UNITS);
 
-  //uint64_t in_num_block_height = strtoull(in_block_height, NULL, 10);
-  //uint64_t pass_block_height = in_num_block_height - CRYPTONOTE_MINED_MONEY_UNLOCK_WINDOW;
-
-  // convert in_block_height to number then - unlock time + some amount to be sure funds are availbe to pay
-
-
-// size_t entries_count = 0;
-// payout_output_t* parsed = NULL;
-//   char in_block_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
+  uint64_t in_num_block_height = strtoull(in_block_height, NULL, 10);
+  uint64_t conf = (uint64_t)(CRYPTONOTE_MINED_MONEY_UNLOCK_WINDOW + 1);
+  uint64_t pass_block_height = (in_num_block_height > conf) ? (in_num_block_height - conf) : 0;
+  if(compute_payouts_due(parsed, pass_block_height, unlocked, entries_count) == XCASH_ERROR) {
+    ERROR_PRINT("compute_payout_due failed");
+    free(parsed);
+    free(sign_str);
+    return;
+  }
 
   free(parsed);
   free(sign_str);

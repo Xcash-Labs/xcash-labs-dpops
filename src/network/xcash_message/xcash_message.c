@@ -352,12 +352,27 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
       }
       break;
 
-    case XMSG_SEED_TO_NODES_PAYOUT:
+    case XMSG_SEED_TO_NODES_PAYOUT: {
+      // Should always be false but just in case
+      bool expected = false;
+      if (!atomic_compare_exchange_strong_explicit(
+              &payment_inprocess, &expected, true,
+              memory_order_acq_rel,
+              memory_order_relaxed))
+      {
+        ERROR_PRINT("Skipping payment processing, transaction currently in process");
+        break;
+      }
+
       if (server_limit_IP_addresses(LIMIT_CHECK, client->client_ip) == 1) {
-        server_receive_payout(data);
+        server_receive_payout(data); 
         server_limit_IP_addresses(LIMIT_REMOVE, client->client_ip);
       }
+
+      // release the lock
+      atomic_store_explicit(&payment_inprocess, false, memory_order_release);
       break;
+    }
 
     default:
       ERROR_PRINT("Unknown message type received: %s", data);

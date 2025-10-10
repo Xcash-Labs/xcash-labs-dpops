@@ -60,6 +60,7 @@ extern atomic_bool server_running;
 extern atomic_bool wait_for_vrf_init;
 extern atomic_bool wait_for_block_height_init;
 extern atomic_bool shutdown_requested;
+extern atomic_bool payment_inprocess;
 
 extern pthread_t server_thread;
 
