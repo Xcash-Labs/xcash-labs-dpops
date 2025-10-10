@@ -1234,8 +1234,8 @@ void server_receive_payout(const char* MESSAGE) {
              unlocked,
              (double)unlocked / (double)XCASH_ATOMIC_UNITS);
 
-  uint64_t in_num_block_height = strtoull(in_block_height, NULL, 10);
-  uint64_t pass_block_height = in_num_block_height - CRYPTONOTE_MINED_MONEY_UNLOCK_WINDOW;
+  //uint64_t in_num_block_height = strtoull(in_block_height, NULL, 10);
+  //uint64_t pass_block_height = in_num_block_height - CRYPTONOTE_MINED_MONEY_UNLOCK_WINDOW;
 
   // convert in_block_height to number then - unlock time + some amount to be sure funds are availbe to pay
 
