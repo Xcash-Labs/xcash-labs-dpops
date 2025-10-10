@@ -1492,11 +1492,14 @@ int compute_payouts_due(payout_output_t *parsed, uint64_t in_block_height, int64
       "{",
         "$group", "{",
           "_id", BCON_NULL,
-          "total", "{", "$sum", BCON_UTF8("$" "block_reward"), "}",
+          "total", "{",
+            "$sum", BCON_UTF8("$block_reward"),
+          "}",
         "}",
       "}",
     "]"
   );
+
   if (!pipeline) {
     ERROR_PRINT("compute_payouts_due: failed to build aggregation pipeline");
     rc = XCASH_ERROR;
