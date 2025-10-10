@@ -252,7 +252,7 @@ int main(int argc, char *argv[]) {
     if (!(get_delegate_fee(&delegate_fee_percent) == XCASH_OK)) {
       WARNING_PRINT("Unable to read fee from database so using default");
     }
-    if (arguments->minimum_amount == 0) {
+    if (arg_config.minimum_amount == 0) {
       WARNING_PRINT("Unable to minimum payout amount so using default");
     }
   }
