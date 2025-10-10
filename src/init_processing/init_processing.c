@@ -152,7 +152,7 @@ void print_starter_state(const arg_config_t *arg_config)
           XCASH_WALLET_IP, XCASH_WALLET_PORT,
           DATABASE_CONNECTION, log_level);
   if (!is_seed_node) {
-    fprintf(stderr, "Delegate fee: %.4f%%, minimum payout: %" PRIu64 "\n", delegate_fee_percent, (uint64_t)minimum_payout);
+    fprintf(stderr, "Delegate fee: %.2f%%, minimum payout: %" PRIu64 "\n", delegate_fee_percent, (uint64_t)minimum_payout);
   }
   fprintf(stderr, "[%s] Daemon startup successful and is busy processing requests...\n\n", time_str);
 }
