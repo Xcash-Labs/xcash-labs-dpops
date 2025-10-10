@@ -1481,24 +1481,36 @@ int compute_payouts_due(payout_output_t *parsed, uint64_t in_block_height, int64
     goto done;
   }
 
-  pipeline = BCON_NEW(
-    "[",
-      "{",
-        "$match", "{",
-          "block_height", "{", "$lt", BCON_INT64((int64_t)in_block_height), "}",
-          "processed", BCON_BOOL(false),
-        "}",
-      "}",
-      "{",
-        "$group", "{",
-          "_id", BCON_NULL,
-          "total", "{",
-            "$sum", BCON_UTF8("$block_reward"),
-          "}",
-        "}",
-      "}",
-    "]"
-  );
+  /* Build pipeline via JSON to avoid BCON varargs pitfalls */
+  {
+    char jbuf[256];
+    int n = snprintf(
+        jbuf, sizeof jbuf,
+        "[{\"$match\":{\"block_height\":{\"$lt\":%" PRId64
+        "},\"processed\":false}},"
+        "{\"$group\":{\"_id\":null,\"total\":{\"$sum\":\"$block_reward\"}}}]",
+        (int64_t)in_block_height);
+    if (n < 0 || (size_t)n >= sizeof jbuf) {
+      ERROR_PRINT("compute_payouts_due: pipeline JSON snprintf failed/overflow");
+      rc = XCASH_ERROR;
+      goto done;
+    }
+
+    bson_error_t jerr;
+    pipeline = bson_new_from_json((const uint8_t*)jbuf, -1, &jerr);
+    if (!pipeline) {
+      ERROR_PRINT("compute_payouts_due: bson_new_from_json failed: %s", jerr.message);
+      rc = XCASH_ERROR;
+      goto done;
+    }
+  }
+
+  cur = mongoc_collection_aggregate(coll_blocks, MONGOC_QUERY_NONE, pipeline, NULL, NULL);
+  if (!cur) {
+    ERROR_PRINT("compute_payouts_due: aggregate cursor creation failed");
+    rc = XCASH_ERROR;
+    goto done;
+  }
 
   if (!pipeline) {
     ERROR_PRINT("compute_payouts_due: failed to build aggregation pipeline");
