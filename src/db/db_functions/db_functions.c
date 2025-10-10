@@ -1419,17 +1419,51 @@ int get_delegate_fee(double* out_fee)
 }
 
 /*---------------------------------------------------------------------------------------------------------
-Name: compute_payouts_due
+Name:        compute_payouts_due
 Description: 
-Parameters:
+  Aggregates unprocessed block rewards below `in_block_height` from the `found_blocks`
+  collection, caps the payable total by the wallet's `in_unlocked_balance`, and
+  distributes the capped sum proportionally across `parsed[0..entries_count-1]`
+  using floor math (no overpay, no fractions). For each address, it upserts into
+  `DB_COLLECTION_PAYOUT_BALANCES` (e.g., "payout_balances") by incrementing
+  `pending_atomic` and setting `updated_at`. After accrual succeeds, all eligible
+  `found_blocks` below `in_block_height` are marked `processed:true`.
 
-Return:  XCASH_OK (1) on success, XCASH_ERROR (0) if error
+  Notes:
+    - If no unprocessed rewards or sum is zero after capping, the function exits early.
+    - Any remainder from floor division is left unpaid (by design).
+    - Uses the global `database_client_thread_pool` (libmongoc).
+    - All Mongo resources are cleaned on every path.
+
+Parameters:
+  parsed            Pointer to an array of payout_output_t (must have fields:
+                    `a` = address, `v` = vote weight).
+  in_block_height   Only `found_blocks` with `block_height < in_block_height` and
+                    `processed:false` are considered. (Pass your "current − N confirmations"
+                    height here.)
+  in_unlocked_balance
+                    Unlocked wallet balance (atomic units) that caps total payouts.
+  entries_count     Number of elements in `parsed`.
+
+Return:
+  XCASH_OK (1)   on success (including the case where nothing is payable).
+  XCASH_ERROR (0) on any database error or arithmetic overflow/invalid input
+                  (e.g., NULL `parsed` with non-zero `entries_count`, vote-sum overflow,
+                  Mongo failures).
 ---------------------------------------------------------------------------------------------------------*/
-int compute_payouts_due(payout_output_t *parsed, uint64_t in_block_height, int64_t in_unlocked_balance, size_t entries_count)
+int compute_payouts_due(payout_output_t *parsed, uint64_t in_block_height, int64_t in_unlocked_balance, size_t entries_count)                        
 {
   int rc = XCASH_OK;
+
+  if (!parsed || entries_count == 0) {
+    WARNING_PRINT("No parsed entries");
+    rc = XCASH_OK;
+    goto done;
+  }
+
   mongoc_client_t* client = NULL;
-  mongoc_collection_t* coll = NULL;
+  mongoc_collection_t* coll_blocks = NULL;     // found_blocks
+  mongoc_collection_t* coll_pub    = NULL;     // public_addresses
   mongoc_cursor_t* cur = NULL;
   bson_t* pipeline = NULL;
   const bson_t* doc = NULL;
@@ -1440,13 +1474,14 @@ int compute_payouts_due(payout_output_t *parsed, uint64_t in_block_height, int64
     return XCASH_ERROR;
   }
 
-  coll = mongoc_client_get_collection(client, DATABASE_NAME, DB_COLLECTION_BLOCKS_FOUND);
-  if (!coll) {
+  /* ---- SUM unprocessed rewards ---- */
+  coll_blocks = mongoc_client_get_collection(client, DATABASE_NAME, DB_COLLECTION_BLOCKS_FOUND);
+  if (!coll_blocks) {
     ERROR_PRINT("compute_payouts_due: get_collection '%s.%s' failed", DATABASE_NAME, DB_COLLECTION_BLOCKS_FOUND);
     rc = XCASH_ERROR;
-    goto cleanup;
+    goto done;
   }
-  
+
   pipeline = BCON_NEW(
     "[",
       "{",
@@ -1466,14 +1501,14 @@ int compute_payouts_due(payout_output_t *parsed, uint64_t in_block_height, int64
   if (!pipeline) {
     ERROR_PRINT("compute_payouts_due: failed to build aggregation pipeline");
     rc = XCASH_ERROR;
-    goto cleanup;
+    goto done;
   }
 
-  cur = mongoc_collection_aggregate(coll, MONGOC_QUERY_NONE, pipeline, NULL, NULL);
+  cur = mongoc_collection_aggregate(coll_blocks, MONGOC_QUERY_NONE, pipeline, NULL, NULL);
   if (!cur) {
     ERROR_PRINT("compute_payouts_due: aggregate cursor creation failed");
     rc = XCASH_ERROR;
-    goto cleanup;
+    goto done;
   }
 
   int64_t sum = 0;
@@ -1482,10 +1517,10 @@ int compute_payouts_due(payout_output_t *parsed, uint64_t in_block_height, int64
     if (!bson_iter_init_find(&it, doc, "total")) {
       ERROR_PRINT("compute_payouts_due: aggregation missing 'total'");
       rc = XCASH_ERROR;
-      goto cleanup;
+      goto done;
     }
     sum = bson_iter_as_int64(&it);
-    if (sum < 0) sum = 0; /* defensive */
+    if (sum < 0) sum = 0;
   }
 
   {
@@ -1493,75 +1528,158 @@ int compute_payouts_due(payout_output_t *parsed, uint64_t in_block_height, int64
     if (mongoc_cursor_error(cur, &err)) {
       ERROR_PRINT("compute_payouts_due: MongoDB error: %s", err.message);
       rc = XCASH_ERROR;
-      goto cleanup;
+      goto done;
     }
   }
 
+  // release aggregation resources early
+  if (cur) { mongoc_cursor_destroy(cur); cur = NULL; }
+  if (pipeline) { bson_destroy(pipeline); pipeline = NULL; }
+  if (coll_blocks) { mongoc_collection_destroy(coll_blocks); coll_blocks = NULL; }
+
+  /* ---- Funds cap check ---- */
   if (sum > in_unlocked_balance) {
     ERROR_PRINT("compute_payouts_due: Not enough funds to cover payouts");
     rc = XCASH_ERROR;
-    goto cleanup;
+    goto done;
   }
 
+  /* ---- Vote totals ---- */
   uint64_t total_delegate_votes = 0;
   for (size_t k = 0; k < entries_count; ++k) {
-    // overflow check: total_delegate_votes + parsed[k].v
     if (UINT64_MAX - total_delegate_votes < parsed[k].v) {
       ERROR_PRINT("vote sum overflow at index %zu", k);
-      return XCASH_ERROR;
+      rc = XCASH_ERROR;
+      goto done;
     }
     total_delegate_votes += parsed[k].v;
   }
-
   if (entries_count == 0 || total_delegate_votes == 0) {
     ERROR_PRINT("No entries or total_delegate_votes == 0");
-    return XCASH_ERROR;
+    rc = XCASH_ERROR;
+    goto done;
   }
 
-  /* cap by unlocked balance */
   uint64_t safe_unlocked = (in_unlocked_balance > 0) ? (uint64_t)in_unlocked_balance : 0;
-  uint64_t pending_sum = (sum > 0) ? (uint64_t)sum : 0;
-  uint64_t sum_atomic = (pending_sum < safe_unlocked) ? pending_sum : safe_unlocked;
+  uint64_t pending_sum   = (sum > 0) ? (uint64_t)sum : 0;
+  uint64_t sum_atomic    = (pending_sum < safe_unlocked) ? pending_sum : safe_unlocked;
   if (sum_atomic == 0) {
     WARNING_PRINT("Nothing to pay (sum_atomic == 0)");
-    return XCASH_OK;
+    rc = XCASH_OK;
+    goto done;
   }
 
-  /* allocate one-field array */
-  if (entries_count > SIZE_MAX / sizeof(uint64_t)) {
-    ERROR_PRINT("entries_count too large");
-    return XCASH_ERROR;
-  }
-  uint64_t *payout_for_address = calloc(entries_count, sizeof *payout_for_address);
-  if (!payout_for_address) {
-    ERROR_PRINT("OOM error in compute_payouts_due");
-    return XCASH_ERROR;
+  /* ---- Accrue per-address pending in public_addresses ---- */
+  coll_pub = mongoc_client_get_collection(client, DATABASE_NAME, DB_COLLECTION_PAYOUT_BALANCES);
+  if (!coll_pub) {
+    ERROR_PRINT("compute_payouts_due: get_collection '%s.%s' failed", DATABASE_NAME, DB_COLLECTION_PAYOUT_BALANCES);
+    rc = XCASH_ERROR;
+    goto done;
   }
 
-  /* floor split using 128-bit intermediate */
   uint64_t base_sum = 0;
   for (size_t k = 0; k < entries_count; ++k) {
-    WARNING_PRINT("out[%zu]: %s -> %" PRIu64, k, parsed[k].a, parsed[k].v);
+    const char* addr = parsed[k].a;
     uint64_t pay = (uint64_t)(((__uint128_t)sum_atomic * parsed[k].v) / total_delegate_votes);
-    payout_for_address[k] = pay;
 
     if (UINT64_MAX - base_sum < pay) {
-      free(payout_for_address);
       ERROR_PRINT("payout accumulation overflow");
-      return XCASH_ERROR;
+      rc = XCASH_ERROR;
+      goto done;
     }
     base_sum += pay;
+
+    if (pay == 0) continue;
+
+    bson_t q, u, opts, inc, set;
+    bson_error_t err;
+
+    bson_init(&q);
+    BSON_APPEND_UTF8(&q, "_id", addr);
+
+    bson_init(&u);
+    BSON_APPEND_DOCUMENT_BEGIN(&u, "$inc", &inc);
+    BSON_APPEND_INT64(&inc, "pending_atomic", (int64_t)pay);
+    bson_append_document_end(&u, &inc);
+
+    BSON_APPEND_DOCUMENT_BEGIN(&u, "$set", &set);
+    BSON_APPEND_DATE_TIME(&set, "updated_at", (int64_t)time(NULL) * 1000);
+    bson_append_document_end(&u, &set);
+
+    bson_init(&opts);
+    BSON_APPEND_BOOL(&opts, "upsert", true);
+
+    bool ok = mongoc_collection_update_one(coll_pub, &q, &u, &opts, NULL, &err);
+
+    bson_destroy(&opts);
+    bson_destroy(&u);
+    bson_destroy(&q);
+
+    if (!ok) {
+      ERROR_PRINT("public_addresses upsert failed for %s: %s", addr, err.message);
+      rc = XCASH_ERROR;
+      goto done;
+    }
   }
 
-  /* ... use payout_for_address[] ... */
+  {
+    uint64_t leftover = sum_atomic - base_sum; // OK if >0: you chose not to pay leftovers
+    DEBUG_PRINT("leftover (not paid) = %" PRIu64, leftover);
+  }
 
-  free(payout_for_address);
+  /* ---- Mark eligible found_blocks as processed ---- */
+  {
+    coll_blocks = mongoc_client_get_collection(client, DATABASE_NAME, DB_COLLECTION_BLOCKS_FOUND);
+    if (!coll_blocks) {
+      ERROR_PRINT("finalize: get_collection '%s.%s' failed", DATABASE_NAME, DB_COLLECTION_BLOCKS_FOUND);
+      rc = XCASH_ERROR;
+      goto done;
+    }
 
+    bson_t filter;
+    bson_init(&filter);
+    bson_t lt;
+    BSON_APPEND_DOCUMENT_BEGIN(&filter, "block_height", &lt);
+    BSON_APPEND_INT64(&lt, "$lt", (int64_t)in_block_height);
+    bson_append_document_end(&filter, &lt);
+    BSON_APPEND_BOOL(&filter, "processed", false);
 
-cleanup:
+    bson_t update;
+    bson_init(&update);
+    bson_t set;
+    BSON_APPEND_DOCUMENT_BEGIN(&update, "$set", &set);
+    BSON_APPEND_BOOL(&set, "processed", true);
+    bson_append_document_end(&update, &set);
+
+    bson_t reply;
+    bson_init(&reply);
+    bson_error_t err;
+    bool ok = mongoc_collection_update_many(coll_blocks, &filter, &update, NULL, &reply, &err);
+    if (!ok) {
+      ERROR_PRINT("finalize: update_many failed: %s", err.message);
+      rc = XCASH_ERROR;
+    } else {
+      bson_iter_t it;
+      int64_t n = 0;
+      if (bson_iter_init_find(&it, &reply, "modifiedCount") && BSON_ITER_HOLDS_INT32(&it))
+        n = bson_iter_int32(&it);
+      else if (bson_iter_init_find(&it, &reply, "nModified") && BSON_ITER_HOLDS_INT32(&it))
+        n = bson_iter_int32(&it);
+      WARNING_PRINT("finalize: marked %" PRIi64 " found_blocks as processed", n);
+    }
+
+    bson_destroy(&reply);
+    bson_destroy(&update);
+    bson_destroy(&filter);
+    mongoc_collection_destroy(coll_blocks);
+    coll_blocks = NULL;
+  }
+
+done:
+  if (coll_pub) mongoc_collection_destroy(coll_pub);
   if (cur) mongoc_cursor_destroy(cur);
   if (pipeline) bson_destroy(pipeline);
-  if (coll) mongoc_collection_destroy(coll);
+  if (coll_blocks) mongoc_collection_destroy(coll_blocks);
   if (client) mongoc_client_pool_push(database_client_thread_pool, client);
   return rc;
 }
