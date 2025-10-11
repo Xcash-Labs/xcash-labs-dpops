@@ -11,6 +11,7 @@
 #include "macro_functions.h"
 #include "string_functions.h"
 #include "network_functions.h"
+#include "network_wallet_functions.h"
 
 int count_documents_in_collection(const char* DATABASE, const char* COLLECTION, const char* DATA);
 int count_all_documents_in_collection(const char* DATABASE, const char* COLLECTION);
