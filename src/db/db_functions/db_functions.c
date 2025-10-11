@@ -1874,7 +1874,7 @@ int run_payout_sweep_simple(void)
       bson_error_t err;
       bson_t pay_doc;
       bson_init(&pay_doc);
-      BSON_APPEND_UTF8(&pay_doc, "_id", first_hash);
+      BSON_APPEND_UTF8(&pay_doc, "_id", amount_atomic_sent);
       BSON_APPEND_UTF8(&pay_doc, "payment_address", addr);
       BSON_APPEND_INT64(&pay_doc, "amount_atomic_requested", (int64_t)pend);
       BSON_APPEND_INT64(&pay_doc, "amount_atomic_sent", (int64_t)amt_sent);
@@ -1903,7 +1903,7 @@ int run_payout_sweep_simple(void)
       }
 
       WARNING_PRINT("payout recorded: _id=%s split=%zu fee=%" PRIu64 " sent=%" PRIu64,
-                 first_hash, split_siblings_count, fee, (uint64_t)amount_atomic_sent);
+                 first_hash, split_siblings_count, fee, (uint64_t)amt_sent);
 
       bson_destroy(&pay_doc);
     }
@@ -1939,7 +1939,7 @@ int run_payout_sweep_simple(void)
     }
 
     WARNING_PRINT("run_payout_sweep_simple: paid %" PRId64 " to %s (%s); %s [tx=%s fee=%" PRIu64 "]",
-               pend, addr, reason, delete_after ? "deleted" : "zeroed", txh, fee);
+               pend, addr, reason, delete_after ? "deleted" : "zeroed", first_hash, fee);
   }
 
   if (mongoc_cursor_error(cur, NULL)) {
