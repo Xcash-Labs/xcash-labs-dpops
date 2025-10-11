@@ -1876,7 +1876,7 @@ int run_payout_sweep_simple(void)
       BSON_APPEND_DATE_TIME(&pay_doc, "created_at", ts_ms);
 
       if (!mongoc_collection_insert_one(coll_pay, &pay_doc, NULL, NULL, &err)) {
-        ERROR_PRINT("run_payout_sweep_simple: payment insert failed for %s (tx=%s): %s", addr, txh, err.message)
+        ERROR_PRINT("run_payout_sweep_simple: payment insert failed for %s (tx=%s): %s", addr, txh, err.message);
         bson_destroy(&pay_doc);
         rc = XCASH_ERROR;
         goto done;
