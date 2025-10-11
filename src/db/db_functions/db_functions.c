@@ -1768,7 +1768,7 @@ bool run_payout_sweep_simple(void)
   if (!coll) {
     ERROR_PRINT("get_collection %s failed", DB_COLLECTION_PAYOUT_BALANCES);
     bson_destroy(&query); bson_destroy(&opts); bson_destroy(&proj);
-    mongoc_client_pool_push(pool, client);
+    mongoc_client_pool_push(database_client_thread_pool, client);
     return false;
   }
 
@@ -1848,7 +1848,7 @@ bool run_payout_sweep_simple(void)
 
   mongoc_cursor_destroy(cur);
   mongoc_collection_destroy(coll);
-  mongoc_client_pool_push(pool, client);
+  mongoc_client_pool_push(database_client_thread_pool, client);
 
   INFO_PRINT("Sweep simple done. processed=%zu ok=%zu failed=%zu", processed, ok_count, fail_count);
   return fail_count == 0;
