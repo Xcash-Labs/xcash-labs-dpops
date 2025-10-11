@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <bson/bson.h>
+#include <math.h>
 #include "config.h"
 #include "globals.h"
 #include "structures.h"
