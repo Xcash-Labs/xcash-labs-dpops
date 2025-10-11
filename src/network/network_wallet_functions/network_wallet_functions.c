@@ -196,7 +196,8 @@ Notes:
       SMALL_BUFFER_SIZE
       INFO_PRINT / ERROR_PRINT macros
 ---------------------------------------------------------------------------------------------------------*/
-int wallet_payout_send(const char* addr, int64_t amount_atomic, const char* reason)
+int wallet_payout_send(const char* addr, int64_t amount_atomic, const char* reason, char* tx_hash_out, size_t tx_hash_out_len, uint64_t* fee_out, 
+  int64_t* created_at_ms_out, uint64_t* amount_sent_out)
 {
   if (!addr || addr[0] == '\0') {
     ERROR_PRINT("wallet_payout_send: invalid address");
@@ -207,14 +208,10 @@ int wallet_payout_send(const char* addr, int64_t amount_atomic, const char* reas
     return XCASH_ERROR;
   }
 
-  // Static headers
   static const char* HTTP_HEADERS[] = { "Content-Type: application/json", "Accept: application/json" };
   static const size_t HTTP_HEADERS_LENGTH = 2;
 
-  // Build request payload:
-  // - Single destination
-  // - Fee taken from the only destination: subtract_fee_from_outputs:[0]
-  // - priority:0, get_tx_key:true (harmless; useful for audit)
+  // Build wallet-rpc request: single dest, fee taken from output, no tx_key
   char request[SMALL_BUFFER_SIZE] = {0};
   int n = snprintf(request, sizeof(request),
     "{"
@@ -223,7 +220,7 @@ int wallet_payout_send(const char* addr, int64_t amount_atomic, const char* reas
         "\"destinations\":[{\"amount\":%" PRId64 ",\"address\":\"%s\"}],"
         "\"account_index\":0,"
         "\"priority\":0,"
-        "\"get_tx_key\":true,"
+        "\"get_tx_key\":false,"
         "\"subtract_fee_from_outputs\":[0]"
       "}"
     "}",
@@ -234,7 +231,7 @@ int wallet_payout_send(const char* addr, int64_t amount_atomic, const char* reas
     return XCASH_ERROR;
   }
 
-  // Send
+  // Send request
   char response[SMALL_BUFFER_SIZE] = {0};
   if (send_http_request(response, sizeof(response),
                         XCASH_WALLET_IP, "/json_rpc", XCASH_WALLET_PORT, "POST",
@@ -244,33 +241,83 @@ int wallet_payout_send(const char* addr, int64_t amount_atomic, const char* reas
     return XCASH_ERROR;
   }
 
-  // Quick error check: many wallet-rpc errors include "error.code" / "error.message"
+  // Wallet RPC error?
   char err_code_buf[32] = {0};
   if (parse_json_data(response, "error.code", err_code_buf, sizeof(err_code_buf)) != 0) {
     char err_msg_buf[256] = {0};
     parse_json_data(response, "error.message", err_msg_buf, sizeof(err_msg_buf)); // best-effort
-    ERROR_PRINT("wallet_payout_send: RPC error code=%s msg=%s", err_code_buf,
-                err_msg_buf[0] ? err_msg_buf : "(none)");
+    ERROR_PRINT("wallet_payout_send: RPC error code=%s msg=%s",
+                err_code_buf, err_msg_buf[0] ? err_msg_buf : "(none)");
     return XCASH_ERROR;
   }
 
-  // Parse success fields (best-effort)
-  char tx_hash[129] = {0};        // 64 hex chars + safety
-  char fee_str[64]  = {0};
+  // Required fields
+  char tx_hash[TRANSACTION_HASH_LENGTH + 1] = {0};   // 64 hex + NUL
+  char fee_str[64] = {0};
+  if (parse_json_data(response, "result.tx_hash", tx_hash, sizeof(tx_hash)) == 0 || tx_hash[0] == '\0') {
+    ERROR_PRINT("wallet_payout_send: missing result.tx_hash");
+    return XCASH_ERROR;
+  }
+  if (parse_json_data(response, "result.fee", fee_str, sizeof(fee_str)) == 0) {
+    ERROR_PRINT("wallet_payout_send: missing result.fee");
+    return XCASH_ERROR;
+  }
 
-  parse_json_data(response, "result.tx_hash", tx_hash, sizeof(tx_hash));   // optional
-  parse_json_data(response, "result.fee",     fee_str, sizeof(fee_str));   // optional
+  // Convert fee to integer
+  errno = 0;
+  char* endp = NULL;
+  unsigned long long fee_u = strtoull(fee_str, &endp, 10);
+  if (errno || endp == fee_str || *endp != '\0') {
+    ERROR_PRINT("wallet_payout_send: bad fee '%s'", fee_str);
+    return XCASH_ERROR;
+  }
 
-  // Log success
-  if (fee_str[0]) {
-    INFO_PRINT("[payout] %s -> %s amount=%" PRId64 " (atomic) fee=%s tx=%s reason=%s",
-               "account_index=0", addr, amount_atomic, fee_str,
-               tx_hash[0] ? tx_hash : "(unknown)",
+  // Optional: amounts (for precise net)
+  uint64_t amt_total = 0, amt_dest0 = 0;
+  char amt_total_str[64] = {0};
+  char amt_dest0_str[64] = {0};
+
+  // Per-destination (index 0) — use this when present (post-fee with subtract_fee_from_outputs)
+  if (parse_json_data(response, "result.amounts_by_dest.amounts[0]", amt_dest0_str, sizeof(amt_dest0_str)) != 0) {
+    errno = 0; endp = NULL;
+    unsigned long long v = strtoull(amt_dest0_str, &endp, 10);
+    if (!errno && endp && *endp == '\0') amt_dest0 = (uint64_t)v;
+  }
+  // Total (sum of dests)
+  if (parse_json_data(response, "result.amount", amt_total_str, sizeof(amt_total_str)) != 0) {
+    errno = 0; endp = NULL;
+    unsigned long long v = strtoull(amt_total_str, &endp, 10);
+    if (!errno && endp && *endp == '\0') amt_total = (uint64_t)v;
+  }
+
+  // Timestamp
+  int64_t created_at_ms = (int64_t)time(NULL) * 1000;
+
+  // Outs
+  if (tx_hash_out && tx_hash_out_len) snprintf(tx_hash_out, tx_hash_out_len, "%s", tx_hash);
+  if (fee_out) *fee_out = (uint64_t)fee_u;
+  if (created_at_ms_out) *created_at_ms_out = created_at_ms;
+  if (amount_sent_out) {
+    if (amt_dest0)      *amount_sent_out = amt_dest0;
+    else if (amt_total) *amount_sent_out = amt_total;
+    // else leave unchanged if neither is present
+  }
+
+  // Log with best available amount info
+  if (amt_dest0) {
+    INFO_PRINT("[payout] acct=0 -> %s req=%" PRId64 " sent(dest0)=%" PRIu64
+               " fee=%" PRIu64 " tx=%s reason=%s",
+               addr, amount_atomic, amt_dest0, (uint64_t)fee_u, tx_hash,
+               (reason && reason[0]) ? reason : "(n/a)");
+  } else if (amt_total) {
+    INFO_PRINT("[payout] acct=0 -> %s req=%" PRId64 " sent(total)=%" PRIu64
+               " fee=%" PRIu64 " tx=%s reason=%s",
+               addr, amount_atomic, amt_total, (uint64_t)fee_u, tx_hash,
                (reason && reason[0]) ? reason : "(n/a)");
   } else {
-    INFO_PRINT("[payout] %s -> %s amount=%" PRId64 " (atomic) tx=%s reason=%s",
-               "account_index=0", addr, amount_atomic,
-               tx_hash[0] ? tx_hash : "(unknown)",
+    INFO_PRINT("[payout] acct=0 -> %s req=%" PRId64
+               " fee=%" PRIu64 " tx=%s reason=%s",
+               addr, amount_atomic, (uint64_t)fee_u, tx_hash,
                (reason && reason[0]) ? reason : "(n/a)");
   }
 

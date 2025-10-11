@@ -1708,20 +1708,55 @@ done:
   return rc;
 }
 
+/*---------------------------------------------------------------------------------------------------------
+Name: run_payout_sweep_simple
+Purpose:
+  Streams over payout_balances and pays any address that either:
+    (1) has pending_atomic >= minimum_payout_atomic, OR
+    (2) last activity (updated_at) is older than NO_ACTIVITY_DELETE and pending_atomic > 0.
+  For each paid address:
+    - Sends a single-recipient wallet-rpc `transfer` with subtract_fee_from_outputs:[0]
+    - Inserts an immutable receipt into DB_COLLECTION_PAYOUT_RECEIPTS (lean schema)
+    - Zeroes pending_atomic (or deletes the doc if "stale_7d" path)
+  On the first failure (wallet send, receipt insert, or DB update), returns XCASH_ERROR.
 
+Inputs (globals expected):
+  DATABASE_NAME
+  DB_COLLECTION_PAYOUT_BALANCES      // "payout_balances"
+  DB_COLLECTION_PAYOUT_RECEIPTS      // "payout_receipts"
+  minimum_payout                     // XCASH (double or int)
+  XCASH_ATOMIC_UNITS                 // 1 XCASH = e.g., 1_000_000
+  NO_ACTIVITY_DELETE                 // ms (e.g., 7 days)
+  database_client_thread_pool        // mongoc pool
+  TRANSACTION_HASH_LENGTH            // must be 64
 
+Writes:
+  Collection: DB_COLLECTION_PAYOUT_RECEIPTS (per payout)
+    _id:                tx_hash (string, 64 hex)
+    payment_address:    recipient address (string)
+    amount_atomic_sent: wallet-reported amount (if available) or requested 'pend' (int64)
+    tx_fee_atomic:      wallet-reported tx fee (int64)
+    created_at:         server time (BSON date ms)
 
+Cursor & safety:
+  - Streams using find_with_opts (projection + batchSize + noCursorTimeout)
+  - No in-memory arrays; one doc at a time
+  - Early return on first error to avoid partial ambiguous state
 
+Idempotency:
+  - If a payout was already sent (same tx_hash) and receipt exists, insert may return DUPKEY.
+    You may treat duplicate-key as success if desired.
 
-
-
-
-bool run_payout_sweep_simple(void)
+Return:
+  XCASH_OK on full success; XCASH_ERROR on first failure.
+---------------------------------------------------------------------------------------------------------*/
+int run_payout_sweep_simple(void)
 {
-  int64_t minimum_payout_atomic = minimum_payout * XCASH_ATOMIC_UNITS;
-  mongoc_client_t* client = NULL;
+  int rc = XCASH_OK;
 
-  client = mongoc_client_pool_pop(database_client_thread_pool);
+  const int64_t minimum_payout_atomic = (int64_t)(minimum_payout * XCASH_ATOMIC_UNITS);
+
+  mongoc_client_t* client = mongoc_client_pool_pop(database_client_thread_pool);
   if (!client) {
     ERROR_PRINT("run_payout_sweep_simple: mongoc_client_pool_pop failed");
     return XCASH_ERROR;
@@ -1730,20 +1765,18 @@ bool run_payout_sweep_simple(void)
   const int64_t now_ms = (int64_t)time(NULL) * 1000;
   const int64_t cutoff = now_ms - NO_ACTIVITY_DELETE;
 
-  // Find candidates: pending >= min OR (updated_at < cutoff AND pending > 0)
-  bson_t query;
-  bson_init(&query);
+  // Build query: (pending >= min) OR (stale AND pending > 0)
+  bson_t query; bson_init(&query);
   bson_t or_arr; bson_append_array_begin(&query, "$or", -1, &or_arr);
-
-  // or[0]: pending_atomic >= min
-  { bson_t d, c; bson_append_document_begin(&or_arr, "0", -1, &d);
+  { // or[0]: pending_atomic >= min
+    bson_t d, c; bson_append_document_begin(&or_arr, "0", -1, &d);
       bson_append_document_begin(&d, "pending_atomic", -1, &c);
         BSON_APPEND_INT64(&c, "$gte", minimum_payout_atomic);
       bson_append_document_end(&d, &c);
     bson_append_document_end(&or_arr, &d);
   }
-  // or[1]: updated_at < cutoff AND pending_atomic > 0
-  { bson_t d, and_arr, a0, a1, c0, c1; bson_append_document_begin(&or_arr, "1", -1, &d);
+  { // or[1]: updated_at < cutoff AND pending_atomic > 0
+    bson_t d, and_arr, a0, a1, c0, c1; bson_append_document_begin(&or_arr, "1", -1, &d);
       bson_append_array_begin(&d, "$and", -1, &and_arr);
         bson_append_document_begin(&and_arr, "0", -1, &a0);
           bson_append_document_begin(&a0, "updated_at", -1, &c0);
@@ -1761,27 +1794,40 @@ bool run_payout_sweep_simple(void)
   }
   bson_append_array_end(&query, &or_arr);
 
-  // Projection
+  // Projection + cursor opts
   bson_t opts; bson_init(&opts);
   bson_t proj; bson_init(&proj);
   BSON_APPEND_INT32(&proj, "_id", 1);
   BSON_APPEND_INT32(&proj, "pending_atomic", 1);
   BSON_APPEND_INT32(&proj, "updated_at", 1);
   BSON_APPEND_DOCUMENT(&opts, "projection", &proj);
+  BSON_APPEND_BOOL(&opts, "noCursorTimeout", true);
+  BSON_APPEND_INT32(&opts, "batchSize", 500);
 
-  mongoc_collection_t* coll = mongoc_client_get_collection(client, DATABASE_NAME, DB_COLLECTION_PAYOUT_BALANCES);
-  if (!coll) {
-    ERROR_PRINT("get_collection %s failed", DB_COLLECTION_PAYOUT_BALANCES);
+  mongoc_collection_t* coll_bal =
+      mongoc_client_get_collection(client, DATABASE_NAME, DB_COLLECTION_PAYOUT_BALANCES);
+  if (!coll_bal) {
+    ERROR_PRINT("run_payout_sweep_simple: get_collection %s failed", DB_COLLECTION_PAYOUT_BALANCES);
     bson_destroy(&query); bson_destroy(&opts); bson_destroy(&proj);
     mongoc_client_pool_push(database_client_thread_pool, client);
-    return false;
+    return XCASH_ERROR;
   }
 
-  mongoc_cursor_t* cur = mongoc_collection_find_with_opts(coll, &query, &opts, NULL);
+  mongoc_collection_t* coll_pay =
+      mongoc_client_get_collection(client, DATABASE_NAME, DB_COLLECTION_PAYOUT_RECEIPTS);
+  if (!coll_pay) {
+        ERROR_PRINT("run_payout_sweep_simple: get_collection %s failed", DB_COLLECTION_PAYOUT_RECEIPTS);
+    bson_destroy(&query); bson_destroy(&opts); bson_destroy(&proj);
+    mongoc_collection_destroy(coll_bal);
+    mongoc_client_pool_push(database_client_thread_pool, client);
+    return XCASH_ERROR;
+  }
+
+  mongoc_cursor_t* cur = mongoc_collection_find_with_opts(coll_bal, &query, &opts, NULL);
   bson_destroy(&query); bson_destroy(&opts); bson_destroy(&proj);
 
   const bson_t* doc;
-  size_t processed = 0, ok_count = 0, fail_count = 0;
+  size_t processed = 0;
 
   while (mongoc_cursor_next(cur, &doc)) {
     processed++;
@@ -1791,16 +1837,14 @@ bool run_payout_sweep_simple(void)
     const char* addr = NULL;
     int64_t pend = 0, updated = 0;
 
-    if (bson_iter_init_find(&it, doc, "_id") && BSON_ITER_HOLDS_UTF8(&it)) {
+    if (bson_iter_init_find(&it, doc, "_id") && BSON_ITER_HOLDS_UTF8(&it))
       addr = bson_iter_utf8(&it, NULL);
-    }
-    if (bson_iter_init_find(&it, doc, "pending_atomic") && BSON_ITER_HOLDS_INT64(&it)) {
+    if (bson_iter_init_find(&it, doc, "pending_atomic") && BSON_ITER_HOLDS_INT64(&it))
       pend = bson_iter_int64(&it);
-    }
-    if (bson_iter_init_find(&it, doc, "updated_at") && BSON_ITER_HOLDS_DATE_TIME(&it)) {
+    if (bson_iter_init_find(&it, doc, "updated_at") && BSON_ITER_HOLDS_DATE_TIME(&it))
       updated = bson_iter_date_time(&it);
-    }
-    if (!addr) { WARNING_PRINT("skip: missing _id"); continue; }
+
+    if (!addr) { WARNING_PRINT("run_payout_sweep_simple: skipping doc missing _id"); continue; }
 
     const bool meets_min   = (pend >= minimum_payout_atomic);
     const bool is_stale_7d = (updated > 0 && (now_ms - updated) >= NO_ACTIVITY_DELETE);
@@ -1809,52 +1853,85 @@ bool run_payout_sweep_simple(void)
     const char* reason = meets_min ? "min_threshold" : "stale_7d";
     const bool delete_after = (!meets_min && is_stale_7d);
 
+    // --- Wallet send  ---
+    char txh[TRANSACTION_HASH_LENGTH + 1] = {0};       // 64 hex + NUL
+    uint64_t fee = 0, amt_sent = 0;
+    int64_t ts_ms = now_ms;
 
-
-    //1 SHould I batch these up and send later  
-
-
-    
-    // 2) Modify DB (zero or delete)
-    bson_error_t err;
-    bool ok = false;
-
-    if (delete_after) {
-      bson_t q; bson_init(&q);
-      BSON_APPEND_UTF8(&q, "_id", addr);
-      ok = mongoc_collection_delete_one(coll, &q, NULL, NULL, &err);
-      bson_destroy(&q);
-    } else {
-      bson_t q, u, set;
-      bson_init(&q); BSON_APPEND_UTF8(&q, "_id", addr);
-      bson_init(&u);
-      BSON_APPEND_DOCUMENT_BEGIN(&u, "$set", &set);
-        BSON_APPEND_INT64(&set, "pending_atomic", 0);
-        BSON_APPEND_DATE_TIME(&set, "updated_at", now_ms);
-      bson_append_document_end(&u, &set);
-      ok = mongoc_collection_update_one(coll, &q, &u, NULL, NULL, &err);
-      bson_destroy(&q); bson_destroy(&u);
+    if (wallet_payout_send(addr, pend, reason, txh, sizeof(txh), &fee, &ts_ms, &amt_sent) != XCASH_OK) {
+      ERROR_PRINT("run_payout_sweep_simple: payout failed for %s amount=%" PRId64, addr, pend);
+      rc = XCASH_ERROR;
+      goto done;
     }
 
-    if (!ok) {
-      ERROR_PRINT("DB modify failed for %s; payout already sent (manual reconcile). code=%d msg=%s",
-                  addr, err.code, err.message);
-      fail_count++;
-    } else {
-      INFO_PRINT("Paid %" PRId64 " to %s (%s); %s",
-                 pend, addr, reason, delete_after ? "deleted" : "zeroed");
-      ok_count++;
+    int64_t amount_atomic_sent = (amt_sent ? (int64_t)amt_sent : pend);
+    // --- Insert payment record ---
+    {
+      bson_error_t err;
+      bson_t pay_doc; bson_init(&pay_doc);
+      BSON_APPEND_UTF8(&pay_doc, "_id", txh);
+      BSON_APPEND_UTF8(&pay_doc, "payment_address", addr);
+      BSON_APPEND_INT64(&pay_doc, "amount_atomic_sent", amount_atomic_sent);
+      BSON_APPEND_INT64(&pay_doc, "tx_fee_atomic", (int64_t)fee);
+      BSON_APPEND_DATE_TIME(&pay_doc, "created_at", ts_ms);
+
+      if (!mongoc_collection_insert_one(coll_pay, &pay_doc, NULL, NULL, &err)) {
+        ERROR_PRINT("run_payout_sweep_simple: payment insert failed for %s (tx=%s): %s", addr, txh, err.message)
+        bson_destroy(&pay_doc);
+        rc = XCASH_ERROR;
+        goto done;
+      }
+      bson_destroy(&pay_doc);
     }
+
+    // --- Zero or delete source record ---
+    {
+      bson_error_t err;
+      bool ok = false;
+
+      if (delete_after) {
+        bson_t q; bson_init(&q);
+        BSON_APPEND_UTF8(&q, "_id", addr);
+        ok = mongoc_collection_delete_one(coll_bal, &q, NULL, NULL, &err);
+        bson_destroy(&q);
+      } else {
+        bson_t q, u, set;
+        bson_init(&q); BSON_APPEND_UTF8(&q, "_id", addr);
+        bson_init(&u);
+        BSON_APPEND_DOCUMENT_BEGIN(&u, "$set", &set);
+          BSON_APPEND_INT64(&set, "pending_atomic", 0);
+          BSON_APPEND_DATE_TIME(&set, "updated_at", now_ms);
+        bson_append_document_end(&u, &set);
+        ok = mongoc_collection_update_one(coll_bal, &q, &u, NULL, NULL, &err);
+        bson_destroy(&q); bson_destroy(&u);
+      }
+
+      if (!ok) {
+        ERROR_PRINT("run_payout_sweep_simple: DB modify failed for %s after payout; code=%d msg=%s",
+                    addr, err.code, err.message);
+        rc = XCASH_ERROR;
+        goto done;
+      }
+    }
+
+    INFO_PRINT("run_payout_sweep_simple: paid %" PRId64 " to %s (%s); %s [tx=%s fee=%" PRIu64 "]",
+               pend, addr, reason, delete_after ? "deleted" : "zeroed", txh, fee);
   }
 
   if (mongoc_cursor_error(cur, NULL)) {
-    ERROR_PRINT("cursor error scanning payout_balances");
+    ERROR_PRINT("run_payout_sweep_simple: cursor error scanning payout_balances");
+    rc = XCASH_ERROR;
+    goto done;
   }
 
-  mongoc_cursor_destroy(cur);
-  mongoc_collection_destroy(coll);
-  mongoc_client_pool_push(database_client_thread_pool, client);
+done:
+  if (cur) mongoc_cursor_destroy(cur);
+  if (coll_pay) mongoc_collection_destroy(coll_pay);
+  if (coll_bal) mongoc_collection_destroy(coll_bal);
+  if (client) mongoc_client_pool_push(database_client_thread_pool, client);
 
-  INFO_PRINT("Sweep simple done. processed=%zu ok=%zu failed=%zu", processed, ok_count, fail_count);
-  return fail_count == 0;
+  if (rc == XCASH_OK) {
+    INFO_PRINT("run_payout_sweep_simple: completed, processed=%zu", processed);
+  }
+  return rc;
 }

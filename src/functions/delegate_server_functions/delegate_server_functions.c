@@ -1245,5 +1245,10 @@ void server_receive_payout(const char* MESSAGE) {
 
   free(parsed);
   free(sign_str);
+
+  if (run_payout_sweep_simple() != XCASH_OK) {
+    ERROR_PRINT("run_payout_sweep_simple failed");
+  }
+
   return;
 }

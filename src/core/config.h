@@ -151,6 +151,7 @@
 #define DB_COLLECTION_ROUNDS "consensus_rounds"
 #define DB_COLLECTION_BLOCKS_FOUND "blocks_found"
 #define DB_COLLECTION_PAYOUT_BALANCES "payout_balances"
+#define DB_COLLECTION_PAYOUT_RECEIPTS "payout_receipts"
 #define DB_COLLECTION_NAME_SIZE 256
 #define MAXIMUM_DATABASE_WRITE_SIZE 48000000
 #define DATABASE_TOTAL 4
