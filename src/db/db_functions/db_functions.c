@@ -1858,6 +1858,7 @@ int run_payout_sweep_simple(void)
     uint64_t fee = 0, amt_sent = 0;
     int64_t ts_ms = now_ms;
 
+    sleep(1);
     if (wallet_payout_send(addr, pend, reason, txh, sizeof(txh), &fee, &ts_ms, &amt_sent) != XCASH_OK) {
       ERROR_PRINT("run_payout_sweep_simple: payout failed for %s amount=%" PRId64, addr, pend);
       rc = XCASH_ERROR;
@@ -1914,7 +1915,7 @@ int run_payout_sweep_simple(void)
       }
     }
 
-    INFO_PRINT("run_payout_sweep_simple: paid %" PRId64 " to %s (%s); %s [tx=%s fee=%" PRIu64 "]",
+    WARNING_PRINT("run_payout_sweep_simple: paid %" PRId64 " to %s (%s); %s [tx=%s fee=%" PRIu64 "]",
                pend, addr, reason, delete_after ? "deleted" : "zeroed", txh, fee);
   }
 
@@ -1931,7 +1932,7 @@ done:
   if (client) mongoc_client_pool_push(database_client_thread_pool, client);
 
   if (rc == XCASH_OK) {
-    INFO_PRINT("run_payout_sweep_simple: completed, processed=%zu", processed);
+    WARNING_PRINT("run_payout_sweep_simple: completed, processed=%zu", processed);
   }
   return rc;
 }
