@@ -1539,7 +1539,12 @@ int compute_payouts_due(payout_output_t *parsed, uint64_t in_block_height, int64
   if (coll_blocks) { mongoc_collection_destroy(coll_blocks); coll_blocks = NULL; }
 
   // ---- Convert percent -> bps (clamped), then compute fee + send_total (all integer math)
-  long long bps_ll = llround(delegate_fee_percent * 100.0);  // 1% = 100 bps
+  long long bps_ll;
+  if (delegate_fee_percent >= 0.0)
+    bps_ll = (long long)(delegate_fee_percent * 100.0 + 0.5);
+  else
+    bps_ll = (long long)(delegate_fee_percent * 100.0 - 0.5);
+
   if (bps_ll < 0) bps_ll = 0;
   if (bps_ll > 10000) bps_ll = 10000;
   uint32_t bps = (uint32_t)bps_ll;
