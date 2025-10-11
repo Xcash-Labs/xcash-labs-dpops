@@ -175,29 +175,42 @@ int get_unlocked_balance(uint64_t* unlocked_balance_out)
 /*---------------------------------------------------------------------------------------------------------
 Name: wallet_payout_send
 Description:
-  Sends a payout for a single destination using monero-wallet-rpc `transfer`, with the fee
-  deducted from the destination amount (subtract_fee_from_outputs:[0]).
+  Sends a payout for a single destination using monero-wallet-rpc `transfer_split`, with the fee
+  deducted from the destination amount (subtract_fee_from_outputs:[0]). Handles multiple txs.
+
+Semantics (important):
+  - first_tx_hash_out = first transaction hash
+  - txids_out = ONLY sibling txids (2nd..N). No duplication of the first.
+  - tx_count_out = number of sibling txids stored in txids_out
+      * If only one tx is created, tx_count_out==0 and txids_out may be NULL.
 
 Parameters:
-  addr           - Destination public address (Base58)
-  amount_atomic  - Amount to send, in atomic units
-  reason         - Optional string for logging ("min_threshold" | "stale_7d" etc.)
+  addr                  - Destination public address (Base58)
+  amount_atomic         - Amount to send, in atomic units (requested amount before fee subtraction)
+  reason                - Optional string for logging ("min_threshold" | "stale_7d" etc.)
+  first_tx_hash_out     - (out) First tx hash (for quick reference; may be NULL)
+  first_tx_hash_out_len - Size of first_tx_hash_out buffer
+  fee_out               - (out) Total fee across all split transactions (may be NULL)
+  created_at_ms_out     - (out) Milliseconds since epoch when request was made (may be NULL)
+  amount_sent_out       - (out) Total amount delivered to destination (sum of all per-tx amounts) (may be NULL)
+  txids_out             - (out) Array of buffers to receive sibling txids only; each buffer must be size (TRANSACTION_HASH_LENGTH+1).
+                          May be NULL if you do not need siblings or expect only one tx.
+  txids_out_cap         - Capacity (number of elements) in txids_out. Ignored if txids_out==NULL.
+  tx_count_out          - (out) Count of sibling txids actually present (0..txids_out_cap, or 0 if only one tx)
 
 Return:
   XCASH_OK (1) on success, XCASH_ERROR (0) on failure
 
 Notes:
   - Uses account_index=0, priority=0, ring_size left to wallet default.
-  - On success, extracts and logs result.tx_hash and result.fee if present.
-  - Requires:
-      send_http_request(...)
-      parse_json_data(...)
-      XCASH_WALLET_IP, XCASH_WALLET_PORT, HTTP_TIMEOUT_SETTINGS
-      SMALL_BUFFER_SIZE
-      INFO_PRINT / ERROR_PRINT macros
+  - Aggregates result.tx_hash_list and result.fee_list.
+  - Prefers per-destination net amounts when available (with subtract_fee_from_outputs),
+    otherwise falls back to result.amount_list.
 ---------------------------------------------------------------------------------------------------------*/
-int wallet_payout_send(const char* addr, int64_t amount_atomic, const char* reason, char* tx_hash_out, size_t tx_hash_out_len, uint64_t* fee_out, 
-  int64_t* created_at_ms_out, uint64_t* amount_sent_out)
+int wallet_payout_send(const char* addr, int64_t amount_atomic, const char* reason,
+                       char* first_tx_hash_out, size_t first_tx_hash_out_len,
+                       uint64_t* fee_out, int64_t* created_at_ms_out, uint64_t* amount_sent_out,
+                       char (*txids_out)[TRANSACTION_HASH_LENGTH + 1], size_t txids_out_cap, size_t* tx_count_out)
 {
   if (!addr || addr[0] == '\0') {
     ERROR_PRINT("wallet_payout_send: invalid address");
@@ -211,16 +224,16 @@ int wallet_payout_send(const char* addr, int64_t amount_atomic, const char* reas
   static const char* HTTP_HEADERS[] = { "Content-Type: application/json", "Accept: application/json" };
   static const size_t HTTP_HEADERS_LENGTH = 2;
 
-  // Build wallet-rpc request: single dest, fee taken from output, no tx_key
+  // Build wallet-rpc request: single dest, fee taken from output, split enabled
   char request[SMALL_BUFFER_SIZE] = {0};
   int n = snprintf(request, sizeof(request),
     "{"
-      "\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"transfer\","
+      "\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"transfer_split\","
       "\"params\":{"
         "\"destinations\":[{\"amount\":%" PRId64 ",\"address\":\"%s\"}],"
         "\"account_index\":0,"
         "\"priority\":0,"
-        "\"get_tx_key\":false,"
+        "\"get_tx_keys\":false,"
         "\"subtract_fee_from_outputs\":[0]"
       "}"
     "}",
@@ -251,75 +264,126 @@ int wallet_payout_send(const char* addr, int64_t amount_atomic, const char* reas
     return XCASH_ERROR;
   }
 
-  // Required fields
-  char tx_hash[TRANSACTION_HASH_LENGTH + 1] = {0};   // 64 hex + NUL
-  char fee_str[64] = {0};
-  if (parse_json_data(response, "result.tx_hash", tx_hash, sizeof(tx_hash)) == 0 || tx_hash[0] == '\0') {
-    ERROR_PRINT("wallet_payout_send: missing result.tx_hash");
-    return XCASH_ERROR;
-  }
-  if (parse_json_data(response, "result.fee", fee_str, sizeof(fee_str)) == 0) {
-    ERROR_PRINT("wallet_payout_send: missing result.fee");
-    return XCASH_ERROR;
-  }
-
-  // Convert fee to integer
-  errno = 0;
-  char* endp = NULL;
-  unsigned long long fee_u = strtoull(fee_str, &endp, 10);
-  if (errno || endp == fee_str || *endp != '\0') {
-    ERROR_PRINT("wallet_payout_send: bad fee '%s'", fee_str);
-    return XCASH_ERROR;
-  }
-
-  // Optional: amounts (for precise net)
-  uint64_t amt_total = 0, amt_dest0 = 0;
-  char amt_total_str[64] = {0};
-  char amt_dest0_str[64] = {0};
-
-  // Per-destination (index 0) — use this when present (post-fee with subtract_fee_from_outputs)
-  if (parse_json_data(response, "result.amounts_by_dest.amounts[0]", amt_dest0_str, sizeof(amt_dest0_str)) != 0) {
-    errno = 0; endp = NULL;
-    unsigned long long v = strtoull(amt_dest0_str, &endp, 10);
-    if (!errno && endp && *endp == '\0') amt_dest0 = (uint64_t)v;
-  }
-  // Total (sum of dests)
-  if (parse_json_data(response, "result.amount", amt_total_str, sizeof(amt_total_str)) != 0) {
-    errno = 0; endp = NULL;
-    unsigned long long v = strtoull(amt_total_str, &endp, 10);
-    if (!errno && endp && *endp == '\0') amt_total = (uint64_t)v;
-  }
+  uint64_t total_fee = 0;
+  uint64_t total_sent_net = 0;
 
   // Timestamp
   int64_t created_at_ms = (int64_t)time(NULL) * 1000;
+  if (created_at_ms_out) *created_at_ms_out = created_at_ms;
+
+  const int MAX_SPLIT_TX = 128; // defensive upper bound
+
+  char first_tx_hash[TRANSACTION_HASH_LENGTH + 1] = {0};
+  size_t total_txs = 0;        // total transactions returned by wallet
+  size_t sibling_count = 0;    // how many we actually store in txids_out
+  bool overflow = false;
+
+  for (int i = 0; i < MAX_SPLIT_TX; ++i) {
+    // tx_hash_list[i]
+    char txh[TRANSACTION_HASH_LENGTH + 1] = {0};
+    char key_txhash[64] = {0};
+    snprintf(key_txhash, sizeof(key_txhash), "result.tx_hash_list[%d]", i);
+    if (parse_json_data(response, key_txhash, txh, sizeof(txh)) == 0 || txh[0] == '\0') {
+      if (i == 0) {
+        ERROR_PRINT("wallet_payout_send: missing result.tx_hash_list");
+        return XCASH_ERROR;
+      }
+      break; // no more entries
+    }
+
+    // fee_list[i]
+    char fee_str[64] = {0};
+    char key_fee[64] = {0};
+    snprintf(key_fee, sizeof(key_fee), "result.fee_list[%d]", i);
+    if (parse_json_data(response, key_fee, fee_str, sizeof(fee_str)) == 0) {
+      ERROR_PRINT("wallet_payout_send: missing result.fee_list[%d]", i);
+      return XCASH_ERROR;
+    }
+    errno = 0; char* endp = NULL;
+    unsigned long long fee_u = strtoull(fee_str, &endp, 10);
+    if (errno || endp == fee_str || *endp != '\0') {
+      ERROR_PRINT("wallet_payout_send: bad fee_list[%d] '%s'", i, fee_str);
+      return XCASH_ERROR;
+    }
+
+    // Prefer per-destination net amount if present (with subtract_fee_from_outputs)
+    uint64_t sent_net_i = 0;
+    char amt_dest_str[64] = {0};
+    char key_amt_dest[96] = {0};
+    snprintf(key_amt_dest, sizeof(key_amt_dest), "result.amounts_by_dest.amounts[%d]", i);
+    if (parse_json_data(response, key_amt_dest, amt_dest_str, sizeof(amt_dest_str)) != 0) {
+      errno = 0; endp = NULL;
+      unsigned long long v = strtoull(amt_dest_str, &endp, 10);
+      if (!errno && endp && *endp == '\0') sent_net_i = (uint64_t)v;
+    }
+    if (!sent_net_i) {
+      // Fallback to amount_list[i]
+      char amt_list_str[64] = {0};
+      char key_amt_list[64] = {0};
+      snprintf(key_amt_list, sizeof(key_amt_list), "result.amount_list[%d]", i);
+      if (parse_json_data(response, key_amt_list, amt_list_str, sizeof(amt_list_str)) != 0) {
+        errno = 0; endp = NULL;
+        unsigned long long v = strtoull(amt_list_str, &endp, 10);
+        if (!errno && endp && *endp == '\0') sent_net_i = (uint64_t)v;
+      }
+    }
+
+    // Aggregate
+    if (total_txs == 0) {
+      snprintf(first_tx_hash, sizeof(first_tx_hash), "%s", txh); // record the first
+    } else {
+      // Sibling txs start here; store only if buffer provided and capacity allows
+      if (txids_out) {
+        size_t arr_idx = total_txs - 1; // 2nd tx -> index 0, 3rd -> 1, etc.
+        if (arr_idx < txids_out_cap) {
+          snprintf(txids_out[arr_idx], TRANSACTION_HASH_LENGTH + 1, "%s", txh);
+          ++sibling_count;
+        } else {
+          overflow = true; // we know more siblings exist than capacity
+        }
+      } else {
+        // Caller didn't provide buffer; we still count siblings for tx_count_out
+        ++sibling_count;
+      }
+    }
+
+    total_fee += (uint64_t)fee_u;
+    total_sent_net += sent_net_i;
+    ++total_txs;
+
+    // Per-tx log
+    WARNING_PRINT("[payout/split #%zu] acct=0 -> %s req=%" PRId64 " sent=%" PRIu64
+                  " fee=%" PRIu64 " tx=%s reason=%s",
+                  total_txs - 1, addr, amount_atomic, sent_net_i, (uint64_t)fee_u, txh,
+                  (reason && reason[0]) ? reason : "(n/a)");
+  }
+
+  // Capacity check: if overflow, report exact sibling total and fail (so caller can resize)
+  if (overflow && txids_out) {
+    if (tx_count_out) *tx_count_out = sibling_count; // total siblings present (even though truncated)
+    ERROR_PRINT("wallet_payout_send: txids_out capacity too small (siblings=%zu, cap=%zu)", sibling_count, txids_out_cap);
+    // still set first_tx_hash_out for caller’s record
+    if (first_tx_hash_out && first_tx_hash_out_len)
+      snprintf(first_tx_hash_out, first_tx_hash_out_len, "%s", first_tx_hash);
+    if (fee_out) *fee_out = total_fee;
+    if (amount_sent_out) *amount_sent_out = total_sent_net;
+    // created_at_ms_out already set
+    return XCASH_ERROR;
+  }
 
   // Outs
-  if (tx_hash_out && tx_hash_out_len) snprintf(tx_hash_out, tx_hash_out_len, "%s", tx_hash);
-  if (fee_out) *fee_out = (uint64_t)fee_u;
-  if (created_at_ms_out) *created_at_ms_out = created_at_ms;
-  if (amount_sent_out) {
-    if (amt_dest0)      *amount_sent_out = amt_dest0;
-    else if (amt_total) *amount_sent_out = amt_total;
-    // else leave unchanged if neither is present
-  }
+  if (first_tx_hash_out && first_tx_hash_out_len)
+    snprintf(first_tx_hash_out, first_tx_hash_out_len, "%s", first_tx_hash);
+  if (fee_out) *fee_out = total_fee;
+  if (amount_sent_out) *amount_sent_out = total_sent_net;
+  if (tx_count_out) *tx_count_out = sibling_count;
 
-  // Log with best available amount info
-  if (amt_dest0) {
-    INFO_PRINT("[payout] acct=0 -> %s req=%" PRId64 " sent(dest0)=%" PRIu64
-               " fee=%" PRIu64 " tx=%s reason=%s",
-               addr, amount_atomic, amt_dest0, (uint64_t)fee_u, tx_hash,
-               (reason && reason[0]) ? reason : "(n/a)");
-  } else if (amt_total) {
-    INFO_PRINT("[payout] acct=0 -> %s req=%" PRId64 " sent(total)=%" PRIu64
-               " fee=%" PRIu64 " tx=%s reason=%s",
-               addr, amount_atomic, amt_total, (uint64_t)fee_u, tx_hash,
-               (reason && reason[0]) ? reason : "(n/a)");
-  } else {
-    INFO_PRINT("[payout] acct=0 -> %s req=%" PRId64
-               " fee=%" PRIu64 " tx=%s reason=%s",
-               addr, amount_atomic, (uint64_t)fee_u, tx_hash,
-               (reason && reason[0]) ? reason : "(n/a)");
-  }
+  // Summary log
+  WARNING_PRINT("[payout/split] acct=0 -> %s req=%" PRId64 " total_sent=%" PRIu64
+                " total_fee=%" PRIu64 " txs=%zu (siblings=%zu) first_tx=%s reason=%s",
+                addr, amount_atomic, total_sent_net, total_fee, total_txs, sibling_count,
+                first_tx_hash[0] ? first_tx_hash : "(none)",
+                (reason && reason[0]) ? reason : "(n/a)");
 
   return XCASH_OK;
 }

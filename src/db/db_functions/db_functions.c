@@ -1850,38 +1850,61 @@ int run_payout_sweep_simple(void)
     const bool is_stale_7d = (updated > 0 && (now_ms - updated) >= NO_ACTIVITY_DELETE);
     if (!meets_min && !(is_stale_7d && pend > 0)) continue;
 
-    const char* reason = meets_min ? "min_threshold" : "stale_7d";
+    const char* reason = meets_min ? "stake reward min_threshold" : "stake reward stale_7d";
     const bool delete_after = (!meets_min && is_stale_7d);
 
     // --- Wallet send  ---
-    char txh[TRANSACTION_HASH_LENGTH + 1] = {0};       // 64 hex + NUL
+    char first_hash[TRANSACTION_HASH_LENGTH + 1] = {0};
+    char split_siblings[MAX_SIBLINGS][TRANSACTION_HASH_LENGTH + 1] = {{0}};
     uint64_t fee = 0, amt_sent = 0;
-    int64_t ts_ms = now_ms;
+    int64_t ts = now_ms;
+    size_t split_siblings_count = 0;
 
     sleep(1);
-    if (wallet_payout_send(addr, pend, reason, txh, sizeof(txh), &fee, &ts_ms, &amt_sent) != XCASH_OK) {
-      ERROR_PRINT("run_payout_sweep_simple: payout failed for %s amount=%" PRId64, addr, pend);
-      rc = XCASH_ERROR;
-      goto done;
-    }
+    int send_ok = wallet_payout_send(addr, pend, reason, first_hash, sizeof(first_hash), &fee, &ts, &amt_sent,
+      split_siblings, MAX_SIBLINGS, &split_siblings_count);
+    if (send_ok == XCASH_ERROR) {
+        ERROR_PRINT("run_payout_sweep_simple: payout failed for %s amount=%" PRId64, addr, pend);
+        rc = XCASH_ERROR;
+        goto done;
+      }
 
-    int64_t amount_atomic_sent = (amt_sent ? (int64_t)amt_sent : pend);
     // --- Insert payment record ---
     {
       bson_error_t err;
-      bson_t pay_doc; bson_init(&pay_doc);
-      BSON_APPEND_UTF8(&pay_doc, "_id", txh);
+      bson_t pay_doc;
+      bson_init(&pay_doc);
+      BSON_APPEND_UTF8(&pay_doc, "_id", first_hash);
       BSON_APPEND_UTF8(&pay_doc, "payment_address", addr);
-      BSON_APPEND_INT64(&pay_doc, "amount_atomic_sent", amount_atomic_sent);
+      BSON_APPEND_INT64(&pay_doc, "amount_atomic_requested", (int64_t)pend);
+      BSON_APPEND_INT64(&pay_doc, "amount_atomic_sent", (int64_t)amt_sent);
       BSON_APPEND_INT64(&pay_doc, "tx_fee_atomic", (int64_t)fee);
-      BSON_APPEND_DATE_TIME(&pay_doc, "created_at", ts_ms);
+      BSON_APPEND_DATE_TIME(&pay_doc, "created_at", ts /* or ts_ms if that's your timestamp var */);
+      BSON_APPEND_INT32(&pay_doc, "split_count", (int32_t)split_siblings_count);  // counts for quick queries
+      // siblings array: split_tx_ids: [ "<txid2>", "<txid3>", ... ]
+      if (split_siblings_count > 0) {
+        bson_t arr;
+        bson_append_array_begin(&pay_doc, "split_tx_ids", -1, &arr);
+        for (uint32_t i = 0; i < split_siblings_count; ++i) {
+          const char* key;
+          char keybuf[16];
+          bson_uint32_to_string(i, &key, keybuf, sizeof(keybuf));  // keys: "0","1",...
+          BSON_APPEND_UTF8(&arr, key, split_siblings[i]);
+        }
+        bson_append_array_end(&pay_doc, &arr);
+      }
 
       if (!mongoc_collection_insert_one(coll_pay, &pay_doc, NULL, NULL, &err)) {
-        ERROR_PRINT("run_payout_sweep_simple: payment insert failed for %s (tx=%s): %s", addr, txh, err.message);
+        ERROR_PRINT("run_payout_sweep_simple: payment insert failed for %s (tx=%s): %s",
+                    addr, first_hash, err.message);
         bson_destroy(&pay_doc);
         rc = XCASH_ERROR;
         goto done;
       }
+
+      WARNING_PRINT("payout recorded: _id=%s split=%zu fee=%" PRIu64 " sent=%" PRIu64,
+                 first_hash, split_siblings_count, fee, (uint64_t)amount_atomic_sent);
+
       bson_destroy(&pay_doc);
     }
 
