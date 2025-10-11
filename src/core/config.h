@@ -175,7 +175,8 @@
 
 #define MAX_WAIT_FOR_BLOCK_CREATION 120
 #define DELAY_EARLY_TRANSACTIONS_MAX 3
-
+#define NO_ACTIVITY_DELETE  (7LL * 24 * 60 * 60 * 1000)
+  
 
 // ===================== XCASH DPOPS =====================
 #define BLOCK_VERIFIERS_TOTAL_AMOUNT 55
@@ -223,7 +224,7 @@
 #define XCASH_OK 1
 #define XCASH_ERROR 0
 #define BASE58_TMP_SIZE 128
-
+#define BPS_SCALE 10000ULL
 
 // ===================== Enums =====================
 typedef enum XCASH_DBS {

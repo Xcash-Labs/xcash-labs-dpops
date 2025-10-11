@@ -1486,10 +1486,10 @@ int compute_payouts_due(payout_output_t *parsed, uint64_t in_block_height, int64
     char jbuf[256];
     int n = snprintf(
         jbuf, sizeof jbuf,
-        "[{\"$match\":{\"block_height\":{\"$lt\":%" PRId64
+        "[{\"$match\":{\"block_height\":{\"$lt\":%" PRIu64
         "},\"processed\":false}},"
         "{\"$group\":{\"_id\":null,\"total\":{\"$sum\":\"$block_reward\"}}}]",
-        (int64_t)in_block_height);
+        (uint64_t)in_block_height);
     if (n < 0 || (size_t)n >= sizeof jbuf) {
       ERROR_PRINT("compute_payouts_due: pipeline JSON snprintf failed/overflow");
       rc = XCASH_ERROR;
@@ -1503,19 +1503,6 @@ int compute_payouts_due(payout_output_t *parsed, uint64_t in_block_height, int64
       rc = XCASH_ERROR;
       goto done;
     }
-  }
-
-  cur = mongoc_collection_aggregate(coll_blocks, MONGOC_QUERY_NONE, pipeline, NULL, NULL);
-  if (!cur) {
-    ERROR_PRINT("compute_payouts_due: aggregate cursor creation failed");
-    rc = XCASH_ERROR;
-    goto done;
-  }
-
-  if (!pipeline) {
-    ERROR_PRINT("compute_payouts_due: failed to build aggregation pipeline");
-    rc = XCASH_ERROR;
-    goto done;
   }
 
   cur = mongoc_collection_aggregate(coll_blocks, MONGOC_QUERY_NONE, pipeline, NULL, NULL);
@@ -1551,9 +1538,27 @@ int compute_payouts_due(payout_output_t *parsed, uint64_t in_block_height, int64
   if (pipeline) { bson_destroy(pipeline); pipeline = NULL; }
   if (coll_blocks) { mongoc_collection_destroy(coll_blocks); coll_blocks = NULL; }
 
-  /* ---- Funds cap check ---- */
+  // ---- Convert percent -> bps (clamped), then compute fee + send_total (all integer math)
+  long long bps_ll = llround(delegate_fee_percent * 100.0);  // 1% = 100 bps
+  if (bps_ll < 0) bps_ll = 0;
+  if (bps_ll > 10000) bps_ll = 10000;
+  uint32_t bps = (uint32_t)bps_ll;
+
+  // fee_atomic = round_half_up(sum * bps / 10000)
+  uint64_t fee_atomic;
+  {
+    // Use 128-bit for the product to avoid overflow: sum can be large.
+    unsigned __int128 prod = (unsigned __int128)sum * (uint64_t)bps;
+    fee_atomic = (uint64_t)((prod + (BPS_SCALE / 2)) / BPS_SCALE);
+  }
+
+  uint64_t send_total = sum - fee_atomic;
+  sum = send_total;
+
+  // ---- Funds cap check (post-fee)
   if (sum > in_unlocked_balance) {
-    ERROR_PRINT("compute_payouts_due: Not enough funds to cover payouts");
+    ERROR_PRINT("compute_payouts_due: Not enough funds (need %" PRIu64 ", have %" PRIu64 ")",
+                sum, in_unlocked_balance);
     rc = XCASH_ERROR;
     goto done;
   }
@@ -1696,4 +1701,155 @@ done:
   if (coll_blocks) mongoc_collection_destroy(coll_blocks);
   if (client) mongoc_client_pool_push(database_client_thread_pool, client);
   return rc;
+}
+
+
+
+
+
+
+
+
+
+bool run_payout_sweep_simple(void)
+{
+  int64_t minimum_payout_atomic = minimum_payout * XCASH_ATOMIC_UNITS;
+  mongoc_client_t* client = NULL;
+
+  client = mongoc_client_pool_pop(database_client_thread_pool);
+  if (!client) {
+    ERROR_PRINT("run_payout_sweep_simple: mongoc_client_pool_pop failed");
+    return XCASH_ERROR;
+  }
+
+  const int64_t now_ms = (int64_t)time(NULL) * 1000;
+  const int64_t cutoff = now_ms - NO_ACTIVITY_DELETE;
+
+  // Find candidates: pending >= min OR (updated_at < cutoff AND pending > 0)
+  bson_t query;
+  bson_init(&query);
+  bson_t or_arr; bson_append_array_begin(&query, "$or", -1, &or_arr);
+
+  // or[0]: pending_atomic >= min
+  { bson_t d, c; bson_append_document_begin(&or_arr, "0", -1, &d);
+      bson_append_document_begin(&d, "pending_atomic", -1, &c);
+        BSON_APPEND_INT64(&c, "$gte", minimum_payout_atomic);
+      bson_append_document_end(&d, &c);
+    bson_append_document_end(&or_arr, &d);
+  }
+  // or[1]: updated_at < cutoff AND pending_atomic > 0
+  { bson_t d, and_arr, a0, a1, c0, c1; bson_append_document_begin(&or_arr, "1", -1, &d);
+      bson_append_array_begin(&d, "$and", -1, &and_arr);
+        bson_append_document_begin(&and_arr, "0", -1, &a0);
+          bson_append_document_begin(&a0, "updated_at", -1, &c0);
+            BSON_APPEND_DATE_TIME(&c0, "$lt", cutoff);
+          bson_append_document_end(&a0, &c0);
+        bson_append_document_end(&and_arr, &a0);
+
+        bson_append_document_begin(&and_arr, "1", -1, &a1);
+          bson_append_document_begin(&a1, "pending_atomic", -1, &c1);
+            BSON_APPEND_INT64(&c1, "$gt", 0);
+          bson_append_document_end(&a1, &c1);
+        bson_append_document_end(&and_arr, &a1);
+      bson_append_array_end(&d, &and_arr);
+    bson_append_document_end(&or_arr, &d);
+  }
+  bson_append_array_end(&query, &or_arr);
+
+  // Projection
+  bson_t opts; bson_init(&opts);
+  bson_t proj; bson_init(&proj);
+  BSON_APPEND_INT32(&proj, "_id", 1);
+  BSON_APPEND_INT32(&proj, "pending_atomic", 1);
+  BSON_APPEND_INT32(&proj, "updated_at", 1);
+  BSON_APPEND_DOCUMENT(&opts, "projection", &proj);
+
+  mongoc_collection_t* coll = mongoc_client_get_collection(client, DATABASE_NAME, DB_COLLECTION_PAYOUT_BALANCES);
+  if (!coll) {
+    ERROR_PRINT("get_collection %s failed", DB_COLLECTION_PAYOUT_BALANCES);
+    bson_destroy(&query); bson_destroy(&opts); bson_destroy(&proj);
+    mongoc_client_pool_push(pool, client);
+    return false;
+  }
+
+  mongoc_cursor_t* cur = mongoc_collection_find_with_opts(coll, &query, &opts, NULL);
+  bson_destroy(&query); bson_destroy(&opts); bson_destroy(&proj);
+
+  const bson_t* doc;
+  size_t processed = 0, ok_count = 0, fail_count = 0;
+
+  while (mongoc_cursor_next(cur, &doc)) {
+    processed++;
+
+    // Parse fields
+    bson_iter_t it;
+    const char* addr = NULL;
+    int64_t pend = 0, updated = 0;
+
+    if (bson_iter_init_find(&it, doc, "_id") && BSON_ITER_HOLDS_UTF8(&it)) {
+      addr = bson_iter_utf8(&it, NULL);
+    }
+    if (bson_iter_init_find(&it, doc, "pending_atomic") && BSON_ITER_HOLDS_INT64(&it)) {
+      pend = bson_iter_int64(&it);
+    }
+    if (bson_iter_init_find(&it, doc, "updated_at") && BSON_ITER_HOLDS_DATE_TIME(&it)) {
+      updated = bson_iter_date_time(&it);
+    }
+    if (!addr) { WARNING_PRINT("skip: missing _id"); continue; }
+
+    const bool meets_min   = (pend >= minimum_payout_atomic);
+    const bool is_stale_7d = (updated > 0 && (now_ms - updated) >= NO_ACTIVITY_DELETE);
+    if (!meets_min && !(is_stale_7d && pend > 0)) continue;
+
+    const char* reason = meets_min ? "min_threshold" : "stale_7d";
+    const bool delete_after = (!meets_min && is_stale_7d);
+
+
+
+    //1 SHould I batch these up and send later  
+
+
+    
+    // 2) Modify DB (zero or delete)
+    bson_error_t err;
+    bool ok = false;
+
+    if (delete_after) {
+      bson_t q; bson_init(&q);
+      BSON_APPEND_UTF8(&q, "_id", addr);
+      ok = mongoc_collection_delete_one(coll, &q, NULL, NULL, &err);
+      bson_destroy(&q);
+    } else {
+      bson_t q, u, set;
+      bson_init(&q); BSON_APPEND_UTF8(&q, "_id", addr);
+      bson_init(&u);
+      BSON_APPEND_DOCUMENT_BEGIN(&u, "$set", &set);
+        BSON_APPEND_INT64(&set, "pending_atomic", 0);
+        BSON_APPEND_DATE_TIME(&set, "updated_at", now_ms);
+      bson_append_document_end(&u, &set);
+      ok = mongoc_collection_update_one(coll, &q, &u, NULL, NULL, &err);
+      bson_destroy(&q); bson_destroy(&u);
+    }
+
+    if (!ok) {
+      ERROR_PRINT("DB modify failed for %s; payout already sent (manual reconcile). code=%d msg=%s",
+                  addr, err.code, err.message);
+      fail_count++;
+    } else {
+      INFO_PRINT("Paid %" PRId64 " to %s (%s); %s",
+                 pend, addr, reason, delete_after ? "deleted" : "zeroed");
+      ok_count++;
+    }
+  }
+
+  if (mongoc_cursor_error(cur, NULL)) {
+    ERROR_PRINT("cursor error scanning payout_balances");
+  }
+
+  mongoc_cursor_destroy(cur);
+  mongoc_collection_destroy(coll);
+  mongoc_client_pool_push(pool, client);
+
+  INFO_PRINT("Sweep simple done. processed=%zu ok=%zu failed=%zu", processed, ok_count, fail_count);
+  return fail_count == 0;
 }
