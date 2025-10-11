@@ -1874,7 +1874,7 @@ int run_payout_sweep_simple(void)
       bson_error_t err;
       bson_t pay_doc;
       bson_init(&pay_doc);
-      BSON_APPEND_UTF8(&pay_doc, "_id", amount_atomic_sent);
+      BSON_APPEND_UTF8(&pay_doc, "_id", first_hash);
       BSON_APPEND_UTF8(&pay_doc, "payment_address", addr);
       BSON_APPEND_INT64(&pay_doc, "amount_atomic_requested", (int64_t)pend);
       BSON_APPEND_INT64(&pay_doc, "amount_atomic_sent", (int64_t)amt_sent);
