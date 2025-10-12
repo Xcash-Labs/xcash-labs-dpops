@@ -1,56 +1,5 @@
 #include "network_wallet_functions.h"
 
-// Helper: count items in result.tx_hash_list quickly (no allocations, tolerant of whitespace).
-// Returns: >=0 item count, or -1 on malformed/missing array.
-static int count_txids_in_response(const char* json)
-{
-  if (!json) return -1;
-  const char* p = strstr(json, "\"tx_hash_list\"");
-  if (!p) return -1;
-
-  // find '[' after key
-  p = strchr(p, '[');
-  if (!p) return -1;
-  ++p;
-
-  // skip whitespace
-  while (*p==' '||*p=='\t'||*p=='\r'||*p=='\n') ++p;
-
-  if (*p == ']') return 0; // empty array
-
-  int count = 0;
-  for (;;) {
-    while (*p==' '||*p=='\t'||*p=='\r'||*p=='\n') ++p;
-    if (*p != '\"') return -1; // expect string element
-    ++p;
-
-    // scan to closing quote (txids are hex strings; escapes not expected)
-    while (*p && *p != '\"') ++p;
-    if (*p != '\"') return -1;
-    ++count; ++p;
-
-    while (*p==' '||*p=='\t'||*p=='\r'||*p=='\n') ++p;
-    if (*p == ',') { ++p; continue; }
-    if (*p == ']') break;
-    return -1; // malformed
-  }
-  return count;
-}
-
-// Helper, quiet JSON-RPC error precheck (prevents noisy "not found" logs from parser)
-static int jsonrpc_has_error_top(const char* s)
-{
-  if (!s) return 0;
-  const char* p = strstr(s, "\"error\"");
-  if (!p) return 0;
-  p += 7;
-  while (*p==' '||*p=='\t'||*p=='\r'||*p=='\n') ++p;
-  if (*p != ':') return 0;
-  ++p;
-  while (*p==' '||*p=='\t'||*p=='\r'||*p=='\n') ++p;
-  return (*p=='{'); // top-level error object present
-}
-
 /*---------------------------------------------------------------------------------------------------------
 Name: get_public_address
 Description: Gets the public address of your wallet
@@ -223,6 +172,95 @@ int get_unlocked_balance(uint64_t* unlocked_balance_out)
   return XCASH_OK;
 }
 
+
+// --- tiny helpers to work on JSON array slices we already extracted ---
+// Expect inputs like: ["abc","def",...], numbers like: [123,456,...] (whitespace ok).
+static int count_items_in_array(const char* arr)
+{
+  if (!arr) return -1;
+  const char* p = strchr(arr, '[');
+  if (!p) return -1;
+  const char* end = strchr(p, ']');
+  if (!end) return -1;
+
+  // check empty
+  const char* q = p + 1;
+  while (q < end && (*q==' '||*q=='\t'||*q=='\r'||*q=='\n')) ++q;
+  if (q == end) return 0;
+
+  int commas = 0;
+  for (const char* s = p; s < end; ++s) if (*s == ',') ++commas;
+  return commas + 1;
+}
+
+static int extract_string_item(const char* arr, int index, char* out, size_t outlen)
+{
+  if (!arr || !out || outlen == 0 || index < 0) return -1;
+  out[0] = '\0';
+
+  const char* p = strchr(arr, '[');
+  if (!p) return -1;
+  const char* end = strchr(p, ']');
+  if (!end) return -1;
+
+  int i = 0;
+  for (const char* s = p+1; s && s < end; )
+  {
+    while (s < end && (*s==' '||*s=='\t'||*s=='\r'||*s=='\n'||*s==',')) ++s;
+    if (s >= end) break;
+    if (*s != '\"') return -1; // expect string
+    const char* start = ++s;
+    while (s < end && *s != '\"') ++s;
+    if (s >= end) return -1;
+    if (i == index) {
+      size_t len = (size_t)(s - start);
+      if (len >= outlen) len = outlen - 1;
+      memcpy(out, start, len);
+      out[len] = '\0';
+      return 0;
+    }
+    ++i;
+    ++s; // skip closing quote
+  }
+  return -1; // index OOB
+}
+
+static int extract_uint64_item(const char* arr, int index, uint64_t* out)
+{
+  if (!arr || !out || index < 0) return -1;
+  const char* p = strchr(arr, '[');
+  if (!p) return -1;
+  const char* end = strchr(p, ']');
+  if (!end) return -1;
+
+  int i = 0;
+  for (const char* s = p+1; s && s < end; )
+  {
+    while (s < end && (*s==' '||*s=='\t'||*s=='\r'||*s=='\n'||*s==',')) ++s;
+    if (s >= end) break;
+
+    // read an unsigned integer
+    const char* start = s;
+    if (*s == '+' ) ++s;  // allow leading '+'
+    if (*s < '0' || *s > '9') return -1;
+    while (s < end && *s >= '0' && *s <= '9') ++s;
+
+    if (i == index) {
+      char tmp[32] = {0};
+      size_t len = (size_t)(s - start);
+      if (len >= sizeof(tmp)) return -1;
+      memcpy(tmp, start, len); tmp[len] = '\0';
+      errno = 0; char* ep = NULL;
+      unsigned long long v = strtoull(tmp, &ep, 10);
+      if (errno || ep == tmp || *ep != '\0') return -1;
+      *out = (uint64_t)v;
+      return 0;
+    }
+    ++i;
+  }
+  return -1; // index OOB
+}
+
 /*---------------------------------------------------------------------------------------------------------
 Name: wallet_payout_send
 Description:
@@ -275,7 +313,7 @@ int wallet_payout_send(const char* addr, int64_t amount_atomic, const char* reas
   static const char* HTTP_HEADERS[] = { "Content-Type: application/json", "Accept: application/json" };
   static const size_t HTTP_HEADERS_LENGTH = 2;
 
-  // Build wallet-rpc request (single dest; fee from output; split enabled)
+  // Build request
   char request[SMALL_BUFFER_SIZE] = {0};
   int n = snprintf(request, sizeof(request),
     "{"
@@ -295,8 +333,8 @@ int wallet_payout_send(const char* addr, int64_t amount_atomic, const char* reas
     return XCASH_ERROR;
   }
 
-  // Send request
-  char response[SMALL_BUFFER_SIZE] = {0};
+  // Send
+  char response[MEDIUM_BUFFER_SIZE] = {0};
   if (send_http_request(response, sizeof(response),
                         XCASH_WALLET_IP, "/json_rpc", XCASH_WALLET_PORT, "POST",
                         HTTP_HEADERS, HTTP_HEADERS_LENGTH,
@@ -307,10 +345,9 @@ int wallet_payout_send(const char* addr, int64_t amount_atomic, const char* reas
 
   // Quiet JSON-RPC error detection
   if (jsonrpc_has_error_top(response)) {
-    char err_code_buf[32] = {0};
-    char err_msg_buf[256] = {0};
+    char err_code_buf[32] = {0}, err_msg_buf[256] = {0};
     if (parse_json_data(response, "error.code", err_code_buf, sizeof(err_code_buf)) == 0) {
-      parse_json_data(response, "error.message", err_msg_buf, sizeof(err_msg_buf)); // best-effort
+      parse_json_data(response, "error.message", err_msg_buf, sizeof(err_msg_buf));
       ERROR_PRINT("wallet_payout_send: RPC error code=%s msg=%s",
                   err_code_buf, err_msg_buf[0] ? err_msg_buf : "(none)");
     } else {
@@ -319,112 +356,104 @@ int wallet_payout_send(const char* addr, int64_t amount_atomic, const char* reas
     return XCASH_ERROR;
   }
 
-
   WARNING_PRINT("Trans=%s", response);
 
+  // Pull the three arrays once into local buffers
+  char tx_hash_list_buf[MEDIUM_BUFFER_SIZE] = {0};
+  char fee_list_buf[MEDIUM_BUFFER_SIZE] = {0};
+  char amount_list_buf[MEDIUM_BUFFER_SIZE] = {0};
 
-  // Count txs once (fast, no logging)
-  int tx_count = count_txids_in_response(response);
-  if (tx_count <= 0) {
-    ERROR_PRINT("wallet_payout_send: tx_hash_list empty or missing");
+  if (parse_json_data(response, "result.tx_hash_list", tx_hash_list_buf, sizeof(tx_hash_list_buf)) != 0) {
+    ERROR_PRINT("wallet_payout_send: tx_hash_list missing");
+    return XCASH_ERROR;
+  }
+  if (parse_json_data(response, "result.fee_list", fee_list_buf, sizeof(fee_list_buf)) != 0) {
+    ERROR_PRINT("wallet_payout_send: fee_list missing");
+    return XCASH_ERROR;
+  }
+  if (parse_json_data(response, "result.amount_list", amount_list_buf, sizeof(amount_list_buf)) != 0) {
+    ERROR_PRINT("wallet_payout_send: amount_list missing");
     return XCASH_ERROR;
   }
 
-  const int MAX_SPLIT_TX = 128; // defensive parser cap
-  int to_process = tx_count;
-  bool too_many_txs = false;
-  if (to_process > MAX_SPLIT_TX) {
-    to_process = MAX_SPLIT_TX;
-    too_many_txs = true;
+  // Count txs by commas inside tx_hash_list
+  int tx_count = count_items_in_array(tx_hash_list_buf);
+  if (tx_count <= 0) {
+    ERROR_PRINT("wallet_payout_send: tx_hash_list empty or malformed");
+    return XCASH_ERROR;
   }
 
-  uint64_t total_fee = 0;
-  uint64_t total_sent_net = 0;
+  // Defensive cap
+  const int MAX_SPLIT_TX = 128;
+  if (tx_count > MAX_SPLIT_TX) {
+    ERROR_PRINT("wallet_payout_send: too many split txs (wallet=%d, max_supported=%d)", tx_count, MAX_SPLIT_TX);
+    return XCASH_ERROR;
+  }
 
   // Timestamp
   int64_t created_at_ms = (int64_t)time(NULL) * 1000;
   if (created_at_ms_out) *created_at_ms_out = created_at_ms;
 
+  // Extract first + siblings from tx_hash_list_buf
   char first_tx_hash[TRANSACTION_HASH_LENGTH + 1] = {0};
-  size_t siblings_total = (tx_count > 0) ? (size_t)(tx_count - 1) : 0;
+  if (extract_string_item(tx_hash_list_buf, 0, first_tx_hash, sizeof(first_tx_hash)) != 0 || !first_tx_hash[0]) {
+    ERROR_PRINT("wallet_payout_send: failed to read first tx hash");
+    return XCASH_ERROR;
+  }
+
+  size_t siblings_total  = (tx_count > 1) ? (size_t)(tx_count - 1) : 0;
   size_t siblings_stored = 0;
-
-  for (int i = 0; i < to_process; ++i) {
-    // tx_hash_list[i]
-    char txh[TRANSACTION_HASH_LENGTH + 1] = {0};
-    char key_txhash[64]; snprintf(key_txhash, sizeof(key_txhash), "result.tx_hash_list[%d]", i);
-    if (parse_json_data(response, key_txhash, txh, sizeof(txh)) != 0 || txh[0] == '\0') {
-      ERROR_PRINT("wallet_payout_send: failed to read tx_hash_list[%d]", i);
-      return XCASH_ERROR;
-    }
-
-    // fee_list[i]
-    char fee_str[64] = {0};
-    char key_fee[64]; snprintf(key_fee, sizeof(key_fee), "result.fee_list[%d]", i);
-    if (parse_json_data(response, key_fee, fee_str, sizeof(fee_str)) != 0) {
-      ERROR_PRINT("wallet_payout_send: missing result.fee_list[%d]", i);
-      return XCASH_ERROR;
-    }
-    errno = 0; char* endp = NULL;
-    unsigned long long fee_u = strtoull(fee_str, &endp, 10);
-    if (errno || endp == fee_str || *endp != '\0') {
-      ERROR_PRINT("wallet_payout_send: bad fee_list[%d] '%s'", i, fee_str);
-      return XCASH_ERROR;
-    }
-
-    // amount_list[i] (net to destination for this tx)
-    uint64_t sent_net_i = 0;
-    char amt_str[64] = {0};
-    char key_amt[64]; snprintf(key_amt, sizeof(key_amt), "result.amount_list[%d]", i);
-    if (parse_json_data(response, key_amt, amt_str, sizeof(amt_str)) == 0) {
-      errno = 0; endp = NULL;
-      unsigned long long v = strtoull(amt_str, &endp, 10);
-      if (!errno && endp && *endp == '\0') sent_net_i = (uint64_t)v;
-    }
-
-    // Collect ids
-    if (i == 0) {
-      snprintf(first_tx_hash, sizeof(first_tx_hash), "%s", txh); // first
-    } else {
-      if (txids_out && siblings_stored < txids_out_cap) {
-        snprintf(txids_out[siblings_stored], TRANSACTION_HASH_LENGTH + 1, "%s", txh);
-        ++siblings_stored;
+  if (siblings_total && txids_out && txids_out_cap) {
+    int max_to_store = (int)((siblings_total < txids_out_cap) ? siblings_total : txids_out_cap);
+    for (int i = 1; i <= max_to_store; ++i) {
+      if (extract_string_item(tx_hash_list_buf, i, txids_out[siblings_stored], TRANSACTION_HASH_LENGTH + 1) != 0) {
+        ERROR_PRINT("wallet_payout_send: failed to read tx_hash_list[%d]", i);
+        return XCASH_ERROR;
       }
-      // If no buffer or buffer full, we still track the total via siblings_total
+      ++siblings_stored;
     }
+    if ((size_t)max_to_store < siblings_total) {
+      if (tx_count_out) *tx_count_out = siblings_total;
+      if (first_tx_hash_out && first_tx_hash_out_len)
+        snprintf(first_tx_hash_out, first_tx_hash_out_len, "%s", first_tx_hash);
+      ERROR_PRINT("wallet_payout_send: txids_out capacity too small (siblings_total=%zu, stored=%zu, cap=%zu)",
+                  siblings_total, siblings_stored, txids_out_cap);
+      return XCASH_ERROR;
+    }
+  }
 
-    total_fee += (uint64_t)fee_u;
-    total_sent_net += sent_net_i;
+  // Sum fees and amounts from *_list_buf
+  uint64_t total_fee = 0;
+  uint64_t total_sent_net = 0;
 
+  for (int i = 0; i < tx_count; ++i) {
+    uint64_t fee_i = 0, amt_i = 0;
+    if (extract_uint64_item(fee_list_buf, i, &fee_i) != 0) {
+      ERROR_PRINT("wallet_payout_send: bad/missing fee_list[%d]", i);
+      return XCASH_ERROR;
+    }
+    if (extract_uint64_item(amount_list_buf, i, &amt_i) != 0) {
+      ERROR_PRINT("wallet_payout_send: bad/missing amount_list[%d]", i);
+      return XCASH_ERROR;
+    }
+    total_fee      += fee_i;
+    total_sent_net += amt_i;
+
+    // Per-tx log
+    const char* txh_for_log = first_tx_hash;
+    char sibling_tmp[TRANSACTION_HASH_LENGTH + 1] = {0};
+    if (i > 0) {
+      // For logging, get the exact sibling from buffer (cheap)
+      if (extract_string_item(tx_hash_list_buf, i, sibling_tmp, sizeof(sibling_tmp)) == 0 && sibling_tmp[0]) {
+        txh_for_log = sibling_tmp;
+      } else {
+        txh_for_log = "(unknown)";
+      }
+    }
     WARNING_PRINT("[payout/split #%d] acct=0 -> %s req=%" PRId64 " sent=%" PRIu64
                   " fee=%" PRIu64 " tx=%s reason=%s",
-                  i, addr, amount_atomic, sent_net_i, (uint64_t)fee_u, txh,
+                  i, addr, amount_atomic, (uint64_t)amt_i, (uint64_t)fee_i, txh_for_log,
                   (reason && reason[0]) ? reason : "(n/a)");
-  }
-
-  // Safety: if wallet produced more txs than we processed, report & fail after setting outs
-  if (too_many_txs) {
-    if (first_tx_hash_out && first_tx_hash_out_len)
-      snprintf(first_tx_hash_out, first_tx_hash_out_len, "%s", first_tx_hash);
-    if (fee_out) *fee_out = total_fee;
-    if (amount_sent_out) *amount_sent_out = total_sent_net;
-    if (tx_count_out) *tx_count_out = siblings_total; // report total siblings from wallet
-    ERROR_PRINT("wallet_payout_send: too many split txs (wallet=%d, max_supported=%d)",
-                tx_count, MAX_SPLIT_TX);
-    return XCASH_ERROR;
-  }
-
-  // Capacity check: if caller's sibling buffer was too small, you can either fail or succeed truncated.
-  // Here we choose to FAIL to force the caller to resize (keeps auditing exact).
-  if (txids_out && siblings_stored < siblings_total) {
-    if (first_tx_hash_out && first_tx_hash_out_len)
-      snprintf(first_tx_hash_out, first_tx_hash_out_len, "%s", first_tx_hash);
-    if (fee_out) *fee_out = total_fee;
-    if (amount_sent_out) *amount_sent_out = total_sent_net;
-    if (tx_count_out) *tx_count_out = siblings_total;
-    ERROR_PRINT("wallet_payout_send: txids_out capacity too small (siblings_total=%zu, stored=%zu, cap=%zu)",
-                siblings_total, siblings_stored, txids_out_cap);
-    return XCASH_ERROR;
   }
 
   // Outs (success)
@@ -432,7 +461,7 @@ int wallet_payout_send(const char* addr, int64_t amount_atomic, const char* reas
     snprintf(first_tx_hash_out, first_tx_hash_out_len, "%s", first_tx_hash);
   if (fee_out) *fee_out = total_fee;
   if (amount_sent_out) *amount_sent_out = total_sent_net;
-  if (tx_count_out) *tx_count_out = siblings_total; // <-- total siblings (0 when only 1 tx)
+  if (tx_count_out) *tx_count_out = siblings_total; // 0 when only one tx
 
   WARNING_PRINT("[payout/split] acct=0 -> %s req=%" PRId64 " total_sent=%" PRIu64
                 " total_fee=%" PRIu64 " txs=%d (siblings=%zu, tx_count_out=%zu) first_tx=%s reason=%s",
