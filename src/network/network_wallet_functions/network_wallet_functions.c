@@ -224,7 +224,7 @@ int wallet_payout_send(const char* addr, int64_t amount_atomic, const char* reas
   static const char* HTTP_HEADERS[] = { "Content-Type: application/json", "Accept: application/json" };
   static const size_t HTTP_HEADERS_LENGTH = 2;
 
-  // Build wallet-rpc request: single dest, fee taken from output, split enabled
+  // Build wallet-rpc request
   char request[SMALL_BUFFER_SIZE] = {0};
   int n = snprintf(request, sizeof(request),
     "{"
@@ -254,13 +254,19 @@ int wallet_payout_send(const char* addr, int64_t amount_atomic, const char* reas
     return XCASH_ERROR;
   }
 
-  // Wallet RPC error?
-  char err_code_buf[32] = {0};
-  if (parse_json_data(response, "error.code", err_code_buf, sizeof(err_code_buf)) != 0) {
+  if (strstr(response, "\"error\":{") != NULL) {
+    char err_code_buf[32] = {0};
     char err_msg_buf[256] = {0};
-    parse_json_data(response, "error.message", err_msg_buf, sizeof(err_msg_buf)); // best-effort
-    ERROR_PRINT("wallet_payout_send: RPC error code=%s msg=%s",
-                err_code_buf, err_msg_buf[0] ? err_msg_buf : "(none)");
+
+    if (parse_json_data(response, "error.code", err_code_buf, sizeof(err_code_buf)) == 0) {
+      // got code; try message (best effort)
+      parse_json_data(response, "error.message", err_msg_buf, sizeof(err_msg_buf));
+      ERROR_PRINT("wallet_payout_send: RPC error code=%s msg=%s",
+                  err_code_buf, err_msg_buf[0] ? err_msg_buf : "(none)");
+    } else {
+      // fallback if structure is odd but 'error' exists
+      ERROR_PRINT("wallet_payout_send: RPC error (no code/message parsed)");
+    }
     return XCASH_ERROR;
   }
 
@@ -274,8 +280,8 @@ int wallet_payout_send(const char* addr, int64_t amount_atomic, const char* reas
   const int MAX_SPLIT_TX = 128; // defensive upper bound
 
   char first_tx_hash[TRANSACTION_HASH_LENGTH + 1] = {0};
-  size_t total_txs = 0;        // total transactions returned by wallet
-  size_t sibling_count = 0;    // how many we actually store in txids_out
+  size_t total_txs = 0;      // total transactions returned by wallet
+  size_t sibling_count = 0;  // number of siblings stored/seen
   bool overflow = false;
 
   for (int i = 0; i < MAX_SPLIT_TX; ++i) {
@@ -283,9 +289,10 @@ int wallet_payout_send(const char* addr, int64_t amount_atomic, const char* reas
     char txh[TRANSACTION_HASH_LENGTH + 1] = {0};
     char key_txhash[64] = {0};
     snprintf(key_txhash, sizeof(key_txhash), "result.tx_hash_list[%d]", i);
-    if (parse_json_data(response, key_txhash, txh, sizeof(txh)) == 0 || txh[0] == '\0') {
+
+    if (parse_json_data(response, key_txhash, txh, sizeof(txh)) != 0 || txh[0] == '\0') {
       if (i == 0) {
-        ERROR_PRINT("wallet_payout_send: missing result.tx_hash_list");
+        ERROR_PRINT("wallet_payout_send: missing result.tx_hash_list[0]");
         return XCASH_ERROR;
       }
       break; // no more entries
@@ -295,7 +302,8 @@ int wallet_payout_send(const char* addr, int64_t amount_atomic, const char* reas
     char fee_str[64] = {0};
     char key_fee[64] = {0};
     snprintf(key_fee, sizeof(key_fee), "result.fee_list[%d]", i);
-    if (parse_json_data(response, key_fee, fee_str, sizeof(fee_str)) == 0) {
+
+    if (parse_json_data(response, key_fee, fee_str, sizeof(fee_str)) != 0) {
       ERROR_PRINT("wallet_payout_send: missing result.fee_list[%d]", i);
       return XCASH_ERROR;
     }
@@ -306,43 +314,32 @@ int wallet_payout_send(const char* addr, int64_t amount_atomic, const char* reas
       return XCASH_ERROR;
     }
 
-    // Prefer per-destination net amount if present (with subtract_fee_from_outputs)
+    // Per-tx amount (net to dest)
     uint64_t sent_net_i = 0;
-    char amt_dest_str[64] = {0};
-    char key_amt_dest[96] = {0};
-    snprintf(key_amt_dest, sizeof(key_amt_dest), "result.amounts_by_dest.amounts[%d]", i);
-    if (parse_json_data(response, key_amt_dest, amt_dest_str, sizeof(amt_dest_str)) != 0) {
+    char amt_list_str[64] = {0};
+    char key_amt_list[64] = {0};
+    snprintf(key_amt_list, sizeof(key_amt_list), "result.amount_list[%d]", i);
+    if (parse_json_data(response, key_amt_list, amt_list_str, sizeof(amt_list_str)) == 0) {
       errno = 0; endp = NULL;
-      unsigned long long v = strtoull(amt_dest_str, &endp, 10);
+      unsigned long long v = strtoull(amt_list_str, &endp, 10);
       if (!errno && endp && *endp == '\0') sent_net_i = (uint64_t)v;
     }
-    if (!sent_net_i) {
-      // Fallback to amount_list[i]
-      char amt_list_str[64] = {0};
-      char key_amt_list[64] = {0};
-      snprintf(key_amt_list, sizeof(key_amt_list), "result.amount_list[%d]", i);
-      if (parse_json_data(response, key_amt_list, amt_list_str, sizeof(amt_list_str)) != 0) {
-        errno = 0; endp = NULL;
-        unsigned long long v = strtoull(amt_list_str, &endp, 10);
-        if (!errno && endp && *endp == '\0') sent_net_i = (uint64_t)v;
-      }
-    }
 
-    // Aggregate
+    // Aggregate & collect ids
     if (total_txs == 0) {
-      snprintf(first_tx_hash, sizeof(first_tx_hash), "%s", txh); // record the first
+      snprintf(first_tx_hash, sizeof(first_tx_hash), "%s", txh); // first txid
     } else {
-      // Sibling txs start here; store only if buffer provided and capacity allows
+      // siblings
       if (txids_out) {
-        size_t arr_idx = total_txs - 1; // 2nd tx -> index 0, 3rd -> 1, etc.
+        size_t arr_idx = total_txs - 1; // 2nd tx -> index 0
         if (arr_idx < txids_out_cap) {
           snprintf(txids_out[arr_idx], TRANSACTION_HASH_LENGTH + 1, "%s", txh);
           ++sibling_count;
         } else {
-          overflow = true; // we know more siblings exist than capacity
+          overflow = true;
         }
       } else {
-        // Caller didn't provide buffer; we still count siblings for tx_count_out
+        // still count siblings even if not storing
         ++sibling_count;
       }
     }
@@ -351,23 +348,21 @@ int wallet_payout_send(const char* addr, int64_t amount_atomic, const char* reas
     total_sent_net += sent_net_i;
     ++total_txs;
 
-    // Per-tx log
     WARNING_PRINT("[payout/split #%zu] acct=0 -> %s req=%" PRId64 " sent=%" PRIu64
                   " fee=%" PRIu64 " tx=%s reason=%s",
                   total_txs - 1, addr, amount_atomic, sent_net_i, (uint64_t)fee_u, txh,
                   (reason && reason[0]) ? reason : "(n/a)");
   }
 
-  // Capacity check: if overflow, report exact sibling total and fail (so caller can resize)
+  // Capacity check
   if (overflow && txids_out) {
-    if (tx_count_out) *tx_count_out = sibling_count; // total siblings present (even though truncated)
-    ERROR_PRINT("wallet_payout_send: txids_out capacity too small (siblings=%zu, cap=%zu)", sibling_count, txids_out_cap);
-    // still set first_tx_hash_out for caller’s record
+    if (tx_count_out) *tx_count_out = sibling_count;
     if (first_tx_hash_out && first_tx_hash_out_len)
       snprintf(first_tx_hash_out, first_tx_hash_out_len, "%s", first_tx_hash);
     if (fee_out) *fee_out = total_fee;
     if (amount_sent_out) *amount_sent_out = total_sent_net;
-    // created_at_ms_out already set
+    ERROR_PRINT("wallet_payout_send: txids_out capacity too small (siblings=%zu, cap=%zu)",
+                sibling_count, txids_out_cap);
     return XCASH_ERROR;
   }
 
@@ -378,10 +373,10 @@ int wallet_payout_send(const char* addr, int64_t amount_atomic, const char* reas
   if (amount_sent_out) *amount_sent_out = total_sent_net;
   if (tx_count_out) *tx_count_out = sibling_count;
 
-  // Summary log
   WARNING_PRINT("[payout/split] acct=0 -> %s req=%" PRId64 " total_sent=%" PRIu64
-                " total_fee=%" PRIu64 " txs=%zu (siblings=%zu) first_tx=%s reason=%s",
-                addr, amount_atomic, total_sent_net, total_fee, total_txs, sibling_count,
+                " total_fee=%" PRIu64 " txs=%zu (siblings=%zu, tx_count_out=%zu) first_tx=%s reason=%s",
+                addr, amount_atomic, total_sent_net, total_fee,
+                total_txs, sibling_count, (tx_count_out ? *tx_count_out : sibling_count),
                 first_tx_hash[0] ? first_tx_hash : "(none)",
                 (reason && reason[0]) ? reason : "(n/a)");
 
