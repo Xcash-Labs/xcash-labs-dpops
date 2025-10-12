@@ -18,7 +18,6 @@
 #include "VRF_functions.h"
 #include "sha256EL.h"
 #include "xcash_round.h"
-#include "blockchain_functions.h"
 
 bool generate_and_request_vrf_data_sync(char** message);
 int block_verifiers_create_block(const char* final_vote_hash_hex, uint8_t total_vote, uint8_t winning_vote);
