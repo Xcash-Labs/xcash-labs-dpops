@@ -35,7 +35,7 @@
 #define XCASH_DPOPS_IP "127.0.0.1"
 #define MAXIMUM_CONNECTIONS_IP_ADDRESS_OR_PUBLIC_ADDRESS 128
 
-/ ===================== Network Block String =====================
+// ===================== Network Block String =====================
 #define EXTRA_NONCE_TAG "02"
 #define TRANSACTION_PUBLIC_KEY_TAG "01"
 #define TRANSACTION_HASH_LENGTH 64 // The length of the transaction hash
