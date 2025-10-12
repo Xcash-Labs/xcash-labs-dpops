@@ -172,6 +172,56 @@ int get_unlocked_balance(uint64_t* unlocked_balance_out)
   return XCASH_OK;
 }
 
+// Helper, Extracts the raw JSON array for a key (e.g. key="\"tx_hash_list\"") into `out` including brackets.
+// Returns 0 on success, -1 on failure.
+static int json_extract_array(const char* json, const char* key, char* out, size_t outlen) {
+  if (!json || !key || !out || outlen == 0) return -1;
+  out[0] = '\0';
+
+  const char* p = strstr(json, key);
+  if (!p) return -1;
+
+  // move past key, find colon
+  p += strlen(key);
+  while (*p==' '||*p=='\t'||*p=='\r'||*p=='\n') ++p;
+  if (*p != ':') return -1;
+  ++p;
+
+  // skip whitespace to '['
+  while (*p==' '||*p=='\t'||*p=='\r'||*p=='\n') ++p;
+  if (*p != '[') return -1;
+
+  // copy balanced array, honoring strings/escapes
+  const char* start = p;
+  int depth = 0;
+  int in_string = 0;
+  int escaped = 0;
+
+  for (; *p; ++p) {
+    char c = *p;
+    if (in_string) {
+      if (!escaped && c == '\\') { escaped = 1; continue; }
+      if (!escaped && c == '\"') in_string = 0;
+      escaped = 0;
+    } else {
+      if (c == '\"') in_string = 1;
+      else if (c == '[') ++depth;
+      else if (c == ']') {
+        --depth;
+        if (depth == 0) { // include this closing ']'
+          size_t len = (size_t)((p - start) + 1);
+          if (len >= outlen) len = outlen - 1;
+          memcpy(out, start, len);
+          out[len] = '\0';
+          return 0;
+        }
+      }
+      // braces {} can appear inside but don't affect [] depth
+    }
+  }
+  return -1;
+}
+
 // --- tiny helpers to work on JSON array slices we already extracted ---
 // Expect inputs like: ["abc","def",...], numbers like: [123,456,...] (whitespace ok).
 static int count_items_in_array(const char* arr)
@@ -371,20 +421,20 @@ int wallet_payout_send(const char* addr, int64_t amount_atomic, const char* reas
 
   WARNING_PRINT("Trans=%s", response);
 
-  // Pull the three arrays once into local buffers
+  // Pull the three arrays once into local buffers, parse_json_data does not work on arrays
   char tx_hash_list_buf[MEDIUM_BUFFER_SIZE] = {0};
   char fee_list_buf[MEDIUM_BUFFER_SIZE] = {0};
   char amount_list_buf[MEDIUM_BUFFER_SIZE] = {0};
 
-  if (parse_json_data(response, "result.tx_hash_list", tx_hash_list_buf, sizeof(tx_hash_list_buf)) != 0) {
+  if (json_extract_array(response, "\"tx_hash_list\"", tx_hash_list_buf, sizeof(tx_hash_list_buf)) != 0) {
     ERROR_PRINT("wallet_payout_send: tx_hash_list missing");
     return XCASH_ERROR;
   }
-  if (parse_json_data(response, "result.fee_list", fee_list_buf, sizeof(fee_list_buf)) != 0) {
+  if (json_extract_array(response, "\"fee_list\"", fee_list_buf, sizeof(fee_list_buf)) != 0) {
     ERROR_PRINT("wallet_payout_send: fee_list missing");
     return XCASH_ERROR;
   }
-  if (parse_json_data(response, "result.amount_list", amount_list_buf, sizeof(amount_list_buf)) != 0) {
+  if (json_extract_array(response, "\"amount_list\"", amount_list_buf, sizeof(amount_list_buf)) != 0) {
     ERROR_PRINT("wallet_payout_send: amount_list missing");
     return XCASH_ERROR;
   }
