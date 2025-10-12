@@ -389,6 +389,10 @@ int wallet_payout_send(const char* addr, int64_t amount_atomic, const char* reas
     return XCASH_ERROR;
   }
 
+  WARNING_PRINT("TX List=%s", tx_hash_list_buf);
+  WARNING_PRINT("Fee List=%s", fee_list_buf);
+  WARNING_PRINT("Amount List=%s", amount_list_buf);
+
   // Count txs by commas inside tx_hash_list
   int tx_count = count_items_in_array(tx_hash_list_buf);
   if (tx_count <= 0) {
