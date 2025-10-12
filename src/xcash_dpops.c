@@ -258,7 +258,7 @@ int main(int argc, char *argv[]) {
 
   if (get_node_data()) {
     if (!is_seed_node) {
-      if (!(get_delegate_fee(&delegate_fee_percent) == XCASH_OK)) {
+      if (get_delegate_fee(&delegate_fee_percent) == XCASH_ERROR) {
         WARNING_PRINT("Unable to read fee from database so using default");
       }
     }
