@@ -172,93 +172,68 @@ int get_unlocked_balance(uint64_t* unlocked_balance_out)
   return XCASH_OK;
 }
 
-
-// --- tiny helpers to work on JSON array slices we already extracted ---
-// Expect inputs like: ["abc","def",...], numbers like: [123,456,...] (whitespace ok).
-static int count_items_in_array(const char* arr)
-{
-  if (!arr) return -1;
-  const char* p = strchr(arr, '[');
-  if (!p) return -1;
-  const char* end = strchr(p, ']');
-  if (!end) return -1;
-
-  // check empty
-  const char* q = p + 1;
-  while (q < end && (*q==' '||*q=='\t'||*q=='\r'||*q=='\n')) ++q;
-  if (q == end) return 0;
-
-  int commas = 0;
-  for (const char* s = p; s < end; ++s) if (*s == ',') ++commas;
-  return commas + 1;
+// Helper, quiet JSON-RPC error precheck (prevents noisy "not found" logs from parser)
+static int jsonrpc_has_error_top(const char* s) {
+  if (!s) return 0;
+  const char* p = strstr(s, "\"error\"");
+  if (!p) return 0;
+  p += 7;
+  while (*p == ' ' || *p == '\t' || *p == '\r' || *p == '\n') ++p;
+  if (*p != ':') return 0;
+  ++p;
+  while (*p == ' ' || *p == '\t' || *p == '\r' || *p == '\n') ++p;
+  return (*p == '{');  // top-level error object present
 }
 
-static int extract_string_item(const char* arr, int index, char* out, size_t outlen)
+// Helper: count items in result.tx_hash_list quickly (no allocations, tolerant of whitespace).
+// Returns: >=0 item count, or -1 on malformed/missing array.
+static int count_txids_in_response(const char* json)
 {
-  if (!arr || !out || outlen == 0 || index < 0) return -1;
-  out[0] = '\0';
-
-  const char* p = strchr(arr, '[');
+  if (!json) return -1;
+  const char* p = strstr(json, "\"tx_hash_list\"");
   if (!p) return -1;
-  const char* end = strchr(p, ']');
-  if (!end) return -1;
 
-  int i = 0;
-  for (const char* s = p+1; s && s < end; )
-  {
-    while (s < end && (*s==' '||*s=='\t'||*s=='\r'||*s=='\n'||*s==',')) ++s;
-    if (s >= end) break;
-    if (*s != '\"') return -1; // expect string
-    const char* start = ++s;
-    while (s < end && *s != '\"') ++s;
-    if (s >= end) return -1;
-    if (i == index) {
-      size_t len = (size_t)(s - start);
-      if (len >= outlen) len = outlen - 1;
-      memcpy(out, start, len);
-      out[len] = '\0';
-      return 0;
-    }
-    ++i;
-    ++s; // skip closing quote
+  // find '[' after key
+  p = strchr(p, '[');
+  if (!p) return -1;
+  ++p;
+
+  // skip whitespace
+  while (*p==' '||*p=='\t'||*p=='\r'||*p=='\n') ++p;
+
+  if (*p == ']') return 0; // empty array
+
+  int count = 0;
+  for (;;) {
+    while (*p==' '||*p=='\t'||*p=='\r'||*p=='\n') ++p;
+    if (*p != '\"') return -1; // expect string element
+    ++p;
+
+    // scan to closing quote (txids are hex strings; escapes not expected)
+    while (*p && *p != '\"') ++p;
+    if (*p != '\"') return -1;
+    ++count; ++p;
+
+    while (*p==' '||*p=='\t'||*p=='\r'||*p=='\n') ++p;
+    if (*p == ',') { ++p; continue; }
+    if (*p == ']') break;
+    return -1; // malformed
   }
-  return -1; // index OOB
+  return count;
 }
 
-static int extract_uint64_item(const char* arr, int index, uint64_t* out)
+// Optional: quiet JSON-RPC error precheck (prevents noisy "not found" logs from parser)
+static int jsonrpc_has_error_top(const char* s)
 {
-  if (!arr || !out || index < 0) return -1;
-  const char* p = strchr(arr, '[');
-  if (!p) return -1;
-  const char* end = strchr(p, ']');
-  if (!end) return -1;
-
-  int i = 0;
-  for (const char* s = p+1; s && s < end; )
-  {
-    while (s < end && (*s==' '||*s=='\t'||*s=='\r'||*s=='\n'||*s==',')) ++s;
-    if (s >= end) break;
-
-    // read an unsigned integer
-    const char* start = s;
-    if (*s == '+' ) ++s;  // allow leading '+'
-    if (*s < '0' || *s > '9') return -1;
-    while (s < end && *s >= '0' && *s <= '9') ++s;
-
-    if (i == index) {
-      char tmp[32] = {0};
-      size_t len = (size_t)(s - start);
-      if (len >= sizeof(tmp)) return -1;
-      memcpy(tmp, start, len); tmp[len] = '\0';
-      errno = 0; char* ep = NULL;
-      unsigned long long v = strtoull(tmp, &ep, 10);
-      if (errno || ep == tmp || *ep != '\0') return -1;
-      *out = (uint64_t)v;
-      return 0;
-    }
-    ++i;
-  }
-  return -1; // index OOB
+  if (!s) return 0;
+  const char* p = strstr(s, "\"error\"");
+  if (!p) return 0;
+  p += 7;
+  while (*p==' '||*p=='\t'||*p=='\r'||*p=='\n') ++p;
+  if (*p != ':') return 0;
+  ++p;
+  while (*p==' '||*p=='\t'||*p=='\r'||*p=='\n') ++p;
+  return (*p=='{'); // top-level error object present
 }
 
 /*---------------------------------------------------------------------------------------------------------
