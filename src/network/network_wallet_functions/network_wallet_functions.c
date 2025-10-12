@@ -319,6 +319,10 @@ int wallet_payout_send(const char* addr, int64_t amount_atomic, const char* reas
     return XCASH_ERROR;
   }
 
+
+  WARNING_PRINT("Trans=%s", response);
+
+
   // Count txs once (fast, no logging)
   int tx_count = count_txids_in_response(response);
   if (tx_count <= 0) {
