@@ -254,7 +254,9 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
 
   if (is_walletsign_type(msg_type)) {
     if (verify_data(data, msg_type) == XCASH_ERROR) {
-      WARNING_PRINT("Failed to validate message sign data");
+      if (startup_complete) {
+        WARNING_PRINT("Failed to validate message sign data");
+      }
       return;
     }
   }

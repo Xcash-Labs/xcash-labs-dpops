@@ -18,6 +18,7 @@ extern int delegate_db_hash_mismatch;
 extern double delegate_fee_percent;
 extern uint64_t minimum_payout;
 
+extern bool startup_complete;
 
 extern bool is_seed_node;   // True if node is a seed node - network_data_node_settings is same as seed node, removed
 extern int network_data_nodes_amount; // Number of network data nodes

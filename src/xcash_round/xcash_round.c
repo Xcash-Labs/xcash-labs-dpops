@@ -505,6 +505,7 @@ void start_block_production(void) {
   // Start production loop
   static bool printed_on_enter = false;
   static time_t last_log_sec = 0;
+  startup_complete = true;
 
   while (!atomic_load(&shutdown_requested)) {
 
