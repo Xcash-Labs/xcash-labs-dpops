@@ -18,7 +18,7 @@ int get_public_address(void)
     // Send HTTP request to get the public address
     if (send_http_request(data, SMALL_BUFFER_SIZE, XCASH_WALLET_IP, "/json_rpc", XCASH_WALLET_PORT, "POST", 
                           HTTP_HEADERS, HTTP_HEADERS_LENGTH, GET_PUBLIC_ADDRESS_DATA, 
-                          SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) <= 0) 
+                          HTTP_TIMEOUT_SETTINGS) <= 0) 
     {  
         ERROR_PRINT("Could not get the public address");
         return XCASH_ERROR;
@@ -249,7 +249,7 @@ int wallet_payout_send(const char* addr, int64_t amount_atomic, const char* reas
   if (send_http_request(response, sizeof(response),
                         XCASH_WALLET_IP, "/json_rpc", XCASH_WALLET_PORT, "POST",
                         HTTP_HEADERS, HTTP_HEADERS_LENGTH,
-                        request, HTTP_TIMEOUT_SETTINGS) != XCASH_OK) {
+                        request, SEND_PAYMENT_TIMEOUT_SETTINGS) != XCASH_OK) {
     ERROR_PRINT("wallet_payout_send: HTTP error");
     return XCASH_ERROR;
   }

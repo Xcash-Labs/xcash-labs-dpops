@@ -253,7 +253,7 @@ int main(int argc, char *argv[]) {
       WARNING_PRINT("Unable to read fee from database so using default");
     }
     if (arg_config.minimum_amount == 0) {
-      WARNING_PRINT("Unable to minimum payout amount so using default");
+      WARNING_PRINT("Unable to read minimum payout parameter so using default");
     }
   }
 

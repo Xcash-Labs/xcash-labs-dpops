@@ -278,7 +278,7 @@ bool verify_vrf_vote_signature(const char *block_height,
 
   if (send_http_request(response, sizeof(response), XCASH_WALLET_IP, "/json_rpc", XCASH_WALLET_PORT,
                         "POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH,
-                        request, SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) <= 0) {
+                        request, HTTP_TIMEOUT_SETTINGS) <= 0) {
     ERROR_PRINT("verify_vrf_vote_signature: HTTP request failed");
     return false;
   }

@@ -69,7 +69,7 @@ int sign_data(char* message) {
   // Step 3: Send signing request to wallet
   if (send_http_request(response, MEDIUM_BUFFER_SIZE, XCASH_WALLET_IP, "/json_rpc", XCASH_WALLET_PORT,
                         "POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH,
-                        request, SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) <= 0 ||
+                        request, HTTP_TIMEOUT_SETTINGS) <= 0 ||
       !parse_json_data(response, "result.signature", signature, XCASH_SIGN_DATA_LENGTH + 1)) {
     handle_error("sign_data", "Wallet signature failed", signature, payload, request);
     return XCASH_ERROR;
@@ -246,7 +246,7 @@ int verify_data(const char* message, xcash_msg_t msg_type) {
 
   if (send_http_request(response, sizeof(response), XCASH_WALLET_IP, "/json_rpc", XCASH_WALLET_PORT,
                         "POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH,
-                        request, SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) <= 0) {
+                        request, HTTP_TIMEOUT_SETTINGS) <= 0) {
     ERROR_PRINT("verify_data: HTTP request failed");
     return XCASH_ERROR;
   }
@@ -362,7 +362,7 @@ int verify_action_data(const char* message, const char* client_ip, xcash_msg_t m
 
   if (send_http_request(response, sizeof(response), XCASH_WALLET_IP, "/json_rpc", XCASH_WALLET_PORT,
                         "POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH,
-                        request, SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) <= 0) {
+                        request, HTTP_TIMEOUT_SETTINGS) <= 0) {
     ERROR_PRINT("verify_data: HTTP request failed");
     return XCASH_ERROR;
   }

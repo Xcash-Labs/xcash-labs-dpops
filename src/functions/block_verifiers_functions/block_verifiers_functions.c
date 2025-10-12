@@ -442,7 +442,7 @@ bool block_verifiers_create_vote_majority_result(char** message, int producer_in
   // Send signing request to wallet
   if (send_http_request(response, MEDIUM_BUFFER_SIZE, XCASH_WALLET_IP, "/json_rpc", XCASH_WALLET_PORT,
                         "POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH,
-                        request, SEND_OR_RECEIVE_SOCKET_DATA_TIMEOUT_SETTINGS) <= 0 ||
+                        request, HTTP_TIMEOUT_SETTINGS) <= 0 ||
       !parse_json_data(response, "result.signature", signature, XCASH_SIGN_DATA_LENGTH+1) ||
       strlen(signature) == 0 ||
       strncmp(signature, XCASH_SIGN_DATA_PREFIX, sizeof(XCASH_SIGN_DATA_PREFIX) - 1) != 0) {
