@@ -1379,10 +1379,6 @@ int get_delegate_fee(double* out_fee)
   bson_t filter; bson_init(&filter);
   BSON_APPEND_UTF8(&filter, "public_address", xcash_wallet_public_address);
 
-
-  WARNING_PRINT("PA=%s", xcash_wallet_public_address);
-
-
   // Projection: { delegate_fee: 1 }
   bson_t proj; bson_init(&proj);
   BSON_APPEND_INT32(&proj, "delegate_fee", 1);
@@ -1403,7 +1399,7 @@ int get_delegate_fee(double* out_fee)
       fee = bson_iter_double(&it);
       ok = true;
     } else {
-      WARNING_PRINT("Delegate_fee is not stroed in the correct format");
+      WARNING_PRINT("Delegate_fee is not stored in the correct format");
     }
   }
 
