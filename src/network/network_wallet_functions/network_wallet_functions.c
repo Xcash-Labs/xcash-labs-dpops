@@ -406,6 +406,8 @@ int wallet_payout_send(const char* addr, int64_t amount_atomic, const char* reas
     return XCASH_ERROR;
   }
 
+  WARNING_PRINT("Trans=%s", response);
+
   // Quiet JSON-RPC error detection
   if (jsonrpc_has_error_top(response)) {
     char err_code_buf[32] = {0}, err_msg_buf[256] = {0};
@@ -418,8 +420,6 @@ int wallet_payout_send(const char* addr, int64_t amount_atomic, const char* reas
     }
     return XCASH_ERROR;
   }
-
-  WARNING_PRINT("Trans=%s", response);
 
   // Pull the three arrays once into local buffers, parse_json_data does not work on arrays
   char tx_hash_list_buf[MEDIUM_BUFFER_SIZE] = {0};
