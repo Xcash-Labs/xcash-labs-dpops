@@ -173,23 +173,23 @@ int get_unlocked_balance(uint64_t* unlocked_balance_out)
 }
 
 // Helper, Extracts the raw JSON array for a key (e.g. key="\"tx_hash_list\"") into `out` including brackets.
-// Returns 0 on success, -1 on failure.
+// Returns XCASH_OK on success, XCASH_ERROR on failure.
 static int json_extract_array(const char* json, const char* key, char* out, size_t outlen) {
-  if (!json || !key || !out || outlen == 0) return -1;
+  if (!json || !key || !out || outlen == 0) return XCASH_ERROR;
   out[0] = '\0';
 
   const char* p = strstr(json, key);
-  if (!p) return -1;
+  if (!p) return XCASH_ERROR;
 
   // move past key, find colon
   p += strlen(key);
   while (*p==' '||*p=='\t'||*p=='\r'||*p=='\n') ++p;
-  if (*p != ':') return -1;
+  if (*p != ':') return XCASH_ERROR;
   ++p;
 
   // skip whitespace to '['
   while (*p==' '||*p=='\t'||*p=='\r'||*p=='\n') ++p;
-  if (*p != '[') return -1;
+  if (*p != '[') return XCASH_ERROR;
 
   // copy balanced array, honoring strings/escapes
   const char* start = p;
@@ -213,13 +213,13 @@ static int json_extract_array(const char* json, const char* key, char* out, size
           if (len >= outlen) len = outlen - 1;
           memcpy(out, start, len);
           out[len] = '\0';
-          return 0;
+          return XCASH_OK;
         }
       }
       // braces {} can appear inside but don't affect [] depth
     }
   }
-  return -1;
+  return XCASH_ERROR;
 }
 
 // --- tiny helpers to work on JSON array slices we already extracted ---
@@ -244,43 +244,43 @@ static int count_items_in_array(const char* arr)
 
 static int extract_string_item(const char* arr, int index, char* out, size_t outlen)
 {
-  if (!arr || !out || outlen == 0 || index < 0) return -1;
+  if (!arr || !out || outlen == 0 || index < 0) return XCASH_ERROR;
   out[0] = '\0';
 
   const char* p = strchr(arr, '[');
-  if (!p) return -1;
+  if (!p) return XCASH_ERROR;
   const char* end = strchr(p, ']');
-  if (!end) return -1;
+  if (!end) return XCASH_ERROR;
 
   int i = 0;
   for (const char* s = p+1; s && s < end; )
   {
     while (s < end && (*s==' '||*s=='\t'||*s=='\r'||*s=='\n'||*s==',')) ++s;
     if (s >= end) break;
-    if (*s != '\"') return -1; // expect string
+    if (*s != '\"') return XCASH_ERROR; // expect string
     const char* start = ++s;
     while (s < end && *s != '\"') ++s;
-    if (s >= end) return -1;
+    if (s >= end) return XCASH_ERROR;
     if (i == index) {
       size_t len = (size_t)(s - start);
       if (len >= outlen) len = outlen - 1;
       memcpy(out, start, len);
       out[len] = '\0';
-      return 0;
+      return XCASH_OK;
     }
     ++i;
     ++s; // skip closing quote
   }
-  return -1; // index OOB
+  return XCASH_ERROR; // index OOB
 }
 
 static int extract_uint64_item(const char* arr, int index, uint64_t* out)
 {
-  if (!arr || !out || index < 0) return -1;
+  if (!arr || !out || index < 0) return XCASH_ERROR;
   const char* p = strchr(arr, '[');
-  if (!p) return -1;
+  if (!p) return XCASH_ERROR;
   const char* end = strchr(p, ']');
-  if (!end) return -1;
+  if (!end) return XCASH_ERROR;
 
   int i = 0;
   for (const char* s = p+1; s && s < end; )
@@ -291,23 +291,23 @@ static int extract_uint64_item(const char* arr, int index, uint64_t* out)
     // read an unsigned integer
     const char* start = s;
     if (*s == '+' ) ++s;  // allow leading '+'
-    if (*s < '0' || *s > '9') return -1;
+    if (*s < '0' || *s > '9') return XCASH_ERROR;
     while (s < end && *s >= '0' && *s <= '9') ++s;
 
     if (i == index) {
       char tmp[32] = {0};
       size_t len = (size_t)(s - start);
-      if (len >= sizeof(tmp)) return -1;
+      if (len >= sizeof(tmp)) return XCASH_ERROR;
       memcpy(tmp, start, len); tmp[len] = '\0';
       errno = 0; char* ep = NULL;
       unsigned long long v = strtoull(tmp, &ep, 10);
-      if (errno || ep == tmp || *ep != '\0') return -1;
+      if (errno || ep == tmp || *ep != '\0') return XCASH_ERROR;
       *out = (uint64_t)v;
-      return 0;
+      return XCASH_OK;
     }
     ++i;
   }
-  return -1; // index OOB
+  return XCASH_ERROR; // index OOB
 }
 
 // quiet JSON-RPC error precheck (prevents noisy "not found" logs from parser)
@@ -411,7 +411,7 @@ int wallet_payout_send(const char* addr, int64_t amount_atomic, const char* reas
   // Quiet JSON-RPC error detection
   if (jsonrpc_has_error_top(response)) {
     char err_code_buf[32] = {0}, err_msg_buf[256] = {0};
-    if (parse_json_data(response, "error.code", err_code_buf, sizeof(err_code_buf)) == 0) {
+    if (parse_json_data(response, "error.code", err_code_buf, sizeof(err_code_buf)) == XCASH_OK) {
       parse_json_data(response, "error.message", err_msg_buf, sizeof(err_msg_buf));
       ERROR_PRINT("wallet_payout_send: RPC error code=%s msg=%s",
                   err_code_buf, err_msg_buf[0] ? err_msg_buf : "(none)");
@@ -426,15 +426,15 @@ int wallet_payout_send(const char* addr, int64_t amount_atomic, const char* reas
   char fee_list_buf[MEDIUM_BUFFER_SIZE] = {0};
   char amount_list_buf[MEDIUM_BUFFER_SIZE] = {0};
 
-  if (json_extract_array(response, "\"tx_hash_list\"", tx_hash_list_buf, sizeof(tx_hash_list_buf)) != 0) {
+  if (json_extract_array(response, "\"tx_hash_list\"", tx_hash_list_buf, sizeof(tx_hash_list_buf)) == XCASH_ERROR) {
     ERROR_PRINT("wallet_payout_send: tx_hash_list missing");
     return XCASH_ERROR;
   }
-  if (json_extract_array(response, "\"fee_list\"", fee_list_buf, sizeof(fee_list_buf)) != 0) {
+  if (json_extract_array(response, "\"fee_list\"", fee_list_buf, sizeof(fee_list_buf)) == XCASH_ERROR) {
     ERROR_PRINT("wallet_payout_send: fee_list missing");
     return XCASH_ERROR;
   }
-  if (json_extract_array(response, "\"amount_list\"", amount_list_buf, sizeof(amount_list_buf)) != 0) {
+  if (json_extract_array(response, "\"amount_list\"", amount_list_buf, sizeof(amount_list_buf)) == XCASH_ERROR) {
     ERROR_PRINT("wallet_payout_send: amount_list missing");
     return XCASH_ERROR;
   }
@@ -463,7 +463,7 @@ int wallet_payout_send(const char* addr, int64_t amount_atomic, const char* reas
 
   // Extract first + siblings from tx_hash_list_buf
   char first_tx_hash[TRANSACTION_HASH_LENGTH + 1] = {0};
-  if (extract_string_item(tx_hash_list_buf, 0, first_tx_hash, sizeof(first_tx_hash)) != 0 || !first_tx_hash[0]) {
+  if (extract_string_item(tx_hash_list_buf, 0, first_tx_hash, sizeof(first_tx_hash)) == XCASH_ERROR || !first_tx_hash[0]) {
     ERROR_PRINT("wallet_payout_send: failed to read first tx hash");
     return XCASH_ERROR;
   }
@@ -473,7 +473,7 @@ int wallet_payout_send(const char* addr, int64_t amount_atomic, const char* reas
   if (siblings_total && txids_out && txids_out_cap) {
     int max_to_store = (int)((siblings_total < txids_out_cap) ? siblings_total : txids_out_cap);
     for (int i = 1; i <= max_to_store; ++i) {
-      if (extract_string_item(tx_hash_list_buf, i, txids_out[siblings_stored], TRANSACTION_HASH_LENGTH + 1) != 0) {
+      if (extract_string_item(tx_hash_list_buf, i, txids_out[siblings_stored], TRANSACTION_HASH_LENGTH + 1) == XCASH_ERROR) {
         ERROR_PRINT("wallet_payout_send: failed to read tx_hash_list[%d]", i);
         return XCASH_ERROR;
       }
@@ -495,11 +495,11 @@ int wallet_payout_send(const char* addr, int64_t amount_atomic, const char* reas
 
   for (int i = 0; i < tx_count; ++i) {
     uint64_t fee_i = 0, amt_i = 0;
-    if (extract_uint64_item(fee_list_buf, i, &fee_i) != 0) {
+    if (extract_uint64_item(fee_list_buf, i, &fee_i) == XCASH_ERROR) {
       ERROR_PRINT("wallet_payout_send: bad/missing fee_list[%d]", i);
       return XCASH_ERROR;
     }
-    if (extract_uint64_item(amount_list_buf, i, &amt_i) != 0) {
+    if (extract_uint64_item(amount_list_buf, i, &amt_i) == XCASH_ERROR) {
       ERROR_PRINT("wallet_payout_send: bad/missing amount_list[%d]", i);
       return XCASH_ERROR;
     }
@@ -511,7 +511,7 @@ int wallet_payout_send(const char* addr, int64_t amount_atomic, const char* reas
     char sibling_tmp[TRANSACTION_HASH_LENGTH + 1] = {0};
     if (i > 0) {
       // For logging, get the exact sibling from buffer (cheap)
-      if (extract_string_item(tx_hash_list_buf, i, sibling_tmp, sizeof(sibling_tmp)) == 0 && sibling_tmp[0]) {
+      if (extract_string_item(tx_hash_list_buf, i, sibling_tmp, sizeof(sibling_tmp)) == XCASH_OK && sibling_tmp[0]) {
         txh_for_log = sibling_tmp;
       } else {
         txh_for_log = "(unknown)";
