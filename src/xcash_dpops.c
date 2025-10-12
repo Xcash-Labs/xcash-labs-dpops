@@ -254,6 +254,8 @@ int main(int argc, char *argv[]) {
     }
     if (arg_config.minimum_amount == 0) {
       WARNING_PRINT("Unable to read minimum payout parameter so using default");
+    } else {
+      minimum_payout = arg_config.minimum_amount;
     }
   }
 
@@ -262,7 +264,7 @@ int main(int argc, char *argv[]) {
     start_block_production();
     fprintf(stderr, "Daemon is shutting down...\n");
   } else {
-    FATAL_ERROR_EXIT("Failed to get the nodes public wallet address"); 
+    FATAL_ERROR_EXIT("Failed to get the nodes public wallet address");
   }
 
   // Signal scheduler to stop and join it
