@@ -249,9 +249,6 @@ int main(int argc, char *argv[]) {
       }
     }
   } else {
-    if (!(get_delegate_fee(&delegate_fee_percent) == XCASH_OK)) {
-      WARNING_PRINT("Unable to read fee from database so using default");
-    }
     if (arg_config.minimum_amount == 0) {
       WARNING_PRINT("Unable to read minimum payout parameter so using default");
     } else {
@@ -260,6 +257,11 @@ int main(int argc, char *argv[]) {
   }
 
   if (get_node_data()) {
+    if (!is_seed_node) {
+      if (!(get_delegate_fee(&delegate_fee_percent) == XCASH_OK)) {
+        WARNING_PRINT("Unable to read fee from database so using default");
+      }
+    }
     print_starter_state(&arg_config);
     start_block_production();
     fprintf(stderr, "Daemon is shutting down...\n");
