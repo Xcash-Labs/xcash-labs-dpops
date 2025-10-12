@@ -123,7 +123,6 @@ RAM_CPU_RATIO_ALL_CPU_THREADS=4
 # Regex
 regex_XCASH_DPOPS_INSTALLATION_DIR="(^\/(.*?)\/$)|(^$)" # anything that starts with / and ends with / and does not contain a space
 regex_MNEMONIC_SEED="^\b([a-z]+\s+){24}\b([a-z]+)$" # 25 words exactly
-regex_DPOPS_MINIMUM_AMOUNT="\b(^[1-9]{1}[0-9]{4,6}$)\b$|^10000000$" # between 10000 and 10000000
 
 # Disable script execution with sudo and warns the user if root install
 if [ $SUDO_USER ] ; then
@@ -256,24 +255,39 @@ function update_global_variables()
   MONGODB_DIR=${XCASH_DPOPS_INSTALLATION_DIR}${MONGODB_LATEST_VERSION}/
 }
 
-function get_shared_delegate_installation_settings()
-{
-  echo -ne "${COLOR_PRINT_YELLOW}Shared Delegate (YES): ${END_COLOR_PRINT}"
+function get_shared_delegate_installation_settings() {
+  # Ask if this is a shared delegate (default to existing value if user hits Enter)
+  echo -ne "${COLOR_PRINT_YELLOW}Shared Delegate (YES/NO) [current: ${SHARED_DELEGATE:-NO}]: ${END_COLOR_PRINT}"
   read -r data
-  SHARED_DELEGATE=$([ "$data" == "" ] && echo "$SHARED_DELEGATE" || echo "$data")
-  echo -ne "\r"
+  SHARED_DELEGATE=$([ -z "$data" ] && echo "${SHARED_DELEGATE:-NO}" || echo "$data")
   echo
-  if [ "${SHARED_DELEGATE^^}" == "YES" ]; then    
 
-    while
-      echo -ne "${COLOR_PRINT_YELLOW}Shared Delegate Minimum Payment Amount (whole number between 10000 and 10000000): ${END_COLOR_PRINT}"
-      read -r DPOPS_MINIMUM_AMOUNT
-      echo -ne "\r"
+  # Only prompt for minimum amount if shared delegate is YES
+  if [[ "${SHARED_DELEGATE^^}" == "YES" ]]; then
+    local prompt_min="${DPOPS_MINIMUM_AMOUNT:-50}"  # default shown if already set
+
+    while :; do
+      echo -ne "${COLOR_PRINT_YELLOW}Shared Delegate Minimum Payment Amount (whole number between 50 and 10000000) [current: ${prompt_min}]: ${END_COLOR_PRINT}"
+      read -r input
       echo
-      [[ ! $DPOPS_MINIMUM_AMOUNT =~ $regex_DPOPS_MINIMUM_AMOUNT ]]
-    do true; done
+
+      # Keep current if user presses Enter
+      if [[ -z "$input" ]]; then
+        DPOPS_MINIMUM_AMOUNT="$prompt_min"
+        break
+      fi
+
+      # Digits only and within range 50..10,000,000
+      if [[ "$input" =~ ^[0-9]+$ ]] && (( input >= 50 && input <= 10000000 )); then
+        DPOPS_MINIMUM_AMOUNT="$input"
+        break
+      fi
+
+      echo "Please enter an integer between 50 and 10000000 (no decimals)."
+    done
   fi
 }
+
 
 function update_systemd_service_files()
 {
@@ -616,21 +630,29 @@ function check_if_upgrade_solo_delegate_and_shared_delegate()
       get_installation_directory
       get_dependencies_current_version
     fi
-  else
-    echo -ne "The current delegate setting is solo delegate. If you would like to change the settings to a shared delegate type \"YES\" otherwise press enter:"
-    read -r data
-    echo -ne "\r"
-    echo
-    if [ "${data^^}" == "YES" ]; then
-      SHARED_DELEGATE="YES"
+    else
+      echo -ne "The current delegate setting is solo delegate. If you would like to change the settings to a shared delegate type \"YES\" otherwise press enter:"
+      read -r data
+      echo -ne "\r"
+      echo
+      if [ "${data^^}" == "YES" ]; then
+        SHARED_DELEGATE="YES"
 
-      while
-        echo -ne "${COLOR_PRINT_YELLOW}Shared Delegate Minimum Payment Amount, minimum is 10K, maximum is 10M (ex: 10000 in whole numbers and not atomic units etc): ${END_COLOR_PRINT}"
+      while :; do
+        echo -ne "${COLOR_PRINT_YELLOW}Shared Delegate Minimum Payment Amount, minimum is 50, maximum is 10M (whole numbers, not atomic units): ${END_COLOR_PRINT}"
         read -r DPOPS_MINIMUM_AMOUNT
         echo -ne "\r"
         echo
-        [[ ! $DPOPS_MINIMUM_AMOUNT =~ $regex_DPOPS_MINIMUM_AMOUNT ]]
-      do true; done  
+
+        # digits only + numeric range check
+        if [[ $DPOPS_MINIMUM_AMOUNT =~ ^[0-9]+$ ]] \
+          && (( DPOPS_MINIMUM_AMOUNT >= 50 && DPOPS_MINIMUM_AMOUNT <= 10000000 )); then
+          break
+        fi
+
+        echo "Please enter an integer between 50 and 10000000 (no decimals)."
+      done
+ 
 
       NODEJS_DIR=${XCASH_DPOPS_INSTALLATION_DIR}${NODEJS_LATEST_VERSION}/ 
       echo -e "${COLOR_PRINT_GREEN}############################################################${END_COLOR_PRINT}"
@@ -2144,29 +2166,69 @@ function install_blockchain()
   echo
 }
 
-function edit_shared_delegate_settings()
-{
+function edit_shared_delegate_settings() {
+  local unit="/lib/systemd/system/xcash-dpops.service"
+
   # check if they are already a shared delegate
-  if grep -q "shared-delegates-website" /lib/systemd/system/xcash-dpops.service; then
-    
-    while
-      echo -ne "${COLOR_PRINT_YELLOW}Shared Delegate Minimum Payment Amount, minimum is 10K, maximum is 10M (ex: 10000 in whole numbers and not atomic units etc): ${END_COLOR_PRINT}"
+  if grep -q "shared-delegates-website" "$unit"; then
+
+    # capture current value (if present)
+    local current_min
+    current_min="$(grep -oE -- '--minimum-amount[[:space:]]+[0-9]+' "$unit" | awk '{print $2}' | tail -n1)"
+    [[ -n "$current_min" ]] && echo "Current --minimum-amount: $current_min"
+
+    local DPOPS_MINIMUM_AMOUNT
+    while :; do
+      echo -ne "${COLOR_PRINT_YELLOW}Shared Delegate Minimum Payment Amount, minimum is 50, maximum is 10M (whole numbers): ${END_COLOR_PRINT}"
       read -r DPOPS_MINIMUM_AMOUNT
-      echo -ne "\r"
       echo
-      [[ ! $DPOPS_MINIMUM_AMOUNT =~ $regex_DPOPS_MINIMUM_AMOUNT ]]
-    do true; done
+
+      # trim leading/trailing whitespace
+      DPOPS_MINIMUM_AMOUNT="${DPOPS_MINIMUM_AMOUNT#"${DPOPS_MINIMUM_AMOUNT%%[![:space:]]*}"}"
+      DPOPS_MINIMUM_AMOUNT="${DPOPS_MINIMUM_AMOUNT%"${DPOPS_MINIMUM_AMOUNT##*[![:space:]]}"}"
+
+      # digits only, numeric range 50..10,000,000
+      if [[ $DPOPS_MINIMUM_AMOUNT =~ ^[0-9]+$ ]] \
+        && (( DPOPS_MINIMUM_AMOUNT >= 50 && DPOPS_MINIMUM_AMOUNT <= 10000000 )); then
+        break
+      fi
+      echo "Please enter an integer between 50 and 10000000 (no decimals)."
+    done
+
+    # make available to callers / later commands
+    export DPOPS_MINIMUM_AMOUNT
+
 
     echo -ne "${COLOR_PRINT_YELLOW}Updating Shared Delegate Settings${END_COLOR_PRINT}"
-    sed_services "s/--minimum-amount.*/--minimum-amount $DPOPS_MINIMUM_AMOUNT/g" /lib/systemd/system/xcash-dpops.service
+
+    # robust in-place edit: replace only the number following --minimum-amount
+    # keep a backup alongside as .bak
+    if command -v gsed >/dev/null 2>&1; then
+      # macOS/BSD users with gsed
+      gsed -E -i.bak "s/(--minimum-amount[[:space:]]+)[0-9]+/\1${DPOPS_MINIMUM_AMOUNT}/g" "$unit"
+    else
+      sed -E -i.bak "s/(--minimum-amount[[:space:]]+)[0-9]+/\1${DPOPS_MINIMUM_AMOUNT}/g" "$unit"
+    fi
+
+    # reload unit files and restart service so it takes effect
     sudo systemctl daemon-reload
+    # use reload-or-restart if available; fallback to restart
+    if systemctl --help | grep -q reload-or-restart; then
+      sudo systemctl reload-or-restart xcash-dpops.service
+    else
+      sudo systemctl restart xcash-dpops.service
+    fi
+
     echo -ne "\r${COLOR_PRINT_GREEN}Updating Shared Delegate Settings${END_COLOR_PRINT}"
     echo
+    echo "New --minimum-amount: $DPOPS_MINIMUM_AMOUNT (backup saved as ${unit}.bak)"
+
   else
     echo -ne "\r${COLOR_PRINT_RED}Your delegate is not setup as a shared delegate${END_COLOR_PRINT}"
     echo
   fi
 }
+
 
 function register_update_delegate()
 {
