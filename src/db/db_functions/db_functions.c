@@ -46,7 +46,7 @@ int count_documents_in_collection(const char* DATABASE, const char* COLLECTION, 
 
   mongoc_collection_t* collection = mongoc_client_get_collection(database_client_thread, DATABASE, COLLECTION);
   if (!check_if_database_collection_exist(DATABASE, COLLECTION)) {
-    DEBUG_PRINT("Collection does not exist: %s", COLLECTION);
+    ERROR_PRINT("Collection does not exist: %s", COLLECTION);
     free_resources(NULL, NULL, collection, database_client_thread);
     return 0;
   }
@@ -72,7 +72,7 @@ int count_all_documents_in_collection(const char* DATABASE, const char* COLLECTI
 
   mongoc_collection_t* collection = mongoc_client_get_collection(database_client_thread, DATABASE, COLLECTION);
   if (!check_if_database_collection_exist(DATABASE, COLLECTION)) {
-    DEBUG_PRINT("Collection does not exist: %s", COLLECTION);
+    ERROR_PRINT("Collection does not exist: %s", COLLECTION);
     free_resources(NULL, NULL, collection, database_client_thread);
     return 0;
   }
@@ -279,7 +279,7 @@ int check_if_database_collection_exist(const char* DATABASE, const char* COLLECT
     if (error.message[0] != '\0') {
       ERROR_PRINT("MongoDB error: %s", error.message);
     } else {
-      DEBUG_PRINT("Collection does not exist: %s", COLLECTION);
+      ERROR_PRINT("Collection does not exist: %s", COLLECTION);
     }
     return XCASH_ERROR;
   }
@@ -875,14 +875,14 @@ bool db_find_doc(const char* db_name, const char* collection_name, const bson_t*
   // Pop a client from the pool
   client = mongoc_client_pool_pop(database_client_thread_pool);
   if (!client) {
-    DEBUG_PRINT("Failed to pop client from pool");
+    ERROR_PRINT("Failed to pop client from pool");
     return false;
   }
 
   // Get the collection
   collection = mongoc_client_get_collection(client, db_name, collection_name);
   if (!collection) {
-    DEBUG_PRINT("Failed to get collection: %s", collection_name);
+    ERROR_PRINT("Failed to get collection: %s", collection_name);
     mongoc_client_pool_push(database_client_thread_pool, client);
     return false;
   }
@@ -896,7 +896,7 @@ bool db_find_doc(const char* db_name, const char* collection_name, const bson_t*
   if (opts) bson_destroy(opts);
 
   if (!cursor) {
-    DEBUG_PRINT("Failed to initiate find operation");
+    ERROR_PRINT("Failed to initiate find operation");
     mongoc_collection_destroy(collection);
     mongoc_client_pool_push(database_client_thread_pool, client);
     return false;
@@ -911,11 +911,11 @@ bool db_find_doc(const char* db_name, const char* collection_name, const bson_t*
   }
 
   if (index == 0) {
-    DEBUG_PRINT("Query returned no documents");
+    ERROR_PRINT("Query returned no documents");
   }
 
   if (mongoc_cursor_error(cursor, error)) {
-    DEBUG_PRINT("Cursor error: %s", error->message);
+    ERROR_PRINT("Cursor error: %s", error->message);
     mongoc_cursor_destroy(cursor);
     mongoc_collection_destroy(collection);
     mongoc_client_pool_push(database_client_thread_pool, client);
@@ -940,14 +940,14 @@ bool db_upsert_doc(const char* db_name, const char* collection_name, const bson_
   // Pop a client from the pool
   client = mongoc_client_pool_pop(database_client_thread_pool);
   if (!client) {
-    DEBUG_PRINT("Failed to pop client from pool");
+    ERROR_PRINT("Failed to pop client from pool");
     return false;
   }
 
   // Get the collection
   collection = mongoc_client_get_collection(client, db_name, collection_name);
   if (!collection) {
-    DEBUG_PRINT("Failed to get collection: %s", collection_name);
+    ERROR_PRINT("Failed to get collection: %s", collection_name);
     mongoc_client_pool_push(database_client_thread_pool, client);
     return false;
   }
@@ -960,12 +960,12 @@ bool db_upsert_doc(const char* db_name, const char* collection_name, const bson_
     bson_append_value(&query, "_id", -1, bson_iter_value(&iter));
 
     if (!mongoc_collection_replace_one(collection, &query, doc, opts, NULL, error)) {
-      DEBUG_PRINT("Failed to upsert document: %s", error->message);
+      ERROR_PRINT("Failed to upsert document: %s", error->message);
       result = false;
     }
   } else {
     char* str = bson_as_legacy_extended_json(doc, NULL);
-    DEBUG_PRINT("Failed to find '_id' in upsert document: %s", str);
+    ERROR_PRINT("Failed to find '_id' in upsert document: %s", str);
     free(str);
 
     result = false;
@@ -989,14 +989,14 @@ bool db_upsert_multi_docs(const char* db_name, const char* collection_name, cons
   // Pop a client from the pool
   client = mongoc_client_pool_pop(database_client_thread_pool);
   if (!client) {
-    DEBUG_PRINT("Failed to pop client from pool");
+    ERROR_PRINT("Failed to pop client from pool");
     return false;
   }
 
   // Get the collection
   collection = mongoc_client_get_collection(client, db_name, collection_name);
   if (!collection) {
-    DEBUG_PRINT("Failed to get collection: %s", collection_name);
+    ERROR_PRINT("Failed to get collection: %s", collection_name);
     mongoc_client_pool_push(database_client_thread_pool, client);
     return false;
   }
@@ -1018,7 +1018,7 @@ bool db_upsert_multi_docs(const char* db_name, const char* collection_name, cons
         bson_append_value(&query, "_id", -1, bson_iter_value(&child));
       } else {
         char* str = bson_as_legacy_extended_json(&sub_doc, NULL);
-        DEBUG_PRINT("Failed to find '_id' in upsert document: %s", str);
+        ERROR_PRINT("Failed to find '_id' in upsert document: %s", str);
         free(str);
 
         result = false;
@@ -1027,7 +1027,7 @@ bool db_upsert_multi_docs(const char* db_name, const char* collection_name, cons
       }
 
       if (!mongoc_collection_replace_one(collection, &query, &sub_doc, opts, NULL, error)) {
-        DEBUG_PRINT("Failed to upsert document: %s", error->message);
+        ERROR_PRINT("Failed to upsert document: %s", error->message);
         result = false;
         bson_destroy(&query);
         break;
@@ -1053,14 +1053,14 @@ bool db_delete_doc(const char* db_name, const char* collection_name, const bson_
   // Pop a client from the pool
   client = mongoc_client_pool_pop(database_client_thread_pool);
   if (!client) {
-    DEBUG_PRINT("Failed to pop client from pool");
+    ERROR_PRINT("Failed to pop client from pool");
     return false;
   }
 
   // Get the collection
   collection = mongoc_client_get_collection(client, db_name, collection_name);
   if (!collection) {
-    DEBUG_PRINT("Failed to get collection: %s", collection_name);
+    ERROR_PRINT("Failed to get collection: %s", collection_name);
     mongoc_client_pool_push(database_client_thread_pool, client);
     return false;
   }
@@ -1068,7 +1068,7 @@ bool db_delete_doc(const char* db_name, const char* collection_name, const bson_
   // Delete documents
   result = mongoc_collection_delete_many(collection, query, &opts, NULL, error);
   if (!result) {
-    DEBUG_PRINT("Failed to delete documents: %s", error->message);
+    ERROR_PRINT("Failed to delete documents: %s", error->message);
     mongoc_collection_destroy(collection);
     mongoc_client_pool_push(database_client_thread_pool, client);
     return false;
@@ -1089,21 +1089,21 @@ bool db_drop(const char* db_name, const char* collection_name, bson_error_t* err
   // Pop a client from the pool
   client = mongoc_client_pool_pop(database_client_thread_pool);
   if (!client) {
-    DEBUG_PRINT("Failed to pop client from pool");
+    ERROR_PRINT("Failed to pop client from pool");
     return false;
   }
 
   // Get the collection
   collection = mongoc_client_get_collection(client, db_name, collection_name);
   if (!collection) {
-    DEBUG_PRINT("Failed to get collection: %s", collection_name);
+    ERROR_PRINT("Failed to get collection: %s", collection_name);
     mongoc_client_pool_push(database_client_thread_pool, client);
     return false;
   }
 
   result = mongoc_collection_drop(collection, error);
   if (!result) {
-    DEBUG_PRINT("Can't drop %s, error: %s", collection_name, error->message);
+    ERROR_PRINT("Can't drop %s, error: %s", collection_name, error->message);
   }
 
   mongoc_collection_destroy(collection);
@@ -1120,14 +1120,14 @@ bool db_count_doc(const char* db_name, const char* collection_name, int64_t* res
   // Pop a client from the pool
   client = mongoc_client_pool_pop(database_client_thread_pool);
   if (!client) {
-    DEBUG_PRINT("Failed to pop client from pool");
+    ERROR_PRINT("Failed to pop client from pool");
     return false;
   }
 
   // Get the collection
   collection = mongoc_client_get_collection(client, db_name, collection_name);
   if (!collection) {
-    DEBUG_PRINT("Failed to get collection: %s", collection_name);
+    ERROR_PRINT("Failed to get collection: %s", collection_name);
     mongoc_client_pool_push(database_client_thread_pool, client);
     return false;
   }
@@ -1136,7 +1136,7 @@ bool db_count_doc(const char* db_name, const char* collection_name, int64_t* res
 
   count = mongoc_collection_count_documents(collection, filter, NULL, NULL, NULL, error);
   if (count < 0) {
-    DEBUG_PRINT("Failed to count documents: %s", error->message);
+    ERROR_PRINT("Failed to count documents: %s", error->message);
     bson_destroy(filter);
     mongoc_collection_destroy(collection);
     mongoc_client_pool_push(database_client_thread_pool, client);
@@ -1686,7 +1686,8 @@ int compute_payouts_due(payout_output_t *parsed, uint64_t in_block_height, int64
         n = bson_iter_int32(&it);
       else if (bson_iter_init_find(&it, &reply, "nModified") && BSON_ITER_HOLDS_INT32(&it))
         n = bson_iter_int32(&it);
-      DEBUG_PRINT("finalize: marked %" PRIi64 " found_blocks as processed", n);
+      // jed
+      WARNING_PRINT("finalize: marked %" PRIi64 " found_blocks as processed", n);
     }
 
     bson_destroy(&reply);
@@ -1899,7 +1900,8 @@ int run_payout_sweep_simple(void)
         goto done;
       }
 
-      DEBUG_PRINT("payout recorded: _id=%s split=%zu fee=%" PRIu64 " sent=%" PRIu64,
+      // jed
+      WARNING_PRINT("payout recorded: _id=%s split=%zu fee=%" PRIu64 " sent=%" PRIu64,
                  first_hash, split_siblings_count, fee, (uint64_t)amt_sent);
 
       bson_destroy(&pay_doc);
@@ -1935,7 +1937,8 @@ int run_payout_sweep_simple(void)
       }
     }
 
-    DEBUG_PRINT("run_payout_sweep_simple: paid %" PRId64 " to %s (%s); %s [tx=%s fee=%" PRIu64 "]",
+    // jed
+    WARNING_PRINT("run_payout_sweep_simple: paid %" PRId64 " to %s (%s); %s [tx=%s fee=%" PRIu64 "]",
                pend, addr, reason, delete_after ? "deleted" : "zeroed", first_hash, fee);
   }
 
