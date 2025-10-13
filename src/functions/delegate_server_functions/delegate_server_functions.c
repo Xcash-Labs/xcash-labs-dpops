@@ -1232,7 +1232,7 @@ void server_receive_payout(const char* MESSAGE) {
     (double)unlocked / (double)XCASH_ATOMIC_UNITS);
 
   uint64_t in_num_block_height = strtoull(in_block_height, NULL, 10);
-  uint64_t conf = (uint64_t)(CRYPTONOTE_MINED_MONEY_UNLOCK_WINDOW + 1);
+  uint64_t conf = (uint64_t)(CRYPTONOTE_MINED_MONEY_UNLOCK_WINDOW + SAFE_CONFIRMATION_MARGIN);
   uint64_t pass_block_height = (in_num_block_height > conf) ? (in_num_block_height - conf) : 0;
   if(compute_payouts_due(parsed, pass_block_height, unlocked, entries_count) == XCASH_ERROR) {
     ERROR_PRINT("compute_payout_due failed");

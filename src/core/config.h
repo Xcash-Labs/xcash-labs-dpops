@@ -19,6 +19,7 @@
 #define TRANSACTION_PUBLIC_KEY_LENGTH 66  // Length of the transaction public key
 #define TRANSACTION_LENGTH 64             // Length of a transaction
 #define TIMESTAMP_LENGTH 10               // Length of the timestamp
+#define SAFE_CONFIRMATION_MARGIN 10
 
 // ===================== Network Ports and IPs =====================
 #define XCASH_DAEMON_PORT 18281

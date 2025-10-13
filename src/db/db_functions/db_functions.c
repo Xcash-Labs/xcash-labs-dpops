@@ -1485,11 +1485,11 @@ int compute_payouts_due(payout_output_t *parsed, uint64_t in_block_height, int64
 
   /* Build pipeline via JSON to avoid BCON varargs pitfalls */
   {
-    char jbuf[256];
+    char jbuf[VVSMALL_BUFFER_SIZE];
     int n = snprintf(
         jbuf, sizeof jbuf,
-        "[{\"$match\":{\"block_height\":{\"$lt\":%" PRIu64
-        "},\"processed\":false}},"
+        "[{\"$match\":{\"block_height\":{\"$lt\":{\"$numberLong\":\"%" PRIu64 "\"}},"
+        "\"processed\":false}},"
         "{\"$group\":{\"_id\":null,\"total\":{\"$sum\":\"$block_reward\"}}}]",
         (uint64_t)in_block_height);
     if (n < 0 || (size_t)n >= sizeof jbuf) {
