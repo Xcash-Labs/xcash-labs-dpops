@@ -417,7 +417,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
         // --- Compare and skip update if no change
         int64_t new_total = (int64_t)agg_total[i];
         if (have_current && current_total == new_total) {
-          DEGUG_PRINT("delegate total unchanged addr=%.12s… total=%lld (skip)",
+          DEBUG_PRINT("delegate total unchanged addr=%.12s… total=%lld (skip)",
                         agg_addr[i], (long long)new_total);
 
           bson_destroy(&filter);
