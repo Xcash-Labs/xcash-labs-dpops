@@ -831,8 +831,7 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
       }
     }
   } else {
-    // jed
-    WARNING_PRINT("voted_for=%s, total_vote=%lld, reserve_proof_len=%zu",
+    DEBUG_PRINT("voted_for=%s, total_vote=%lld, reserve_proof_len=%zu",
                 dbvoted_for, (long long)dbtotal_vote, strlen(dbreserve_proof));
     if (strcmp(dbvoted_for, voted_for_public_address) == 0 &&
         strcmp(dbreserve_proof, proof_str) == 0 &&

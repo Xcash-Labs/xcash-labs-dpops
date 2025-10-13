@@ -1453,7 +1453,7 @@ Return:
                   (e.g., NULL `parsed` with non-zero `entries_count`, vote-sum overflow,
                   Mongo failures).
 ---------------------------------------------------------------------------------------------------------*/
-int compute_payouts_due(payout_output_t *parsed, uint64_t in_block_height, int64_t in_unlocked_balance, size_t entries_count)                        
+int compute_payouts_due(payout_output_t *parsed, uint64_t in_block_height, int64_t in_unlocked_balance, size_t entries_count)                      
 {
   int rc = XCASH_OK;
 
@@ -1595,9 +1595,6 @@ int compute_payouts_due(payout_output_t *parsed, uint64_t in_block_height, int64
     goto done;
   }
 
-  //jed
-  WARNING_PRINT("sum_atomic=%" PRIu64, sum_atomic);
-
   /* ---- Accrue per-address pending in public_addresses ---- */
   coll_pub = mongoc_client_get_collection(client, DATABASE_NAME, DB_COLLECTION_PAYOUT_BALANCES);
   if (!coll_pub) {
@@ -1689,8 +1686,7 @@ int compute_payouts_due(payout_output_t *parsed, uint64_t in_block_height, int64
         n = bson_iter_int32(&it);
       else if (bson_iter_init_find(&it, &reply, "nModified") && BSON_ITER_HOLDS_INT32(&it))
         n = bson_iter_int32(&it);
-      // jed
-      WARNING_PRINT("finalize: marked %" PRIi64 " found_blocks as processed", n);
+      DEBUG_PRINT("finalize: marked %" PRIi64 " found_blocks as processed", n);
     }
 
     bson_destroy(&reply);
@@ -1903,8 +1899,7 @@ int run_payout_sweep_simple(void)
         goto done;
       }
 
-      // jed
-      WARNING_PRINT("payout recorded: _id=%s split=%zu fee=%" PRIu64 " sent=%" PRIu64,
+      DEBUG_PRINT("payout recorded: _id=%s split=%zu fee=%" PRIu64 " sent=%" PRIu64,
                  first_hash, split_siblings_count, fee, (uint64_t)amt_sent);
 
       bson_destroy(&pay_doc);
@@ -1940,8 +1935,7 @@ int run_payout_sweep_simple(void)
       }
     }
 
-    // jed
-    WARNING_PRINT("run_payout_sweep_simple: paid %" PRId64 " to %s (%s); %s [tx=%s fee=%" PRIu64 "]",
+    DEBUG_PRINT("run_payout_sweep_simple: paid %" PRId64 " to %s (%s); %s [tx=%s fee=%" PRIu64 "]",
                pend, addr, reason, delete_after ? "deleted" : "zeroed", first_hash, fee);
   }
 
@@ -1958,7 +1952,8 @@ done:
   if (client) mongoc_client_pool_push(database_client_thread_pool, client);
 
   if (rc == XCASH_OK) {
-    DEBUG_PRINT("run_payout_sweep_simple: completed, processed=%zu", processed);
+    WARNING_PRINT("Payout Sweep completed: processed=%zu, total=%.6f XCA", processed, (double)sum_atomic / (double)XCASH_ATOMIC_UNITS);
   }
+
   return rc;
 }
