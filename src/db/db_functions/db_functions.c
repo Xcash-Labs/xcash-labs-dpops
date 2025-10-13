@@ -1596,7 +1596,7 @@ int compute_payouts_due(payout_output_t *parsed, uint64_t in_block_height, int64
   }
 
   //jed
-  WARNING_PRINT("sum_atomic=%" PRIu64 " (%.6f XCA)", sum_atomic, sum_atomic / 1e6.0);
+  WARNING_PRINT("sum_atomic=%" PRIu64, sum_atomic);
 
   /* ---- Accrue per-address pending in public_addresses ---- */
   coll_pub = mongoc_client_get_collection(client, DATABASE_NAME, DB_COLLECTION_PAYOUT_BALANCES);
