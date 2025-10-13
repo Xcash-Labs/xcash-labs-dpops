@@ -1702,6 +1702,11 @@ done:
   if (pipeline) bson_destroy(pipeline);
   if (coll_blocks) mongoc_collection_destroy(coll_blocks);
   if (client) mongoc_client_pool_push(database_client_thread_pool, client);
+
+  if (rc == XCASH_OK) {
+    WARNING_PRINT("Computed Payouts: Total=%.6f XCA", (double)sum_atomic / (double)XCASH_ATOMIC_UNITS);
+  }
+
   return rc;
 }
 
@@ -1952,7 +1957,7 @@ done:
   if (client) mongoc_client_pool_push(database_client_thread_pool, client);
 
   if (rc == XCASH_OK) {
-    WARNING_PRINT("Payout Sweep completed: processed=%zu, total=%.6f XCA", processed, (double)sum_atomic / (double)XCASH_ATOMIC_UNITS);
+    WARNING_PRINT("Payout Sweep completed: processed %zu addresses", processed);
   }
 
   return rc;
