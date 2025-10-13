@@ -1,8 +1,5 @@
 #include "xcash_timer_thread.h"
 
-#define SCHED_TEST_EVERY_MIN 10
-#define SCHED_TEST_MODE 1
-
 // ---- helpers ----
 static void lower_thread_priority_batch(void) {
   // Best-effort: reduce CPU weight via niceness (works even if sched change fails)
@@ -117,12 +114,12 @@ static void add_vote_sum(char addrs[][XCASH_WALLET_LENGTH + 1],
   }
   // New bucket
   if (*pcount >= BLOCK_VERIFIERS_TOTAL_AMOUNT) {
-    WARNING_PRINT("vote_sums full; dropping contribution for %.12s…", addr);
+    ERROR_PRINT("vote_sums full; dropping contribution for %.12s…", addr);
     return;
   }
   size_t n = strnlen(addr, XCASH_WALLET_LENGTH + 1);
   if (n == 0 || n > XCASH_WALLET_LENGTH) {
-    WARNING_PRINT("bad delegate address length=%zu, skipping", n);
+    ERROR_PRINT("bad delegate address length=%zu, skipping", n);
     return;
   }
   memcpy(addrs[*pcount], addr, n);
@@ -285,7 +282,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
     }
 
     if (claimed_total <= 0) {
-      WARNING_PRINT("reserve_proofs: non-positive total_vote=%lld for id=%.12s… — skipping",
+      ERROR_PRINT("reserve_proofs: non-positive total_vote=%lld for id=%.12s… — skipping",
                     (long long)claimed_total, voter ? voter : "(unknown)");
       ++skipped;
       continue;
@@ -293,7 +290,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
 
     if (!voter || !delegate || !proof) {
       ++skipped;
-      WARNING_PRINT("reserve_proofs: missing required field(s), skipping one doc");
+      ERROR_PRINT("reserve_proofs: missing required field(s), skipping one doc");
       continue;
     }
 
@@ -311,10 +308,8 @@ static void run_proof_check(sched_ctx_t* ctx) {
       bson_error_t derr;
       if (mongoc_collection_delete_one(coll, &del_filter, NULL, NULL, &derr)) {
         ++deleted;
-        WARNING_PRINT("Deleted invalid reserve_proof id=%.12s… (delegate=%.12s…)",
-                      voter, delegate);
       } else {
-        WARNING_PRINT("Failed to delete invalid reserve_proof id=%.12s… : %s",
+        ERROR_PRINT("Failed to delete invalid reserve_proof id=%.12s… : %s",
                       voter, derr.message);
       }
       bson_destroy(&del_filter);
@@ -338,7 +333,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
   if (mongoc_cursor_error(cur, &cerr)) {
     ERROR_PRINT("reserve_proofs cursor error: %s", cerr.message);
   } else {
-    WARNING_PRINT("reserve_proofs scan complete: seen=%zu invalid=%zu deleted=%zu skipped=%zu",
+    DEBUG_PRINT("reserve_proofs scan complete: seen=%zu invalid=%zu deleted=%zu skipped=%zu",
                   seen, invalid, deleted, skipped);
   }
 
@@ -398,7 +393,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
 
         mongoc_cursor_t* cur_ck = mongoc_collection_find_with_opts(dcoll, &filter, &opts_ck, NULL);
         if (!cur_ck) {
-          WARNING_PRINT("delegate total read failed addr=%.12s… (cursor init)", agg_addr[i]);
+          ERROR_PRINT("delegate total read failed addr=%.12s… (cursor init)", agg_addr[i]);
         } else {
           const bson_t* doc_ck;
           if (mongoc_cursor_next(cur_ck, &doc_ck)) {
@@ -411,7 +406,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
           }
           bson_error_t ck_err;
           if (mongoc_cursor_error(cur_ck, &ck_err)) {
-            WARNING_PRINT("delegate total read failed addr=%.12s… : %s", agg_addr[i], ck_err.message);
+            ERROR_PRINT("delegate total read failed addr=%.12s… : %s", agg_addr[i], ck_err.message);
           }
           mongoc_cursor_destroy(cur_ck);
         }
@@ -422,7 +417,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
         // --- Compare and skip update if no change
         int64_t new_total = (int64_t)agg_total[i];
         if (have_current && current_total == new_total) {
-          WARNING_PRINT("delegate total unchanged addr=%.12s… total=%lld (skip)",
+          DEGUG_PRINT("delegate total unchanged addr=%.12s… total=%lld (skip)",
                         agg_addr[i], (long long)new_total);
 
           bson_destroy(&filter);
@@ -442,7 +437,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
         bool update_ok = false;
         if (!mongoc_collection_update_one(dcoll, &filter, &update,
                                           /*opts=*/NULL, /*reply=*/NULL, &uerr)) {
-          WARNING_PRINT("delegate total update failed addr=%.12s… : %s",
+          ERROR_PRINT("delegate total update failed addr=%.12s… : %s",
                         agg_addr[i], uerr.message);
         } else {
           update_ok = true;
@@ -493,11 +488,11 @@ static void run_proof_check(sched_ctx_t* ctx) {
       }
     }
     if (!ip) {
-      WARNING_PRINT("No online IP for delegate %.12s…; skipping PAYOUT_INSTRUCTION", delegate_addr);
+      DEBUG_PRINT("No online IP for delegate %.12s…; skipping PAYOUT_INSTRUCTION", delegate_addr);
       continue;
     }
     if (B->count == 0) {
-      WARNING_PRINT("No outputs for delegate %.12s…; skipping", delegate_addr);
+      DEBUG_PRINT("No outputs for delegate %.12s…; skipping", delegate_addr);
       continue;
     }
 
@@ -617,21 +612,10 @@ void* timer_thread(void* arg) {
 
   for (;;) {
     if (atomic_load_explicit(&shutdown_requested, memory_order_relaxed)) break;
-
     time_t now = time(NULL), run_at;
-
-#ifndef SCHED_TEST_MODE
     // --- normal: pick next slot from SLOTS ---
     int idx = pick_next_slot(now, &run_at);
     if (idx < 0) break;  // shouldn't happen
-#else
-    // --- test mode: run every N minutes (local time) ---
-    run_at = mk_local_next_every_minutes(SCHED_TEST_EVERY_MIN, now);
-
-    WARNING_PRINT("Test mode..................");
-
-#endif
-
     time_t wake = run_at - WAKEUP_SKEW_SEC;
     if (wake < now) wake = now;
 
@@ -641,10 +625,8 @@ void* timer_thread(void* arg) {
     sleep_until(run_at);
     if (atomic_load_explicit(&shutdown_requested, memory_order_relaxed)) break;
 
-#ifndef SCHED_TEST_MODE
     // dispatch based on role
     const sched_slot_t* slot = &SLOTS[idx];
-
     if (slot->kind == JOB_PROOF) {
       if (is_seed_node) {
         if (seed_is_primary()) {
@@ -653,18 +635,6 @@ void* timer_thread(void* arg) {
         }
       }
     }
-
-#else
-    // ---- test dispatch every N minutes ----
-    if (is_seed_node) {
-      if (seed_is_primary()) {
-        WARNING_PRINT("Test scheduler: PROOF CHECK (every %d min)", SCHED_TEST_EVERY_MIN);
-        run_proof_check(ctx);
-      } else {
-        DEBUG_PRINT("Test scheduler: not primary seed — skip proof");
-      }
-    }
-#endif
   }
   return NULL;
 }

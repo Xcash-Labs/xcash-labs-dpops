@@ -96,7 +96,7 @@ int check_reserve_proofs(uint64_t vote_amount_atomic, const char* PUBLIC_ADDRESS
 
   // Must be good and unspent
   if (strcmp(good, "true") != 0 || strcmp(spent, "0") != 0) {
-    WARNING_PRINT("Reserve proof invalid or indicates spent outputs (good=%s, spent=%s)",
+    ERROR_PRINT("Reserve proof invalid or indicates spent outputs (good=%s, spent=%s)",
                   good, spent);
     return XCASH_ERROR;
   }
@@ -113,7 +113,7 @@ int check_reserve_proofs(uint64_t vote_amount_atomic, const char* PUBLIC_ADDRESS
 
   // Compare against requested amount (ensure you use the correct var name)
   if (proven_atomic < vote_amount_atomic) {
-    WARNING_PRINT("Proof insufficient: proven=%" PRIu64 " requested=%" PRIu64,
+    ERROR_PRINT("Proof insufficient: proven=%" PRIu64 " requested=%" PRIu64,
                   proven_atomic, vote_amount_atomic);
     return XCASH_ERROR;
   }
@@ -437,10 +437,6 @@ int wallet_payout_send(const char* addr, int64_t amount_atomic, const char* reas
     return XCASH_ERROR;
   }
 
-  WARNING_PRINT("TX List=%s", tx_hash_list_buf);
-  WARNING_PRINT("Fee List=%s", fee_list_buf);
-  WARNING_PRINT("Amount List=%s", amount_list_buf);
-
   // Count txs by commas inside tx_hash_list
   int tx_count = count_items_in_array(tx_hash_list_buf);
   if (tx_count <= 0) {
@@ -515,7 +511,7 @@ int wallet_payout_send(const char* addr, int64_t amount_atomic, const char* reas
         txh_for_log = "(unknown)";
       }
     }
-    WARNING_PRINT("[payout/split #%d] acct=0 -> %s req=%" PRId64 " sent=%" PRIu64
+    DEBUG_PRINT("[payout/split #%d] acct=0 -> %s req=%" PRId64 " sent=%" PRIu64
                   " fee=%" PRIu64 " tx=%s reason=%s",
                   i, addr, amount_atomic, (uint64_t)amt_i, (uint64_t)fee_i, txh_for_log,
                   (reason && reason[0]) ? reason : "(n/a)");
@@ -528,7 +524,7 @@ int wallet_payout_send(const char* addr, int64_t amount_atomic, const char* reas
   if (amount_sent_out) *amount_sent_out = total_sent_net;
   if (tx_count_out) *tx_count_out = siblings_total; // 0 when only one tx
 
-  WARNING_PRINT("[payout/split] acct=0 -> %s req=%" PRId64 " total_sent=%" PRIu64
+  DEBUG_PRINT("[payout/split] acct=0 -> %s req=%" PRId64 " total_sent=%" PRIu64
                 " total_fee=%" PRIu64 " txs=%d (siblings=%zu, tx_count_out=%zu) first_tx=%s reason=%s",
                 addr, amount_atomic, total_sent_net, total_fee,
                 tx_count, siblings_total, (tx_count_out ? *tx_count_out : siblings_total),

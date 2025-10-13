@@ -987,8 +987,6 @@ void server_receive_payout(const char* MESSAGE) {
     return;
   }
 
-  WARNING_PRINT("Message: %s", MESSAGE);
-
   cJSON* root = cJSON_Parse(MESSAGE);
   if (!root) {
     const char* ep = cJSON_GetErrorPtr();
@@ -1229,9 +1227,8 @@ void server_receive_payout(const char* MESSAGE) {
     return;
   }
 
-  WARNING_PRINT("Unlocked balance: %" PRIu64 " atomic (%.6f XCA)",
-             unlocked,
-             (double)unlocked / (double)XCASH_ATOMIC_UNITS);
+  DEBUG_PRINT("Unlocked balance: %" PRIu64 " atomic (%.6f XCA)", unlocked,
+    (double)unlocked / (double)XCASH_ATOMIC_UNITS);
 
   uint64_t in_num_block_height = strtoull(in_block_height, NULL, 10);
   uint64_t conf = (uint64_t)(CRYPTONOTE_MINED_MONEY_UNLOCK_WINDOW + 1);

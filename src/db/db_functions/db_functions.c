@@ -1458,7 +1458,7 @@ int compute_payouts_due(payout_output_t *parsed, uint64_t in_block_height, int64
   int rc = XCASH_OK;
 
   if (!parsed || entries_count == 0) {
-    WARNING_PRINT("No parsed entries");
+    ERROR_PRINT("No parsed entries");
     return XCASH_ERROR;
   }
 
@@ -1590,7 +1590,7 @@ int compute_payouts_due(payout_output_t *parsed, uint64_t in_block_height, int64
   uint64_t pending_sum   = (sum > 0) ? (uint64_t)sum : 0;
   uint64_t sum_atomic    = (pending_sum < safe_unlocked) ? pending_sum : safe_unlocked;
   if (sum_atomic == 0) {
-    WARNING_PRINT("Nothing to pay (sum_atomic == 0)");
+    DEBUG_PRINT("Nothing to pay (sum_atomic == 0)");
     rc = XCASH_OK;
     goto done;
   }
@@ -1648,11 +1648,6 @@ int compute_payouts_due(payout_output_t *parsed, uint64_t in_block_height, int64
     }
   }
 
-  {
-    uint64_t leftover = sum_atomic - base_sum; // OK if >0: you chose not to pay leftovers
-    DEBUG_PRINT("leftover (not paid) = %" PRIu64, leftover);
-  }
-
   /* ---- Mark eligible found_blocks as processed ---- */
   {
     coll_blocks = mongoc_client_get_collection(client, DATABASE_NAME, DB_COLLECTION_BLOCKS_FOUND);
@@ -1691,7 +1686,7 @@ int compute_payouts_due(payout_output_t *parsed, uint64_t in_block_height, int64
         n = bson_iter_int32(&it);
       else if (bson_iter_init_find(&it, &reply, "nModified") && BSON_ITER_HOLDS_INT32(&it))
         n = bson_iter_int32(&it);
-      WARNING_PRINT("finalize: marked %" PRIi64 " found_blocks as processed", n);
+      DEBUG_PRINT("finalize: marked %" PRIi64 " found_blocks as processed", n);
     }
 
     bson_destroy(&reply);
@@ -1818,7 +1813,7 @@ int run_payout_sweep_simple(void)
   mongoc_collection_t* coll_pay =
       mongoc_client_get_collection(client, DATABASE_NAME, DB_COLLECTION_PAYOUT_RECEIPTS);
   if (!coll_pay) {
-        ERROR_PRINT("run_payout_sweep_simple: get_collection %s failed", DB_COLLECTION_PAYOUT_RECEIPTS);
+    ERROR_PRINT("run_payout_sweep_simple: get_collection %s failed", DB_COLLECTION_PAYOUT_RECEIPTS);
     bson_destroy(&query); bson_destroy(&opts); bson_destroy(&proj);
     mongoc_collection_destroy(coll_bal);
     mongoc_client_pool_push(database_client_thread_pool, client);
@@ -1846,7 +1841,7 @@ int run_payout_sweep_simple(void)
     if (bson_iter_init_find(&it, doc, "updated_at") && BSON_ITER_HOLDS_DATE_TIME(&it))
       updated = bson_iter_date_time(&it);
 
-    if (!addr) { WARNING_PRINT("run_payout_sweep_simple: skipping doc missing _id"); continue; }
+    if (!addr) { ERROR_PRINT("run_payout_sweep_simple: skipping doc missing _id"); continue; }
 
     const bool meets_min   = (pend >= minimum_payout_atomic);
     const bool is_stale_7d = (updated > 0 && (now_ms - updated) >= NO_ACTIVITY_DELETE);
@@ -1904,7 +1899,7 @@ int run_payout_sweep_simple(void)
         goto done;
       }
 
-      WARNING_PRINT("payout recorded: _id=%s split=%zu fee=%" PRIu64 " sent=%" PRIu64,
+      DEBUG_PRINT("payout recorded: _id=%s split=%zu fee=%" PRIu64 " sent=%" PRIu64,
                  first_hash, split_siblings_count, fee, (uint64_t)amt_sent);
 
       bson_destroy(&pay_doc);
@@ -1940,7 +1935,7 @@ int run_payout_sweep_simple(void)
       }
     }
 
-    WARNING_PRINT("run_payout_sweep_simple: paid %" PRId64 " to %s (%s); %s [tx=%s fee=%" PRIu64 "]",
+    DEBUG_PRINT("run_payout_sweep_simple: paid %" PRId64 " to %s (%s); %s [tx=%s fee=%" PRIu64 "]",
                pend, addr, reason, delete_after ? "deleted" : "zeroed", first_hash, fee);
   }
 
@@ -1957,7 +1952,7 @@ done:
   if (client) mongoc_client_pool_push(database_client_thread_pool, client);
 
   if (rc == XCASH_OK) {
-    WARNING_PRINT("run_payout_sweep_simple: completed, processed=%zu", processed);
+    DEBUG_PRINT("run_payout_sweep_simple: completed, processed=%zu", processed);
   }
   return rc;
 }
