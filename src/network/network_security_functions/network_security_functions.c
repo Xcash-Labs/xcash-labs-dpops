@@ -415,8 +415,6 @@ int verify_the_ip(const char* message, const char* client_ip, bool seed_only) {
   char resolved_ip[INET_ADDRSTRLEN] = {0};   // v4 only, as before
   char client_canon[INET_ADDRSTRLEN] = {0};  // v4 only, as before
 
-  INFO_PRINT("Client IP: %s", client_ip);
-
   // allow local: loopback or any interface on this host
   if (is_local_address(client_ip)) {
     DEBUG_PRINT("Internal loopback connection ok from: %s", client_ip);
