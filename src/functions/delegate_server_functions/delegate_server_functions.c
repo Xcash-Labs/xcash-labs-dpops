@@ -325,8 +325,6 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
   bool is_live_round = false;
   if (startup_complete) {
     is_live_round = (height == cheight);
-  } else {
-    is_live_round = false;
   }
 
   pthread_mutex_lock(&producer_refs_lock);
