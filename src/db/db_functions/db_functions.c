@@ -532,7 +532,7 @@ bool add_seed_indexes(void) {
     if (!mongoc_database_create_collection(db, DB_COLLECTION_ROUNDS, &c_opts, &err)) {
       if (err.code != 48) {
         ok = false;
-        WARNING_PRINT("[indexes] create_collection %s failed (domain=%d code=%d): %s",
+        ERROR_PRINT("[indexes] create_collection %s failed (domain=%d code=%d): %s",
                       DB_COLLECTION_ROUNDS, err.domain, err.code, err.message);
       }
     }
@@ -542,9 +542,8 @@ bool add_seed_indexes(void) {
         mongoc_client_get_collection(client, DATABASE_NAME, DB_COLLECTION_ROUNDS);
     if (!coll) {
       ok = false;
-      WARNING_PRINT("[indexes] get_collection %s failed", DB_COLLECTION_ROUNDS);
+      ERROR_PRINT("[indexes] get_collection %s failed", DB_COLLECTION_ROUNDS);
       mongoc_database_destroy(db);
-      // return or goto as fits your flow
     } else {
       // 1) unique block_height
       bson_t rk1, ro1;
@@ -1704,7 +1703,7 @@ done:
   if (client) mongoc_client_pool_push(database_client_thread_pool, client);
 
   if (rc == XCASH_OK) {
-    WARNING_PRINT("Computed Payouts: Total=%.6f XCA", (double)sum_atomic / (double)XCASH_ATOMIC_UNITS);
+    INFO_PRINT("Computed Payouts: Total=%.6f XCA", (double)sum_atomic / (double)XCASH_ATOMIC_UNITS);
   }
 
   return rc;
@@ -1957,7 +1956,7 @@ done:
   if (client) mongoc_client_pool_push(database_client_thread_pool, client);
 
   if (rc == XCASH_OK) {
-    WARNING_PRINT("Payout Sweep completed: processed %zu addresses", processed);
+    INFO_PRINT("Payout Sweep completed: processed %zu addresses", processed);
   }
 
   return rc;
