@@ -320,7 +320,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
     return;
   }
 
-  // If block_height being passed in is equal to the node block height do extra checks
+  // If block_height being passed in is equal to the node block height and node is not starting up do extra checks
   unsigned long long cheight = strtoull(current_block_height, NULL, 10);
   bool is_live_round = false;
   if (startup_complete) {
@@ -347,8 +347,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
     if (election_state_ready) {
       if (strncmp(prev_hash_str, previous_block_hash, 64) != 0) {
         cJSON_Delete(root);
-        INFO_PRINT("Prev Hash mismatch: expected %s, got %s",
-                   previous_block_hash, prev_hash_str);
+        INFO_PRINT("Prev Hash mismatch: expected %s, got %s", previous_block_hash, prev_hash_str);
         send_data(client, (unsigned char*)"0|PARENT_HASH_MISMATCH", strlen("0|PARENT_HASH_MISMATCH"));
         return;
       }
