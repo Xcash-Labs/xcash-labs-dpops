@@ -656,7 +656,7 @@ bool add_seed_indexes(void) {
   return ok;
 }
 
-bool add_indexes(void) {
+bool add_indexes_delegates(void) {
   bson_error_t err;
   bool ok = true;
 
@@ -748,13 +748,22 @@ bool add_indexes(void) {
     mongoc_collection_destroy(coll);
   }
 
+  mongoc_client_pool_push(database_client_thread_pool, client);
+  return ok;
+}
+
+bool add_indexes_blocks_found(void) {
+  bson_error_t err;
+  bool ok = true;
+
+  mongoc_client_t* client = mongoc_client_pool_pop(database_client_thread_pool);
+  if (!client) return false;
+
   /* =========================
      BLOCKS_FOUND COLLECTION
      ========================= */
-  // don't add to seed nodes
-#ifndef SEED_NODE_ON
-
   {
+    // don't add on seeds
     mongoc_collection_t* coll =
         mongoc_client_get_collection(client, DATABASE_NAME, DB_COLLECTION_BLOCKS_FOUND);
 
@@ -804,8 +813,6 @@ bool add_indexes(void) {
     bson_destroy(&k1);
     mongoc_collection_destroy(coll);
   }
-
-#endif
 
   mongoc_client_pool_push(database_client_thread_pool, client);
   return ok;

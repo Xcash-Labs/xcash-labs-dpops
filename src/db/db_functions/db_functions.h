@@ -24,7 +24,8 @@ int delete_document_from_collection(const char* DATABASE, const char* COLLECTION
 int check_if_database_collection_exist(const char* DATABASE, const char* COLLECTION);
 bool is_replica_set_ready(void);
 bool add_seed_indexes(void);
-bool add_indexes(void);
+bool add_indexes_delegates(void);
+bool add_indexes_blocks_found(void);
 int count_db_delegates(void);
 int count_recs(const bson_t *recs);
 bool db_find_all_doc(const char *db_name, const char *collection_name, bson_t *reply, bson_error_t *error);

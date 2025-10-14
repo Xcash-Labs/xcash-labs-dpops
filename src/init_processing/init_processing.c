@@ -100,11 +100,16 @@ bool init_processing(const arg_config_t *arg_config) {
 #endif
 
     }
-    if (!add_indexes()) {
-      ERROR_PRINT("Failed to add indexes to database!");
+    if (!add_indexes_delegates()) {
+      ERROR_PRINT("Failed to add indexes to delegates collection!");
       return false;
     }
-
+    if (!is_seed_node) {
+      if (!add_indexes_blocks_found()) {
+        ERROR_PRINT("Failed to add indexes to blocks_found collection!");
+        return false;
+      }
+    }
   }
 
   return true;
