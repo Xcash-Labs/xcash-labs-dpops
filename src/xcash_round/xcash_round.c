@@ -492,11 +492,13 @@ void start_block_production(void) {
       } else {
         snprintf(target_disp, sizeof(target_disp), "%llu", target_h);
       }
-      WARNING_PRINT("Delegate is still syncing, node is at %llu and the target height is %s", node_h, target_disp);
+      WARNING_PRINT("Delegate's blockchain is still syncing, node is at %llu and the target height is %s", node_h, target_disp);
       sleep(5);
     }
   }
 
+  INFO_PRINT("Waiting for block production to start");
+  sync_block_verifiers_minutes_and_seconds(0, 57);
   // set up delegates for first round
   if (!fill_delegates_from_db()) {
     FATAL_ERROR_EXIT("Failed to load and organize delegates for starting round, Possible problem with Mongodb");

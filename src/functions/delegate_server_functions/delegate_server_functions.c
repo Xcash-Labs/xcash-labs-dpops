@@ -322,7 +322,12 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
 
   // If block_height being passed in is equal to the node block height do extra checks
   unsigned long long cheight = strtoull(current_block_height, NULL, 10);
-  bool is_live_round = (height == cheight);
+  bool is_live_round = false;
+  if (startup_complete) {
+    is_live_round = (height == cheight);
+  } else {
+    is_live_round = false;
+  }
 
   pthread_mutex_lock(&producer_refs_lock);
   bool election_state_ready = is_hex_len(producer_refs[0].vrf_public_key, VRF_PUBLIC_KEY_LENGTH) &&
