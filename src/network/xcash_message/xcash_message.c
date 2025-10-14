@@ -342,7 +342,7 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
 
     case XMSG_XCASHD_TO_DPOPS_VERIFY:
       // New node or one that has been down for a while needs to skip until fully started 
-      if (startup_complete && (LIMIT_CHECK, data) == 1) {
+      if (startup_complete && ((LIMIT_CHECK, data) == 1)) {
         server_receive_data_socket_nodes_to_block_verifiers_validate_block(client, data);
         server_limit_public_addresses_vrf_lookup(LIMIT_REMOVE, data);
       }
