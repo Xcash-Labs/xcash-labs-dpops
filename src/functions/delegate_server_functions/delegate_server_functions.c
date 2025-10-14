@@ -987,9 +987,6 @@ void server_receive_payout(const char* MESSAGE) {
     return;
   }
 
-  // jed
-  WARNING_PRINT("Trans: %s", MESSAGE);
-
   cJSON* root = cJSON_Parse(MESSAGE);
   if (!root) {
     const char* ep = cJSON_GetErrorPtr();
@@ -1094,8 +1091,6 @@ void server_receive_payout(const char* MESSAGE) {
       return;
     }
     memcpy(parsed[i].a, ja->valuestring, alen + 1);
-
-// jed
 
     // amount (uint64_t from JSON string)
     cJSON* jv = cJSON_GetObjectItemCaseSensitive(elem, "v");
