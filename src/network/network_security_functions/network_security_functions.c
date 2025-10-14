@@ -404,11 +404,6 @@ static int sockaddr_to_numhost(const struct sockaddr* sa, char* out, size_t outs
  *   XCASH_ERROR (0) if the delegate is unknown, the IP does not match, or data is invalid.
 ---------------------------------------------------------------------------------------------------------*/
 int verify_the_ip(const char* message, const char* client_ip, bool seed_only) {
-  if (!message || !client_ip || *client_ip == 0) {
-    ERROR_PRINT("verify_ip: Null or empty client_ip passed");
-    return XCASH_ERROR;
-  }
-
   if (!message || !client_ip || client_ip[0] == '\0') {
     ERROR_PRINT("verify_ip: Null or empty client_ip passed");
     return XCASH_ERROR;
@@ -419,6 +414,8 @@ int verify_the_ip(const char* message, const char* client_ip, bool seed_only) {
   char filter_json[256] = {0};
   char resolved_ip[INET_ADDRSTRLEN] = {0};   // v4 only, as before
   char client_canon[INET_ADDRSTRLEN] = {0};  // v4 only, as before
+
+  INFO_PRINT("Client IP: %s", client_ip);
 
   // allow local: loopback or any interface on this host
   if (is_local_address(client_ip)) {
