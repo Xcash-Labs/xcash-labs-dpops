@@ -49,7 +49,6 @@ void server_receive_data_socket_node_to_node_db_sync_req(server_client_t *client
   char *message_str = NULL;          // serialized full message (used for hashing)
   char *final_str = NULL;            // serialized full message AFTER adding signature (what we send)
   EVP_MD_CTX* ctx = NULL;
-  int ok = XCASH_ERROR;
 
   char incoming_token[SYNC_TOKEN_LEN + 1] = {0};
 
@@ -133,10 +132,7 @@ void server_receive_data_socket_node_to_node_db_sync_req(server_client_t *client
   }
 
   char digest_hex[TRANSACTION_HASH_LENGTH + 1] = {0};
-  if (sha256_finalize_to_hex(ctx, digest_hex) != 0) {
-    ERROR_PRINT("Failed to finalize SHA-256");
-    goto cleanup;
-  }
+  bin_to_hex(ctx, SHA256_HASH_SIZE, digest_hex);
   EVP_MD_CTX_free(ctx); ctx = NULL;
 
   // 6) Build canonical signable string and sign it
@@ -197,8 +193,6 @@ void server_receive_data_socket_node_to_node_db_sync_req(server_client_t *client
   } else {
     DEBUG_PRINT("Sent delegate sync message to %s", client->client_ip);
   }
-
-  ok = XCASH_OK;
 
 cleanup:
   if (ctx) EVP_MD_CTX_free(ctx);
