@@ -496,7 +496,7 @@ void start_block_production(void) {
   }
 
   INFO_PRINT("Waiting for block production to start");
-  sync_block_verifiers_minutes_and_seconds(0, 57);
+  sync_block_verifiers_minutes_and_seconds(0, 58);
   // set up delegates for first round
   if (!fill_delegates_from_db()) {
     FATAL_ERROR_EXIT("Failed to load and organize delegates for starting round, Possible problem with Mongodb");
@@ -506,6 +506,10 @@ void start_block_production(void) {
   static bool printed_on_enter = false;
   static time_t last_log_sec = 0;
   startup_complete = true;
+  // Might not be used yet but lets initialize 
+  if (create_sync_token() == XCASH_OK) {
+    ERROR_PRINT("Error creating sync token");
+  }
 
   while (!atomic_load(&shutdown_requested)) {
 

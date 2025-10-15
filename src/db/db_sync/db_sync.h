@@ -22,7 +22,7 @@ typedef struct {
 typedef struct
 {
   xcash_node_sync_info_t* sync_info;
-  char overall_md5_hash[MD5_HASH_SIZE + 1];
+  char overall_md5_hash[SHA256_HASH_SIZE + 1];
 
 } xcash_db_sync_prehash_t;
 

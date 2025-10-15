@@ -40,7 +40,7 @@ Behavior:
 Returns:
   None
 ---------------------------------------------------------------------------------------------------------*/
-void server_receive_data_socket_node_to_node_db_sync_req(server_client_t *client, const char* MESSAGE) {
+void server_receive_data_socket_node_to_node_db_sync_req__OLD__(server_client_t *client, const char* MESSAGE) {
   bson_t reply;
   bson_error_t error;
   char incoming_token[SYNC_TOKEN_LEN + 1] = {0};
@@ -58,7 +58,7 @@ void server_receive_data_socket_node_to_node_db_sync_req(server_client_t *client
     }
     cJSON_Delete(root);
   } else {
-    ERROR_PRINT("cJSON parse failed");  // <-- added missing semicolon
+    ERROR_PRINT("cJSON parse failed");
     return;
   }
 
@@ -100,6 +100,85 @@ void server_receive_data_socket_node_to_node_db_sync_req(server_client_t *client
   char* message_str = cJSON_PrintUnformatted(message);
   cJSON_Delete(message);
 
+// jed
+  if (!message_str) {
+    ERROR_PRINT("Failed to serialize message to JSON");
+    return;
+  }
+
+  EVP_MD_CTX* ctx = EVP_MD_CTX_new();
+  if (!ctx) {
+    free(message_str);
+    ERROR_PRINT("EVP_MD_CTX_new failed");
+    return;
+  }
+  if (EVP_DigestInit_ex(ctx, EVP_sha256(), NULL) != 1) {
+    EVP_MD_CTX_free(ctx);
+    free(message_str);
+    ERROR_PRINT("EVP_DigestInit_ex failed");
+    return;
+  }
+
+  /* Hash the exact bytes of the JSON string */
+  size_t msg_len = strlen(message_str);
+  if (EVP_DigestUpdate(ctx, (const unsigned char*)message_str, msg_len) != 1) {
+    EVP_MD_CTX_free(ctx);
+    free(message_str);
+    ERROR_PRINT("EVP_DigestUpdate failed");
+    return;
+  }
+
+  char digest_hex[TRANSACTION_HASH_LENGTH + 1];
+  if (sha256_finalize_to_hex(ctx, digest_hex) != 0) {
+    EVP_MD_CTX_free(ctx);
+    free(message_str);
+    ERROR_PRINT("Failed to finalize SHA-256");
+    return;
+  }
+  EVP_MD_CTX_free(ctx);
+
+  // build canonical signable string: DB_SYNC_RESP|<height>|<public_key>|<entries>|<outputs_hash>
+  char* sign_str = NULL;
+  {
+    const char* fmt_sign = "DB_SYNC_RESP|%s|%s|%s|%s";
+    int need = snprintf(NULL, 0, fmt_sign, current_block_height, xcash_wallet_public_address, incoming_token, digest_hex);
+    if (need < 0) {
+      ERROR_PRINT("Failed to size signable string");
+      free(message_str);
+      return;
+    }
+    size_t len = (size_t)need + 1;
+    sign_str = (char*)malloc(len);
+    if (!sign_str) {
+      ERROR_PRINT("malloc(%zu) failed for signable string", len);
+      free(message_str);
+      return;
+    }
+    int wrote = snprintf(sign_str, len, fmt_sign, current_block_height, xcash_wallet_public_address, incoming_token, digest_hex);
+    if (wrote < 0 || (size_t)wrote >= len) {
+      ERROR_PRINT("snprintf(write) failed or truncated");
+      free(sign_str);
+      sign_str = NULL;
+      free(message_str);
+      return;
+    }
+  }
+
+  // sign
+  char signature[XCASH_SIGN_DATA_LENGTH + 1] = {0};
+  if (!sign_txt_string(sign_str, signature, sizeof signature)) {
+    ERROR_PRINT("Failed to sign the payout message for %.12s…", delegate_addr);
+    free(sign_str);
+    free(message_str);
+    return;
+  }
+  free(sign_str);
+  sign_str = NULL;
+
+  /* need to append signature to message here */
+
+  free(message_str);
+
   // Send message
   if (send_message_to_ip_or_hostname(client->client_ip, XCASH_DPOPS_PORT, message_str) != XCASH_OK) {
     ERROR_PRINT("Failed to send the DB sync message to %s", client->client_ip);
@@ -109,6 +188,182 @@ void server_receive_data_socket_node_to_node_db_sync_req(server_client_t *client
 
   free(message_str);
 }
+
+
+void server_receive_data_socket_node_to_node_db_sync_req(server_client_t *client, const char* MESSAGE) {
+  bson_t reply;
+  bson_error_t error;
+  char *json_string = NULL;          // from bson_as_canonical_extended_json
+  cJSON *message = NULL;             // outer message object
+  cJSON *json_data = NULL;           // nested "json" (delegates dump)
+  char *message_str = NULL;          // serialized full message (used for hashing)
+  char *final_str = NULL;            // serialized full message AFTER adding signature (what we send)
+  EVP_MD_CTX* ctx = NULL;
+  int ok = XCASH_ERROR;
+
+  char incoming_token[SYNC_TOKEN_LEN + 1] = {0};
+
+  // 1) Parse incoming MESSAGE, extract sync_token
+  cJSON *root = cJSON_Parse(MESSAGE);
+  if (!root) {
+    ERROR_PRINT("cJSON parse failed");
+    goto cleanup;
+  }
+  {
+    cJSON *token_item = cJSON_GetObjectItemCaseSensitive(root, "sync_token");
+    if (token_item && cJSON_IsString(token_item) && token_item->valuestring) {
+      // Copy up to SYNC_TOKEN_LEN characters; ensure NUL
+      strncpy(incoming_token, token_item->valuestring, SYNC_TOKEN_LEN);
+      incoming_token[SYNC_TOKEN_LEN] = '\0';
+    }
+  }
+  cJSON_Delete(root);
+  root = NULL;
+
+  if (incoming_token[0] == '\0') {
+    ERROR_PRINT("Failed to read sync_token");
+    goto cleanup;
+  }
+
+  // 2) Export collection -> BSON -> canonical extended JSON (string)
+  if (!db_export_collection_to_bson(DATABASE_NAME, DB_COLLECTION_DELEGATES, &reply, &error)) {
+    ERROR_PRINT("Failed to export collection: %s", error.message);
+    goto cleanup;
+  }
+  json_string = bson_as_canonical_extended_json(&reply, NULL);
+  bson_destroy(&reply);
+  if (!json_string) {
+    ERROR_PRINT("Failed to convert BSON to JSON");
+    goto cleanup;
+  }
+
+  // 3) Build the outgoing JSON object (keep it in memory until the very end)
+  message = cJSON_CreateObject();
+  if (!message) {
+    ERROR_PRINT("cJSON_CreateObject failed");
+    goto cleanup;
+  }
+  cJSON_AddStringToObject(message, "message_settings", "NODES_TO_NODES_DATABASE_SYNC_DATA");
+  cJSON_AddStringToObject(message, "public_address", xcash_wallet_public_address);
+
+  // Parse the exported collection JSON into an object
+  json_data = cJSON_Parse(json_string);
+  if (!json_data) {
+    ERROR_PRINT("Failed to parse inner JSON data");
+    goto cleanup;
+  }
+  // Attach sync_token and nest it under "json"
+  cJSON_AddStringToObject(json_data, "sync_token", incoming_token);
+  cJSON_AddItemToObject(message, "json", json_data);
+  json_data = NULL; // now owned by message
+
+  // 4) Serialize current message (without signature) for hashing
+  message_str = cJSON_PrintUnformatted(message);
+  if (!message_str) {
+    ERROR_PRINT("Failed to serialize message to JSON (pre-sign)");
+    goto cleanup;
+  }
+
+  // 5) SHA-256 over the EXACT bytes we’ll claim to sign (the JSON string above)
+  ctx = EVP_MD_CTX_new();
+  if (!ctx) {
+    ERROR_PRINT("EVP_MD_CTX_new failed");
+    goto cleanup;
+  }
+  if (EVP_DigestInit_ex(ctx, EVP_sha256(), NULL) != 1) {
+    ERROR_PRINT("EVP_DigestInit_ex failed");
+    goto cleanup;
+  }
+  {
+    const size_t msg_len = strlen(message_str);
+    if (EVP_DigestUpdate(ctx, (const unsigned char*)message_str, msg_len) != 1) {
+      ERROR_PRINT("EVP_DigestUpdate failed");
+      goto cleanup;
+    }
+  }
+
+  char digest_hex[TRANSACTION_HASH_LENGTH + 1] = {0};
+  if (sha256_finalize_to_hex(ctx, digest_hex) != 0) {
+    ERROR_PRINT("Failed to finalize SHA-256");
+    goto cleanup;
+  }
+  EVP_MD_CTX_free(ctx); ctx = NULL;
+
+  // 6) Build canonical signable string and sign it
+  char *sign_str = NULL;
+  {
+    const char* fmt_sign = "DB_SYNC_RESP|%s|%s|%s|%s";
+    int need = snprintf(NULL, 0, fmt_sign,
+                        current_block_height,
+                        xcash_wallet_public_address,
+                        incoming_token,
+                        digest_hex);
+    if (need < 0) {
+      ERROR_PRINT("Failed to size signable string");
+      goto cleanup;
+    }
+    size_t len = (size_t)need + 1;
+    sign_str = (char*)malloc(len);
+    if (!sign_str) {
+      ERROR_PRINT("malloc(%zu) failed for signable string", len);
+      goto cleanup;
+    }
+    int wrote = snprintf(sign_str, len, fmt_sign,
+                         current_block_height,
+                         xcash_wallet_public_address,
+                         incoming_token,
+                         digest_hex);
+    if (wrote < 0 || (size_t)wrote >= len) {
+      ERROR_PRINT("snprintf(write) failed or truncated for signable string");
+      free(sign_str); sign_str = NULL;
+      goto cleanup;
+    }
+  }
+
+  char signature[XCASH_SIGN_DATA_LENGTH + 1] = {0};
+  if (!sign_txt_string(sign_str, signature, sizeof signature)) {
+    ERROR_PRINT("Failed to sign DB sync response for %.12s…", xcash_wallet_public_address);
+    free(sign_str); sign_str = NULL;
+    goto cleanup;
+  }
+  free(sign_str); sign_str = NULL;
+
+  // 7) Append signature to the message JSON, then serialize the FINAL payload
+  if (!cJSON_AddStringToObject(message, "signature", signature)) {
+    ERROR_PRINT("Failed to append signature to message JSON");
+    goto cleanup;
+  }
+
+  final_str = cJSON_PrintUnformatted(message);
+  if (!final_str) {
+    ERROR_PRINT("Failed to serialize final message JSON");
+    goto cleanup;
+  }
+
+  // 8) Send final JSON (NOT the earlier pre-sign string)
+  if (send_message_to_ip_or_hostname(client->client_ip, XCASH_DPOPS_PORT, final_str) != XCASH_OK) {
+    ERROR_PRINT("Failed to send the DB sync message to %s", client->client_ip);
+    goto cleanup;
+  } else {
+    DEBUG_PRINT("Sent delegate sync message to %s", client->client_ip);
+  }
+
+  ok = XCASH_OK;
+
+cleanup:
+  if (ctx) EVP_MD_CTX_free(ctx);
+  if (json_string) bson_free(json_string);
+  if (message) cJSON_Delete(message);
+  if (message_str) free(message_str);
+  if (final_str) free(final_str);
+
+  return;
+}
+
+
+
+
+
 
 /*---------------------------------------------------------------------------------------------------------
  * @brief Handles incoming delegate database sync messages from other nodes.

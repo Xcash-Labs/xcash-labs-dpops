@@ -7,7 +7,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
   char vrf_proof_hex[VRF_PROOF_LENGTH + 1] = {0};  
   char vrf_beta_hex[VRF_BETA_LENGTH + 1] = {0};
   char block_height[BLOCK_HEIGHT_LENGTH] = {0};
-  char parsed_delegates_hash[MD5_HASH_SIZE + 1] = {0};
+  char parsed_delegates_hash[SHA256_HASH_SIZE + 1] = {0};
 
   DEBUG_PRINT("received %s, %s", __func__, MESSAGE);
 

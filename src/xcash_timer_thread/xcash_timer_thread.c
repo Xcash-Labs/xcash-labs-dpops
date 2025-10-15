@@ -497,10 +497,10 @@ static void run_proof_check(sched_ctx_t* ctx) {
     }
 
     // 1) hash outputs
-    uint8_t out_hash[MD5_HASH_SIZE];
+    uint8_t out_hash[SHA256_HASH_SIZE];
     outputs_digest_sha256(B->outs, B->count, out_hash);
     char out_hash_hex[TRANSACTION_HASH_LENGTH + 1];
-    bin_to_hex(out_hash, MD5_HASH_SIZE, out_hash_hex);
+    bin_to_hex(out_hash, SHA256_HASH_SIZE, out_hash_hex);
 
     // 2) build canonical signable string:
     //    SEED_TO_NODES_PAYOUT|<height>|<blockhash>|<delegate>|<entries>|<outputs_hash>

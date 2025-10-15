@@ -27,7 +27,7 @@ char secret_key[VRF_SECRET_KEY_LENGTH +1] = {0};
 char vrf_public_key[VRF_PUBLIC_KEY_LENGTH + 1] = {0};
 
 char current_round_part[3] = "1";
-char delegates_hash[MD5_HASH_SIZE + 1] = {0};
+char delegates_hash[SHA256_HASH_SIZE + 1] = {0};
 
 char delegates_error_list[(MAXIMUM_BUFFER_SIZE_DELEGATES_NAME * 100) + 5000];     // not sure if this is used    
 
