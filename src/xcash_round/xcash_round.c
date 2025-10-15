@@ -986,7 +986,8 @@ void start_block_production(void) {
             selected_index = select_random_online_delegate();
             pthread_mutex_unlock(&delegates_all_lock);
             if (create_sync_token() == XCASH_OK) {
-              if (create_delegates_db_sync_request(selected_index)) {
+//              if (create_delegates_db_sync_request(selected_index)) {
+              if (create_delegates_db_sync_request(0)) {
                 INFO_PRINT("Waiting for DB sync");
               } else {
                 ERROR_PRINT("Error occured while syncing delegates");
