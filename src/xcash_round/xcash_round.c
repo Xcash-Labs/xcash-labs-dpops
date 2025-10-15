@@ -426,11 +426,11 @@ xcash_round_result_t process_round(void) {
 
   DEBUG_PRINT("Final vote hash: %s", final_vote_hash_hex);
 
-  if (max_votes < agreement_threshold) {
-    INFO_PRINT_STATUS_FAIL("Agreement not reached. Votes: %d (need ≥ %d of N=%d)", max_votes, agreement_threshold, delegates_num);
+  if (max_votes < agreement_needed) {
+    INFO_PRINT_STATUS_FAIL("Agreement not reached. Votes: %d (need ≥ %d of N=%d)", max_votes, agreement_needed, delegates_num);
     return ROUND_ERROR;
   }
-  INFO_PRINT_STATUS_OK("Agreement reached. Votes: %d (≥ %d of N=%d)", max_votes, agreement_threshold, delegates_num);
+  INFO_PRINT_STATUS_OK("Agreement reached. Votes: %d (≥ %d of N=%d)", max_votes, agreement_needed, delegates_num);
 
   if (producer_indx >= 0) {
     pthread_mutex_lock(&producer_refs_lock);
