@@ -132,9 +132,9 @@ void server_receive_data_socket_node_to_node_db_sync_req(server_client_t *client
   }
 
   unsigned char digest[SHA256_HASH_SIZE];
-  unsigned int len = 0;
+  unsigned int leng = 0;
 
-  if (EVP_DigestFinal_ex(ctx, digest, &len) != 1 || len != SHA256_HASH_SIZE) {
+  if (EVP_DigestFinal_ex(ctx, digest, &leng) != 1 || leng != SHA256_HASH_SIZE) {
     ERROR_PRINT("EVP_DigestFinal_ex failed");
     EVP_MD_CTX_free(ctx);
     return;
@@ -142,7 +142,7 @@ void server_receive_data_socket_node_to_node_db_sync_req(server_client_t *client
   EVP_MD_CTX_free(ctx);
 
   char digest_hex[TRANSACTION_HASH_LENGTH + 1] = {0};
-  bin_to_hex(digest, (int)len, digest_hex);
+  bin_to_hex(digest, (int)leng, digest_hex);
 
   // 6) Build canonical signable string and sign it
   char *sign_str = NULL;
