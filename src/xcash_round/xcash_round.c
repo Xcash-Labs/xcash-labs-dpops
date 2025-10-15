@@ -507,7 +507,7 @@ void start_block_production(void) {
   static time_t last_log_sec = 0;
   startup_complete = true;
   // Might not be used yet but lets initialize 
-  if (create_sync_token() == XCASH_OK) {
+  if (create_sync_token() == XCASH_ERROR) {
     ERROR_PRINT("Error creating sync token");
   }
 
