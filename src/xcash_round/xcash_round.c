@@ -207,7 +207,7 @@ xcash_round_result_t process_round(void) {
   INFO_STAGE_PRINT("Part 5 - Checking Block Verifiers Majority and Minimum Online Requirement");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 5);
   // Fill block verifiers list with proven online nodes
-  int nodes_majority_count = 0;
+  int online_count = 0;
 
   pthread_mutex_lock(&current_block_verifiers_lock);
   memset(&current_block_verifiers_list, 0, sizeof(current_block_verifiers_list));
@@ -223,7 +223,7 @@ xcash_round_result_t process_round(void) {
         current_block_verifiers_list.block_verifiers_vote_total[j] = 0;
         current_block_verifiers_list.block_verifiers_voted[j] = 0;
         INFO_PRINT_STATUS_OK("Delegate: %s, Online Status: ", delegates_all[i].delegate_name);
-        nodes_majority_count++;
+        online_count++;
         j++;
       } else {
         INFO_PRINT_STATUS_FAIL("Delegate: %s, Online Status: ", delegates_all[i].delegate_name);
@@ -234,20 +234,23 @@ xcash_round_result_t process_round(void) {
   atomic_store(&wait_for_vrf_init, false);
 
   // Need at least BLOCK_VERIFIERS_VALID_AMOUNT delegates to start things off, delegates data needs to match for first delegates
-  if (nodes_majority_count < BLOCK_VERIFIERS_VALID_AMOUNT) {
-    INFO_PRINT_STATUS_FAIL("Failed to reach the required number of online nodes: %d  Minimum Required: %d", nodes_majority_count, BLOCK_VERIFIERS_VALID_AMOUNT);
+  if (online_count < BLOCK_VERIFIERS_VALID_AMOUNT) {
+    INFO_PRINT_STATUS_FAIL("Failed to reach the required number of online nodes: %d  Minimum Required: %d", online_count, BLOCK_VERIFIERS_VALID_AMOUNT);
     return ROUND_ERROR;
   }
 
   int delegates_num = (total_delegates < BLOCK_VERIFIERS_AMOUNT) ? total_delegates : BLOCK_VERIFIERS_AMOUNT;
-  int required_majority = (delegates_num * MAJORITY_PERCENT + 99) / 100;
+  int quorum_needed = (delegates_num * MAJORITY_PERCENT + 99) / 100;  // 70% of nodes online
+  int agreement_needed = (2 * delegates_num + 2) / 3;
 
-  if (nodes_majority_count < required_majority) {
-    INFO_PRINT_STATUS_FAIL("Data majority not reached. Online Nodes: %d  Required majority: %d", nodes_majority_count, required_majority);
+
+  if (online_count < quorum_needed) {
+    INFO_PRINT_STATUS_FAIL("Quorum not reached. Total: %d  Online: %d  Need: %d (>= %d%%)", delegates_num, online_count, quorum_needed, MAJORITY_PERCENT);
     return ROUND_ERROR;
   }
 
-  INFO_PRINT_STATUS_OK("Data majority reached. Required Majority / Online Nodes: [%d/%d]", required_majority, nodes_majority_count);
+  INFO_PRINT_STATUS_OK("Quorum reached. Online: %d/%d  Need: %d", online_count, delegates_num, quorum_needed);
+
 
   INFO_STAGE_PRINT("Part 6 - Select Block Creator From VRF Data");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 6);
@@ -423,10 +426,11 @@ xcash_round_result_t process_round(void) {
 
   DEBUG_PRINT("Final vote hash: %s", final_vote_hash_hex);
 
-  if (max_votes < required_majority) {
-    INFO_PRINT_STATUS_FAIL("Data majority not reached. Online Nodes: [%d/%d]", max_votes, required_majority);
+  if (max_votes < agreement_threshold) {
+    INFO_PRINT_STATUS_FAIL("Agreement not reached. Votes: %d (need ≥ %d of N=%d)", max_votes, agreement_threshold, delegates_num);
     return ROUND_ERROR;
   }
+  INFO_PRINT_STATUS_OK("Agreement reached. Votes: %d (≥ %d of N=%d)", max_votes, agreement_threshold, delegates_num);
 
   if (producer_indx >= 0) {
     pthread_mutex_lock(&producer_refs_lock);
@@ -440,7 +444,7 @@ xcash_round_result_t process_round(void) {
     pthread_mutex_unlock(&producer_refs_lock);
   }
 
-  int block_creation_result = block_verifiers_create_block(final_vote_hash_hex, (uint8_t)valid_vote_count, (uint8_t)nodes_majority_count);
+  int block_creation_result = block_verifiers_create_block(final_vote_hash_hex, (uint8_t)valid_vote_count, (uint8_t)online_count);
 
   if (block_creation_result == ROUND_OK) {
     INFO_PRINT_STATUS_OK("Round Successfully Completed For Block %s", current_block_height);
