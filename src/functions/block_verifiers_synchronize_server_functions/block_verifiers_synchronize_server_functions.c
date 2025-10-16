@@ -247,78 +247,185 @@ void server_receive_data_socket_node_to_node_db_sync_data(const char *MESSAGE) {
 
   INFO_PRINT("Data Message: %s", MESSAGE);
 
-  char tmp_token[SYNC_TOKEN_LEN + 1] = {0};
+  char sender_public_address[XCASH_WALLET_LENGTH + 1] = {0};
+  char sender_signature[XCASH_SIGN_DATA_LENGTH + 1]  = {0};
+  char tmp_token[SYNC_TOKEN_LEN + 1]                 = {0};
 
-  // 1) Parse root JSON
   cJSON *root = cJSON_Parse(MESSAGE);
   if (!root) {
     ERROR_PRINT("Failed to parse root JSON message");
     return;
   }
 
-  // 2) Get "json" container (must be an object of numbered docs)
+  // --- json container (object of numbered docs) ---
   cJSON *json_field = cJSON_GetObjectItemCaseSensitive(root, "json");
   if (!json_field || !cJSON_IsObject(json_field)) {
     ERROR_PRINT("Field 'json' not found or not a JSON object");
-    cJSON_Delete(root);
+    cJSON_Delete(root); root = NULL;
     return;
   }
 
-  // 3) Extract and verify sync_token (inside "json")
+  // --- public_address (root) ---
+  cJSON *pub_item = cJSON_GetObjectItemCaseSensitive(root, "public_address");
+  if (!pub_item || !cJSON_IsString(pub_item) || !pub_item->valuestring || pub_item->valuestring[0] == '\0') {
+    ERROR_PRINT("Field 'public_address' not found or invalid");
+    cJSON_Delete(root); root = NULL;
+    return;
+  }
+  {
+    size_t plen = strnlen(pub_item->valuestring, XCASH_WALLET_LENGTH + 1);
+    if (plen == 0 || plen > XCASH_WALLET_LENGTH) {
+      ERROR_PRINT("public_address too long (len=%zu, cap=%d)", plen, XCASH_WALLET_LENGTH);
+      cJSON_Delete(root); root = NULL;
+      return;
+    }
+    memcpy(sender_public_address, pub_item->valuestring, plen);
+    sender_public_address[plen] = '\0';
+  }
+
+  // --- signature (root) ---
+  cJSON *sig_item = cJSON_GetObjectItemCaseSensitive(root, "signature");
+  if (!sig_item || !cJSON_IsString(sig_item) || !sig_item->valuestring || sig_item->valuestring[0] == '\0') {
+    ERROR_PRINT("Field 'signature' not found or invalid");
+    cJSON_Delete(root); root = NULL;
+    return;
+  }
+  {
+    size_t slen = strnlen(sig_item->valuestring, XCASH_SIGN_DATA_LENGTH + 1);
+    if (slen == 0 || slen > XCASH_SIGN_DATA_LENGTH) {
+      ERROR_PRINT("signature wrong length (len=%zu, max=%d)", slen, XCASH_SIGN_DATA_LENGTH);
+      cJSON_Delete(root); root = NULL;
+      return;
+    }
+    memcpy(sender_signature, sig_item->valuestring, slen);
+    sender_signature[slen] = '\0';
+  }
+
+  // --- sync_token (inside "json") ---
   cJSON *token_item = cJSON_GetObjectItemCaseSensitive(json_field, "sync_token");
   if (!token_item || !cJSON_IsString(token_item) || !token_item->valuestring) {
     ERROR_PRINT("Field 'sync_token' not found or not a valid string");
-    cJSON_Delete(root);
+    cJSON_Delete(root); root = NULL;
     return;
   }
-  size_t toklen = strnlen(token_item->valuestring, SYNC_TOKEN_LEN + 1);
-  if (toklen != SYNC_TOKEN_LEN) {
-    ERROR_PRINT("sync_token wrong length: %zu (expected %d)", toklen, SYNC_TOKEN_LEN);
-    cJSON_Delete(root);
-    return;
+  {
+    size_t toklen = strnlen(token_item->valuestring, SYNC_TOKEN_LEN + 1);
+    if (toklen != SYNC_TOKEN_LEN) {
+      ERROR_PRINT("sync_token wrong length: %zu (expected %d)", toklen, SYNC_TOKEN_LEN);
+      cJSON_Delete(root); root = NULL;
+      return;
+    }
+    memcpy(tmp_token, token_item->valuestring, SYNC_TOKEN_LEN);
+    tmp_token[SYNC_TOKEN_LEN] = '\0';
   }
-  memcpy(tmp_token, token_item->valuestring, SYNC_TOKEN_LEN);
-  tmp_token[SYNC_TOKEN_LEN] = '\0';
 
+  // Validate token against local expected token
   if (strcmp(tmp_token, sync_token) != 0) {
     ERROR_PRINT("Skipping db sync, invalid sync_token received: %s", tmp_token);
-    cJSON_Delete(root);
+    cJSON_Delete(root); root = NULL;
     return;
   }
 
-  // 4) Remove sync_token so the payload shape matches the old one (object of numbered docs)
-  cJSON_DeleteItemFromObjectCaseSensitive(json_field, "sync_token");
+  // --- remove 'signature' from ROOT before hashing (detach to avoid API variance) ---
+  {
+    cJSON *sig_node = cJSON_DetachItemFromObjectCaseSensitive(root, "signature");
+    if (!sig_node) {
+      ERROR_PRINT("Failed to remove 'signature' from root before hashing");
+    cJSON_Delete(root); root = NULL;
+      return;
+    }
+    cJSON_Delete(sig_node); // free detached node
+  }
 
-  // (Optional) quick sanity: ensure there is at least one numbered object
+  // --- serialize pre-sign JSON (root WITHOUT signature) ---
+  char *message_str = cJSON_PrintUnformatted(root);
+  if (!message_str) {
+    ERROR_PRINT("Failed to serialize pre-sign JSON");
+    cJSON_Delete(root); root = NULL;
+    return;
+  }
+
+  // --- SHA-256(pre-sign JSON) ---
+  EVP_MD_CTX *ctx = EVP_MD_CTX_new();
+  if (!ctx) {
+    ERROR_PRINT("EVP_MD_CTX_new failed");
+    free(message_str);
+    cJSON_Delete(root); root = NULL;
+    return;
+  }
+  if (EVP_DigestInit_ex(ctx, EVP_sha256(), NULL) != 1 ||
+      EVP_DigestUpdate(ctx, (const unsigned char*)message_str, strlen(message_str)) != 1) {
+    ERROR_PRINT("EVP_DigestInit/Update failed");
+    EVP_MD_CTX_free(ctx);
+    free(message_str);
+    cJSON_Delete(root); root = NULL;
+    return;
+  }
+  unsigned char digest[SHA256_HASH_SIZE];
+  unsigned int dlen = 0;
+  if (EVP_DigestFinal_ex(ctx, digest, &dlen) != 1 || dlen != SHA256_HASH_SIZE) {
+    ERROR_PRINT("EVP_DigestFinal_ex failed");
+    EVP_MD_CTX_free(ctx);
+    free(message_str);
+    cJSON_Delete(root); root = NULL;
+    return;
+  }
+  EVP_MD_CTX_free(ctx); ctx = NULL;
+
+  char digest_hex[TRANSACTION_HASH_LENGTH + 1];
+  bin_to_hex(digest, (int)dlen, digest_hex);
+  free(message_str); message_str = NULL;
+
+  // --- rebuild canonical string using GLOBAL current_block_height ---
+  char sign_buf[VSMALL_BUFFER_SIZE];
+  int need = snprintf(sign_buf, sizeof sign_buf,
+                      "DB_SYNC_RESP|%s|%s|%s|%s",
+                      current_block_height,
+                      sender_public_address,
+                      tmp_token,
+                      digest_hex);
+  if (need < 0 || (size_t)need >= sizeof sign_buf) {
+    ERROR_PRINT("sign_buf truncated when reconstructing signable string");
+    cJSON_Delete(root); root = NULL;
+    return;
+  }
+
+  // --- verify signature ---
+  if (wallet_verify_signature(sign_buf, sender_public_address, sender_signature) != XCASH_OK) {
+    ERROR_PRINT("DB sync: Signature verification failed for %.12s…", sender_public_address);
+    cJSON_Delete(root); root = NULL;
+    return;
+  }
+
+  // --- remove sync_token from payload before import (payload should be numbered docs only) ---
+  {
+    cJSON *tok_node = cJSON_DetachItemFromObjectCaseSensitive(json_field, "sync_token");
+    if (tok_node) cJSON_Delete(tok_node); // ok if absent
+  }
+
+  // --- quick sanity: at least one document under 'json' ---
   int doc_count = 0;
   for (cJSON *it = json_field->child; it; it = it->next) {
     if (it->string && cJSON_IsObject(it)) ++doc_count;
   }
   if (doc_count == 0) {
     ERROR_PRINT("DB sync payload empty: no documents under 'json'");
-    cJSON_Delete(root);
+    cJSON_Delete(root); root = NULL;
     return;
   }
   INFO_PRINT("DB sync payload object contains %d documents", doc_count);
 
-  // 5) Serialize the OBJECT (not an array) exactly like before
+  // --- serialize 'json' object and convert to BSON ---
   char *json_compact = cJSON_PrintUnformatted(json_field);
-  cJSON_Delete(root);
+  cJSON_Delete(root); root = NULL;
   if (!json_compact) {
     ERROR_PRINT("Failed to serialize 'json' object");
     return;
   }
-  if (json_compact[0] != '{') {
-    ERROR_PRINT("Upsert expects an object of documents; got non-object JSON");
-    free(json_compact);
-    return;
-  }
 
-  // 6) Convert JSON -> BSON
   bson_error_t error;
   bson_t *doc = bson_new_from_json((const uint8_t *)json_compact, -1, &error);
   free(json_compact);
-
   if (!doc) {
     ERROR_PRINT("Failed to parse BSON from JSON: %s", error.message);
     return;
@@ -329,7 +436,7 @@ void server_receive_data_socket_node_to_node_db_sync_data(const char *MESSAGE) {
     return;
   }
 
-  // 7) Replace collection contents
+  // --- replace collection contents atomically under lock ---
   pthread_mutex_lock(&delegates_all_lock);
 
   if (!db_drop(DATABASE_NAME, DB_COLLECTION_DELEGATES, &error)) {
@@ -346,7 +453,7 @@ void server_receive_data_socket_node_to_node_db_sync_data(const char *MESSAGE) {
     return;
   }
 
-  if(!add_indexes_delegates()) {
+  if (!add_indexes_delegates()) {
     ERROR_PRINT("Failed to create index on delegates");
     pthread_mutex_unlock(&delegates_all_lock);
     bson_destroy(doc);
@@ -355,6 +462,7 @@ void server_receive_data_socket_node_to_node_db_sync_data(const char *MESSAGE) {
 
   pthread_mutex_unlock(&delegates_all_lock);
   bson_destroy(doc);
+  create_sync_token();
 
   INFO_PRINT("Successfully updated delegates database from sync message");
 }

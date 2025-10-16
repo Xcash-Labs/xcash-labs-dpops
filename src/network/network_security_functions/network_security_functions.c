@@ -493,3 +493,67 @@ int verify_the_ip(const char* message, const char* client_ip, bool seed_only) {
 
   return XCASH_OK;
 }
+
+/*---------------------------------------------------------------------------------------------------------
+ * Name: wallet_verify_signature
+ *
+ * Description:
+ *   Calls the local XCASH wallet JSON-RPC `verify` to check that `in_signature` is valid
+ *   for (`sign_str`, `in_public_address`). Returns XCASH_OK on valid, XCASH_ERROR otherwise.
+ *
+ * Parameters:
+ *   sign_str          - Canonical string that was signed (exact bytes).
+ *   in_public_address - XCA public address of the claimed signer.
+ *   in_signature      - Signature text to verify.
+ *
+ * Return:
+ *   XCASH_OK    -> wallet says signature is valid
+ *   XCASH_ERROR -> HTTP/parse error or wallet says invalid
+ *
+ * Notes:
+ *   - If sign_str may contain quotes/backslashes/newlines, JSON-escape it before calling.
+ *   - Uses XCASH_WALLET_IP / XCASH_WALLET_PORT / HTTP_TIMEOUT_SETTINGS.
+ *---------------------------------------------------------------------------------------------------------*/
+int wallet_verify_signature(const char *sign_str, const char *in_public_address, const char *in_signature)
+{
+  if (!sign_str || !in_public_address || !in_signature) {
+    return XCASH_ERROR;
+  }
+
+  static const char *HTTP_HEADERS[] = {
+    "Content-Type: application/json",
+    "Accept: application/json"
+  };
+  static const size_t HTTP_HEADERS_LENGTH =
+      sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0]);
+
+  char request[MEDIUM_BUFFER_SIZE * 2] = {0};
+  char response[MEDIUM_BUFFER_SIZE] = {0};
+
+  // NOTE: JSON-escape sign_str/address/signature if they can contain special chars.
+  int nw = snprintf(request, sizeof(request),
+      "{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"verify\",\"params\":{"
+        "\"data\":\"%s\","
+        "\"address\":\"%s\","
+        "\"signature\":\"%s\"}}",
+      sign_str, in_public_address, in_signature);
+  if (nw < 0 || (size_t)nw >= sizeof(request)) {
+    return XCASH_ERROR;
+  }
+
+  int sent = send_http_request(response, sizeof(response),
+                               XCASH_WALLET_IP, "/json_rpc", XCASH_WALLET_PORT,
+                               "POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH,
+                               request, HTTP_TIMEOUT_SETTINGS);
+  if (sent <= 0) {
+    return XCASH_ERROR;
+  }
+
+  char result[8] = {0};
+  int parsed_ok = parse_json_data(response, "result.good", result, sizeof(result));
+  if (parsed_ok != XCASH_OK) {
+    return XCASH_ERROR;
+  }
+
+  return (strcmp(result, "true") == 0) ? XCASH_OK : XCASH_ERROR;
+}
