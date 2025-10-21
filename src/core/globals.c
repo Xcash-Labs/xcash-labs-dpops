@@ -1,7 +1,7 @@
 #include "globals.h"
 
 // set globals defined in globals.h
-int log_level = 0;
+int log_level = 1;  // default level is error
 int delegate_db_hash_mismatch = 0;
 double delegate_fee_percent = 5.0;
 uint64_t minimum_payout = 50;  // default value
