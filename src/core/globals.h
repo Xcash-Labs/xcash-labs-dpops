@@ -43,7 +43,7 @@ extern char sync_token[SYNC_TOKEN_LEN + 1];
 
 extern struct main_nodes_list main_nodes_list; // The list of main nodes public address and IP address
 extern block_verifiers_list_t current_block_verifiers_list; // The list of block verifiers name, public address and IP address for the current round
-extern const char* collection_names[XCASH_DB_COUNT];
+//extern const char* collection_names[XCASH_DB_COUNT];
 extern bool cleanup_db_before_upsert;
 
 extern struct blockchain_data blockchain_data; // The data for a new block to be added to the network.
