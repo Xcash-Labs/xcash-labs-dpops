@@ -823,7 +823,7 @@ int count_db_delegates(void) {
   bool result = false;
   int64_t count;
 
-  result = db_count_doc(DATABASE_NAME, collection_names[XCASH_DB_DELEGATES], &count, &error);
+  result = db_count_doc(DATABASE_NAME, DB_COLLECTION_DELEGATES, &count, &error);
   if (!result) {
     count = -1;
   }
