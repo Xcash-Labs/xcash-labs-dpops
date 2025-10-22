@@ -42,7 +42,6 @@ bool add_vrf_extra_and_sign(char* block_blob_hex, const char* vote_hash_hex, siz
   DEBUG_PRINT("Final vote hash 2: %s", vote_hash_hex);
   DEBUG_PRINT("total_vote: %u | winning_vote: %u", total_vote, winning_vote);
 
-
   size_t blob_len = strlen(block_blob_hex) / 2;   // bytes after hex→bin
   unsigned char* block_blob_bin = calloc(1, blob_len);
 

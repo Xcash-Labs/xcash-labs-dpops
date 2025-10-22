@@ -28,5 +28,6 @@ int verify_action_data(const char *message, const char *client_ip, xcash_msg_t m
 int verify_the_ip(const char *message, const char *client_ip, bool seed_only);
 bool sign_txt_string(const char* txt_string, char* signature_out, size_t sig_out_len);
 int wallet_verify_signature(const char *sign_str, const char *in_public_address, const char *in_signature);
+bool dnssec_rr_secure(const char* name, int rrtype);
 
 #endif
