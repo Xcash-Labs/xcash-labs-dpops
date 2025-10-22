@@ -21,7 +21,7 @@
 
 typedef struct {
     char public_address[XCASH_WALLET_LENGTH + 1];
-    char IP_address[BLOCK_VERIFIERS_IP_ADDRESS_TOTAL_LENGTH + 1];
+    char IP_address[IP_LENGTH + 1];
     char vrf_public_key[VRF_PUBLIC_KEY_LENGTH + 1];
     char vrf_proof_hex[VRF_PROOF_LENGTH + 1];
     char vrf_beta_hex[VRF_BETA_LENGTH + 1];
@@ -32,7 +32,7 @@ extern producer_ref_t producer_refs[PRODUCER_REF_COUNT];
 
 typedef struct {
     char public_address[XCASH_WALLET_LENGTH+1];
-    char IP_address[BLOCK_VERIFIERS_IP_ADDRESS_TOTAL_LENGTH+1];
+    char IP_address[IP_LENGTH+1];
     bool is_online;
 } producer_node_t;
 
