@@ -63,10 +63,7 @@
 #define MAXIMUM_BUFFER_SIZE_DELEGATES_BACKUP_NAMES 505
 
 
-
-
-
-#define CONNECT_TIMEOUT_SEC 3
+#define CONNECT_TIMEOUT_SEC 2
 #define RECEIVE_TIMEOUT_SEC 3
 #define SEND_TIMEOUT_MS 3000
 #define NET_MULTI_WORKERS 12
@@ -179,14 +176,5 @@
 #define XCASH_ERROR 0
 #define BASE58_TMP_SIZE 128
 #define BPS_SCALE 10000ULL
-
-// ===================== Enums =====================
-typedef enum XCASH_DBS {
-    XCASH_DB_DELEGATES = 0,
-    XCASH_DB_STATISTICS = 1,
-    XCASH_DB_RESERVE_PROOFS = 2,
-    XCASH_DB_RESERVE_BYTES = 3,
-    XCASH_DB_COUNT
-} xcash_dbs_t;
 
 #endif // CONFIG_H_
