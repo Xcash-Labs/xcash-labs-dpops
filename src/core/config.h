@@ -59,7 +59,6 @@
 // ===================== Hash and Key Lengths =====================
 #define DATA_HASH_LENGTH 128
 #define XCASH_WALLET_LENGTH 98
-
 #define BLOCK_HASH_LENGTH 64
 #define RANDOM_STRING_LENGTH 100
 #define XCASH_SIGN_DATA_LENGTH 93
@@ -68,7 +67,6 @@
 #define VRF_RANDOMBYTES_LENGTH 32
 #define VRF_PROOF_LENGTH 160
 #define VRF_BETA_LENGTH 128
-#define VRF_DATA "74727565"
 #define SHA256_HASH_SIZE 32
 #define SHA256_HASH_SIZE 32
 #define DB_HASH_SIZE 128
@@ -76,8 +74,6 @@
 #define SIGNATURE_BIN_LEN 64
 #define SYNC_TOKEN_LEN 32
 #define VOTE_HASH_LEN 64
-
-
 
 // ===================== Database =====================
 #define DATABASE_CONNECTION "mongodb://127.0.0.1:27017"
@@ -90,7 +86,6 @@
 #define DB_COLLECTION_PAYOUT_BALANCES "payout_balances"
 #define DB_COLLECTION_PAYOUT_RECEIPTS "payout_receipts"
 #define DB_COLLECTION_NAME_SIZE 256
-//#define TOTAL_DELEGATES_DATABASE_FIELDS 16
 #define MAXIMUM_DATABASE_COLLECTION_DOCUMENTS 5000
 #define DATABASE_EMPTY_STRING "empty_database_collection"
 #define TOTAL_RESERVE_PROOFS_DATABASES 50

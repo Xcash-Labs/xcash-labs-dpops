@@ -43,20 +43,6 @@ typedef struct {
     char IP_address[IP_LENGTH+1];
 } delegates_timer_t;
 
-// database struct
-//struct database_document_fields {
-//    size_t count; // The amount of items in the database_document_fields struct
-//    char* item[TOTAL_DELEGATES_DATABASE_FIELDS+1]; // The item
-//    char* value[TOTAL_DELEGATES_DATABASE_FIELDS+1]; // The value
-//};
-
-//struct database_multiple_documents_fields {
-//    size_t document_count; // The amount of documents in the database_multiple_documents_fields
-//    size_t database_fields_count; // The amount of items in each document
-//    char* item[MAXIMUM_DATABASE_COLLECTION_DOCUMENTS][TOTAL_DELEGATES_DATABASE_FIELDS+1]; // The item
-//    char* value[MAXIMUM_DATABASE_COLLECTION_DOCUMENTS][TOTAL_DELEGATES_DATABASE_FIELDS+1]; // The value
-//};
-
 typedef struct {
   mongoc_client_pool_t *pool;
 } sched_ctx_t;
