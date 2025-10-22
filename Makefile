@@ -46,16 +46,16 @@ MongoDB_INC_DIRS := -I/usr/local/include/libbson-1.0 -I/usr/local/include/libmon
 #LDFLAGS ?= -lmongoc-1.0 -lbson-1.0 -lresolv -lpthread -l:libcrypto.so.3 -lcurl -lcjson
 
 # Compiler flags
-CFLAGS ?= $(INC_FLAGS) $(MongoDB_INC_DIRS) -MMD -MP -Wall -Wextra -Wstrict-prototypes \
-          -Wcast-qual -Wfloat-equal -Wundef -Wshadow -Wcast-align -Wstrict-overflow \
-          -Wdouble-promotion -fexceptions -fPIE \
-          $(shell pkg-config --cflags libunbound 2>/dev/null)
+CFLAGS ?= $(INC_FLAGS) $(MongoDB_INC_DIRS) -MMD -MP \
+  -Wall -Wextra -Wstrict-prototypes -Wcast-qual -Wfloat-equal -Wundef -Wshadow \
+  -Wcast-align -Wstrict-overflow -Wdouble-promotion \
+  -fexceptions -fstack-protector-strong -D_FORTIFY_SOURCE=2 -fPIE \
+  $(shell pkg-config --cflags libunbound 2>/dev/null)
 
 # Linker flags
 LDFLAGS ?= -lmongoc-1.0 -lbson-1.0 -lresolv -lpthread -l:libcrypto.so.3 -lcurl -lcjson \
-           $(shell pkg-config --libs libunbound 2>/dev/null || echo -lunbound) \
-           -Wl,-dynamicbase -Wl,-nxcompat -pie
-
+  $(shell pkg-config --libs libunbound 2>/dev/null || echo -lunbound) \
+  -pie -Wl,-z,relro -Wl,-z,now -Wl,-z,noexecstack
 
 # Build configurations
 debug: CFLAGS += -g -fno-stack-protector
