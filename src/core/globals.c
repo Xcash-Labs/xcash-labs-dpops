@@ -1,58 +1,39 @@
 #include "globals.h"
 
 // set globals defined in globals.h
+
+mongoc_client_pool_t* database_client_thread_pool = NULL;
+pthread_t server_thread;
 int log_level = 1;  // default level is error
 int delegate_db_hash_mismatch = 0;
 double delegate_fee_percent = 5.0;
 uint64_t minimum_payout = 50;  // default value
-
 bool startup_complete = false;
-
 bool is_seed_node = false;
 int network_data_nodes_amount = 0;
-
 delegates_t delegates_all[BLOCK_VERIFIERS_TOTAL_AMOUNT] = {0};
 delegates_timer_t delegates_timer_all[BLOCK_VERIFIERS_TOTAL_AMOUNT] = {0};
-
 char xcash_wallet_public_address[XCASH_WALLET_LENGTH + 1] = {0};
 char current_block_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
 char previous_block_hash[BLOCK_HASH_LENGTH + 1] = {0};
-
 char sync_token[SYNC_TOKEN_LEN + 1] = {0};
-
 unsigned char secret_key_data[crypto_vrf_SECRETKEYBYTES] = {0};
 char secret_key[VRF_SECRET_KEY_LENGTH +1] = {0};
-
-
 char vrf_public_key[VRF_PUBLIC_KEY_LENGTH + 1] = {0};
-
 char current_round_part[3] = "1";
 char delegates_hash[SHA256_HASH_SIZE + 1] = {0};
-
-//char delegates_error_list[(MAXIMUM_BUFFER_SIZE_DELEGATES_NAME * 100) + 5000];     // not sure if this is used    
-
-mongoc_client_pool_t* database_client_thread_pool = NULL;
-
 
 pthread_mutex_t delegates_all_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t current_block_verifiers_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t producer_refs_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t database_data_IP_address_lock = PTHREAD_MUTEX_INITIALIZER;
-
-
 atomic_bool server_running             = ATOMIC_VAR_INIT(true);
 atomic_bool wait_for_vrf_init          = ATOMIC_VAR_INIT(true);
 atomic_bool wait_for_block_height_init = ATOMIC_VAR_INIT(true);
 atomic_bool shutdown_requested         = ATOMIC_VAR_INIT(false);
 atomic_bool payment_inprocess          = ATOMIC_VAR_INIT(false);
 
-pthread_t server_thread;
-
-//const char* collection_names[XCASH_DB_COUNT] = {"delegates", "statistics", "reserve_proofs", "reserve_bytes"};
-//const char* collection_names[XCASH_DB_COUNT] = {"delegates", "statistics"};
-//bool cleanup_db_before_upsert = false;  // delete db before put content. make sure we have exact copy during initial db syncing
 block_verifiers_list_t current_block_verifiers_list;
-
 NetworkNode network_nodes[] = {
     {"XCA1T1uxPiS8oprWpaCrUiiFcQB3KEriiUVqeeqnVtiKakSZmrZhoXKGbzqn4wj3EXY4JFPdJHqGr7iRHVxF4yyE28NvzLQgZf", "seeds.xcashseeds.us",
       "d6d46ef68fb24e13a307bce08e3b31ecdd6601776f5e136bf1be7f5dcfff45c7",0},
