@@ -89,4 +89,15 @@ typedef struct {
   uint64_t v;                          // vote total (atomic)
 } payout_output_t;
 
+typedef enum {
+  DNSSEC_ERR = -1,
+  DNSSEC_UNSIGNED = 0,  // no DNSSEC validation (unsigned path)
+  DNSSEC_SECURE = 1,    // validated OK
+  DNSSEC_BOGUS = 2      // validation attempted but failed
+} dnssec_status_t;
+
+typedef struct {
+  struct ub_ctx* ctx;
+} dnssec_ctx_t;
+
 #endif

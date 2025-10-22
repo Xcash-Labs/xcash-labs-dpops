@@ -558,29 +558,10 @@ int wallet_verify_signature(const char *sign_str, const char *in_public_address,
   return (strcmp(result, "true") == 0) ? XCASH_OK : XCASH_ERROR;
 }
 
-// dnssec_check.c — minimal libunbound-based DNSSEC helper for X-Cash
-// Build: gcc -O2 -Wall -Wextra -o test dnssec_check.c -lunbound
-// Usage example at bottom.
-
-#include <unbound.h>
-#include <stdbool.h>
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-
-typedef enum {
-  DNSSEC_ERR = -1,
-  DNSSEC_UNSIGNED = 0,  // no DNSSEC validation (unsigned path)
-  DNSSEC_SECURE = 1,    // validated OK
-  DNSSEC_BOGUS = 2      // validation attempted but failed
-} dnssec_status_t;
-
-typedef struct {
-  struct ub_ctx* ctx;
-} dnssec_ctx_t;
-
-// ---- internal helpers -------------------------------------------------------
-
+/*---------------------------------------------------------------------------------------------------------
+* dnssec_check.c — minimal libunbound-based DNSSEC helper for X-Cash
+* Build: gcc -O2 -Wall -Wextra -o test dnssec_check.c -lunbound
+*---------------------------------------------------------------------------------------------------------*/
 static int dnssec_add_trust_anchor(struct ub_ctx* ctx) {
   const char* env = getenv("DNS_TRUST_ANCHOR");
   const char* candidates[] = {
