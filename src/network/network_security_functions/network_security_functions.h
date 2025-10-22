@@ -11,6 +11,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <ifaddrs.h>
+#include <unbound.h>
 #include "config.h"
 #include "macro_functions.h"
 #include "globals.h"
