@@ -29,7 +29,7 @@ char vrf_public_key[VRF_PUBLIC_KEY_LENGTH + 1] = {0};
 char current_round_part[3] = "1";
 char delegates_hash[SHA256_HASH_SIZE + 1] = {0};
 
-char delegates_error_list[(MAXIMUM_BUFFER_SIZE_DELEGATES_NAME * 100) + 5000];     // not sure if this is used    
+//char delegates_error_list[(MAXIMUM_BUFFER_SIZE_DELEGATES_NAME * 100) + 5000];     // not sure if this is used    
 
 mongoc_client_pool_t* database_client_thread_pool = NULL;
 
@@ -50,7 +50,7 @@ pthread_t server_thread;
 
 //const char* collection_names[XCASH_DB_COUNT] = {"delegates", "statistics", "reserve_proofs", "reserve_bytes"};
 //const char* collection_names[XCASH_DB_COUNT] = {"delegates", "statistics"};
-bool cleanup_db_before_upsert = false;  // delete db before put content. make sure we have exact copy during initial db syncing
+//bool cleanup_db_before_upsert = false;  // delete db before put content. make sure we have exact copy during initial db syncing
 block_verifiers_list_t current_block_verifiers_list;
 
 NetworkNode network_nodes[] = {

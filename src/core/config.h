@@ -15,10 +15,10 @@
 #define MAX_SIBLINGS 15
 
 // ===================== Blockchain Field Lengths =====================
-#define STEALTH_ADDRESS_OUTPUT_LENGTH 64  // Length of the stealth address output
-#define TRANSACTION_PUBLIC_KEY_LENGTH 66  // Length of the transaction public key
-#define TRANSACTION_LENGTH 64             // Length of a transaction
-#define TIMESTAMP_LENGTH 10               // Length of the timestamp
+//#define STEALTH_ADDRESS_OUTPUT_LENGTH 64  // Length of the stealth address output
+//#define TRANSACTION_PUBLIC_KEY_LENGTH 66  // Length of the transaction public key
+//#define TRANSACTION_LENGTH 64             // Length of a transaction
+//#define TIMESTAMP_LENGTH 10               // Length of the timestamp
 #define SAFE_CONFIRMATION_MARGIN 10
 
 // ===================== Network Ports and IPs =====================

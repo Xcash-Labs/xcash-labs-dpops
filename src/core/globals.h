@@ -41,13 +41,13 @@ extern char delegates_hash[SHA256_HASH_SIZE + 1];
 
 extern char sync_token[SYNC_TOKEN_LEN + 1];
 
-extern struct main_nodes_list main_nodes_list; // The list of main nodes public address and IP address
+//extern struct main_nodes_list main_nodes_list; // The list of main nodes public address and IP address
 extern block_verifiers_list_t current_block_verifiers_list; // The list of block verifiers name, public address and IP address for the current round
 //extern const char* collection_names[XCASH_DB_COUNT];
-extern bool cleanup_db_before_upsert;
+//extern bool cleanup_db_before_upsert;
 
-extern struct blockchain_data blockchain_data; // The data for a new block to be added to the network.
-extern char delegates_error_list[(MAXIMUM_BUFFER_SIZE_DELEGATES_NAME * 100) + 5000]; // Holds the list of delegates that did not complete a part of the round
+//extern struct blockchain_data blockchain_data; // The data for a new block to be added to the network.
+//extern char delegates_error_list[(MAXIMUM_BUFFER_SIZE_DELEGATES_NAME * 100) + 5000]; // Holds the list of delegates that did not complete a part of the round
 
 extern mongoc_client_pool_t* database_client_thread_pool;  // database
 
@@ -71,8 +71,8 @@ extern char* server_limit_IP_address_list; // holds all of the IP addresses that
 extern char* server_limit_public_address_list; // holds all of the public addresses that are currently running on the server.
 
 extern const char* xcash_net_messages[];
-extern const xcash_msg_t xcash_db_sync_messages[];
-extern const xcash_msg_t xcash_db_download_messages[];
+//extern const xcash_msg_t xcash_db_sync_messages[];
+//extern const xcash_msg_t xcash_db_download_messages[];
 
 void init_globals(void);
 
