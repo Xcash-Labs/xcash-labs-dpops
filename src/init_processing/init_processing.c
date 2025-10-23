@@ -7,7 +7,7 @@ Description: Initialize globals and print program start header.
 bool init_processing(const arg_config_t *arg_config) {
   (void) arg_config;
   size_t i = 0;
-  size_t count_seeds = 0;
+  int count_seeds = 0;
 
 #ifdef SEED_NODE_ON
 
@@ -119,7 +119,7 @@ bool init_processing(const arg_config_t *arg_config) {
       bool have = false;
       dnssec_status_t st = dnssec_query(ctx, network_nodes[i].ip_address, 1, &have);
       if (st == DNSSEC_SECURE && have) {
-        count++;
+        count_seeds++;
       }
     }
     dnssec_destroy(ctx);
