@@ -124,7 +124,7 @@ bool init_processing(const arg_config_t *arg_config) {
     }
     dnssec_destroy(ctx);
 
-    if(!(count_seeds == network_data_nodes_amount))
+    if(!(count_seeds == network_data_nodes_amount)) {
       FATAL_ERROR_EXIT("Counld not validate DNSSEC records for seed nodes, unable to start");
       atomic_store(&shutdown_requested, true)
     }
