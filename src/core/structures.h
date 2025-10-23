@@ -18,6 +18,10 @@ typedef struct {
     int online_status;
 } NetworkNode;
 
+typedef struct {
+    const char *ip_address;
+} xCashpulseNode;
+
 // xcash-next
 typedef struct  {
     char public_address[XCASH_WALLET_LENGTH+1];
