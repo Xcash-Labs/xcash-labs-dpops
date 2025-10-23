@@ -286,10 +286,8 @@ int main(int argc, char *argv[]) {
       }
     }
     print_starter_state(&arg_config);
-    if (!atomic_load(&shutdown_requested)) {
-      start_block_production();
-      fprintf(stderr, "Daemon is shutting down...\n");
-    }
+    start_block_production();
+    fprintf(stderr, "Daemon is shutting down...\n");
   } else {
     ERROR_PRINT("Failed to get the nodes public wallet address, shutting down...");
   }
