@@ -118,6 +118,7 @@ bool init_processing(const arg_config_t *arg_config) {
     }
 
     // Check DNSSEC records for seeds
+    INFO_PRINT("Validating DNSSEC entries...");
     dnssec_ctx_t* ctx = dnssec_init();
     for (i = 0; network_nodes[i].ip_address != NULL; i++) {
       bool have = false;
@@ -144,7 +145,7 @@ bool init_processing(const arg_config_t *arg_config) {
     }
 
     if(!(count_dnspulse == count_total)) {
-      FATAL_ERROR_EXIT("Counld not validate DNSSEC records for seed nodes, unable to start");
+      FATAL_ERROR_EXIT("Counld not validate DNSSEC records for pulse nodes, unable to start");
       return false;
     }
 
