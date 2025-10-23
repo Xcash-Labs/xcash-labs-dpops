@@ -2,7 +2,7 @@
 Description=X-Cash Daemon background process
 After=network-online.target time-sync.target
 StartLimitIntervalSec=60
-StartLimitBurst=1
+StartLimitBurst=4
 
 [Service]
 Type=forking

@@ -2,7 +2,7 @@
 Description=X-Cash DPOPS Program background process
 After=network-online.target time-sync.target mongodb.service
 StartLimitIntervalSec=60
-StartLimitBurst=1
+StartLimitBurst=4
 
 [Service]
 Type=simple
