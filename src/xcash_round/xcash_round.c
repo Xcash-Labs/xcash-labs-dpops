@@ -1005,13 +1005,16 @@ void start_block_production(void) {
 
   end_of_round_skip_block:
     sync_block_verifiers_minutes_and_seconds(0, 58);
-
-    // set up delegates for next round
+    // set up delegates for next round; retry on transient failure
+    bool ok = false;
     pthread_mutex_lock(&delegates_all_lock);
-    if (!fill_delegates_from_db()) {
-      ERROR_PRINT("Failed to load and organize delegates for next round, Possible problem with Mongodb");
-      atomic_store(&shutdown_requested, true);
-    }
+    ok = fill_delegates_from_db();
     pthread_mutex_unlock(&delegates_all_lock);
+
+    if (!ok) {
+      ERROR_PRINT("Failed to load and organize delegates for next round, MongoDB or network error");
+      sleep(5);  // make sure we miss the next block window and wait for next round
+    }
+
   }
 }
