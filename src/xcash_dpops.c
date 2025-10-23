@@ -286,10 +286,12 @@ int main(int argc, char *argv[]) {
       }
     }
     print_starter_state(&arg_config);
-    start_block_production();
-    fprintf(stderr, "Daemon is shutting down...\n");
+    if (!atomic_load(&shutdown_requested)) {
+      start_block_production();
+      fprintf(stderr, "Daemon is shutting down...\n");
+    }
   } else {
-    FATAL_ERROR_EXIT("Failed to get the nodes public wallet address");
+    ERROR_PRINT("Failed to get the nodes public wallet address, shutting down...");
   }
 
   // Signal scheduler to stop and join it

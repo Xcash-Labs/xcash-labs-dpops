@@ -34,6 +34,7 @@ extern char current_round_part[3]; // The current round part
 extern char delegates_hash[SHA256_HASH_SIZE + 1];
 extern char sync_token[SYNC_TOKEN_LEN + 1];
 extern block_verifiers_list_t current_block_verifiers_list; // The list of block verifiers name, public address and IP address for the current round
+
 extern pthread_mutex_t delegates_all_lock;
 extern pthread_mutex_t current_block_verifiers_lock;
 extern pthread_mutex_t producer_refs_lock;
@@ -43,6 +44,7 @@ extern atomic_bool wait_for_vrf_init;
 extern atomic_bool wait_for_block_height_init;
 extern atomic_bool shutdown_requested;
 extern atomic_bool payment_inprocess;
+
 extern NetworkNode network_nodes[];
 extern char* server_limit_IP_address_list; // holds all of the IP addresses that are currently running on the server.
 extern char* server_limit_public_address_list; // holds all of the public addresses that are currently running on the server.

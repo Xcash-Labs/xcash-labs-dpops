@@ -6,6 +6,8 @@ Description: Initialize globals and print program start header.
 ---------------------------------------------------------------------------------------------------------*/
 bool init_processing(const arg_config_t *arg_config) {
   (void) arg_config;
+  size_t i = 0;
+  size_t count_seeds = 0;
 
 #ifdef SEED_NODE_ON
 
@@ -23,7 +25,7 @@ bool init_processing(const arg_config_t *arg_config) {
     INFO_PRINT("Delegates collection does not exist so creating it.");
     uint64_t set_counts = 0;
 
-    for (int i = 0; network_nodes[i].seed_public_address != NULL; i++) {
+    for (i = 0; network_nodes[i].seed_public_address != NULL; i++) {
       char delegate_name[256];
       strncpy(delegate_name, network_nodes[i].ip_address, sizeof(delegate_name));
       delegate_name[sizeof(delegate_name) - 1] = '\0';  // Null-terminate
@@ -110,6 +112,23 @@ bool init_processing(const arg_config_t *arg_config) {
         return false;
       }
     }
+
+    // Check DNSSEC records for seeds
+    dnssec_ctx_t* ctx = dnssec_init();
+    for (i = 0; network_nodes[i].seed_public_address != NULL; i++) {
+      bool have = false;
+      dnssec_status_t st = dnssec_query(ctx, network_nodes[i].ip_address, 1, &have);
+      if (st == DNSSEC_SECURE && have) {
+        count++;
+      }
+    }
+    dnssec_destroy(ctx);
+
+    if(!(count_seeds == network_data_nodes_amount))
+      FATAL_ERROR_EXIT("Counld not validate DNSSEC records for seed nodes, unable to start");
+      atomic_store(&shutdown_requested, true)
+    }
+
   }
 
   return true;

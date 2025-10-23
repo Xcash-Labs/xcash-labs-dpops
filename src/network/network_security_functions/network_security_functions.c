@@ -687,13 +687,3 @@ dnssec_status_t dnssec_query(dnssec_ctx_t* h, const char* name, int rrtype, bool
   (void)ub_resolve_free(res);
   return status;
 }
-
-/* Convenience: true only if validated and non-empty RRset. */
-bool dnssec_rr_secure(const char* name, int rrtype) {
-  bool havedata = false;
-  dnssec_ctx_t* h = dnssec_init();
-  if (!h) return false;
-  dnssec_status_t st = dnssec_query(h, name, rrtype, &havedata);
-  dnssec_destroy(h);
-  return (st == DNSSEC_SECURE) && havedata;
-}
