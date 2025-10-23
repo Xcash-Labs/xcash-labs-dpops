@@ -1,5 +1,71 @@
 #include "init_processing.h"
 
+/*--------------------------------------------------------------------------
+* get_self_sha256
+* 
+* Compute the SHA-256 hash of the currently running executable image and
+* return it as a lowercase hexadecimal string.
+*
+* Source of bytes:
+*   Reads from /proc/self/exe, which points to the exact ELF image the
+ *   process was started with (works even if the on-disk path was later
+ *   moved or unlinked).
+ *
+ * Parameters:
+ *   out_hex
+ *     Buffer provided by the caller to receive the hex digest string.
+ *     Must be at least 65 bytes long (64 hex chars + NUL).
+ *
+ * Returns:
+ *   true  on success (out_hex is filled with a 64-char hex string + NUL).
+ *   false on failure (out_hex is left unspecified).
+ *
+ -------------------------------------------------------------------------------*/
+bool get_self_sha256(char out_hex[65]) {
+  unsigned char digest[EVP_MAX_MD_SIZE];
+  unsigned int  dlen = 0;
+
+  int fd = open("/proc/self/exe", O_RDONLY | O_CLOEXEC);
+  if (fd < 0) return false;
+
+  EVP_MD_CTX *ctx = EVP_MD_CTX_new();
+  if (!ctx) { close(fd); return false; }
+
+  if (EVP_DigestInit_ex(ctx, EVP_sha256(), NULL) != 1) {
+    EVP_MD_CTX_free(ctx); close(fd); return false;
+  }
+
+  unsigned char buf[1 << 16]; // 64 KiB
+  for (;;) {
+    ssize_t n = read(fd, buf, sizeof(buf));
+    if (n > 0) {
+      if (EVP_DigestUpdate(ctx, buf, (size_t)n) != 1) {
+        EVP_MD_CTX_free(ctx); close(fd); return false;
+      }
+    } else if (n == 0) {
+      break; // EOF
+    } else {
+      if (errno == EINTR) continue;
+      EVP_MD_CTX_free(ctx); close(fd); return false;
+    }
+  }
+
+  if (EVP_DigestFinal_ex(ctx, digest, &dlen) != 1) {
+    EVP_MD_CTX_free(ctx); close(fd); return false;
+  }
+
+  EVP_MD_CTX_free(ctx);
+  close(fd);
+
+  static const char hexdig[] = "0123456789abcdef";
+  for (unsigned int i = 0; i < dlen; ++i) {
+    out_hex[2*i    ] = hexdig[(digest[i] >> 4) & 0xF];
+    out_hex[2*i + 1] = hexdig[(digest[i]     ) & 0xF];
+  }
+  out_hex[2*dlen] = '\0';
+  return true;
+}
+
 /*---------------------------------------------------------------------------------------------------------
 Name: init_processing
 Description: Initialize globals and print program start header.
@@ -149,6 +215,14 @@ bool init_processing(const arg_config_t *arg_config) {
   if (!(count_dnspulse == count_total)) {
     FATAL_ERROR_EXIT("Counld not validate DNSSEC records for pulse nodes, unable to start");
     return false;
+  }
+
+
+  char sha[(SHA256_HASH_SIZE * 2) + 1];
+  if (get_self_sha256(sha)) {
+    INFO_PRINT("xcash-dpops image SHA-256: %s", sha);
+  } else {
+    ERROR_PRINT("Failed to compute self SHA-256");
   }
 
   return true;
