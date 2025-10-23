@@ -559,10 +559,43 @@ int wallet_verify_signature(const char *sign_str, const char *in_public_address,
 }
 
 /*---------------------------------------------------------------------------------------------------------
-* dnssec_check.c — minimal libunbound-based DNSSEC helper for X-Cash
-* Build: gcc -O2 -Wall -Wextra -o test dnssec_check.c -lunbound
+  dnssec_helper.c — DNSSEC helper for X-Cash
+
+  Public API (see prototypes below):
+    dnssec_ctx_t*   dnssec_init(void);
+    void            dnssec_destroy(dnssec_ctx_t*);
+    dnssec_status_t dnssec_query(dnssec_ctx_t*, const char* name, int rrtype, bool* out_havedata);
+    bool            dnssec_rr_secure(const char* name, int rrtype);
+
+
+dnssec_ctx_t*  dnssec_init(void);
+void           dnssec_destroy(dnssec_ctx_t* h);
+dnssec_status_t dnssec_query(dnssec_ctx_t* h, const char* name, int rrtype, bool* out_havedata);
+bool           dnssec_rr_secure(const char* name, int rrtype);
+
 *---------------------------------------------------------------------------------------------------------*/
+/* ICANN KSK DS anchors (2010:19036 and 2017:20326), same as Monero ships.    */
+static const char * const* get_builtin_ds(void) {
+  static const char * const ds[] = {
+    ". IN DS 19036 8 2 49AAC11D7B6F6446702E54A1607371607A1A41855200FD2CE1CDDE32F24E8FB5\n",
+    ". IN DS 20326 8 2 E06D44B80B8F1D39A95C0B0D7C65D08458E880409BBC683457104237C7F8EC8D\n",
+    NULL
+  };
+  return ds;
+}
+
+/* ----------------------------- Internals ---------------------------------- */
+
 static int dnssec_add_trust_anchor(struct ub_ctx* ctx) {
+  int added = 0;
+
+  /* 1) Built-in DS anchors */
+  const char * const *ds = get_builtin_ds();
+  for (; *ds; ++ds) {
+    if (ub_ctx_add_ta(ctx, *ds) == 0) ++added;
+  }
+
+  /* 2) Optional env/file anchors */
   const char* env = getenv("DNS_TRUST_ANCHOR");
   const char* candidates[] = {
     (env && *env) ? env : NULL,
@@ -571,37 +604,31 @@ static int dnssec_add_trust_anchor(struct ub_ctx* ctx) {
     "/usr/local/etc/unbound/root.key",
     NULL
   };
-  for (int i = 0; candidates[i]; ++i) {
-    if (ub_ctx_add_ta_file(ctx, candidates[i]) == 0) {
-      // fprintf(stderr, "[dnssec] trust anchor: %s\n", candidates[i]);
-      return 0;
-    }
+  int i;
+  for (i = 0; candidates[i]; ++i) {
+    if (candidates[i] && ub_ctx_add_ta_file(ctx, candidates[i]) == 0) ++added;
   }
-  // Optional: auto-roll file if you manage it
-  // if (ub_ctx_add_ta_autr(ctx, "/var/lib/unbound/root.key") == 0) return 0;
-  return -1;
+
+  return (added > 0) ? 0 : -1;
 }
 
+/* Support DNS_PUBLIC=tcp://9.9.9.9 (or udp://1.1.1.1, or plain IP). */
 static void dnssec_maybe_set_public_forwarder(struct ub_ctx* ctx) {
   const char* dns_pub = getenv("DNS_PUBLIC");
   if (!dns_pub || !*dns_pub) return;
 
-  // Examples:
-  //   DNS_PUBLIC=tcp://9.9.9.9
-  //   DNS_PUBLIC=udp://1.1.1.1
-  //   DNS_PUBLIC=9.9.9.9   (assume UDP)
   const char* s = dns_pub;
   const char* addr = s;
   int use_tcp = 0;
-  if (strncmp(s, "tcp://", 6) == 0) { use_tcp = 1; addr = s + 6; }
+  if      (strncmp(s, "tcp://", 6) == 0) { use_tcp = 1; addr = s + 6; }
   else if (strncmp(s, "udp://", 6) == 0) { use_tcp = 0; addr = s + 6; }
 
-  ub_ctx_set_fwd(ctx, addr);
-  if (use_tcp) ub_ctx_set_option(ctx, "do-tcp:", "yes");
+  (void)ub_ctx_set_fwd(ctx, addr);
+  if (use_tcp) (void)ub_ctx_set_option(ctx, "do-tcp:", "yes");
 }
 
+/* --------------------------- Public Functions ----------------------------- */
 
-// Initialize a validating DNSSEC context. Returns NULL on error.
 dnssec_ctx_t* dnssec_init(void) {
   dnssec_ctx_t* h = (dnssec_ctx_t*)calloc(1, sizeof(*h));
   if (!h) return NULL;
@@ -609,21 +636,21 @@ dnssec_ctx_t* dnssec_init(void) {
   h->ctx = ub_ctx_create();
   if (!h->ctx) { free(h); return NULL; }
 
-  // Mildly hardened defaults; adjust as you like
-  ub_ctx_set_option(h->ctx, "infra-cache-numhosts:", "2000");
-  ub_ctx_set_option(h->ctx, "infra-keep-probing:", "yes");
-  ub_ctx_set_option(h->ctx, "harden-below-nxdomain:", "yes");
-  ub_ctx_set_option(h->ctx, "do-ip4:", "yes");
-  ub_ctx_set_option(h->ctx, "do-ip6:", "no");         // flip to yes if you want IPv6
-  ub_ctx_set_option(h->ctx, "timeout:", "3000");      // ms per query
+  /* Sensible defaults */
+  (void)ub_ctx_set_option(h->ctx, "infra-cache-numhosts:", "2000");
+  (void)ub_ctx_set_option(h->ctx, "infra-keep-probing:",   "yes");
+  (void)ub_ctx_set_option(h->ctx, "harden-below-nxdomain:","yes");
+  (void)ub_ctx_set_option(h->ctx, "do-ip4:",               "yes");
+  (void)ub_ctx_set_option(h->ctx, "do-ip6:",               "no");   /* set yes if you want IPv6 */
+  (void)ub_ctx_set_option(h->ctx, "timeout:",              "3000"); /* ms per query */
 
-  // Use system resolvers unless DNS_PUBLIC overrides
+  /* Use system resolvers unless DNS_PUBLIC overrides */
   (void)ub_ctx_resolvconf(h->ctx, NULL);
   dnssec_maybe_set_public_forwarder(h->ctx);
 
+  /* Add anchors (built-in DS first, then optional files) */
   if (dnssec_add_trust_anchor(h->ctx) != 0) {
-    // fprintf(stderr, "[dnssec] trust anchor missing. Run: unbound-anchor -a /var/lib/unbound/root.key\n");
-    ub_ctx_delete(h->ctx);
+    (void)ub_ctx_delete(h->ctx);
     free(h);
     return NULL;
   }
@@ -633,12 +660,10 @@ dnssec_ctx_t* dnssec_init(void) {
 
 void dnssec_destroy(dnssec_ctx_t* h) {
   if (!h) return;
-  if (h->ctx) ub_ctx_delete(h->ctx);
+  if (h->ctx) (void)ub_ctx_delete(h->ctx);
   free(h);
 }
 
-// Query a single RRset and return DNSSEC status.
-// rrtype: 1=A, 28=AAAA, 16=TXT, etc.
 dnssec_status_t dnssec_query(dnssec_ctx_t* h, const char* name, int rrtype, bool* out_havedata) {
   if (out_havedata) *out_havedata = false;
   if (!h || !h->ctx || !name || !*name) return DNSSEC_ERR;
@@ -650,7 +675,6 @@ dnssec_status_t dnssec_query(dnssec_ctx_t* h, const char* name, int rrtype, bool
 
   dnssec_status_t status;
   if (res->bogus) {
-    // fprintf(stderr, "[dnssec] BOGUS for %s: %s\n", name, res->why_bogus ? res->why_bogus : "(no reason)");
     status = DNSSEC_BOGUS;
   } else if (res->secure) {
     status = DNSSEC_SECURE;
@@ -660,11 +684,11 @@ dnssec_status_t dnssec_query(dnssec_ctx_t* h, const char* name, int rrtype, bool
 
   if (out_havedata) *out_havedata = (res->havedata != 0);
 
-  ub_resolve_free(res);
+  (void)ub_resolve_free(res);
   return status;
 }
 
-// Convenience wrapper: return true only for DNSSEC-validated data with havedata==true.
+/* Convenience: true only if validated and non-empty RRset. */
 bool dnssec_rr_secure(const char* name, int rrtype) {
   bool havedata = false;
   dnssec_ctx_t* h = dnssec_init();
