@@ -74,8 +74,6 @@ bool init_processing(const arg_config_t *arg_config) {
   (void) arg_config;
   size_t i = 0;
   int count_seeds = 0;
-  size_t count_dnspulse = 0;
-  size_t count_total = 0;
 
 #ifdef SEED_NODE_ON
 
@@ -202,7 +200,7 @@ bool init_processing(const arg_config_t *arg_config) {
 //  xCashpulseNode xcashpulse_nodes[] = {{"updpops.xcashpulse.cc"},{"updpops.xcashpulse.uk"},{NULL}};
   const char* endpoints[] = {"updpops.xcashpulse.cc", "updpops.xcashseeds.uk", NULL};
   // schuffel?
-  for (int i = 0; endpoints[i]; ++i) {
+  for (i = 0; endpoints[i]; ++i) {
     updpops_entry_t tmp[8];
     size_t m = dnssec_get_all_updpops(g_ctx, endpoints[i], tmp, 8);
     for (size_t j = 0; j < m && allowed_n < 8; ++j) {
@@ -244,86 +242,10 @@ bool init_processing(const arg_config_t *arg_config) {
     FATAL_PRINT("Running digest not in allowed list; refusing to start");
   }
 
-/*
-  for (i = 0; xcashpulse_nodes[i].ip_address != NULL; i++) {
-    char* txt = NULL;
-    const char* host = xcashpulse_nodes[i].ip_address;
-    const char* pfx = "xcashdpops:source:";
-
-    count_total++;
-    if (dnssec_get_txt_with_prefix(g_ctx, host, pfx, &txt)) {
-      count_dnspulse++;
-      xcashpulse_nodes[i].dsfound = true;
-      INFO_PRINT("Validated TXT: %s", txt);
-
-      char digest[SHA256_DIGEST_SIZE + 1] = {0};
-      const char* p = txt + strlen(pfx);
-      const char* c = strchr(p, ':');
-      if (c) {
-        const char* d = c + 1;  // start of <64-hex> digest
-        if (strlen(d) == SHA256_DIGEST_SIZE) {
-          bool ok = true;
-          for (int k = 0; k < 64; ++k) {
-            unsigned char ch = (unsigned char)d[k];
-            if (!isxdigit(ch)) {
-              ok = false;
-              break;
-            }
-            digest[k] = (ch >= 'A' && ch <= 'F') ? (char)(ch + 32) : (char)ch;  // lowercase
-          }
-          if (ok) {
-            INFO_PRINT("updpops digest=%s", digest);
-            snprintf(xcashpulse_nodes[i].digest, sizeof xcashpulse_nodes[i].digest, "%s", digest);
-          } else {
-            WARNING_PRINT("Malformed digest hex at %s: %s", host, txt);
-          }
-        } else {
-          WARNING_PRINT("Digest length != 64 at %s: %s", host, txt);
-        }
-      } else {
-        WARNING_PRINT("Missing version/digest separator ':' at %s: %s", host, txt);
-      }
-
-    } else {
-      WARNING_PRINT("DNSSEC-validated TXT not found (or invalid) at %s", host);
-    }
-
-    free(txt);  // free if set; safe even if NULL
-    txt = NULL;
-  }
-*/
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   if (!(count_seeds == network_data_nodes_amount)) {
     FATAL_ERROR_EXIT("Counld not validate DNSSEC records for seed nodes, unable to start");
     return false;
   }
-
-//  if (!(count_dnspulse == count_total)) {
-//    FATAL_ERROR_EXIT("Counld not validate DNSSEC records for pulse nodes, unable to start");
-//    return false;
-//  }
-
-//  char sha[SHA256_DIGEST_SIZE + 1];
-//  if (get_self_sha256(sha)) {
-//    INFO_PRINT("xcash-dpops image SHA-256: %s", sha);
-//  } else {
-//    ERROR_PRINT("Failed to compute self SHA-256");
-//  }
 
   return true;
 }
