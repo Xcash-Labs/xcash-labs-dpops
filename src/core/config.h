@@ -33,6 +33,8 @@
 #define TX_EXTRA_VRF_SIGNATURE_TAG 0x07
 #define BLOCK_RESERVED_SIZE 255
 #define VRF_BLOB_TOTAL_SIZE 210
+#define RR_IN 1
+#define RR_TXT 16
 
 // ===================== Buffer Sizes =====================
 #define BUFFER_SIZE_NETWORK_BLOCK_DATA 500

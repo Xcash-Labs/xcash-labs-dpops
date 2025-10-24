@@ -625,8 +625,6 @@ static void dnssec_maybe_set_public_forwarder(struct ub_ctx* ctx) {
   if (use_tcp) (void)ub_ctx_set_option(ctx, "do-tcp:", "yes");
 }
 
-/* --------------------------- Public Functions ----------------------------- */
-
 dnssec_ctx_t* dnssec_init(void) {
   dnssec_ctx_t* h = (dnssec_ctx_t*)calloc(1, sizeof(*h));
   if (!h) return NULL;
@@ -669,7 +667,7 @@ dnssec_status_t dnssec_query(dnssec_ctx_t* h, const char* name, int rrtype, bool
   if (!h || !h->ctx || !name || !*name) return DNSSEC_ERR;
 
   struct ub_result* res = NULL;
-  if (ub_resolve(h->ctx, name, rrtype, 1 /*IN*/, &res) != 0 || !res) {
+  if (ub_resolve(h->ctx, name, rrtype, 1, &res) != 0 || !res) {
     return DNSSEC_ERR;
   }
 
@@ -686,69 +684,50 @@ dnssec_status_t dnssec_query(dnssec_ctx_t* h, const char* name, int rrtype, bool
   } else {
     status = DNSSEC_UNSIGNED;
   }
-
+  
   if (out_havedata) *out_havedata = (res->havedata != 0);
 
   (void)ub_resolve_free(res);
   return status;
 }
 
-
-#define RR_IN   1
-#define RR_TXT 16
-
-/* Concatenate a TXT RDATA (sequence of <len><bytes> chunks) into a C string. */
-static bool txt_rdata_to_string(const unsigned char* rdata, size_t len,
-                                char** out_str) {
+static bool txt_rdata_to_string(const unsigned char* rdata, size_t len, char** out_str) {
   if (!rdata || !len || !out_str) return false;
-  // Maximum possible output length is len (sum of chunks) + 1 NUL
   char* s = (char*)malloc(len + 1);
   if (!s) return false;
   size_t i = 0, pos = 0;
   while (i < len) {
     unsigned int n = rdata[i++];
-    if (i + n > len) { free(s); return false; } // malformed
+    if (i + n > len) { free(s); return false; }
     memcpy(s + pos, rdata + i, n);
-    pos += n;
-    i   += n;
+    pos += n; i += n;
   }
   s[pos] = '\0';
   *out_str = s;
   return true;
 }
 
-/* Query a DNSSEC-validated TXT record and extract the upddpops value.
-   Returns true on success and fills out_value with a malloc'd string that caller frees. */
-bool get_upddpops_txt_validated(struct ub_ctx* ctx,
-                                const char* host,
-                                const char* required_prefix,   // e.g. "xcashdpops:source:"
-                                char** out_value)              // malloc'd string
+bool dnssec_get_txt_with_prefix(dnssec_ctx_t* h, const char* host, const char* prefix, char** out_txt)
 {
-  if (out_value) *out_value = NULL;
-  if (!ctx || !host || !*host || !out_value) return false;
+  if (out_txt) *out_txt = NULL;
+  if (!h || !h->ctx || !host || !*host) return false;
 
   struct ub_result* res = NULL;
-  if (ub_resolve(ctx, host, RR_TXT, RR_IN, &res) != 0 || !res) return false;
+  if (ub_resolve(h->ctx, host, RR_TXT, RR_IN, &res) != 0 || !res) return false;
 
   bool ok = false;
-  // Require DNSSEC validation for the TXT RRset
   if (res->secure && !res->bogus && res->havedata && res->data) {
-    for (size_t i = 0; res->data[i] != NULL; ++i) {
-      const unsigned char* rdata = (const unsigned char*)res->data[i];
-      size_t rlen = (size_t)res->len[i];
-
-      char* txt = NULL;
-      if (!txt_rdata_to_string(rdata, rlen, &txt)) continue;
-
-      // Match expected content (exact or prefix-based)
-      if (!required_prefix || strncmp(txt, required_prefix, strlen(required_prefix)) == 0) {
-        // Found a validated TXT value we care about
-        *out_value = txt;
-        ok = true;
-        break;
+    for (size_t i = 0; res->data[i]; ++i) {
+      char* s = NULL;
+      if (txt_rdata_to_string((const unsigned char*)res->data[i], (size_t)res->len[i], &s)) {
+        if (!prefix || strncmp(s, prefix, strlen(prefix)) == 0) {
+          *out_txt = s; ok = true; break;
+        }
+        free(s);
       }
-      free(txt);
     }
+  } else if (res->bogus) {
+    INFO_PRINT("DNSSEC BOGUS for %s TXT: %s", host, res->why_bogus ? res->why_bogus : "(no reason)");
   }
 
   ub_resolve_free(res);
