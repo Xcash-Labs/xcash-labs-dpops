@@ -226,7 +226,7 @@ bool init_processing(const arg_config_t *arg_config) {
     FATAL_ERROR_EXIT("Unable to compute self SHA-256");
   }
 
-  DEBUG_PRINT("self digest: %s", self_sha);
+  INFO_PRINT("self digest: %s", self_sha);
 
   const updpops_entry_t* match = NULL;
   if (digest_allowed(self_sha, allowed, allowed_n, &match)) {
