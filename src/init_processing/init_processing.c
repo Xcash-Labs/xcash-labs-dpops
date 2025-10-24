@@ -198,11 +198,11 @@ bool init_processing(const arg_config_t *arg_config) {
   size_t allowed_n = 0;
 
 //  xCashpulseNode xcashpulse_nodes[] = {{"updpops.xcashpulse.cc"},{"updpops.xcashpulse.uk"},{NULL}};
-//  const char* endpoints[] = {"updpops.xcashpulse.cc", "updpops.xcashseeds.uk", NULL};
+
   // schuffel?
-  for (i = 0; xcashpulse_nodes[i]; ++i) {
+  for (i = 0; endpoints[i]; ++i) {
     updpops_entry_t tmp[8];
-    size_t m = dnssec_get_all_updpops(g_ctx, xcashpulse_nodes[i], tmp, 8);
+    size_t m = dnssec_get_all_updpops(g_ctx, endpoints[i], tmp, 8);
     for (size_t j = 0; j < m && allowed_n < 8; ++j) {
       bool seen = false;
       for (size_t k = 0; k < allowed_n; ++k) {
@@ -229,15 +229,6 @@ bool init_processing(const arg_config_t *arg_config) {
 
   INFO_PRINT("self digest: %s", self_sha);
 
-/* Show all DNSSEC-validated allowed entries (version + digest) */
-if (allowed_n == 0) {
-  ERROR_PRINT("No allowed digests found (unexpected here)");
-} else {
-  INFO_PRINT("Allowed digests from DNS (%zu):", allowed_n);
-  for (size_t j = 0; j < allowed_n; ++j) {
-    INFO_PRINT("  [%zu] version=%s digest=%s", j, allowed[j].version, allowed[j].digest);
-  }
-}
 
 
   const updpops_entry_t* match = NULL;
