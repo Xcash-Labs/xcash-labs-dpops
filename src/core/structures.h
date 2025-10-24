@@ -20,7 +20,7 @@ typedef struct {
 
 typedef struct {
     const char *ip_address;
-    char *digest;
+    char digest[SHA256_DIGEST_SIZE + 1];
     bool dsfound;
 } xCashpulseNode;
 
