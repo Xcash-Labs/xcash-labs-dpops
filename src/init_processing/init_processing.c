@@ -206,19 +206,58 @@ bool init_processing(const arg_config_t *arg_config) {
 //    }
 //  }
 
-  char* txt = NULL;
+
+
   for (i = 0; xcashpulse_nodes[i].ip_address != NULL; i++) {
+    char* txt = NULL;
+    const char* host = xcashpulse_nodes[i].ip_address;
+    const char* pfx = "xcashdpops:source:";
+
     count_total++;
-    if (dnssec_get_txt_with_prefix(g_ctx, xcashpulse_nodes[i].ip_address, "xcashdpops:source:", &txt)) {
+    if (dnssec_get_txt_with_prefix(g_ctx, host, pfx, &txt)) {
       count_dnspulse++;
       xcashpulse_nodes[i].dsfound = true;
       INFO_PRINT("Validated TXT: %s", txt);
-      /* parse/use txt here */
+
+      /* ---- extract 64-hex digest after "xcashdpops:source:<version>:" ---- */
+      char digest[SHA256_DIGEST_SIZE + 1] = {0};
+      const char* p = txt + strlen(pfx);
+      const char* c = strchr(p, ':');
+      if (c) {
+        const char* d = c + 1;  // start of <64-hex> digest
+        if (strlen(d) == SHA256_DIGEST_SIZE) {
+          bool ok = true;
+          for (int k = 0; k < 64; ++k) {
+            unsigned char ch = (unsigned char)d[k];
+            if (!isxdigit(ch)) {
+              ok = false;
+              break;
+            }
+            digest[k] = (ch >= 'A' && ch <= 'F') ? (char)(ch + 32) : (char)ch;  // lowercase
+          }
+          if (ok) {
+            INFO_PRINT("updpops digest=%s", digest);
+            /* optional: store on the node record if you have a field */
+            /* strncpy(xcashpulse_nodes[i].digest, digest, sizeof(xcashpulse_nodes[i].digest));
+               xcashpulse_nodes[i].digest[64] = '\0'; */
+          } else {
+            WARNING_PRINT("Malformed digest hex at %s: %s", host, txt);
+          }
+        } else {
+          WARNING_PRINT("Digest length != 64 at %s: %s", host, txt);
+        }
+      } else {
+        WARNING_PRINT("Missing version/digest separator ':' at %s: %s", host, txt);
+      }
+      /* -------------------------------------------------------------------- */
+
     } else {
-      WARNING_PRINT("DNSSEC-validated TXT not found (or invalid) at %s", xcashpulse_nodes[i].ip_address);
+      WARNING_PRINT("DNSSEC-validated TXT not found (or invalid) at %s", host);
     }
+
+    free(txt);  // free if set; safe even if NULL
+    txt = NULL;
   }
-  free(txt);
 
   if (!(count_seeds == network_data_nodes_amount)) {
     FATAL_ERROR_EXIT("Counld not validate DNSSEC records for seed nodes, unable to start");
@@ -230,7 +269,7 @@ bool init_processing(const arg_config_t *arg_config) {
     return false;
   }
 
-  char sha[(SHA256_HASH_SIZE * 2) + 1];
+  char sha[SHA256_DIGEST_SIZE + 1];
   if (get_self_sha256(sha)) {
     INFO_PRINT("xcash-dpops image SHA-256: %s", sha);
   } else {
