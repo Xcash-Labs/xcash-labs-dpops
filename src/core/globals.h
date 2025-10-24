@@ -46,7 +46,6 @@ extern atomic_bool wait_for_block_height_init;
 extern atomic_bool shutdown_requested;
 extern atomic_bool payment_inprocess;
 extern char* endpoints[];
-extern xCashpulseNode xcashpulse_nodes[];
 extern char* server_limit_IP_address_list; // holds all of the IP addresses that are currently running on the server.
 extern char* server_limit_public_address_list; // holds all of the public addresses that are currently running on the server.
 extern const char* xcash_net_messages[];
