@@ -28,33 +28,33 @@ bool get_self_sha256(char out_hex[65]) {
   int fd = open("/proc/self/exe", O_RDONLY | O_CLOEXEC);
   if (fd < 0) return false;
 
-  EVP_MD_CTX *ctx = EVP_MD_CTX_new();
-  if (!ctx) { close(fd); return false; }
+  EVP_MD_CTX *ctx_self = EVP_MD_CTX_new();
+  if (!ctx_self) { close(fd); return false; }
 
-  if (EVP_DigestInit_ex(ctx, EVP_sha256(), NULL) != 1) {
-    EVP_MD_CTX_free(ctx); close(fd); return false;
+  if (EVP_DigestInit_ex(ctx_self, EVP_sha256(), NULL) != 1) {
+    EVP_MD_CTX_free(ctx_self); close(fd); return false;
   }
 
   unsigned char buf[1 << 16]; // 64 KiB
   for (;;) {
     ssize_t n = read(fd, buf, sizeof(buf));
     if (n > 0) {
-      if (EVP_DigestUpdate(ctx, buf, (size_t)n) != 1) {
-        EVP_MD_CTX_free(ctx); close(fd); return false;
+      if (EVP_DigestUpdate(ctx_self, buf, (size_t)n) != 1) {
+        EVP_MD_CTX_free(ctx_self); close(fd); return false;
       }
     } else if (n == 0) {
       break; // EOF
     } else {
       if (errno == EINTR) continue;
-      EVP_MD_CTX_free(ctx); close(fd); return false;
+      EVP_MD_CTX_free(ctx_self); close(fd); return false;
     }
   }
 
-  if (EVP_DigestFinal_ex(ctx, digest, &dlen) != 1) {
-    EVP_MD_CTX_free(ctx); close(fd); return false;
+  if (EVP_DigestFinal_ex(ctx_self, digest, &dlen) != 1) {
+    EVP_MD_CTX_free(ctx_self); close(fd); return false;
   }
 
-  EVP_MD_CTX_free(ctx);
+  EVP_MD_CTX_free(ctx_self);
   close(fd);
 
   static const char hexdig[] = "0123456789abcdef";
