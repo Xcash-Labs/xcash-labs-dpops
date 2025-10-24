@@ -66,6 +66,35 @@ bool get_self_sha256(char out_hex[65]) {
   return true;
 }
 
+// --- helpers ---
+static int parse_semver(const char *s, int *maj, int *min, int *pat) {
+  if (!s || !maj || !min || !pat) return 0;
+  // allow optional leading 'v' or 'V'
+  if (s[0] == 'v' || s[0] == 'V') s++;
+  // tolerate missing minor/patch as 0 (e.g., "1" or "1.2")
+  int m = 0, n = 0, p = 0;
+  int count = sscanf(s, "%d.%d.%d", &m, &n, &p);
+  if (count <= 0) return 0;
+  if (count == 1) { n = 0; p = 0; }
+  if (count == 2) { p = 0; }
+  *maj = m; *min = n; *pat = p;
+  return 1;
+}
+
+static int semver_cmp(const char *a, const char *b) {
+  int A=0,B=0,C=0, D=0,E=0,F=0;
+  int ok_a = parse_semver(a, &A,&B,&C);
+  int ok_b = parse_semver(b, &D,&E,&F);
+  if (!ok_a || !ok_b) {
+    // Fallback: lexical compare if not parseable
+    return strcmp(a ? a : "", b ? b : "");
+  }
+  if (A != D) return (A < D) ? -1 : 1;
+  if (B != E) return (B < E) ? -1 : 1;
+  if (C != F) return (C < F) ? -1 : 1;
+  return 0;
+}
+
 /*---------------------------------------------------------------------------------------------------------
 Name: init_processing
 Description: Initialize globals and print program start header.
@@ -193,7 +222,12 @@ bool init_processing(const arg_config_t *arg_config) {
     }
   }
 
-  // Gather from multiple endpoints, merge, and dedupe (simple O(n^2) here)
+  if (!(count_seeds == network_data_nodes_amount)) {
+    FATAL_ERROR_EXIT("Counld not validate DNSSEC records for seed nodes, unable to start");
+    return false;
+  }
+
+  // Gather from multiple endpoints, merge, and dedupe
   updpops_entry_t allowed[8];  // keep up to 8 concurrent digests
   size_t allowed_n = 0;
   for (i = 0; endpoints[i]; ++i) {
@@ -222,33 +256,25 @@ bool init_processing(const arg_config_t *arg_config) {
     FATAL_ERROR_EXIT("Unable to compute self SHA-256");
   }
 
-
-  INFO_PRINT("self digest: %s", self_sha);
-
-
+  DEBUG_PRINT("self digest: %s", self_sha);
 
   const updpops_entry_t* match = NULL;
   if (digest_allowed(self_sha, allowed, allowed_n, &match)) {
     INFO_PRINT("Binary allowed by DNS: version=%s digest=%s", match->version, match->digest);
-    // Optional: if multiple allowed and ours is not the highest version, warn:
-    // (naive compare; replace with real semver compare if needed)
+
+    // Improved optional: warn only if there is a STRICTLY NEWER allowed version.
+    const char* newest = match->version;
     for (i = 0; i < allowed_n; ++i) {
-      if (strcmp(allowed[i].version, match->version) != 0) {
-        WARNING_PRINT("A newer allowed version exists (%s). Consider upgrading.", allowed[i].version);
-        break;
+      if (semver_cmp(allowed[i].version, newest) > 0) {
+        newest = allowed[i].version;
       }
     }
+    if (semver_cmp(newest, match->version) > 0) {
+      WARNING_PRINT("A newer allowed version exists (%s). Consider upgrading.", newest);
+    }
   } else {
-    // Soft policy: allow old for a grace window? (behind flag)
 //    FATAL_ERROR_EXIT("Running digest not in allowed list; refusing to start");
-
-// Don't enforce yet
     WARNING_PRINT("Running digest not in allowed list; refusing to start");
-  }
-
-  if (!(count_seeds == network_data_nodes_amount)) {
-    FATAL_ERROR_EXIT("Counld not validate DNSSEC records for seed nodes, unable to start");
-    return false;
   }
 
   return true;
