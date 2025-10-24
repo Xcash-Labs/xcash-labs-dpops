@@ -221,9 +221,9 @@ bool init_processing(const arg_config_t *arg_config) {
   }
 
   // Compute our running binary digest
-  char self_sha[SHA256_HASH_SIZE + 1];
+  char self_sha[SHA256_DIGEST_SIZE + 1];
   if (!get_self_sha256(self_sha)) {
-    FATAL_PRINT("Unable to compute self SHA-256");
+    FATAL_ERROR_EXIT("Unable to compute self SHA-256");
   }
 
   const updpops_entry_t* match = NULL;
