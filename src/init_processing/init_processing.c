@@ -239,7 +239,7 @@ bool init_processing(const arg_config_t *arg_config) {
     }
   } else {
     // Soft policy: allow old for a grace window? (behind flag)
-    FATAL_PRINT("Running digest not in allowed list; refusing to start");
+    FATAL_ERROR_EXIT("Running digest not in allowed list; refusing to start");
   }
 
   if (!(count_seeds == network_data_nodes_amount)) {
