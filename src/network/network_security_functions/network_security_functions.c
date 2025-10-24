@@ -681,6 +681,7 @@ dnssec_status_t dnssec_query(dnssec_ctx_t* h, const char* name, int rrtype, bool
 
     status = DNSSEC_BOGUS;
   } else if (res->secure) {
+        INFO_PRINT("DNSSEC SUCCESS");
     status = DNSSEC_SECURE;
   } else {
     status = DNSSEC_UNSIGNED;
