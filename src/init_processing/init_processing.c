@@ -216,7 +216,7 @@ bool init_processing(const arg_config_t *arg_config) {
   }
 
   if (allowed_n == 0) {
-    FATAL_PRINT("No DNSSEC-validated updpops digests available; refusing to start");
+    FATAL_ERROR_EXIT("No DNSSEC-validated updpops digests available; refusing to start");
     // shutdown or return error
   }
 

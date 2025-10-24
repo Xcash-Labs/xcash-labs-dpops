@@ -704,11 +704,13 @@ static bool txt_rdata_to_string(const unsigned char* rdata, size_t len, char** o
   return true;
 }
 
-size_t dnssec_get_all_updpops(dnssec_ctx_t* ctx, const char* host, updpops_entry_t* out, size_t cap) {
-  if (!ctx || !host || !out || cap == 0) return 0;
+// Collect all validated updpops entries from a host
+size_t dnssec_get_all_updpops(dnssec_ctx_t* dctx, const char* host,
+                              updpops_entry_t* out, size_t cap) {
+  if (!dctx || !dctx->ctx || !host || !out || cap == 0) return 0;
 
   struct ub_result* res = NULL;
-  if (ub_resolve(ctx, host, RR_TXT, 1, &res) != 0 || !res) return 0;
+  if (ub_resolve(dctx->ctx, host, RR_TXT, RR_IN, &res) != 0 || !res) return 0;
 
   size_t n = 0;
   if (res->secure && !res->bogus && res->havedata && res->data) {
@@ -717,15 +719,14 @@ size_t dnssec_get_all_updpops(dnssec_ctx_t* ctx, const char* host, updpops_entry
       if (txt_rdata_to_string((const unsigned char*)res->data[i],
                               (size_t)res->len[i], &str)) {
         updpops_entry_t e;
-        if (parse_updpops_entry(str, &e)) {
-          out[n++] = e;
-        }
+        if (parse_updpops_entry(str, &e)) out[n++] = e;
         free(str);
       }
     }
   }
-  if (res) ub_resolve_free(res);
-  return n; // number of validated entries parsed
+
+  ub_resolve_free(res);
+  return n;
 }
 
 bool digest_allowed(const char* self_hex, const updpops_entry_t* list, size_t n, const updpops_entry_t** matched) {
