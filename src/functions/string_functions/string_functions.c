@@ -728,3 +728,30 @@ void outputs_digest_sha256(const payout_output_t *outs, size_t n, uint8_t out32[
 
   EVP_MD_CTX_free(ctx);
 }
+
+static bool parse_updpops_entry(const char* s, updpops_entry_t* out) {
+  const char* pfx = "xcashdpops:source:";
+  size_t plen = strlen(pfx);
+  if (strncmp(s, pfx, plen) != 0) return false;
+
+  const char* p = s + plen;               // version start
+  const char* c = strchr(p, ':');         // colon before digest
+  if (!c) return false;
+
+  size_t vlen = (size_t)(c - p);
+  if (vlen == 0 || vlen >= sizeof(out->version)) return false;
+  memcpy(out->version, p, vlen);
+  out->version[vlen] = '\0';
+
+  const char* d = c + 1;                  // digest
+  if (strlen(d) != 64) return false;
+  for (int i = 0; i < 64; ++i) {
+    char ch = d[i];
+    if (!((ch >= '0' && ch <= '9') ||
+          (ch >= 'a' && ch <= 'f') ||
+          (ch >= 'A' && ch <= 'F'))) return false;
+    out->digest[i] = (ch >= 'A' && ch <= 'F') ? (char)(ch + 32) : ch; // lower
+  }
+  out->digest[64] = '\0';
+  return true;
+}

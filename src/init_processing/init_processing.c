@@ -195,19 +195,56 @@ bool init_processing(const arg_config_t *arg_config) {
     }
   }
 
-//  for (i = 0; xcashpulse_nodes[i].ip_address != NULL; i++) {
-//    bool have = false;
-//    dnssec_status_t st = dnssec_query(g_ctx, xcashpulse_nodes[i].ip_address, RR_TXT, &have);
-//    count_total++;
-//    INFO_PRINT("Checking %s", xcashpulse_nodes[i].ip_address);
-//    if (st == DNSSEC_SECURE && have) {
-//      count_dnspulse++;
-//      INFO_PRINT("Valid");
-//    }
-//  }
+  // Gather from multiple endpoints, merge, and dedupe (simple O(n^2) here)
+  updpops_entry_t allowed[8];  // keep up to 8 concurrent digests
+  size_t allowed_n = 0;
 
+//  xCashpulseNode xcashpulse_nodes[] = {{"updpops.xcashpulse.cc"},{"updpops.xcashpulse.uk"},{NULL}};
+  const char* endpoints[] = {"updpops.xcashpulse.cc", "updpops.xcashseeds.uk", NULL};
+  // schuffel?
+  for (int i = 0; endpoints[i]; ++i) {
+    updpops_entry_t tmp[8];
+    size_t m = dnssec_get_all_updpops(g_ctx, endpoints[i], tmp, 8);
+    for (size_t j = 0; j < m && allowed_n < 8; ++j) {
+      bool seen = false;
+      for (size_t k = 0; k < allowed_n; ++k) {
+        if (strcmp(tmp[j].digest, allowed[k].digest) == 0) {
+          seen = true;
+          break;
+        }
+      }
+      if (!seen) allowed[allowed_n++] = tmp[j];
+    }
+  }
 
+  if (allowed_n == 0) {
+    FATAL_PRINT("No DNSSEC-validated updpops digests available; refusing to start");
+    // shutdown or return error
+  }
 
+  // Compute our running binary digest
+  char self_sha[SHA256_HASH_SIZE + 1];
+  if (!get_self_sha256(self_sha)) {
+    FATAL_PRINT("Unable to compute self SHA-256");
+  }
+
+  const updpops_entry_t* match = NULL;
+  if (digest_allowed(self_sha, allowed, allowed_n, &match)) {
+    INFO_PRINT("Binary allowed by DNS: version=%s digest=%s", match->version, match->digest);
+    // Optional: if multiple allowed and ours is not the highest version, warn:
+    // (naive compare; replace with real semver compare if needed)
+    for (size_t i = 0; i < allowed_n; ++i) {
+      if (strcmp(allowed[i].version, match->version) != 0) {
+        WARNING_PRINT("A newer allowed version exists (%s). Consider upgrading.", allowed[i].version);
+        break;
+      }
+    }
+  } else {
+    // Soft policy: allow old for a grace window? (behind flag)
+    FATAL_PRINT("Running digest not in allowed list; refusing to start");
+  }
+
+/*
   for (i = 0; xcashpulse_nodes[i].ip_address != NULL; i++) {
     char* txt = NULL;
     const char* host = xcashpulse_nodes[i].ip_address;
@@ -219,7 +256,6 @@ bool init_processing(const arg_config_t *arg_config) {
       xcashpulse_nodes[i].dsfound = true;
       INFO_PRINT("Validated TXT: %s", txt);
 
-      /* ---- extract 64-hex digest after "xcashdpops:source:<version>:" ---- */
       char digest[SHA256_DIGEST_SIZE + 1] = {0};
       const char* p = txt + strlen(pfx);
       const char* c = strchr(p, ':');
@@ -247,7 +283,6 @@ bool init_processing(const arg_config_t *arg_config) {
       } else {
         WARNING_PRINT("Missing version/digest separator ':' at %s: %s", host, txt);
       }
-      /* -------------------------------------------------------------------- */
 
     } else {
       WARNING_PRINT("DNSSEC-validated TXT not found (or invalid) at %s", host);
@@ -256,23 +291,39 @@ bool init_processing(const arg_config_t *arg_config) {
     free(txt);  // free if set; safe even if NULL
     txt = NULL;
   }
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   if (!(count_seeds == network_data_nodes_amount)) {
     FATAL_ERROR_EXIT("Counld not validate DNSSEC records for seed nodes, unable to start");
     return false;
   }
 
-  if (!(count_dnspulse == count_total)) {
-    FATAL_ERROR_EXIT("Counld not validate DNSSEC records for pulse nodes, unable to start");
-    return false;
-  }
+//  if (!(count_dnspulse == count_total)) {
+//    FATAL_ERROR_EXIT("Counld not validate DNSSEC records for pulse nodes, unable to start");
+//    return false;
+//  }
 
-  char sha[SHA256_DIGEST_SIZE + 1];
-  if (get_self_sha256(sha)) {
-    INFO_PRINT("xcash-dpops image SHA-256: %s", sha);
-  } else {
-    ERROR_PRINT("Failed to compute self SHA-256");
-  }
+//  char sha[SHA256_DIGEST_SIZE + 1];
+//  if (get_self_sha256(sha)) {
+//    INFO_PRINT("xcash-dpops image SHA-256: %s", sha);
+//  } else {
+//    ERROR_PRINT("Failed to compute self SHA-256");
+//  }
 
   return true;
 }
