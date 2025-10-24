@@ -4,6 +4,7 @@
 
 mongoc_client_pool_t* database_client_thread_pool = NULL;
 pthread_t server_thread;
+dnssec_ctx_t* ctx = NULL;
 int log_level = 1;  // default level is error
 int delegate_db_hash_mismatch = 0;
 double delegate_fee_percent = 5.0;
