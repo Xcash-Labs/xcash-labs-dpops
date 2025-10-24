@@ -47,6 +47,7 @@ NetworkNode network_nodes[] = {
     // Sentinel value (empty entry to mark the end)
     {NULL, NULL, NULL, 0}};
 char* endpoints[] = {"updpops.xcashpulse.cc", "updpops.xcashseeds.uk", NULL};
+char self_sha[SHA256_DIGEST_SIZE + 1] = {0};
 char* server_limit_IP_address_list;
 char* server_limit_public_address_list;
 

@@ -222,7 +222,6 @@ bool init_processing(const arg_config_t *arg_config) {
   }
 
   // Compute our running binary digest
-  char self_sha[SHA256_DIGEST_SIZE + 1];
   if (!get_self_sha256(self_sha)) {
     FATAL_ERROR_EXIT("Unable to compute self SHA-256");
   }
@@ -232,8 +231,6 @@ bool init_processing(const arg_config_t *arg_config) {
   const updpops_entry_t* match = NULL;
   if (digest_allowed(self_sha, allowed, allowed_n, &match)) {
     INFO_PRINT("Binary allowed by DNS: version=%s digest=%s", match->version, match->digest);
-
-    // Improved optional: warn only if there is a STRICTLY NEWER allowed version.
     const char* newest = match->version;
     for (i = 0; i < allowed_n; ++i) {
       if (semver_cmp(allowed[i].version, newest) > 0) {
@@ -245,7 +242,7 @@ bool init_processing(const arg_config_t *arg_config) {
     }
   } else {
 //    FATAL_ERROR_EXIT("Running digest not in allowed list; refusing to start");
-    WARNING_PRINT("Running digest not in allowed list; refusing to start");
+    WARNING_PRINT("Running digest not in allowed list; if this is production notify devs");
   }
 
   return true;
