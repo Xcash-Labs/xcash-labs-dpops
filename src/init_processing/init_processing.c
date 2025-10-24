@@ -185,8 +185,6 @@ bool init_processing(const arg_config_t *arg_config) {
 
   }
 
-dnssec_status_t dnssec_query(dnssec_ctx_t* h, const char* name, int rrtype, bool* out_havedata)
-
   // Check DNSSEC records for seeds
   INFO_PRINT("Validating DNSSEC entries...");
   for (i = 0; network_nodes[i].ip_address != NULL; i++) {
