@@ -584,8 +584,6 @@ static const char * const* get_builtin_ds(void) {
   return ds;
 }
 
-/* ----------------------------- Internals ---------------------------------- */
-
 static int dnssec_add_trust_anchor(struct ub_ctx* ctx) {
   int added = 0;
 
@@ -637,12 +635,14 @@ dnssec_ctx_t* dnssec_init(void) {
   if (!h->ctx) { free(h); return NULL; }
 
   /* Sensible defaults */
+  (void)ub_ctx_set_option(h->ctx, "val-permissive-mode:", "no");
+  (void)ub_ctx_set_option(h->ctx, "qname-minimisation:",  "yes");
   (void)ub_ctx_set_option(h->ctx, "infra-cache-numhosts:", "2000");
   (void)ub_ctx_set_option(h->ctx, "infra-keep-probing:",   "yes");
   (void)ub_ctx_set_option(h->ctx, "harden-below-nxdomain:","yes");
   (void)ub_ctx_set_option(h->ctx, "do-ip4:",               "yes");
-  (void)ub_ctx_set_option(h->ctx, "do-ip6:",               "no");   /* set yes if you want IPv6 */
-  (void)ub_ctx_set_option(h->ctx, "timeout:",              "3000"); /* ms per query */
+  (void)ub_ctx_set_option(h->ctx, "do-ip6:",               "no");
+  (void)ub_ctx_set_option(h->ctx, "timeout:",              "3000");
 
   /* Use system resolvers unless DNS_PUBLIC overrides */
   (void)ub_ctx_resolvconf(h->ctx, NULL);
@@ -675,6 +675,10 @@ dnssec_status_t dnssec_query(dnssec_ctx_t* h, const char* name, int rrtype, bool
 
   dnssec_status_t status;
   if (res->bogus) {
+
+    INFO_PRINT("DNSSEC BOGUS for %s (rr=%d): %s", name, rrtype,
+                res->why_bogus ? res->why_bogus : "(no reason)");
+
     status = DNSSEC_BOGUS;
   } else if (res->secure) {
     status = DNSSEC_SECURE;
