@@ -755,3 +755,31 @@ bool parse_updpops_entry(const char* s, updpops_entry_t* out) {
   out->digest[64] = '\0';
   return true;
 }
+
+int parse_semver(const char *s, int *maj, int *min, int *pat) {
+  if (!s || !maj || !min || !pat) return 0;
+  // allow optional leading 'v' or 'V'
+  if (s[0] == 'v' || s[0] == 'V') s++;
+  // tolerate missing minor/patch as 0 (e.g., "1" or "1.2")
+  int m = 0, n = 0, p = 0;
+  int count = sscanf(s, "%d.%d.%d", &m, &n, &p);
+  if (count <= 0) return 0;
+  if (count == 1) { n = 0; p = 0; }
+  if (count == 2) { p = 0; }
+  *maj = m; *min = n; *pat = p;
+  return 1;
+}
+
+int semver_cmp(const char *a, const char *b) {
+  int A=0,B=0,C=0, D=0,E=0,F=0;
+  int ok_a = parse_semver(a, &A,&B,&C);
+  int ok_b = parse_semver(b, &D,&E,&F);
+  if (!ok_a || !ok_b) {
+    // Fallback: lexical compare if not parseable
+    return strcmp(a ? a : "", b ? b : "");
+  }
+  if (A != D) return (A < D) ? -1 : 1;
+  if (B != E) return (B < E) ? -1 : 1;
+  if (C != F) return (C < F) ? -1 : 1;
+  return 0;
+}
