@@ -190,8 +190,10 @@ bool init_processing(const arg_config_t *arg_config) {
   for (i = 0; network_nodes[i].ip_address != NULL; i++) {
     bool have = false;
     dnssec_status_t st = dnssec_query(g_ctx, network_nodes[i].ip_address, 1, &have);
+    INFO_PRINT("Checking %s", network_nodes[i].ip_address);
     if (st == DNSSEC_SECURE && have) {
       count_seeds++;
+      INFO_PRINT("Valid");
     }
   }
 

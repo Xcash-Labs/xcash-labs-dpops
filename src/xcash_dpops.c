@@ -245,6 +245,8 @@ int main(int argc, char *argv[]) {
     FATAL_ERROR_EXIT("Can't open mongo database");
   }
 
+  g_ctx = dnssec_init();
+
   if (!(init_processing(&arg_config))) {
     FATAL_ERROR_EXIT("Failed server initialization.");
   }
@@ -286,12 +288,7 @@ int main(int argc, char *argv[]) {
       }
     }
     print_starter_state(&arg_config);
-    g_ctx = dnssec_init();
     start_block_production();
-    if (g_ctx) {
-      dnssec_destroy(g_ctx);
-      g_ctx = NULL;
-    }
     fprintf(stderr, "Daemon is shutting down...\n");
   } else {
     ERROR_PRINT("Failed to get the nodes public wallet address, shutting down...");
@@ -301,6 +298,11 @@ int main(int argc, char *argv[]) {
   if (sched_started) {
     pthread_join(timer_tid, NULL);
     free(sched_ctx);
+  }
+
+  if (g_ctx) {
+    dnssec_destroy(g_ctx);
+    g_ctx = NULL;
   }
 
   shutdown_db();
