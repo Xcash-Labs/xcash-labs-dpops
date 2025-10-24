@@ -198,11 +198,11 @@ bool init_processing(const arg_config_t *arg_config) {
   size_t allowed_n = 0;
 
 //  xCashpulseNode xcashpulse_nodes[] = {{"updpops.xcashpulse.cc"},{"updpops.xcashpulse.uk"},{NULL}};
-  const char* endpoints[] = {"updpops.xcashpulse.cc", "updpops.xcashseeds.uk", NULL};
+//  const char* endpoints[] = {"updpops.xcashpulse.cc", "updpops.xcashseeds.uk", NULL};
   // schuffel?
-  for (i = 0; endpoints[i]; ++i) {
+  for (i = 0; xcashpulse_nodes[i]; ++i) {
     updpops_entry_t tmp[8];
-    size_t m = dnssec_get_all_updpops(g_ctx, endpoints[i], tmp, 8);
+    size_t m = dnssec_get_all_updpops(g_ctx, xcashpulse_nodes[i], tmp, 8);
     for (size_t j = 0; j < m && allowed_n < 8; ++j) {
       bool seen = false;
       for (size_t k = 0; k < allowed_n; ++k) {
