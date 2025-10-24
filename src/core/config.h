@@ -4,7 +4,7 @@
 #include <stdbool.h>
 
 // ===================== XCASH Version =====================
-#define XCASH_DPOPS_CURRENT_VERSION "xCash Labs DPoPs V. 2.0.0"
+#define XCASH_DPOPS_CURRENT_VERSION "xCash Labs DPoPs V. 0.2.0.0"
 
 // ===================== Blockchain Settings =====================
 #define XCASH_WALLET_PREFIX "XCA" // The prefix of a XCA address
