@@ -729,7 +729,7 @@ void outputs_digest_sha256(const payout_output_t *outs, size_t n, uint8_t out32[
   EVP_MD_CTX_free(ctx);
 }
 
-static bool parse_updpops_entry(const char* s, updpops_entry_t* out) {
+bool parse_updpops_entry(const char* s, updpops_entry_t* out) {
   const char* pfx = "xcashdpops:source:";
   size_t plen = strlen(pfx);
   if (strncmp(s, pfx, plen) != 0) return false;

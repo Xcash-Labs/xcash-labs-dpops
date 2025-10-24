@@ -231,7 +231,7 @@ bool init_processing(const arg_config_t *arg_config) {
     INFO_PRINT("Binary allowed by DNS: version=%s digest=%s", match->version, match->digest);
     // Optional: if multiple allowed and ours is not the highest version, warn:
     // (naive compare; replace with real semver compare if needed)
-    for (size_t i = 0; i < allowed_n; ++i) {
+    for (i = 0; i < allowed_n; ++i) {
       if (strcmp(allowed[i].version, match->version) != 0) {
         WARNING_PRINT("A newer allowed version exists (%s). Consider upgrading.", allowed[i].version);
         break;

@@ -37,6 +37,6 @@ int check_for_invalid_strings(const char* MESSAGE);
 int create_sync_token(void);
 bool str_is_base58(const char* s);
 void outputs_digest_sha256(const payout_output_t *outs, size_t n, uint8_t out32[32]);
-static bool parse_updpops_entry(const char* s, updpops_entry_t* out);
+bool parse_updpops_entry(const char* s, updpops_entry_t* out);
 
 #endif
