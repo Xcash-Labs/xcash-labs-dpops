@@ -15,7 +15,7 @@ Global Variables
 --------------------------------------------------------------------------------------------------*/
 extern mongoc_client_pool_t* database_client_thread_pool;  // database
 extern pthread_t server_thread;
-extern dnssec_ctx_t* ctx;
+extern dnssec_ctx_t* gctx;
 extern int log_level;  // Log level for display log messages
 extern int delegate_db_hash_mismatch; 
 extern double delegate_fee_percent;
