@@ -196,10 +196,6 @@ bool init_processing(const arg_config_t *arg_config) {
   // Gather from multiple endpoints, merge, and dedupe (simple O(n^2) here)
   updpops_entry_t allowed[8];  // keep up to 8 concurrent digests
   size_t allowed_n = 0;
-
-//  xCashpulseNode xcashpulse_nodes[] = {{"updpops.xcashpulse.cc"},{"updpops.xcashpulse.uk"},{NULL}};
-
-  // schuffel?
   for (i = 0; endpoints[i]; ++i) {
     updpops_entry_t tmp[8];
     size_t m = dnssec_get_all_updpops(g_ctx, endpoints[i], tmp, 8);

@@ -19,10 +19,6 @@ typedef struct {
 } NetworkNode;
 
 typedef struct {
-    const char *ip_address;
-} xCashpulseNode;
-
-typedef struct {
   char version[32];
   char digest[SHA256_DIGEST_SIZE + 1];
 } updpops_entry_t;
