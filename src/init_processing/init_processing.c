@@ -244,9 +244,6 @@ bool init_processing(const arg_config_t *arg_config) {
 
 // Don't enforce yet
     WARNING_PRINT("Running digest not in allowed list; refusing to start");
- INFO_PRINT("self digest: %s", self_sha);
-
-
   }
 
   if (!(count_seeds == network_data_nodes_amount)) {
