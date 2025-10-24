@@ -708,7 +708,7 @@ size_t dnssec_get_all_updpops(dnssec_ctx_t* ctx, const char* host, updpops_entry
   if (!ctx || !host || !out || cap == 0) return 0;
 
   struct ub_result* res = NULL;
-  if (ub_resolve(ctx, host, 16 /*TXT*/, 1 /*IN*/, &res) != 0 || !res) return 0;
+  if (ub_resolve(ctx, host, RR_TXT, 1, &res) != 0 || !res) return 0;
 
   size_t n = 0;
   if (res->secure && !res->bogus && res->havedata && res->data) {
