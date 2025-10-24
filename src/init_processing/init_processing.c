@@ -209,7 +209,7 @@ bool init_processing(const arg_config_t *arg_config) {
   char* txt = NULL;
   for (i = 0; xcashpulse_nodes[i].ip_address != NULL; i++) {
   count_total++;
-  if (dnssec_get_txt_with_prefix(ctx, xcashpulse_nodes[i].ip_address, "xcashdpops:source:", &txt))
+  if (dnssec_get_txt_with_prefix(g_ctx, xcashpulse_nodes[i].ip_address, "xcashdpops:source:", &txt))
   {
     count_dnspulse++;
     xcashpulse_nodes[i].dsfound = true;
@@ -228,11 +228,6 @@ bool init_processing(const arg_config_t *arg_config) {
   if (!(count_dnspulse == count_total)) {
     FATAL_ERROR_EXIT("Counld not validate DNSSEC records for pulse nodes, unable to start");
     return false;
-  }
-
-
-  if (dnssec_get_txt_with_prefix(g_ctx, xcashpulse_nodes[0].ip_address, const char* prefix, char** out_txt)) {
-
   }
 
   char sha[(SHA256_HASH_SIZE * 2) + 1];
