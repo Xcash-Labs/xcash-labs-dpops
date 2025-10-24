@@ -286,7 +286,9 @@ int main(int argc, char *argv[]) {
       }
     }
     print_starter_state(&arg_config);
+    dnssec_ctx_t* ctx = dnssec_init();
     start_block_production();
+    dnssec_destroy(ctx);
     fprintf(stderr, "Daemon is shutting down...\n");
   } else {
     ERROR_PRINT("Failed to get the nodes public wallet address, shutting down...");
