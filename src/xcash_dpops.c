@@ -289,7 +289,7 @@ int main(int argc, char *argv[]) {
     g_ctx = dnssec_init();
     start_block_production();
     if (g_ctx) {
-      dnssec_destroy(ctx);
+      dnssec_destroy(g_ctx);
       g_ctx = NULL;
     }
     fprintf(stderr, "Daemon is shutting down...\n");
