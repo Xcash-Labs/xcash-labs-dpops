@@ -237,7 +237,7 @@ bool init_processing(const arg_config_t *arg_config) {
           }
           if (ok) {
             INFO_PRINT("updpops digest=%s", digest);
-            strncpy(xcashpulse_nodes[i].digest, digest, sizeof(xcashpulse_nodes[i].digest)); xcashpulse_nodes[i].digest[64] = '\0';
+            snprintf(xcashpulse_nodes[i].digest, sizeof xcashpulse_nodes[i].digest, "%s", digest);
           } else {
             WARNING_PRINT("Malformed digest hex at %s: %s", host, txt);
           }
