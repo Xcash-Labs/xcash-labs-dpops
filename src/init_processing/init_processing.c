@@ -195,16 +195,30 @@ bool init_processing(const arg_config_t *arg_config) {
     }
   }
 
+//  for (i = 0; xcashpulse_nodes[i].ip_address != NULL; i++) {
+//    bool have = false;
+//    dnssec_status_t st = dnssec_query(g_ctx, xcashpulse_nodes[i].ip_address, RR_TXT, &have);
+//    count_total++;
+//    INFO_PRINT("Checking %s", xcashpulse_nodes[i].ip_address);
+//    if (st == DNSSEC_SECURE && have) {
+//      count_dnspulse++;
+//      INFO_PRINT("Valid");
+//    }
+//  }
+
+  char* txt = NULL;
   for (i = 0; xcashpulse_nodes[i].ip_address != NULL; i++) {
-    bool have = false;
-    dnssec_status_t st = dnssec_query(g_ctx, xcashpulse_nodes[i].ip_address, RR_TXT, &have);
-    count_total++;
-    INFO_PRINT("Checking %s", xcashpulse_nodes[i].ip_address);
-    if (st == DNSSEC_SECURE && have) {
-      count_dnspulse++;
-      INFO_PRINT("Valid");
-    }
-  }
+  count_total++;
+  if (dnssec_get_txt_with_prefix(ctx, xcashpulse_nodes[i].ip_address, "xcashdpops:source:", &txt))
+  {
+    count_dnspulse++;
+    xcashpulse_nodes[i].dsfound = true;
+    INFO_PRINT("Validated TXT: %s", txt);
+    /* parse/use txt here */
+  } else {
+    WARNING_PRINT("DNSSEC-validated TXT not found (or invalid) at %s", xcashpulse_nodes[i].ip_address);
+  } 
+  free(txt);
 
   if (!(count_seeds == network_data_nodes_amount)) {
     FATAL_ERROR_EXIT("Counld not validate DNSSEC records for seed nodes, unable to start");
@@ -216,6 +230,10 @@ bool init_processing(const arg_config_t *arg_config) {
     return false;
   }
 
+
+  if (dnssec_get_txt_with_prefix(g_ctx, xcashpulse_nodes[0].ip_address, const char* prefix, char** out_txt)) {
+
+  }
 
   char sha[(SHA256_HASH_SIZE * 2) + 1];
   if (get_self_sha256(sha)) {

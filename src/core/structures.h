@@ -20,6 +20,7 @@ typedef struct {
 
 typedef struct {
     const char *ip_address;
+    bool dsfound;
 } xCashpulseNode;
 
 // xcash-next

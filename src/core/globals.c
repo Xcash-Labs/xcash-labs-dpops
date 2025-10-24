@@ -46,7 +46,7 @@ NetworkNode network_nodes[] = {
       "e735f2dea3a1894936088c0423e565634deb7b0cf74412debc5dbc36766dfeaf",0},
     // Sentinel value (empty entry to mark the end)
     {NULL, NULL, NULL, 0}};
-xCashpulseNode xcashpulse_nodes[] = {{"updpops.xcashpulse.cc"},{"updpops.xcashpulse.uk"},{NULL}};
+xCashpulseNode xcashpulse_nodes[] = {{"updpops.xcashpulse.cc", false},{"updpops.xcashpulse.uk", flase},{NULL, false}};
 char* server_limit_IP_address_list;
 char* server_limit_public_address_list;
 
@@ -64,7 +64,7 @@ const char* xcash_net_messages[] = {
     "XCASHD_TO_DPOPS_VERIFY",
     "DPOPS_TO_XCASHD_VERIFY",
     "SEED_TO_NODES_UPDATE_VOTE_COUNT",
-    "SEED_TO_NODES_PAYOUT" };
+    "SEED_TO_NODES_PAYOUT"};
 
 // initialize the global variables
 void init_globals(void) {
