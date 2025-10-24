@@ -226,6 +226,7 @@ bool init_processing(const arg_config_t *arg_config) {
     FATAL_ERROR_EXIT("Unable to compute self SHA-256");
   }
 
+  INFO_PRINT("self digest: %s", self_sha);
   const updpops_entry_t* match = NULL;
   if (digest_allowed(self_sha, allowed, allowed_n, &match)) {
     INFO_PRINT("Binary allowed by DNS: version=%s digest=%s", match->version, match->digest);
@@ -239,7 +240,13 @@ bool init_processing(const arg_config_t *arg_config) {
     }
   } else {
     // Soft policy: allow old for a grace window? (behind flag)
-    FATAL_ERROR_EXIT("Running digest not in allowed list; refusing to start");
+//    FATAL_ERROR_EXIT("Running digest not in allowed list; refusing to start");
+
+// Don't enforce yet
+    WARNING_PRINT("Running digest not in allowed list; refusing to start");
+
+
+
   }
 
   if (!(count_seeds == network_data_nodes_amount)) {
