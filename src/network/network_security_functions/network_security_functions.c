@@ -673,18 +673,15 @@ dnssec_status_t dnssec_query(dnssec_ctx_t* h, const char* name, int rrtype, bool
 
   dnssec_status_t status;
   if (res->bogus) {
-
-    INFO_PRINT("DNSSEC BOGUS for %s (rr=%d): %s", name, rrtype,
+    DEBUG_PRINT("DNSSEC BOGUS for %s (rr=%d): %s", name, rrtype,
                 res->why_bogus ? res->why_bogus : "(no reason)");
-
     status = DNSSEC_BOGUS;
   } else if (res->secure) {
-        INFO_PRINT("DNSSEC SUCCESS");
     status = DNSSEC_SECURE;
   } else {
     status = DNSSEC_UNSIGNED;
   }
-  
+
   if (out_havedata) *out_havedata = (res->havedata != 0);
 
   (void)ub_resolve_free(res);
