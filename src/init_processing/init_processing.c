@@ -208,16 +208,16 @@ bool init_processing(const arg_config_t *arg_config) {
 
   char* txt = NULL;
   for (i = 0; xcashpulse_nodes[i].ip_address != NULL; i++) {
-  count_total++;
-  if (dnssec_get_txt_with_prefix(g_ctx, xcashpulse_nodes[i].ip_address, "xcashdpops:source:", &txt))
-  {
-    count_dnspulse++;
-    xcashpulse_nodes[i].dsfound = true;
-    INFO_PRINT("Validated TXT: %s", txt);
-    /* parse/use txt here */
-  } else {
-    WARNING_PRINT("DNSSEC-validated TXT not found (or invalid) at %s", xcashpulse_nodes[i].ip_address);
-  } 
+    count_total++;
+    if (dnssec_get_txt_with_prefix(g_ctx, xcashpulse_nodes[i].ip_address, "xcashdpops:source:", &txt)) {
+      count_dnspulse++;
+      xcashpulse_nodes[i].dsfound = true;
+      INFO_PRINT("Validated TXT: %s", txt);
+      /* parse/use txt here */
+    } else {
+      WARNING_PRINT("DNSSEC-validated TXT not found (or invalid) at %s", xcashpulse_nodes[i].ip_address);
+    }
+  }
   free(txt);
 
   if (!(count_seeds == network_data_nodes_amount)) {
