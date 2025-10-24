@@ -286,11 +286,11 @@ int main(int argc, char *argv[]) {
       }
     }
     print_starter_state(&arg_config);
-    ctx = dnssec_init();
+    g_ctx = dnssec_init();
     start_block_production();
-    if (ctx) {
+    if (g_ctx) {
       dnssec_destroy(ctx);
-      ctx = NULL;
+      g_ctx = NULL;
     }
     fprintf(stderr, "Daemon is shutting down...\n");
   } else {

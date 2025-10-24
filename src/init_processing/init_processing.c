@@ -189,7 +189,7 @@ bool init_processing(const arg_config_t *arg_config) {
   INFO_PRINT("Validating DNSSEC entries...");
   for (i = 0; network_nodes[i].ip_address != NULL; i++) {
     bool have = false;
-    dnssec_status_t st = dnssec_query(ctx, network_nodes[i].ip_address, 1, &have);
+    dnssec_status_t st = dnssec_query(g_ctx, network_nodes[i].ip_address, 1, &have);
     if (st == DNSSEC_SECURE && have) {
       count_seeds++;
     }
@@ -197,7 +197,7 @@ bool init_processing(const arg_config_t *arg_config) {
 
   for (i = 0; xcashpulse_nodes[i].ip_address != NULL; i++) {
     bool have = false;
-    dnssec_status_t st = dnssec_query(ctx, xcashpulse_nodes[i].ip_address, 1, &have);
+    dnssec_status_t st = dnssec_query(g_ctx, xcashpulse_nodes[i].ip_address, 1, &have);
     count_total++;
     if (st == DNSSEC_SECURE && have) {
       count_dnspulse++;
