@@ -226,7 +226,20 @@ bool init_processing(const arg_config_t *arg_config) {
     FATAL_ERROR_EXIT("Unable to compute self SHA-256");
   }
 
+
   INFO_PRINT("self digest: %s", self_sha);
+
+/* Show all DNSSEC-validated allowed entries (version + digest) */
+if (allowed_n == 0) {
+  ERROR_PRINT("No allowed digests found (unexpected here)");
+} else {
+  INFO_PRINT("Allowed digests from DNS (%zu):", allowed_n);
+  for (size_t j = 0; j < allowed_n; ++j) {
+    INFO_PRINT("  [%zu] version=%s digest=%s", j, allowed[j].version, allowed[j].digest);
+  }
+}
+
+
   const updpops_entry_t* match = NULL;
   if (digest_allowed(self_sha, allowed, allowed_n, &match)) {
     INFO_PRINT("Binary allowed by DNS: version=%s digest=%s", match->version, match->digest);
@@ -244,7 +257,7 @@ bool init_processing(const arg_config_t *arg_config) {
 
 // Don't enforce yet
     WARNING_PRINT("Running digest not in allowed list; refusing to start");
-
+ INFO_PRINT("self digest: %s", self_sha);
 
 
   }
