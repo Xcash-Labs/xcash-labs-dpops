@@ -199,7 +199,6 @@ bool init_processing(const arg_config_t *arg_config) {
   }
 
   // Check if endpoints match
-  /*
   updpops_entry_t base[8];
   size_t base_n = 0;
   if (endpoints[0]) {
@@ -232,76 +231,6 @@ bool init_processing(const arg_config_t *arg_config) {
     ERROR_PRINT("No DNSSEC-validated updpops digests available; refusing to start");
     return false;
   }
-*/
-
-
-
-
-
-updpops_entry_t allowed[16];
-size_t allowed_n = 0;
-
-
-
-
-
-
-
-
-updpops_entry_t base[16];
-size_t base_n = 0;
-const char *base_src = NULL;
-bool have_base = false;
-
-for (i = 0; endpoints[i]; ++i) {
-  updpops_entry_t tmp[16];
-  size_t m = dnssec_get_all_updpops(g_ctx, endpoints[i], tmp, 16);
-
-  INFO_PRINT("[DNSSEC] endpoint=%s accepted_entries=%zu", endpoints[i], m);
-  for (size_t j = 0; j < m; ++j) {
-    INFO_PRINT("[DNSSEC] %s[%zu]: version=%s digest=%s",
-               endpoints[i], j, tmp[j].version, tmp[j].digest);
-  }
-
-  if (m == 0) {
-    WARNING_PRINT("[DNSSEC] No entries from %s; skipping this mirror", endpoints[i]);
-    continue;
-  }
-
-  if (!have_base) {
-    memcpy(base, tmp, m * sizeof(updpops_entry_t));
-    base_n = m;
-    base_src = endpoints[i];
-    have_base = true;
-    INFO_PRINT("Baseline allowlist established from %s with %zu entries", base_src, base_n);
-  } else {
-    if (!same_set_by_digest(base, base_n, tmp, m)) {
-      WARNING_PRINT("Mirror mismatch: %s (baseline) != %s; continuing with merge",
-                    base_src, endpoints[i]);
-    }
-  }
-
-  // Merge (dedupe by digest)
-  for (size_t j = 0; j < m && allowed_n < 16; ++j) {
-    bool seen = false;
-    for (size_t k = 0; k < allowed_n; ++k) {
-      if (strcmp(tmp[j].digest, allowed[k].digest) == 0) { seen = true; break; }
-    }
-    if (!seen) allowed[allowed_n++] = tmp[j];
-  }
-}
-
-if (!have_base || allowed_n == 0) {
-  ERROR_PRINT("No DNSSEC-validated updpops digests available from any endpoint; refusing to start");
-  return false;
-}
-
-
-
-
-
-
-
 
   // Compute our running binary digest
   if (!get_self_sha256(self_sha)) {
