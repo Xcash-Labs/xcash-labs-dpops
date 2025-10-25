@@ -238,8 +238,6 @@ bool init_processing(const arg_config_t *arg_config) {
     return false;
   }
 
-  DEBUG_PRINT("self digest: %s", self_sha);
-
   const updpops_entry_t* match = NULL;
   if (digest_allowed(self_sha, allowed, allowed_n, &match)) {
     DEBUG_PRINT("Image verified via DNS: version=%s digest=%s", match->version, match->digest);
