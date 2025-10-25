@@ -595,7 +595,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
 }
 
 
-void run_activity_check(ctx) {
+void run_activity_check(sched_ctx_t* ctx) {
   mongoc_client_t* c = mongoc_client_pool_pop(ctx->pool);
   if (!c) { ERROR_PRINT("Failed to pop a client from the mongoc_client_pool"); return; }
 
