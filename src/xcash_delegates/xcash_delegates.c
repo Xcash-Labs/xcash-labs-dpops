@@ -104,7 +104,11 @@ int read_organize_delegates(delegates_t* delegates, size_t* delegates_count_resu
             }
           } else if (strcmp(db_key, "server_specs") == 0 && BSON_ITER_HOLDS_UTF8(&record_iter)) {
             strncpy(delegates[delegate_index].server_specs, bson_iter_utf8(&record_iter, NULL), 255);
+
           } else if (strcmp(db_key, "online_status") == 0 && BSON_ITER_HOLDS_UTF8(&record_iter)) {
+            if (strcmp(bson_iter_utf8(&record_iter, NULL) == "banned")) {
+              skip_delegate = true;
+            }
             strncpy(delegates[delegate_index].online_status, "false", sizeof(delegates[delegate_index].online_status));
             delegates[delegate_index].online_status[sizeof(delegates[delegate_index].online_status) - 1] = '\0';
             strncpy(delegates[delegate_index].online_status_orginal, bson_iter_utf8(&record_iter, NULL), 10);

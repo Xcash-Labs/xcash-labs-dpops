@@ -344,7 +344,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
   bson_destroy(query);
   mongoc_collection_destroy(coll);
 
-  // Wait for correct time to load from delegates_all
+  // Wait for correct time to load from delegates_all, create you own copy 
   sync_block_verifiers_minutes_and_seconds(0, 51);
   char save_block_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
   char save_block_hash[BLOCK_HASH_LENGTH + 1] = {0};
@@ -595,7 +595,53 @@ static void run_proof_check(sched_ctx_t* ctx) {
 }
 
 
+
+
+
+
+
+
+/*---------------------------------------------------------------------------------------------------------
+ run_activity_check
+
+ Purpose:
+   1) Snapshot currently-online delegates (from delegates_all) for routing.
+   2) Query `statistics` for delegates whose `last_counted_block` is stale:
+        last_counted_block <= current_height - BLOCKS_BEHIND_CURRENT
+   3) For each stale delegate (statistics._id == VRF public key), fetch
+      `public_address` from `delegates` by _id (== public_key).
+   4) Broadcast a BANNED/INACTIVE message to online delegates so they can
+      quarantine the stale delegate (seed -> nodes).
+
+ Notes:
+   - Assumes 1-minute blocks unless BLOCKS_PER_DAY/BLOCKS_BEHIND_CURRENT overridden.
+   - This function is best run from a scheduler thread.
+   - Function is non-fatal: logs and continues on per-item errors.
+-------------------------------------------------------------------------------------------------------- */
 void run_activity_check(sched_ctx_t* ctx) {
+
+  // 0) Wait for the coordinated timeslot to avoid racing with other jobs.
+  sync_block_verifiers_minutes_and_seconds(0, 51);
+
+  // 1) Snapshot ONLINE delegates for routing (seed -> online nodes)
+  size_t online_count = 0;
+  pthread_mutex_lock(&current_block_verifiers_lock);
+  memset(delegates_timer_all, 0, sizeof delegates_timer_all);
+  for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; ++i) {
+    if (delegates_all[i].public_address[0] == '\0' ||
+        delegates_all[i].IP_address[0] == '\0') {
+      continue;
+    }
+    if (strcmp(delegates_all[i].online_status, "true") == 0) {
+      strcpy(delegates_timer_all[online_count].public_address, delegates_all[i].public_address);
+      strcpy(delegates_timer_all[online_count].IP_address,    delegates_all[i].IP_address);
+      online_count++;
+    }
+  }
+  pthread_mutex_unlock(&current_block_verifiers_lock);
+  INFO_PRINT("activity_check: online_delegates_snapshot=%zu", online_count);
+
+  // 2) Mongo handles
   mongoc_client_t* c = mongoc_client_pool_pop(ctx->pool);
   if (!c) { ERROR_PRINT("Failed to pop a client from the mongoc_client_pool"); return; }
 
@@ -607,7 +653,7 @@ void run_activity_check(sched_ctx_t* ctx) {
     return;
   }
 
-  // Compute cutoff height (guard underflow)
+  // 3) Compute cutoff height (guard underflow)
   int64_t current_height = (int64_t)atoll(current_block_height);
   if (current_height <= 0) {
     ERROR_PRINT("run_activity_check: invalid current_block_height='%s'", current_block_height);
@@ -621,7 +667,7 @@ void run_activity_check(sched_ctx_t* ctx) {
   INFO_PRINT("activity_check: current_height=%lld cutoff_height=%lld (behind=%d)",
              (long long)current_height, (long long)cutoff_height, (int)BLOCKS_BEHIND_CURRENT);
 
-  // Query: { last_counted_block: { $lte: cutoff_height } }
+  // 4) Query `statistics` for stale: { last_counted_block: { $lte: cutoff_height } }
   bson_t query; bson_init(&query);
   {
     bson_t ineq;
@@ -632,7 +678,6 @@ void run_activity_check(sched_ctx_t* ctx) {
 
   // Only need _id from statistics
   bson_t* opts = BCON_NEW("projection", "{", "_id", BCON_INT32(1), "}");
-
   mongoc_cursor_t* cur_stats = mongoc_collection_find_with_opts(coll_stats, &query, opts, NULL);
 
   // Prepare delegates collection once
@@ -640,12 +685,13 @@ void run_activity_check(sched_ctx_t* ctx) {
       mongoc_client_get_collection(c, DATABASE_NAME, DB_COLLECTION_DELEGATES);
   if (!coll_deleg) {
     ERROR_PRINT("delegates: get_collection failed");
-    // we’ll still iterate stats to drain cursor/log stale keys
+    // We still iterate stats and log stale keys.
   }
 
   const bson_t* doc;
-  size_t matched = 0;
+  size_t matched = 0, banned_sent = 0;
 
+  // 5) Iterate stale statistics docs
   while (mongoc_cursor_next(cur_stats, &doc)) {
     bson_iter_t it;
     if (!bson_iter_init_find(&it, doc, "_id")) continue;
@@ -670,7 +716,8 @@ void run_activity_check(sched_ctx_t* ctx) {
 
     if (tmp_public_key[0] == '\0') continue;
 
-    // Look up delegate by _id (== public_key), project only IP_address + public_address
+    // Look up delegate by _id (== public_key), project only public_address
+    const char *pub_addr = NULL;
     if (coll_deleg) {
       bson_t q2; bson_init(&q2);
       BSON_APPEND_UTF8(&q2, "_id", tmp_public_key);   // exact match on _id
@@ -678,7 +725,6 @@ void run_activity_check(sched_ctx_t* ctx) {
       bson_t* opts2 = BCON_NEW(
         "projection", "{",
           "_id", BCON_INT32(0),
-          "IP_address", BCON_INT32(1),      // exact case: IP_address
           "public_address", BCON_INT32(1),
         "}",
         "limit", BCON_INT32(1)
@@ -688,19 +734,9 @@ void run_activity_check(sched_ctx_t* ctx) {
       const bson_t* d2;
 
       if (mongoc_cursor_next(cur2, &d2)) {
-        const char *ip_addr = NULL, *pub_addr = NULL;
         bson_iter_t it2;
-
-        if (bson_iter_init_find(&it2, d2, "IP_address") && BSON_ITER_HOLDS_UTF8(&it2))
-          ip_addr = bson_iter_utf8(&it2, NULL);
-
         if (bson_iter_init_find(&it2, d2, "public_address") && BSON_ITER_HOLDS_UTF8(&it2))
           pub_addr = bson_iter_utf8(&it2, NULL);
-
-        INFO_PRINT("stale_pubkey=%s IP_address=%s public_address=%s",
-                   tmp_public_key,
-                   ip_addr ? ip_addr : "(none)",
-                   pub_addr ? pub_addr : "(none)");
       } else {
         ERROR_PRINT("No delegate found for _id/public_key=%s", tmp_public_key);
       }
@@ -713,9 +749,32 @@ void run_activity_check(sched_ctx_t* ctx) {
       if (opts2) bson_destroy(opts2);
       bson_destroy(&q2);
       mongoc_cursor_destroy(cur2);
-    } else {
-      // If delegates collection unavailable, at least log the stale key
-      INFO_PRINT("stale_pubkey=%s (delegates collection unavailable)", tmp_public_key);
+    }
+
+    INFO_PRINT("stale_pubkey=%s public_address=%s",
+               tmp_public_key, pub_addr ? pub_addr : "(none)");
+
+    // 6) Notify online nodes to ban/quarantine the stale delegate
+    if (pub_addr) {
+      const char* params[] = {
+        "public_address",          xcash_wallet_public_address,
+        "public_key_upd",          tmp_public_key,
+        NULL
+      };
+
+      response_t** responses = NULL;
+      char* ban_message = create_message_param_list(XMSG_SEED_TO_NODES_BANNED, params);
+      if (!ban_message) {
+        WARNING_PRINT("create_message_param_list returned NULL for XMSG_SEED_TO_NODES_BANNED");
+      } else {
+        if (!xnet_send_data_multi(XNET_DELEGATES_ALL_ONLINE_NOSEEDS, ban_message, &responses)) {
+          ERROR_PRINT("Failed to send BANNED message for public_key=%s", tmp_public_key);
+        } else {
+          banned_sent++;
+        }
+        free(ban_message);
+        cleanup_responses(responses);
+      }
     }
 
     ++matched;
@@ -725,7 +784,8 @@ void run_activity_check(sched_ctx_t* ctx) {
   if (mongoc_cursor_error(cur_stats, &err)) {
     ERROR_PRINT("run_activity_check: cursor error: %s", err.message);
   } else {
-    INFO_PRINT("activity_check: matched=%zu stale statistics docs", matched);
+    INFO_PRINT("activity_check: matched=%zu stale statistics docs; ban_messages_sent=%zu",
+               matched, banned_sent);
   }
 
   // Cleanup
@@ -735,8 +795,29 @@ void run_activity_check(sched_ctx_t* ctx) {
   if (coll_deleg) mongoc_collection_destroy(coll_deleg);
   mongoc_collection_destroy(coll_stats);
   mongoc_client_pool_push(ctx->pool, c);
+  return; 
 }
 
+/*---------------------------------------------------------------------------------------------------------
+ @brief Verify the running binary against DNSSEC-published allowlists and warn on newer versions.
+
+ Workflow:
+   1) Fetch the allowlist (version,digest pairs) from all configured DNS endpoints (TXT),
+      requiring DNSSEC validation.
+   2) Enforce strict mirror consistency: all endpoints must publish the same set (by digest).
+      If any endpoint is empty or mismatched, the function logs an ERROR and returns false.
+   3) Use the baseline set as the effective allowlist (no re-merge needed).
+   4) Compute this process's SHA-256 digest (self_sha) and check membership in the allowlist.
+      - If present: log success; also scan the allowlist for a strictly newer version and warn.
+      - If absent: log a WARNING (non-fatal here), suggesting escalation in production.
+
+ Return:
+   @return bool
+     - true  : basic checks completed; either the image is allowed OR (policy here) it's not,
+              but we only warn (non-fatal) and continue.
+     - false : could not build a trustworthy allowlist (empty/mismatch) OR self digest could
+              not be computed; startup should abort.
+--------------------------------------------------------------------------------------------------------*/
 bool run_image_check(void) {
   size_t i = 0;
 

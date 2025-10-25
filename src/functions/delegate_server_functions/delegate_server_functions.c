@@ -973,7 +973,7 @@ static int json_get_string_into(cJSON* root, const char* key, char* out, size_t 
 }
 /* --------------------------------------------------------------------------------------------------------
   Name: server_receive_payout
-  Description: Runs the code when the server receives the NODE_TO_BLOCK_VERIFIERS_CHECK_VOTE_STATUS message is received
+  Description: Runs the code when the server receives the NODE_TO_BLOCK_VERIFIERS_CHECK_VOTE_STATUS message
   Parameters:
 
   MESSAGE - The message
@@ -1250,4 +1250,86 @@ void server_receive_payout(const char* MESSAGE) {
   }
 
   return;
+}
+
+/* --------------------------------------------------------------------------------------------------------
+  Name: server_receive_banned_request
+  Description: Handle a ban request on a NON-seed node.
+
+  Expects MESSAGE JSON like:
+  {
+    "public_key_upd": "<VRF_PUBLIC_KEY_TO_BAN>"
+  }
+
+  Behavior:
+  - On non-seed nodes only: marks the delegate with _id==public_key_upd as banned
+    by setting { online_status: "banned" } in the `delegates` collection.
+  - Logs errors and returns on any parse/DB failure.
+----------------------------------------------------------------------------------------------------------- */
+void server_receive_banned_request(const char* MESSAGE) {
+  if (!MESSAGE || !*MESSAGE) {
+    ERROR_PRINT("Invalid message parameter passed to server_receive_banned_request");
+    return;
+  }
+
+  if (is_seed_node) {
+    ERROR_PRINT("Seed nodes should never receive a server_receive_banned_request transaction");
+    return;
+  }
+
+  cJSON* root = cJSON_Parse(MESSAGE);
+  if (!root) {
+    const char* ep = cJSON_GetErrorPtr();
+    ERROR_PRINT("cJSON parse error near: %s", ep ? ep : "(unknown)");
+    return;
+  }
+
+  // Parse required field: public_key_upd (VRF public key / delegates._id)
+  char in_public_key[VRF_PUBLIC_KEY_LENGTH + 1] = {0};
+  int ok = json_get_string_into(root, "public_key_upd",
+                                in_public_key, sizeof in_public_key, /*trim_ws=*/1);
+  if (!ok || in_public_key[0] == '\0') {
+    cJSON_Delete(root);
+    ERROR_PRINT("Invalid or missing 'public_key_upd' in server_receive_banned_request");
+    return;
+  }
+
+  // Build filter: { _id: <public_key_upd> }
+  bson_t* filter_bson = bson_new();
+  if (!filter_bson) {
+    cJSON_Delete(root);
+    ERROR_PRINT("MongoDB: failed to alloc filter_bson");
+    return;
+  }
+  BSON_APPEND_UTF8(filter_bson, "_id", in_public_key);
+
+  // Build set doc: { online_status: "banned" }
+  // (Assumes your update helper will wrap this in $set.)
+  bson_t* setdoc_bson = bson_new();
+  if (!setdoc_bson) {
+    bson_destroy(filter_bson);
+    cJSON_Delete(root);
+    ERROR_PRINT("MongoDB: failed to alloc setdoc_bson");
+    return;
+  }
+  BSON_APPEND_UTF8(setdoc_bson, "online_status", "banned");
+
+  // Execute update
+  if (update_document_from_collection_bson(DATABASE_NAME,
+                                           DB_COLLECTION_DELEGATES,
+                                           filter_bson,
+                                           setdoc_bson) == 0) {
+    ERROR_PRINT("MongoDB: update failed for delegates._id=%s (server_receive_banned_request)",
+                in_public_key);
+    bson_destroy(setdoc_bson);
+    bson_destroy(filter_bson);
+    cJSON_Delete(root);
+    return;
+  }
+
+  INFO_PRINT("Delegate banned: public_key=%s (online_status='banned')", in_public_key);
+
+  bson_destroy(setdoc_bson);
+  bson_destroy(filter_bson);
+  cJSON_Delete(root);
 }
