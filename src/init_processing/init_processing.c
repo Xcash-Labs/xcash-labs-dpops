@@ -245,11 +245,7 @@ size_t allowed_n = 0;
 // Per-endpoint summary
 INFO_PRINT("[DNSSEC] endpoint=%s accepted_entries=%zu", endpoints[i], m);
 
-// Per-entry detail (PUT THIS HERE)
-for (size_t j = 0; j < m; ++j) {
-  INFO_PRINT("[DNSSEC] %s[%zu]: version=%s digest=%s",
-             endpoints[i], j, tmp[j].version, tmp[j].digest);
-}
+
 
 
 
