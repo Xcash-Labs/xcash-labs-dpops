@@ -199,9 +199,10 @@ bool init_processing(const arg_config_t *arg_config) {
   }
 
   // Check if endpoints match
+  size_t base_n = 0;
   if (endpoints[0]) {
     updpops_entry_t base[8];
-    size_t base_n = dnssec_get_all_updpops(g_ctx, endpoints[0], base, 8);
+    base_n = dnssec_get_all_updpops(g_ctx, endpoints[0], base, 8);
     if (base_n == 0) {
       ERROR_PRINT("No entries from %s for baseline comparison", endpoints[0]);
       return false;
@@ -220,11 +221,12 @@ bool init_processing(const arg_config_t *arg_config) {
       }
     }
 
-    // Because sets matched, we can just use the baseline directly.
-    updpops_entry_t allowed[8];
-    size_t allowed_n = base_n;
-    memcpy(allowed, base, base_n * sizeof(updpops_entry_t));
   }
+
+  // Because sets matched, we can just use the baseline directly.
+  updpops_entry_t allowed[8];
+  size_t allowed_n = base_n;
+  memcpy(allowed, base, base_n * sizeof(updpops_entry_t));
 
   if (allowed_n == 0) {
     ERROR_PRINT("No DNSSEC-validated updpops digests available; refusing to start");
