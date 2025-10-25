@@ -103,7 +103,9 @@
 #define BLOCK_TIMEOUT_SECONDS 10
 #define HTTP_TIMEOUT_SETTINGS 4
 #define DELAY_EARLY_TRANSACTIONS_MAX 3
-#define NO_ACTIVITY_DELETE  (7LL * 24 * 60 * 60 * 1000)
+#define NO_ACTIVITY_DELETE  (7LL * 24 * 60 * 60 * 1000LL)  // 7 day used for payouts
+#BLOCKS_PER_DAY 1440 // 1 min blocktimes
+#define BLOCKS_BEHIND_CURRENT (BLOCK_PER_DAY * 1) // Days behind
   
 // ===================== XCASH DPOPS =====================
 #define BLOCK_VERIFIERS_TOTAL_AMOUNT 55

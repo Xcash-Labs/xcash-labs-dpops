@@ -594,6 +594,149 @@ static void run_proof_check(sched_ctx_t* ctx) {
   free_buckets(pay_buckets, pay_bucket_count);
 }
 
+
+void run_activity_check(ctx) {
+  mongoc_client_t* c = mongoc_client_pool_pop(ctx->pool);
+  if (!c) { ERROR_PRINT("Failed to pop a client from the mongoc_client_pool"); return; }
+
+  mongoc_collection_t* coll_stats =
+      mongoc_client_get_collection(c, DATABASE_NAME, DB_COLLECTION_STATISTICS);
+  if (!coll_stats) {
+    ERROR_PRINT("statistics: get_collection failed");
+    mongoc_client_pool_push(ctx->pool, c);
+    return;
+  }
+
+  // Compute cutoff height (guard underflow)
+  int64_t current_height = (int64_t)atoll(current_block_height);
+  if (current_height <= 0) {
+    ERROR_PRINT("run_activity_check: invalid current_block_height='%s'", current_block_height);
+    mongoc_collection_destroy(coll_stats);
+    mongoc_client_pool_push(ctx->pool, c);
+    return;
+  }
+  int64_t cutoff_height = current_height - BLOCKS_BEHIND_CURRENT;
+  if (cutoff_height < 0) cutoff_height = 0;
+
+  INFO_PRINT("activity_check: current_height=%lld cutoff_height=%lld (behind=%d)",
+             (long long)current_height, (long long)cutoff_height, (int)BLOCKS_BEHIND_CURRENT);
+
+  // Query: { last_counted_block: { $lte: cutoff_height } }
+  bson_t query; bson_init(&query);
+  {
+    bson_t ineq;
+    bson_append_document_begin(&query, "last_counted_block", -1, &ineq);
+      BSON_APPEND_INT64(&ineq, "$lte", cutoff_height);
+    bson_append_document_end(&query, &ineq);
+  }
+
+  // Only need _id from statistics
+  bson_t* opts = BCON_NEW("projection", "{", "_id", BCON_INT32(1), "}");
+
+  mongoc_cursor_t* cur_stats = mongoc_collection_find_with_opts(coll_stats, &query, opts, NULL);
+
+  // Prepare delegates collection once
+  mongoc_collection_t* coll_deleg =
+      mongoc_client_get_collection(c, DATABASE_NAME, DB_COLLECTION_DELEGATES);
+  if (!coll_deleg) {
+    ERROR_PRINT("delegates: get_collection failed");
+    // we’ll still iterate stats to drain cursor/log stale keys
+  }
+
+  const bson_t* doc;
+  size_t matched = 0;
+
+  while (mongoc_cursor_next(cur_stats, &doc)) {
+    bson_iter_t it;
+    if (!bson_iter_init_find(&it, doc, "_id")) continue;
+
+    // statistics._id is the VRF public key string
+    char tmp_public_key[VRF_PUBLIC_KEY_LENGTH + 1] = {0};
+
+    if (BSON_ITER_HOLDS_UTF8(&it)) {
+      uint32_t len = 0;
+      const char* s = bson_iter_utf8(&it, &len);
+      if (s && len > 0) {
+        size_t copy = len < VRF_PUBLIC_KEY_LENGTH ? len : VRF_PUBLIC_KEY_LENGTH;
+        memcpy(tmp_public_key, s, copy);
+        tmp_public_key[copy] = '\0';
+      }
+    } else {
+      // Unexpected _id type; dump minimal doc for debugging
+      char* j = bson_as_canonical_extended_json(doc, NULL);
+      if (j) { WARNING_PRINT("statistics _id not UTF8; doc=%s", j); bson_free(j); }
+      continue;
+    }
+
+    if (tmp_public_key[0] == '\0') continue;
+
+    // Look up delegate by _id (== public_key), project only IP_address + public_address
+    if (coll_deleg) {
+      bson_t q2; bson_init(&q2);
+      BSON_APPEND_UTF8(&q2, "_id", tmp_public_key);   // exact match on _id
+
+      bson_t* opts2 = BCON_NEW(
+        "projection", "{",
+          "_id", BCON_INT32(0),
+          "IP_address", BCON_INT32(1),      // exact case: IP_address
+          "public_address", BCON_INT32(1),
+        "}",
+        "limit", BCON_INT32(1)
+      );
+
+      mongoc_cursor_t* cur2 = mongoc_collection_find_with_opts(coll_deleg, &q2, opts2, NULL);
+      const bson_t* d2;
+
+      if (mongoc_cursor_next(cur2, &d2)) {
+        const char *ip_addr = NULL, *pub_addr = NULL;
+        bson_iter_t it2;
+
+        if (bson_iter_init_find(&it2, d2, "IP_address") && BSON_ITER_HOLDS_UTF8(&it2))
+          ip_addr = bson_iter_utf8(&it2, NULL);
+
+        if (bson_iter_init_find(&it2, d2, "public_address") && BSON_ITER_HOLDS_UTF8(&it2))
+          pub_addr = bson_iter_utf8(&it2, NULL);
+
+        INFO_PRINT("stale_pubkey=%s IP_address=%s public_address=%s",
+                   tmp_public_key,
+                   ip_addr ? ip_addr : "(none)",
+                   pub_addr ? pub_addr : "(none)");
+      } else {
+        ERROR_PRINT("No delegate found for _id/public_key=%s", tmp_public_key);
+      }
+
+      bson_error_t err2;
+      if (mongoc_cursor_error(cur2, &err2)) {
+        ERROR_PRINT("delegates lookup cursor error: %s", err2.message);
+      }
+
+      if (opts2) bson_destroy(opts2);
+      bson_destroy(&q2);
+      mongoc_cursor_destroy(cur2);
+    } else {
+      // If delegates collection unavailable, at least log the stale key
+      INFO_PRINT("stale_pubkey=%s (delegates collection unavailable)", tmp_public_key);
+    }
+
+    ++matched;
+  }
+
+  bson_error_t err;
+  if (mongoc_cursor_error(cur_stats, &err)) {
+    ERROR_PRINT("run_activity_check: cursor error: %s", err.message);
+  } else {
+    INFO_PRINT("activity_check: matched=%zu stale statistics docs", matched);
+  }
+
+  // Cleanup
+  bson_destroy(&query);
+  if (opts) bson_destroy(opts);
+  mongoc_cursor_destroy(cur_stats);
+  if (coll_deleg) mongoc_collection_destroy(coll_deleg);
+  mongoc_collection_destroy(coll_stats);
+  mongoc_client_pool_push(ctx->pool, c);
+}
+
 bool run_image_check(void) {
   size_t i = 0;
 
@@ -690,6 +833,7 @@ void* timer_thread(void* arg) {
       if (is_seed_node) {
         if (seed_is_primary()) {
           INFO_PRINT("Scheduler: running ACTIVITY CHECK at %02d:%02d", slot->hour, slot->min);
+          run_activity_check(ctx);
         }
       }
     } else if (slot->kind == JOB_IMAGE_CK) {
