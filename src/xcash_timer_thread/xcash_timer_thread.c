@@ -594,6 +594,65 @@ static void run_proof_check(sched_ctx_t* ctx) {
   free_buckets(pay_buckets, pay_bucket_count);
 }
 
+bool run_image_check(void) {
+  updpops_entry_t base[8];
+  size_t base_n = 0;
+  if (endpoints[0]) {
+    base_n = dnssec_get_all_updpops(g_ctx, endpoints[0], base, 8);
+    if (base_n == 0) {
+      ERROR_PRINT("No entries from %s for baseline comparison", endpoints[0]);
+      return false;
+    } else {
+      for (i = 1; endpoints[i]; ++i) {
+        updpops_entry_t tmpc[8];
+        size_t mc = dnssec_get_all_updpops(g_ctx, endpoints[i], tmpc, 8);
+        if (mc == 0) {
+          ERROR_PRINT("No entries from %s during mirror comparison", endpoints[i]);
+          return false;
+        }
+        if (!same_set_by_digest(base, base_n, tmpc, mc)) {
+          ERROR_PRINT("Mirror mismatch: %s and %s publish different allowlists", endpoints[0], endpoints[i]);
+          return false;
+        }
+      }
+    }
+  }
+
+  // Because sets matched, we can just use the baseline directly.
+  updpops_entry_t allowed[8];
+  size_t allowed_n = base_n;
+  memcpy(allowed, base, base_n * sizeof(updpops_entry_t));
+
+  if (allowed_n == 0) {
+    ERROR_PRINT("No DNSSEC-validated updpops digests available; refusing to start");
+    return false;
+  }
+
+  // Compute our running binary digest
+  if (!get_self_sha256(self_sha)) {
+    ERROR_PRINT("Unable to compute self SHA-256");
+    return false;
+  }
+
+  const updpops_entry_t* match = NULL;
+  if (digest_allowed(self_sha, allowed, allowed_n, &match)) {
+    DEBUG_PRINT("Image verified via DNS: version=%s digest=%s", match->version, match->digest);
+    const char* newest = match->version;
+    for (i = 0; i < allowed_n; ++i) {
+      if (semver_cmp(allowed[i].version, newest) > 0) {
+        newest = allowed[i].version;
+      }
+    }
+    if (semver_cmp(newest, match->version) > 0) {
+      WARNING_PRINT("A newer allowed software version exists (%s). Consider upgrading.", newest);
+    }
+  } else {
+    //    ERROR_PRINT("Running digest not in allowed list; refusing to start");
+    //    return false;
+    WARNING_PRINT("Running digest not in allowed list; if this is production notify devs");
+  }
+}
+
 // ---- single scheduler thread ----
 void* timer_thread(void* arg) {
   lower_thread_priority_batch();
@@ -623,7 +682,19 @@ void* timer_thread(void* arg) {
           run_proof_check(ctx);
         }
       }
+    } else if (slot->kind == JOB_ACTIVITY_CK) {
+      if (is_seed_node) {
+        if (seed_is_primary()) {
+          INFO_PRINT("Scheduler: running ACTIVITY CHECK at %02d:%02d", slot->hour, slot->min);
+        }
+      }
+    } else if (slot->kind == JOB_IMAGE_CK) {
+      INFO_PRINT("Scheduler: running IMAGE CHECK at %02d:%02d", slot->hour, slot->min);
+      if (!run_image_check()) {
+        // end program
+      }
     }
+
   }
   return NULL;
 }
