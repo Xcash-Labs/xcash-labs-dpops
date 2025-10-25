@@ -35,5 +35,10 @@ void dnssec_destroy(dnssec_ctx_t* h);
 dnssec_status_t dnssec_query(dnssec_ctx_t* h, const char* name, int rrtype, bool* out_havedata);
 bool digest_allowed(const char* self_hex, const updpops_entry_t* list, size_t n, const updpops_entry_t** matched);
 size_t dnssec_get_all_updpops(dnssec_ctx_t* ctx, const char* host, updpops_entry_t* out, size_t cap);
+size_t dnssec_get_all_updpops_debug(dnssec_ctx_t* ctx,
+                                           const char* host,
+                                           updpops_entry_t* out,
+                                           size_t cap);
+
 
 #endif
