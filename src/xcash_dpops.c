@@ -237,7 +237,7 @@ int main(int argc, char *argv[]) {
   }
 
   if (!start_tcp_server(XCASH_DPOPS_PORT)) {
-    FATAL_ERROR_EXIT("Failed to start TCP server.");
+    FATAL_ERROR_EXIT("Failed to start TCP server");
   }
 
   if (!initialize_database()) {
@@ -248,7 +248,7 @@ int main(int argc, char *argv[]) {
   g_ctx = dnssec_init();
 
   if (!(init_processing(&arg_config))) {
-    FATAL_ERROR_EXIT("Failed server initialization.");
+    FATAL_ERROR_EXIT("Failed server initialization");
   }
 
 // start the daily scheduler on seeds (ONE thread)

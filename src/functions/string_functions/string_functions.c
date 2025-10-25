@@ -783,3 +783,27 @@ int semver_cmp(const char *a, const char *b) {
   if (C != F) return (C < F) ? -1 : 1;
   return 0;
 }
+
+static int cmp_entry_digest(const void *a, const void *b) {
+  const updpops_entry_t *A = (const updpops_entry_t*)a;
+  const updpops_entry_t *B = (const updpops_entry_t*)b;
+  return strcmp(A->digest, B->digest);
+}
+
+// Order-insensitive set compare by digest only.
+int same_set_by_digest(const updpops_entry_t *A, size_t na, const updpops_entry_t *B, size_t nb) {
+  if (na != nb) return 0;
+  updpops_entry_t *AA = (updpops_entry_t*)malloc(na * sizeof(*AA));
+  updpops_entry_t *BB = (updpops_entry_t*)malloc(nb * sizeof(*BB));
+  if (!AA || !BB) { free(AA); free(BB); return 0; }
+  memcpy(AA, A, na * sizeof(*AA));
+  memcpy(BB, B, nb * sizeof(*BB));
+  qsort(AA, na, sizeof(*AA), cmp_entry_digest);
+  qsort(BB, nb, sizeof(*BB), cmp_entry_digest);
+  int ok = 1;
+  for (size_t i = 0; i < na; ++i) {
+    if (strcmp(AA[i].digest, BB[i].digest) != 0) { ok = 0; break; }
+  }
+  free(AA); free(BB);
+  return ok;
+}

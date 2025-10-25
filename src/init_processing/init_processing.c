@@ -194,59 +194,70 @@ bool init_processing(const arg_config_t *arg_config) {
   }
 
   if (!(count_seeds == network_data_nodes_amount)) {
-    FATAL_ERROR_EXIT("Counld not validate DNSSEC records for seed nodes, unable to start");
+    ERROR_PRINT("Counld not validate DNSSEC records for seed nodes, unable to start");
     return false;
   }
 
-  // Gather from multiple endpoints, merge, and dedupe
-  updpops_entry_t allowed[8];  // keep up to 8 concurrent digests
-  size_t allowed_n = 0;
-  for (i = 0; endpoints[i]; ++i) {
-    updpops_entry_t tmp[8];
-    size_t m = dnssec_get_all_updpops(g_ctx, endpoints[i], tmp, 8);
-    for (size_t j = 0; j < m && allowed_n < 8; ++j) {
-      bool seen = false;
-      for (size_t k = 0; k < allowed_n; ++k) {
-        if (strcmp(tmp[j].digest, allowed[k].digest) == 0) {
-          seen = true;
-          break;
+  // Check if endpoints match
+  if (endpoints[0]) {
+    updpops_entry_t base[8];
+    size_t base_n = dnssec_get_all_updpops(g_ctx, endpoints[0], base, 8);
+    if (base_n == 0) {
+      ERROR_PRINT("No entries from %s for baseline comparison", endpoints[0]);
+      return false;
+    } else {
+      for (i = 1; endpoints[i]; ++i) {
+        updpops_entry_t tmpc[8];
+        size_t mc = dnssec_get_all_updpops(g_ctx, endpoints[i], tmpc, 8);
+        if (mc == 0) {
+          ERROR_PRINT("No entries from %s during mirror comparison", endpoints[i]);
+          return false;
+        }
+        if (!same_set_by_digest(base, base_n, tmpc, mc)) {
+          ERROR_PRINT("Mirror mismatch: %s and %s publish different allowlists", endpoints[0], endpoints[i]);
+          return false;
         }
       }
-      if (!seen) allowed[allowed_n++] = tmp[j];
     }
-  }
 
-  if (allowed_n == 0) {
-    FATAL_ERROR_EXIT("No DNSSEC-validated updpops digests available; refusing to start");
-    // shutdown or return error
-  }
+    // Because sets matched, we can just use the baseline directly.
+    updpops_entry_t allowed[8];
+    size_t allowed_n = base_n;
+    memcpy(allowed, base, base_n * sizeof(updpops_entry_t));
 
-  // Compute our running binary digest
-  if (!get_self_sha256(self_sha)) {
-    FATAL_ERROR_EXIT("Unable to compute self SHA-256");
-  }
+    if (allowed_n == 0) {
+      ERROR_PRINT("No DNSSEC-validated updpops digests available; refusing to start");
+      return false;
+    }
 
-  INFO_PRINT("self digest: %s", self_sha);
+    // Compute our running binary digest
+    if (!get_self_sha256(self_sha)) {
+      ERROR_PRINT("Unable to compute self SHA-256");
+      return false;
+    }
 
-  const updpops_entry_t* match = NULL;
-  if (digest_allowed(self_sha, allowed, allowed_n, &match)) {
-    INFO_PRINT("Binary allowed by DNS: version=%s digest=%s", match->version, match->digest);
-    const char* newest = match->version;
-    for (i = 0; i < allowed_n; ++i) {
-      if (semver_cmp(allowed[i].version, newest) > 0) {
-        newest = allowed[i].version;
+    DEBUG_PRINT("self digest: %s", self_sha);
+
+    const updpops_entry_t* match = NULL;
+    if (digest_allowed(self_sha, allowed, allowed_n, &match)) {
+      DEBUG_PRINT("Image verified via DNS: version=%s digest=%s", match->version, match->digest);
+      const char* newest = match->version;
+      for (i = 0; i < allowed_n; ++i) {
+        if (semver_cmp(allowed[i].version, newest) > 0) {
+          newest = allowed[i].version;
+        }
       }
+      if (semver_cmp(newest, match->version) > 0) {
+        WARNING_PRINT("A newer allowed version exists (%s). Consider upgrading.", newest);
+      }
+    } else {
+      //    ERROR_PRINT("Running digest not in allowed list; refusing to start");
+      //    return false;
+      WARNING_PRINT("Running digest not in allowed list; if this is production notify devs");
     }
-    if (semver_cmp(newest, match->version) > 0) {
-      WARNING_PRINT("A newer allowed version exists (%s). Consider upgrading.", newest);
-    }
-  } else {
-//    FATAL_ERROR_EXIT("Running digest not in allowed list; refusing to start");
-    WARNING_PRINT("Running digest not in allowed list; if this is production notify devs");
-  }
 
-  return true;
-}
+    return true;
+  }
 
 /*---------------------------------------------------------------------------------------------------------
 Name: print_starter_state
