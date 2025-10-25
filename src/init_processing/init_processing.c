@@ -219,6 +219,7 @@ bool init_processing(const arg_config_t *arg_config) {
         }
       }
     }
+  }
 
     // Because sets matched, we can just use the baseline directly.
     updpops_entry_t allowed[8];
