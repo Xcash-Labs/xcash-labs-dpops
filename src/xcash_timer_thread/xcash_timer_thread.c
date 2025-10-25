@@ -596,7 +596,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
 
 bool run_image_check(void) {
   size_t i = 0;
-  
+
   updpops_entry_t base[8];
   size_t base_n = 0;
   if (endpoints[0]) {
@@ -653,6 +653,8 @@ bool run_image_check(void) {
     //    return false;
     WARNING_PRINT("Running digest not in allowed list; if this is production notify devs");
   }
+
+  return true;
 }
 
 // ---- single scheduler thread ----
