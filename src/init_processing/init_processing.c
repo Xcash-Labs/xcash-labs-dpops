@@ -288,20 +288,20 @@ void print_starter_state(const arg_config_t *arg_config)
           "Wallet Public Address:\t%s\n"
           "\n"
           "Node Type:\t%s\n"
-          "\n"
           "Services:\n"
           "Daemon:\t\t%s:%d\n"
           "DPoPS:\t\t%s:%d\n"
           "Wallet:\t\t%s:%d\n"
           "MongoDB:\t%s\n"
-          "Log level:\t%d\n",
+          "Log level:\t%d\n"
+          "Image Hash:\t%s\n",
           XCASH_DPOPS_CURRENT_VERSION, "~Lazarus",
           xcash_wallet_public_address,
           is_seed_node ? "SEED NODE" : "DELEGATE NODE",
           XCASH_DAEMON_IP, XCASH_DAEMON_PORT,
           XCASH_DPOPS_IP, XCASH_DPOPS_PORT,
           XCASH_WALLET_IP, XCASH_WALLET_PORT,
-          DATABASE_CONNECTION, log_level);
+          DATABASE_CONNECTION, log_level. self_sha);
   if (!is_seed_node) {
     fprintf(stderr, "Delegate fee: %.2f%%, minimum payout: %" PRIu64 "\n", delegate_fee_percent, (uint64_t)minimum_payout);
   }
