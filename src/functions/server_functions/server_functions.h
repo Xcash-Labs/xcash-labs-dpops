@@ -14,5 +14,6 @@
 int server_limit_IP_addresses(limit_action_t action, const char* IP_ADDRESS);
 int server_limit_public_addresses(limit_action_t action, const char* MESSAGE);
 int server_limit_public_addresses_vrf_lookup(limit_action_t action, const char* MESSAGE);
+bool get_self_sha256(char out_hex[SHA256_DIGEST_SIZE + 1]);
 
 #endif
