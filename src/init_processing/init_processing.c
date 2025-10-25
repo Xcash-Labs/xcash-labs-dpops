@@ -299,7 +299,7 @@ void print_starter_state(const arg_config_t *arg_config)
           XCASH_DAEMON_IP, XCASH_DAEMON_PORT,
           XCASH_DPOPS_IP, XCASH_DPOPS_PORT,
           XCASH_WALLET_IP, XCASH_WALLET_PORT,
-          DATABASE_CONNECTION, log_level. self_sha);
+          DATABASE_CONNECTION, log_level, self_sha);
   if (!is_seed_node) {
     fprintf(stderr, "Delegate fee: %.2f%%, minimum payout: %" PRIu64 "\n", delegate_fee_percent, (uint64_t)minimum_payout);
   }
