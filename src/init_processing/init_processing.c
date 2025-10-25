@@ -202,7 +202,7 @@ bool init_processing(const arg_config_t *arg_config) {
   updpops_entry_t base[8];
   size_t base_n = 0;
   if (endpoints[0]) {
-    base_n = dnssec_get_all_updpops_debug(g_ctx, endpoints[0], base, 8);
+    base_n = dnssec_get_all_updpops(g_ctx, endpoints[0], base, 8);
     if (base_n == 0) {
       ERROR_PRINT("No entries from %s for baseline comparison", endpoints[0]);
       return false;
