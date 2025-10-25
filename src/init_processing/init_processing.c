@@ -242,8 +242,7 @@ updpops_entry_t allowed[16];
 size_t allowed_n = 0;
 
 
-// Per-endpoint summary
-INFO_PRINT("[DNSSEC] endpoint=%s accepted_entries=%zu", endpoints[i], m);
+
 
 
 
