@@ -26,7 +26,7 @@ typedef struct {
   job_kind_t kind;
 } sched_slot_t;
 
-// 2:00 → ACTIVITY_CK; 3:00 → ACTIVITY_CK; 4:00 AM & 4:00 PM → PROOF
+// 2:00 → IMAGE_CK; 3:00 → ACTIVITY_CK; 4:00 AM & 4:00 PM → PROOF
 static const sched_slot_t SLOTS[] = {
   {2,  0, JOB_IMAGE_CK},
   {3,  0, JOB_ACTIVITY_CK},
