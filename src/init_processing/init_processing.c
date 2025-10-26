@@ -164,7 +164,7 @@ bool print_starter_state(const arg_config_t *arg_config) {
   if (!is_seed_node) {
     fprintf(stderr, "Delegate fee: %.2f%%, minimum payout: %" PRIu64 "\n", delegate_fee_percent, (uint64_t)minimum_payout);
   }
-  
+
 //
 // Checking DNSSEC records for seeds and image version using xcashpulse dns entries
 //
@@ -241,5 +241,5 @@ bool print_starter_state(const arg_config_t *arg_config) {
   }
 
   fprintf(stderr, "[%s] Daemon startup successful and is busy processing requests...\n\n", time_str);\
-  return ture
+  return true;
 }
