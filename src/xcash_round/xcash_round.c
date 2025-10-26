@@ -480,14 +480,42 @@ void start_block_production(void) {
   char target_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
   char cheight[BLOCK_HEIGHT_LENGTH + 1] = {0};
 
+  // Wait for block to advance so we know it has a connection
+  sleep(2);  // make sure xcashd is up
+  INFO_PRINT("Checking if blockchain is up and processing blocks");
+  if (get_current_block_height(cheight) != XCASH_OK) {
+    ERROR_PRINT("Can't get current block height on startup");
+    return;
+  }
+
+  unsigned long long prev = strtoull(cheight, NULL, 10); 10 
+  for (;;) {
+    sleep(15);
+    if (get_current_block_height(cheight) != XCASH_OK) {
+      ERROR_PRINT("Can't get current block height on startup");
+      return;
+    }
+    unsigned long long curr = strtoull(cheight, NULL, 10);
+    if (curr > prev) {
+      break;
+    }
+  }
+
   // Wait for node to be fully synced
   bool not_synced = true;
-  INFO_PRINT("Checking blockchain synced");
   while (not_synced) {
     if (is_blockchain_synced(target_height, cheight)) {
       not_synced = false;
     } else {
-      WARNING_PRINT("Delegate's blockchain is still syncing, please wait...");
+      unsigned long long node_h = strtoull(cheight, NULL, 10);
+      unsigned long long target_h = strtoull(target_height, NULL, 10);
+      char target_disp[BLOCK_HEIGHT_LENGTH];
+      if (target_h == 0ULL || target_height[0] == '\0') {
+        strcpy(target_disp, "unknown");
+      } else {
+        snprintf(target_disp, sizeof(target_disp), "%llu", target_h);
+      }
+      WARNING_PRINT("Delegate is still syncing, node is at %llu and the target height is %s", node_h, target_disp);
       sleep(5);
     }
   }
@@ -496,7 +524,8 @@ void start_block_production(void) {
   sync_block_verifiers_minutes_and_seconds(0, 58);
   // set up delegates for first round
   if (!fill_delegates_from_db()) {
-    FATAL_ERROR_EXIT("Failed to load and organize delegates for starting round, Possible problem with Mongodb");
+    ERROR_EXIT("Failed to load and organize delegates for starting round, Possible problem with Mongodb");
+    return;
   }
 
   // Start production loop
