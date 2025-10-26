@@ -477,6 +477,7 @@ Returns:
 void start_block_production(void) {
   struct timeval current_time;
   xcash_round_result_t round_result;
+  size_t tries = 0;
   char target_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
   char cheight[BLOCK_HEIGHT_LENGTH + 1] = {0};
 
@@ -491,6 +492,7 @@ void start_block_production(void) {
   unsigned long long prev = strtoull(cheight, NULL, 10);
   for (;;) {
     sleep(5);
+    tries++;
     if (get_current_block_height(cheight) != XCASH_OK) {
       ERROR_PRINT("Can't get current block height on startup");
       return;
@@ -499,7 +501,12 @@ void start_block_production(void) {
     if (curr > prev) {
       break;
     } else {
-      WARNING_PRINT("Waiting for synchronization to begin");
+
+      if {tries > 20) {
+       WARNING_PRINT("Server procees may be hung, please restart XCASHD");
+      } else {
+        WARNING_PRINT("Waiting for synchronization to begin"); 
+      }
     }
   }
 
