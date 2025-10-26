@@ -502,7 +502,7 @@ void start_block_production(void) {
       break;
     } else {
 
-      if {tries > 20) {
+      if (tries > 20) {
        WARNING_PRINT("Server procees may be hung, please restart XCASHD");
       } else {
         WARNING_PRINT("Waiting for synchronization to begin"); 
