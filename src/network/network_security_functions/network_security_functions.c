@@ -34,7 +34,8 @@ int sign_data(char* message) {
   }
 
   strcpy(cur_round_part, current_round_part);
-  if (strcmp(trans_type, "SEED_TO_NODES_UPDATE_VOTE_COUNT") == 0 || strcmp(trans_type, "SEED_TO_NODES_PAYOUT") == 0) {
+  if (strcmp(trans_type, "SEED_TO_NODES_UPDATE_VOTE_COUNT") == 0 || strcmp(trans_type, "SEED_TO_NODES_PAYOUT") == 0 || 
+   strcmp(trans_type, "SEED_TO_NODES_BANNED") == 0) {
     snprintf(cur_round_part, sizeof cur_round_part, "70");
   }
 
@@ -192,7 +193,7 @@ int verify_data(const char* message, xcash_msg_t msg_type) {
   char cur_round_part[3] = {0};
 
   strcpy(cur_round_part, current_round_part);
-  if (msg_type == XMSG_SEED_TO_NODES_UPDATE_VOTE_COUNT || msg_type == XMSG_SEED_TO_NODES_PAYOUT) {
+  if (msg_type == XMSG_SEED_TO_NODES_UPDATE_VOTE_COUNT || msg_type == XMSG_SEED_TO_NODES_PAYOUT || XMSG_SEED_TO_NODES_BANNED) {
     snprintf(cur_round_part, sizeof cur_round_part, "70");
   }
 
