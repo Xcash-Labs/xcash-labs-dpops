@@ -482,6 +482,7 @@ void start_block_production(void) {
 
   // Wait for node to be fully synced
   bool not_synced = true;
+  INFO_PRINT("Checking blockchain synced");
   while (not_synced) {
     if (is_blockchain_synced(target_height, cheight)) {
       not_synced = false;
