@@ -185,9 +185,9 @@ bool init_processing(const arg_config_t *arg_config) {
       WARNING_PRINT("A newer allowed version exists (%s). Consider upgrading.", newest);
     }
     } else {
-      //    ERROR_PRINT("Running digest not in allowed list; refusing to start");
+      //    ERROR_PRINT("Software version not in allowed list; refusing to start");
       //    return false;
-      WARNING_PRINT("Running digest not in allowed list; if this is production notify devs");
+      WARNING_PRINT("Software version not in allowed list; if this is production notify devs");
     }
 
     return true;
