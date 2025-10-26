@@ -287,8 +287,9 @@ int main(int argc, char *argv[]) {
         WARNING_PRINT("Unable to read fee from database so using default");
       }
     }
-    print_starter_state(&arg_config);
-    start_block_production();
+    if (print_starter_state(&arg_config)) {
+      start_block_production();
+    }
     fprintf(stderr, "Daemon is shutting down...\n");
   } else {
     ERROR_PRINT("Failed to get the nodes public wallet address, shutting down...");

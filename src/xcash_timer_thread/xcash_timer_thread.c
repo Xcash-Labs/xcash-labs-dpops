@@ -873,9 +873,9 @@ bool run_image_check(void) {
       WARNING_PRINT("A newer allowed software version exists (%s). Consider upgrading.", newest);
     }
   } else {
-    //    ERROR_PRINT("Software version not in allowed list; refusing to start");
+    //    WARNING_PRINT("Binary SHA-256 digest does not match allowed values; verify source before proceeding.");
     //    return false;
-    WARNING_PRINT("Software version not in allowed list; if this is production notify devs");
+    WARNING_PRINT("Binary SHA-256 digest does not match allowed values; Notify developers if this is production.");
   }
 
   return true;
