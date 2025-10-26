@@ -488,7 +488,7 @@ void start_block_production(void) {
     return;
   }
 
-  unsigned long long prev = strtoull(cheight, NULL, 10); 10 
+  unsigned long long prev = strtoull(cheight, NULL, 10);
   for (;;) {
     sleep(15);
     if (get_current_block_height(cheight) != XCASH_OK) {
@@ -524,7 +524,7 @@ void start_block_production(void) {
   sync_block_verifiers_minutes_and_seconds(0, 58);
   // set up delegates for first round
   if (!fill_delegates_from_db()) {
-    ERROR_EXIT("Failed to load and organize delegates for starting round, Possible problem with Mongodb");
+    ERROR_PRINT("Failed to load and organize delegates for starting round, Possible problem with Mongodb");
     return;
   }
 
