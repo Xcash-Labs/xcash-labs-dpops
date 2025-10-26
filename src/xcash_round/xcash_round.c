@@ -490,7 +490,7 @@ void start_block_production(void) {
 
   unsigned long long prev = strtoull(cheight, NULL, 10);
   for (;;) {
-    sleep(15);
+    sleep(5);
     if (get_current_block_height(cheight) != XCASH_OK) {
       ERROR_PRINT("Can't get current block height on startup");
       return;
@@ -498,6 +498,8 @@ void start_block_production(void) {
     unsigned long long curr = strtoull(cheight, NULL, 10);
     if (curr > prev) {
       break;
+    } else {
+      WARNING_PRINT("Waiting for synchronization to begin");
     }
   }
 
