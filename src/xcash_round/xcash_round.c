@@ -486,15 +486,7 @@ void start_block_production(void) {
     if (is_blockchain_synced(target_height, cheight)) {
       not_synced = false;
     } else {
-      unsigned long long node_h = strtoull(cheight, NULL, 10);
-      unsigned long long target_h = strtoull(target_height, NULL, 10);
-      char target_disp[BLOCK_HEIGHT_LENGTH];
-      if (target_h == 0ULL || target_height[0] == '\0') {
-        strcpy(target_disp, "unknown");
-      } else {
-        snprintf(target_disp, sizeof(target_disp), "%llu", target_h);
-      }
-      WARNING_PRINT("Delegate's blockchain is still syncing, node is at %llu and the target height is %s", node_h, target_disp);
+      WARNING_PRINT("Delegate's blockchain is still syncing, please wait...");
       sleep(5);
     }
   }

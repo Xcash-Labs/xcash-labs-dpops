@@ -88,9 +88,6 @@ iptables -A INPUT -p tcp -m tcp --dport ${SSH_PORT_NUMBER} -m state --state NEW 
 iptables -A INPUT -p tcp -m tcp --dport ${SSH_PORT_NUMBER} -m state --state NEW -m recent --update --seconds 3600 --hitcount 100 --name DEFAULT --rsource -j DROP
 iptables -A INPUT -p tcp -m tcp --dport ${SSH_PORT_NUMBER} -j ACCEPT
  
-# Redirect HTTP to port 18283
-iptables -A PREROUTING -t nat -i ${DEFAULT_NETWORK_DEVICE} -p tcp --dport 80 -j REDIRECT --to-ports 18283
- 
 # DROP all INPUT and FORWARD packets if they have reached this point
 iptables -A INPUT -j DROP
 iptables -A FORWARD -j DROP
