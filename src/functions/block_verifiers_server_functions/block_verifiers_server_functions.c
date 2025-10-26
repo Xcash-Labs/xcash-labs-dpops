@@ -119,7 +119,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
   pthread_mutex_unlock(&delegates_all_lock);
 
   // This should only happen if a node has been banned for being offline too long
-  if (!found) {
+  if (!found && startup_complete) {
 
     char data[VVSMALL_BUFFER_SIZE] = {0};
     snprintf(data, sizeof(data), "{\"public_address\":\"%s\"}", public_address);
