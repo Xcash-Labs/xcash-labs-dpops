@@ -77,9 +77,6 @@ iptables -A FORWARD -p tcp -m tcp -m multiport --destination-ports 21,25,110,135
 # Accept specific packets
 # Accept ICMP
 iptables -A INPUT -p icmp -j ACCEPT
- 
-# Accept HTTP
-# iptables -A INPUT -p tcp --dport 80 -j ACCEPT
 
 # Accept XCASH
 iptables -A INPUT -p tcp --dport 18280 -j ACCEPT
