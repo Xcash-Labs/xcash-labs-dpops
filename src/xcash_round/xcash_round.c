@@ -489,7 +489,7 @@ void start_block_production(void) {
       size_t tries = 0;
       for (;;) {
         if (atomic_load(&shutdown_requested)) {
-          break;
+          return;
         }
         sleep(5);
         tries++;
