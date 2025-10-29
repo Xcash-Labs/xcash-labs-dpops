@@ -480,28 +480,44 @@ void start_block_production(void) {
   char target_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
   char cheight[BLOCK_HEIGHT_LENGTH + 1] = {0};
 
-  // Wait for block to advance so we know it has a connection
-
-
   // Wait for node to be fully synced
   bool not_synced = true;
   while (not_synced && !atomic_load(&shutdown_requested)) {
-    if (is_blockchain_synced(target_height, cheight)) {
-//      not_synced = false;
-      WARNING_PRINT("Delegate is still syncing, node is at %s[end] and the target height is %s[end]", target_height, cheight);
-      sleep(10);
-    } else {
-      unsigned long long node_h = strtoull(cheight, NULL, 10);
-      unsigned long long target_h = strtoull(target_height, NULL, 10);
-      char target_disp[BLOCK_HEIGHT_LENGTH];
-      if (target_h == 0ULL || target_height[0] == '\0') {
-        strcpy(target_disp, "unknown");
-      } else {
-        snprintf(target_disp, sizeof(target_disp), "%llu", target_h);
-      }
-      WARNING_PRINT("Delegate is still syncing, node is at %llu and the target height is %s", node_h, target_disp);
+    if (!is_blockchain_synced(target_height, cheight)) {
+      INFO_PRINT("Synchronizing with blockchain");
       sleep(5);
+      continue;
     }
+    if (target_height[0] == '\0' || cheight[0] == '\0') {
+      INFO_PRINT("Synchronizing with blockchain");
+      sleep(5);
+      continue;
+    }
+    errno = 0;
+    char *end1 = NULL, *end2 = NULL;
+    unsigned long long target_h = strtoull(target_height, &end1, 10);
+    int err1 = errno;
+    errno = 0;
+    unsigned long long node_h = strtoull(cheight, &end2, 10);
+    int err2 = errno;
+    if (err1 || err2 || end1 == target_height || *end1 != '\0' ||
+        end2 == cheight || *end2 != '\0') {
+      INFO_PRINT("Synchronizing with blockchain, waiting for valid heights");
+      sleep(5);
+      continue;
+    }
+    if (target_h == 0ULL) {
+      INFO_PRINT("Synchronizing with blockchain");
+      sleep(5);
+      continue;
+    }
+    if (node_h < target_h) {
+      INFO_PRINT("Delegate is still syncing, node is at %s and the target height is %s",
+                 cheight, target_height);
+      sleep(5);
+      continue;
+    }
+    not_synced = false;
   }
 
   INFO_PRINT("Waiting for block production to start");
