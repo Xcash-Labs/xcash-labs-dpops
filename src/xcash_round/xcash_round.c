@@ -489,7 +489,7 @@ void start_block_production(void) {
       size_t tries = 0;
       for (;;) {
         if (atomic_load(&shutdown_requested)) {
-          return;
+          break;
         }
         sleep(5);
         tries++;
@@ -500,18 +500,18 @@ void start_block_production(void) {
             break;
           } else {
             if (tries > 20) {
-              WARNING_PRINT("Server procees may be hung, consider restarting all processes");
+              WARNING_PRINT("XCASHD process may be hung, consider restarting all processes");
             } else {
               INFO_PRINT("Synchronizing with blockchain");
             }
           }
         } else {
-          ERROR_PRINT("Can't get current block height, retrying");
+          ERROR_PRINT("Can't get current block height (ck XCASHD), retrying");
         }
       }
     } else {
       sleep(5);
-      ERROR_PRINT("Can't get current block height, retrying");
+      ERROR_PRINT("Can't get current block height (ck XCASHD), retrying");
     }
   }
 
