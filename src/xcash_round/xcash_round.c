@@ -27,10 +27,10 @@ int select_block_producer_from_vrf(void) {
       continue;
     }
 
-    //    Include seed nodes in block production for now
-    //    if (is_seed_address(current_block_verifiers_list.block_verifiers_public_address[i])) {
-    //      continue;
-    //    }
+    // Do not include seed nodes in block production
+    if (is_seed_address(current_block_verifiers_list.block_verifiers_public_address[i])) {
+      continue;
+    }
 
     if (selected_index == -1 ||
         strcmp(current_block_verifiers_list.block_verifiers_vrf_beta_hex[i], lowest_beta) < 0) {
