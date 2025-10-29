@@ -481,45 +481,15 @@ void start_block_production(void) {
   char cheight[BLOCK_HEIGHT_LENGTH + 1] = {0};
 
   // Wait for block to advance so we know it has a connection
-  bool not_processing = true;
-  while (not_processing && !atomic_load(&shutdown_requested)) {
-    INFO_PRINT("Checking if blockchain is processing blocks");
-    if (get_current_block_height(cheight) == XCASH_OK) {
-      unsigned long long prev = strtoull(cheight, NULL, 10);
-      size_t tries = 0;
-      for (;;) {
-        if (atomic_load(&shutdown_requested)) {
-          break;
-        }
-        sleep(5);
-        tries++;
-        if (get_current_block_height(cheight) == XCASH_OK) {
-          unsigned long long curr = strtoull(cheight, NULL, 10);
-          if (curr > prev) {
-            not_processing = false;
-            break;
-          } else {
-            if (tries > 20) {
-              WARNING_PRINT("XCASHD process may be hung, consider restarting all processes");
-            } else {
-              INFO_PRINT("Synchronizing with blockchain");
-            }
-          }
-        } else {
-          ERROR_PRINT("Can't get current block height (ck XCASHD), retrying");
-        }
-      }
-    } else {
-      sleep(5);
-      ERROR_PRINT("Can't get current block height (ck XCASHD), retrying");
-    }
-  }
+
 
   // Wait for node to be fully synced
   bool not_synced = true;
   while (not_synced && !atomic_load(&shutdown_requested)) {
     if (is_blockchain_synced(target_height, cheight)) {
-      not_synced = false;
+//      not_synced = false;
+      WARNING_PRINT("Delegate is still syncing, node is at %s[end] and the target height is %s[end]", target_height, cheight);
+      sleep(10);
     } else {
       unsigned long long node_h = strtoull(cheight, NULL, 10);
       unsigned long long target_h = strtoull(target_height, NULL, 10);
