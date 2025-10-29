@@ -477,42 +477,47 @@ Returns:
 void start_block_production(void) {
   struct timeval current_time;
   xcash_round_result_t round_result;
-  size_t tries = 0;
   char target_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
   char cheight[BLOCK_HEIGHT_LENGTH + 1] = {0};
 
   // Wait for block to advance so we know it has a connection
-  sleep(2);  // make sure xcashd is up
-  INFO_PRINT("Checking if blockchain is up and processing blocks");
-  if (get_current_block_height(cheight) != XCASH_OK) {
-    ERROR_PRINT("Can't get current block height on startup");
-    return;
-  }
-
-  unsigned long long prev = strtoull(cheight, NULL, 10);
-  for (;;) {
-    sleep(5);
-    tries++;
-    if (get_current_block_height(cheight) != XCASH_OK) {
-      ERROR_PRINT("Can't get current block height on startup");
-      return;
-    }
-    unsigned long long curr = strtoull(cheight, NULL, 10);
-    if (curr > prev) {
-      break;
-    } else {
-
-      if (tries > 20) {
-       WARNING_PRINT("Server procees may be hung, please restart XCASHD");
-      } else {
-        INFO_PRINT("Waiting for synchronization to begin"); 
+  bool not_processing = true;
+  while (not_processing && !atomic_load(&shutdown_requested)) {
+    INFO_PRINT("Checking if blockchain is processing blocks");
+    if (get_current_block_height(cheight) == XCASH_OK) {
+      unsigned long long prev = strtoull(cheight, NULL, 10);
+      size_t tries = 0;
+      for (;;) {
+        if (atomic_load(&shutdown_requested)) {
+          break;
+        }
+        sleep(5);
+        tries++;
+        if (get_current_block_height(cheight) == XCASH_OK) {
+          unsigned long long curr = strtoull(cheight, NULL, 10);
+          if (curr > prev) {
+            not_processing = false;
+            break;
+          } else {
+            if (tries > 20) {
+              WARNING_PRINT("Server procees may be hung, consider restarting all processes");
+            } else {
+              INFO_PRINT("Synchronizing with blockchain");
+            }
+          }
+        } else {
+          ERROR_PRINT("Can't get current block height, retrying");
+        }
       }
+    } else {
+      sleep(5);
+      ERROR_PRINT("Can't get current block height, retrying");
     }
   }
 
   // Wait for node to be fully synced
   bool not_synced = true;
-  while (not_synced) {
+  while (not_synced && !atomic_load(&shutdown_requested)) {
     if (is_blockchain_synced(target_height, cheight)) {
       not_synced = false;
     } else {
