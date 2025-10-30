@@ -506,11 +506,15 @@ void start_block_production(void) {
     }
   }
 
-  // Check just to be sure, this should not fail
-  if (!is_blockchain_synced(target_height, cheight)) {
-    ERROR_PRINT("Problem syncing with blockchain");
-    atomic_store(&shutdown_requested, true);
-    return;
+  // Wait for node to be fully synced after we are sure it is up and processing
+  bool not_synced = true;
+  while (not_synced && !atomic_load(&shutdown_requested)) {
+    if (is_blockchain_synced(target_height, cheight)) {
+      not_synced = false;
+    } else {
+      WARNING_PRINT("Delegate is still syncing, delegate is at %s and the target height is %s", cheight, target_height);
+      sleep(5);
+    }
   }
 
   INFO_PRINT("Waiting for block production to start");
