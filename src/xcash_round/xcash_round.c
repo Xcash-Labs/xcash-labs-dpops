@@ -480,16 +480,28 @@ void start_block_production(void) {
       continue;
     }
     unsigned long long node_h = strtoull(cheight, NULL, 10);
-//    unsigned long long target_h = strtoull(target_height, NULL, 10);
+    unsigned long long target_h = strtoull(target_height, NULL, 10);
     if (cheight[0] == '\0' || node_h == 0) {
       INFO_PRINT("Synchronizing blockchain: current height / target height: %s / %s", cheight, target_height);
       sleep(5);
       continue;
     }
-
-// More to do here, need to find a way to tell if the node is synced even if no nodes are corrected
-
-    not_synced = false;
+    // if restarting all nodes can't check if block height is advancing until we have a quorum
+    if (count_all_documents_in_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES) > 5) {
+      if (target_h == 0ULL || cheight == 0ULL) {
+        WARNING_PRINT("Synchronizing blockchain, one of check height still zero");
+        sleep(5);
+        continue;
+      }
+      if (node_h < target_h) {
+        INFO_PRINT("Delegate is still syncing, node is at %s and the target height is %s", cheight, target_height);
+        sleep(5);
+        continue;
+      }
+      not_synced = false;
+    } else {
+      not_synced = false;
+    }
   }
 
   INFO_PRINT("Waiting for block production to start");
