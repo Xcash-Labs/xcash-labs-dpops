@@ -485,8 +485,11 @@ void start_block_production(void) {
       continue;
     }
 
-    unsigned long long target_h = strtoull(target_height, NULL, 10);
+
+    INFO_PRINT("target_height/cheight: %s/%s", target_height, cheight);
+    
     unsigned long long node_h = strtoull(cheight, NULL, 10);
+    unsigned long long target_h = strtoull(target_height, NULL, 10);
     if (target_h == 0ULL || cheight == 0ULL) {
       ERROR_PRINT("Error converting string heights to number");
       atomic_store(&shutdown_requested, true);
