@@ -512,7 +512,7 @@ void start_block_production(void) {
     if (is_blockchain_synced(target_height, cheight)) {
       not_synced = false;
     } else {
-      WARNING_PRINT("Delegate is still syncing, delegate is at %s and the target height is %s", cheight, target_disp);
+      WARNING_PRINT("Delegate is still syncing, delegate is at %s and the target height is %s", cheight, target_height);
       sleep(5);
     }
   }
