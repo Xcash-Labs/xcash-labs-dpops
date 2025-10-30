@@ -29,7 +29,6 @@ bool is_blockchain_synced(char *target_height, char *height)
   char bs_flag[16] = {0};
   target_height[0] = '\0';
   height[0] = '\0';
-  char no_bs_height[BLOCK_HEIGHT_LENGTH + 1];
 
   if (send_http_request(response, SMALL_BUFFER_SIZE,
                         XCASH_DAEMON_IP, "/json_rpc", XCASH_DAEMON_PORT,
@@ -40,14 +39,8 @@ bool is_blockchain_synced(char *target_height, char *height)
       parse_json_data(response, "result.busy_syncing",  bs_flag,  sizeof(bs_flag))  != 0 &&
       parse_json_data(response, "result.height",        height,       BLOCK_HEIGHT_LENGTH)  != 0 &&
       parse_json_data(response, "result.target_height", target_height,BLOCK_HEIGHT_LENGTH)  != 0 &&
-      parse_json_data(response, "result.height_without_bootstrap", no_bs_height,BLOCK_HEIGHT_LENGTH)  != 0 &&
       parse_json_data(response, "result.offline",       offline_flag, sizeof(offline_flag)) != 0)
   {
-
-
-    INFO_PRINT("***** no_bs_height=%s", no_bs_height);
-
-
     if (strcmp(synced_flag, "true") == 0 &&
         strcmp(status_flag, "OK") == 0 &&
         strcmp(bs_flag, "false") == 0 &&
