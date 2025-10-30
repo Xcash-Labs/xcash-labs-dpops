@@ -37,7 +37,7 @@ static struct argp_option options[] = {
   {"shared-delegates-website", OPTION_SHARED_DELEGATES_WEBSITE, 0, 0, "Run shared delegate's website with specified minimum amount.", 0},
   {"minimum-amount", OPTION_MINIMUM_AMOUNT, "MINIMUM_PAYOUT", 0, "The minimum amount of payouts to voters.", 0},
   {"generate-key", OPTION_GENERATE_KEY, 0, 0, "Generate public/private key for block verifiers.", 0},
-  {"quorum-bootstrap", QUORUM_BOOTSTRAP, 0, 0, "Ensures quorum before checking sync status, only used to start things rolling when first starting chain.", 0},
+  {"quorum-bootstrap", OPTION_QUORUM_BOOTSTRAP, 0, 0, "Ensures quorum before checking sync status, only used to start things rolling when first starting chain.", 0},
   {0}
 };
 
@@ -74,7 +74,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
   case OPTION_GENERATE_KEY:
     create_key = true;
     break;
-  case QUORUM_BOOTSTRAP:
+  case OPTION_QUORUM_BOOTSTRAP:
     quorum_bootstrap = true;
     break;
   default:
