@@ -471,9 +471,9 @@ void start_block_production(void) {
   char target_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
   char cheight[BLOCK_HEIGHT_LENGTH + 1] = {0};
 
-  // Wait for block to advance so we know we has a connection skip if 
+  // Wait for block to advance so we know we have a connection skip if boot_sync is true (only used start things move on chain startup)
   bool not_processing = true;
-  while (not_processing && !atomic_load(&shutdown_requested)) {
+  while (not_processing && !atomic_load(&shutdown_requested) && !quorum_bootstrap) {
     INFO_PRINT("Checking if blockchain is processing blocks");
     if (get_current_block_height(cheight) == XCASH_OK) {
       unsigned long long prev = strtoull(cheight, NULL, 10);
@@ -493,7 +493,6 @@ void start_block_production(void) {
             if (tries > 20) {
               WARNING_PRINT("XCASHD process may be hung, consider restarting all processes");
             } else {
-              INFO_PRINT("Synchronizing blockchain");
               WARNING_PRINT("Delegate is still syncing, delegate is at %llu and the target height is %llu", curr, prev);
             }
           }
@@ -507,67 +506,19 @@ void start_block_production(void) {
     }
   }
 
-  // Check just to be sure 
-  if (is_blockchain_synced(target_height, cheight)) {
-    ERROR_PRINT("Delegate is still syncing, delegate is at %s and the target height is %s", cheight, target_height);
+  // Check just to be sure, this should not fail
+  if (!is_blockchain_synced(target_height, cheight)) {
+    ERROR_PRINT("Problem syncing with blockchain");
+    atomic_store(&shutdown_requested, true);
+    return;
   }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
-  bool not_synced = true;
-  while (not_synced && !atomic_load(&shutdown_requested)) {
-    if (!is_blockchain_synced(target_height, cheight)) {
-      INFO_PRINT("Synchronizing blockchain");
-      sleep(5);
-      continue;
-    }
-    unsigned long long node_h = strtoull(cheight, NULL, 10);
-    unsigned long long target_h = strtoull(target_height, NULL, 10);
-    if (cheight[0] == '\0' || node_h == 0) {
-      INFO_PRINT("Synchronizing blockchain: current height / target height: %s / %s", cheight, target_height);
-      sleep(5);
-      continue;
-    }
-    // if restarting all nodes can't check if block height is advancing until we have a quorum
-    if (count_all_documents_in_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES) > 5) {
-      if (target_h == 0ULL || cheight == 0ULL) {
-        WARNING_PRINT("Synchronizing blockchain, one of check height still zero");
-        sleep(5);
-        continue;
-      }
-      if (node_h < target_h) {
-        INFO_PRINT("Delegate is still syncing, node is at %s and the target height is %s", cheight, target_height);
-        sleep(5);
-        continue;
-      }
-      not_synced = false;
-    } else {
-      not_synced = false;
-    }
-  }
-*/
 
   INFO_PRINT("Waiting for block production to start");
   sync_block_verifiers_minutes_and_seconds(0, 58);
   // set up delegates for first round
   if (!fill_delegates_from_db()) {
     ERROR_PRINT("Failed to load and organize delegates for starting round, Possible problem with Mongodb");
+    atomic_store(&shutdown_requested, true);
     return;
   }
 
