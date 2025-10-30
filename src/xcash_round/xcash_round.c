@@ -480,7 +480,7 @@ void start_block_production(void) {
       continue;
     }
     unsigned long long node_h = strtoull(cheight, NULL, 10);
-    unsigned long long target_h = strtoull(target_height, NULL, 10);
+//    unsigned long long target_h = strtoull(target_height, NULL, 10);
     if (cheight[0] == '\0' || node_h == 0) {
       INFO_PRINT("Synchronizing blockchain: current height / target height: %s / %s", cheight, target_height);
       sleep(5);
