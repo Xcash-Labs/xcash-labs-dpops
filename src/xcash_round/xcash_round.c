@@ -493,7 +493,8 @@ void start_block_production(void) {
             if (tries > 20) {
               WARNING_PRINT("XCASHD process may be hung, consider restarting all processes");
             } else {
-              INFO_PRINT("Synchronizing with blockchain");
+              INFO_PRINT("Synchronizing blockchain");
+              WARNING_PRINT("Delegate is still syncing, delegate is at %llu and the target height is %llu", curr, prev);
             }
           }
         } else {
