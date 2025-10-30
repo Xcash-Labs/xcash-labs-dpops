@@ -479,7 +479,7 @@ void start_block_production(void) {
       sleep(5);
       continue;
     }
-    if ((target_height[0] == '\0' || target_height[0] == 0 || cheight[0] == '\0' || cheight[0] == 0) {
+    if (target_height[0] == '\0' || target_height[0] == 0 || cheight[0] == '\0' || cheight[0] == 0) {
       INFO_PRINT("Synchronizing blockchain: current height / target height: %s / %s", cheight, target_height);
       sleep(5);
       continue;
