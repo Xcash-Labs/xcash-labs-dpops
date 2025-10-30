@@ -471,7 +471,7 @@ void start_block_production(void) {
   char target_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
   char cheight[BLOCK_HEIGHT_LENGTH + 1] = {0};
 
-  // Wait for node to be fully synced
+  // Wait for node to be fully sync
   bool not_synced = true;
   while (not_synced && !atomic_load(&shutdown_requested)) {
     if (!is_blockchain_synced(target_height, cheight)) {
@@ -481,24 +481,14 @@ void start_block_production(void) {
     }
     unsigned long long node_h = strtoull(cheight, NULL, 10);
     unsigned long long target_h = strtoull(target_height, NULL, 10);
-    if (target_height[0] == '\0' || target_h == 0 || cheight[0] == '\0' || node_h == 0) {
+    if (cheight[0] == '\0' || node_h == 0) {
       INFO_PRINT("Synchronizing blockchain: current height / target height: %s / %s", cheight, target_height);
       sleep(5);
       continue;
     }
 
-    INFO_PRINT("current height / target height: %s / %s", cheight, target_height);
+// More to do here, need to find a way to tell if the node is synced even if no nodes are corrected
 
- 
-    if (target_h == 0ULL || cheight == 0ULL) {
-      ERROR_PRINT("Error converting string heights to number");
-      atomic_store(&shutdown_requested, true);
-    }
-    if (node_h < target_h) {
-      INFO_PRINT("Delegate is still syncing, node is at %s and the target height is %s", cheight, target_height);
-      sleep(5);
-      continue;
-    }
     not_synced = false;
   }
 
