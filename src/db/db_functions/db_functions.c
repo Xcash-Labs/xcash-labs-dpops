@@ -1158,12 +1158,15 @@ bool db_count_doc(const char* db_name, const char* collection_name, int64_t* res
   return true;
 }
 
-// Returns true if a reserve_proofs doc exists for voter_id.
-// On success: *total_out set, delegate_name_out filled ("" if unknown).
+// Returns:
+//   true  and *total_out > 0  -> found a reserve_proofs doc (0 is valid)
+//   true  and *total_out == 0 -> NOT FOUND (voter_id has not voted for a delegate)
+//   false                      -> error (mongo/params/etc)
 bool get_vote_total_and_delegate_name(
     const char* voter_id,
     int64_t* total_out,
-    char delegate_name_out[MAXIMUM_BUFFER_SIZE_DELEGATES_NAME + 1]) {
+    char delegate_name_out[MAXIMUM_BUFFER_SIZE_DELEGATES_NAME + 1])
+{
   if (!voter_id || !*voter_id || !total_out || !delegate_name_out) {
     ERROR_PRINT("get_vote_total_and_delegate_name: bad params");
     return false;
@@ -1185,66 +1188,83 @@ bool get_vote_total_and_delegate_name(
       mongoc_client_get_collection(c, DATABASE_NAME, DB_COLLECTION_RESERVE_PROOFS);
   if (!rp) {
     ERROR_PRINT("get_collection failed for %s.%s", DATABASE_NAME, DB_COLLECTION_RESERVE_PROOFS);
-    goto CLEANUP;
+    goto CLEANUP_CLIENT;
   }
 
   bson_t f = BSON_INITIALIZER;
   BSON_APPEND_UTF8(&f, "_id", voter_id);
 
   bson_t* opts = BCON_NEW(
+      "limit", BCON_INT64(1),               // unique _id, but be explicit
       "projection", "{",
-      "total_vote", BCON_BOOL(true),
-      "public_address_voted_for", BCON_BOOL(true),
-      "_id", BCON_BOOL(false),
-      "}");
+        "total_vote", BCON_BOOL(true),
+        "public_address_voted_for", BCON_BOOL(true),
+        "_id", BCON_BOOL(false),
+      "}"
+  );
 
   mongoc_cursor_t* cur = mongoc_collection_find_with_opts(rp, &f, opts, NULL);
   if (opts) bson_destroy(opts);
 
   const bson_t* doc = NULL;
-  char delegate_addr[XCASH_WALLET_LENGTH + 1];
-  delegate_addr[0] = '\0';
+  char delegate_addr[XCASH_WALLET_LENGTH + 1] = {0};
 
   if (!cur || !mongoc_cursor_next(cur, &doc)) {
-    goto CLEANUP_F_AND_CUR;
+    // Distinguish "not found" from cursor error
+    bson_error_t berr;
+    if (cur && mongoc_cursor_error(cur, &berr)) {
+      ERROR_PRINT("Mongo cursor error (reserve_proofs): %s", berr.message);
+      if (cur) mongoc_cursor_destroy(cur);
+      bson_destroy(&f);
+      mongoc_collection_destroy(rp);
+      goto CLEANUP_CLIENT;  // returns false
+    }
+
+    // --- NOT FOUND ---
+    *total_out = 0;  // sentinel: no reserve_proofs doc for this voter_id
+    if (cur) mongoc_cursor_destroy(cur);
+    bson_destroy(&f);
+    mongoc_collection_destroy(rp);
+    ok = true;
+    goto CLEANUP_CLIENT;     // returns true (+ sentinel)
   }
 
-  // extract total + delegate address
+  // Found: extract total + delegate address
   {
     bson_iter_t it;
-    if (bson_iter_init_find(&it, doc, "total_vote") && BSON_ITER_HOLDS_INT64(&it))
-      *total_out = bson_iter_int64(&it);
+    if (bson_iter_init_find_case(&it, doc, "total_vote") && BSON_ITER_HOLDS_INT(&it)) {
+      *total_out = bson_iter_as_int64(&it);
+    }
 
-    if (bson_iter_init_find(&it, doc, "public_address_voted_for") && BSON_ITER_HOLDS_UTF8(&it)) {
+    if (bson_iter_init_find_case(&it, doc, "public_address_voted_for") && BSON_ITER_HOLDS_UTF8(&it)) {
       const char* s = bson_iter_utf8(&it, NULL);
       if (s) snprintf(delegate_addr, sizeof(delegate_addr), "%s", s);
     }
   }
 
-CLEANUP_F_AND_CUR:
-  if (cur) {
-    mongoc_cursor_destroy(cur);
-    cur = NULL;
-  }
+  if (cur) mongoc_cursor_destroy(cur);
   bson_destroy(&f);
+  mongoc_collection_destroy(rp);
 
   // ---- Step 2: delegates by public_address -> delegate_name ----
-  if (delegate_addr[0]) {
+  if (delegate_addr[0] != '\0') {
     mongoc_collection_t* del =
         mongoc_client_get_collection(c, DATABASE_NAME, DB_COLLECTION_DELEGATES);
     if (!del) {
       ERROR_PRINT("get_collection failed for %s.%s", DATABASE_NAME, DB_COLLECTION_DELEGATES);
-      goto CLEANUP;
+      goto CLEANUP_CLIENT; // leave ok=false -> error
     }
 
     bson_t df = BSON_INITIALIZER;
     BSON_APPEND_UTF8(&df, "public_address", delegate_addr);
 
     bson_t* dopts = BCON_NEW(
+        "limit", BCON_INT64(1),
         "projection", "{",
-        "delegate_name", BCON_BOOL(true),
-        "_id", BCON_BOOL(false),
-        "}");
+          "delegate_name", BCON_BOOL(true),
+          "_id", BCON_BOOL(false),
+        "}"
+    );
 
     cur = mongoc_collection_find_with_opts(del, &df, dopts, NULL);
     if (dopts) bson_destroy(dopts);
@@ -1252,23 +1272,29 @@ CLEANUP_F_AND_CUR:
     const bson_t* ddoc = NULL;
     if (cur && mongoc_cursor_next(cur, &ddoc)) {
       bson_iter_t it;
-      if (bson_iter_init_find(&it, ddoc, "delegate_name") && BSON_ITER_HOLDS_UTF8(&it)) {
+      if (bson_iter_init_find_case(&it, ddoc, "delegate_name") && BSON_ITER_HOLDS_UTF8(&it)) {
         const char* nm = bson_iter_utf8(&it, NULL);
-        if (nm) snprintf(delegate_name_out, MAXIMUM_BUFFER_SIZE_DELEGATES_NAME, "%s", nm);
+        if (nm) {
+          // ensure null-termination
+          snprintf(delegate_name_out, MAXIMUM_BUFFER_SIZE_DELEGATES_NAME + 1, "%s", nm);
+        }
+      }
+    } else {
+      // Not finding a delegates doc is not fatal; leave name empty.
+      bson_error_t berr;
+      if (cur && mongoc_cursor_error(cur, &berr)) {
+        WARNING_PRINT("Mongo cursor warning (delegates lookup): %s", berr.message);
       }
     }
 
-    if (cur) {
-      mongoc_cursor_destroy(cur);
-      cur = NULL;
-    }
+    if (cur) { mongoc_cursor_destroy(cur); cur = NULL; }
     bson_destroy(&df);
     mongoc_collection_destroy(del);
   }
 
   ok = true;
 
-CLEANUP:
+CLEANUP_CLIENT:
   mongoc_client_pool_push(database_client_thread_pool, c);
   return ok;
 }

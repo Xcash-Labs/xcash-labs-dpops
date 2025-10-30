@@ -930,9 +930,14 @@ void server_receive_data_socket_node_to_block_verifiers_check_vote_status(server
   int64_t total_atomic = 0;
   char delegate_name[MAXIMUM_BUFFER_SIZE_DELEGATES_NAME + 1] = {0};
 
-  if (!get_vote_total_and_delegate_name(public_address, &total_atomic, delegate_name)) {
+  if (get_vote_total_and_delegate_name(public_address, &total_atomic, delegate_name)) {
+    if (total_atomic <= 0) {
+        cJSON_Delete(root);
+        send_data(client, (unsigned char*)"1|No Vote Found", strlen("1|No Vote Found"));
+    }
+  } else {
     cJSON_Delete(root);
-    send_data(client, (unsigned char*)"1|No Vote Found", strlen("1|No Vote Found"));
+    send_data(client, (unsigned char*)"0|DB Error", strlen("0|DB Error"));
   }
 
   // Build success message
