@@ -479,7 +479,9 @@ void start_block_production(void) {
       sleep(5);
       continue;
     }
-    if (target_height[0] == '\0' || target_height[0] == 0 || cheight[0] == '\0' || cheight[0] == 0) {
+    unsigned long long node_h = strtoull(cheight, NULL, 10);
+    unsigned long long target_h = strtoull(target_height, NULL, 10);
+    if (target_height[0] == '\0' || target_h == 0 || cheight[0] == '\0' || node_h == 0) {
       INFO_PRINT("Synchronizing blockchain: current height / target height: %s / %s", cheight, target_height);
       sleep(5);
       continue;
@@ -487,8 +489,7 @@ void start_block_production(void) {
 
     INFO_PRINT("current height / target height: %s / %s", cheight, target_height);
 
-    unsigned long long node_h = strtoull(cheight, NULL, 10);
-    unsigned long long target_h = strtoull(target_height, NULL, 10);
+ 
     if (target_h == 0ULL || cheight == 0ULL) {
       ERROR_PRINT("Error converting string heights to number");
       atomic_store(&shutdown_requested, true);
