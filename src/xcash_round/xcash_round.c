@@ -479,15 +479,14 @@ void start_block_production(void) {
       sleep(5);
       continue;
     }
-    if (target_height[0] == '\0' || cheight[0] == '\0') {
-      INFO_PRINT("Synchronizing blockchain, no valid heights");
+    if ((target_height[0] == '\0' || target_height[0] == 0 || cheight[0] == '\0' || cheight[0] == 0) {
+      INFO_PRINT("Synchronizing blockchain: current height / target height: %s / %s", cheight, target_height);
       sleep(5);
       continue;
     }
 
+    INFO_PRINT("current height / target height: %s / %s", cheight, target_height);
 
-    INFO_PRINT("target_height/cheight: %s/%s", target_height, cheight);
-    
     unsigned long long node_h = strtoull(cheight, NULL, 10);
     unsigned long long target_h = strtoull(target_height, NULL, 10);
     if (target_h == 0ULL || cheight == 0ULL) {
