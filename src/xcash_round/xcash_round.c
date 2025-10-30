@@ -507,15 +507,9 @@ void start_block_production(void) {
     }
   }
 
-  // Wait for node to be fully synced
-  bool not_synced = true;
-  while (not_synced && !atomic_load(&shutdown_requested)) {
-    if (is_blockchain_synced(target_height, cheight)) {
-      not_synced = false;
-    } else {
-      WARNING_PRINT("Delegate is still syncing, delegate is at %s and the target height is %s", cheight, target_height);
-      sleep(5);
-    }
+  // Check just to be sure 
+  if (is_blockchain_synced(target_height, cheight)) {
+    ERROR_PRINT("Delegate is still syncing, delegate is at %s and the target height is %s", cheight, target_height);
   }
 
 
