@@ -565,11 +565,9 @@ function start_systemd_service_files()
 {
   echo -ne "${COLOR_PRINT_YELLOW}Starting Systemd Service Files${END_COLOR_PRINT}"
   sudo systemctl start mongodb &>/dev/null
-  sleep 5s
+  sleep 3s
   sudo systemctl start xcash-dpops &>/dev/null
-  sleep 1s
   sudo systemctl start xcash-daemon &>/dev/null
-  sleep 1s
   sudo systemctl start xcash-rpc-wallet &>/dev/null
   echo -ne "\r${COLOR_PRINT_GREEN}Starting Systemd Service Files${END_COLOR_PRINT}"
   echo
