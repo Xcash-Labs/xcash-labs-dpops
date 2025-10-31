@@ -471,42 +471,7 @@ void start_block_production(void) {
   char target_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
   char cheight[BLOCK_HEIGHT_LENGTH + 1] = {0};
 
-  // Wait for block to advance so we know we have a connection skip if boot_sync is true (only used start things move on chain startup)
-  bool not_processing = true;
-  while (not_processing && !atomic_load(&shutdown_requested) && !quorum_bootstrap) {
-    INFO_PRINT("Checking if blockchain is processing blocks");
-    if (get_current_block_height(cheight) == XCASH_OK) {
-      unsigned long long prev = strtoull(cheight, NULL, 10);
-      size_t tries = 0;
-      for (;;) {
-        if (atomic_load(&shutdown_requested)) {
-          break;
-        }
-        sleep(5);
-        tries++;
-        if (get_current_block_height(cheight) == XCASH_OK) {
-          unsigned long long curr = strtoull(cheight, NULL, 10);
-          if (curr > prev) {
-            not_processing = false;
-            break;
-          } else {
-            if (tries > 20) {
-              WARNING_PRINT("XCASHD process may be hung, consider restarting all processes");
-            } else {
-              WARNING_PRINT("Delegate is still syncing, delegate is at %llu and the target height is %llu", curr, prev);
-            }
-          }
-        } else {
-          ERROR_PRINT("Can't get current block height (ck XCASHD), retrying");
-        }
-      }
-    } else {
-      sleep(5);
-      ERROR_PRINT("Can't get current block height (ck XCASHD), retrying");
-    }
-  }
-
-  // Wait for node to be fully synced after we are sure it is up and processing
+  sleep(5); //  If there is a backlog, give it time to start processing before checking if synced
   bool not_synced = true;
   while (not_synced && !atomic_load(&shutdown_requested)) {
     if (is_blockchain_synced(target_height, cheight)) {

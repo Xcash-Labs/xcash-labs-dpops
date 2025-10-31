@@ -10,7 +10,6 @@ int delegate_db_hash_mismatch = 0;
 double delegate_fee_percent = 5.0;
 uint64_t minimum_payout = 50;  // default value
 bool startup_complete = false;
-bool quorum_bootstrap = false;
 bool is_seed_node = false;
 int network_data_nodes_amount = 0;
 delegates_t delegates_all[BLOCK_VERIFIERS_TOTAL_AMOUNT] = {0};
