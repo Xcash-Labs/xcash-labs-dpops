@@ -594,13 +594,6 @@ static void run_proof_check(sched_ctx_t* ctx) {
   free_buckets(pay_buckets, pay_bucket_count);
 }
 
-
-
-
-
-
-
-
 /*---------------------------------------------------------------------------------------------------------
  run_activity_check
 

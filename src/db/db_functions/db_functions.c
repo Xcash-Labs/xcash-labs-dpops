@@ -331,7 +331,7 @@ int read_document_field_from_collection(const char* DATABASE, const char* COLLEC
   free_resources(NULL, NULL, collection, database_client_thread);
 
   if (!found) {
-    ERROR_PRINT("Field '%s' not found in document.", FIELD_NAME);
+    DEBUG_PRINT("Field '%s' not found in document.", FIELD_NAME);
     return XCASH_ERROR;
   }
 

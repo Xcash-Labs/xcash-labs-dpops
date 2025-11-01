@@ -192,20 +192,6 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
     SERVER_ERROR("0|The maximum amount of delegates has been reached");
   }
 
-  int selected_index;
-  pthread_mutex_lock(&delegates_all_lock);
-  selected_index = select_random_online_delegate();
-  pthread_mutex_unlock(&delegates_all_lock);
-  if (create_sync_token() == XCASH_OK) {
-    if (create_delegates_db_sync_request(selected_index)) {
-      INFO_PRINT("Waiting for DB sync");
-    } else {
-      ERROR_PRINT("Error occured while syncing delegates");
-    }
-  } else {
-    ERROR_PRINT("Error creating sync token");
-  }
-
   // 7) Finally insert a new document
   double set_delegate_fee = 5.0;  // default value
   uint64_t set_counts = 0;
