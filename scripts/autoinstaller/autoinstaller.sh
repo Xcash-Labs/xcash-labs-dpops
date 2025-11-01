@@ -971,10 +971,10 @@ function build_xcash_dpops()
   cd "${XCASH_DPOPS_DIR}"
   git checkout --quiet ${XCASH_DPOPS_BRANCH}
   if [ "$RAM_CPU_RATIO" -ge "$RAM_CPU_RATIO_ALL_CPU_THREADS" ]; then
-    echo "y" | make clean &>/dev/null
+    make clean &>/dev/null
     make release -j "${CPU_THREADS}" &>/dev/null
   else
-    echo "y" | make clean &>/dev/null
+    make clean &>/dev/null
     if [ "$RAM_CPU_RATIO" -eq 0 ]; then
         make release &>/dev/null
     else
@@ -1306,8 +1306,8 @@ function update_xcash()
   cd "$XCASH_DIR"
   git reset --hard HEAD --quiet
   git pull --quiet
-  make clean &>/dev/null
-  make release -j $((CPU_THREADS / 2)) &>/dev/null
+  echo "y" | make clean &>/dev/null
+  make release -j $((CPU_THREADS / 2)) 
   echo -ne "\r${COLOR_PRINT_GREEN}Updating X-CASH Complete                     ${END_COLOR_PRINT}"
   echo
 }
