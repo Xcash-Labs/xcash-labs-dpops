@@ -75,13 +75,6 @@ static int compare_hashes(const void* a, const void* b) {
 xcash_round_result_t process_round(void) {
   memset(&producer_refs, 0, sizeof(producer_refs));
 
-//  INFO_STAGE_PRINT("Part 1 - Check Delegate Registration");
-//  snprintf(current_round_part, sizeof(current_round_part), "%d", 1);
-//  if (strlen(vrf_public_key) == 0) {
-//    WARNING_PRINT("Failed to read vrf_public_key, has this delegate been registered?");
-//    return ROUND_SKIP;
-//  }
-
   INFO_STAGE_PRINT("Part 1 - Check Delegates");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 1);
   // delegates_all is loaded prior to start of round due to node timing issues
@@ -475,7 +468,7 @@ void start_block_production(void) {
     get_vrf_public_key();
     if (strlen(vrf_public_key) != 0) {
       break;
-    }
+    } else {
       ERROR_PRINT("Failed to read vrf_public_key, has this delegate been registered?");
       sleep(10);
     }
