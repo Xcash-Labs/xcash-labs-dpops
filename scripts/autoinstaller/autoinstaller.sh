@@ -1307,7 +1307,7 @@ function update_xcash()
   git reset --hard HEAD --quiet
   git pull --quiet
   echo "y" | make clean &>/dev/null
-  make release -j $((CPU_THREADS / 2)) 
+  make release -j $((CPU_THREADS / 2)) &>/dev/null
   echo -ne "\r${COLOR_PRINT_GREEN}Updating X-CASH Complete                     ${END_COLOR_PRINT}"
   echo
 }
