@@ -342,13 +342,9 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
     break;
 
     case XMSG_XCASHD_TO_DPOPS_VERIFY:
-      if (startup_complete) {
-        if (server_limit_public_addresses_vrf_lookup(LIMIT_CHECK, data) == 1) {
-          server_receive_data_socket_nodes_to_block_verifiers_validate_block(client, data);
-          server_limit_public_addresses_vrf_lookup(LIMIT_REMOVE, data);
-        }
-      } else {
+      if (server_limit_IP_addresses(LIMIT_CHECK, client->client_ip) == 1) {
         server_receive_data_socket_nodes_to_block_verifiers_validate_block(client, data);
+        server_limit_IP_addresses(LIMIT_REMOVE, client->client_ip);
       }
       break;
 
