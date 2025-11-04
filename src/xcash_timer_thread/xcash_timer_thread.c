@@ -411,12 +411,12 @@ static void run_proof_check(sched_ctx_t* ctx) {
           memset(zero_addrs, 0, sizeof zero_addrs); 
           size_t zero_n = 0;
 
-          mongoc_cursor_t *cur = mongoc_collection_find_with_opts(dcoll, &filter, &find_opts, NULL);
-          if (cur) {
-            const bson_t *doc;
-            while (mongoc_cursor_next(cur, &doc)) {
+          mongoc_cursor_t *zcur = mongoc_collection_find_with_opts(dcoll, &filter, &find_opts, NULL);
+          if (zcur) {
+            const bson_t *zdoc;
+            while (mongoc_cursor_next(zcur, &zdoc)) {
               bson_iter_t it;
-              if (bson_iter_init_find(&it, doc, "public_address") && BSON_ITER_HOLDS_UTF8(&it)) {
+              if (bson_iter_init_find(&it, zdoc, "public_address") && BSON_ITER_HOLDS_UTF8(&it)) {
                 const char *addr = bson_iter_utf8(&it, NULL);
                 if (addr && zero_n < BLOCK_VERIFIERS_TOTAL_AMOUNT) {
                   strncpy(zero_addrs[zero_n], addr, XCASH_WALLET_LENGTH);
@@ -425,7 +425,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
                 }
               }
             }
-            mongoc_cursor_destroy(cur);
+            mongoc_cursor_destroy(zcur);
           }
           bson_destroy(&proj);
           bson_destroy(&find_opts);
