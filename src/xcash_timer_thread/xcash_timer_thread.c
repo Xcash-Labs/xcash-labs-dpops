@@ -283,7 +283,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
 
     if (claimed_total <= 0) {
       ERROR_PRINT("reserve_proofs: non-positive total_vote=%lld for id=%.12s… — skipping",
-                    (long long)claimed_total, voter ? voter : "(unknown)");
+                  (long long)claimed_total, voter ? voter : "(unknown)");
       ++skipped;
       continue;
     }
@@ -310,7 +310,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
         ++deleted;
       } else {
         ERROR_PRINT("Failed to delete invalid reserve_proof id=%.12s… : %s",
-                      voter, derr.message);
+                    voter, derr.message);
       }
       bson_destroy(&del_filter);
       continue;
@@ -334,7 +334,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
     ERROR_PRINT("reserve_proofs cursor error: %s", cerr.message);
   } else {
     DEBUG_PRINT("reserve_proofs scan complete: seen=%zu invalid=%zu deleted=%zu skipped=%zu",
-                  seen, invalid, deleted, skipped);
+                seen, invalid, deleted, skipped);
   }
 
   bool stop_after_scan = atomic_load_explicit(&shutdown_requested, memory_order_relaxed);
@@ -344,7 +344,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
   bson_destroy(query);
   mongoc_collection_destroy(coll);
 
-  // Wait for correct time to load from delegates_all, create you own copy 
+  // Wait for correct time to load from delegates_all, create you own copy
   sync_block_verifiers_minutes_and_seconds(0, 51);
   char save_block_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
   char save_block_hash[BLOCK_HASH_LENGTH + 1] = {0};
@@ -373,6 +373,102 @@ static void run_proof_check(sched_ctx_t* ctx) {
     if (!dcoll) {
       ERROR_PRINT("delegates: get_collection failed; cannot write totals");
     } else {
+
+      /* === Zero-out delegates that are NOT in the aggregation ===
+        Filter: { public_address: { $nin: [agg_addr...] }, total_vote_count: { $gt: 0 } }
+        Update: { $set: { total_vote_count: 0 } }
+      */
+      {
+        if (agg_count > 0) {
+          // Build the same filter you already have: { public_address: { $nin: [...] }, total_vote_count: { $gt: 0 } }
+          bson_t filter; bson_init(&filter);
+
+          bson_t nin_doc; bson_init(&nin_doc);
+          bson_t nin_arr; bson_init(&nin_arr);
+          for (size_t i = 0; i < agg_count; ++i) {
+            char k[16]; bson_uint32_to_string((uint32_t)i, NULL, k, sizeof k);
+            BSON_APPEND_UTF8(&nin_arr, k, agg_addr[i]);
+          }
+          BSON_APPEND_ARRAY(&nin_doc, "$nin", &nin_arr);
+          bson_destroy(&nin_arr);
+          BSON_APPEND_DOCUMENT(&filter, "public_address", &nin_doc);
+          bson_destroy(&nin_doc);
+
+          bson_t gt_doc; bson_init(&gt_doc);
+          BSON_APPEND_INT64(&gt_doc, "$gt", 0);
+          BSON_APPEND_DOCUMENT(&filter, "total_vote_count", &gt_doc);
+          bson_destroy(&gt_doc);
+
+          // --- NEW: prefetch list to broadcast (public_address only)
+          bson_t find_opts; bson_init(&find_opts);
+          bson_t proj; bson_init(&proj);
+          BSON_APPEND_INT32(&proj, "_id", 0);
+          BSON_APPEND_INT32(&proj, "public_address", 1);
+          BSON_APPEND_DOCUMENT(&find_opts, "projection", &proj);
+
+          // collect addresses that will be zeroed
+          char zero_addrs[BLOCK_VERIFIERS_TOTAL_AMOUNT][XCASH_WALLET_LENGTH + 1];
+          memset(zero_addrs, 0, sizeof zero_addrs); 
+          size_t zero_n = 0;
+
+          mongoc_cursor_t *cur = mongoc_collection_find_with_opts(dcoll, &filter, &find_opts, NULL);
+          if (cur) {
+            const bson_t *doc;
+            while (mongoc_cursor_next(cur, &doc)) {
+              bson_iter_t it;
+              if (bson_iter_init_find(&it, doc, "public_address") && BSON_ITER_HOLDS_UTF8(&it)) {
+                const char *addr = bson_iter_utf8(&it, NULL);
+                if (addr && zero_n < BLOCK_VERIFIERS_TOTAL_AMOUNT) {
+                  strncpy(zero_addrs[zero_n], addr, XCASH_WALLET_LENGTH);
+                  zero_addrs[zero_n][XCASH_WALLET_LENGTH] = '\0';
+                  zero_n++;
+                }
+              }
+            }
+            mongoc_cursor_destroy(cur);
+          }
+          bson_destroy(&proj);
+          bson_destroy(&find_opts);
+
+          // Do the zero-out updateMany
+          bson_t update; bson_init(&update);
+          bson_t set; bson_init(&set);
+          BSON_APPEND_INT64(&set, "total_vote_count", 0);
+          BSON_APPEND_DOCUMENT(&update, "$set", &set);
+          bson_destroy(&set);
+
+          bson_error_t err;
+          if (!mongoc_collection_update_many(dcoll, &filter, &update, NULL, NULL, &err)) {
+            ERROR_PRINT("zero-out updateMany failed: %s", err.message);
+          } else {
+            DEBUG_PRINT("zero-out applied for non-agg delegates (set total_vote_count = 0)");
+
+            // --- Broadcast zeros for those addresses
+            for (size_t zi = 0; zi < zero_n; ++zi) {
+              response_t **responses = NULL;
+              char *upd_vote_message = NULL;
+              if (build_seed_to_nodes_vote_count_update(zero_addrs[zi], 0, &upd_vote_message)) {
+                if (xnet_send_data_multi(XNET_DELEGATES_ALL_ONLINE_NOSEEDS, upd_vote_message, &responses)) {
+                  free(upd_vote_message);
+                  cleanup_responses(responses);
+                } else {
+                  ERROR_PRINT("Failed to send vote count update message (zero).");
+                  free(upd_vote_message);
+                  cleanup_responses(responses);
+                }
+              } else {
+                ERROR_PRINT("Failed to generate vote count update message (zero)");
+                if (upd_vote_message) free(upd_vote_message);
+              }
+            }
+          }
+
+          bson_destroy(&update);
+          bson_destroy(&filter);
+        }
+      }
+      /* === End zero-out === */
+
       for (size_t i = 0; i < agg_count; ++i) {
         bson_t filter;
         bson_init(&filter);
@@ -418,7 +514,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
         int64_t new_total = (int64_t)agg_total[i];
         if (have_current && current_total == new_total) {
           DEBUG_PRINT("delegate total unchanged addr=%.12s… total=%lld (skip)",
-                        agg_addr[i], (long long)new_total);
+                      agg_addr[i], (long long)new_total);
 
           bson_destroy(&filter);
           continue;
@@ -438,7 +534,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
         if (!mongoc_collection_update_one(dcoll, &filter, &update,
                                           /*opts=*/NULL, /*reply=*/NULL, &uerr)) {
           ERROR_PRINT("delegate total update failed addr=%.12s… : %s",
-                        agg_addr[i], uerr.message);
+                      agg_addr[i], uerr.message);
         } else {
           update_ok = true;
           DEBUG_PRINT("delegate total %s addr=%.12s… total=%lld",
@@ -586,8 +682,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
     free(sb.buf);
 
   // fall-through;
-  next_delegate:
-    ;
+  next_delegate:;
   }
 
   mongoc_client_pool_push(ctx->pool, c);
@@ -612,7 +707,6 @@ static void run_proof_check(sched_ctx_t* ctx) {
    - Function is non-fatal: logs and continues on per-item errors.
 -------------------------------------------------------------------------------------------------------- */
 void run_activity_check(sched_ctx_t* ctx) {
-
   // 0) Wait for the coordinated timeslot to avoid racing with other jobs.
   sync_block_verifiers_minutes_and_seconds(0, 51);
 
@@ -627,7 +721,7 @@ void run_activity_check(sched_ctx_t* ctx) {
     }
     if (strcmp(delegates_all[i].online_status, "true") == 0) {
       strcpy(delegates_timer_all[online_count].public_address, delegates_all[i].public_address);
-      strcpy(delegates_timer_all[online_count].IP_address,    delegates_all[i].IP_address);
+      strcpy(delegates_timer_all[online_count].IP_address, delegates_all[i].IP_address);
       online_count++;
     }
   }
@@ -636,7 +730,10 @@ void run_activity_check(sched_ctx_t* ctx) {
 
   // 2) Mongo handles
   mongoc_client_t* c = mongoc_client_pool_pop(ctx->pool);
-  if (!c) { ERROR_PRINT("Failed to pop a client from the mongoc_client_pool"); return; }
+  if (!c) {
+    ERROR_PRINT("Failed to pop a client from the mongoc_client_pool");
+    return;
+  }
 
   mongoc_collection_t* coll_stats =
       mongoc_client_get_collection(c, DATABASE_NAME, DB_COLLECTION_STATISTICS);
@@ -661,11 +758,12 @@ void run_activity_check(sched_ctx_t* ctx) {
              (long long)current_height, (long long)cutoff_height, (int)BLOCKS_BEHIND_CURRENT);
 
   // 4) Query `statistics` for stale: { last_counted_block: { $lte: cutoff_height } }
-  bson_t query; bson_init(&query);
+  bson_t query;
+  bson_init(&query);
   {
     bson_t ineq;
     bson_append_document_begin(&query, "last_counted_block", -1, &ineq);
-      BSON_APPEND_INT64(&ineq, "$lte", cutoff_height);
+    BSON_APPEND_INT64(&ineq, "$lte", cutoff_height);
     bson_append_document_end(&query, &ineq);
   }
 
@@ -703,25 +801,28 @@ void run_activity_check(sched_ctx_t* ctx) {
     } else {
       // Unexpected _id type; dump minimal doc for debugging
       char* j = bson_as_canonical_extended_json(doc, NULL);
-      if (j) { WARNING_PRINT("statistics _id not UTF8; doc=%s", j); bson_free(j); }
+      if (j) {
+        WARNING_PRINT("statistics _id not UTF8; doc=%s", j);
+        bson_free(j);
+      }
       continue;
     }
 
     if (tmp_public_key[0] == '\0') continue;
 
     // Look up delegate by _id (== public_key), project only public_address
-    const char *pub_addr = NULL;
+    const char* pub_addr = NULL;
     if (coll_deleg) {
-      bson_t q2; bson_init(&q2);
-      BSON_APPEND_UTF8(&q2, "_id", tmp_public_key);   // exact match on _id
+      bson_t q2;
+      bson_init(&q2);
+      BSON_APPEND_UTF8(&q2, "_id", tmp_public_key);  // exact match on _id
 
       bson_t* opts2 = BCON_NEW(
-        "projection", "{",
+          "projection", "{",
           "_id", BCON_INT32(0),
           "public_address", BCON_INT32(1),
-        "}",
-        "limit", BCON_INT32(1)
-      );
+          "}",
+          "limit", BCON_INT32(1));
 
       mongoc_cursor_t* cur2 = mongoc_collection_find_with_opts(coll_deleg, &q2, opts2, NULL);
       const bson_t* d2;
@@ -750,10 +851,9 @@ void run_activity_check(sched_ctx_t* ctx) {
     // 6) Notify online nodes to ban/quarantine the stale delegate
     if (pub_addr) {
       const char* params[] = {
-        "public_address",          xcash_wallet_public_address,
-        "public_key_upd",          tmp_public_key,
-        NULL
-      };
+          "public_address", xcash_wallet_public_address,
+          "public_key_upd", tmp_public_key,
+          NULL};
 
       response_t** responses = NULL;
       char* ban_message = create_message_param_list(XMSG_SEED_TO_NODES_BANNED, params);
@@ -788,7 +888,7 @@ void run_activity_check(sched_ctx_t* ctx) {
   if (coll_deleg) mongoc_collection_destroy(coll_deleg);
   mongoc_collection_destroy(coll_stats);
   mongoc_client_pool_push(ctx->pool, c);
-  return; 
+  return;
 }
 
 /*---------------------------------------------------------------------------------------------------------
@@ -916,7 +1016,6 @@ void* timer_thread(void* arg) {
         // end program
       }
     }
-
   }
   return NULL;
 }
