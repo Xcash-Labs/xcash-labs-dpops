@@ -341,8 +341,9 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
               64, previous_block_hash,
               current_round_part);
 
-  if (is_live_round && strcmp(current_round_part, "12")) {
+  if ((is_live_round && strcmp(current_round_part, "12") == 0)) {
     if (election_state_ready) {
+      
       if (strncmp(prev_hash_str, previous_block_hash, 64) != 0) {
         cJSON_Delete(root);
         INFO_PRINT("Prev Hash mismatch: expected %s, got %s", previous_block_hash, prev_hash_str);
