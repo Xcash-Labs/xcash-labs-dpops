@@ -366,7 +366,10 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
       }
 
     } else {
-      INFO_PRINT("No delegated selected, took too long or round part not 12");
+      ERROR_PRINT("No delegated selected, took too long or round part not 12");
+
+      atomic_store(&shutdown_requested, true);
+
       cJSON_Delete(root);
       send_data(client, (unsigned char*)"0|DELEGATE_SELECTION_TIMEOUT", strlen("0|DELEGATE_SELECTION_TIMEOUT"));
       return;
