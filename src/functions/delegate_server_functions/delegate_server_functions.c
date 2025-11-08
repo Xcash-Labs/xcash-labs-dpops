@@ -316,7 +316,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
       !is_hex_len(prev_hash_str, BLOCK_HASH_LENGTH)) {
     cJSON_Delete(root);
     send_data(client, (unsigned char*)"0|BAD_FIELD_LEN_OR_NONHEX", strlen("0|BAD_FIELD_LEN_OR_NONHEX"));
-    INFO_PRINT("Bad field lenght");
+    INFO_PRINT("Bad field length");
     return;
   }
 
