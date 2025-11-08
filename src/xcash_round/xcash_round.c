@@ -991,32 +991,33 @@ void start_block_production(void) {
       }
     }
 
-end_of_round_skip_block:
+  end_of_round_skip_block:
 
-  sync_block_verifiers_minutes_and_seconds(0, 58);
-  // set up delegates for next round; retry on transient failure
-  bool ok = false;
-  pthread_mutex_lock(&delegates_all_lock);
-  ok = fill_delegates_from_db();
-  pthread_mutex_unlock(&delegates_all_lock);
+    sync_block_verifiers_minutes_and_seconds(0, 58);
+    // set up delegates for next round; retry on transient failure
+    bool ok = false;
+    pthread_mutex_lock(&delegates_all_lock);
+    ok = fill_delegates_from_db();
+    pthread_mutex_unlock(&delegates_all_lock);
 
-  // MongoDB replica set sometime misfires and does not return the data
-  if (ok) {
-    missed_load = 0;
-  } else {
-    missed_load++;
-    if (missed_load <= 3) {
-      WARNING_PRINT("Failed to load and organize delegates for next round, re-using current round data");
-      for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; ++i) {
-        memcpy(delegates_all[i].online_status_orginal, delegates_all[i].online_status, sizeof delegates_all[i].online_status_orginal);
-        delegates_all[i].online_status_orginal[sizeof delegates_all[i].online_status_orginal - 1] = '\0';
-        delegates_all[i].verifiers_vrf_proof_hex[0] = '\0';
-        delegates_all[i].verifiers_vrf_beta_hex[0] = '\0';
-      }
+    // MongoDB replica set sometime misfires and does not return the data
+    if (ok) {
+      missed_load = 0;
     } else {
-      ERROR_PRINT("Failed to load delegates for next round, MongoDB or network error, Shutting downdown after 5 failed read attemps...");
-      atomic_store(&shutdown_requested, true);
+      missed_load++;
+      if (missed_load <= 3) {
+        WARNING_PRINT("Failed to load and organize delegates for next round, re-using current round data");
+        for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; ++i) {
+          memcpy(delegates_all[i].online_status_orginal, delegates_all[i].online_status, sizeof delegates_all[i].online_status_orginal);
+          delegates_all[i].online_status_orginal[sizeof delegates_all[i].online_status_orginal - 1] = '\0';
+          delegates_all[i].verifiers_vrf_proof_hex[0] = '\0';
+          delegates_all[i].verifiers_vrf_beta_hex[0] = '\0';
+        }
+      } else {
+        ERROR_PRINT("Failed to load delegates for next round, MongoDB or network error, Shutting downdown after 5 failed read attemps...");
+        atomic_store(&shutdown_requested, true);
+      }
     }
   }
-
+  
 }
