@@ -26,9 +26,9 @@ bool initialize_database(void) {
            "&retryReads=true"
            "&readPreference=primaryPreferred"
            "&readConcernLevel=majority"
-           "&serverSelectionTimeoutMS=15000"
-           "&connectTimeoutMS=10000"
-           "&socketTimeoutMS=30000"
+           "&serverSelectionTimeoutMS=30000"
+           "&connectTimeoutMS=20000"
+           "&socketTimeoutMS=50000"
            "&w=majority"
            "&journal=true"
            "&appName=xcash-node",

@@ -123,7 +123,7 @@ xcash_round_result_t process_round(void) {
         return ROUND_SKIP;
       }
       INFO_PRINT("Previous hash unchanged, retrying");
-      sleep(2);
+      sleep(1);
     }
   } else {
     // No majority last round -> chain may be stalled
@@ -1014,10 +1014,10 @@ void start_block_production(void) {
           delegates_all[i].verifiers_vrf_beta_hex[0] = '\0';
         }
       } else {
-        ERROR_PRINT("Failed to load delegates for next round, MongoDB or network error, Shutting downdown after 5 failed read attemps...");
+        ERROR_PRINT("Failed to load delegates for next round, MongoDB or network error, Shutting downdown after 3 failed read attemps...");
         atomic_store(&shutdown_requested, true);
       }
     }
   }
-  
+
 }
