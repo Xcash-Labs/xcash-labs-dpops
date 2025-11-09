@@ -5,7 +5,7 @@
 mongoc_client_pool_t* database_client_thread_pool = NULL;
 pthread_t server_thread;
 dnssec_ctx_t* g_ctx = NULL;
-int log_level = 2;  // default level is error + warning + info - change back to 2 once system stabilizes
+int log_level = 3;  // default level is error + warning + info - change back to 2 once system stabilizes
 bool last_round_success = false;
 int delegate_db_hash_mismatch = 0;
 double delegate_fee_percent = 5.0;
@@ -75,7 +75,7 @@ void init_globals(void) {
   size_t count = 0;
   srand(time(NULL));
   memset(delegates_all, 0, sizeof(delegates_all));
-   memset(data,0,sizeof(data));
+  memset(data,0,sizeof(data));
   memset(current_block_height,0,sizeof(current_block_height));
   server_limit_IP_address_list = (char*)calloc(15728640,sizeof(char)); // 15 MB
   server_limit_public_address_list = (char*)calloc(15728640,sizeof(char)); // 15 MB
