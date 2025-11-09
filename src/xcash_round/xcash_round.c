@@ -1000,7 +1000,7 @@ void start_block_production(void) {
     pthread_mutex_unlock(&delegates_all_lock);
 
     // MongoDB replica set sometime misfires and does not return the data
-    if (ok) {
+    if (!ok) {
       missed_load = 0;
     } else {
       missed_load++;
@@ -1008,7 +1008,7 @@ void start_block_production(void) {
         WARNING_PRINT("Failed to load and organize delegates for next round, re-using current round data");
         pthread_mutex_lock(&delegates_all_lock);
         for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; ++i) {
-          strncpy(delegates_all[i].online_status_original, delegates_all[i].online_status, 10);
+          strncpy(delegates_all[i].online_status_original, delegates_all[i].online_status, sizeof(delegates_all[i].online_status));
           delegates_all[i].online_status_original[sizeof(delegates_all[i].online_status_original) - 1] = '\0';
           strncpy(delegates_all[i].online_status, "false", sizeof(delegates_all[i].online_status));
           delegates_all[i].online_status[sizeof(delegates_all[i].online_status) - 1] = '\0';
