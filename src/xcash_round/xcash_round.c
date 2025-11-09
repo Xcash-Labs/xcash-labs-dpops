@@ -1000,7 +1000,7 @@ void start_block_production(void) {
     pthread_mutex_unlock(&delegates_all_lock);
 
     // MongoDB replica set sometime misfires and does not return the data
-    if (!ok) {
+    if (ok) {
       missed_load = 0;
     } else {
       missed_load++;
