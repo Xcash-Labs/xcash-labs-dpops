@@ -17,7 +17,7 @@ extern mongoc_client_pool_t* database_client_thread_pool;  // database
 extern pthread_t server_thread;
 extern dnssec_ctx_t* g_ctx;
 extern int log_level;  // Log level for display log messages
-extern bool last_round_success = false;
+extern bool last_round_success;
 extern int delegate_db_hash_mismatch; 
 extern double delegate_fee_percent;
 extern uint64_t minimum_payout;
