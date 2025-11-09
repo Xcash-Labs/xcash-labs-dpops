@@ -38,7 +38,7 @@ typedef struct  {
     char online_status[11];
     char public_key[VRF_PUBLIC_KEY_LENGTH+1];
     uint64_t registration_timestamp;
-    char online_status_orginal[11];
+    char online_status_original[11];
     char verifiers_vrf_proof_hex[VRF_PROOF_LENGTH + 1];
     char verifiers_vrf_beta_hex[VRF_BETA_LENGTH + 1];
 } delegates_t;

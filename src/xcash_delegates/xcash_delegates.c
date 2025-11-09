@@ -110,8 +110,8 @@ int read_organize_delegates(delegates_t* delegates, size_t* delegates_count_resu
             }
             strncpy(delegates[delegate_index].online_status, "false", sizeof(delegates[delegate_index].online_status));
             delegates[delegate_index].online_status[sizeof(delegates[delegate_index].online_status) - 1] = '\0';
-            strncpy(delegates[delegate_index].online_status_orginal, bson_iter_utf8(&record_iter, NULL), 10);
-            delegates[delegate_index].online_status_orginal[sizeof(delegates[delegate_index].online_status_orginal) - 1] = '\0';
+            strncpy(delegates[delegate_index].online_status_original, bson_iter_utf8(&record_iter, NULL), 10);
+            delegates[delegate_index].online_status_original[sizeof(delegates[delegate_index].online_status_original) - 1] = '\0';
           } else if (strcmp(db_key, "public_key") == 0 && BSON_ITER_HOLDS_UTF8(&record_iter)) {
             strncpy(delegates[delegate_index].public_key, bson_iter_utf8(&record_iter, NULL), VRF_PUBLIC_KEY_LENGTH);
           } else if (strcmp(db_key, "registration_timestamp") == 0) {

@@ -562,7 +562,7 @@ void start_block_production(void) {
       // Update online status
       for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
         if (strlen(delegates_all[i].public_address) > 0 && strlen(delegates_all[i].public_key) > 0) {
-          if (strcmp(delegates_all[i].online_status, delegates_all[i].online_status_orginal) != 0) {
+          if (strcmp(delegates_all[i].online_status, delegates_all[i].online_status_original) != 0) {
             char tmp_status[6] = "false";
             if (strcmp(delegates_all[i].online_status, "true") == 0) {
               strcpy(tmp_status, "true");
@@ -1004,14 +1004,18 @@ void start_block_production(void) {
       missed_load = 0;
     } else {
       missed_load++;
-      if (missed_load <= 3) {
+      if (missed_load < 3) {
         WARNING_PRINT("Failed to load and organize delegates for next round, re-using current round data");
+        pthread_mutex_lock(&delegates_all_lock);
         for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; ++i) {
-          memcpy(delegates_all[i].online_status_orginal, delegates_all[i].online_status, sizeof delegates_all[i].online_status_orginal);
-          delegates_all[i].online_status_orginal[sizeof delegates_all[i].online_status_orginal - 1] = '\0';
+          strncpy(delegates_all[i].online_status_original, delegates_all[i].online_status, 10);
+          delegates_all[i].online_status_original[sizeof(delegates_all[i].online_status_original) - 1] = '\0';
+          strncpy(delegates_all[i].online_status, "false", sizeof(delegates_all[i].online_status));
+          delegates_all[i].online_status[sizeof(delegates_all[i].online_status) - 1] = '\0';
           delegates_all[i].verifiers_vrf_proof_hex[0] = '\0';
           delegates_all[i].verifiers_vrf_beta_hex[0] = '\0';
         }
+        pthread_mutex_unlock(&delegates_all_lock);
       } else {
         ERROR_PRINT("Failed to load delegates for next round, MongoDB or network error, Shutting downdown after 3 failed read attemps...");
         atomic_store(&shutdown_requested, true);
