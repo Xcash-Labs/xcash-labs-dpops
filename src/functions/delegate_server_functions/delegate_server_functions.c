@@ -320,10 +320,11 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
     return;
   }
 
-  // If block_height being passed in is equal to the node block height and node is not starting up do extra checks
+  // If block_height being passed in is equal to the node block height and node is not starting up and last round was successful
+  // perform full validation
   unsigned long long cheight = strtoull(current_block_height, NULL, 10);
   bool is_live_round = false;
-  if (startup_complete) {
+  if (startup_complete && last_round_success) {
     is_live_round = (height == cheight);
   }
 

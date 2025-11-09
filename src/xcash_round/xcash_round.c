@@ -3,7 +3,6 @@
 producer_ref_t producer_refs[] = {0};
 static int total_delegates = 0;
 static char previous_round_block_hash[BLOCK_HASH_LENGTH + 1] = {0};
-static bool last_round_success = false;
 static size_t missed_load = 0;
 
 /**
@@ -126,7 +125,7 @@ xcash_round_result_t process_round(void) {
       sleep(1);
     }
   } else {
-    // No majority last round -> chain may be stalled
+    // No majority last round -> chain may be stalled on this node
     memset(previous_block_hash, 0, sizeof previous_block_hash);
     if (get_previous_block_hash(previous_block_hash) != XCASH_OK) {
       ERROR_PRINT("Can't get previous block hash");
