@@ -943,7 +943,6 @@ void start_block_production(void) {
         bson_destroy(&filter);
         mongoc_collection_destroy(coll);
         mongoc_client_pool_push(database_client_thread_pool, c);
-        INFO_PRINT("Cleanup Success");
         last_round_success = true;
         goto end_of_round_skip_block;
 
