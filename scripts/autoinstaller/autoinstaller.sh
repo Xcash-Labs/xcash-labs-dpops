@@ -560,7 +560,6 @@ function get_current_xcash_wallet_data()
   echo
 }
 
-
 function start_systemd_service_files()
 {
   echo -ne "${COLOR_PRINT_YELLOW}Starting Systemd Service Files${END_COLOR_PRINT}"
@@ -576,7 +575,9 @@ function start_systemd_service_files()
 function stop_systemd_service_files()
 {
   echo -ne "${COLOR_PRINT_YELLOW}Stopping Systemd Service Files${END_COLOR_PRINT}"
-  sudo systemctl stop mongodb xcash-daemon xcash-rpc-wallet xcash-dpops &>/dev/null
+  sudo systemctl stop xcash-dpops&>/dev/null
+  sleep 1s
+  sudo systemctl stop mongodb xcash-daemon xcash-rpc-wallet&>/dev/null
   echo -ne "\r${COLOR_PRINT_GREEN}Stopping Systemd Service Files${END_COLOR_PRINT}"
   echo
 }
