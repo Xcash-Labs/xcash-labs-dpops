@@ -417,8 +417,6 @@ bool block_verifiers_create_vote_majority_result(char** message, int producer_in
     return false;
   }
 
-  // **
-
   // collect valid pubkeys and create a hash
   uint8_t pks[BLOCK_VERIFIERS_AMOUNT][crypto_vrf_PUBLICKEYBYTES];
   memset(pks, 0, sizeof pks);
@@ -475,13 +473,6 @@ bool block_verifiers_create_vote_majority_result(char** message, int producer_in
 
     sha256EL(buf, off, round_pk_hash_bin);
   }
-
-  // Hex-encode if you need to ship it in JSON
-//  char round_pk_hash_hex[SHA256_EL_HASH_SIZE * 2 + 1] = {0};
-//  for (size_t i = 0; i < SHA256_EL_HASH_SIZE; ++i)
-//    snprintf(round_pk_hash_hex + i * 2, 3, "%02x", round_pk_hash[i]);
-
-  // **
 
   char* signature = calloc(XCASH_SIGN_DATA_LENGTH + 1, sizeof(char));
   char* request = calloc(MEDIUM_BUFFER_SIZE * 2, sizeof(char));
