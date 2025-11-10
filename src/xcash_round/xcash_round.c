@@ -107,22 +107,13 @@ xcash_round_result_t process_round(void) {
   if (last_round_success) {
     // Get the previous block hash and check to make sure it changed from last round
     snprintf(previous_round_block_hash, sizeof previous_round_block_hash, "%s", previous_block_hash);
-    for (int attempt = 1; attempt <= 2; ++attempt) {
-      memset(previous_block_hash, 0, BLOCK_HASH_LENGTH + 1);
-      if (get_previous_block_hash(previous_block_hash) != XCASH_OK) {
-        ERROR_PRINT("Can't get previous block hash");
-        return ROUND_SKIP;
-      }
-      // Success condition: the previous hash changed vs what we had
-      if (strcmp(previous_block_hash, previous_round_block_hash) != 0) {
-        break;
-      }
-      if (attempt >= 2) {
-        ERROR_PRINT("Still showing Previous Block Hash, Block did not advance");
-        return ROUND_SKIP;
-      }
-      INFO_PRINT("Previous hash unchanged, retrying");
-      sleep(1);
+    if (get_previous_block_hash(previous_block_hash) != XCASH_OK) {
+      ERROR_PRINT("Can't get previous block hash");
+      return ROUND_SKIP;
+    }
+    if (strcmp(previous_block_hash, previous_round_block_hash) == 0) {
+      ERROR_PRINT("Still showing Previous Block Hash, Block did not advance");
+      return ROUND_SKIP;
     }
   } else {
     // No majority last round -> chain may be stalled on this node
@@ -538,13 +529,12 @@ void start_block_production(void) {
 
     round_result = process_round();
 
-    // Final step - Wait for block creation/DB Updates or Node clean-up
+    // Final step - Wait for block creation/DB Updates or Node clean-up  jed
     snprintf(current_round_part, sizeof(current_round_part), "%d", 12);
+    last_round_success = false;
     if (round_result == ROUND_OK) {
-      last_round_success = true;
       INFO_STAGE_PRINT("Part 12 - Wait for Block Creation");
     } else  {
-      last_round_success = false;
       INFO_STAGE_PRINT("Part 12 - Wait for Node clean-up / sync");
     }
 
@@ -585,7 +575,7 @@ void start_block_production(void) {
         }
       }
 
-// If not a seed node - Add block record only on delegate that found block.  Seed nodes are be part of block create process
+// If not a seed node - Add block record only on delegate that found block.  Seed nodes do not create blocks other than the first one.
 #ifndef SEED_NODE_ON
 
       const bool block_found = (strcmp(xcash_wallet_public_address, producer_refs[0].public_address) == 0);
@@ -619,9 +609,11 @@ void start_block_production(void) {
           goto end_of_round_skip_block;
         }
       }
+      last_round_success = true;
 
 #endif
 
+// Save 
 #ifdef SEED_NODE_ON
 
       char current_block_hash[BLOCK_HASH_LENGTH + 1] = {0};
@@ -643,7 +635,7 @@ void start_block_production(void) {
           goto end_of_round_skip_block;
         }
 
-        // If block height does not advance after a second try, skip (on of other seed nodes will update)
+        // If block height does not advance after a second try, skip (one of other seed nodes will update)
         ck_height = strtoull(ck_block_height, NULL, 10);
         if (ck_height <= cbheight) {
           ERROR_PRINT("Block did not advance (still at %llu)", (unsigned long long)cbheight);
@@ -951,6 +943,8 @@ void start_block_production(void) {
         bson_destroy(&filter);
         mongoc_collection_destroy(coll);
         mongoc_client_pool_push(database_client_thread_pool, c);
+        INFO_PRINT("Cleanup Success");
+        last_round_success = true;
         goto end_of_round_skip_block;
 
       // ------------- unified error cleanup -------------
@@ -991,6 +985,8 @@ void start_block_production(void) {
     }
 
   end_of_round_skip_block:
+
+    INFO_STAGE_PRINT("Part 12 End....");
 
     sync_block_verifiers_minutes_and_seconds(0, 58);
     // set up delegates for next round; retry on transient failure
