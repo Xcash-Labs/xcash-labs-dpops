@@ -370,6 +370,13 @@ bool generate_and_request_vrf_data_sync(char** message) {
   return true;
 }
 
+// Helper for sort
+static int bytes32_cmp(const void *va, const void *vb) {
+  const unsigned char *a = (const unsigned char *)va;
+  const unsigned char *b = (const unsigned char *)vb;
+  return memcmp(a, b, crypto_vrf_PUBLICKEYBYTES);
+}
+
 /*---------------------------------------------------------------------------------------------------------
 Name: block_verifiers_create_vote_majority_results
 Description: The block verifiers will create the vote majority results
