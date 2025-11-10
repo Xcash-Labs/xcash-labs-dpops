@@ -192,7 +192,7 @@ void server_receive_data_socket_node_to_node_vote_majority(const char* MESSAGE) 
   }
 
   if (!verify_vrf_vote_signature(block_height, vrf_beta_hex, vrf_public_key_data, public_address, vote_signature)) {
-    ERROR_PRINT("Unable to verify the signature for the vote %s", public_address);
+    WARNING_PRINT("Unable to verify the signature for vote from delegate %s", public_address);
     return;
   }
 

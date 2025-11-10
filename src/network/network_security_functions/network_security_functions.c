@@ -217,13 +217,13 @@ int verify_data(const char* message, xcash_msg_t msg_type) {
   }
  
   if (strcmp(previous_block_hash, ck_previous_block_hash) != 0) {
-    ERROR_PRINT("Public address %s failed Signature Verification, previous block hash is not valid", ck_public_address);
+    WARNING_PRINT("Public address %s failed Signature Verification, previous block hash is not valid", ck_public_address);
     return XCASH_ERROR;
   }
 
   snprintf(data, sizeof(data), "{\"public_address\":\"%s\"}", ck_public_address);
   if (count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, data) == 0) {
-    DEBUG_PRINT("The delegates public address in this transaction does not exist");
+    WARNING_PRINT("The delegates public address in this transaction does not exist");
     return XCASH_ERROR;
   }
 
