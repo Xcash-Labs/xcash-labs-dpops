@@ -282,7 +282,7 @@ bool verify_vrf_vote_signature(const char *block_height,
   uint8_t vrf_pubkey_bin[crypto_vrf_PUBLICKEYBYTES] = {0};
   uint8_t hash[SHA256_EL_HASH_SIZE];
   char hash_hex[(SHA256_EL_HASH_SIZE * 2) + 1] = {0};
-  uint8_t hash_input[128];
+  uint8_t hash_input[160];
   size_t offset = 0;
   char request[MEDIUM_BUFFER_SIZE * 2] = {0};
   char response[MEDIUM_BUFFER_SIZE] = {0};
@@ -359,7 +359,6 @@ bool verify_vrf_vote_signature(const char *block_height,
     sha256EL(buf, off, round_pk_hash_bin);
   }
 
-  unsigned char hash_input[160];  // height_len + 64 + 32 + 32
   memcpy(hash_input + offset, block_height, block_height_len); offset += block_height_len;
   memcpy(hash_input + offset, vrf_beta_bin, crypto_vrf_OUTPUTBYTES); offset += crypto_vrf_OUTPUTBYTES;
   memcpy(hash_input + offset, vrf_pubkey_bin, crypto_vrf_PUBLICKEYBYTES); offset += crypto_vrf_PUBLICKEYBYTES;

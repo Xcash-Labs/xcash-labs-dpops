@@ -494,7 +494,7 @@ bool block_verifiers_create_vote_majority_result(char** message, int producer_in
   memcpy(hash_input + offset, vrf_beta_bin, crypto_vrf_OUTPUTBYTES);
   offset += crypto_vrf_OUTPUTBYTES;
 
-  memcpy(hash_input + offset, vrf_pubkey_bin, crypto_vrf_PUBLICKEYBYTES); 
+  memcpy(hash_input + offset, pk_bin, crypto_vrf_PUBLICKEYBYTES);
   offset += crypto_vrf_PUBLICKEYBYTES;
 
   memcpy(hash_input + offset, round_pk_hash_bin, crypto_vrf_PUBLICKEYBYTES);
