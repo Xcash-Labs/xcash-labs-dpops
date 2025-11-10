@@ -370,7 +370,7 @@ bool generate_and_request_vrf_data_sync(char** message) {
   return true;
 }
 
-// Helper for sort
+// Helper for qsort
 static int bytes32_cmp(const void *va, const void *vb) {
   const unsigned char *a = (const unsigned char *)va;
   const unsigned char *b = (const unsigned char *)vb;
@@ -487,15 +487,18 @@ bool block_verifiers_create_vote_majority_result(char** message, int producer_in
     FATAL_ERROR_EXIT("sign_data: Memory allocation failed");
   }
 
-  unsigned char hash_input[128];  // height_len + 32 + 64 + 32
+  unsigned char hash_input[160];  // height_len + 64 + 32 + 32
   memcpy(hash_input + offset, current_block_height, height_len);
   offset += height_len;
 
-  memcpy(hash_input + offset, vrf_beta_bin, 64);
-  offset += 64;
+  memcpy(hash_input + offset, vrf_beta_bin, crypto_vrf_OUTPUTBYTES);
+  offset += crypto_vrf_OUTPUTBYTES;
 
-  memcpy(hash_input + offset, round_pk_hash_bin, 32);
-  offset += 32;
+  memcpy(hash_input + offset, vrf_pubkey_bin, crypto_vrf_PUBLICKEYBYTES); 
+  offset += crypto_vrf_PUBLICKEYBYTES;
+
+  memcpy(hash_input + offset, round_pk_hash_bin, crypto_vrf_PUBLICKEYBYTES);
+  offset += crypto_vrf_PUBLICKEYBYTES;
 
   size_t i = 0;
   sha256EL(hash_input, offset, hash);

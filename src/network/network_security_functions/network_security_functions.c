@@ -202,19 +202,22 @@ int verify_data(const char* message, xcash_msg_t msg_type) {
       parse_json_data(message, "public_address", ck_public_address, sizeof(ck_public_address)) != 1 ||
       parse_json_data(message, "v_previous_block_hash", ck_previous_block_hash, sizeof(ck_previous_block_hash)) != 1 ||
       parse_json_data(message, "v_current_round_part", ck_round_part, sizeof(ck_round_part)) != 1) {
-    ERROR_PRINT("verify_data: Failed to parse one or more required fields.");
+    ERROR_PRINT("verify_data: Failed to parse one or more required fields."); 
     return XCASH_ERROR;
   }
+
+// need to change error message    
 
   if (strcmp(cur_round_part, ck_round_part) != 0) {
     if (startup_complete) {
-      WARNING_PRINT("Failed Signature Verification, round part timing issue: current round %s - message round %s.", cur_round_part, ck_round_part);
+      WARNING_PRINT("Public address %s failed Signature Verification, round part timing issue: current round %s - message round %s.", 
+        ck_public_address, cur_round_part, ck_round_part);
     }
     return XCASH_ERROR;
   }
-
+ 
   if (strcmp(previous_block_hash, ck_previous_block_hash) != 0) {
-    ERROR_PRINT("Failed Signature Verification, previous block hash is not valid");
+    ERROR_PRINT("Public address %s failed Signature Verification, previous block hash is not valid", ck_public_address);
     return XCASH_ERROR;
   }
 
