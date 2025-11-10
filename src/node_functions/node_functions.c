@@ -3,7 +3,7 @@
 bool get_node_data(void) {
   // --- Wait for wallet public address to be available (from wallet process) ---
   const int SLEEP_SEC = 5;
-  sleep(SLEEP_SEC);  // give things a chance to start-up
+  sleep(10);  // give things a chance to start-up
   int attempt = 0;
 
   for (;;) {
