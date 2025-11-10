@@ -417,20 +417,86 @@ bool block_verifiers_create_vote_majority_result(char** message, int producer_in
     return false;
   }
 
-  char* signature = calloc(XCASH_SIGN_DATA_LENGTH+1, sizeof(char));
+  // **
+
+  // collect valid pubkeys and create a hash
+  uint8_t pks[BLOCK_VERIFIERS_AMOUNT][crypto_vrf_PUBLICKEYBYTES];
+  memset(pks, 0, sizeof pks);
+  size_t n = 0;
+
+  for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; ++i) {
+    const char* hex = current_block_verifiers_list.block_verifiers_public_key[i];
+    if (!hex || hex[0] == '\0') continue;
+
+    size_t len = strnlen(hex, (size_t)VRF_PUBLIC_KEY_LENGTH + 1);  // VRF_PUBLIC_KEY_LENGTH == 64
+    if (len != (size_t)VRF_PUBLIC_KEY_LENGTH) {
+      ERROR_PRINT("Pubkey[%zu] length %zu (expected %d)", i, len, VRF_PUBLIC_KEY_LENGTH);
+      return false;  // or: continue;
+    }
+
+    if (!hex_to_byte_array(hex, pks[n], crypto_vrf_PUBLICKEYBYTES)) {
+      ERROR_PRINT("Pubkey[%zu] invalid hex", i);
+      return false;  // or: continue;
+    }
+    n++;
+  }
+
+  if (n == 0) {
+    ERROR_PRINT("No valid public keys to hash");
+    return false;
+  }
+
+  qsort(pks, n, crypto_vrf_PUBLICKEYBYTES, bytes32_cmp);
+
+  // Domain-separate and bind to the round
+  uint8_t round_pk_hash_bin[SHA256_EL_HASH_SIZE] = {0};  // SHA256_EL_HASH_SIZE must be 32
+  {
+    // buffer = "PKSET" || varint(len(height_bytes)) || height_bytes || varint(n) || concat(pks[0..n-1])
+    uint8_t buf[5 + 16 + 8 + BLOCK_VERIFIERS_AMOUNT * crypto_vrf_PUBLICKEYBYTES];
+    size_t off = 0;
+
+    // domain tag
+    memcpy(buf + off, "PKSET", 5);
+    off += 5;
+
+    // height as ASCII (or binary) with length-prefix to avoid ambiguity
+    const uint8_t* h = (const uint8_t*)current_block_height;
+    size_t hlen = strlen(current_block_height);
+    buf[off++] = (uint8_t)hlen;  // simple 1-byte length (if height fits)
+    memcpy(buf + off, h, hlen);
+    off += hlen;
+
+    // count
+    buf[off++] = (uint8_t)n;
+
+    // concatenated keys
+    memcpy(buf + off, pks, n * crypto_vrf_PUBLICKEYBYTES);
+    off += n * crypto_vrf_PUBLICKEYBYTES;
+
+    sha256EL(buf, off, round_pk_hash_bin);
+  }
+
+  // Hex-encode if you need to ship it in JSON
+//  char round_pk_hash_hex[SHA256_EL_HASH_SIZE * 2 + 1] = {0};
+//  for (size_t i = 0; i < SHA256_EL_HASH_SIZE; ++i)
+//    snprintf(round_pk_hash_hex + i * 2, 3, "%02x", round_pk_hash[i]);
+
+  // **
+
+  char* signature = calloc(XCASH_SIGN_DATA_LENGTH + 1, sizeof(char));
   char* request = calloc(MEDIUM_BUFFER_SIZE * 2, sizeof(char));
   if (!signature || !request) {
     FATAL_ERROR_EXIT("sign_data: Memory allocation failed");
   }
 
-  unsigned char hash_input[128];  // height_len + 32 + 64
+  unsigned char hash_input[128];  // height_len + 32 + 64 + 32
   memcpy(hash_input + offset, current_block_height, height_len);
   offset += height_len;
 
   memcpy(hash_input + offset, vrf_beta_bin, 64);
   offset += 64;
 
-  memcpy(hash_input + offset, pk_bin, 32);
+  memcpy(hash_input + offset, round_pk_hash_bin, 32);
   offset += 32;
 
   size_t i = 0;
