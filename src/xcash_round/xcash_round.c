@@ -529,7 +529,7 @@ void start_block_production(void) {
 
     round_result = process_round();
 
-    // Final step - Wait for block creation/DB Updates or Node clean-up  jed
+    // Final step - Wait for block creation/DB Updates or Node clean-up
     snprintf(current_round_part, sizeof(current_round_part), "%d", 12);
     last_round_success = false;
     if (round_result == ROUND_OK) {
