@@ -347,9 +347,9 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
 
     if (election_state_ready) {
       
-      // The block producer will submit the block in round 11
+      // The block producer will submit the block in round part 11 others in part 12
       if (strcmp(current_round_part, "12") == 0 ||
-          (current_round_part == "11" && (strcmp(producer_refs[0].public_address, xcash_wallet_public_address) == 0))) {
+          (strcmp(current_round_part, "11") == 0 && (strcmp(producer_refs[0].public_address, xcash_wallet_public_address) == 0))) {
         if (strncmp(prev_hash_str, previous_block_hash, 64) != 0) {
           cJSON_Delete(root);
           INFO_PRINT("Prev Hash mismatch: expected %s, got %s", previous_block_hash, prev_hash_str);
