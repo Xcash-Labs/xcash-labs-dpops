@@ -3,6 +3,7 @@
 producer_ref_t producer_refs[] = {0};
 static int total_delegates = 0;
 static char previous_round_block_hash[BLOCK_HASH_LENGTH + 1] = {0};
+static bool last_round_success = false;
 static size_t missed_load = 0;
 
 /**
@@ -531,10 +532,11 @@ void start_block_production(void) {
 
     // Final step - Wait for block creation/DB Updates or Node clean-up
     snprintf(current_round_part, sizeof(current_round_part), "%d", 12);
-    last_round_success = false;
     if (round_result == ROUND_OK) {
+      last_round_success = true;
       INFO_STAGE_PRINT("Part 12 - Wait for Block Creation");
     } else  {
+      last_round_success = false;
       INFO_STAGE_PRINT("Part 12 - Wait for Node clean-up / sync");
     }
 
@@ -609,7 +611,6 @@ void start_block_production(void) {
           goto end_of_round_skip_block;
         }
       }
-      last_round_success = true;
 
 #endif
 
@@ -943,7 +944,6 @@ void start_block_production(void) {
         bson_destroy(&filter);
         mongoc_collection_destroy(coll);
         mongoc_client_pool_push(database_client_thread_pool, c);
-        last_round_success = true;
         goto end_of_round_skip_block;
 
       // ------------- unified error cleanup -------------
@@ -984,8 +984,6 @@ void start_block_production(void) {
     }
 
   end_of_round_skip_block:
-
-    INFO_STAGE_PRINT("Part 12 End....");
 
     sync_block_verifiers_minutes_and_seconds(0, 58);
     // set up delegates for next round; retry on transient failure

@@ -53,9 +53,9 @@
 
 
 
-#define CONNECT_TIMEOUT_SEC 2
-#define RECEIVE_TIMEOUT_SEC 3
-#define SEND_TIMEOUT_MS 3000
+#define CONNECT_TIMEOUT_SEC 4  // was 2
+#define RECEIVE_TIMEOUT_SEC 5  // was 3 
+#define SEND_TIMEOUT_MS 5000   // was 3000
 #define NET_MULTI_WORKERS 12
 
 // ===================== Hash and Key Lengths =====================
