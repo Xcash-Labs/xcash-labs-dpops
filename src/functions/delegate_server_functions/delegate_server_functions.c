@@ -324,7 +324,8 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
   // perform full validation
   unsigned long long cheight = strtoull(current_block_height, NULL, 10);
   bool is_live_round = false;
-  if (startup_complete && last_round_success) {
+//  if (startup_complete && last_round_success) {
+  if (startup_complete) {
     is_live_round = (height == cheight);
   }
 
@@ -333,7 +334,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
                               is_hex_len(producer_refs[0].vote_hash_hex, VOTE_HASH_LEN);
   pthread_mutex_unlock(&producer_refs_lock);
 
-  DEBUG_PRINT("DPOPS dbg: height=%" PRIu64 " cheight=%llu live=%d state_ready=%d prev_in=%.*s prev_local=%.*s round_part %s",
+  INFO_PRINT("DPOPS dbg: height=%" PRIu64 " cheight=%llu live=%d state_ready=%d prev_in=%.*s prev_local=%.*s round_part %s",
               (uint64_t)height,
               (unsigned long long)cheight,
               is_live_round ? 1 : 0,
