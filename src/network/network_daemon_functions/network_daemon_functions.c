@@ -244,7 +244,7 @@ bool submit_block_template(const char* DATA)
     }
   }
 
-  ERROR_PRINT("Could not submit the block template.");
+  ERROR_PRINT("Could not submit the block template. Response: %s", response);
   return XCASH_ERROR;
 }
 
