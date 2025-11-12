@@ -345,6 +345,8 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
 
     if (election_state_ready) {
       
+      INFO_PRINT("**** Check Tip *******");
+
       // The block producer will submit the block in round part 11 others in part 12
       if (strcmp(current_round_part, "12") == 0 ||
           (strcmp(current_round_part, "11") == 0 && (strcmp(producer_refs[0].public_address, xcash_wallet_public_address) == 0))) {
