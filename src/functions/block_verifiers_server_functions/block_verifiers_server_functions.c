@@ -31,12 +31,11 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
   DEBUG_PRINT("Parsed remote public_address: %s, block_height: %s, delegates_hash: %s", public_address, block_height, 
     parsed_delegates_hash);
 
-  int wait_seconds = 0;
-  while (atomic_load(&wait_for_block_height_init) && wait_seconds < DELAY_EARLY_TRANSACTIONS_MAX) {
-    sleep(1);
-    wait_seconds++;
+  wait_milliseconds = 0;
+  while (atomic_load(&wait_for_block_height_init) && wait_milliseconds < (DELAY_EARLY_TRANSACTIONS_MAX * 1000)) {
+    usleep(500000);  // 0.5 seconds = 500,000 microseconds
+    wait_milliseconds += 500;
   }
-
   if (atomic_load(&wait_for_block_height_init)) {
     ERROR_PRINT("Timed out waiting for current_block_height in server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data");
   }
@@ -173,15 +172,6 @@ void server_receive_data_socket_node_to_node_vote_majority(const char* MESSAGE) 
   char vote_signature[XCASH_SIGN_DATA_LENGTH + 1] = {0};
 
   DEBUG_PRINT("received %s, %s", __func__, MESSAGE);
-
-  int wait_seconds = 0;
-  while (atomic_load(&wait_for_consensus_vote) && wait_seconds < DELAY_EARLY_TRANSACTIONS_MAX) {
-    sleep(1);
-    wait_seconds++;
-  }
-  if (atomic_load(&wait_for_consensus_vote)) {
-    ERROR_PRINT("Timed out waiting for vrf init in block_verifiers_create_vote_majority_result");
-  }
 
   // parse the message
   if (parse_json_data(MESSAGE, "public_address", public_address, sizeof(public_address)) == XCASH_ERROR ||

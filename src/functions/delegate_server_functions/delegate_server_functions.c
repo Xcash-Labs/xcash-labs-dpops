@@ -363,7 +363,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
           return;
         }
         if (strncmp(producer_refs[0].vote_hash_hex, vote_hash_str, VOTE_HASH_LEN) != 0) {
-          WARNING_PRINT("Vote hash mismatch but delegate winner is correct so allowed, likey cause is a network issue");
+          WARNING_PRINT("Vote hash mismatch but delegate winner is correct so allowed, likely cause is a network issue");
         }
 
       } else {

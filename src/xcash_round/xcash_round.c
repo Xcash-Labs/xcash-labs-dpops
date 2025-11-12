@@ -153,10 +153,9 @@ xcash_round_result_t process_round(void) {
 
   atomic_store(&wait_for_block_height_init, false);
   INFO_STAGE_PRINT("Creating Block: %s", current_block_height);
-
+  
   INFO_STAGE_PRINT("Part 4 - Sync & Create VRF Data and Send To All Delegates");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 4);
-  sleep(1);  // needed for nodes time not being exact
   response_t** responses = NULL;
   char* vrf_message = NULL;
   if (generate_and_request_vrf_data_sync(&vrf_message)) {
@@ -528,8 +527,9 @@ void start_block_production(void) {
     current_block_height[0] = '\0';
     delegate_db_hash_mismatch = 0;
     atomic_store(&wait_for_vrf_init, true);
-    atomic_store(&wait_for_consensus_vote, true);
     atomic_store(&wait_for_block_height_init, true);
+
+    atomic_store(&wait_for_consensus_vote, true);
     blockchain_ready = true;
 
     round_result = ROUND_OK;
