@@ -870,7 +870,7 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
   // One vote per wallet: delete previous (single collection)
   (void)delete_document_from_collection(DATABASE_NAME, DB_COLLECTION_RESERVE_PROOFS, json_filter);
 
-  data = {0};
+  memset(data, 0, sizeof(data));
   snprintf(data, sizeof(data), "{\"voted_for_public_address\":\"%s\"}", voted_for_public_address);
   int number_of_votes = count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_RESERVE_PROOFS, data);
   if (number_of_votes >= MAX_PROOFS_PER_DELEGATE_HARD) {
