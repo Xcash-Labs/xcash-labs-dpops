@@ -333,7 +333,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
   if (mongoc_cursor_error(cur, &cerr)) {
     ERROR_PRINT("reserve_proofs cursor error: %s", cerr.message);
   } else {
-    DEBUG_PRINT("reserve_proofs scan complete: seen=%zu invalid=%zu deleted=%zu skipped=%zu",
+    INFO_PRINT("reserve_proofs scan complete: seen=%zu invalid=%zu deleted=%zu skipped=%zu",
                 seen, invalid, deleted, skipped);
   }
 
@@ -476,7 +476,9 @@ static void run_proof_check(sched_ctx_t* ctx) {
     }
   }
 
-  for (size_t i = 0; i < pay_bucket_count; ++i) {
+// Add back here
+
+   for (size_t i = 0; i < pay_bucket_count; ++i) {
     const payout_bucket_t* B = &pay_buckets[i];
     const char* delegate_addr = B->delegate;
     const char* ip = NULL;
