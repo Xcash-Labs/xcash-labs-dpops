@@ -174,6 +174,15 @@ void server_receive_data_socket_node_to_node_vote_majority(const char* MESSAGE) 
 
   DEBUG_PRINT("received %s, %s", __func__, MESSAGE);
 
+  int wait_seconds = 0;
+  while (atomic_load(&wait_for_consensus_vote) && wait_seconds < DELAY_EARLY_TRANSACTIONS_MAX) {
+    sleep(1);
+    wait_seconds++;
+  }
+  if (atomic_load(&wait_for_consensus_vote)) {
+    ERROR_PRINT("Timed out waiting for vrf init in block_verifiers_create_vote_majority_result");
+  }
+
   // parse the message
   if (parse_json_data(MESSAGE, "public_address", public_address, sizeof(public_address)) == XCASH_ERROR ||
       parse_json_data(MESSAGE, "proposed_producer", public_address_producer, sizeof(public_address_producer)) == XCASH_ERROR ||

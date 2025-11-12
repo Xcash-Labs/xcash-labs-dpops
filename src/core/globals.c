@@ -30,6 +30,7 @@ pthread_mutex_t producer_refs_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t database_data_IP_address_lock = PTHREAD_MUTEX_INITIALIZER;
 atomic_bool server_running             = ATOMIC_VAR_INIT(true);
 atomic_bool wait_for_vrf_init          = ATOMIC_VAR_INIT(true);
+atomic_bool wait_for_consensus_vote    = ATOMIC_VAR_INIT(true);
 atomic_bool wait_for_block_height_init = ATOMIC_VAR_INIT(true);
 atomic_bool shutdown_requested         = ATOMIC_VAR_INIT(false);
 atomic_bool payment_inprocess          = ATOMIC_VAR_INIT(false);

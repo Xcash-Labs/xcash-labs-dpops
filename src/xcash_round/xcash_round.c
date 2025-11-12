@@ -103,7 +103,7 @@ xcash_round_result_t process_round(void) {
     return ROUND_SKIP;
   }
 
-  INFO_STAGE_PRINT("Get Previous Block Hash and Delegates Collection Hash");
+  INFO_STAGE_PRINT("Part 2 - Get Previous Block Hash and Delegates Collection Hash");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 2);
   if (last_round_success) {
     // Get the previous block hash and check to make sure it changed from last round
@@ -261,6 +261,7 @@ xcash_round_result_t process_round(void) {
     }
   }
   pthread_mutex_unlock(&current_block_verifiers_lock);
+  atomic_store(&wait_for_consensus_vote, false);
 
   responses = NULL;
   char* vote_message = NULL;
@@ -525,6 +526,7 @@ void start_block_production(void) {
     current_block_height[0] = '\0';
     delegate_db_hash_mismatch = 0;
     atomic_store(&wait_for_vrf_init, true);
+    atomic_store(&wait_for_consensus_vote, true);
     atomic_store(&wait_for_block_height_init, true);
     round_result = ROUND_OK;
 
