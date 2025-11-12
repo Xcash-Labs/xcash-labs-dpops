@@ -165,12 +165,6 @@ bool print_starter_state(const arg_config_t *arg_config) {
     fprintf(stderr, "Delegate fee: %.2f%%, minimum payout: %" PRIu64 "\n", delegate_fee_percent, (uint64_t)minimum_payout);
   }
 
-  char data[VVSMALL_BUFFER_SIZE] = {0};
-  snprintf(data, sizeof(data), "{\"delegate_type\":\"%s\"}", "shared");
-  int testc = count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, data);
-  INFO_PRINT("Test Count: %d", testc);
-
-
 //
 // Checking DNSSEC records for seeds and image version using xcashpulse dns entries
 //
