@@ -31,7 +31,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
   DEBUG_PRINT("Parsed remote public_address: %s, block_height: %s, delegates_hash: %s", public_address, block_height, 
     parsed_delegates_hash);
 
-  wait_milliseconds = 0;
+  int wait_milliseconds = 0;
   while (atomic_load(&wait_for_block_height_init) && wait_milliseconds < (DELAY_EARLY_TRANSACTIONS_MAX * 1000)) {
     usleep(500000);  // 0.5 seconds = 500,000 microseconds
     wait_milliseconds += 500;
