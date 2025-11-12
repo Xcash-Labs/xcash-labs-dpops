@@ -476,9 +476,17 @@ static void run_proof_check(sched_ctx_t* ctx) {
     }
   }
 
-// Add back here
 
-   for (size_t i = 0; i < pay_bucket_count; ++i) {
+// ****
+
+
+
+
+// ****
+
+
+
+  for (size_t i = 0; i < pay_bucket_count; ++i) {
     const payout_bucket_t* B = &pay_buckets[i];
     const char* delegate_addr = B->delegate;
     const char* ip = NULL;
