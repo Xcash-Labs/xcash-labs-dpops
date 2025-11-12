@@ -204,6 +204,17 @@ int verify_data(const char* message, xcash_msg_t msg_type) {
     }
   }
 
+  wait_milliseconds = 0;
+  if (msg_type == XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_VRF_DATA) {
+    while (atomic_load(&wait_for_vrf_message) && wait_milliseconds < (DELAY_EARLY_TRANSACTIONS_MAX * 1000)) {
+      usleep(500000);  // 0.5 seconds = 500,000 microseconds
+      wait_milliseconds += 500;
+    }
+    if (atomic_load(&wait_for_vrf_message)) {
+      ERROR_PRINT("Timed out waiting for vrf_init round part to start");
+    }
+  }
+
   strcpy(cur_round_part, current_round_part);
   if (msg_type == XMSG_SEED_TO_NODES_UPDATE_VOTE_COUNT || msg_type == XMSG_SEED_TO_NODES_PAYOUT || msg_type == XMSG_SEED_TO_NODES_BANNED) {
     snprintf(cur_round_part, sizeof cur_round_part, "70");
