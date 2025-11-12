@@ -146,7 +146,7 @@ int block_verifiers_create_block(const char* vote_hash_hex, uint8_t total_vote, 
   snprintf(current_round_part, sizeof(current_round_part), "%d", 8);
   if (get_current_block_height(ck_block_height) == 1 && strncmp(current_block_height, ck_block_height, BLOCK_HEIGHT_LENGTH) != 0) {
     WARNING_PRINT("Your block height is not synced correctly, waiting for next round");
-    return ROUND_SKIP;
+    return ROUND_ERROR;
   }
 
   char block_blob[BUFFER_SIZE] = {0};
@@ -159,26 +159,26 @@ int block_verifiers_create_block(const char* vote_hash_hex, uint8_t total_vote, 
     INFO_STAGE_PRINT("Part 9 - Create block template");
     snprintf(current_round_part, sizeof(current_round_part), "%d", 9);
     if (get_block_template(block_blob, BUFFER_SIZE, &reserved_offset) == 0) {
-      return ROUND_SKIP;
+      return ROUND_ERROR;
     }
 
     if (strncmp(block_blob, "", 1) == 0) {
       WARNING_PRINT("Did not receive block template");
-      return ROUND_SKIP;
+      return ROUND_ERROR;
     }
 
     // Create block template
     INFO_STAGE_PRINT("Part 10 - Add VRF Data and Sign Block Blob");
     snprintf(current_round_part, sizeof(current_round_part), "%d", 10);
     if (!add_vrf_extra_and_sign(block_blob, vote_hash_hex, reserved_offset, total_vote, winning_vote)) {
-      return ROUND_SKIP;
+      return ROUND_ERROR;
     }
 
     // Part 11 - Submit block
     INFO_STAGE_PRINT("Part 11 - Submit the Block");
     snprintf(current_round_part, sizeof(current_round_part), "%d", 11);
     if (!submit_block_template(block_blob)) {
-      return ROUND_SKIP;
+      return ROUND_ERROR;
     }
     
     INFO_PRINT_STATUS_OK("Block signature sent");
