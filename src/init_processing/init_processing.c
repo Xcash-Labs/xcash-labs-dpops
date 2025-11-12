@@ -168,7 +168,7 @@ bool print_starter_state(const arg_config_t *arg_config) {
   char data[VVSMALL_BUFFER_SIZE] = {0};
   snprintf(data, sizeof(data), "{\"delegate_type\":\"%s\"}", "shared");
   int testc = count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, data);
-  INFO_PRINT("Test Count: %d", count);
+  INFO_PRINT("Test Count: %d", testc);
 
 
 //
