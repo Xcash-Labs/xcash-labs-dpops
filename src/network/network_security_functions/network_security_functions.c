@@ -193,7 +193,7 @@ int verify_data(const char* message, xcash_msg_t msg_type) {
   char cur_round_part[3] = {0};
 
   // must wait at this point so it will pass type round_part check it trans is early, timing matters
-  wait_milliseconds = 0;
+  int wait_milliseconds = 0;
   if (msg_type == XMSG_NODES_TO_NODES_VOTE_MAJORITY_RESULTS) {
     while (atomic_load(&wait_for_consensus_vote) && wait_milliseconds < (DELAY_EARLY_TRANSACTIONS_MAX * 1000)) {
       usleep(500000);  // 0.5 seconds = 500,000 microseconds

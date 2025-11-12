@@ -396,7 +396,7 @@ bool block_verifiers_create_vote_majority_result(char** message, int producer_in
   if (!message)
     return false;
 
-  wait_milliseconds = 0;
+  int wait_milliseconds = 0;
   while (atomic_load(&wait_for_vrf_init) && wait_milliseconds < (DELAY_EARLY_TRANSACTIONS_MAX * 1000)) {
     usleep(500000);  // 0.5 seconds = 500,000 microseconds
     wait_milliseconds += 500;
