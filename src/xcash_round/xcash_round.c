@@ -110,6 +110,7 @@ xcash_round_result_t process_round(void) {
     snprintf(previous_round_block_hash, sizeof previous_round_block_hash, "%s", previous_block_hash);
     if (get_previous_block_hash(previous_block_hash) != XCASH_OK) {
       ERROR_PRINT("Can't get previous block hash");
+      blockchain_stalled = true;
       return ROUND_SKIP;
     }
     if (strcmp(previous_block_hash, previous_round_block_hash) == 0) {
@@ -549,6 +550,7 @@ void start_block_production(void) {
     }
 
     if (round_result == ROUND_SKIP) {
+      blockchain_stalled = false;
       goto end_of_round_skip_block;
     }
 
