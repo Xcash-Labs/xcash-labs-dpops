@@ -323,7 +323,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
   // If block_height being passed in is equal to the node block height and node is not starting up blockchain is synced
   unsigned long long cheight = strtoull(current_block_height, NULL, 10);
   bool is_live_round = false;
-  if (startup_complete and !blockchain_stalled) {
+  if (startup_complete && !blockchain_stalled) {
     is_live_round = (height == cheight);
   }
 
