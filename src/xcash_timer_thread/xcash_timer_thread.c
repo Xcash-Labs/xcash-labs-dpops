@@ -506,12 +506,12 @@ static void run_proof_check(sched_ctx_t* ctx) {
         bson_init(&f_res);
         BSON_APPEND_UTF8(&f_res, "public_address_voted_for", addr);
 
-        bson_error_t cerr = {0};
+        bson_error_t cerr_r = {0};
         int64_t rp_count = mongoc_collection_count_documents(
-            rcoll, &f_res, /*opts*/ NULL, /*read_prefs*/ NULL, /*reply*/ NULL, &cerr);
+            rcoll, &f_res, /*opts*/ NULL, /*read_prefs*/ NULL, /*reply*/ NULL, &cerr_r);
 
         if (rp_count < 0) {
-          ERROR_PRINT("reserve_proofs count failed for %.12s… : %s", addr, cerr.message);
+          ERROR_PRINT("reserve_proofs count failed for %.12s… : %s", addr, cerr_r.message);
           bson_destroy(&f_res);
           continue;  // don't attempt to zero if we couldn't confidently check
         }
