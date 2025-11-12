@@ -816,6 +816,14 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
     SERVER_ERROR("0|Cannot vote for a network seed node");
   }
 
+  char data[VVSMALL_BUFFER_SIZE] = {0};
+  snprintf(data, sizeof(data), "{\"public_address\":\"%s\"}", voter_public_address);
+  int num_delegates = count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, data);
+  if (num_delegates > 0) {
+    cJSON_Delete(root);
+    SERVER_ERROR("0|A delegate wallet is not allowed to vote");
+  }
+
   if (check_reserve_proofs(vote_amount_atomic, voter_public_address, proof_str) != XCASH_OK) {
     cJSON_Delete(root);
     SERVER_ERROR("0|Invalid reserve proof");
@@ -861,6 +869,14 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
 
   // One vote per wallet: delete previous (single collection)
   (void)delete_document_from_collection(DATABASE_NAME, DB_COLLECTION_RESERVE_PROOFS, json_filter);
+
+  data[VVSMALL_BUFFER_SIZE] = {0};
+  snprintf(data, sizeof(data), "{\"voted_for_public_address\":\"%s\"}", voted_for_public_address);
+  int number_of_votes = count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_RESERVE_PROOFS, data);
+  if (number_of_votes >= MAX_PROOFS_PER_DELEGATE_HARD) {
+    cJSON_Delete(root);
+    SERVER_ERROR("0|This delegate has reached the maximum number of voters, Please select another delegete");
+  }
 
   // Build BSON document
   bson_t doc;
