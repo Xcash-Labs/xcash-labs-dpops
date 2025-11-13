@@ -230,6 +230,7 @@ int verify_data(const char* message, xcash_msg_t msg_type) {
   }
 
   if (strcmp(cur_round_part, ck_round_part) != 0) {
+    // Either starting up or errors occured so silence messages
     if (startup_complete && blockchain_ready) {
       WARNING_PRINT("Public address %s failed Signature Verification, round part timing issue: current round %s - message round %s.",
                     ck_public_address, cur_round_part, ck_round_part);
