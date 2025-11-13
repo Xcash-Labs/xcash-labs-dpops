@@ -220,6 +220,8 @@ int verify_data(const char* message, xcash_msg_t msg_type) {
     snprintf(cur_round_part, sizeof cur_round_part, "70");
   }
 
+current round 12 - message round 7.
+
   // Extract all required fields
   if (parse_json_data(message, "XCASH_DPOPS_signature", signature, sizeof(signature)) != 1 ||
       parse_json_data(message, "public_address", ck_public_address, sizeof(ck_public_address)) != 1 ||
@@ -229,16 +231,14 @@ int verify_data(const char* message, xcash_msg_t msg_type) {
     return XCASH_ERROR;
   }
 
-// need to change error message    
-
   if (strcmp(cur_round_part, ck_round_part) != 0) {
-    if (startup_complete) {
-      WARNING_PRINT("Public address %s failed Signature Verification, round part timing issue: current round %s - message round %s.", 
-        ck_public_address, cur_round_part, ck_round_part);
+    if (startup_complete && blockchain_ready) {
+      WARNING_PRINT("Public address %s failed Signature Verification, round part timing issue: current round %s - message round %s.",
+                    ck_public_address, cur_round_part, ck_round_part);
     }
     return XCASH_ERROR;
   }
- 
+
   if (strcmp(previous_block_hash, ck_previous_block_hash) != 0) {
     WARNING_PRINT("Public address %s failed Signature Verification, previous block hash is not valid", ck_public_address);
     return XCASH_ERROR;
