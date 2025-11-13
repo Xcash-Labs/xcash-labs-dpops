@@ -220,8 +220,6 @@ int verify_data(const char* message, xcash_msg_t msg_type) {
     snprintf(cur_round_part, sizeof cur_round_part, "70");
   }
 
-current round 12 - message round 7.
-
   // Extract all required fields
   if (parse_json_data(message, "XCASH_DPOPS_signature", signature, sizeof(signature)) != 1 ||
       parse_json_data(message, "public_address", ck_public_address, sizeof(ck_public_address)) != 1 ||
