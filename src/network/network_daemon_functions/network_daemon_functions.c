@@ -279,9 +279,9 @@ int get_block_info_by_height(uint64_t height,
     const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0]);
 
     char request_payload[256] = {0};
-    // {"jsonrpc":"2.0","id":"0","method":"get_block","params":{"height":<height>}}
+    // {"jsonrpc":"2.0","id":"0","method":"get_block_header_by_height","params":{"height":<height>}}
     int n = snprintf(request_payload, sizeof(request_payload),
-                     "{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"get_block\","
+                     "{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"get_block_header_by_height\","
                      "\"params\":{\"height\":%" PRIu64 "}}", height);
     if (n < 0 || (size_t)n >= sizeof(request_payload)) {
         ERROR_PRINT("get_block_info_by_height: payload too large");
@@ -289,6 +289,7 @@ int get_block_info_by_height(uint64_t height,
     }
 
     char response_data[MEDIUM_BUFFER_SIZE] = {0};
+
     if (send_http_request(response_data, sizeof(response_data),
                           XCASH_DAEMON_IP, "/json_rpc", XCASH_DAEMON_PORT,
                           "POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH,
