@@ -145,11 +145,10 @@ xcash_round_result_t process_round(void) {
 
   if (get_current_block_height(current_block_height) != XCASH_OK) {
     ERROR_PRINT("Can't get current block height");
-    atomic_store(&wait_for_block_height_init, false);
     return ROUND_ERROR;
   }
-
   atomic_store(&wait_for_block_height_init, false);
+
   INFO_STAGE_PRINT("Creating Block: %s", current_block_height);
   INFO_STAGE_PRINT("Part 4 - Create & Sync VRF Data and Send To All Delegates");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 4);
@@ -961,6 +960,12 @@ void start_block_production(void) {
 
       // Error durning round
       blockchain_ready = false;
+      // Release all waits
+      atomic_store(&wait_for_vrf_init, false);
+      atomic_store(&wait_for_block_height_init, false);
+      atomic_store(&wait_for_vrf_message, false);
+      atomic_store(&wait_for_consensus_vote, false);
+
       // If >20% of delegates report a DB hash mismatch, trigger a resync.
       if (delegate_db_hash_mismatch > 0) {
         if ((delegate_db_hash_mismatch * 100) > (total_delegates * 20)) {
