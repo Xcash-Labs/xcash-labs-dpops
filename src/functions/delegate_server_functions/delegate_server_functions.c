@@ -1259,7 +1259,7 @@ void server_receive_payout(const char* MESSAGE) {
     return;
   }
 
-  DEBUG_PRINT("Unlocked balance: %" PRIu64 " atomic (%.6f XCA)", unlocked,
+  INFO_PRINT("Unlocked balance: %" PRIu64 " atomic (%.6f XCA)", unlocked,
     (double)unlocked / (double)XCASH_ATOMIC_UNITS);
 
   uint64_t in_num_block_height = strtoull(in_block_height, NULL, 10);
