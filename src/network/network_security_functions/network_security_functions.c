@@ -210,7 +210,7 @@ int verify_data(const char* message, xcash_msg_t msg_type) {
       usleep(500000);  // 0.5 seconds = 500,000 microseconds
       wait_milliseconds += 500;
     }
-    if (atomic_load(&wait_for_vrf_message)) {
+    if (atomic_load(&wait_for_vrf_message) && blockchain_ready && blockchain_ready) {
       ERROR_PRINT("Timed out waiting for vrf_init round part to start");
     }
   }
@@ -230,7 +230,7 @@ int verify_data(const char* message, xcash_msg_t msg_type) {
   }
 
   if (strcmp(cur_round_part, ck_round_part) != 0) {
-    // Either starting up or errors occured so silence messages
+    // Either starting up or errors occured so silence messages that will not be proceese
     if (startup_complete && blockchain_ready) {
       WARNING_PRINT("Public address %s failed Signature Verification, round part timing issue: current round %s - message round %s.",
                     ck_public_address, cur_round_part, ck_round_part);
