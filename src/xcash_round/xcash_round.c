@@ -539,8 +539,14 @@ void start_block_production(void) {
       last_round_success = true;
       INFO_STAGE_PRINT("Part 12 - Wait for Block Creation");
     } else  {
-      last_round_success = false;
       INFO_STAGE_PRINT("Part 12 - Wait for Node clean-up / sync");
+      last_round_success = false;
+      // Error occured
+      blockchain_ready = false;
+      atomic_store(&wait_for_vrf_init, false);
+      atomic_store(&wait_for_block_height_init, false);
+      atomic_store(&wait_for_vrf_message, false);
+      atomic_store(&wait_for_consensus_vote, false);
     }
 
     // 10 secs to perform cleanup or add stats and other info
@@ -957,14 +963,6 @@ void start_block_production(void) {
 #endif
 
     } else {
-
-      // Error durning round
-      blockchain_ready = false;
-      // Release all waits
-      atomic_store(&wait_for_vrf_init, false);
-      atomic_store(&wait_for_block_height_init, false);
-      atomic_store(&wait_for_vrf_message, false);
-      atomic_store(&wait_for_consensus_vote, false);
 
       // If >20% of delegates report a DB hash mismatch, trigger a resync.
       if (delegate_db_hash_mismatch > 0) {

@@ -210,7 +210,7 @@ int verify_data(const char* message, xcash_msg_t msg_type) {
       usleep(500000);  // 0.5 seconds = 500,000 microseconds
       wait_milliseconds += 500;
     }
-    if (atomic_load(&wait_for_vrf_message) && blockchain_ready && blockchain_ready) {
+    if (atomic_load(&wait_for_vrf_message) && startup_complete && blockchain_ready) {
       ERROR_PRINT("Timed out waiting for vrf_init round part to start");
     }
   }

@@ -367,7 +367,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
         }
 
       } else {
-        ERROR_PRINT("No delegated selected, trans received in the round round part (timming issue)");
+        ERROR_PRINT("No delegated selected, trans received in the wrong round part (timming issue)");
         cJSON_Delete(root);
         send_data(client, (unsigned char*)"0|DELEGATE_SELECTION_TIMEOUT", strlen("0|DELEGATE_SELECTION_TIMEOUT"));
         return;
