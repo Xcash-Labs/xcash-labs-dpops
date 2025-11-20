@@ -5,7 +5,7 @@
 mongoc_client_pool_t* database_client_thread_pool = NULL;
 pthread_t server_thread;
 dnssec_ctx_t* g_ctx = NULL;
-int log_level = 2;  // default level is error + warning + info - change back to 2 once system stabilizes
+int log_level = 3;  // default level is error + warning + info - change back to 2 once system stabilizes
 bool blockchain_ready = false;
 int delegate_db_hash_mismatch = 0;
 double delegate_fee_percent = 5.0;
