@@ -51,11 +51,9 @@
 #define MINIMUM_BUFFER_SIZE_DELEGATES_NAME 5
 #define MAXIMUM_BUFFER_SIZE_DELEGATES_NAME 100
 
-
-
-#define CONNECT_TIMEOUT_SEC 4  // was 2
-#define RECEIVE_TIMEOUT_SEC 5  // was 3 
-#define SEND_TIMEOUT_MS 5000   // was 3000
+#define CONNECT_TIMEOUT_SEC 2
+#define RECEIVE_TIMEOUT_SEC 4 // was 3
+#define SEND_TIMEOUT_MS 3000
 #define NET_MULTI_WORKERS 12
 
 // ===================== Hash and Key Lengths =====================
