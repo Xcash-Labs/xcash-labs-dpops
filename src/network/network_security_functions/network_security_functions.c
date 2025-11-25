@@ -894,44 +894,26 @@ bool validate_server_IP(void) {
         "IP/hostname points to a public IP. This usually means the delegate is configured\n"
         "for a different machine than the one you are running now.\n"
         "\n"
-        "If you INTEND to run this delegate on this machine, you must either:\n"
-        "  - Move the delegate to a server that actually has public IP %s, OR\n"
-        "  - Update the delegate's configured IP/hostname to correctly reflect this node.\n",
+        "If you INTEND to run this delegate on this machine, you can fix this by updating\n"
+        "your /etc/hosts file so that the delegate hostname resolves to this node's IP.\n"
+        "\n"
+        "Linux instructions:\n"
+        "  1. Edit the hosts file:\n"
+        "       sudo nano /etc/hosts\n"
+        "  2. Add a line like:\n"
+        "       %s    %s\n"
+        "  3. Save and restart xcashd.\n"
+        "\n"
+        "This allows the delegate hostname to resolve to your LAN IP on this node, while\n"
+        "other nodes on the internet continue to use the public DNS record.\n",
         xcash_wallet_public_address,
         ip_address,
         delegate_ip,
         server_ip,
-        delegate_ip  // the public IP
+        server_ip, ip_address  // /etc/hosts example
     );
     return false;
   }
-
-  // Optional: Case 2: both are public -> require exact match
-  if (!delegate_private && !server_private && strcmp(delegate_ip, server_ip) != 0) {
-    ERROR_PRINT(
-        "IP verification failed at startup:\n"
-        "  Delegate address:            %s\n"
-        "  Configured DB value:         %s\n"
-        "  Resolved delegate IP:        %s\n"
-        "  Server public IP:           %s\n"
-        "\n"
-        "This delegate's configured public IP/hostname does not match this server's\n"
-        "public IP. You are likely running it on the wrong machine.\n",
-        xcash_wallet_public_address,
-        ip_address,
-        delegate_ip,
-        server_ip);
-    return false;
-  }
-
-  // Case 3: delegate is private/loopback (or other weird local override)
-  INFO_PRINT(
-      "validate_server_IP: delegate '%s' resolved to %s (DB value: %s); "
-      "server IP %s. No startup IP conflict detected.",
-      xcash_wallet_public_address,
-      delegate_ip,
-      ip_address,
-      server_ip);
 
   return true;
 }
