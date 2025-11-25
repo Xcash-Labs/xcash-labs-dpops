@@ -764,3 +764,128 @@ bool digest_allowed(const char* self_hex, const updpops_entry_t* list, size_t n,
   }
   return false;
 }
+
+// Helper to get the servers IP
+bool get_server_ipv4(char* out_ip, size_t out_ip_size) {
+  if (!out_ip || out_ip_size == 0)
+    return false;
+
+  struct ifaddrs* ifaddr = NULL;
+  if (getifaddrs(&ifaddr) == -1)
+    return false;
+
+  bool found = false;
+
+  for (struct ifaddrs* ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
+    if (!ifa->ifa_addr)
+      continue;
+    if (ifa->ifa_addr->sa_family != AF_INET)
+      continue;
+    // skip loopback
+    if (ifa->ifa_flags & IFF_LOOPBACK)
+      continue;
+
+    struct sockaddr_in* sa = (struct sockaddr_in*)ifa->ifa_addr;
+    if (!inet_ntop(AF_INET, &sa->sin_addr, out_ip, out_ip_size))
+      continue;
+
+    // we got something like "192.168.1.10"
+    found = true;
+    break;
+  }
+
+  freeifaddrs(ifaddr);
+  return found;
+}
+
+bool validate_server_IP(void) {
+  char filter_json[256] = {0};
+  char ip_address[IP_LENGTH + 1] = {0};     // value from DB (IP or hostname)
+  char delegate_ip[INET_ADDRSTRLEN] = {0};  // resolved delegate IPv4
+  char server_ip[INET_ADDRSTRLEN] = {0};    // this server's IPv4
+
+  // 1. Read delegate IP/hostname from DB
+  snprintf(filter_json, sizeof(filter_json),
+           "{ \"public_address\": \"%s\" }", xcash_wallet_public_address);
+
+  if (read_document_field_from_collection(
+          DATABASE_NAME,
+          DB_COLLECTION_DELEGATES,
+          filter_json,
+          "IP_address",
+          ip_address,
+          sizeof(ip_address)) != XCASH_OK) {
+    ERROR_PRINT("validate_server_IP: delegate '%s' has no IP_address in DB",
+                xcash_wallet_public_address);
+    return false;
+  }
+
+  ip_address[sizeof(ip_address) - 1] = '\0';
+
+  // 2. Resolve delegate IP/hostname -> IPv4
+  struct addrinfo hints, *res = NULL;
+  memset(&hints, 0, sizeof(hints));
+  hints.ai_family = AF_INET;  // IPv4
+  hints.ai_socktype = SOCK_STREAM;
+
+  int gai_ret = getaddrinfo(ip_address, NULL, &hints, &res);
+  if (gai_ret == 0 && res != NULL) {
+    struct sockaddr_in* sa = (struct sockaddr_in*)res->ai_addr;
+    if (!inet_ntop(AF_INET, &sa->sin_addr, delegate_ip, sizeof(delegate_ip))) {
+      ERROR_PRINT("validate_server_IP: inet_ntop failed for delegate '%s' (%s)",
+                  xcash_wallet_public_address, ip_address);
+      freeaddrinfo(res);
+      return false;
+    }
+    freeaddrinfo(res);
+  } else {
+    // if getaddrinfo fails, assume ip_address is already a numeric IPv4 string
+    strncpy(delegate_ip, ip_address, sizeof(delegate_ip) - 1);
+    delegate_ip[sizeof(delegate_ip) - 1] = '\0';
+  }
+
+  // 3. Get this server's IPv4 from the system
+  if (!get_server_ipv4(server_ip, sizeof(server_ip))) {
+    ERROR_PRINT("validate_server_IP: failed to determine server IPv4 address");
+    return false;
+  }
+
+  // 4. Compare delegate IP with server IP
+  if (strcmp(delegate_ip, server_ip) != 0) {
+    ERROR_PRINT(
+        "IP verification failed at startup:\n"
+        "  Delegate address:            %s\n"
+        "  Configured DB value:         %s\n"
+        "  Resolved delegate IP:        %s\n"
+        "  Server IP from system:       %s\n"
+        "\n"
+        "This delegate's configured IP/hostname does not match the IP of this server.\n"
+        "\n"
+        "If you INTEND to run this delegate on this machine, you can fix this by updating\n"
+        "your /etc/hosts file so that the hostname resolves to your server's IP.\n"
+        "\n"
+        "Linux instructions:\n"
+        "  1. Edit the hosts file:\n"
+        "       sudo nano /etc/hosts\n"
+        "  2. Add a line like:\n"
+        "       %s    %s\n"
+        "  3. Save and restart xcashd.\n"
+        "\n"
+        "This allows the delegate hostname to resolve to your LAN IP instead of the public DNS IP.\n"
+        "\n"
+        "If your node has a public IP (VPS / dedicated server), then DNS should normally point\n"
+        "directly to that public IP instead of using /etc/hosts.\n",
+        xcash_wallet_public_address,  // %s (Delegate address)
+        ip_address,                   // %s (Configured DB value)
+        delegate_ip,                  // %s (Resolved delegate IP)
+        server_ip,                    // %s (Server IP from system)
+        server_ip, ip_address         // %s %s (/etc/hosts example line)
+    );
+    return false;
+  }
+
+  INFO_PRINT("Delegate IP OK: DB '%s' -> %s; server IP %s",
+             ip_address, delegate_ip, server_ip);
+
+  return true;
+}
