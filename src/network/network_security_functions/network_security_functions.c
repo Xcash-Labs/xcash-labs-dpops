@@ -765,8 +765,36 @@ bool digest_allowed(const char* self_hex, const updpops_entry_t* list, size_t n,
   return false;
 }
 
-// Helper to get the servers IP
-bool get_server_ipv4(char* out_ip, size_t out_ip_size) {
+// Helper to check for private or loopback
+static bool is_private_or_loopback_ipv4(const char* ip) {
+  if (!ip || !*ip)
+    return false;
+
+  unsigned int a, b, c, d;
+  if (sscanf(ip, "%u.%u.%u.%u", &a, &b, &c, &d) != 4)
+    return false;
+
+  // 127.0.0.0/8 loopback
+  if (a == 127)
+    return true;
+
+  // 10.0.0.0/8
+  if (a == 10)
+    return true;
+
+  // 172.16.0.0/12
+  if (a == 172 && (b >= 16 && b <= 31))
+    return true;
+
+  // 192.168.0.0/16
+  if (a == 192 && b == 168)
+    return true;
+
+  return false;
+}
+
+// Helper to get the server's IP (first non-loopback IPv4)
+static bool get_server_ipv4(char* out_ip, size_t out_ip_size) {
   if (!out_ip || out_ip_size == 0)
     return false;
 
@@ -789,7 +817,7 @@ bool get_server_ipv4(char* out_ip, size_t out_ip_size) {
     if (!inet_ntop(AF_INET, &sa->sin_addr, out_ip, out_ip_size))
       continue;
 
-    // we got something like "192.168.1.10"
+    // we got something like "192.168.1.10" or a public IP
     found = true;
     break;
   }
@@ -850,42 +878,60 @@ bool validate_server_IP(void) {
     return false;
   }
 
-  // 4. Compare delegate IP with server IP
-  if (strcmp(delegate_ip, server_ip) != 0) {
+  bool delegate_private = is_private_or_loopback_ipv4(delegate_ip);
+  bool server_private = is_private_or_loopback_ipv4(server_ip);
+
+  // Case 1: delegate is public, server is private -> classic bad home/NAT config
+  if (!delegate_private && server_private) {
+    ERROR_PRINT(
+        "IP verification failed at startup:\n"
+        "  Delegate address:            %s\n"
+        "  Configured DB value:         %s\n"
+        "  Resolved delegate IP:        %s (public)\n"
+        "  Server IP from system:       %s (private/LAN)\n"
+        "\n"
+        "This node appears to be running on a private/home network, but the delegate's\n"
+        "IP/hostname points to a public IP. This usually means the delegate is configured\n"
+        "for a different machine than the one you are running now.\n"
+        "\n"
+        "If you INTEND to run this delegate on this machine, you must either:\n"
+        "  - Move the delegate to a server that actually has public IP %s, OR\n"
+        "  - Update the delegate's configured IP/hostname to correctly reflect this node.\n",
+        xcash_wallet_public_address,
+        ip_address,
+        delegate_ip,
+        server_ip,
+        delegate_ip  // the public IP
+    );
+    return false;
+  }
+
+  // Optional: Case 2: both are public -> require exact match
+  if (!delegate_private && !server_private && strcmp(delegate_ip, server_ip) != 0) {
     ERROR_PRINT(
         "IP verification failed at startup:\n"
         "  Delegate address:            %s\n"
         "  Configured DB value:         %s\n"
         "  Resolved delegate IP:        %s\n"
-        "  Server IP from system:       %s\n"
+        "  Server public IP:           %s\n"
         "\n"
-        "This delegate's configured IP/hostname does not match the IP of this server.\n"
-        "\n"
-        "If you INTEND to run this delegate on this machine, you can fix this by updating\n"
-        "your /etc/hosts file so that the hostname resolves to your server's IP.\n"
-        "\n"
-        "Linux instructions:\n"
-        "  1. Edit the hosts file:\n"
-        "       sudo nano /etc/hosts\n"
-        "  2. Add a line like:\n"
-        "       %s    %s\n"
-        "  3. Save and restart xcashd.\n"
-        "\n"
-        "This allows the delegate hostname to resolve to your LAN IP instead of the public DNS IP.\n"
-        "\n"
-        "If your node has a public IP (VPS / dedicated server), then DNS should normally point\n"
-        "directly to that public IP instead of using /etc/hosts.\n",
-        xcash_wallet_public_address,  // %s (Delegate address)
-        ip_address,                   // %s (Configured DB value)
-        delegate_ip,                  // %s (Resolved delegate IP)
-        server_ip,                    // %s (Server IP from system)
-        server_ip, ip_address         // %s %s (/etc/hosts example line)
-    );
+        "This delegate's configured public IP/hostname does not match this server's\n"
+        "public IP. You are likely running it on the wrong machine.\n",
+        xcash_wallet_public_address,
+        ip_address,
+        delegate_ip,
+        server_ip);
     return false;
   }
 
-  INFO_PRINT("Delegate IP OK: DB '%s' -> %s; server IP %s",
-             ip_address, delegate_ip, server_ip);
+  // Case 3: delegate is private/loopback (or other weird local override)
+  INFO_PRINT(
+      "validate_server_IP: delegate '%s' resolved to %s (DB value: %s); "
+      "server IP %s. No startup IP conflict detected.",
+      xcash_wallet_public_address,
+      delegate_ip,
+      ip_address,
+      server_ip);
 
   return true;
 }
