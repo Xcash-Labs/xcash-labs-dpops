@@ -293,7 +293,7 @@ int main(int argc, char *argv[]) {
     }
     fprintf(stderr, "Daemon is shutting down...\n");
   } else {
-    ERROR_PRINT("Failed to get the nodes public wallet address, shutting down...");
+    ERROR_PRINT("Failed in call get_node_data, shutting down...");
   }
 
   // Signal scheduler to stop and join it
