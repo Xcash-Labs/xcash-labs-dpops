@@ -320,11 +320,10 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
     return;
   }
 
-  // If block_height being passed in is equal to the node block height and node is not starting up and last round was successful
-  // perform full validation
+  // If block_height being passed in is equal to the node block height and node is not starting up blockchain is synced
   unsigned long long cheight = strtoull(current_block_height, NULL, 10);
   bool is_live_round = false;
-  if (startup_complete && last_round_success) {
+  if (startup_complete && blockchain_ready) {
     is_live_round = (height == cheight);
   }
 
@@ -343,31 +342,39 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
               current_round_part);
 
   if (is_live_round) {
-    if (election_state_ready && strcmp(current_round_part, "12") == 0) {
-      
-      if (strncmp(prev_hash_str, previous_block_hash, 64) != 0) {
-        cJSON_Delete(root);
-        INFO_PRINT("Prev Hash mismatch: expected %s, got %s", previous_block_hash, prev_hash_str);
-        send_data(client, (unsigned char*)"0|PARENT_HASH_MISMATCH", strlen("0|PARENT_HASH_MISMATCH"));
-        return;
-      }
 
-      // Parent matches our tip: enforce elected producer + vote hash
-      if (strncmp(producer_refs[0].vrf_public_key, vrf_pubkey_str, VRF_PUBLIC_KEY_LENGTH) != 0) {
-        INFO_PRINT("Public key mismatch: expected %s, got %s", producer_refs[0].vrf_public_key, vrf_pubkey_str);
+    if (election_state_ready) {
+      
+      // The block producer will submit the block in round part 11 others in part 12
+      if (strcmp(current_round_part, "12") == 0 ||
+          (strcmp(current_round_part, "11") == 0 && (strcmp(producer_refs[0].public_address, xcash_wallet_public_address) == 0))) {
+        if (strncmp(prev_hash_str, previous_block_hash, 64) != 0) {
+          cJSON_Delete(root);
+          INFO_PRINT("Prev Hash mismatch: expected %s, got %s", previous_block_hash, prev_hash_str);
+          send_data(client, (unsigned char*)"0|PARENT_HASH_MISMATCH", strlen("0|PARENT_HASH_MISMATCH"));
+          return;
+        }
+
+        // Parent matches our tip: enforce elected producer
+        if (strncmp(producer_refs[0].vrf_public_key, vrf_pubkey_str, VRF_PUBLIC_KEY_LENGTH) != 0) {
+          INFO_PRINT("Public key mismatch: expected %s, got %s", producer_refs[0].vrf_public_key, vrf_pubkey_str);
+          cJSON_Delete(root);
+          send_data(client, (unsigned char*)"0|VRF_PUBKEY_MISMATCH", strlen("0|VRF_PUBKEY_MISMATCH"));
+          return;
+        }
+        if (strncmp(producer_refs[0].vote_hash_hex, vote_hash_str, VOTE_HASH_LEN) != 0) {
+          WARNING_PRINT("Vote hash mismatch but delegate winner is correct so allowed, likely cause is a network issue");
+        }
+
+      } else {
+        ERROR_PRINT("No delegated selected, trans received in the wrong round part (timming issue)");
         cJSON_Delete(root);
-        send_data(client, (unsigned char*)"0|VRF_PUBKEY_MISMATCH", strlen("0|VRF_PUBKEY_MISMATCH"));
-        return;
-      }
-      if (strncmp(producer_refs[0].vote_hash_hex, vote_hash_str, VOTE_HASH_LEN) != 0) {
-        INFO_PRINT("Vote hash mismatch");
-        cJSON_Delete(root);
-        send_data(client, (unsigned char*)"0|VOTE_HASH_MISMATCH", strlen("0|VOTE_HASH_MISMATCH"));
+        send_data(client, (unsigned char*)"0|DELEGATE_SELECTION_TIMEOUT", strlen("0|DELEGATE_SELECTION_TIMEOUT"));
         return;
       }
 
     } else {
-      ERROR_PRINT("No delegated selected, took too long or round part not 12");
+      ERROR_PRINT("No delegated selected, trans took too long");
       cJSON_Delete(root);
       send_data(client, (unsigned char*)"0|DELEGATE_SELECTION_TIMEOUT", strlen("0|DELEGATE_SELECTION_TIMEOUT"));
       return;
@@ -806,6 +813,14 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
     SERVER_ERROR("0|Cannot vote for a network seed node");
   }
 
+  char data[VVSMALL_BUFFER_SIZE] = {0};
+  snprintf(data, sizeof(data), "{\"public_address\":\"%s\"}", voter_public_address);
+  int num_delegates = count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, data);
+  if (num_delegates > 0) {
+    cJSON_Delete(root);
+    SERVER_ERROR("0|A delegate wallet is not allowed to vote");
+  }
+
   if (check_reserve_proofs(vote_amount_atomic, voter_public_address, proof_str) != XCASH_OK) {
     cJSON_Delete(root);
     SERVER_ERROR("0|Invalid reserve proof");
@@ -851,6 +866,14 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
 
   // One vote per wallet: delete previous (single collection)
   (void)delete_document_from_collection(DATABASE_NAME, DB_COLLECTION_RESERVE_PROOFS, json_filter);
+
+  memset(data, 0, sizeof(data));
+  snprintf(data, sizeof(data), "{\"voted_for_public_address\":\"%s\"}", voted_for_public_address);
+  int number_of_votes = count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_RESERVE_PROOFS, data);
+  if (number_of_votes >= MAX_PROOFS_PER_DELEGATE_HARD) {
+    cJSON_Delete(root);
+    SERVER_ERROR("0|This delegate has reached the maximum number of voters, Please select another delegete");
+  }
 
   // Build BSON document
   bson_t doc;
@@ -1236,7 +1259,7 @@ void server_receive_payout(const char* MESSAGE) {
     return;
   }
 
-  DEBUG_PRINT("Unlocked balance: %" PRIu64 " atomic (%.6f XCA)", unlocked,
+  INFO_PRINT("Unlocked balance: %" PRIu64 " atomic (%.6f XCA)", unlocked,
     (double)unlocked / (double)XCASH_ATOMIC_UNITS);
 
   uint64_t in_num_block_height = strtoull(in_block_height, NULL, 10);

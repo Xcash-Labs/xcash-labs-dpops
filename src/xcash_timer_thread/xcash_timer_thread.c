@@ -333,7 +333,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
   if (mongoc_cursor_error(cur, &cerr)) {
     ERROR_PRINT("reserve_proofs cursor error: %s", cerr.message);
   } else {
-    DEBUG_PRINT("reserve_proofs scan complete: seen=%zu invalid=%zu deleted=%zu skipped=%zu",
+    INFO_PRINT("reserve_proofs scan complete: seen=%zu invalid=%zu deleted=%zu skipped=%zu",
                 seen, invalid, deleted, skipped);
   }
 
@@ -345,7 +345,8 @@ static void run_proof_check(sched_ctx_t* ctx) {
   mongoc_collection_destroy(coll);
 
   // Wait for correct time to load from delegates_all, create you own copy
-  sync_block_verifiers_minutes_and_seconds(0, 51);
+  // Capture height before next block is found but online status is set
+  sync_block_verifiers_minutes_and_seconds(0, 25);
   char save_block_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
   char save_block_hash[BLOCK_HASH_LENGTH + 1] = {0};
   strncpy(save_block_height, current_block_height, sizeof save_block_height);
@@ -367,6 +368,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
   pthread_mutex_unlock(&current_block_verifiers_lock);
 
   // Apply per-delegate totals only if not shutting down
+  sync_block_verifiers_minutes_and_seconds(0, 45);
   if (!stop_after_scan && agg_count > 0) {
     mongoc_collection_t* dcoll =
         mongoc_client_get_collection(c, DATABASE_NAME, DB_COLLECTION_DELEGATES);
@@ -476,6 +478,116 @@ static void run_proof_check(sched_ctx_t* ctx) {
     }
   }
 
+  // One more pass: for every online delegate, if they have no reserve proofs,
+  // set total_vote_count=0 locally (this seed) and then broadcast that zero.
+  {
+    mongoc_collection_t* rcoll =
+        mongoc_client_get_collection(c, DATABASE_NAME, DB_COLLECTION_RESERVE_PROOFS);
+    mongoc_collection_t* dcoll =
+        mongoc_client_get_collection(c, DATABASE_NAME, DB_COLLECTION_DELEGATES);
+
+    sync_block_verifiers_minutes_and_seconds(0, 45);
+    if (!rcoll || !dcoll) {
+      ERROR_PRINT("Failed to get collections (reserve_proofs or delegates)");
+      if (rcoll) mongoc_collection_destroy(rcoll);
+      if (dcoll) mongoc_collection_destroy(dcoll);
+    } else {
+      for (size_t i = 0; i < online_count; ++i) {
+        // Basic sanity
+        if (delegates_timer_all[i].public_address[0] == '\0' ||
+            delegates_timer_all[i].IP_address[0] == '\0') {
+          continue;
+        }
+
+        const char* addr = delegates_timer_all[i].public_address;
+
+        // ---- Count reserve proofs for this delegate
+        bson_t f_res;
+        bson_init(&f_res);
+        BSON_APPEND_UTF8(&f_res, "public_address_voted_for", addr);
+
+        bson_error_t cerr_r = {0};
+        int64_t rp_count = mongoc_collection_count_documents(
+            rcoll, &f_res, /*opts*/ NULL, /*read_prefs*/ NULL, /*reply*/ NULL, &cerr_r);
+
+        if (rp_count < 0) {
+          ERROR_PRINT("reserve_proofs count failed for %.12s… : %s", addr, cerr_r.message);
+          bson_destroy(&f_res);
+          continue;  // don't attempt to zero if we couldn't confidently check
+        }
+
+        bson_destroy(&f_res);
+
+        // ---- If no reserve proofs exist, zero the local total and broadcast
+        if (rp_count == 0) {
+          // Local update on this seed FIRST:
+          // filter: { public_address: addr, total_vote_count: { $gt: 0 } }
+          bson_t f_del;
+          bson_init(&f_del);
+          BSON_APPEND_UTF8(&f_del, "public_address", addr);
+
+          bson_t gt_doc;
+          bson_init(&gt_doc);
+          BSON_APPEND_INT64(&gt_doc, "$gt", 0);
+          BSON_APPEND_DOCUMENT(&f_del, "total_vote_count", &gt_doc);
+          bson_destroy(&gt_doc);
+
+          // update: { $set: { total_vote_count: 0 } }
+          bson_t u_doc, u_set;
+          bson_init(&u_doc);
+          bson_init(&u_set);
+          BSON_APPEND_INT64(&u_set, "total_vote_count", 0);
+          BSON_APPEND_DOCUMENT(&u_doc, "$set", &u_set);
+          bson_destroy(&u_set);
+
+          bson_t reply;
+          bson_init(&reply);
+          bson_error_t uerr = {0};
+
+          bool ok = mongoc_collection_update_one(
+              dcoll, &f_del, &u_doc, /*opts*/ NULL, &reply, &uerr);
+
+          if (!ok) {
+            ERROR_PRINT("delegate zero update failed addr=%.12s… : %s", addr, uerr.message);
+            bson_destroy(&reply);
+            bson_destroy(&u_doc);
+            bson_destroy(&f_del);
+            continue;
+          }
+
+          bson_destroy(&reply);
+          bson_destroy(&u_doc);
+          bson_destroy(&f_del);
+
+          DEBUG_PRINT("delegate total zeroed locally addr=%.12s… (no reserve proofs)", addr);
+
+          // Now that THIS SEED is consistent, broadcast to others
+          response_t** responses = NULL;
+          char* upd_vote_message = NULL;
+          if (build_seed_to_nodes_vote_count_update(addr, 0, &upd_vote_message)) {
+            if (xnet_send_data_multi(XNET_DELEGATES_ALL_ONLINE_NOSEEDS,
+                                     upd_vote_message, &responses)) {
+              free(upd_vote_message);
+              cleanup_responses(responses);
+            } else {
+              ERROR_PRINT("Failed to send vote count zero update message.");
+              free(upd_vote_message);
+              cleanup_responses(responses);
+            }
+          } else {
+            ERROR_PRINT("Failed to generate vote count zero update message");
+            if (upd_vote_message) free(upd_vote_message);
+          }
+
+        }  // rp_count == 0
+      }  // for online_count
+
+      mongoc_collection_destroy(rcoll);
+      mongoc_collection_destroy(dcoll);
+    }  // collections ok
+  }
+
+  sync_block_verifiers_minutes_and_seconds(0, 45);
   for (size_t i = 0; i < pay_bucket_count; ++i) {
     const payout_bucket_t* B = &pay_buckets[i];
     const char* delegate_addr = B->delegate;
@@ -613,7 +725,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
 -------------------------------------------------------------------------------------------------------- */
 void run_activity_check(sched_ctx_t* ctx) {
   // 0) Wait for the coordinated timeslot to avoid racing with other jobs.
-  sync_block_verifiers_minutes_and_seconds(0, 51);
+  sync_block_verifiers_minutes_and_seconds(0, 45);
 
   // 1) Snapshot ONLINE delegates for routing (seed -> online nodes)
   size_t online_count = 0;

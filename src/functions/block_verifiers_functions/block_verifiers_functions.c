@@ -177,7 +177,6 @@ int block_verifiers_create_block(const char* vote_hash_hex, uint8_t total_vote, 
     // Part 11 - Submit block
     INFO_STAGE_PRINT("Part 11 - Submit the Block");
     snprintf(current_round_part, sizeof(current_round_part), "%d", 11);
-    sleep(1);
     if (!submit_block_template(block_blob)) {
       return ROUND_ERROR;
     }
@@ -397,10 +396,10 @@ bool block_verifiers_create_vote_majority_result(char** message, int producer_in
   if (!message)
     return false;
 
-  int wait_seconds = 0;
-  while (atomic_load(&wait_for_vrf_init) && wait_seconds < DELAY_EARLY_TRANSACTIONS_MAX) {
-    sleep(1);
-    wait_seconds++;
+  int wait_milliseconds = 0;
+  while (atomic_load(&wait_for_vrf_init) && wait_milliseconds < (DELAY_EARLY_TRANSACTIONS_MAX * 1000)) {
+    usleep(500000);  // 0.5 seconds = 500,000 microseconds
+    wait_milliseconds += 500;
   }
   if (atomic_load(&wait_for_vrf_init)) {
     ERROR_PRINT("Timed out waiting for vrf init in block_verifiers_create_vote_majority_result");

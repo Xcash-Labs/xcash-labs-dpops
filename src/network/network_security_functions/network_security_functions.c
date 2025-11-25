@@ -192,6 +192,29 @@ int verify_data(const char* message, xcash_msg_t msg_type) {
   char response[MEDIUM_BUFFER_SIZE] = {0};
   char cur_round_part[3] = {0};
 
+  // must wait at this point so it will pass type round_part check it trans is early, timing matters
+  int wait_milliseconds = 0;
+  if (msg_type == XMSG_NODES_TO_NODES_VOTE_MAJORITY_RESULTS) {
+    while (atomic_load(&wait_for_consensus_vote) && wait_milliseconds < (DELAY_EARLY_TRANSACTIONS_MAX * 1000)) {
+      usleep(500000);  // 0.5 seconds = 500,000 microseconds
+      wait_milliseconds += 500;
+    }
+    if (atomic_load(&wait_for_consensus_vote)) {
+      ERROR_PRINT("Timed out waiting for consensus vote round part to start");
+    }
+  }
+
+  wait_milliseconds = 0;
+  if (msg_type == XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_VRF_DATA) {
+    while (atomic_load(&wait_for_vrf_message) && wait_milliseconds < (DELAY_EARLY_TRANSACTIONS_MAX * 1000)) {
+      usleep(500000);  // 0.5 seconds = 500,000 microseconds
+      wait_milliseconds += 500;
+    }
+    if (atomic_load(&wait_for_vrf_message) && startup_complete && blockchain_ready) {
+      ERROR_PRINT("Timed out waiting for vrf_init round part to start");
+    }
+  }
+
   strcpy(cur_round_part, current_round_part);
   if (msg_type == XMSG_SEED_TO_NODES_UPDATE_VOTE_COUNT || msg_type == XMSG_SEED_TO_NODES_PAYOUT || msg_type == XMSG_SEED_TO_NODES_BANNED) {
     snprintf(cur_round_part, sizeof cur_round_part, "70");
@@ -206,16 +229,15 @@ int verify_data(const char* message, xcash_msg_t msg_type) {
     return XCASH_ERROR;
   }
 
-// need to change error message    
-
   if (strcmp(cur_round_part, ck_round_part) != 0) {
-    if (startup_complete) {
-      WARNING_PRINT("Public address %s failed Signature Verification, round part timing issue: current round %s - message round %s.", 
-        ck_public_address, cur_round_part, ck_round_part);
+    // Either starting up or errors occured so silence messages that will not be proceese
+    if (startup_complete && blockchain_ready) {
+      WARNING_PRINT("Public address %s failed Signature Verification, round part timing issue: current round %s - message round %s.",
+                    ck_public_address, cur_round_part, ck_round_part);
     }
     return XCASH_ERROR;
   }
- 
+
   if (strcmp(previous_block_hash, ck_previous_block_hash) != 0) {
     WARNING_PRINT("Public address %s failed Signature Verification, previous block hash is not valid", ck_public_address);
     return XCASH_ERROR;
@@ -741,4 +763,157 @@ bool digest_allowed(const char* self_hex, const updpops_entry_t* list, size_t n,
     }
   }
   return false;
+}
+
+// Helper to check for private or loopback
+static bool is_private_or_loopback_ipv4(const char* ip) {
+  if (!ip || !*ip)
+    return false;
+
+  unsigned int a, b, c, d;
+  if (sscanf(ip, "%u.%u.%u.%u", &a, &b, &c, &d) != 4)
+    return false;
+
+  // 127.0.0.0/8 loopback
+  if (a == 127)
+    return true;
+
+  // 10.0.0.0/8
+  if (a == 10)
+    return true;
+
+  // 172.16.0.0/12
+  if (a == 172 && (b >= 16 && b <= 31))
+    return true;
+
+  // 192.168.0.0/16
+  if (a == 192 && b == 168)
+    return true;
+
+  return false;
+}
+
+// Helper to get the server's IP (first non-loopback IPv4)
+static bool get_server_ipv4(char* out_ip, size_t out_ip_size) {
+  if (!out_ip || out_ip_size == 0)
+    return false;
+
+  struct ifaddrs* ifaddr = NULL;
+  if (getifaddrs(&ifaddr) == -1)
+    return false;
+
+  bool found = false;
+
+  for (struct ifaddrs* ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
+    if (!ifa->ifa_addr)
+      continue;
+    if (ifa->ifa_addr->sa_family != AF_INET)
+      continue;
+    // skip loopback
+    if (ifa->ifa_flags & IFF_LOOPBACK)
+      continue;
+
+    struct sockaddr_in* sa = (struct sockaddr_in*)ifa->ifa_addr;
+    if (!inet_ntop(AF_INET, &sa->sin_addr, out_ip, out_ip_size))
+      continue;
+
+    // we got something like "192.168.1.10" or a public IP
+    found = true;
+    break;
+  }
+
+  freeifaddrs(ifaddr);
+  return found;
+}
+
+bool validate_server_IP(void) {
+  char filter_json[256] = {0};
+  char ip_address[IP_LENGTH + 1] = {0};     // value from DB (IP or hostname)
+  char delegate_ip[INET_ADDRSTRLEN] = {0};  // resolved delegate IPv4
+  char server_ip[INET_ADDRSTRLEN] = {0};    // this server's IPv4
+
+  // 1. Read delegate IP/hostname from DB
+  snprintf(filter_json, sizeof(filter_json),
+           "{ \"public_address\": \"%s\" }", xcash_wallet_public_address);
+
+  if (read_document_field_from_collection(
+          DATABASE_NAME,
+          DB_COLLECTION_DELEGATES,
+          filter_json,
+          "IP_address",
+          ip_address,
+          sizeof(ip_address)) != XCASH_OK) {
+    ERROR_PRINT("validate_server_IP: delegate '%s' has no IP_address in DB",
+                xcash_wallet_public_address);
+    return false;
+  }
+
+  ip_address[sizeof(ip_address) - 1] = '\0';
+
+  // 2. Resolve delegate IP/hostname -> IPv4
+  struct addrinfo hints, *res = NULL;
+  memset(&hints, 0, sizeof(hints));
+  hints.ai_family = AF_INET;  // IPv4
+  hints.ai_socktype = SOCK_STREAM;
+
+  int gai_ret = getaddrinfo(ip_address, NULL, &hints, &res);
+  if (gai_ret == 0 && res != NULL) {
+    struct sockaddr_in* sa = (struct sockaddr_in*)res->ai_addr;
+    if (!inet_ntop(AF_INET, &sa->sin_addr, delegate_ip, sizeof(delegate_ip))) {
+      ERROR_PRINT("validate_server_IP: inet_ntop failed for delegate '%s' (%s)",
+                  xcash_wallet_public_address, ip_address);
+      freeaddrinfo(res);
+      return false;
+    }
+    freeaddrinfo(res);
+  } else {
+    // if getaddrinfo fails, assume ip_address is already a numeric IPv4 string
+    strncpy(delegate_ip, ip_address, sizeof(delegate_ip) - 1);
+    delegate_ip[sizeof(delegate_ip) - 1] = '\0';
+  }
+
+  // 3. Get this server's IPv4 from the system
+  if (!get_server_ipv4(server_ip, sizeof(server_ip))) {
+    ERROR_PRINT("validate_server_IP: failed to determine server IPv4 address");
+    return false;
+  }
+
+  bool delegate_private = is_private_or_loopback_ipv4(delegate_ip);
+  bool server_private = is_private_or_loopback_ipv4(server_ip);
+
+  // Case 1: delegate is public, server is private -> classic bad home/NAT config
+  if (!delegate_private && server_private) {
+    ERROR_PRINT(
+        "IP verification failed at startup:\n"
+        "  Delegate address:            %s\n"
+        "  Configured DB value:         %s\n"
+        "  Resolved delegate IP:        %s (public)\n"
+        "  Server IP from system:       %s (private/LAN)\n"
+        "\n"
+        "This node appears to be running on a private/home network, but the delegate's\n"
+        "IP/hostname points to a public IP. This usually means the delegate is configured\n"
+        "for a different machine than the one you are running now.\n"
+        "\n"
+        "If you INTEND to run this delegate on this machine, you can fix this by updating\n"
+        "your /etc/hosts file so that the delegate hostname resolves to this node's IP.\n"
+        "\n"
+        "Linux instructions:\n"
+        "  1. Edit the hosts file:\n"
+        "       sudo nano /etc/hosts\n"
+        "  2. Add a line like:\n"
+        "       %s    %s\n"
+        "  3. Save and restart xcashd.\n"
+        "\n"
+        "This allows the delegate hostname to resolve to your LAN IP on this node, while\n"
+        "other nodes on the internet continue to use the public DNS record.\n",
+        xcash_wallet_public_address,
+        ip_address,
+        delegate_ip,
+        server_ip,
+        server_ip, ip_address  // /etc/hosts example
+    );
+    return false;
+  }
+
+  return true;
 }

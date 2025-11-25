@@ -17,7 +17,7 @@ extern mongoc_client_pool_t* database_client_thread_pool;  // database
 extern pthread_t server_thread;
 extern dnssec_ctx_t* g_ctx;
 extern int log_level;  // Log level for display log messages
-extern bool last_round_success;
+extern bool blockchain_ready;
 extern int delegate_db_hash_mismatch; 
 extern double delegate_fee_percent;
 extern uint64_t minimum_payout;
@@ -43,6 +43,8 @@ extern pthread_mutex_t producer_refs_lock;
 extern pthread_mutex_t database_data_IP_address_lock;
 extern atomic_bool server_running; 
 extern atomic_bool wait_for_vrf_init;
+extern atomic_bool wait_for_consensus_vote;
+extern atomic_bool wait_for_vrf_message;
 extern atomic_bool wait_for_block_height_init;
 extern atomic_bool shutdown_requested;
 extern atomic_bool payment_inprocess;

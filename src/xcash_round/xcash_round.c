@@ -3,6 +3,7 @@
 producer_ref_t producer_refs[] = {0};
 static int total_delegates = 0;
 static char previous_round_block_hash[BLOCK_HASH_LENGTH + 1] = {0};
+static bool last_round_success = false;
 static size_t missed_load = 0;
 
 /**
@@ -69,7 +70,6 @@ static int compare_hashes(const void* a, const void* b) {
  * and uses `current_round_part` for identification and message signing context.
  *
  * @return xcash_round_result_t - ROUND_OK if block was created and broadcast successfully,
- *                                ROUND_SKIP if round was skipped due to xcashd error or round stage took too long
  *                                ROUND_ERROR on critical errors attempt refresh
  */
 xcash_round_result_t process_round(void) {
@@ -99,28 +99,28 @@ xcash_round_result_t process_round(void) {
   // Check if this node is active
   if (delegate_not_found) {
     WARNING_PRINT("This delegate was not found in delegates_all. If recently registered or updated, activation can take up to 10 minutes.");
-    return ROUND_SKIP;
+    return ROUND_ERROR;
   }
 
-  INFO_STAGE_PRINT("Get Previous Block Hash and Delegates Collection Hash");
+  INFO_STAGE_PRINT("Part 2 - Get Previous Block Hash and Delegates Collection Hash");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 2);
   if (last_round_success) {
     // Get the previous block hash and check to make sure it changed from last round
     snprintf(previous_round_block_hash, sizeof previous_round_block_hash, "%s", previous_block_hash);
     if (get_previous_block_hash(previous_block_hash) != XCASH_OK) {
       ERROR_PRINT("Can't get previous block hash");
-      return ROUND_SKIP;
+      return ROUND_ERROR;
     }
     if (strcmp(previous_block_hash, previous_round_block_hash) == 0) {
       ERROR_PRINT("Still showing Previous Block Hash, Block did not advance");
-      return ROUND_SKIP;
+      return ROUND_ERROR;
     }
   } else {
     // No majority last round -> chain may be stalled on this node
     memset(previous_block_hash, 0, sizeof previous_block_hash);
     if (get_previous_block_hash(previous_block_hash) != XCASH_OK) {
       ERROR_PRINT("Can't get previous block hash");
-      return ROUND_SKIP;
+      return ROUND_ERROR;
     }
     INFO_PRINT("No majority last round; skipping hash tip-advance check");
   }
@@ -129,7 +129,7 @@ xcash_round_result_t process_round(void) {
   memset(delegates_hash, 0, sizeof(delegates_hash));
   if (!hash_delegates_collection(delegates_hash)) {
     ERROR_PRINT("Failed to create delegates MD5 hash");
-    return ROUND_SKIP;
+    return ROUND_ERROR;
   }
 
   // Get the current block height and wait to complete before sending or reading transactions
@@ -140,21 +140,20 @@ xcash_round_result_t process_round(void) {
   char cheight[BLOCK_HEIGHT_LENGTH + 1] = {0};
   if (!is_blockchain_synced(target_height, cheight)) {
     ERROR_PRINT("Blockchain is not synced, skipping round");
-    return ROUND_SKIP;
+    return ROUND_ERROR;
   }
 
   if (get_current_block_height(current_block_height) != XCASH_OK) {
     ERROR_PRINT("Can't get current block height");
-    atomic_store(&wait_for_block_height_init, false);
-    return ROUND_SKIP;
+    return ROUND_ERROR;
   }
-
   atomic_store(&wait_for_block_height_init, false);
-  INFO_STAGE_PRINT("Creating Block: %s", current_block_height);
 
-  INFO_STAGE_PRINT("Part 4 - Sync & Create VRF Data and Send To All Delegates");
+  INFO_STAGE_PRINT("Creating Block: %s", current_block_height);
+  INFO_STAGE_PRINT("Part 4 - Create & Sync VRF Data and Send To All Delegates");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 4);
-  sleep(1);  // needed for nodes time not being exact
+  atomic_store(&wait_for_vrf_message, false);
+
   response_t** responses = NULL;
   char* vrf_message = NULL;
   if (generate_and_request_vrf_data_sync(&vrf_message)) {
@@ -178,7 +177,7 @@ xcash_round_result_t process_round(void) {
   INFO_STAGE_PRINT("Waiting for Sync and VRF Data from all nodes...");
   if (sync_block_verifiers_minutes_and_seconds(0, 15) == XCASH_ERROR) {
     INFO_PRINT("Failed to sync Delegates in the allotted  time, skipping round");
-    return ROUND_SKIP;
+    return ROUND_ERROR;
   }
 
   INFO_STAGE_PRINT("Part 5 - Checking Block Verifiers Majority and Minimum Online Requirement");
@@ -260,6 +259,7 @@ xcash_round_result_t process_round(void) {
     }
   }
   pthread_mutex_unlock(&current_block_verifiers_lock);
+  atomic_store(&wait_for_consensus_vote, false);
 
   responses = NULL;
   char* vote_message = NULL;
@@ -284,7 +284,7 @@ xcash_round_result_t process_round(void) {
   // Sync start
   if (sync_block_verifiers_minutes_and_seconds(0, 30) == XCASH_ERROR) {
     INFO_PRINT("Failed to Confirm Block Creator in the allotted  time, skipping round");
-    return ROUND_SKIP;
+    return ROUND_ERROR;
   }
 
   int max_index = -1;
@@ -375,7 +375,7 @@ xcash_round_result_t process_round(void) {
   if (valid_vote_count != (size_t)max_votes) {
     INFO_PRINT("Unexpected vote count when creating final vote hash: valid_vote_count = %zu, max_votes = %d",
                valid_vote_count, max_votes);
-    return ROUND_SKIP;
+    return ROUND_ERROR;
   }
 
   qsort(vote_hashes, valid_vote_count, SHA256_EL_HASH_SIZE, compare_hashes);
@@ -521,30 +521,37 @@ void start_block_production(void) {
       }
     }
 
+    // May have some redundant waits here but leaving for now...
     current_block_height[0] = '\0';
     delegate_db_hash_mismatch = 0;
     atomic_store(&wait_for_vrf_init, true);
     atomic_store(&wait_for_block_height_init, true);
+    atomic_store(&wait_for_vrf_message, true);
+    atomic_store(&wait_for_consensus_vote, true);
+    blockchain_ready = true;
     round_result = ROUND_OK;
 
     round_result = process_round();
 
-    // Final step - Wait for block creation/DB Updates or Node clean-up  jed
+    // Final step - Wait for block creation/DB Updates or Node clean-up
     snprintf(current_round_part, sizeof(current_round_part), "%d", 12);
-    last_round_success = false;
     if (round_result == ROUND_OK) {
+      last_round_success = true;
       INFO_STAGE_PRINT("Part 12 - Wait for Block Creation");
     } else  {
       INFO_STAGE_PRINT("Part 12 - Wait for Node clean-up / sync");
+      last_round_success = false;
+      // Error occured
+      blockchain_ready = false;
+      atomic_store(&wait_for_vrf_init, false);
+      atomic_store(&wait_for_block_height_init, false);
+      atomic_store(&wait_for_vrf_message, false);
+      atomic_store(&wait_for_consensus_vote, false);
     }
 
     // 10 secs to perform cleanup or add stats and other info
     if (sync_block_verifiers_minutes_and_seconds(0, 50) == XCASH_ERROR) {
       INFO_PRINT("Failed to create block in the allotted time, skipping round");
-      goto end_of_round_skip_block;
-    }
-
-    if (round_result == ROUND_SKIP) {
       goto end_of_round_skip_block;
     }
 
@@ -609,7 +616,6 @@ void start_block_production(void) {
           goto end_of_round_skip_block;
         }
       }
-      last_round_success = true;
 
 #endif
 
@@ -943,7 +949,6 @@ void start_block_production(void) {
         bson_destroy(&filter);
         mongoc_collection_destroy(coll);
         mongoc_client_pool_push(database_client_thread_pool, c);
-        last_round_success = true;
         goto end_of_round_skip_block;
 
       // ------------- unified error cleanup -------------
@@ -958,6 +963,7 @@ void start_block_production(void) {
 #endif
 
     } else {
+
       // If >20% of delegates report a DB hash mismatch, trigger a resync.
       if (delegate_db_hash_mismatch > 0) {
         if ((delegate_db_hash_mismatch * 100) > (total_delegates * 20)) {
@@ -981,11 +987,10 @@ void start_block_production(void) {
           }
         }
       }
+
     }
 
   end_of_round_skip_block:
-
-    INFO_STAGE_PRINT("Part 12 End....");
 
     sync_block_verifiers_minutes_and_seconds(0, 58);
     // set up delegates for next round; retry on transient failure

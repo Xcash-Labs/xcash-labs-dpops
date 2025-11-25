@@ -6,7 +6,7 @@ mongoc_client_pool_t* database_client_thread_pool = NULL;
 pthread_t server_thread;
 dnssec_ctx_t* g_ctx = NULL;
 int log_level = 3;  // default level is error + warning + info - change back to 2 once system stabilizes
-bool last_round_success = false;
+bool blockchain_ready = false;
 int delegate_db_hash_mismatch = 0;
 double delegate_fee_percent = 5.0;
 uint64_t minimum_payout = 50;  // default value
@@ -32,6 +32,8 @@ pthread_mutex_t database_data_IP_address_lock = PTHREAD_MUTEX_INITIALIZER;
 atomic_bool server_running             = ATOMIC_VAR_INIT(true);
 atomic_bool wait_for_vrf_init          = ATOMIC_VAR_INIT(true);
 atomic_bool wait_for_block_height_init = ATOMIC_VAR_INIT(true);
+atomic_bool wait_for_consensus_vote    = ATOMIC_VAR_INIT(true);
+atomic_bool wait_for_vrf_message       = ATOMIC_VAR_INIT(true);
 atomic_bool shutdown_requested         = ATOMIC_VAR_INIT(false);
 atomic_bool payment_inprocess          = ATOMIC_VAR_INIT(false);
 

@@ -17,7 +17,8 @@ bool get_node_data(void) {
   }
 
   if (xcash_wallet_public_address[0] == '\0') {
-    FATAL_ERROR_EXIT("Wallet public address is empty");
+    ERROR_PRINT("Wallet public address is empty");
+    return false;
   }
 
   // --- Load VRF public key (may be empty if delegate not registered yet) ---
@@ -26,7 +27,11 @@ bool get_node_data(void) {
     WARNING_PRINT("Failed to read vrf_public_key for delegate; has this delegate been registered?");
   }
 
-  return XCASH_OK;
+  if (!validate_server_IP()) {
+    return false;
+  }
+
+  return true;
 }
 
 bool is_seed_address(const char *public_address) {
@@ -38,12 +43,9 @@ bool is_seed_address(const char *public_address) {
   return false;
 }
 
-
 void get_vrf_public_key() {
   char filter_json[256] = {0};
-
   snprintf(filter_json, sizeof(filter_json), "{ \"public_address\": \"%s\" }", xcash_wallet_public_address);
-
   if (read_document_field_from_collection(
         DATABASE_NAME,
         DB_COLLECTION_DELEGATES,

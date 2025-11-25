@@ -1622,7 +1622,7 @@ int compute_payouts_due(payout_output_t *parsed, uint64_t in_block_height, int64
   uint64_t pending_sum   = (sum > 0) ? (uint64_t)sum : 0;
   uint64_t sum_atomic    = (pending_sum < safe_unlocked) ? pending_sum : safe_unlocked;
   if (sum_atomic == 0) {
-    DEBUG_PRINT("Nothing to pay (sum_atomic == 0)");
+    INFO_PRINT("Nothing to pay (sum_atomic == 0)");
     rc = XCASH_OK;
     goto done;
   }
@@ -1718,7 +1718,7 @@ int compute_payouts_due(payout_output_t *parsed, uint64_t in_block_height, int64
         n = bson_iter_int32(&it);
       else if (bson_iter_init_find(&it, &reply, "nModified") && BSON_ITER_HOLDS_INT32(&it))
         n = bson_iter_int32(&it);
-      DEBUG_PRINT("finalize: marked %" PRIi64 " found_blocks as processed", n);
+      INFO_PRINT("finalize: marked %" PRIi64 " found_blocks as processed", n);
     }
 
     bson_destroy(&reply);
@@ -1936,7 +1936,7 @@ int run_payout_sweep_simple(void)
         goto done;
       }
 
-      DEBUG_PRINT("payout recorded: _id=%s split=%zu fee=%" PRIu64 " sent=%" PRIu64,
+      INFO_PRINT("payout recorded: _id=%s split=%zu fee=%" PRIu64 " sent=%" PRIu64,
                  first_hash, split_siblings_count, fee, (uint64_t)amt_sent);
 
       bson_destroy(&pay_doc);
@@ -1972,7 +1972,7 @@ int run_payout_sweep_simple(void)
       }
     }
 
-    DEBUG_PRINT("run_payout_sweep_simple: paid %" PRId64 " to %s (%s); %s [tx=%s fee=%" PRIu64 "]",
+    INFO_PRINT("run_payout_sweep_simple: paid %" PRId64 " to %s (%s); %s [tx=%s fee=%" PRIu64 "]",
                pend, addr, reason, delete_after ? "deleted" : "zeroed", first_hash, fee);
   }
 
