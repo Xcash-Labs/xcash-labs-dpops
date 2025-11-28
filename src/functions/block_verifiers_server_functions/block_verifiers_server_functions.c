@@ -6,10 +6,10 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
   char vrf_public_key_data[VRF_PUBLIC_KEY_LENGTH + 1] = {0};
   char vrf_proof_hex[VRF_PROOF_LENGTH + 1] = {0};  
   char vrf_beta_hex[VRF_BETA_LENGTH + 1] = {0};
-  char block_height[BLOCK_HEIGHT_LENGTH] = {0};
+  char block_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
   char parsed_delegates_hash[SHA256_HASH_SIZE + 1] = {0};
 
-  DEBUG_PRINT("received %s, %s", __func__, MESSAGE);
+  INFO_PRINT("received %s, %s", __func__, MESSAGE);
 
   // parse the message
   if (parse_json_data(MESSAGE, "public_address", public_address, sizeof(public_address)) == XCASH_ERROR || 
@@ -24,11 +24,11 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
   }
 
   if (strlen(public_address) < 5 || public_address[0] != 'X') {
-    DEBUG_PRINT("Invalid or missing delegate address: '%s'", public_address);
+    ERROR_PRINT("Invalid or missing delegate address: '%s'", public_address);
     return;
   }
 
-  DEBUG_PRINT("Parsed remote public_address: %s, block_height: %s, delegates_hash: %s", public_address, block_height, 
+  INFO_PRINT("Parsed remote public_address: %s, block_height: %s, delegates_hash: %s", public_address, block_height, 
     parsed_delegates_hash);
 
   int wait_milliseconds = 0;

@@ -298,6 +298,7 @@ xcash_round_result_t process_round(void) {
     }
   }
 
+  INFO_PRINT("if max_index",);
   if (max_index != -1) {
     INFO_PRINT("Confirmed Block Winner: %s with %d votes", current_block_verifiers_list.block_verifiers_name[max_index], max_votes);
   } else {
@@ -309,6 +310,7 @@ xcash_round_result_t process_round(void) {
   uint8_t final_vote_hash[SHA256_EL_HASH_SIZE] = {0};
   size_t valid_vote_count = 0;
 
+  INFO_PRINT("pthread_mutex",);
   pthread_mutex_lock(&current_block_verifiers_lock);
   for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     if ((current_block_verifiers_list.block_verifiers_voted[i] > 0) &&
@@ -372,6 +374,7 @@ xcash_round_result_t process_round(void) {
   }
   pthread_mutex_unlock(&current_block_verifiers_lock);
 
+  INFO_PRINT("valid_vote_count",);
   if (valid_vote_count != (size_t)max_votes) {
     INFO_PRINT("Unexpected vote count when creating final vote hash: valid_vote_count = %zu, max_votes = %d",
                valid_vote_count, max_votes);
