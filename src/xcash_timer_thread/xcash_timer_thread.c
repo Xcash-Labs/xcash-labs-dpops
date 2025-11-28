@@ -184,8 +184,7 @@ Parameters:
 Returns:
   void
 ---------------------------------------------------------------------------------------------------------*/
-//static void run_proof_check(sched_ctx_t* ctx) {
-void run_proof_check(sched_ctx_t* ctx) {
+static void run_proof_check(sched_ctx_t* ctx) {
 mongoc_client_t* c = mongoc_client_pool_pop(ctx->pool);
   if (!c) {
     ERROR_PRINT("Failed to pop a client from the mongoc_client_pool");
@@ -1008,6 +1007,16 @@ void* timer_thread(void* arg) {
     if (idx < 0) break;  // shouldn't happen
     time_t wake = run_at - WAKEUP_SKEW_SEC;
     if (wake < now) wake = now;
+
+
+    sleep(120);
+    if (is_seed_node) {
+      if (seed_is_primary()) {
+        INFO_PRINT("Scheduler: Testing running PROOF CHECK at %02d:%02d", slot->hour, slot->min);
+        run_proof_check(ctx);
+      }
+    }
+
 
     // pre-wake, then align to exact minute
     sleep_until(wake);
