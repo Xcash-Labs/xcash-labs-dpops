@@ -172,7 +172,6 @@ void server_receive_data_socket_node_to_node_vote_majority(const char* MESSAGE) 
   char vote_signature[XCASH_SIGN_DATA_LENGTH + 1] = {0};
 
   DEBUG_PRINT("received %s, %s", __func__, MESSAGE);
-  INFO_PRINT("Start");
 
   // parse the message
   if (parse_json_data(MESSAGE, "public_address", public_address, sizeof(public_address)) == XCASH_ERROR ||
@@ -196,19 +195,28 @@ void server_receive_data_socket_node_to_node_vote_majority(const char* MESSAGE) 
     return;
   }
 
+  bool found_voter = false;
+  pthread_mutex_lock(&current_block_verifiers_lock);
   for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     if (strcmp(public_address, current_block_verifiers_list.block_verifiers_public_address[i]) == 0) {
+      found_voter = true;
       if (current_block_verifiers_list.block_verifiers_voted[i] == 0) {
-        pthread_mutex_lock(&current_block_verifiers_lock);
         current_block_verifiers_list.block_verifiers_voted[i] = 1;
         memcpy(current_block_verifiers_list.block_verifiers_vote_signature[i], vote_signature, XCASH_SIGN_DATA_LENGTH+1);
         memcpy(current_block_verifiers_list.block_verifiers_selected_public_address[i], public_address_producer, XCASH_WALLET_LENGTH+1);
-        pthread_mutex_unlock(&current_block_verifiers_lock);
+        break; 
       } else {
+        pthread_mutex_unlock(&current_block_verifiers_lock);
         WARNING_PRINT("Verifier %s, has already voted and can not vote again", public_address);
         return;
       }
     }
+  }
+  pthread_mutex_unlock(&current_block_verifiers_lock);
+
+  if (!found_voter) {
+    WARNING_PRINT("Verifier %s not found in current_block_verifiers_list", public_address);
+    return;
   }
 
   if (strcmp(block_height, current_block_height) != 0) {
@@ -216,36 +224,38 @@ void server_receive_data_socket_node_to_node_vote_majority(const char* MESSAGE) 
     return;
   }
 
+  pthread_mutex_lock(&current_block_verifiers_lock);
   for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     if (strcmp(public_address_producer, current_block_verifiers_list.block_verifiers_public_address[i]) != 0) {
       continue;
     }
 
     if (strcmp(vrf_public_key_data, current_block_verifiers_list.block_verifiers_public_key[i]) != 0) {
+      pthread_mutex_unlock(&current_block_verifiers_lock);
       ERROR_PRINT("Mismatch in vrf_public_key for verifier %s", public_address_producer);
       return;
     }
 
     if (strcmp(vrf_proof_hex, current_block_verifiers_list.block_verifiers_vrf_proof_hex[i]) != 0) {
+      pthread_mutex_unlock(&current_block_verifiers_lock);
       ERROR_PRINT("Mismatch in vrf_proof for verifier %s", public_address_producer);
       return;
     }
 
     if (strcmp(vrf_beta_hex, current_block_verifiers_list.block_verifiers_vrf_beta_hex[i]) != 0) {
+      pthread_mutex_unlock(&current_block_verifiers_lock);
       ERROR_PRINT("Mismatch in vrf_beta for verifier %s", public_address_producer);
       return;
     }
 
-    pthread_mutex_lock(&current_block_verifiers_lock);
     current_block_verifiers_list.block_verifiers_vote_total[i] += 1;
     pthread_mutex_unlock(&current_block_verifiers_lock);
     return;
   }
 
-  INFO_PRINT("End");
+  pthread_mutex_unlock(&current_block_verifiers_lock);
   return;
 }
-
 
 // Helper for qsort
 static int bytes32_cmp(const void *va, const void *vb) {
