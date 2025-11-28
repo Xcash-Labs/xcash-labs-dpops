@@ -9,7 +9,6 @@ static char last_winner_name[MAXIMUM_BUFFER_SIZE_DELEGATES_NAME+1];
 static size_t last_winner_cnt = 0;
 
 #include "xcash_round.h"
-#include "xcash_timer_thread.h"
 
 /**
  * @brief Selects the block producer from the current round’s verifiers using VRF beta comparison.
