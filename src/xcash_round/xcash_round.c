@@ -5,6 +5,10 @@ static int total_delegates = 0;
 static char previous_round_block_hash[BLOCK_HASH_LENGTH + 1] = {0};
 static bool last_round_success = false;
 static size_t missed_load = 0;
+static char last_winner_name[MAXIMUM_BUFFER_SIZE_DELEGATES_NAME+1];
+static size_t last_winner_cnt = 0;
+
+#include "xcash_round.h"
 
 /**
  * @brief Selects the block producer from the current round’s verifiers using VRF beta comparison.
@@ -12,6 +16,9 @@ static size_t missed_load = 0;
  * This function scans through the list of block verifiers who submitted valid VRF data,
  * and deterministically selects the one with the lowest VRF beta value as the block producer.
  * The comparison is lexicographic and assumes all submitted beta strings are valid hex strings.
+ *
+ * It also enforces a fairness rule: if the last winner has already produced
+ * MAX_CONSECUTIVE_WINS blocks in a row, they will be skipped for this selection.
  *
  * @return int The index in `current_block_verifiers_list` of the selected block producer,
  *             or -1 if no valid VRF beta values are found.
@@ -21,22 +28,37 @@ int select_block_producer_from_vrf(void) {
   char lowest_beta[VRF_BETA_LENGTH + 1] = {0};
 
   pthread_mutex_lock(&current_block_verifiers_lock);
-  for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
-    // Skip if no beta submitted or is a seed node
 
-    if (strlen(current_block_verifiers_list.block_verifiers_vrf_beta_hex[i]) != VRF_BETA_LENGTH) {
+  for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
+    const char *beta_hex = current_block_verifiers_list.block_verifiers_vrf_beta_hex[i];
+    const char *addr     = current_block_verifiers_list.block_verifiers_public_address[i];
+    const char *name     = current_block_verifiers_list.block_verifiers_name[i];
+
+    // Skip if no beta submitted
+    if (strlen(beta_hex) != VRF_BETA_LENGTH) {
       continue;
     }
 
     // Do not include seed nodes in block production
-    if (is_seed_address(current_block_verifiers_list.block_verifiers_public_address[i])) {
+    if (is_seed_address(addr)) {
       continue;
     }
 
-    if (selected_index == -1 ||
-        strcmp(current_block_verifiers_list.block_verifiers_vrf_beta_hex[i], lowest_beta) < 0) {
+    // If this delegate has already won too many consecutive times, skip it
+    if (last_winner_cnt >= MAX_CONSECUTIVE_WINS &&
+        strncmp(last_winner_name, name, sizeof last_winner_name) == 0) {
+      ERROR_PRINT("Skipping delegate %s due to consecutive wins (%zu >= %d)",
+                  name, last_winner_cnt, MAX_CONSECUTIVE_WINS);
+      continue;
+    }
+
+    // Normal "lowest beta" selection
+    if (selected_index == -1 || strcmp(beta_hex, lowest_beta) < 0) {
       selected_index = (int)i;
-      strncpy(lowest_beta, current_block_verifiers_list.block_verifiers_vrf_beta_hex[i], VRF_BETA_LENGTH);
+
+      // Track current lowest beta safely
+      strncpy(lowest_beta, beta_hex, sizeof lowest_beta);
+      lowest_beta[sizeof lowest_beta - 1] = '\0';
     }
   }
 
@@ -46,6 +68,7 @@ int select_block_producer_from_vrf(void) {
   } else {
     ERROR_PRINT("No valid block producer could be selected.");
   }
+
   pthread_mutex_unlock(&current_block_verifiers_lock);
 
   return selected_index;
@@ -296,6 +319,13 @@ xcash_round_result_t process_round(void) {
     if (votes > max_votes) {
       max_votes = votes;
       max_index = (int)i;
+      if (strncmp(last_winner_name, current_block_verifiers_list.block_verifiers_name[max_index], sizeof last_winner_name) == 0) {
+        last_winner_cnt++;
+      } else {
+        last_winner_cnt = 1;
+      }
+      strncpy(last_winner_name, current_block_verifiers_list.block_verifiers_name[max_index], sizeof last_winner_name);
+      last_winner_name[sizeof last_winner_name - 1] = '\0';
     }
   }
   pthread_mutex_unlock(&current_block_verifiers_lock);
