@@ -274,6 +274,11 @@ int main(int argc, char *argv[]) {
         }
       }
     }
+// testing
+ INFO_PRINT("Running test payment");
+ run_proof_check(sched_ctx);
+
+
   } else {
     if (arg_config.minimum_amount == 0) {
       WARNING_PRINT("Unable to read minimum payout parameter so using default");
