@@ -479,7 +479,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
   }
 
   // One more pass: for every online delegate, if they have no reserve proofs,
-  // set total_vote_count=0 locally (this seed) and then broadcast that zero.
+  // set total_vote_count=0 locally (this seed) and then broadcast that to others.
   {
     mongoc_collection_t* rcoll =
         mongoc_client_get_collection(c, DATABASE_NAME, DB_COLLECTION_RESERVE_PROOFS);
@@ -690,13 +690,16 @@ static void run_proof_check(sched_ctx_t* ctx) {
 
     if (!sbuf_addf(&sb, "]}")) {
       free(sb.buf);
+      goto next_delegate;
     }
 
+    INFO_PRINT("SEED_TO_NODES_PAYOUT message: %s", sb.buf);
+
     // 5) send
-    if (send_message_to_ip_or_hostname(ip, XCASH_DPOPS_PORT, sb.buf) != XCASH_OK) {
-      ERROR_PRINT("Failed to send the payment message to %s", ip);
-    }
-    free(sb.buf);
+//    if (send_message_to_ip_or_hostname(ip, XCASH_DPOPS_PORT, sb.buf) != XCASH_OK) {
+//      ERROR_PRINT("Failed to send the payment message to %s", ip);
+//    }
+//    free(sb.buf);
 
   // fall-through;
   next_delegate:;
