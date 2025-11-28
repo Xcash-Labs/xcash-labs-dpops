@@ -266,6 +266,14 @@ xcash_round_result_t process_round(void) {
   if (producer_indx < 0) {
     INFO_STAGE_PRINT("Block Producer not selected, skipping round");
     return ROUND_ERROR;
+  } else {
+    if (strncmp(last_winner_name, current_block_verifiers_list.block_verifiers_name[producer_indx], sizeof last_winner_name) == 0) {
+      last_winner_cnt++;
+    } else {
+      last_winner_cnt = 1;
+    }
+    strncpy(last_winner_name, current_block_verifiers_list.block_verifiers_name[producer_indx], sizeof last_winner_name);
+    last_winner_name[sizeof last_winner_name - 1] = '\0';
   }
 
   INFO_STAGE_PRINT("Part 7 - Wait for Block Creator Confirmation by Consensus Vote");
@@ -319,13 +327,6 @@ xcash_round_result_t process_round(void) {
     if (votes > max_votes) {
       max_votes = votes;
       max_index = (int)i;
-      if (strncmp(last_winner_name, current_block_verifiers_list.block_verifiers_name[max_index], sizeof last_winner_name) == 0) {
-        last_winner_cnt++;
-      } else {
-        last_winner_cnt = 1;
-      }
-      strncpy(last_winner_name, current_block_verifiers_list.block_verifiers_name[max_index], sizeof last_winner_name);
-      last_winner_name[sizeof last_winner_name - 1] = '\0';
     }
   }
   pthread_mutex_unlock(&current_block_verifiers_lock);
