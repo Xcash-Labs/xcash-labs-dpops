@@ -49,6 +49,6 @@ typedef struct {
 } payout_bucket_t;
 
 void* timer_thread(void* arg);
-static void run_proof_check(sched_ctx_t* ctx)
+void run_proof_check(sched_ctx_t* ctx)
 
 #endif
