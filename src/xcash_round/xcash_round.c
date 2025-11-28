@@ -270,14 +270,14 @@ xcash_round_result_t process_round(void) {
   } else {
     
     INFO_PRINT("Setting last_winner_name");
-    INFO_PRINT("Delegate %s, count %zu",name, last_winner_cnt);
+    INFO_PRINT("Delegate %s, count %zu",current_block_verifiers_list.block_verifiers_name[producer_indx], last_winner_cnt);
 
     if (strncmp(last_winner_name, current_block_verifiers_list.block_verifiers_name[producer_indx], sizeof last_winner_name) == 0) {
       last_winner_cnt++;
     } else {
       last_winner_cnt = 1;
     }
-    INFO_PRINT("Delegate %s, count %zu",name, last_winner_cnt);
+    INFO_PRINT("Delegate %s, count %zu",current_block_verifiers_list.block_verifiers_name[producer_indx], last_winner_cnt);
 
         strncpy(last_winner_name, current_block_verifiers_list.block_verifiers_name[producer_indx], sizeof last_winner_name);
     last_winner_name[sizeof last_winner_name - 1] = '\0';
