@@ -9,7 +9,8 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
   char block_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
   char parsed_delegates_hash[SHA256_HASH_SIZE + 1] = {0};
 
-  INFO_PRINT("received %s, %s", __func__, MESSAGE);
+  DEBUG_PRINT("received %s, %s", __func__, MESSAGE);
+  INFO_PRINT("server_receive");
 
   // parse the message
   if (parse_json_data(MESSAGE, "public_address", public_address, sizeof(public_address)) == XCASH_ERROR || 
@@ -28,7 +29,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
     return;
   }
 
-  INFO_PRINT("Parsed remote public_address: %s, block_height: %s, delegates_hash: %s", public_address, block_height, 
+  DEBUG_PRINT("Parsed remote public_address: %s, block_height: %s, delegates_hash: %s", public_address, block_height, 
     parsed_delegates_hash);
 
   int wait_milliseconds = 0;
@@ -117,6 +118,8 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
   }
   pthread_mutex_unlock(&delegates_all_lock);
 
+  INFO_PRINT("server_receive end");
+  
   // This should only happen if a node has been banned for being offline too long
   if (!found && startup_complete) {
 
@@ -151,6 +154,8 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
       WARNING_PRINT("Delegate %s not found in delegates_all or delegates collection.", public_address);
     }
   }
+
+  INFO_PRINT("server_receive very end");
 
 skip_to_end:
   return;
