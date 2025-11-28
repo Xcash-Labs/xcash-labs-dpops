@@ -168,10 +168,11 @@ void server_receive_data_socket_node_to_node_vote_majority(const char* MESSAGE) 
   char vrf_public_key_data[VRF_PUBLIC_KEY_LENGTH + 1] = {0};
   char vrf_proof_hex[VRF_PROOF_LENGTH + 1] = {0};
   char vrf_beta_hex[VRF_BETA_LENGTH + 1] = {0};
-  char block_height[BLOCK_HEIGHT_LENGTH] = {0};
+  char block_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
   char vote_signature[XCASH_SIGN_DATA_LENGTH + 1] = {0};
 
   DEBUG_PRINT("received %s, %s", __func__, MESSAGE);
+  INFO_PRINT("Start");
 
   // parse the message
   if (parse_json_data(MESSAGE, "public_address", public_address, sizeof(public_address)) == XCASH_ERROR ||
@@ -241,8 +242,10 @@ void server_receive_data_socket_node_to_node_vote_majority(const char* MESSAGE) 
     return;
   }
 
+  INFO_PRINT("End");
   return;
 }
+
 
 // Helper for qsort
 static int bytes32_cmp(const void *va, const void *vb) {
