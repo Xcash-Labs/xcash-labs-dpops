@@ -45,7 +45,6 @@ int select_block_producer_from_vrf(void) {
     }
 
     // If this delegate has already won too many consecutive times, skip it
-    INFO_PRINT("In select: Delegate %s, count %zu",name, last_winner_cnt);
     if (last_winner_cnt >= MAX_CONSECUTIVE_WINS &&
         strncmp(last_winner_name, name, sizeof last_winner_name) == 0) {
       ERROR_PRINT("Skipping delegate %s due to consecutive wins (%zu >= %d)",
@@ -268,18 +267,12 @@ xcash_round_result_t process_round(void) {
     INFO_STAGE_PRINT("Block Producer not selected, skipping round");
     return ROUND_ERROR;
   } else {
-    
-    INFO_PRINT("Setting last_winner_name");
-    INFO_PRINT("Delegate %s, count %zu",current_block_verifiers_list.block_verifiers_name[producer_indx], last_winner_cnt);
-
     if (strncmp(last_winner_name, current_block_verifiers_list.block_verifiers_name[producer_indx], sizeof last_winner_name) == 0) {
       last_winner_cnt++;
     } else {
       last_winner_cnt = 1;
     }
-    INFO_PRINT("Delegate %s, count %zu",current_block_verifiers_list.block_verifiers_name[producer_indx], last_winner_cnt);
-
-        strncpy(last_winner_name, current_block_verifiers_list.block_verifiers_name[producer_indx], sizeof last_winner_name);
+    strncpy(last_winner_name, current_block_verifiers_list.block_verifiers_name[producer_indx], sizeof last_winner_name);
     last_winner_name[sizeof last_winner_name - 1] = '\0';
   }
 
