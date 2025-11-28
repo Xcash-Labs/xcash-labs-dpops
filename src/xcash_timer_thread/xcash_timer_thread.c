@@ -1012,7 +1012,7 @@ void* timer_thread(void* arg) {
     sleep(120);
     if (is_seed_node) {
       if (seed_is_primary()) {
-        INFO_PRINT("Scheduler: Testing running PROOF CHECK at %02d:%02d", slot->hour, slot->min);
+        INFO_PRINT("Scheduler: Testing running PROOF CHECK at startup...");
         run_proof_check(ctx);
       }
     }
