@@ -1010,6 +1010,7 @@ void* timer_thread(void* arg) {
 
     sleep(120);
     sync_block_verifiers_minutes_and_seconds(0, 50);
+    INFO_PRINT("Testing..............");
     if (is_job_node()) {
       INFO_PRINT("Scheduler: Testing running PROOF CHECK at startup...");
       run_proof_check(ctx);
