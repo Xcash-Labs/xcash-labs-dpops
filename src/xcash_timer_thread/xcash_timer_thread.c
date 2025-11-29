@@ -346,7 +346,7 @@ mongoc_client_t* c = mongoc_client_pool_pop(ctx->pool);
 
   // Wait for correct time to load from delegates_all, create you own copy
   // Capture height before next block is found but online status is set
-  sync_block_verifiers_minutes_and_seconds(0, 25);
+  sync_block_verifiers_minutes_and_seconds(0, 50);
   char save_block_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
   char save_block_hash[BLOCK_HASH_LENGTH + 1] = {0};
   strncpy(save_block_height, current_block_height, sizeof save_block_height);
