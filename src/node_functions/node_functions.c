@@ -132,8 +132,10 @@ const char *address_to_node_name(const char *public_address) {
 
 bool is_job_node(void) {
   // Run payouts only on uk node for now
-  if (strcmp(network_nodes[2].seed_public_address, xcash_wallet_public_address) == 0) {
+  if (strcmp(network_nodes[1].seed_public_address, xcash_wallet_public_address) == 0) {
+    INFO_PRINT("Return TRUE...");
     return true;
   }
+  INFO_PRINT("Return FALSE...");
   return false;
 }
