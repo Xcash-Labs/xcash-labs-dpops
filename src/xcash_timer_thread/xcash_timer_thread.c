@@ -1008,17 +1008,15 @@ void* timer_thread(void* arg) {
     time_t wake = run_at - WAKEUP_SKEW_SEC;
     if (wake < now) wake = now;
 
+//    sleep(120);
+//    if (is_seed_node) {
+//      if (seed_is_primary()) {
+//        INFO_PRINT("Scheduler: Testing running PROOF CHECK at startup...");
+//        run_proof_check(ctx);
+//      }
+//    }
 
-    sleep(120);
-    if (is_seed_node) {
-      if (seed_is_primary()) {
-        INFO_PRINT("Scheduler: Testing running PROOF CHECK at startup...");
-        run_proof_check(ctx);
-      }
-    }
-
-
-    // pre-wake, then align to exact minute
+// pre-wake, then align to exact minute
     sleep_until(wake);
     if (atomic_load_explicit(&shutdown_requested, memory_order_relaxed)) break;
     sleep_until(run_at);
