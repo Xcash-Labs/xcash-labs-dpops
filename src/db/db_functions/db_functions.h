@@ -42,6 +42,6 @@ bool fetch_reserve_proof_fields_by_id(const char* voter_public_address, char* vo
 bool seed_is_primary(void);
 int get_delegate_fee(double* out_fee);
 int compute_payouts_due(payout_output_t *parsed, uint64_t in_block_height, int64_t in_unlocked_balance, size_t entries_count);
-int run_payout_sweep_simple(void);
+int run_payout_sweep_simple(int64_t in_unlocked_balance);
 
 #endif

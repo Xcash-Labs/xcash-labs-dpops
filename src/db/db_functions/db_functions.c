@@ -1591,16 +1591,16 @@ int compute_payouts_due(payout_output_t *parsed, uint64_t in_block_height, int64
     fee_atomic = (uint64_t)((prod + (BPS_SCALE / 2)) / BPS_SCALE);
   }
 
-  uint64_t send_total = sum - fee_atomic;
-  sum = send_total;
-
-  // ---- Funds cap check (post-fee)
-  if (sum > in_unlocked_balance) {
-    ERROR_PRINT("compute_payouts_due: Not enough funds (need %" PRIu64 ", have %" PRIu64 ")",
-                sum, in_unlocked_balance);
+  // Safety guard: fee must not exceed total rewards
+  if (fee_atomic > (uint64_t)sum) {
+    ERROR_PRINT("compute_payouts_due: fee %" PRIu64 " exceeds sum %" PRIi64,
+                fee_atomic, (int64_t)sum);
     rc = XCASH_ERROR;
     goto done;
   }
+
+  uint64_t send_total = sum - fee_atomic;
+  sum = send_total;
 
   /* ---- Vote totals ---- */
   uint64_t total_delegate_votes = 0;
@@ -1743,92 +1743,204 @@ done:
 }
 
 /*---------------------------------------------------------------------------------------------------------
-Name: run_payout_sweep_simple
-Purpose:
-  Streams over payout_balances and pays any address that either:
-    (1) has pending_atomic >= minimum_payout_atomic, OR
-    (2) last activity (updated_at) is older than NO_ACTIVITY_DELETE and pending_atomic > 0.
-  For each paid address:
-    - Sends a single-recipient wallet-rpc `transfer` with subtract_fee_from_outputs:[0]
-    - Inserts an immutable receipt into DB_COLLECTION_PAYOUT_RECEIPTS (lean schema)
-    - Zeroes pending_atomic (or deletes the doc if "stale_7d" path)
-  On the first failure (wallet send, receipt insert, or DB update), returns XCASH_ERROR.
-
-Inputs (globals expected):
-  DATABASE_NAME
-  DB_COLLECTION_PAYOUT_BALANCES      // "payout_balances"
-  DB_COLLECTION_PAYOUT_RECEIPTS      // "payout_receipts"
-  minimum_payout                     // XCASH (double or int)
-  XCASH_ATOMIC_UNITS                 // 1 XCASH = e.g., 1_000_000
-  NO_ACTIVITY_DELETE                 // ms (e.g., 7 days)
-  database_client_thread_pool        // mongoc pool
-  TRANSACTION_HASH_LENGTH            // must be 64
-
-Writes:
-  Collection: DB_COLLECTION_PAYOUT_RECEIPTS (per payout)
-    _id:                tx_hash (string, 64 hex)
-    payment_address:    recipient address (string)
-    amount_atomic_sent: wallet-reported amount (if available) or requested 'pend' (int64)
-    tx_fee_atomic:      wallet-reported tx fee (int64)
-    created_at:         server time (BSON date ms)
-
-Cursor & safety:
-  - Streams using find_with_opts (projection + batchSize + noCursorTimeout)
-  - No in-memory arrays; one doc at a time
-  - Early return on first error to avoid partial ambiguous state
-
-Idempotency:
-  - If a payout was already sent (same tx_hash) and receipt exists, insert may return DUPKEY.
-    You may treat duplicate-key as success if desired.
-
-Return:
-  XCASH_OK on full success; XCASH_ERROR on first failure.
+ * run_payout_sweep_simple
+ *
+ * Streams over payout_balances and pays any address that either:
+ *   (1) has pending_atomic >= minimum_payout_atomic, or
+ *   (2) updated_at is older than NO_ACTIVITY_DELETE and pending_atomic > 0.
+ *
+ * The sweep:
+ *   - Sends a single-recipient wallet payout per address via wallet_payout_send().
+ *   - Inserts a lean, immutable receipt into DB_COLLECTION_PAYOUT_RECEIPTS.
+ *   - Zeroes pending_atomic or deletes the balance doc (for stale entries).
+ *
+ * Fairness / budget:
+ *   - Caller must pass the current unlocked wallet balance in atomic units.
+ *   - The function enforces an all-or-nothing rule:
+ *       total_pending_eligible <= (in_unlocked_balance - safety_reserve)
+ *     otherwise it skips the sweep.
+ *
+ * @param in_unlocked_balance  Unlocked wallet balance in atomic units (>= 0).
+ * @return XCASH_OK on success, XCASH_ERROR on first failure.
 ---------------------------------------------------------------------------------------------------------*/
-int run_payout_sweep_simple(void)
+int run_payout_sweep_simple(int64_t in_unlocked_balance)
 {
   int rc = XCASH_OK;
 
-  const int64_t minimum_payout_atomic = (int64_t)(minimum_payout * XCASH_ATOMIC_UNITS);
+  mongoc_client_t* client = NULL;
+  mongoc_collection_t* coll_bal = NULL;
+  mongoc_collection_t* coll_pay = NULL;
+  mongoc_cursor_t* cur = NULL;
+  size_t processed = 0;
+  int64_t total_pending_atomic = 0;
 
-  mongoc_client_t* client = mongoc_client_pool_pop(database_client_thread_pool);
+  // ---- Quick unlocked check (no DB needed) ----
+  if (in_unlocked_balance <= 0) {
+    INFO_PRINT("run_payout_sweep_simple: unlocked balance <= 0, skipping sweep");
+    return XCASH_OK;
+  }
+
+  uint64_t unlocked = (uint64_t)in_unlocked_balance;
+
+  // Optional safety reserve so you never drain to absolute 0
+  const uint64_t safety_reserve = 1 * XCASH_ATOMIC_UNITS;
+
+  if (unlocked <= safety_reserve) {
+    INFO_PRINT("run_payout_sweep_simple: unlocked balance %" PRIu64
+               " <= safety reserve %" PRIu64 ", skipping sweep",
+               unlocked, safety_reserve);
+    return XCASH_OK;
+  }
+
+  // We'll only spend up to this amount in total (fairness guard uses this)
+  const uint64_t max_spend = unlocked - safety_reserve;
+
+  // ---- Get client + payout_balances collection (needed for all queries) ----
+  client = mongoc_client_pool_pop(database_client_thread_pool);
   if (!client) {
     ERROR_PRINT("run_payout_sweep_simple: mongoc_client_pool_pop failed");
     return XCASH_ERROR;
   }
 
+  coll_bal = mongoc_client_get_collection(client, DATABASE_NAME, DB_COLLECTION_PAYOUT_BALANCES);
+  if (!coll_bal) {
+    ERROR_PRINT("run_payout_sweep_simple: get_collection %s failed", DB_COLLECTION_PAYOUT_BALANCES);
+    rc = XCASH_ERROR;
+    goto done;
+  }
+
+  // Common parameters used in both total_pending and sweep queries
+  const int64_t minimum_payout_atomic = (int64_t)(minimum_payout * XCASH_ATOMIC_UNITS);
   const int64_t now_ms = (int64_t)time(NULL) * 1000;
   const int64_t cutoff = now_ms - NO_ACTIVITY_DELETE;
 
-  // Build query: (pending >= min) OR (stale AND pending > 0)
+  // ---- Compute total_pending_atomic (only entries that would be swept) ----
+  {
+    bson_t q; bson_init(&q);
+    bson_t or_arr; bson_append_array_begin(&q, "$or", -1, &or_arr);
+
+    // or[0]: pending_atomic >= min
+    {
+      bson_t d, c;
+      bson_append_document_begin(&or_arr, "0", -1, &d);
+        bson_append_document_begin(&d, "pending_atomic", -1, &c);
+          BSON_APPEND_INT64(&c, "$gte", minimum_payout_atomic);
+        bson_append_document_end(&d, &c);
+      bson_append_document_end(&or_arr, &d);
+    }
+
+    // or[1]: updated_at < cutoff AND pending_atomic > 0
+    {
+      bson_t d, and_arr, a0, a1, c0, c1;
+      bson_append_document_begin(&or_arr, "1", -1, &d);
+        bson_append_array_begin(&d, "$and", -1, &and_arr);
+
+          // updated_at < cutoff
+          bson_append_document_begin(&and_arr, "0", -1, &a0);
+            bson_append_document_begin(&a0, "updated_at", -1, &c0);
+              BSON_APPEND_DATE_TIME(&c0, "$lt", cutoff);
+            bson_append_document_end(&a0, &c0);
+          bson_append_document_end(&and_arr, &a0);
+
+          // pending_atomic > 0
+          bson_append_document_begin(&and_arr, "1", -1, &a1);
+            bson_append_document_begin(&a1, "pending_atomic", -1, &c1);
+              BSON_APPEND_INT64(&c1, "$gt", 0);
+            bson_append_document_end(&a1, &c1);
+          bson_append_document_end(&and_arr, &a1);
+
+        bson_append_array_end(&d, &and_arr);
+      bson_append_document_end(&or_arr, &d);
+    }
+
+    bson_append_array_end(&q, &or_arr);
+
+    // Only need pending_atomic field for the sum
+    bson_t opts; bson_init(&opts);
+    bson_t proj; bson_init(&proj);
+    BSON_APPEND_INT32(&proj, "pending_atomic", 1);
+    BSON_APPEND_DOCUMENT(&opts, "projection", &proj);
+    BSON_APPEND_BOOL(&opts, "noCursorTimeout", true);
+    BSON_APPEND_INT32(&opts, "batchSize", 500);
+
+    mongoc_cursor_t* csum = mongoc_collection_find_with_opts(coll_bal, &q, &opts, NULL);
+    const bson_t* d;
+    while (mongoc_cursor_next(csum, &d)) {
+      bson_iter_t it;
+      if (bson_iter_init_find(&it, d, "pending_atomic") && BSON_ITER_HOLDS_INT64(&it)) {
+        total_pending_atomic += bson_iter_int64(&it);
+      }
+    }
+    if (mongoc_cursor_error(csum, NULL)) {
+      ERROR_PRINT("run_payout_sweep_simple: cursor error computing total_pending");
+      mongoc_cursor_destroy(csum);
+      bson_destroy(&q);
+      bson_destroy(&opts);
+      bson_destroy(&proj);
+      rc = XCASH_ERROR;
+      goto done;
+    }
+
+    mongoc_cursor_destroy(csum);
+    bson_destroy(&q);
+    bson_destroy(&opts);
+    bson_destroy(&proj);
+  }
+
+  INFO_PRINT("run_payout_sweep_simple: total pending (eligible)=%" PRId64
+             " max_spend=%" PRIu64 " unlocked=%" PRIu64,
+             total_pending_atomic, max_spend, unlocked);
+
+  // ---- Fairness guard: require enough unlocked (minus reserve) to clear all eligible pending ----
+  if (total_pending_atomic < 0) {
+    total_pending_atomic = 0; // defensive
+  }
+
+  if ((uint64_t)total_pending_atomic > max_spend) {
+    INFO_PRINT("run_payout_sweep_simple: total_pending %" PRId64
+               " exceeds max_spend %" PRIu64 ", skipping sweep this round",
+               total_pending_atomic, max_spend);
+    goto done;
+  }
+
+  // ---- From here on, we know we can afford to clear everything that meets criteria ----
+
+  // Build sweep query: (pending >= min) OR (stale AND pending > 0)
   bson_t query; bson_init(&query);
-  bson_t or_arr; bson_append_array_begin(&query, "$or", -1, &or_arr);
+  bson_t or_arr2; bson_append_array_begin(&query, "$or", -1, &or_arr2);
   { // or[0]: pending_atomic >= min
-    bson_t d, c; bson_append_document_begin(&or_arr, "0", -1, &d);
+    bson_t d, c;
+    bson_append_document_begin(&or_arr2, "0", -1, &d);
       bson_append_document_begin(&d, "pending_atomic", -1, &c);
         BSON_APPEND_INT64(&c, "$gte", minimum_payout_atomic);
       bson_append_document_end(&d, &c);
-    bson_append_document_end(&or_arr, &d);
+    bson_append_document_end(&or_arr2, &d);
   }
   { // or[1]: updated_at < cutoff AND pending_atomic > 0
-    bson_t d, and_arr, a0, a1, c0, c1; bson_append_document_begin(&or_arr, "1", -1, &d);
+    bson_t d, and_arr, a0, a1, c0, c1;
+    bson_append_document_begin(&or_arr2, "1", -1, &d);
       bson_append_array_begin(&d, "$and", -1, &and_arr);
+
+        // updated_at < cutoff
         bson_append_document_begin(&and_arr, "0", -1, &a0);
           bson_append_document_begin(&a0, "updated_at", -1, &c0);
             BSON_APPEND_DATE_TIME(&c0, "$lt", cutoff);
           bson_append_document_end(&a0, &c0);
         bson_append_document_end(&and_arr, &a0);
 
+        // pending_atomic > 0
         bson_append_document_begin(&and_arr, "1", -1, &a1);
           bson_append_document_begin(&a1, "pending_atomic", -1, &c1);
             BSON_APPEND_INT64(&c1, "$gt", 0);
           bson_append_document_end(&a1, &c1);
         bson_append_document_end(&and_arr, &a1);
-      bson_append_array_end(&d, &and_arr);
-    bson_append_document_end(&or_arr, &d);
-  }
-  bson_append_array_end(&query, &or_arr);
 
-  // Projection + cursor opts
+      bson_append_array_end(&d, &and_arr);
+    bson_append_document_end(&or_arr2, &d);
+  }
+  bson_append_array_end(&query, &or_arr2);
+
+  // Projection + cursor opts for sweep
   bson_t opts; bson_init(&opts);
   bson_t proj; bson_init(&proj);
   BSON_APPEND_INT32(&proj, "_id", 1);
@@ -1838,31 +1950,21 @@ int run_payout_sweep_simple(void)
   BSON_APPEND_BOOL(&opts, "noCursorTimeout", true);
   BSON_APPEND_INT32(&opts, "batchSize", 500);
 
-  mongoc_collection_t* coll_bal =
-      mongoc_client_get_collection(client, DATABASE_NAME, DB_COLLECTION_PAYOUT_BALANCES);
-  if (!coll_bal) {
-    ERROR_PRINT("run_payout_sweep_simple: get_collection %s failed", DB_COLLECTION_PAYOUT_BALANCES);
-    bson_destroy(&query); bson_destroy(&opts); bson_destroy(&proj);
-    mongoc_client_pool_push(database_client_thread_pool, client);
-    return XCASH_ERROR;
-  }
-
-  mongoc_collection_t* coll_pay =
-      mongoc_client_get_collection(client, DATABASE_NAME, DB_COLLECTION_PAYOUT_RECEIPTS);
+  coll_pay = mongoc_client_get_collection(client, DATABASE_NAME, DB_COLLECTION_PAYOUT_RECEIPTS);
   if (!coll_pay) {
     ERROR_PRINT("run_payout_sweep_simple: get_collection %s failed", DB_COLLECTION_PAYOUT_RECEIPTS);
     bson_destroy(&query); bson_destroy(&opts); bson_destroy(&proj);
-    mongoc_collection_destroy(coll_bal);
-    mongoc_client_pool_push(database_client_thread_pool, client);
-    return XCASH_ERROR;
+    rc = XCASH_ERROR;
+    goto done;
   }
 
-  mongoc_cursor_t* cur = mongoc_collection_find_with_opts(coll_bal, &query, &opts, NULL);
-  bson_destroy(&query); bson_destroy(&opts); bson_destroy(&proj);
+  cur = mongoc_collection_find_with_opts(coll_bal, &query, &opts, NULL);
+  bson_destroy(&query);
+  bson_destroy(&opts);
+  bson_destroy(&proj);
 
+  // ---- Sweep loop (unchanged from your latest version) ----
   const bson_t* doc;
-  size_t processed = 0;
-
   while (mongoc_cursor_next(cur, &doc)) {
     processed++;
 
@@ -1878,7 +1980,10 @@ int run_payout_sweep_simple(void)
     if (bson_iter_init_find(&it, doc, "updated_at") && BSON_ITER_HOLDS_DATE_TIME(&it))
       updated = bson_iter_date_time(&it);
 
-    if (!addr) { ERROR_PRINT("run_payout_sweep_simple: skipping doc missing _id"); continue; }
+    if (!addr) {
+      ERROR_PRINT("run_payout_sweep_simple: skipping doc missing _id");
+      continue;
+    }
 
     const bool meets_min   = (pend >= minimum_payout_atomic);
     const bool is_stale_7d = (updated > 0 && (now_ms - updated) >= NO_ACTIVITY_DELETE);
@@ -1895,13 +2000,15 @@ int run_payout_sweep_simple(void)
     size_t split_siblings_count = 0;
 
     sleep(1);
-    int send_ok = wallet_payout_send(addr, pend, reason, first_hash, sizeof(first_hash), &fee, &ts, &amt_sent,
-      split_siblings, MAX_SIBLINGS, &split_siblings_count);
+    int send_ok = wallet_payout_send(addr, pend, reason,
+                                     first_hash, sizeof(first_hash),
+                                     &fee, &ts, &amt_sent,
+                                     split_siblings, MAX_SIBLINGS, &split_siblings_count);
     if (send_ok == XCASH_ERROR) {
-        ERROR_PRINT("run_payout_sweep_simple: payout failed for %s amount=%" PRId64, addr, pend);
-        rc = XCASH_ERROR;
-        goto done;
-      }
+      ERROR_PRINT("run_payout_sweep_simple: payout failed for %s amount=%" PRId64, addr, pend);
+      rc = XCASH_ERROR;
+      goto done;
+    }
 
     // --- Insert payment record ---
     {
@@ -1913,16 +2020,15 @@ int run_payout_sweep_simple(void)
       BSON_APPEND_INT64(&pay_doc, "amount_atomic_requested", (int64_t)pend);
       BSON_APPEND_INT64(&pay_doc, "amount_atomic_sent", (int64_t)amt_sent);
       BSON_APPEND_INT64(&pay_doc, "tx_fee_atomic", (int64_t)fee);
-      BSON_APPEND_DATE_TIME(&pay_doc, "created_at", ts /* or ts_ms if that's your timestamp var */);
-      BSON_APPEND_INT32(&pay_doc, "split_count", (int32_t)split_siblings_count);  // counts for quick queries
-      // siblings array: split_tx_ids: [ "<txid2>", "<txid3>", ... ]
+      BSON_APPEND_DATE_TIME(&pay_doc, "created_at", ts);
+      BSON_APPEND_INT32(&pay_doc, "split_count", (int32_t)split_siblings_count);
       if (split_siblings_count > 0) {
         bson_t arr;
         bson_append_array_begin(&pay_doc, "split_tx_ids", -1, &arr);
         for (uint32_t i = 0; i < split_siblings_count; ++i) {
           const char* key;
           char keybuf[16];
-          bson_uint32_to_string(i, &key, keybuf, sizeof(keybuf));  // keys: "0","1",...
+          bson_uint32_to_string(i, &key, keybuf, sizeof(keybuf));
           BSON_APPEND_UTF8(&arr, key, split_siblings[i]);
         }
         bson_append_array_end(&pay_doc, &arr);
@@ -1961,7 +2067,8 @@ int run_payout_sweep_simple(void)
           BSON_APPEND_DATE_TIME(&set, "updated_at", now_ms);
         bson_append_document_end(&u, &set);
         ok = mongoc_collection_update_one(coll_bal, &q, &u, NULL, NULL, &err);
-        bson_destroy(&q); bson_destroy(&u);
+        bson_destroy(&q);
+        bson_destroy(&u);
       }
 
       if (!ok) {
