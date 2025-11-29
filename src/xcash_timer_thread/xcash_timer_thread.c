@@ -1008,13 +1008,12 @@ void* timer_thread(void* arg) {
     time_t wake = run_at - WAKEUP_SKEW_SEC;
     if (wake < now) wake = now;
 
-//    sleep(120);
-//    if (is_seed_node) {
-//      if (seed_is_primary()) {
-//        INFO_PRINT("Scheduler: Testing running PROOF CHECK at startup...");
-//        run_proof_check(ctx);
-//      }
-//    }
+    sleep(120);
+    sync_block_verifiers_minutes_and_seconds(0, 50);
+    if (is_job_node()) {
+      INFO_PRINT("Scheduler: Testing running PROOF CHECK at startup...");
+      run_proof_check(ctx);
+    }
 
 // pre-wake, then align to exact minute
     sleep_until(wake);
@@ -1025,20 +1024,16 @@ void* timer_thread(void* arg) {
     // dispatch based on role
     const sched_slot_t* slot = &SLOTS[idx];
     if (slot->kind == JOB_PROOF) {
-      if (is_seed_node) {
+      if (is_job_node) {
         sync_block_verifiers_minutes_and_seconds(0, 50);
-        if (seed_is_primary()) {
-          INFO_PRINT("Scheduler: running PROOF CHECK at %02d:%02d", slot->hour, slot->min);
-          run_proof_check(ctx);
-        }
+        INFO_PRINT("Scheduler: running PROOF CHECK at %02d:%02d", slot->hour, slot->min);
+        run_proof_check(ctx);
       }
     } else if (slot->kind == JOB_ACTIVITY_CK) {
-      if (is_seed_node) {
+      if (is_job_node) {
         sync_block_verifiers_minutes_and_seconds(0, 50);
-        if (seed_is_primary()) {
-          INFO_PRINT("Scheduler: running ACTIVITY CHECK at %02d:%02d", slot->hour, slot->min);
-          run_activity_check(ctx);
-        }
+        INFO_PRINT("Scheduler: running ACTIVITY CHECK at %02d:%02d", slot->hour, slot->min);
+        run_activity_check(ctx);
       }
     } else if (slot->kind == JOB_IMAGE_CK) {
       INFO_PRINT("Scheduler: running IMAGE CHECK at %02d:%02d", slot->hour, slot->min);

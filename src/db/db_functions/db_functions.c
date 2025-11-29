@@ -414,62 +414,6 @@ bool is_replica_set_ready(void) {
   return is_ready;
 }
 
-// Function to determine if this seed delegate is the primary mongodb node
-bool seed_is_primary(void) {
-  char ip_address[IP_LENGTH + 1] = {0};
-  int i = 0;
-  while (i < network_data_nodes_amount) {
-    if (strcmp(network_nodes[i].seed_public_address, xcash_wallet_public_address) == 0) {
-      if (!hostname_to_ip(network_nodes[i].ip_address, ip_address, sizeof(ip_address))) {
-        ERROR_PRINT("Could not resolve %s", network_nodes[i].ip_address);
-        return false;
-      }
-      break;
-    }
-    i++;
-  }
-
-  mongoc_client_t* client = mongoc_client_pool_pop(database_client_thread_pool);
-  if (!client) return false;
-
-  bool ok = false;
-  bson_error_t err;
-  bson_t reply;
-  bson_t* cmd = BCON_NEW("hello", BCON_INT32(1));  // ask the node who it is
-
-  if (mongoc_client_command_simple(client, "admin", cmd, NULL, &reply, &err)) {
-    bson_iter_t iter;
-    if (bson_iter_init(&iter, &reply) &&
-        bson_iter_find_case(&iter, "me") && BSON_ITER_HOLDS_UTF8(&iter)) {
-      const char* me = bson_iter_utf8(&iter, NULL);  // e.g. "10.0.0.5:27017" or "[::1]:27017"
-      char ip[256];
-      size_t n = 0;
-
-      if (me[0] == '[') {
-        const char* rb = strchr(me, ']');
-        n = rb ? (size_t)(rb - me - 1) : 0;
-        memcpy(ip, me + 1, n);
-      } else {
-        const char* c = strrchr(me, ':');
-        n = c ? (size_t)(c - me) : strlen(me);
-        memcpy(ip, me, n);
-      }
-
-      ip[n] = '\0';
-      if (strcmp(ip, ip_address) == 0) {
-        ok = true;
-      }
-    }
-    bson_destroy(&reply);
-  } else {
-    ERROR_PRINT("hello failed: %s", err.message);
-  }
-
-  bson_destroy(cmd);
-  mongoc_client_pool_push(database_client_thread_pool, client);
-  return ok;
-}
-
 bool add_seed_indexes(void) {
   bson_error_t err;
   bool ok = true;

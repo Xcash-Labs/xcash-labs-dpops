@@ -17,5 +17,6 @@ int get_seed_node_count(void);
 void get_vrf_public_key(void);
 const char* address_to_node_name(const char* public_address);
 const char* address_to_node_host(const char* public_address);
+bool is_job_node(void);
 
 #endif  // NODE_FUNCTIONS_H

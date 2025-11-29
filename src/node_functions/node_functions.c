@@ -129,3 +129,11 @@ const char *address_to_node_name(const char *public_address) {
   WARNING_PRINT("Public address %s not found in any list.", public_address);
   return NULL;
 }
+
+bool is_job_node(void) {
+  // Run payouts only on uk node for now
+  if (strcmp(network_nodes[2].seed_public_address, xcash_wallet_public_address) == 0) {
+    return true;
+  }
+  return false;
+}
