@@ -696,10 +696,10 @@ mongoc_client_t* c = mongoc_client_pool_pop(ctx->pool);
     INFO_PRINT("SEED_TO_NODES_PAYOUT message: %s", sb.buf);
 
     // 5) send
-//    if (send_message_to_ip_or_hostname(ip, XCASH_DPOPS_PORT, sb.buf) != XCASH_OK) {
-//      ERROR_PRINT("Failed to send the payment message to %s", ip);
-//    }
-//    free(sb.buf);
+    if (send_message_to_ip_or_hostname(ip, XCASH_DPOPS_PORT, sb.buf) != XCASH_OK) {
+      ERROR_PRINT("Failed to send the payment message to %s", ip);
+    }
+    free(sb.buf);
 
   // fall-through;
   next_delegate:;

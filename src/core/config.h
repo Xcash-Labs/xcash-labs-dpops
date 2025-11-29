@@ -15,7 +15,6 @@
 #define MAX_SIBLINGS 15
 
 // ===================== Blockchain Field Lengths =====================
-#define SAFE_CONFIRMATION_MARGIN 10
 
 // ===================== Network Ports and IPs =====================
 #define XCASH_DAEMON_PORT 18281
@@ -122,7 +121,7 @@
 #define MAX_PROOFS_PER_DELEGATE_HARD   24000
 #define ATOMIC_UNITS_PER_XCA 1000000LL
 #define MAX_CONSECUTIVE_WINS 3
-
+#define SAFE_CONFIRMATION_MARGIN 60
 #define IP_LENGTH 255
 #define DELEGATES_ONLINE_BUFFER ((IP_LENGTH * BLOCK_VERIFIERS_TOTAL_AMOUNT) + VSMALL_BUFFER_SIZE) // add buffer padding just incase
 
