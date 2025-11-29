@@ -1024,13 +1024,13 @@ void* timer_thread(void* arg) {
     // dispatch based on role
     const sched_slot_t* slot = &SLOTS[idx];
     if (slot->kind == JOB_PROOF) {
-      if (is_job_node) {
+      if (is_job_node()) {
         sync_block_verifiers_minutes_and_seconds(0, 50);
         INFO_PRINT("Scheduler: running PROOF CHECK at %02d:%02d", slot->hour, slot->min);
         run_proof_check(ctx);
       }
     } else if (slot->kind == JOB_ACTIVITY_CK) {
-      if (is_job_node) {
+      if (is_job_node()) {
         sync_block_verifiers_minutes_and_seconds(0, 50);
         INFO_PRINT("Scheduler: running ACTIVITY CHECK at %02d:%02d", slot->hour, slot->min);
         run_activity_check(ctx);
