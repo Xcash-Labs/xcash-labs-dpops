@@ -288,6 +288,14 @@ int main(int argc, char *argv[]) {
         WARNING_PRINT("Unable to read fee from database so using default");
       }
     }
+
+
+    if(is_seed_node) {
+      bool ok = test_primary();
+    }
+
+
+
     if (print_starter_state(&arg_config)) {
       start_block_production();
     }

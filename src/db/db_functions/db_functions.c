@@ -414,6 +414,57 @@ bool is_replica_set_ready(void) {
   return is_ready;
 }
 
+bool reserve_proof_check_node(void) {
+  // Run payouts only on uk node for now
+  if (strcmp(network_nodes[2].seed_public_address, xcash_wallet_public_address) == 0) {
+    return true;
+  }
+  return false;
+}
+
+bool test_primary(void)
+{
+  bool is_primary = false;
+  bson_t cmd;
+  bson_t reply;
+  bson_error_t err;
+
+  mongoc_client_t* client = mongoc_client_pool_pop(database_client_thread_pool);
+  if (!client) {
+    ERROR_PRINT("test_primary: mongoc_client_pool_pop failed");
+    return false;
+  }
+
+  bson_init(&cmd);
+  BSON_APPEND_INT32(&cmd, "hello", 1);  // or "isMaster" for older servers
+
+  if (mongoc_client_command_simple(client, "admin", &cmd, NULL, &reply, &err)) {
+    bson_iter_t it;
+
+    // Newer MongoDB: "isWritablePrimary"
+    if (bson_iter_init_find_case(&it, &reply, "isWritablePrimary") &&
+        BSON_ITER_HOLDS_BOOL(&it)) {
+      is_primary = bson_iter_bool(&it);
+    }
+    // Older MongoDB: "ismaster"
+    else if (bson_iter_init_find_case(&it, &reply, "ismaster") &&
+             BSON_ITER_HOLDS_BOOL(&it)) {
+      is_primary = bson_iter_bool(&it);
+    }
+
+    bson_destroy(&reply);
+  } else {
+    ERROR_PRINT("test_primary: hello command failed: %s", err.message);
+  }
+
+  bson_destroy(&cmd);
+  mongoc_client_pool_push(database_client_thread_pool, client);
+
+  INFO_PRINT("This node is Primary");
+  return is_primary;
+}
+
+
 // Function to determin if this seed delegate is the primary mongodb node
 bool seed_is_primary(void) {
   char ip_address[IP_LENGTH + 1] = {0};
@@ -533,7 +584,7 @@ bool add_seed_indexes(void) {
       if (err.code != 48) {
         ok = false;
         ERROR_PRINT("[indexes] create_collection %s failed (domain=%d code=%d): %s",
-                      DB_COLLECTION_ROUNDS, err.domain, err.code, err.message);
+                    DB_COLLECTION_ROUNDS, err.domain, err.code, err.message);
       }
     }
     bson_destroy(&c_opts);
@@ -1165,8 +1216,7 @@ bool db_count_doc(const char* db_name, const char* collection_name, int64_t* res
 bool get_vote_total_and_delegate_name(
     const char* voter_id,
     int64_t* total_out,
-    char delegate_name_out[MAXIMUM_BUFFER_SIZE_DELEGATES_NAME + 1])
-{
+    char delegate_name_out[MAXIMUM_BUFFER_SIZE_DELEGATES_NAME + 1]) {
   if (!voter_id || !*voter_id || !total_out || !delegate_name_out) {
     ERROR_PRINT("get_vote_total_and_delegate_name: bad params");
     return false;
@@ -1195,13 +1245,12 @@ bool get_vote_total_and_delegate_name(
   BSON_APPEND_UTF8(&f, "_id", voter_id);
 
   bson_t* opts = BCON_NEW(
-      "limit", BCON_INT64(1),               // unique _id, but be explicit
+      "limit", BCON_INT64(1),  // unique _id, but be explicit
       "projection", "{",
-        "total_vote", BCON_BOOL(true),
-        "public_address_voted_for", BCON_BOOL(true),
-        "_id", BCON_BOOL(false),
-      "}"
-  );
+      "total_vote", BCON_BOOL(true),
+      "public_address_voted_for", BCON_BOOL(true),
+      "_id", BCON_BOOL(false),
+      "}");
 
   mongoc_cursor_t* cur = mongoc_collection_find_with_opts(rp, &f, opts, NULL);
   if (opts) bson_destroy(opts);
@@ -1226,7 +1275,7 @@ bool get_vote_total_and_delegate_name(
     bson_destroy(&f);
     mongoc_collection_destroy(rp);
     ok = true;
-    goto CLEANUP_CLIENT;     // returns true (+ sentinel)
+    goto CLEANUP_CLIENT;  // returns true (+ sentinel)
   }
 
   // Found: extract total + delegate address
@@ -1252,7 +1301,7 @@ bool get_vote_total_and_delegate_name(
         mongoc_client_get_collection(c, DATABASE_NAME, DB_COLLECTION_DELEGATES);
     if (!del) {
       ERROR_PRINT("get_collection failed for %s.%s", DATABASE_NAME, DB_COLLECTION_DELEGATES);
-      goto CLEANUP_CLIENT; // leave ok=false -> error
+      goto CLEANUP_CLIENT;  // leave ok=false -> error
     }
 
     bson_t df = BSON_INITIALIZER;
@@ -1261,10 +1310,9 @@ bool get_vote_total_and_delegate_name(
     bson_t* dopts = BCON_NEW(
         "limit", BCON_INT64(1),
         "projection", "{",
-          "delegate_name", BCON_BOOL(true),
-          "_id", BCON_BOOL(false),
-        "}"
-    );
+        "delegate_name", BCON_BOOL(true),
+        "_id", BCON_BOOL(false),
+        "}");
 
     cur = mongoc_collection_find_with_opts(del, &df, dopts, NULL);
     if (dopts) bson_destroy(dopts);
@@ -1287,7 +1335,10 @@ bool get_vote_total_and_delegate_name(
       }
     }
 
-    if (cur) { mongoc_cursor_destroy(cur); cur = NULL; }
+    if (cur) {
+      mongoc_cursor_destroy(cur);
+      cur = NULL;
+    }
     bson_destroy(&df);
     mongoc_collection_destroy(del);
   }
@@ -1386,8 +1437,7 @@ Parameters:
   out_fee - [out] Receives the delegate fee as a double (e.g., 5.0 for 5%)
 Return:  XCASH_OK (1) on success, XCASH_ERROR (0) if missing / not a double / error
 ---------------------------------------------------------------------------------------------------------*/
-int get_delegate_fee(double* out_fee)
-{
+int get_delegate_fee(double* out_fee) {
   if (!out_fee) {
     ERROR_PRINT("get_delegate_fee: out_fee is NULL");
     return XCASH_ERROR;
@@ -1408,14 +1458,17 @@ int get_delegate_fee(double* out_fee)
   }
 
   // Filter: { public_address: "<xcash_wallet_public_address>" }
-  bson_t filter; bson_init(&filter);
+  bson_t filter;
+  bson_init(&filter);
   BSON_APPEND_UTF8(&filter, "public_address", xcash_wallet_public_address);
 
   // Projection: { delegate_fee: 1 }
-  bson_t proj; bson_init(&proj);
+  bson_t proj;
+  bson_init(&proj);
   BSON_APPEND_INT32(&proj, "delegate_fee", 1);
 
-  bson_t opts; bson_init(&opts);
+  bson_t opts;
+  bson_init(&opts);
   BSON_APPEND_DOCUMENT(&opts, "projection", &proj);
   BSON_APPEND_INT32(&opts, "limit", 1);
 
@@ -1454,7 +1507,7 @@ int get_delegate_fee(double* out_fee)
 
 /*---------------------------------------------------------------------------------------------------------
 Name:        compute_payouts_due
-Description: 
+Description:
   Aggregates unprocessed block rewards below `in_block_height` from the `found_blocks`
   collection, caps the payable total by the wallet's `in_unlocked_balance`, and
   distributes the capped sum proportionally across `parsed[0..entries_count-1]`
@@ -1485,8 +1538,7 @@ Return:
                   (e.g., NULL `parsed` with non-zero `entries_count`, vote-sum overflow,
                   Mongo failures).
 ---------------------------------------------------------------------------------------------------------*/
-int compute_payouts_due(payout_output_t *parsed, uint64_t in_block_height, int64_t in_unlocked_balance, size_t entries_count)                      
-{
+int compute_payouts_due(payout_output_t* parsed, uint64_t in_block_height, int64_t in_unlocked_balance, size_t entries_count) {
   int rc = XCASH_OK;
 
   if (!parsed || entries_count == 0) {
@@ -1495,8 +1547,8 @@ int compute_payouts_due(payout_output_t *parsed, uint64_t in_block_height, int64
   }
 
   mongoc_client_t* client = NULL;
-  mongoc_collection_t* coll_blocks = NULL;     // found_blocks
-  mongoc_collection_t* coll_pub    = NULL;     // public_addresses
+  mongoc_collection_t* coll_blocks = NULL;  // found_blocks
+  mongoc_collection_t* coll_pub = NULL;     // public_addresses
   mongoc_cursor_t* cur = NULL;
   bson_t* pipeline = NULL;
   const bson_t* doc = NULL;
@@ -1520,7 +1572,8 @@ int compute_payouts_due(payout_output_t *parsed, uint64_t in_block_height, int64
     char jbuf[VVSMALL_BUFFER_SIZE];
     int n = snprintf(
         jbuf, sizeof jbuf,
-        "[{\"$match\":{\"block_height\":{\"$lt\":{\"$numberLong\":\"%" PRIu64 "\"}},"
+        "[{\"$match\":{\"block_height\":{\"$lt\":{\"$numberLong\":\"%" PRIu64
+        "\"}},"
         "\"processed\":false}},"
         "{\"$group\":{\"_id\":null,\"total\":{\"$sum\":\"$block_reward\"}}}]",
         (uint64_t)in_block_height);
@@ -1568,9 +1621,18 @@ int compute_payouts_due(payout_output_t *parsed, uint64_t in_block_height, int64
   }
 
   // release aggregation resources early
-  if (cur) { mongoc_cursor_destroy(cur); cur = NULL; }
-  if (pipeline) { bson_destroy(pipeline); pipeline = NULL; }
-  if (coll_blocks) { mongoc_collection_destroy(coll_blocks); coll_blocks = NULL; }
+  if (cur) {
+    mongoc_cursor_destroy(cur);
+    cur = NULL;
+  }
+  if (pipeline) {
+    bson_destroy(pipeline);
+    pipeline = NULL;
+  }
+  if (coll_blocks) {
+    mongoc_collection_destroy(coll_blocks);
+    coll_blocks = NULL;
+  }
 
   // ---- Convert percent -> bps (clamped), then compute fee + send_total (all integer math)
   long long bps_ll;
@@ -1619,8 +1681,8 @@ int compute_payouts_due(payout_output_t *parsed, uint64_t in_block_height, int64
   }
 
   uint64_t safe_unlocked = (in_unlocked_balance > 0) ? (uint64_t)in_unlocked_balance : 0;
-  uint64_t pending_sum   = (sum > 0) ? (uint64_t)sum : 0;
-  uint64_t sum_atomic    = (pending_sum < safe_unlocked) ? pending_sum : safe_unlocked;
+  uint64_t pending_sum = (sum > 0) ? (uint64_t)sum : 0;
+  uint64_t sum_atomic = (pending_sum < safe_unlocked) ? pending_sum : safe_unlocked;
   if (sum_atomic == 0) {
     INFO_PRINT("Nothing to pay (sum_atomic == 0)");
     rc = XCASH_OK;
@@ -1763,8 +1825,7 @@ done:
  * @param in_unlocked_balance  Unlocked wallet balance in atomic units (>= 0).
  * @return XCASH_OK on success, XCASH_ERROR on first failure.
 ---------------------------------------------------------------------------------------------------------*/
-int run_payout_sweep_simple(int64_t in_unlocked_balance)
-{
+int run_payout_sweep_simple(int64_t in_unlocked_balance) {
   int rc = XCASH_OK;
 
   mongoc_client_t* client = NULL;
@@ -1816,16 +1877,18 @@ int run_payout_sweep_simple(int64_t in_unlocked_balance)
 
   // ---- Compute total_pending_atomic (only entries that would be swept) ----
   {
-    bson_t q; bson_init(&q);
-    bson_t or_arr; bson_append_array_begin(&q, "$or", -1, &or_arr);
+    bson_t q;
+    bson_init(&q);
+    bson_t or_arr;
+    bson_append_array_begin(&q, "$or", -1, &or_arr);
 
     // or[0]: pending_atomic >= min
     {
       bson_t d, c;
       bson_append_document_begin(&or_arr, "0", -1, &d);
-        bson_append_document_begin(&d, "pending_atomic", -1, &c);
-          BSON_APPEND_INT64(&c, "$gte", minimum_payout_atomic);
-        bson_append_document_end(&d, &c);
+      bson_append_document_begin(&d, "pending_atomic", -1, &c);
+      BSON_APPEND_INT64(&c, "$gte", minimum_payout_atomic);
+      bson_append_document_end(&d, &c);
       bson_append_document_end(&or_arr, &d);
     }
 
@@ -1833,31 +1896,33 @@ int run_payout_sweep_simple(int64_t in_unlocked_balance)
     {
       bson_t d, and_arr, a0, a1, c0, c1;
       bson_append_document_begin(&or_arr, "1", -1, &d);
-        bson_append_array_begin(&d, "$and", -1, &and_arr);
+      bson_append_array_begin(&d, "$and", -1, &and_arr);
 
-          // updated_at < cutoff
-          bson_append_document_begin(&and_arr, "0", -1, &a0);
-            bson_append_document_begin(&a0, "updated_at", -1, &c0);
-              BSON_APPEND_DATE_TIME(&c0, "$lt", cutoff);
-            bson_append_document_end(&a0, &c0);
-          bson_append_document_end(&and_arr, &a0);
+      // updated_at < cutoff
+      bson_append_document_begin(&and_arr, "0", -1, &a0);
+      bson_append_document_begin(&a0, "updated_at", -1, &c0);
+      BSON_APPEND_DATE_TIME(&c0, "$lt", cutoff);
+      bson_append_document_end(&a0, &c0);
+      bson_append_document_end(&and_arr, &a0);
 
-          // pending_atomic > 0
-          bson_append_document_begin(&and_arr, "1", -1, &a1);
-            bson_append_document_begin(&a1, "pending_atomic", -1, &c1);
-              BSON_APPEND_INT64(&c1, "$gt", 0);
-            bson_append_document_end(&a1, &c1);
-          bson_append_document_end(&and_arr, &a1);
+      // pending_atomic > 0
+      bson_append_document_begin(&and_arr, "1", -1, &a1);
+      bson_append_document_begin(&a1, "pending_atomic", -1, &c1);
+      BSON_APPEND_INT64(&c1, "$gt", 0);
+      bson_append_document_end(&a1, &c1);
+      bson_append_document_end(&and_arr, &a1);
 
-        bson_append_array_end(&d, &and_arr);
+      bson_append_array_end(&d, &and_arr);
       bson_append_document_end(&or_arr, &d);
     }
 
     bson_append_array_end(&q, &or_arr);
 
     // Only need pending_atomic field for the sum
-    bson_t opts; bson_init(&opts);
-    bson_t proj; bson_init(&proj);
+    bson_t opts;
+    bson_init(&opts);
+    bson_t proj;
+    bson_init(&proj);
     BSON_APPEND_INT32(&proj, "pending_atomic", 1);
     BSON_APPEND_DOCUMENT(&opts, "projection", &proj);
     BSON_APPEND_BOOL(&opts, "noCursorTimeout", true);
@@ -1893,7 +1958,7 @@ int run_payout_sweep_simple(int64_t in_unlocked_balance)
 
   // ---- Fairness guard: require enough unlocked (minus reserve) to clear all eligible pending ----
   if (total_pending_atomic < 0) {
-    total_pending_atomic = 0; // defensive
+    total_pending_atomic = 0;  // defensive
   }
 
   if ((uint64_t)total_pending_atomic > max_spend) {
@@ -1906,43 +1971,47 @@ int run_payout_sweep_simple(int64_t in_unlocked_balance)
   // ---- From here on, we know we can afford to clear everything that meets criteria ----
 
   // Build sweep query: (pending >= min) OR (stale AND pending > 0)
-  bson_t query; bson_init(&query);
-  bson_t or_arr2; bson_append_array_begin(&query, "$or", -1, &or_arr2);
-  { // or[0]: pending_atomic >= min
+  bson_t query;
+  bson_init(&query);
+  bson_t or_arr2;
+  bson_append_array_begin(&query, "$or", -1, &or_arr2);
+  {  // or[0]: pending_atomic >= min
     bson_t d, c;
     bson_append_document_begin(&or_arr2, "0", -1, &d);
-      bson_append_document_begin(&d, "pending_atomic", -1, &c);
-        BSON_APPEND_INT64(&c, "$gte", minimum_payout_atomic);
-      bson_append_document_end(&d, &c);
+    bson_append_document_begin(&d, "pending_atomic", -1, &c);
+    BSON_APPEND_INT64(&c, "$gte", minimum_payout_atomic);
+    bson_append_document_end(&d, &c);
     bson_append_document_end(&or_arr2, &d);
   }
-  { // or[1]: updated_at < cutoff AND pending_atomic > 0
+  {  // or[1]: updated_at < cutoff AND pending_atomic > 0
     bson_t d, and_arr, a0, a1, c0, c1;
     bson_append_document_begin(&or_arr2, "1", -1, &d);
-      bson_append_array_begin(&d, "$and", -1, &and_arr);
+    bson_append_array_begin(&d, "$and", -1, &and_arr);
 
-        // updated_at < cutoff
-        bson_append_document_begin(&and_arr, "0", -1, &a0);
-          bson_append_document_begin(&a0, "updated_at", -1, &c0);
-            BSON_APPEND_DATE_TIME(&c0, "$lt", cutoff);
-          bson_append_document_end(&a0, &c0);
-        bson_append_document_end(&and_arr, &a0);
+    // updated_at < cutoff
+    bson_append_document_begin(&and_arr, "0", -1, &a0);
+    bson_append_document_begin(&a0, "updated_at", -1, &c0);
+    BSON_APPEND_DATE_TIME(&c0, "$lt", cutoff);
+    bson_append_document_end(&a0, &c0);
+    bson_append_document_end(&and_arr, &a0);
 
-        // pending_atomic > 0
-        bson_append_document_begin(&and_arr, "1", -1, &a1);
-          bson_append_document_begin(&a1, "pending_atomic", -1, &c1);
-            BSON_APPEND_INT64(&c1, "$gt", 0);
-          bson_append_document_end(&a1, &c1);
-        bson_append_document_end(&and_arr, &a1);
+    // pending_atomic > 0
+    bson_append_document_begin(&and_arr, "1", -1, &a1);
+    bson_append_document_begin(&a1, "pending_atomic", -1, &c1);
+    BSON_APPEND_INT64(&c1, "$gt", 0);
+    bson_append_document_end(&a1, &c1);
+    bson_append_document_end(&and_arr, &a1);
 
-      bson_append_array_end(&d, &and_arr);
+    bson_append_array_end(&d, &and_arr);
     bson_append_document_end(&or_arr2, &d);
   }
   bson_append_array_end(&query, &or_arr2);
 
   // Projection + cursor opts for sweep
-  bson_t opts; bson_init(&opts);
-  bson_t proj; bson_init(&proj);
+  bson_t opts;
+  bson_init(&opts);
+  bson_t proj;
+  bson_init(&proj);
   BSON_APPEND_INT32(&proj, "_id", 1);
   BSON_APPEND_INT32(&proj, "pending_atomic", 1);
   BSON_APPEND_INT32(&proj, "updated_at", 1);
@@ -1953,7 +2022,9 @@ int run_payout_sweep_simple(int64_t in_unlocked_balance)
   coll_pay = mongoc_client_get_collection(client, DATABASE_NAME, DB_COLLECTION_PAYOUT_RECEIPTS);
   if (!coll_pay) {
     ERROR_PRINT("run_payout_sweep_simple: get_collection %s failed", DB_COLLECTION_PAYOUT_RECEIPTS);
-    bson_destroy(&query); bson_destroy(&opts); bson_destroy(&proj);
+    bson_destroy(&query);
+    bson_destroy(&opts);
+    bson_destroy(&proj);
     rc = XCASH_ERROR;
     goto done;
   }
@@ -1985,7 +2056,7 @@ int run_payout_sweep_simple(int64_t in_unlocked_balance)
       continue;
     }
 
-    const bool meets_min   = (pend >= minimum_payout_atomic);
+    const bool meets_min = (pend >= minimum_payout_atomic);
     const bool is_stale_7d = (updated > 0 && (now_ms - updated) >= NO_ACTIVITY_DELETE);
     if (!meets_min && !(is_stale_7d && pend > 0)) continue;
 
@@ -2054,17 +2125,19 @@ int run_payout_sweep_simple(int64_t in_unlocked_balance)
       bool ok = false;
 
       if (delete_after) {
-        bson_t q; bson_init(&q);
+        bson_t q;
+        bson_init(&q);
         BSON_APPEND_UTF8(&q, "_id", addr);
         ok = mongoc_collection_delete_one(coll_bal, &q, NULL, NULL, &err);
         bson_destroy(&q);
       } else {
         bson_t q, u, set;
-        bson_init(&q); BSON_APPEND_UTF8(&q, "_id", addr);
+        bson_init(&q);
+        BSON_APPEND_UTF8(&q, "_id", addr);
         bson_init(&u);
         BSON_APPEND_DOCUMENT_BEGIN(&u, "$set", &set);
-          BSON_APPEND_INT64(&set, "pending_atomic", 0);
-          BSON_APPEND_DATE_TIME(&set, "updated_at", now_ms);
+        BSON_APPEND_INT64(&set, "pending_atomic", 0);
+        BSON_APPEND_DATE_TIME(&set, "updated_at", now_ms);
         bson_append_document_end(&u, &set);
         ok = mongoc_collection_update_one(coll_bal, &q, &u, NULL, NULL, &err);
         bson_destroy(&q);
