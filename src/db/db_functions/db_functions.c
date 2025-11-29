@@ -414,58 +414,7 @@ bool is_replica_set_ready(void) {
   return is_ready;
 }
 
-bool reserve_proof_check_node(void) {
-  // Run payouts only on uk node for now
-  if (strcmp(network_nodes[2].seed_public_address, xcash_wallet_public_address) == 0) {
-    return true;
-  }
-  return false;
-}
-
-bool test_primary(void)
-{
-  bool is_primary = false;
-  bson_t cmd;
-  bson_t reply;
-  bson_error_t err;
-
-  mongoc_client_t* client = mongoc_client_pool_pop(database_client_thread_pool);
-  if (!client) {
-    ERROR_PRINT("test_primary: mongoc_client_pool_pop failed");
-    return false;
-  }
-
-  bson_init(&cmd);
-  BSON_APPEND_INT32(&cmd, "hello", 1);  // or "isMaster" for older servers
-
-  if (mongoc_client_command_simple(client, "admin", &cmd, NULL, &reply, &err)) {
-    bson_iter_t it;
-
-    // Newer MongoDB: "isWritablePrimary"
-    if (bson_iter_init_find_case(&it, &reply, "isWritablePrimary") &&
-        BSON_ITER_HOLDS_BOOL(&it)) {
-      is_primary = bson_iter_bool(&it);
-    }
-    // Older MongoDB: "ismaster"
-    else if (bson_iter_init_find_case(&it, &reply, "ismaster") &&
-             BSON_ITER_HOLDS_BOOL(&it)) {
-      is_primary = bson_iter_bool(&it);
-    }
-
-    bson_destroy(&reply);
-  } else {
-    ERROR_PRINT("test_primary: hello command failed: %s", err.message);
-  }
-
-  bson_destroy(&cmd);
-  mongoc_client_pool_push(database_client_thread_pool, client);
-
-  INFO_PRINT("This node is Primary");
-  return is_primary;
-}
-
-
-// Function to determin if this seed delegate is the primary mongodb node
+// Function to determine if this seed delegate is the primary mongodb node
 bool seed_is_primary(void) {
   char ip_address[IP_LENGTH + 1] = {0};
   int i = 0;
