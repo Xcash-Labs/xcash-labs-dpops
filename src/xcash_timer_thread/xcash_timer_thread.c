@@ -1061,12 +1061,12 @@ void* timer_thread(void* arg) {
     time_t wake = run_at - WAKEUP_SKEW_SEC;
     if (wake < now) wake = now;
 
-    sleep(120);
-    sync_minutes_and_seconds(0, 50);
-    if (is_job_node()) {
-      INFO_PRINT("Scheduler: Testing running PROOF CHECK at startup...");
-      run_proof_check(ctx);
-    }
+//    sleep(120);
+//    sync_minutes_and_seconds(0, 50);
+//    if (is_job_node()) {
+//      INFO_PRINT("Scheduler: Testing running PROOF CHECK at startup...");
+//      run_proof_check(ctx);
+//    }
 
 // pre-wake, then align to exact minute
     sleep_until(wake);
