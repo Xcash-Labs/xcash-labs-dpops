@@ -162,6 +162,11 @@ int send_data(server_client_t* client, const unsigned char* data, size_t length)
     return XCASH_ERROR;
   }
 
+  if (length > 0 && !data) {
+    ERROR_PRINT("send_data failed: data is NULL but length=%zu", length);
+    return XCASH_ERROR;
+  }
+
   // 4-byte big-endian length prefix
   uint32_t be_len = htonl((uint32_t)length);
 
@@ -226,8 +231,9 @@ int send_message_to_ip_or_hostname(const char* host_or_ip, int port, const char*
     char port_str[6];
     snprintf(port_str, sizeof(port_str), "%d", port);
 
-    if (getaddrinfo(host_or_ip, port_str, &hints, &res) != 0) {
-      ERROR_PRINT("DNS resolution failed for host: %s", host_or_ip);
+    int gai_rc = getaddrinfo(host_or_ip, port_str, &hints, &res);
+    if (gai_rc != 0) {
+      ERROR_PRINT("DNS resolution failed for host %s: %s", host_or_ip, gai_strerror(gai_rc));
       return XCASH_ERROR;
     }
 
@@ -264,15 +270,30 @@ int send_message_to_ip_or_hostname(const char* host_or_ip, int port, const char*
     return XCASH_ERROR;
   }
 
-  ssize_t sent = send(sock, compressed, compressed_len, MSG_NOSIGNAL);
-  free(compressed);
-
-  if (sent < 0) {
-    perror("send");
-    close(sock);
-    return XCASH_ERROR;
+  size_t total_sent = 0;
+  while (total_sent < compressed_len) {
+    ssize_t n = send(sock,
+                    compressed + total_sent,
+                    compressed_len - total_sent,
+                    MSG_NOSIGNAL);
+    if (n < 0) {
+      if (errno == EINTR) continue;
+      perror("send");
+      free(compressed);
+      close(sock);
+      return XCASH_ERROR;
+    }
+    if (n == 0) {
+      // Peer closed unexpectedly
+      ERROR_PRINT("send_message_to_ip_or_hostname: peer closed connection early");
+      free(compressed);
+      close(sock);
+      return XCASH_ERROR;
+    }
+    total_sent += (size_t)n;
   }
 
+  free(compressed);
   INFO_PRINT("Sent message to %s:%d", host_or_ip, port);
   close(sock);
   return XCASH_OK;

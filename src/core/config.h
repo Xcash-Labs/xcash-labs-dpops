@@ -103,7 +103,7 @@
 #define NO_ACTIVITY_DELETE  (7LL * 24 * 60 * 60 * 1000LL)  // 7 day used for payouts
 #define BLOCKS_PER_DAY 1440 // 1 min blocktimes
 #define BLOCKS_BEHIND_CURRENT (BLOCKS_PER_DAY * 1) // Days behind
-  
+
 // ===================== XCASH DPOPS =====================
 #define BLOCK_VERIFIERS_TOTAL_AMOUNT 55
 #define BLOCK_VERIFIERS_AMOUNT 50
@@ -118,14 +118,12 @@
 #define MAX_CONNECTIONS 1024
 #define MAX_THREADS 10
 #define MIN_VOTE_ATOMIC 4000000000000ULL
-#define MAX_PROOFS_PER_DELEGATE_HARD   24000
+#define MAX_PROOFS_PER_DELEGATE_HARD 5000
 #define ATOMIC_UNITS_PER_XCA 1000000LL
 #define MAX_CONSECUTIVE_WINS 3
 #define SAFE_CONFIRMATION_MARGIN 60
 #define IP_LENGTH 255
 #define DELEGATES_ONLINE_BUFFER ((IP_LENGTH * BLOCK_VERIFIERS_TOTAL_AMOUNT) + VSMALL_BUFFER_SIZE) // add buffer padding just incase
-
-
 #define MINIMUM_BYTE_RANGE 1 // The minimum byte range to use when calculating the next block producer
 #define MAXIMUM_BYTE_RANGE 250 // The maximum byte range to use when calculating the next block producer
 #define BLOCK_VERIFIERS_CREATE_BLOCK_TIMEOUT_SETTINGS 5 // The time to wait to check if the block was created

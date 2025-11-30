@@ -2,15 +2,70 @@
 
 // ---- helpers ----
 static void lower_thread_priority_batch(void) {
-  // Best-effort: reduce CPU weight via niceness (works even if sched change fails)
-  if (setpriority(PRIO_PROCESS, 0, 10) == -1) {
-    WARNING_PRINT("setpriority failed: %s", strerror(errno));
-  }
+  // Best-effort: move this *thread* to SCHED_BATCH so it's treated as background work.
   struct sched_param sp;
-  memset(&sp, 0, sizeof sp);  // priority must be 0 for BATCH
+  memset(&sp, 0, sizeof sp);  // priority must be 0 for SCHED_BATCH
+
   if (sched_setscheduler(0, SCHED_BATCH, &sp) == -1) {
     WARNING_PRINT("sched_setscheduler(SCHED_BATCH) failed: %s", strerror(errno));
   }
+}
+
+static void sync_minutes_and_seconds(const int MINUTES, const int SECONDS) {
+  if (MINUTES >= BLOCK_TIME || SECONDS >= 60) {
+    ERROR_PRINT("Invalid sync time: MINUTES must be < BLOCK_TIME and SECONDS < 60");
+    return;
+  }
+
+  struct timespec now_ts;
+  if (clock_gettime(CLOCK_REALTIME, &now_ts) != 0) {
+    ERROR_PRINT("Failed to get high-resolution time");
+    return;
+  }
+
+  time_t now_sec  = now_ts.tv_sec;
+  long   now_nsec = now_ts.tv_nsec;
+
+  // One "round" or "block interval" in seconds
+  size_t seconds_per_block     = (size_t)BLOCK_TIME * 60;
+  size_t seconds_within_block  = (size_t)(now_sec % (time_t)seconds_per_block);
+
+  double target_seconds        = (double)(MINUTES * 60 + SECONDS);
+  double current_time_in_block = (double)seconds_within_block + (double)now_nsec / 1e9;
+  double sleep_seconds         = target_seconds - current_time_in_block;
+
+  // If we already passed this (MINUTES:SECONDS) mark in the current block interval,
+  // roll forward by one full block interval so we wait until the *next* occurrence.
+  if (sleep_seconds <= 0.0) {
+    double missed = -sleep_seconds;
+    sleep_seconds += (double)seconds_per_block;
+    DEBUG_PRINT(
+      "Missed sync point by %.3f seconds in this block; rolling to next block, sleep=%.3f",
+      missed, sleep_seconds
+    );
+  }
+
+  // Build relative timespec (no libm needed)
+  time_t sec  = (time_t)sleep_seconds;
+  double frac = sleep_seconds - (double)sec;
+  long   nsec = (long)(frac * 1000000000.0);
+
+  struct timespec req = { .tv_sec = sec, .tv_nsec = nsec };
+  struct timespec rem;
+
+  // Resume remaining time on EINTR so signals don't abort the wait
+  for (;;) {
+    if (nanosleep(&req, &rem) == 0) {
+      break;    // slept fully
+    }
+    if (errno != EINTR) {
+      ERROR_PRINT("nanosleep failed: %s", strerror(errno));
+      return;
+    }
+    req = rem;
+  }
+
+  return;
 }
 
 static time_t mk_local_next(int hour, int minute, time_t now) {
@@ -346,7 +401,7 @@ mongoc_client_t* c = mongoc_client_pool_pop(ctx->pool);
 
   // Wait for correct time to load from delegates_all, create you own copy
   // Capture height before next block is found but online status is set
-  sync_block_verifiers_minutes_and_seconds(0, 50);
+  sync_minutes_and_seconds(0, 45);
   char save_block_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
   char save_block_hash[BLOCK_HASH_LENGTH + 1] = {0};
   strncpy(save_block_height, current_block_height, sizeof save_block_height);
@@ -367,8 +422,8 @@ mongoc_client_t* c = mongoc_client_pool_pop(ctx->pool);
   }
   pthread_mutex_unlock(&current_block_verifiers_lock);
 
+
   // Apply per-delegate totals only if not shutting down
-  sync_block_verifiers_minutes_and_seconds(0, 45);
   if (!stop_after_scan && agg_count > 0) {
     mongoc_collection_t* dcoll =
         mongoc_client_get_collection(c, DATABASE_NAME, DB_COLLECTION_DELEGATES);
@@ -454,6 +509,7 @@ mongoc_client_t* c = mongoc_client_pool_pop(ctx->pool);
         bson_destroy(&filter);
 
         if (update_ok) {
+          sync_minutes_and_seconds(0, 50);
           response_t** responses = NULL;
           char* upd_vote_message = NULL;
           if (build_seed_to_nodes_vote_count_update(agg_addr[i], new_total, &upd_vote_message)) {
@@ -485,8 +541,6 @@ mongoc_client_t* c = mongoc_client_pool_pop(ctx->pool);
         mongoc_client_get_collection(c, DATABASE_NAME, DB_COLLECTION_RESERVE_PROOFS);
     mongoc_collection_t* dcoll =
         mongoc_client_get_collection(c, DATABASE_NAME, DB_COLLECTION_DELEGATES);
-
-    sync_block_verifiers_minutes_and_seconds(0, 45);
     if (!rcoll || !dcoll) {
       ERROR_PRINT("Failed to get collections (reserve_proofs or delegates)");
       if (rcoll) mongoc_collection_destroy(rcoll);
@@ -562,6 +616,7 @@ mongoc_client_t* c = mongoc_client_pool_pop(ctx->pool);
           DEBUG_PRINT("delegate total zeroed locally addr=%.12s… (no reserve proofs)", addr);
 
           // Now that THIS SEED is consistent, broadcast to others
+          sync_minutes_and_seconds(0, 50);
           response_t** responses = NULL;
           char* upd_vote_message = NULL;
           if (build_seed_to_nodes_vote_count_update(addr, 0, &upd_vote_message)) {
@@ -587,7 +642,6 @@ mongoc_client_t* c = mongoc_client_pool_pop(ctx->pool);
     }  // collections ok
   }
 
-  sync_block_verifiers_minutes_and_seconds(0, 45);
   for (size_t i = 0; i < pay_bucket_count; ++i) {
     const payout_bucket_t* B = &pay_buckets[i];
     const char* delegate_addr = B->delegate;
@@ -693,9 +747,8 @@ mongoc_client_t* c = mongoc_client_pool_pop(ctx->pool);
       goto next_delegate;
     }
 
-    INFO_PRINT("SEED_TO_NODES_PAYOUT message: %s", sb.buf);
-
     // 5) send
+    sync_minutes_and_seconds(0, 50);
     if (send_message_to_ip_or_hostname(ip, XCASH_DPOPS_PORT, sb.buf) != XCASH_OK) {
       ERROR_PRINT("Failed to send the payment message to %s", ip);
     }
@@ -728,7 +781,7 @@ mongoc_client_t* c = mongoc_client_pool_pop(ctx->pool);
 -------------------------------------------------------------------------------------------------------- */
 void run_activity_check(sched_ctx_t* ctx) {
   // 0) Wait for the coordinated timeslot to avoid racing with other jobs.
-  sync_block_verifiers_minutes_and_seconds(0, 45);
+  sync_minutes_and_seconds(0, 50);
 
   // 1) Snapshot ONLINE delegates for routing (seed -> online nodes)
   size_t online_count = 0;
@@ -1009,8 +1062,7 @@ void* timer_thread(void* arg) {
     if (wake < now) wake = now;
 
     sleep(120);
-    sync_block_verifiers_minutes_and_seconds(0, 50);
-    INFO_PRINT("Testing..............");
+    sync_minutes_and_seconds(0, 50);
     if (is_job_node()) {
       INFO_PRINT("Scheduler: Testing running PROOF CHECK at startup...");
       run_proof_check(ctx);
@@ -1026,13 +1078,11 @@ void* timer_thread(void* arg) {
     const sched_slot_t* slot = &SLOTS[idx];
     if (slot->kind == JOB_PROOF) {
       if (is_job_node()) {
-        sync_block_verifiers_minutes_and_seconds(0, 50);
         INFO_PRINT("Scheduler: running PROOF CHECK at %02d:%02d", slot->hour, slot->min);
         run_proof_check(ctx);
       }
     } else if (slot->kind == JOB_ACTIVITY_CK) {
       if (is_job_node()) {
-        sync_block_verifiers_minutes_and_seconds(0, 50);
         INFO_PRINT("Scheduler: running ACTIVITY CHECK at %02d:%02d", slot->hour, slot->min);
         run_activity_check(ctx);
       }
