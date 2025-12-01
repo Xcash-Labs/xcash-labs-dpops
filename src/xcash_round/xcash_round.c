@@ -47,7 +47,7 @@ int select_block_producer_from_vrf(void) {
     // If this delegate has already won too many consecutive times, skip it
     if (last_winner_cnt >= MAX_CONSECUTIVE_WINS &&
         strncmp(last_winner_name, name, sizeof last_winner_name) == 0) {
-      ERROR_PRINT("Skipping delegate %s due to consecutive wins (%zu >= %d)",
+      WARNING_PRINT("Skipping delegate %s due to consecutive wins (%zu >= %d)",
                   name, last_winner_cnt, MAX_CONSECUTIVE_WINS);
       continue;
     }
