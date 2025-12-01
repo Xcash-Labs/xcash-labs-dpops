@@ -1561,14 +1561,14 @@ int compute_payouts_due(payout_output_t* parsed, uint64_t in_block_height, int64
   uint64_t total_delegate_votes = 0;
   for (size_t k = 0; k < entries_count; ++k) {
     if (UINT64_MAX - total_delegate_votes < parsed[k].v) {
-      ERROR_PRINT("vote sum overflow at index %zu", k);
+      ERROR_PRINT("compute_payouts_due: vote sum overflow at index %zu", k);
       rc = XCASH_ERROR;
       goto done;
     }
     total_delegate_votes += parsed[k].v;
   }
   if (entries_count == 0 || total_delegate_votes == 0) {
-    ERROR_PRINT("No entries or total_delegate_votes == 0");
+    ERROR_PRINT("compute_payouts_due: No entries or total_delegate_votes == 0");
     rc = XCASH_ERROR;
     goto done;
   }
@@ -1577,7 +1577,7 @@ int compute_payouts_due(payout_output_t* parsed, uint64_t in_block_height, int64
   uint64_t pending_sum = (sum > 0) ? (uint64_t)sum : 0;
   uint64_t sum_atomic = (pending_sum < safe_unlocked) ? pending_sum : safe_unlocked;
   if (sum_atomic == 0) {
-    INFO_PRINT("Nothing to pay (sum_atomic == 0)");
+    INFO_PRINT("compute_payouts_due: Nothing to pay (sum_atomic == 0)");
     rc = XCASH_OK;
     goto done;
   }
@@ -1596,7 +1596,7 @@ int compute_payouts_due(payout_output_t* parsed, uint64_t in_block_height, int64
     uint64_t pay = (uint64_t)(((__uint128_t)sum_atomic * parsed[k].v) / total_delegate_votes);
 
     if (UINT64_MAX - base_sum < pay) {
-      ERROR_PRINT("payout accumulation overflow");
+      ERROR_PRINT("compute_payouts_due: payout accumulation overflow");
       rc = XCASH_ERROR;
       goto done;
     }
@@ -1629,7 +1629,7 @@ int compute_payouts_due(payout_output_t* parsed, uint64_t in_block_height, int64
     bson_destroy(&q);
 
     if (!ok) {
-      ERROR_PRINT("public_addresses upsert failed for %s: %s", addr, err.message);
+      ERROR_PRINT("compute_payouts_due: public_addresses upsert failed for %s: %s", addr, err.message);
       rc = XCASH_ERROR;
       goto done;
     }
@@ -1639,7 +1639,7 @@ int compute_payouts_due(payout_output_t* parsed, uint64_t in_block_height, int64
   {
     coll_blocks = mongoc_client_get_collection(client, DATABASE_NAME, DB_COLLECTION_BLOCKS_FOUND);
     if (!coll_blocks) {
-      ERROR_PRINT("finalize: get_collection '%s.%s' failed", DATABASE_NAME, DB_COLLECTION_BLOCKS_FOUND);
+      ERROR_PRINT("compute_payouts_due: finalize - get_collection '%s.%s' failed", DATABASE_NAME, DB_COLLECTION_BLOCKS_FOUND);
       rc = XCASH_ERROR;
       goto done;
     }
@@ -1664,7 +1664,7 @@ int compute_payouts_due(payout_output_t* parsed, uint64_t in_block_height, int64
     bson_error_t err;
     bool ok = mongoc_collection_update_many(coll_blocks, &filter, &update, NULL, &reply, &err);
     if (!ok) {
-      ERROR_PRINT("finalize: update_many failed: %s", err.message);
+      ERROR_PRINT("compute_payouts_due: finalize - update_many failed: %s", err.message);
       rc = XCASH_ERROR;
     } else {
       bson_iter_t it;
@@ -1673,7 +1673,7 @@ int compute_payouts_due(payout_output_t* parsed, uint64_t in_block_height, int64
         n = bson_iter_int32(&it);
       else if (bson_iter_init_find(&it, &reply, "nModified") && BSON_ITER_HOLDS_INT32(&it))
         n = bson_iter_int32(&it);
-      INFO_PRINT("finalize: marked %" PRIi64 " found_blocks as processed", n);
+      INFO_PRINT("compute_payouts_due: finalize - marked %" PRIi64 " found_blocks as processed", n);
     }
 
     bson_destroy(&reply);
@@ -1691,7 +1691,7 @@ done:
   if (client) mongoc_client_pool_push(database_client_thread_pool, client);
 
   if (rc == XCASH_OK) {
-    INFO_PRINT("Computed Payouts: Total=%.6f XCA", (double)sum_atomic / (double)XCASH_ATOMIC_UNITS);
+    INFO_PRINT("compute_payouts_due: Computed Payouts: Total=%.6f XCA", (double)sum_atomic / (double)XCASH_ATOMIC_UNITS);
   }
 
   return rc;
@@ -1963,7 +1963,6 @@ int run_payout_sweep_simple(int64_t in_unlocked_balance) {
     int64_t ts = now_ms;
     size_t split_siblings_count = 0;
 
-    sleep(1);
     int send_ok = wallet_payout_send(addr, pend, reason,
                                      first_hash, sizeof(first_hash),
                                      &fee, &ts, &amt_sent,
@@ -2006,7 +2005,7 @@ int run_payout_sweep_simple(int64_t in_unlocked_balance) {
         goto done;
       }
 
-      INFO_PRINT("payout recorded: _id=%s split=%zu fee=%" PRIu64 " sent=%" PRIu64,
+      INFO_PRINT("run_payout_sweep_simple:: _id=%s split=%zu fee=%" PRIu64 " sent=%" PRIu64,
                  first_hash, split_siblings_count, fee, (uint64_t)amt_sent);
 
       bson_destroy(&pay_doc);
@@ -2062,7 +2061,7 @@ done:
   if (client) mongoc_client_pool_push(database_client_thread_pool, client);
 
   if (rc == XCASH_OK) {
-    INFO_PRINT("Payout Sweep completed: processed %zu addresses", processed);
+    INFO_PRINT("run_payout_sweep_simple: Payout Sweep completed, processed %zu addresses", processed);
   }
 
   return rc;
