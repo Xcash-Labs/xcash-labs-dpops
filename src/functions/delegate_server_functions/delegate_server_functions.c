@@ -1010,19 +1010,19 @@ static int json_get_string_into(cJSON* root, const char* key, char* out, size_t 
 ----------------------------------------------------------------------------------------------------------- */
 void server_receive_payout(const char* MESSAGE) {
   if (!MESSAGE || !*MESSAGE) {
-    ERROR_PRINT("Invalid message parameter passed to server_receive_payout");
+    ERROR_PRINT("server_receive_payout: Invalid message parameter passed to server_receive_payout");
     return;
   }
 
   if(is_seed_node) {
-    ERROR_PRINT("Seed nodes should never recieve a server_receive_payout transaction");
+    ERROR_PRINT("server_receive_payout: Seed nodes should never recieve a server_receive_payout transaction");
     return;
   }
 
   cJSON* root = cJSON_Parse(MESSAGE);
   if (!root) {
     const char* ep = cJSON_GetErrorPtr();
-    ERROR_PRINT("cJSON parse error near: %s", ep ? ep : "(unknown)");
+    ERROR_PRINT("server_receive_payout: cJSON parse error near: %s", ep ? ep : "(unknown)");
     return;
   }
 
@@ -1041,7 +1041,7 @@ void server_receive_payout(const char* MESSAGE) {
   ok &= json_get_string_into(root, "XCASH_DPOPS_signature", in_signature, sizeof in_signature, 1);
 
   if (!ok) {
-    ERROR_PRINT("Failed to parse json fields in server_receive_payout");
+    ERROR_PRINT("server_receive_payout: Failed to parse json fields in server_receive_payout");
     cJSON_Delete(root);
     return;
   }
@@ -1050,14 +1050,14 @@ void server_receive_payout(const char* MESSAGE) {
   {
     cJSON* jcnt = cJSON_GetObjectItemCaseSensitive(root, "entries_count");
     if (!jcnt || !cJSON_IsNumber(jcnt)) {
-      ERROR_PRINT("Missing/invalid 'entries_count'");
+      ERROR_PRINT("server_receive_payout: Missing/invalid 'entries_count'");
       cJSON_Delete(root);
       return;
     }
 
     double v = jcnt->valuedouble;
     if (!(v >= 0.0) || v > (double)MAX_PROOFS_PER_DELEGATE_HARD) {
-      ERROR_PRINT("'entries_count' out of range");
+      ERROR_PRINT("server_receive_payout: 'entries_count' out of range");
       cJSON_Delete(root);
       return;
     }
@@ -1065,7 +1065,7 @@ void server_receive_payout(const char* MESSAGE) {
     uint64_t u = (uint64_t)v;
     double diff = v - (double)u;
     if (diff < -1e-9 || diff > 1e-9) {
-      ERROR_PRINT("'entries_count' must be an integer JSON number");
+      ERROR_PRINT("server_receive_payout: 'entries_count' must be an integer JSON number");
       cJSON_Delete(root);
       return;
     }
@@ -1076,14 +1076,14 @@ void server_receive_payout(const char* MESSAGE) {
   // outputs (array)
   cJSON* outs = cJSON_GetObjectItemCaseSensitive(root, "outputs");
   if (!outs || !cJSON_IsArray(outs)) {
-    ERROR_PRINT("Missing/invalid 'outputs' array");
+    ERROR_PRINT("server_receive_payout: Missing/invalid 'outputs' array");
     cJSON_Delete(root);
     return;
   }
 
   size_t n = (size_t)cJSON_GetArraySize(outs);
   if (entries_count != n) {
-    WARNING_PRINT("entries_count (%zu) != outputs length (%zu) — using outputs length", entries_count, n);
+    WARNING_PRINT("server_receive_payout: entries_count (%zu) != outputs length (%zu) — using outputs length", entries_count, n);
     entries_count = n;
   }
 
@@ -1091,7 +1091,7 @@ void server_receive_payout(const char* MESSAGE) {
   if (entries_count > 0) {
     parsed = (payout_output_t*)calloc(entries_count, sizeof(*parsed));
     if (!parsed) {
-      ERROR_PRINT("OOM allocating outputs array");
+      ERROR_PRINT("server_receive_payout: OOM allocating outputs array");
       cJSON_Delete(root);
       return;
     }
@@ -1101,7 +1101,7 @@ void server_receive_payout(const char* MESSAGE) {
   size_t i = 0;
   for (cJSON* elem = outs->child; elem && i < entries_count; elem = elem->next, ++i) {
     if (!cJSON_IsObject(elem)) {
-      ERROR_PRINT("outputs[%zu] is not an object", i);
+      ERROR_PRINT("server_receive_payout: outputs[%zu] is not an object", i);
       free(parsed);
       cJSON_Delete(root);
       return;
@@ -1110,14 +1110,14 @@ void server_receive_payout(const char* MESSAGE) {
     // address
     cJSON* ja = cJSON_GetObjectItemCaseSensitive(elem, "a");
     if (!ja || !cJSON_IsString(ja) || !ja->valuestring) {
-      ERROR_PRINT("outputs[%zu].a missing/invalid", i);
+      ERROR_PRINT("server_receive_payout: outputs[%zu].a missing/invalid", i);
       free(parsed);
       cJSON_Delete(root);
       return;
     }
     size_t alen = strlen(ja->valuestring);
     if (alen >= sizeof(parsed[i].a)) {
-      ERROR_PRINT("outputs[%zu].a too long (%zu >= %zu)", i, alen, sizeof(parsed[i].a));
+      ERROR_PRINT("server_receive_payout: outputs[%zu].a too long (%zu >= %zu)", i, alen, sizeof(parsed[i].a));
       free(parsed);
       cJSON_Delete(root);
       return;
@@ -1127,7 +1127,7 @@ void server_receive_payout(const char* MESSAGE) {
     // amount (uint64_t from JSON string)
     cJSON* jv = cJSON_GetObjectItemCaseSensitive(elem, "v");
     if (!jv || !cJSON_IsString(jv) || !jv->valuestring || jv->valuestring[0] == '\0') {
-      ERROR_PRINT("outputs[%zu].v missing/invalid (must be string)", i);
+      ERROR_PRINT("server_receive_payout: outputs[%zu].v missing/invalid (must be string)", i);
       free(parsed);
       cJSON_Delete(root);
       return;
@@ -1138,7 +1138,7 @@ void server_receive_payout(const char* MESSAGE) {
     char* end = NULL;
     unsigned long long tmp = strtoull(jv->valuestring, &end, 10);
     if (errno == ERANGE || end == jv->valuestring || *end != '\0') {
-      ERROR_PRINT("outputs[%zu].v invalid uint64 string '%s'", i, jv->valuestring);
+      ERROR_PRINT("server_receive_payout: outputs[%zu].v invalid uint64 string '%s'", i, jv->valuestring);
       free(parsed);
       cJSON_Delete(root);
       return;
@@ -1151,13 +1151,13 @@ void server_receive_payout(const char* MESSAGE) {
   cJSON_Delete(root);
 
   if (strlen(in_outputs_hash) != TRANSACTION_HASH_LENGTH || !is_hex_string(in_outputs_hash)) {
-    ERROR_PRINT("outputs_hash must be %d hex chars", TRANSACTION_HASH_LENGTH);
+    ERROR_PRINT("server_receive_payout: outputs_hash must be %d hex chars", TRANSACTION_HASH_LENGTH);
     free(parsed);
     return;
   }
 
   if (strcmp(in_delegate_wallet_address, xcash_wallet_public_address) != 0) {
-    ERROR_PRINT("Payout transaction is not for this delegate");
+    ERROR_PRINT("server_receive_payout: Payout transaction is not for this delegate");
     free(parsed);
     return;
   }
@@ -1167,7 +1167,7 @@ void server_receive_payout(const char* MESSAGE) {
   char out_hash_hex[TRANSACTION_HASH_LENGTH + 1];
   bin_to_hex(out_hash, SHA256_HASH_SIZE, out_hash_hex);
   if (strcmp(out_hash_hex, in_outputs_hash) != 0) {
-    ERROR_PRINT("outputs_hash mismatch for payout trans");
+    ERROR_PRINT("server_receive_payout: outputs_hash mismatch for payout trans");
     free(parsed);
     return;
   }
@@ -1179,7 +1179,7 @@ void server_receive_payout(const char* MESSAGE) {
   uint64_t block_create_height = strtoull(in_block_height, NULL, 10) - 1;
   int rc = get_block_info_by_height(block_create_height, ck_block_hash, sizeof(ck_block_hash), &reward_atomic, &ts_epoch, &is_orphan);
   if (rc != XCASH_OK) {
-    ERROR_PRINT("get_block_info_by_height(%" PRIu64 ") failed", block_create_height);
+    ERROR_PRINT("server_receive_payout: get_block_info_by_height(%" PRIu64 ") failed", block_create_height);
     free(parsed);
     return;
   }
@@ -1194,21 +1194,21 @@ void server_receive_payout(const char* MESSAGE) {
                         entries_count,
                         in_outputs_hash);
     if (need < 0) {
-      ERROR_PRINT("Failed to size signable string");
+      ERROR_PRINT("server_receive_payout: Failed to size signable string");
       free(parsed);
       return;
     }
     size_t len = (size_t)need + 1;
     sign_str = (char*)malloc(len);
     if (!sign_str) {
-      ERROR_PRINT("malloc(%zu) failed for signable string", len);
+      ERROR_PRINT("server_receive_payout: malloc(%zu) failed for signable string", len);
       free(parsed);
       return;
     }
     int wrote = snprintf(sign_str, len, fmt_sign,
                          in_block_height, ck_block_hash, in_delegate_wallet_address, entries_count, in_outputs_hash);
     if (wrote < 0 || (size_t)wrote >= len) {
-      ERROR_PRINT("snprintf(write) failed or truncated");
+      ERROR_PRINT("server_receive_payout: snprintf(write) failed or truncated");
       free(parsed);
       free(sign_str);
       return;
@@ -1253,13 +1253,13 @@ void server_receive_payout(const char* MESSAGE) {
 
   uint64_t unlocked = 0;
   if (get_unlocked_balance(&unlocked) != XCASH_OK) {
-    ERROR_PRINT("get_unlocked_balance failed");
+    ERROR_PRINT("server_receive_payout: get_unlocked_balance failed");
     free(parsed);
     free(sign_str);
     return;
   }
 
-  INFO_PRINT("Unlocked balance: %" PRIu64 " atomic (%.6f XCA)", unlocked,
+  INFO_PRINT("server_receive_payout: Unlocked balance: %" PRIu64 " atomic (%.6f XCA)", unlocked,
     (double)unlocked / (double)XCASH_ATOMIC_UNITS);
 
   uint64_t in_num_block_height = strtoull(in_block_height, NULL, 10);
