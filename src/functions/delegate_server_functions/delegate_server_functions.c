@@ -959,10 +959,12 @@ void server_receive_data_socket_node_to_block_verifiers_check_vote_status(server
     if (total_atomic <= 0) {
         cJSON_Delete(root);
         send_data(client, (unsigned char*)"1|No Vote Found", strlen("1|No Vote Found"));
+        return;
     }
   } else {
     cJSON_Delete(root);
     send_data(client, (unsigned char*)"0|DB Error", strlen("0|DB Error"));
+    return;
   }
 
   // Build success message
@@ -1001,6 +1003,7 @@ static int json_get_string_into(cJSON* root, const char* key, char* out, size_t 
   memcpy(out, it->valuestring, len + 1);
   return 1;
 }
+
 /* --------------------------------------------------------------------------------------------------------
   Name: server_receive_payout
   Description: Runs the code when the server receives the NODE_TO_BLOCK_VERIFIERS_CHECK_VOTE_STATUS message
@@ -1046,6 +1049,9 @@ void server_receive_payout(const char* MESSAGE) {
     return;
   }
 
+  uint64_t in_num_block_height = strtoull(in_block_height, NULL, 10);
+  uint64_t conf = (uint64_t)(CRYPTONOTE_MINED_MONEY_UNLOCK_WINDOW + SAFE_CONFIRMATION_MARGIN);
+  uint64_t pass_block_height = (in_num_block_height > conf) ? (in_num_block_height - conf) : 0;
   size_t entries_count = 0;
   {
     cJSON* jcnt = cJSON_GetObjectItemCaseSensitive(root, "entries_count");
@@ -1056,7 +1062,7 @@ void server_receive_payout(const char* MESSAGE) {
     }
 
     double v = jcnt->valuedouble;
-    if (!(v >= 0.0) || v > (double)MAX_PROOFS_PER_DELEGATE_HARD) {
+    if ((v < 0.0) || v > (double)MAX_PROOFS_PER_DELEGATE_HARD) {
       ERROR_PRINT("server_receive_payout: 'entries_count' out of range");
       cJSON_Delete(root);
       return;
@@ -1073,6 +1079,17 @@ void server_receive_payout(const char* MESSAGE) {
     entries_count = (size_t)u;
   }
 
+  if (entries_count == 0) {
+    INFO_PRINT("server_receive_payout: entries_count == 0; marking found_blocks < %" PRIu64
+               " as processed and exiting", pass_block_height);
+    int is_ok = mark_found_blocks_processed_up_to(pass_block_height);
+    cJSON_Delete(root);
+    if (is_ok == XCASH_ERROR) {
+      ERROR_PRINT("server_receive_payout: error calling mark_found_blocks_processed_up_to");
+    }
+    return;
+  }
+
   // outputs (array)
   cJSON* outs = cJSON_GetObjectItemCaseSensitive(root, "outputs");
   if (!outs || !cJSON_IsArray(outs)) {
@@ -1083,7 +1100,12 @@ void server_receive_payout(const char* MESSAGE) {
 
   size_t n = (size_t)cJSON_GetArraySize(outs);
   if (entries_count != n) {
-    WARNING_PRINT("server_receive_payout: entries_count (%zu) != outputs length (%zu) — using outputs length", entries_count, n);
+    WARNING_PRINT("server_receive_payout: entries_count (%zu) != outputs length (%zu) — using min(outputs length, MAX_PROOFS_PER_DELEGATE_HARD)",
+                  entries_count, n);
+    if (n > MAX_PROOFS_PER_DELEGATE_HARD) {
+      WARNING_PRINT("server_receive_payout: outputs length exceeds hard limit (%d), truncating", MAX_PROOFS_PER_DELEGATE_HARD);
+      n = MAX_PROOFS_PER_DELEGATE_HARD;
+    }
     entries_count = n;
   }
 
@@ -1261,11 +1283,6 @@ void server_receive_payout(const char* MESSAGE) {
 
   INFO_PRINT("server_receive_payout: Unlocked balance: %" PRIu64 " atomic (%.6f XCA)", unlocked,
     (double)unlocked / (double)XCASH_ATOMIC_UNITS);
-
-  uint64_t in_num_block_height = strtoull(in_block_height, NULL, 10);
-  uint64_t conf = (uint64_t)(CRYPTONOTE_MINED_MONEY_UNLOCK_WINDOW + SAFE_CONFIRMATION_MARGIN);
-
-  uint64_t pass_block_height = (in_num_block_height > conf) ? (in_num_block_height - conf) : 0;
   if(compute_payouts_due(parsed, pass_block_height, unlocked, entries_count) == XCASH_ERROR) {
     ERROR_PRINT("compute_payout_due failed");
     free(parsed);

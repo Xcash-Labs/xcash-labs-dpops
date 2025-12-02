@@ -158,14 +158,6 @@ int insert_document_into_collection_bson(const char* DATABASE, const char* COLLE
 
 /*-----------------------------------------------------------------------------------------------------------
 Name: delegates_apply_vote_total
-Description: set the delegate's total_vote_count to the new_total
-Parameters:
-  DATABASE - The database name.
-  COLLECTION - The collection name.
-Return: 0 if an error has occurred or collection does not exist, 1 if successful.
------------------------------------------------------------------------------------------------------------*/
-/*-----------------------------------------------------------------------------------------------------------
-Name: delegates_apply_vote_total
 Description: Set the delegate's total_vote_count to new_total (no upsert).
 Parameters:
   delegate_pubaddr - delegate public address (string key)
@@ -1433,6 +1425,8 @@ Return:
 ---------------------------------------------------------------------------------------------------------*/
 int compute_payouts_due(payout_output_t* parsed, uint64_t in_block_height, int64_t in_unlocked_balance, size_t entries_count) {
   int rc = XCASH_OK;
+  uint64_t safe_unlocked = 0;
+  uint64_t sum_atomic = 0;
 
   if (!parsed || entries_count == 0) {
     ERROR_PRINT("No parsed entries");
@@ -1573,9 +1567,19 @@ int compute_payouts_due(payout_output_t* parsed, uint64_t in_block_height, int64
     goto done;
   }
 
-  uint64_t safe_unlocked = (in_unlocked_balance > 0) ? (uint64_t)in_unlocked_balance : 0;
+  safe_unlocked = (in_unlocked_balance > 0) ? (uint64_t)in_unlocked_balance : 0;
   uint64_t pending_sum = (sum > 0) ? (uint64_t)sum : 0;
-  uint64_t sum_atomic = (pending_sum < safe_unlocked) ? pending_sum : safe_unlocked;
+  sum_atomic = pending_sum;
+
+  if (sum_atomic > safe_unlocked) {
+    INFO_PRINT(
+        "compute_payouts_due: Not enough funds to cover rewards "
+        "(sum_atomic=%" PRIu64 ", safe_unlocked=%" PRIu64 "), skipping payout",
+        sum_atomic, safe_unlocked);
+    rc = XCASH_OK;
+    goto done;
+  }
+
   if (sum_atomic == 0) {
     INFO_PRINT("compute_payouts_due: Nothing to pay (sum_atomic == 0)");
     rc = XCASH_OK;
@@ -1593,7 +1597,7 @@ int compute_payouts_due(payout_output_t* parsed, uint64_t in_block_height, int64
   uint64_t base_sum = 0;
   for (size_t k = 0; k < entries_count; ++k) {
     const char* addr = parsed[k].a;
-    uint64_t pay = (uint64_t)(((__uint128_t)sum_atomic * parsed[k].v) / total_delegate_votes);
+    uint64_t pay = (uint64_t)(((unsigned __int128)sum_atomic * parsed[k].v) / total_delegate_votes);
 
     if (UINT64_MAX - base_sum < pay) {
       ERROR_PRINT("compute_payouts_due: payout accumulation overflow");
@@ -1635,52 +1639,23 @@ int compute_payouts_due(payout_output_t* parsed, uint64_t in_block_height, int64
     }
   }
 
+  // 🔍 Sanity check: we never paid out more than we intended
+  if (base_sum > sum_atomic) {
+    ERROR_PRINT("compute_payouts_due: base_sum (%" PRIu64 ") exceeds sum_atomic (%" PRIu64 ")",
+                base_sum, sum_atomic);
+    rc = XCASH_ERROR;
+    goto done;
+  }
+
   /* ---- Mark eligible found_blocks as processed ---- */
   {
-    coll_blocks = mongoc_client_get_collection(client, DATABASE_NAME, DB_COLLECTION_BLOCKS_FOUND);
-    if (!coll_blocks) {
-      ERROR_PRINT("compute_payouts_due: finalize - get_collection '%s.%s' failed", DATABASE_NAME, DB_COLLECTION_BLOCKS_FOUND);
+    int mrc = mark_found_blocks_processed_up_to(in_block_height);
+    if (mrc != XCASH_OK) {
+      ERROR_PRINT("compute_payouts_due: mark_found_blocks_processed_up_to(%" PRIu64 ") failed",
+                  in_block_height);
       rc = XCASH_ERROR;
       goto done;
     }
-
-    bson_t filter;
-    bson_init(&filter);
-    bson_t lt;
-    BSON_APPEND_DOCUMENT_BEGIN(&filter, "block_height", &lt);
-    BSON_APPEND_INT64(&lt, "$lt", (int64_t)in_block_height);
-    bson_append_document_end(&filter, &lt);
-    BSON_APPEND_BOOL(&filter, "processed", false);
-
-    bson_t update;
-    bson_init(&update);
-    bson_t set;
-    BSON_APPEND_DOCUMENT_BEGIN(&update, "$set", &set);
-    BSON_APPEND_BOOL(&set, "processed", true);
-    bson_append_document_end(&update, &set);
-
-    bson_t reply;
-    bson_init(&reply);
-    bson_error_t err;
-    bool ok = mongoc_collection_update_many(coll_blocks, &filter, &update, NULL, &reply, &err);
-    if (!ok) {
-      ERROR_PRINT("compute_payouts_due: finalize - update_many failed: %s", err.message);
-      rc = XCASH_ERROR;
-    } else {
-      bson_iter_t it;
-      int64_t n = 0;
-      if (bson_iter_init_find(&it, &reply, "modifiedCount") && BSON_ITER_HOLDS_INT32(&it))
-        n = bson_iter_int32(&it);
-      else if (bson_iter_init_find(&it, &reply, "nModified") && BSON_ITER_HOLDS_INT32(&it))
-        n = bson_iter_int32(&it);
-      INFO_PRINT("compute_payouts_due: finalize - marked %" PRIi64 " found_blocks as processed", n);
-    }
-
-    bson_destroy(&reply);
-    bson_destroy(&update);
-    bson_destroy(&filter);
-    mongoc_collection_destroy(coll_blocks);
-    coll_blocks = NULL;
   }
 
 done:
@@ -1690,8 +1665,9 @@ done:
   if (coll_blocks) mongoc_collection_destroy(coll_blocks);
   if (client) mongoc_client_pool_push(database_client_thread_pool, client);
 
-  if (rc == XCASH_OK) {
-    INFO_PRINT("compute_payouts_due: Computed Payouts: Total=%.6f XCA", (double)sum_atomic / (double)XCASH_ATOMIC_UNITS);
+  if (rc == XCASH_OK && sum_atomic > 0 && sum_atomic <= safe_unlocked) {
+    INFO_PRINT("compute_payouts_due: Computed Payouts: Total=%.6f XCA",
+               (double)sum_atomic / (double)XCASH_ATOMIC_UNITS);
   }
 
   return rc;
@@ -1712,7 +1688,7 @@ done:
  * Fairness / budget:
  *   - Caller must pass the current unlocked wallet balance in atomic units.
  *   - The function enforces an all-or-nothing rule:
- *       total_pending_eligible <= (in_unlocked_balance - safety_reserve)
+ *       total_pending_eligible <= (in_unlocked_balance - unlocked)
  *     otherwise it skips the sweep.
  *
  * @param in_unlocked_balance  Unlocked wallet balance in atomic units (>= 0).
@@ -1735,19 +1711,6 @@ int run_payout_sweep_simple(int64_t in_unlocked_balance) {
   }
 
   uint64_t unlocked = (uint64_t)in_unlocked_balance;
-
-  // Optional safety reserve so you never drain to absolute 0
-  const uint64_t safety_reserve = 1 * XCASH_ATOMIC_UNITS;
-
-  if (unlocked <= safety_reserve) {
-    INFO_PRINT("run_payout_sweep_simple: unlocked balance %" PRIu64
-               " <= safety reserve %" PRIu64 ", skipping sweep",
-               unlocked, safety_reserve);
-    return XCASH_OK;
-  }
-
-  // We'll only spend up to this amount in total (fairness guard uses this)
-  const uint64_t max_spend = unlocked - safety_reserve;
 
   // ---- Get client + payout_balances collection (needed for all queries) ----
   client = mongoc_client_pool_pop(database_client_thread_pool);
@@ -1846,22 +1809,20 @@ int run_payout_sweep_simple(int64_t in_unlocked_balance) {
   }
 
   INFO_PRINT("run_payout_sweep_simple: total pending (eligible)=%" PRId64
-             " max_spend=%" PRIu64 " unlocked=%" PRIu64,
-             total_pending_atomic, max_spend, unlocked);
+             " unlocked=%" PRIu64,
+             total_pending_atomic, unlocked);
 
-  // ---- Fairness guard: require enough unlocked (minus reserve) to clear all eligible pending ----
+  // ---- Fairness guard: require enough unlocked to clear all eligible pending ----
   if (total_pending_atomic < 0) {
-    total_pending_atomic = 0;  // defensive
+    total_pending_atomic = 0;
   }
 
-  if ((uint64_t)total_pending_atomic > max_spend) {
+  if ((uint64_t)total_pending_atomic > unlocked) {
     INFO_PRINT("run_payout_sweep_simple: total_pending %" PRId64
-               " exceeds max_spend %" PRIu64 ", skipping sweep this round",
-               total_pending_atomic, max_spend);
+               " exceeds unlocked %" PRIu64 ", skipping sweep this round",
+               total_pending_atomic, unlocked);
     goto done;
   }
-
-  // ---- From here on, we know we can afford to clear everything that meets criteria ----
 
   // Build sweep query: (pending >= min) OR (stale AND pending > 0)
   bson_t query;
@@ -2042,10 +2003,12 @@ int run_payout_sweep_simple(int64_t in_unlocked_balance) {
         rc = XCASH_ERROR;
         goto done;
       }
+
     }
 
-    INFO_PRINT("run_payout_sweep_simple: paid %" PRId64 " to %s (%s); %s [tx=%s fee=%" PRIu64 "]",
-               pend, addr, reason, delete_after ? "deleted" : "zeroed", first_hash, fee);
+    INFO_PRINT("run_payout_sweep_simple: requested=%" PRId64 " sent=%" PRIu64 " to %s (%s); %s [tx=%s fee=%" PRIu64 "]",
+           pend, (uint64_t)amt_sent, addr, reason,
+           delete_after ? "deleted" : "zeroed", first_hash, fee);
   }
 
   if (mongoc_cursor_error(cur, NULL)) {
@@ -2065,4 +2028,89 @@ done:
   }
 
   return rc;
+}
+
+
+/*---------------------------------------------------------------------------------------------------------
+ * @brief Mark found_blocks entries as processed up to a given block height.
+ *
+ * This function updates all documents in the `found_blocks` collection where:
+ *
+ *   - block_height < @p height
+ *   - processed == false
+ *
+ * and sets `processed` to true. It is used when a delegate has either
+ * received a zero-entry payout instruction (no outputs for this height) or
+ * when payouts have been successfully computed and applied, so earlier
+ * blocks are considered fully handled.
+ *
+ * The function logs how many documents were modified.
+ *
+ * @param height
+ *   Exclusive upper bound on block_height. All records with
+ *   block_height < height and processed == false will be marked processed.
+ *
+ * @return XCASH_OK on success, XCASH_ERROR on any MongoDB or pool error.
+---------------------------------------------------------------------------------------------------------*/
+int mark_found_blocks_processed_up_to(uint64_t height)
+{
+  mongoc_client_t* client = mongoc_client_pool_pop(database_client_thread_pool);
+  if (!client) {
+    ERROR_PRINT("mark_found_blocks_processed_up_to: mongoc_client_pool_pop failed");
+    return XCASH_ERROR;
+  }
+
+  mongoc_collection_t* coll_blocks =
+      mongoc_client_get_collection(client, DATABASE_NAME, DB_COLLECTION_BLOCKS_FOUND);
+  if (!coll_blocks) {
+    ERROR_PRINT("mark_found_blocks_processed_up_to: get_collection '%s.%s' failed",
+                DATABASE_NAME, DB_COLLECTION_BLOCKS_FOUND);
+    mongoc_client_pool_push(database_client_thread_pool, client);
+    return XCASH_ERROR;
+  }
+
+  bson_t filter;
+  bson_init(&filter);
+  bson_t lt;
+  BSON_APPEND_DOCUMENT_BEGIN(&filter, "block_height", &lt);
+  BSON_APPEND_INT64(&lt, "$lt", (int64_t)height);
+  bson_append_document_end(&filter, &lt);
+  BSON_APPEND_BOOL(&filter, "processed", false);
+
+  bson_t update;
+  bson_init(&update);
+  bson_t set;
+  BSON_APPEND_DOCUMENT_BEGIN(&update, "$set", &set);
+  BSON_APPEND_BOOL(&set, "processed", true);
+  bson_append_document_end(&update, &set);
+
+  bson_t reply;
+  bson_init(&reply);
+  bson_error_t err;
+  bool ok = mongoc_collection_update_many(coll_blocks, &filter, &update, NULL, &reply, &err);
+  if (!ok) {
+    ERROR_PRINT("mark_found_blocks_processed_up_to: update_many failed: %s", err.message);
+    bson_destroy(&reply);
+    bson_destroy(&update);
+    bson_destroy(&filter);
+    mongoc_collection_destroy(coll_blocks);
+    mongoc_client_pool_push(database_client_thread_pool, client);
+    return XCASH_ERROR;
+  }
+
+  bson_iter_t it;
+  int64_t n = 0;
+  if (bson_iter_init_find(&it, &reply, "modifiedCount") && BSON_ITER_HOLDS_INT32(&it))
+    n = bson_iter_int32(&it);
+  else if (bson_iter_init_find(&it, &reply, "nModified") && BSON_ITER_HOLDS_INT32(&it))
+    n = bson_iter_int32(&it);
+
+  INFO_PRINT("mark_found_blocks_processed_up_to: marked %" PRIi64 " found_blocks as processed", n);
+
+  bson_destroy(&reply);
+  bson_destroy(&update);
+  bson_destroy(&filter);
+  mongoc_collection_destroy(coll_blocks);
+  mongoc_client_pool_push(database_client_thread_pool, client);
+  return XCASH_OK;
 }

@@ -240,7 +240,7 @@ Returns:
   void
 ---------------------------------------------------------------------------------------------------------*/
 static void run_proof_check(sched_ctx_t* ctx) {
-mongoc_client_t* c = mongoc_client_pool_pop(ctx->pool);
+  mongoc_client_t* c = mongoc_client_pool_pop(ctx->pool);
   if (!c) {
     ERROR_PRINT("Failed to pop a client from the mongoc_client_pool");
     return;
@@ -392,12 +392,17 @@ mongoc_client_t* c = mongoc_client_pool_pop(ctx->pool);
                 seen, invalid, deleted, skipped);
   }
 
-  bool stop_after_scan = atomic_load_explicit(&shutdown_requested, memory_order_relaxed);
-
   mongoc_cursor_destroy(cur);
   bson_destroy(opts);
   bson_destroy(query);
   mongoc_collection_destroy(coll);
+
+  bool stop_after_scan = atomic_load_explicit(&shutdown_requested, memory_order_relaxed);
+  if (stop_after_scan) {
+    mongoc_client_pool_push(ctx->pool, c);
+    free_buckets(pay_buckets, pay_bucket_count);
+    return;
+  }
 
   // Wait for correct time to load from delegates_all, create you own copy
   // Capture height before next block is found but online status is set
@@ -424,7 +429,7 @@ mongoc_client_t* c = mongoc_client_pool_pop(ctx->pool);
 
 
   // Apply per-delegate totals only if not shutting down
-  if (!stop_after_scan && agg_count > 0) {
+  if (agg_count > 0) {
     mongoc_collection_t* dcoll =
         mongoc_client_get_collection(c, DATABASE_NAME, DB_COLLECTION_DELEGATES);
     if (!dcoll) {
@@ -534,7 +539,7 @@ mongoc_client_t* c = mongoc_client_pool_pop(ctx->pool);
     }
   }
 
-  // One more pass: for every online delegate, if they have no reserve proofs,
+  // Another pass: for every online delegate, if they have no reserve proofs,
   // set total_vote_count=0 locally (this seed) and then broadcast that to others.
   {
     mongoc_collection_t* rcoll =
@@ -642,6 +647,7 @@ mongoc_client_t* c = mongoc_client_pool_pop(ctx->pool);
     }  // collections ok
   }
 
+  // loop that builds and sends non-empty PAYOUT_INSTRUCTION messages.
   for (size_t i = 0; i < pay_bucket_count; ++i) {
     const payout_bucket_t* B = &pay_buckets[i];
     const char* delegate_addr = B->delegate;
@@ -756,6 +762,114 @@ mongoc_client_t* c = mongoc_client_pool_pop(ctx->pool);
 
   // fall-through;
   next_delegate:;
+  }
+
+  // Final pass: for every ONLINE delegate that did NOT appear in pay_buckets with any outputs, send a 
+  // zero-entry PAYOUT_INSTRUCTION so the receiver can mark its blocks as processed for this height.
+  if (online_count > 0) {
+    // Precompute "empty outputs" hash once
+    uint8_t out_hash[SHA256_HASH_SIZE];
+    payout_output_t dummy_out;
+    memset(&dummy_out, 0, sizeof dummy_out);
+    outputs_digest_sha256(&dummy_out, 0, out_hash);
+    char out_hash_hex[TRANSACTION_HASH_LENGTH + 1];
+    bin_to_hex(out_hash, SHA256_HASH_SIZE, out_hash_hex);
+
+    for (size_t di = 0; di < online_count; ++di) {
+      const char* delegate_addr = delegates_timer_all[di].public_address;
+      const char* ip            = delegates_timer_all[di].IP_address;
+
+      if (!delegate_addr || !ip || delegate_addr[0] == '\0' || ip[0] == '\0')
+        continue;
+
+      // Check if this delegate had any bucket with outputs
+      bool has_bucket = false;
+      for (size_t bi = 0; bi < pay_bucket_count; ++bi) {
+        const payout_bucket_t* B = &pay_buckets[bi];
+        if (B->count == 0) continue;
+        if (strcmp(B->delegate, delegate_addr) == 0) {
+          has_bucket = true;
+          break;
+        }
+      }
+      if (has_bucket) {
+        continue;  // this delegate already got a normal payout message
+      }
+
+      // Build canonical signable string for zero entries:
+      // SEED_TO_NODES_PAYOUT|<height>|<blockhash>|<delegate>|0|<outputs_hash>
+      char* sign_str = NULL;
+      {
+        const char* fmt_sign = "SEED_TO_NODES_PAYOUT|%s|%s|%s|%d|%s";
+        int need = snprintf(NULL, 0, fmt_sign,
+                            save_block_height,
+                            save_block_hash,
+                            delegate_addr,
+                            0,   // entries_count
+                            out_hash_hex);
+        if (need < 0) {
+          ERROR_PRINT("Failed to size signable string for zero-entry payout (delegate %.12s…)", delegate_addr);
+          continue;
+        }
+        size_t len = (size_t)need + 1;
+        sign_str = (char*)malloc(len);
+        if (!sign_str) {
+          ERROR_PRINT("malloc(%zu) failed for zero-entry signable string (delegate %.12s…)", len, delegate_addr);
+          continue;
+        }
+        int wrote = snprintf(sign_str, len, fmt_sign,
+                             save_block_height, save_block_hash, delegate_addr, 0, out_hash_hex);
+        if (wrote < 0 || (size_t)wrote >= len) {
+          ERROR_PRINT("snprintf(write) failed/truncated for zero-entry signable string (delegate %.12s…)", delegate_addr);
+          free(sign_str);
+          sign_str = NULL;
+          continue;
+        }
+      }
+
+      char signature[XCASH_SIGN_DATA_LENGTH + 1] = {0};
+      if (!sign_txt_string(sign_str, signature, sizeof signature)) {
+        ERROR_PRINT("Failed to sign zero-entry payout message for %.12s…", delegate_addr);
+        free(sign_str);
+        continue;
+      }
+      free(sign_str);
+      sign_str = NULL;
+
+      sbuf_t sb;
+      if (!sbuf_init(&sb, 4096)) {
+        ERROR_PRINT("alloc failed building zero-entry PAYOUT_INSTRUCTION for %.12s…", delegate_addr);
+        continue;
+      }
+
+      if (!sbuf_addf(&sb,
+                     "{"
+                     "\"message_settings\":\"SEED_TO_NODES_PAYOUT\","
+                     "\"public_address\":\"%s\","
+                     "\"block_height\":\"%s\","
+                     "\"delegate_wallet_address\":\"%s\","
+                     "\"entries_count\":0,"
+                     "\"outputs_hash\":\"%s\","
+                     "\"XCASH_DPOPS_signature\":\"%s\","
+                     "\"outputs\":[]"
+                     "}",
+                     xcash_wallet_public_address,
+                     save_block_height,
+                     delegate_addr,
+                     out_hash_hex,
+                     signature)) {
+        ERROR_PRINT("Failed to build zero-entry payout JSON for %.12s…", delegate_addr);
+        free(sb.buf);
+        continue;
+      }
+
+      sync_minutes_and_seconds(0, 50);
+      if (send_message_to_ip_or_hostname(ip, XCASH_DPOPS_PORT, sb.buf) != XCASH_OK) {
+        ERROR_PRINT("Failed to send zero-entry payment message to %s (delegate %.12s…)", ip, delegate_addr);
+      }
+
+      free(sb.buf);
+    } // for di
   }
 
   mongoc_client_pool_push(ctx->pool, c);
