@@ -755,7 +755,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
       goto next_delegate;
     }
 
-    DEBUG_PRINT("sb.buf=%s", sb.buf);
+    INFO_PRINT("sb.buf=%s", sb.buf);
 
     // 5) send
     sync_minutes_and_seconds(0, 50);
@@ -867,7 +867,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
         continue;
       }
 
-      DEBUG_PRINT("sb.buf no outputs=%s", sb.buf);
+      INFO_PRINT("sb.buf no outputs=%s", sb.buf);
 
       sync_minutes_and_seconds(0, 50);
       if (send_message_to_ip_or_hostname(ip, XCASH_DPOPS_PORT, sb.buf) != XCASH_OK) {
