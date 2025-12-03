@@ -299,9 +299,10 @@ static void run_proof_check(sched_ctx_t* ctx) {
   size_t pay_bucket_count = 0;
 
   while (mongoc_cursor_next(cur, &doc)) {
+    if (atomic_load_explicit(&shutdown_requested, memory_order_relaxed)) {
+      break;
+    }
     ++seen;
-    if (atomic_load_explicit(&shutdown_requested, memory_order_relaxed)) break;
-
     bson_iter_t it;
     const char* voter = NULL;     // _id (voter public address)
     const char* delegate = NULL;  // public_address_voted_for
@@ -397,8 +398,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
   bson_destroy(query);
   mongoc_collection_destroy(coll);
 
-  bool stop_after_scan = atomic_load_explicit(&shutdown_requested, memory_order_relaxed);
-  if (stop_after_scan) {
+  if (atomic_load_explicit(&shutdown_requested, memory_order_relaxed)) {
     mongoc_client_pool_push(ctx->pool, c);
     free_buckets(pay_buckets, pay_bucket_count);
     return;
@@ -431,7 +431,8 @@ static void run_proof_check(sched_ctx_t* ctx) {
 
 
   // Apply per-delegate totals only if not shutting down
-  if (!stop_after_scan && agg_count > 0) {
+  bool shutting_down = atomic_load_explicit(&shutdown_requested, memory_order_relaxed);
+  if (agg_count > 0 && !shutting_down) {
     mongoc_collection_t* dcoll =
         mongoc_client_get_collection(c, DATABASE_NAME, DB_COLLECTION_DELEGATES);
     if (!dcoll) {
@@ -553,7 +554,10 @@ static void run_proof_check(sched_ctx_t* ctx) {
       if (rcoll) mongoc_collection_destroy(rcoll);
       if (dcoll) mongoc_collection_destroy(dcoll);
     } else {
-      for (size_t i = 0; i < online_count && !stop_after_scan; ++i) {
+      for (size_t i = 0; i < online_count; ++i) {
+        if (atomic_load_explicit(&shutdown_requested, memory_order_relaxed)) {
+          break;
+        }
         // Basic sanity
         if (delegates_timer_all[i].public_address[0] == '\0' ||
             delegates_timer_all[i].IP_address[0] == '\0') {
@@ -650,7 +654,10 @@ static void run_proof_check(sched_ctx_t* ctx) {
   }
 
   // loop that builds and sends non-empty PAYOUT_INSTRUCTION messages.
-  for (size_t i = 0; i < pay_bucket_count && !stop_after_scan; ++i) {
+  for (size_t i = 0; i < pay_bucket_count; ++i) {
+    if (atomic_load_explicit(&shutdown_requested, memory_order_relaxed)) {
+      break;
+    }
     const payout_bucket_t* B = &pay_buckets[i];
     const char* delegate_addr = B->delegate;
     const char* ip = NULL;
@@ -778,8 +785,10 @@ static void run_proof_check(sched_ctx_t* ctx) {
     outputs_digest_sha256(&dummy_out, 0, out_hash);
     char out_hash_hex[TRANSACTION_HASH_LENGTH + 1];
     bin_to_hex(out_hash, SHA256_HASH_SIZE, out_hash_hex);
-
-    for (size_t di = 0; di < online_count && !stop_after_scan; ++di) {
+    for (size_t di = 0; di < online_count; ++di) {
+      if (atomic_load_explicit(&shutdown_requested, memory_order_relaxed)) {
+        break;
+      }
       const char* delegate_addr = delegates_timer_all[di].public_address;
       const char* ip            = delegates_timer_all[di].IP_address;
 
@@ -1174,7 +1183,9 @@ void* timer_thread(void* arg) {
   sched_ctx_t* ctx = (sched_ctx_t*)arg;
 
   for (;;) {
-    if (atomic_load_explicit(&shutdown_requested, memory_order_relaxed)) break;
+    if (atomic_load_explicit(&shutdown_requested, memory_order_relaxed)) {
+      break;
+    }
     time_t now = time(NULL), run_at;
     // --- normal: pick next slot from SLOTS ---
     int idx = pick_next_slot(now, &run_at);
