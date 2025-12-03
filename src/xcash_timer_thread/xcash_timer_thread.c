@@ -878,6 +878,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
 
   mongoc_client_pool_push(ctx->pool, c);
   free_buckets(pay_buckets, pay_bucket_count);
+  return;
 }
 
 /*---------------------------------------------------------------------------------------------------------
