@@ -1176,8 +1176,10 @@ void* timer_thread(void* arg) {
     if (wake < now) wake = now;
 
     sleep(120);
+    INFO_PRINT("Testing.....");
     sync_minutes_and_seconds(0, 50);
     if (is_job_node()) {
+      INFO_PRINT("Is_job_node .....");
       INFO_PRINT("Scheduler: Testing running PROOF CHECK at startup...");
       run_proof_check(ctx);
     }
