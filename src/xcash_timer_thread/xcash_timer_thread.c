@@ -389,7 +389,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
     ERROR_PRINT("reserve_proofs cursor error: %s", cerr.message);
   } else {
     INFO_PRINT("reserve_proofs scan complete: seen=%zu invalid=%zu deleted=%zu skipped=%zu",
-                seen, invalid, deleted, skipped);
+      seen, invalid, deleted, skipped);
   }
 
   mongoc_cursor_destroy(cur);
@@ -419,6 +419,8 @@ static void run_proof_check(sched_ctx_t* ctx) {
   for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; ++i) {
     if (delegates_all[i].public_address[0] == '\0' ||
         delegates_all[i].IP_address[0] == '\0') continue;
+    if (is_seed_address(delegates_all[i].public_address))
+      continue;
     if (strcmp(delegates_all[i].online_status, "true") == 0) {
       strcpy(delegates_timer_all[online_count].public_address, delegates_all[i].public_address);
       strcpy(delegates_timer_all[online_count].IP_address, delegates_all[i].IP_address);
@@ -429,7 +431,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
 
 
   // Apply per-delegate totals only if not shutting down
-  if (agg_count > 0) {
+  if (!stop_after_scan && agg_count > 0) {
     mongoc_collection_t* dcoll =
         mongoc_client_get_collection(c, DATABASE_NAME, DB_COLLECTION_DELEGATES);
     if (!dcoll) {
@@ -551,7 +553,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
       if (rcoll) mongoc_collection_destroy(rcoll);
       if (dcoll) mongoc_collection_destroy(dcoll);
     } else {
-      for (size_t i = 0; i < online_count; ++i) {
+      for (size_t i = 0; i < online_count && !stop_after_scan; ++i) {
         // Basic sanity
         if (delegates_timer_all[i].public_address[0] == '\0' ||
             delegates_timer_all[i].IP_address[0] == '\0') {
@@ -648,7 +650,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
   }
 
   // loop that builds and sends non-empty PAYOUT_INSTRUCTION messages.
-  for (size_t i = 0; i < pay_bucket_count; ++i) {
+  for (size_t i = 0; i < pay_bucket_count && !stop_after_scan; ++i) {
     const payout_bucket_t* B = &pay_buckets[i];
     const char* delegate_addr = B->delegate;
     const char* ip = NULL;
@@ -777,7 +779,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
     char out_hash_hex[TRANSACTION_HASH_LENGTH + 1];
     bin_to_hex(out_hash, SHA256_HASH_SIZE, out_hash_hex);
 
-    for (size_t di = 0; di < online_count; ++di) {
+    for (size_t di = 0; di < online_count && !stop_after_scan; ++di) {
       const char* delegate_addr = delegates_timer_all[di].public_address;
       const char* ip            = delegates_timer_all[di].IP_address;
 
