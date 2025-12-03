@@ -26,12 +26,12 @@ typedef struct {
   job_kind_t kind;
 } sched_slot_t;
 
-// 2:00 → IMAGE_CK; 3:00 → ACTIVITY_CK; 4:00 AM & 4:00 PM → PROOF
+// 2:00 AM → IMAGE_CK; 3:00 AM → ACTIVITY_CK; 4:00 AM & 4:00 PM → PROOF
 static const sched_slot_t SLOTS[] = {
-  {2,  0, JOB_IMAGE_CK},
-  {3,  0, JOB_ACTIVITY_CK},
-  {4,  0, JOB_PROOF},
-  {16, 0, JOB_PROOF},
+  {7,  0, JOB_IMAGE_CK},
+  {8,  0, JOB_ACTIVITY_CK},
+  {9,  0, JOB_PROOF},
+  {21, 0, JOB_PROOF},
 };
 static const size_t NSLOTS = sizeof(SLOTS)/sizeof(SLOTS[0]);
 
