@@ -406,7 +406,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
 
   // Wait for correct time to load from delegates_all, create you own copy
   // Capture height before next block is found but online status is set
-  sync_minutes_and_seconds(0, 45);
+  sync_minutes_and_seconds(0, 47);
   char save_block_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
   char save_block_hash[BLOCK_HASH_LENGTH + 1] = {0};
   strncpy(save_block_height, current_block_height, sizeof save_block_height);
@@ -517,7 +517,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
         bson_destroy(&filter);
 
         if (update_ok) {
-          sync_minutes_and_seconds(0, 50);
+          sync_minutes_and_seconds(0, 47);
           response_t** responses = NULL;
           char* upd_vote_message = NULL;
           if (build_seed_to_nodes_vote_count_update(agg_addr[i], new_total, &upd_vote_message)) {
@@ -627,7 +627,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
           DEBUG_PRINT("delegate total zeroed locally addr=%.12s… (no reserve proofs)", addr);
 
           // Now that THIS SEED is consistent, broadcast to others
-          sync_minutes_and_seconds(0, 50);
+          sync_minutes_and_seconds(0, 47);
           response_t** responses = NULL;
           char* upd_vote_message = NULL;
           if (build_seed_to_nodes_vote_count_update(addr, 0, &upd_vote_message)) {
@@ -765,7 +765,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
     DEBUG_PRINT("sb.buf=%s", sb.buf);
 
     // 5) send
-    sync_minutes_and_seconds(0, 50);
+    sync_minutes_and_seconds(0, 47);
     if (send_message_to_ip_or_hostname(ip, XCASH_DPOPS_PORT, sb.buf) != XCASH_OK) {
       ERROR_PRINT("Failed to send the payment message to %s", ip);
     }
@@ -878,7 +878,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
 
       DEBUG_PRINT("sb.buf no outputs=%s", sb.buf);
 
-      sync_minutes_and_seconds(0, 50);
+      sync_minutes_and_seconds(0, 47);
       if (send_message_to_ip_or_hostname(ip, XCASH_DPOPS_PORT, sb.buf) != XCASH_OK) {
         ERROR_PRINT("Failed to send zero-entry payment message to %s (delegate %.12s…)", ip, delegate_addr);
       }
@@ -911,7 +911,7 @@ static void run_proof_check(sched_ctx_t* ctx) {
 -------------------------------------------------------------------------------------------------------- */
 void run_activity_check(sched_ctx_t* ctx) {
   // 0) Wait for the coordinated timeslot to avoid racing with other jobs.
-  sync_minutes_and_seconds(0, 50);
+  sync_minutes_and_seconds(0, 47);
 
   // 1) Snapshot ONLINE delegates for routing (seed -> online nodes)
   size_t online_count = 0;
@@ -1192,13 +1192,6 @@ void* timer_thread(void* arg) {
     if (idx < 0) break;  // shouldn't happen
     time_t wake = run_at - WAKEUP_SKEW_SEC;
     if (wake < now) wake = now;
-
-    sleep(120);
-    sync_minutes_and_seconds(0, 50);
-    if (is_job_node()) {
-      INFO_PRINT("Scheduler: Testing running PROOF CHECK at startup...");
-      run_proof_check(ctx);
-    }
 
 // pre-wake, then align to exact minute
     sleep_until(wake);
