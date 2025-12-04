@@ -362,7 +362,7 @@ Notes:
   - Prefers per-destination net amounts when available (with subtract_fee_from_outputs),
     otherwise falls back to result.amount_list.
 ---------------------------------------------------------------------------------------------------------*/
-int wallet_payout_send(const char* addr, uint64_t amount_atomic, const char* reason,
+int wallet_payout_send(const char* addr, int64_t amount_atomic, const char* reason,
                        char* first_tx_hash_out, size_t first_tx_hash_out_len,
                        uint64_t* fee_out, int64_t* created_at_ms_out, uint64_t* amount_sent_out,
                        char (*txids_out)[TRANSACTION_HASH_LENGTH + 1], size_t txids_out_cap, size_t* tx_count_out)
@@ -371,8 +371,8 @@ int wallet_payout_send(const char* addr, uint64_t amount_atomic, const char* rea
     ERROR_PRINT("wallet_payout_send: invalid address");
     return XCASH_ERROR;
   }
-  if (amount_atomic == 0) {
-    ERROR_PRINT("wallet_payout_send: non-positive amount %" PRIu64, amount_atomic);
+  if (amount_atomic <= 0) {
+    ERROR_PRINT("wallet_payout_send: non-positive amount %" PRId64, amount_atomic);
     return XCASH_ERROR;
   }
 
@@ -385,7 +385,7 @@ int wallet_payout_send(const char* addr, uint64_t amount_atomic, const char* rea
     "{"
       "\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"transfer_split\","
       "\"params\":{"
-        "\"destinations\":[{\"amount\":%" PRIu64 ",\"address\":\"%s\"}],"
+        "\"destinations\":[{\"amount\":%" PRId64 ",\"address\":\"%s\"}],"
         "\"account_index\":0,"
         "\"priority\":0,"
         "\"get_tx_keys\":false,"
@@ -515,7 +515,7 @@ int wallet_payout_send(const char* addr, uint64_t amount_atomic, const char* rea
         txh_for_log = "(unknown)";
       }
     }
-    DEBUG_PRINT("[payout/split #%d] acct=0 -> %s req=%" PRIu64 " sent=%" PRIu64
+    DEBUG_PRINT("[payout/split #%d] acct=0 -> %s req=%" PRId64 " sent=%" PRIu64
                   " fee=%" PRIu64 " tx=%s reason=%s",
                   i, addr, amount_atomic, (uint64_t)amt_i, (uint64_t)fee_i, txh_for_log,
                   (reason && reason[0]) ? reason : "(n/a)");
@@ -528,7 +528,7 @@ int wallet_payout_send(const char* addr, uint64_t amount_atomic, const char* rea
   if (amount_sent_out) *amount_sent_out = total_sent_net;
   if (tx_count_out) *tx_count_out = siblings_total; // 0 when only one tx
 
-  DEBUG_PRINT("[payout/split] acct=0 -> %s req=%" PRIu64 " total_sent=%" PRIu64
+  DEBUG_PRINT("[payout/split] acct=0 -> %s req=%" PRId64 " total_sent=%" PRIu64
                 " total_fee=%" PRIu64 " txs=%d (siblings=%zu, tx_count_out=%zu) first_tx=%s reason=%s",
                 addr, amount_atomic, total_sent_net, total_fee,
                 tx_count, siblings_total, (tx_count_out ? *tx_count_out : siblings_total),
