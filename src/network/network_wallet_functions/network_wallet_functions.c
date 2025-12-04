@@ -137,7 +137,7 @@ int get_unlocked_balance(uint64_t* unlocked_balance_out)
 
   // Static headers & payload; no formatting or size computations needed.
   static const char* HTTP_HEADERS[] = { "Content-Type: application/json", "Accept: application/json" };
-  static const size_t HTTP_HEADERS_LENGTH = 2;
+  static const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0]);
 
   // account_index hardcoded to 0; constant JSON payload
   static const char* REQUEST_PAYLOAD =
@@ -210,7 +210,10 @@ static int json_extract_array(const char* json, const char* key, char* out, size
         --depth;
         if (depth == 0) { // include this closing ']'
           size_t len = (size_t)((p - start) + 1);
-          if (len >= outlen) len = outlen - 1;
+          if (len >= outlen) {
+            ERROR_PRINT("Not enough space to store full array including ']'");
+            return XCASH_ERROR;
+          }
           memcpy(out, start, len);
           out[len] = '\0';
           return XCASH_OK;
@@ -359,7 +362,7 @@ Notes:
   - Prefers per-destination net amounts when available (with subtract_fee_from_outputs),
     otherwise falls back to result.amount_list.
 ---------------------------------------------------------------------------------------------------------*/
-int wallet_payout_send(const char* addr, int64_t amount_atomic, const char* reason,
+int wallet_payout_send(const char* addr, uint64_t amount_atomic, const char* reason,
                        char* first_tx_hash_out, size_t first_tx_hash_out_len,
                        uint64_t* fee_out, int64_t* created_at_ms_out, uint64_t* amount_sent_out,
                        char (*txids_out)[TRANSACTION_HASH_LENGTH + 1], size_t txids_out_cap, size_t* tx_count_out)
@@ -368,13 +371,13 @@ int wallet_payout_send(const char* addr, int64_t amount_atomic, const char* reas
     ERROR_PRINT("wallet_payout_send: invalid address");
     return XCASH_ERROR;
   }
-  if (amount_atomic <= 0) {
-    ERROR_PRINT("wallet_payout_send: non-positive amount %" PRId64, amount_atomic);
+  if (amount_atomic == 0) {
+    ERROR_PRINT("wallet_payout_send: non-positive amount %" PRIu64, amount_atomic);
     return XCASH_ERROR;
   }
 
   static const char* HTTP_HEADERS[] = { "Content-Type: application/json", "Accept: application/json" };
-  static const size_t HTTP_HEADERS_LENGTH = 2;
+  static const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0]);
 
   // Build request
   char request[SMALL_BUFFER_SIZE] = {0};
@@ -382,7 +385,7 @@ int wallet_payout_send(const char* addr, int64_t amount_atomic, const char* reas
     "{"
       "\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"transfer_split\","
       "\"params\":{"
-        "\"destinations\":[{\"amount\":%" PRId64 ",\"address\":\"%s\"}],"
+        "\"destinations\":[{\"amount\":%" PRIu64 ",\"address\":\"%s\"}],"
         "\"account_index\":0,"
         "\"priority\":0,"
         "\"get_tx_keys\":false,"
@@ -397,7 +400,7 @@ int wallet_payout_send(const char* addr, int64_t amount_atomic, const char* reas
   }
 
   // Send
-  char response[MEDIUM_BUFFER_SIZE] = {0};
+  char response[XLARGE_BUFFER_SIZE] = {0};
   if (send_http_request(response, sizeof(response),
                         XCASH_WALLET_IP, "/json_rpc", XCASH_WALLET_PORT, "POST",
                         HTTP_HEADERS, HTTP_HEADERS_LENGTH,
@@ -406,6 +409,7 @@ int wallet_payout_send(const char* addr, int64_t amount_atomic, const char* reas
     return XCASH_ERROR;
   }
 
+  response[sizeof(response) - 1] = '\0';
   // Quiet JSON-RPC error detection
   if (jsonrpc_has_error_top(response)) {
     char err_code_buf[32] = {0}, err_msg_buf[256] = {0};
@@ -420,9 +424,9 @@ int wallet_payout_send(const char* addr, int64_t amount_atomic, const char* reas
   }
 
   // Pull the three arrays once into local buffers, parse_json_data does not work on arrays
-  char tx_hash_list_buf[MEDIUM_BUFFER_SIZE] = {0};
-  char fee_list_buf[MEDIUM_BUFFER_SIZE] = {0};
-  char amount_list_buf[MEDIUM_BUFFER_SIZE] = {0};
+  char tx_hash_list_buf[XLARGE_BUFFER_SIZE] = {0};
+  char fee_list_buf[XLARGE_BUFFER_SIZE] = {0};
+  char amount_list_buf[XLARGE_BUFFER_SIZE] = {0};
 
   if (json_extract_array(response, "\"tx_hash_list\"", tx_hash_list_buf, sizeof(tx_hash_list_buf)) == XCASH_ERROR) {
     ERROR_PRINT("wallet_payout_send: tx_hash_list missing");
@@ -511,7 +515,7 @@ int wallet_payout_send(const char* addr, int64_t amount_atomic, const char* reas
         txh_for_log = "(unknown)";
       }
     }
-    DEBUG_PRINT("[payout/split #%d] acct=0 -> %s req=%" PRId64 " sent=%" PRIu64
+    DEBUG_PRINT("[payout/split #%d] acct=0 -> %s req=%" PRIu64 " sent=%" PRIu64
                   " fee=%" PRIu64 " tx=%s reason=%s",
                   i, addr, amount_atomic, (uint64_t)amt_i, (uint64_t)fee_i, txh_for_log,
                   (reason && reason[0]) ? reason : "(n/a)");
@@ -524,7 +528,7 @@ int wallet_payout_send(const char* addr, int64_t amount_atomic, const char* reas
   if (amount_sent_out) *amount_sent_out = total_sent_net;
   if (tx_count_out) *tx_count_out = siblings_total; // 0 when only one tx
 
-  DEBUG_PRINT("[payout/split] acct=0 -> %s req=%" PRId64 " total_sent=%" PRIu64
+  DEBUG_PRINT("[payout/split] acct=0 -> %s req=%" PRIu64 " total_sent=%" PRIu64
                 " total_fee=%" PRIu64 " txs=%d (siblings=%zu, tx_count_out=%zu) first_tx=%s reason=%s",
                 addr, amount_atomic, total_sent_net, total_fee,
                 tx_count, siblings_total, (tx_count_out ? *tx_count_out : siblings_total),

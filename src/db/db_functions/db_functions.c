@@ -1896,7 +1896,8 @@ int run_payout_sweep_simple(int64_t in_unlocked_balance) {
     // Parse fields
     bson_iter_t it;
     const char* addr = NULL;
-    int64_t pend = 0, updated = 0;
+    uint64_t pend = 0;
+    int64_t updated = 0;
 
     if (bson_iter_init_find(&it, doc, "_id") && BSON_ITER_HOLDS_UTF8(&it))
       addr = bson_iter_utf8(&it, NULL);
