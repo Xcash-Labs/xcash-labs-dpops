@@ -417,9 +417,12 @@ int wallet_payout_send(const char* addr, int64_t amount_atomic, const char* reas
       parse_json_data(response, "error.message", err_msg_buf, sizeof(err_msg_buf));
       ERROR_PRINT("wallet_payout_send: RPC error code=%s msg=%s",
                   err_code_buf, err_msg_buf[0] ? err_msg_buf : "(none)");
+      ERROR_PRINT("response=%s", response);
     } else {
       ERROR_PRINT("wallet_payout_send: RPC error (no code/message parsed)");
+      ERROR_PRINT("response=%s", response);
     }
+    ERROR_PRINT("response=%s", response);
     return XCASH_ERROR;
   }
 
