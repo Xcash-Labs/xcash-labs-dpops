@@ -1639,7 +1639,7 @@ int compute_payouts_due(payout_output_t* parsed, uint64_t in_block_height, int64
     }
   }
 
-  // 🔍 Sanity check: we never paid out more than we intended
+  // Sanity check: we never paid out more than we intended
   if (base_sum > sum_atomic) {
     ERROR_PRINT("compute_payouts_due: base_sum (%" PRIu64 ") exceeds sum_atomic (%" PRIu64 ")",
                 base_sum, sum_atomic);
@@ -1896,8 +1896,7 @@ int run_payout_sweep_simple(int64_t in_unlocked_balance) {
     // Parse fields
     bson_iter_t it;
     const char* addr = NULL;
-    uint64_t pend = 0;
-    int64_t updated = 0;
+    int64_t pend = 0; updated = 0;
 
     if (bson_iter_init_find(&it, doc, "_id") && BSON_ITER_HOLDS_UTF8(&it))
       addr = bson_iter_utf8(&it, NULL);
