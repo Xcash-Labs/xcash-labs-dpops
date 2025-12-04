@@ -1435,7 +1435,7 @@ int compute_payouts_due(payout_output_t* parsed, uint64_t in_block_height, int64
 
   mongoc_client_t* client = NULL;
   mongoc_collection_t* coll_blocks = NULL;  // found_blocks
-  mongoc_collection_t* coll_pub = NULL;     // public_addresses
+  mongoc_collection_t* coll_pub = NULL;
   mongoc_cursor_t* cur = NULL;
   bson_t* pipeline = NULL;
   const bson_t* doc = NULL;
@@ -2029,7 +2029,6 @@ done:
 
   return rc;
 }
-
 
 /*---------------------------------------------------------------------------------------------------------
  * @brief Mark found_blocks entries as processed up to a given block height.
