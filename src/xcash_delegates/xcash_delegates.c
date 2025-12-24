@@ -126,6 +126,12 @@ int read_organize_delegates(delegates_t* delegates, size_t* delegates_count_resu
               WARNING_PRINT("registration_timestamp is not a BSON Date; ignoring field");
             }
           }
+
+          // See if we are able to connect to the delegate
+          if (!delegate_connect_check(delegates[delegate_index].IP_address, XCASH_DPOPS_PORT)) {
+            skip_delegate = true;
+          }
+
         }
       }
 
