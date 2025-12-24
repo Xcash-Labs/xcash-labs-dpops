@@ -85,7 +85,6 @@ int read_organize_delegates(delegates_t* delegates, size_t* delegates_count_resu
             }
           } else if (strcmp(db_key, "IP_address") == 0 && BSON_ITER_HOLDS_UTF8(&record_iter)) {
             strncpy(delegates[delegate_index].IP_address, bson_iter_utf8(&record_iter, NULL), IP_LENGTH);
-            
             // See if we are able to connect to the delegate
             if (!delegate_connect_check(delegates[delegate_index].IP_address, XCASH_DPOPS_PORT)) {
               skip_delegate = true;
@@ -133,7 +132,6 @@ int read_organize_delegates(delegates_t* delegates, size_t* delegates_count_resu
           }
         }
       }
-
 
       if (!skip_delegate &&
           strlen(delegates[delegate_index].public_address) > 0 &&
