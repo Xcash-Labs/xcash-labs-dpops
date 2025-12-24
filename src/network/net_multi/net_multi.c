@@ -264,7 +264,6 @@ bool delegate_connect_check(const char* host, int port)
                 return true;
             }
         }
-WARNING_PRINT
         close(sock);
     }
 
