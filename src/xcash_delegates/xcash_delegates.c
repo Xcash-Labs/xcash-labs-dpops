@@ -85,6 +85,10 @@ int read_organize_delegates(delegates_t* delegates, size_t* delegates_count_resu
             }
           } else if (strcmp(db_key, "IP_address") == 0 && BSON_ITER_HOLDS_UTF8(&record_iter)) {
             strncpy(delegates[delegate_index].IP_address, bson_iter_utf8(&record_iter, NULL), IP_LENGTH);
+            // See if we are able to connect to the delegate
+            if (!delegate_connect_check(delegates[delegate_index].IP_address, XCASH_DPOPS_PORT)) {
+              skip_delegate = true;
+            }
           } else if (strcmp(db_key, "delegate_name") == 0 && BSON_ITER_HOLDS_UTF8(&record_iter)) {
             strncpy(delegates[delegate_index].delegate_name, bson_iter_utf8(&record_iter, NULL), MAXIMUM_BUFFER_SIZE_DELEGATES_NAME);
           } else if (strcmp(db_key, "about") == 0 && BSON_ITER_HOLDS_UTF8(&record_iter)) {
@@ -126,12 +130,6 @@ int read_organize_delegates(delegates_t* delegates, size_t* delegates_count_resu
               WARNING_PRINT("registration_timestamp is not a BSON Date; ignoring field");
             }
           }
-
-          // See if we are able to connect to the delegate
-          if (!delegate_connect_check(delegates[delegate_index].IP_address, XCASH_DPOPS_PORT)) {
-            skip_delegate = true;
-          }
-
         }
       }
 
