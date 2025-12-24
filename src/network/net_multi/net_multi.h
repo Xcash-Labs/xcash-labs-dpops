@@ -46,5 +46,6 @@ typedef struct {
 
 response_t **send_multi_request(const char **hosts, int port, const char *message);
 void cleanup_responses(response_t **responses);
+bool delegate_connect_check(const char* host, int port);
 
 #endif

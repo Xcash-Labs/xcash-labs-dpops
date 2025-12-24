@@ -210,3 +210,65 @@ void cleanup_responses(response_t** responses) {
     }
     free(responses);
 }
+
+bool delegate_connect_check(const char* host, int port)
+{
+    char port_str[6];
+    snprintf(port_str, sizeof(port_str), "%d", port);
+
+    struct addrinfo hints;
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family   = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_flags    = AI_NUMERICSERV | AI_ADDRCONFIG;
+
+    struct addrinfo* res = NULL;
+    if (getaddrinfo(host, port_str, &hints, &res) != 0 || !res)
+        WARNING_PRINT("connect_check: DNS resolution failed for %s:%d", host, port);
+        return false;
+
+    for (struct addrinfo* ai = res; ai; ai = ai->ai_next) {
+        int sock = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
+        if (sock < 0)
+            continue;
+
+        int flags = fcntl(sock, F_GETFL, 0);
+        if (flags >= 0)
+            fcntl(sock, F_SETFL, flags | O_NONBLOCK);
+
+        int rc = connect(sock, ai->ai_addr, ai->ai_addrlen);
+        if (rc == 0) {
+            close(sock);
+            freeaddrinfo(res);
+            return true;
+        }
+
+        if (errno != EINPROGRESS) {
+            close(sock);
+            continue;
+        }
+
+        fd_set wfds;
+        FD_ZERO(&wfds);
+        FD_SET(sock, &wfds);
+
+        struct timeval tv = { CONNECT_TIMEOUT_SEC, 0 };
+        rc = select(sock + 1, NULL, &wfds, NULL, &tv);
+
+        if (rc > 0 && FD_ISSET(sock, &wfds)) {
+            int err = 0;
+            socklen_t len = sizeof(err);
+            if (getsockopt(sock, SOL_SOCKET, SO_ERROR, &err, &len) == 0 && err == 0) {
+                close(sock);
+                freeaddrinfo(res);
+                return true;
+            }
+        }
+WARNING_PRINT
+        close(sock);
+    }
+
+    freeaddrinfo(res);
+    WARNING_PRINT("connect_check: unable to connect to %s:%d", host, port)
+    return false;
+}
