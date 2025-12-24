@@ -269,6 +269,6 @@ WARNING_PRINT
     }
 
     freeaddrinfo(res);
-    WARNING_PRINT("connect_check: unable to connect to %s:%d", host, port)
+    WARNING_PRINT("connect_check: unable to connect to %s:%d", host, port);
     return false;
 }
