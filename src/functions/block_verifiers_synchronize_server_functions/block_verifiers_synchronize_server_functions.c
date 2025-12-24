@@ -245,7 +245,7 @@ void server_receive_data_socket_node_to_node_db_sync_data(const char *MESSAGE) {
     return;
   }
 
-  INFO_PRINT("Data Message: %s", MESSAGE);
+  DEBUG_PRINT("Data Message: %s", MESSAGE);
 
   char sender_public_address[XCASH_WALLET_LENGTH + 1] = {0};
   char sender_signature[XCASH_SIGN_DATA_LENGTH + 1]  = {0};
