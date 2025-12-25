@@ -557,8 +557,8 @@ void start_block_production(void) {
     // May have some redundant waits here but leaving for now...
     current_block_height[0] = '\0';
     delegate_db_hash_mismatch = 0;
-    atomic_store(&wait_for_vrf_init, true);
     atomic_store(&wait_for_block_height_init, true);
+    atomic_store(&wait_for_vrf_init, true);
     atomic_store(&wait_for_vrf_message, true);
     atomic_store(&wait_for_consensus_vote, true);
     blockchain_ready = true;
@@ -576,8 +576,8 @@ void start_block_production(void) {
       last_round_success = false;
       // Error occured
       blockchain_ready = false;
-      atomic_store(&wait_for_vrf_init, false);
       atomic_store(&wait_for_block_height_init, false);
+      atomic_store(&wait_for_vrf_init, false);
       atomic_store(&wait_for_vrf_message, false);
       atomic_store(&wait_for_consensus_vote, false);
     }
@@ -587,6 +587,9 @@ void start_block_production(void) {
       INFO_PRINT("Failed to create block in the allotted time, skipping round");
       goto end_of_round_skip_block;
     }
+
+    // Set now incase some delegate timing is slightly off 
+    atomic_store(&wait_for_block_height_init, true);
 
     if (round_result == ROUND_OK) {
       // Update online status
@@ -1025,8 +1028,7 @@ void start_block_production(void) {
     }
 
   end_of_round_skip_block:
-
-    sync_block_verifiers_minutes_and_seconds(0, 58);
+    sync_block_verifiers_minutes_and_seconds(0, 55);
     // set up delegates for next round; retry on transient failure
     bool ok = false;
     pthread_mutex_lock(&delegates_all_lock);
