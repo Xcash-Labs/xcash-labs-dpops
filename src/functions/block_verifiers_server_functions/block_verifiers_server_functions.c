@@ -119,6 +119,10 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
 
   // This should only happen if a node has been banned for being offline too long
   if (!found && startup_complete) {
+    WARNING_PRINT("Delegate %s not found in delegates_all or delegates collection.", public_address);
+  }
+/*
+  if (!found && startup_complete) {
 
     WARNING_PRINT("Delegate %s not found in delegates_all or delegates collection.", public_address);
 
@@ -155,6 +159,8 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
   }
 
 skip_to_end:
+*/
+
   return;
 }
 
