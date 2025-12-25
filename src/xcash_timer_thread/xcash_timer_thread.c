@@ -1007,7 +1007,7 @@ void* timer_thread(void* arg) {
     } else if (slot->kind == JOB_IMAGE_CK) {
       INFO_PRINT("Scheduler: running IMAGE CHECK at %02d:%02d", slot->hour, slot->min);
       if (!run_image_check()) {
-        ERROR_PRINT("Image check failed")
+        ERROR_PRINT("Image check failed");
       }
     }
   }
