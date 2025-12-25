@@ -117,7 +117,7 @@ xcash_round_result_t process_round(void) {
     ERROR_PRINT("No delegates were loaded from the database");
     return ROUND_ERROR;
   }
-  DEBUG_PRINT("Found %d active delegates out of %d total slots", total_delegates, BLOCK_VERIFIERS_TOTAL_AMOUNT);
+  INFO_PRINT("Found %d active delegates out of %d total slots", total_delegates, BLOCK_VERIFIERS_TOTAL_AMOUNT);
 
   // Check if this node is active
   if (delegate_not_found) {
@@ -434,7 +434,7 @@ xcash_round_result_t process_round(void) {
     snprintf(final_vote_hash_hex + (i * 2), 3, "%02x", final_vote_hash[i]);
   }
 
-  DEBUG_PRINT("Final vote hash: %s", final_vote_hash_hex);
+  INFO_PRINT("Final vote hash: %s", final_vote_hash_hex);
 
   if (max_votes < agreement_needed) {
     INFO_PRINT_STATUS_FAIL("Consensus not reached: Votes: %d (need ≥ %d of N=%d)", max_votes, agreement_needed, delegates_num);
