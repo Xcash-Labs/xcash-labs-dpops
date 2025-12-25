@@ -158,21 +158,21 @@ void server_receive_data_socket_node_to_node_vote_majority(const char* MESSAGE) 
     return;
   }
 
-  if (!verify_vrf_vote_signature(block_height, vrf_beta_hex, vrf_public_key_data, public_address, vote_signature)) {
-    WARNING_PRINT("Unable to verify the signature for vote from delegate %s", public_address);
-    return;
-  }
-
   bool found_voter = false;
   pthread_mutex_lock(&current_block_verifiers_lock);
   for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     if (strcmp(public_address, current_block_verifiers_list.block_verifiers_public_address[i]) == 0) {
       found_voter = true;
+      if (!verify_vrf_vote_signature(block_height, vrf_beta_hex, vrf_public_key_data, public_address, vote_signature)) {
+        pthread_mutex_unlock(&current_block_verifiers_lock);
+        WARNING_PRINT("Unable to verify the signature for vote from delegate %s", public_address);
+        return;
+      }
       if (current_block_verifiers_list.block_verifiers_voted[i] == 0) {
         current_block_verifiers_list.block_verifiers_voted[i] = 1;
-        memcpy(current_block_verifiers_list.block_verifiers_vote_signature[i], vote_signature, XCASH_SIGN_DATA_LENGTH+1);
-        memcpy(current_block_verifiers_list.block_verifiers_selected_public_address[i], public_address_producer, XCASH_WALLET_LENGTH+1);
-        break; 
+        memcpy(current_block_verifiers_list.block_verifiers_vote_signature[i], vote_signature, XCASH_SIGN_DATA_LENGTH + 1);
+        memcpy(current_block_verifiers_list.block_verifiers_selected_public_address[i], public_address_producer, XCASH_WALLET_LENGTH + 1);
+        break;
       } else {
         pthread_mutex_unlock(&current_block_verifiers_lock);
         WARNING_PRINT("Verifier %s, has already voted and can not vote again", public_address);
