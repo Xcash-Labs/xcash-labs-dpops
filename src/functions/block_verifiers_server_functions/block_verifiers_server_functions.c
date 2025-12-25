@@ -117,49 +117,9 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
   }
   pthread_mutex_unlock(&delegates_all_lock);
 
-  // This should only happen if a node has been banned for being offline too long
   if (!found && startup_complete) {
     WARNING_PRINT("Delegate %s not found in delegates_all or delegates collection.", public_address);
   }
-/*
-  if (!found && startup_complete) {
-
-    WARNING_PRINT("Delegate %s not found in delegates_all or delegates collection.", public_address);
-
-    char data[VVSMALL_BUFFER_SIZE] = {0};
-    snprintf(data, sizeof(data), "{\"public_address\":\"%s\"}", public_address);
-    if (count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, data) != 0) {
-
-      bson_t* filter_bson = bson_new();
-      if (!filter_bson) {
-        ERROR_PRINT("MongoDB: failed to alloc filter_bson");
-        goto skip_to_end;
-      }
-      BSON_APPEND_UTF8(filter_bson, "public_address", public_address);
-
-      bson_t* setdoc_bson = bson_new();
-      if (!setdoc_bson) {
-        bson_destroy(filter_bson);
-        ERROR_PRINT("MongoDB: failed to alloc setdoc_bson");
-        goto skip_to_end;
-      }
-      BSON_APPEND_UTF8(setdoc_bson, "online_status", "false");  // false for remainder of this round, will be reset next round
-
-      // Execute update
-      if (update_document_from_collection_bson(DATABASE_NAME, DB_COLLECTION_DELEGATES, filter_bson, setdoc_bson) == 0) {
-        ERROR_PRINT("MongoDB: update failed for delegates. public_address=%s (server_receive_banned_request)", public_address);
-      }
-
-      bson_destroy(setdoc_bson);
-      bson_destroy(filter_bson);
-
-    } else {
-      WARNING_PRINT("Delegate %s not found in delegates_all or delegates collection.", public_address);
-    }
-  }
-
-skip_to_end:
-*/
 
   return;
 }
