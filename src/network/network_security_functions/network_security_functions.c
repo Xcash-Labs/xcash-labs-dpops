@@ -192,7 +192,18 @@ int verify_data(const char* message, xcash_msg_t msg_type) {
   char response[MEDIUM_BUFFER_SIZE] = {0};
   char cur_round_part[3] = {0};
 
-  // must wait at this point so it will pass type round_part check it trans is early, timing matters
+  // must wait at this point so it will pass type round_part check if trans is early, timing matters
+  int wait_milliseconds = 0;
+  if (msg_type == XMSG_BLOCK_VERIFIERS_TO_BLOCK_VERIFIERS_VRF_DATA) {
+    while (atomic_load(&wait_for_block_height_init) && wait_milliseconds < (DELAY_EARLY_TRANSACTIONS_MAX * 1000)) {
+      usleep(500000);  // 0.5 seconds = 500,000 microseconds
+      wait_milliseconds += 500;
+    }
+    if (atomic_load(&wait_for_block_height_init)) {
+      ERROR_PRINT("Timed out waiting for current_block_height to load before receiving vrf_data");
+    }
+  }
+
   int wait_milliseconds = 0;
   if (msg_type == XMSG_NODES_TO_NODES_VOTE_MAJORITY_RESULTS) {
     while (atomic_load(&wait_for_consensus_vote) && wait_milliseconds < (DELAY_EARLY_TRANSACTIONS_MAX * 1000)) {
