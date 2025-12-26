@@ -677,7 +677,6 @@ void start_block_production(void) {
 
 #endif
 
-// Save 
 #ifdef SEED_NODE_ON
 
       char current_block_hash[BLOCK_HASH_LENGTH + 1] = {0};
