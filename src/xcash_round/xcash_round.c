@@ -220,15 +220,14 @@ xcash_round_result_t process_round(void) {
   for (size_t i = 0, j = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     if (delegates_all[i].public_address[0] != '\0') {
 
-      const char* ip = delegates_all[i].IP_address;
       response_status_t send_status = STATUS_ERROR;
-      if (ip && responses) {
+      if (delegates_all[i].IP_address && responses) {
         for (size_t k = 0; k < responses_count; ++k) {
           response_t* r = responses[k];
           if (!r || !r->host) {
             continue;
           }
-          if (strcmp(r->host, ip) == 0) {
+          if (strcmp(r->host, delegates_all[i].IP_address) == 0) {
             send_status = r->status;
             break;
           }
