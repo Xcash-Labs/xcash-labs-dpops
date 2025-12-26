@@ -10,15 +10,6 @@ static size_t last_winner_cnt = 0;
 
 #include "xcash_round.h"
 
-static const char* response_status_to_str(response_status_t st) {
-    switch (st) {
-        case STATUS_OK:      return "OK";
-        case STATUS_TIMEOUT: return "TIMEOUT";
-        case STATUS_ERROR:   return "ERROR";
-        default:             return "UNKNOWN";
-    }
-}
-
 /**
  * @brief Selects the block producer from the current round’s verifiers using VRF beta comparison.
  *
