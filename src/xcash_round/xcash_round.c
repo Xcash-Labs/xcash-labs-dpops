@@ -234,7 +234,7 @@ xcash_round_result_t process_round(void) {
         }
       }
 
-      if (strcmp(delegates_all[i].online_status, "true") == 0) {
+      if ((strcmp(delegates_all[i].online_status, "true") == 0) && (send_status == STATUS_OK) ) {
         strcpy(current_block_verifiers_list.block_verifiers_name[j], delegates_all[i].delegate_name);
         strcpy(current_block_verifiers_list.block_verifiers_public_address[j], delegates_all[i].public_address);
         strcpy(current_block_verifiers_list.block_verifiers_public_key[j], delegates_all[i].public_key);
@@ -244,9 +244,6 @@ xcash_round_result_t process_round(void) {
         current_block_verifiers_list.block_verifiers_vote_total[j] = 0;
         current_block_verifiers_list.block_verifiers_voted[j] = 0;
         INFO_PRINT_STATUS_OK("Delegate: %s, Online Status: ", delegates_all[i].delegate_name);
-
-        if (send_status == STATUS_OK) INFO_PRINT("Response: Success");
-
         online_count++;
         j++;
       } else {
