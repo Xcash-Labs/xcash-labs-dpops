@@ -3,6 +3,7 @@
 producer_ref_t producer_refs[] = {0};
 static int total_delegates = 0;
 static char previous_round_block_hash[BLOCK_HASH_LENGTH + 1] = {0};
+static bool last_round_success = false;
 static size_t missed_load = 0;
 static char last_winner_name[MAXIMUM_BUFFER_SIZE_DELEGATES_NAME+1];
 static size_t last_winner_cnt = 0;
@@ -126,14 +127,24 @@ xcash_round_result_t process_round(void) {
 
   INFO_STAGE_PRINT("Part 2 - Get Previous Block Hash and Delegates Collection Hash");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 2);
-  // Get the previous block hash and check to make sure it changed from last round
-  snprintf(previous_round_block_hash, sizeof previous_round_block_hash, "%s", previous_block_hash);
-  if (get_previous_block_hash(previous_block_hash) != XCASH_OK) {
-    ERROR_PRINT("Can't get previous block hash");
-    return ROUND_ERROR;
-  }
-  if (strcmp(previous_block_hash, previous_round_block_hash) == 0) {
-    WARNING_PRINT("Still showing Previous Block Hash, Block did not advance (block winner did not update chain)");
+  if (last_round_success) {
+    // Get the previous block hash and check to make sure it changed from last round
+    snprintf(previous_round_block_hash, sizeof previous_round_block_hash, "%s", previous_block_hash);
+    if (get_previous_block_hash(previous_block_hash) != XCASH_OK) {
+      ERROR_PRINT("Can't get previous block hash");
+      return ROUND_ERROR;
+    }
+    if (strcmp(previous_block_hash, previous_round_block_hash) == 0) {
+      WARNING_PRINT("Still showing Previous Block Hash, Block did not advance");
+    }
+  } else {
+    // No majority last round -> chain may be stalled on this node
+    memset(previous_block_hash, 0, sizeof previous_block_hash);
+    if (get_previous_block_hash(previous_block_hash) != XCASH_OK) {
+      ERROR_PRINT("Can't get previous block hash");
+      return ROUND_ERROR;
+    }
+    INFO_PRINT("No majority last round; skipping hash tip-advance check");
   }
 
   // Get hash for delegates collection
@@ -580,9 +591,12 @@ void start_block_production(void) {
     // Final step - Wait for block creation/DB Updates or Node clean-up
     snprintf(current_round_part, sizeof(current_round_part), "%d", 12);
     if (round_result == ROUND_OK) {
+      last_round_success = true;
       INFO_STAGE_PRINT("Part 12 - Wait for Block Creation");
     } else  {
       INFO_STAGE_PRINT("Part 12 - Wait for Node clean-up / sync");
+      last_round_success = false;
+      // Error occured
       blockchain_ready = false;
       atomic_store(&wait_for_block_height_init, false);
       atomic_store(&wait_for_vrf_init, false);
@@ -663,7 +677,7 @@ void start_block_production(void) {
 
 #endif
 
- 
+// Save 
 #ifdef SEED_NODE_ON
 
       char current_block_hash[BLOCK_HASH_LENGTH + 1] = {0};
@@ -689,6 +703,7 @@ void start_block_production(void) {
         ck_height = strtoull(ck_block_height, NULL, 10);
         if (ck_height <= cbheight) {
           ERROR_PRINT("Block did not advance (still at %llu)", (unsigned long long)cbheight);
+          last_round_success = false;
           goto end_of_round_skip_block;
         }
       }
