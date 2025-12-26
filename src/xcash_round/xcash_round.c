@@ -221,7 +221,7 @@ xcash_round_result_t process_round(void) {
     if (delegates_all[i].public_address[0] != '\0') {
 
       response_status_t send_status = STATUS_ERROR;
-      if (delegates_all[i].IP_address && responses) {
+      if (responses && delegates_all[i].IP_address[0] != '\0') {
         for (size_t k = 0; k < responses_count; ++k) {
           response_t* r = responses[k];
           if (!r || !r->host) {
