@@ -10,6 +10,15 @@ static size_t last_winner_cnt = 0;
 
 #include "xcash_round.h"
 
+static const char* response_status_to_str(response_status_t st) {
+    switch (st) {
+        case STATUS_OK:      return "OK";
+        case STATUS_TIMEOUT: return "TIMEOUT";
+        case STATUS_ERROR:   return "ERROR";
+        default:             return "UNKNOWN";
+    }
+}
+
 /**
  * @brief Selects the block producer from the current round’s verifiers using VRF beta comparison.
  *
@@ -182,7 +191,6 @@ xcash_round_result_t process_round(void) {
   if (generate_and_request_vrf_data_sync(&vrf_message)) {
     if (xnet_send_data_multi(XNET_DELEGATES_ALL, vrf_message, &responses)) {
       free(vrf_message);
-      cleanup_responses(responses);
     } else {
       ERROR_PRINT("Failed to send VRF message.");
       free(vrf_message);
@@ -197,9 +205,17 @@ xcash_round_result_t process_round(void) {
     return ROUND_ERROR;
   }
 
+  size_t responses_count = 0;
+  if (responses) {
+    while (responses[responses_count] != NULL) {
+      responses_count++;
+    }
+  }
+
   INFO_STAGE_PRINT("Waiting for Sync and VRF Data from all nodes...");
   if (sync_block_verifiers_minutes_and_seconds(0, 15) == XCASH_ERROR) {
     INFO_PRINT("Failed to sync Delegates in the allotted  time, skipping round");
+    cleanup_responses(responses);
     return ROUND_ERROR;
   }
 
@@ -212,6 +228,22 @@ xcash_round_result_t process_round(void) {
   memset(&current_block_verifiers_list, 0, sizeof(current_block_verifiers_list));
   for (size_t i = 0, j = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     if (delegates_all[i].public_address[0] != '\0') {
+
+      const char* ip = delegates_all[i].IP_address;
+      response_status_t send_status = STATUS_ERROR;
+      if (ip && responses) {
+        for (size_t k = 0; k < responses_count; ++k) {
+          response_t* r = responses[k];
+          if (!r || !r->host) {
+            continue;
+          }
+          if (strcmp(r->host, ip) == 0) {
+            send_status = r->status;
+            break;
+          }
+        }
+      }
+
       if (strcmp(delegates_all[i].online_status, "true") == 0) {
         strcpy(current_block_verifiers_list.block_verifiers_name[j], delegates_all[i].delegate_name);
         strcpy(current_block_verifiers_list.block_verifiers_public_address[j], delegates_all[i].public_address);
@@ -222,6 +254,9 @@ xcash_round_result_t process_round(void) {
         current_block_verifiers_list.block_verifiers_vote_total[j] = 0;
         current_block_verifiers_list.block_verifiers_voted[j] = 0;
         INFO_PRINT_STATUS_OK("Delegate: %s, Online Status: ", delegates_all[i].delegate_name);
+
+        if (send_status == STATUS_OK) INFO_PRINT("Response: Success");
+
         online_count++;
         j++;
       } else {
@@ -231,6 +266,7 @@ xcash_round_result_t process_round(void) {
   }
   pthread_mutex_unlock(&current_block_verifiers_lock);
   atomic_store(&wait_for_vrf_init, false);
+  cleanup_responses(responses);
 
   // Need at least BLOCK_VERIFIERS_VALID_AMOUNT delegates to start things off, delegates data needs to match for first delegates
   if (online_count < BLOCK_VERIFIERS_VALID_AMOUNT) {
