@@ -1028,7 +1028,7 @@ void start_block_production(void) {
     }
 
   end_of_round_skip_block:
-    sync_block_verifiers_minutes_and_seconds(0, 55);
+    sync_block_verifiers_minutes_and_seconds(0, 57);
     // set up delegates for next round; retry on transient failure
     bool ok = false;
     pthread_mutex_lock(&delegates_all_lock);
