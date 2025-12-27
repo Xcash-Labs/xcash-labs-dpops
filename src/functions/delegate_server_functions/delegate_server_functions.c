@@ -122,6 +122,13 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
   memcpy(delegate_public_address, js_address->valuestring, address_len);
   registration_time = (uint64_t)js_reg_time->valuedouble;
 
+  if (is_seed_node) {
+    snprintf(data, sizeof(data), "{\"public_key\":\"%s\"}", delegate_public_key);
+    if (count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, data) == 0) {
+      SERVER_ERROR("0|Please get approval before registering a delegate");
+    }
+  }
+
   // 3) Convert hex string → raw bytes for VRF public key
   //    (each two hex chars → one byte)
   for (int i = 0, j = 0; i < (int)pubkey_len; i += 2, j++) {
