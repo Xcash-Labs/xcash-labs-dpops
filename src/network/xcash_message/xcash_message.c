@@ -215,7 +215,7 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
     cJSON* json_obj = cJSON_Parse(data);
     if (!json_obj) {
       ERROR_PRINT("Invalid message received, JSON parsing error in handle_srv_message: %s", cJSON_GetErrorPtr());
-      INFO_PRINT("Client IP: %s Message: %s", client->client_ip, data);
+      DEBUG_PRINT("Client IP: %s Message: %s", client->client_ip, data);
       return;
     }
 
