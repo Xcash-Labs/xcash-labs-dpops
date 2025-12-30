@@ -136,6 +136,8 @@ xcash_round_result_t process_round(void) {
     }
     if (strcmp(previous_block_hash, previous_round_block_hash) == 0) {
       WARNING_PRINT("Still showing Previous Block Hash, Block did not advance");
+      // attempt to get everyone on same count
+      last_winner_cnt = MAX_CONSECUTIVE_WINS;
       return ROUND_ERROR;
     }
   } else {
@@ -146,6 +148,8 @@ xcash_round_result_t process_round(void) {
       return ROUND_ERROR;
     }
     INFO_PRINT("No majority last round; skipping hash tip-advance check");
+    // attempt to get everyone on same count
+    last_winner_cnt = MAX_CONSECUTIVE_WINS;
   }
 
   // Get hash for delegates collection
