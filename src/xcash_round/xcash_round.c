@@ -5,8 +5,8 @@ static int total_delegates = 0;
 static char previous_round_block_hash[BLOCK_HASH_LENGTH + 1] = {0};
 static bool last_round_success = false;
 static size_t missed_load = 0;
-static char last_winner_name[MAXIMUM_BUFFER_SIZE_DELEGATES_NAME+1];
-static size_t last_winner_cnt = 0;
+// static char last_winner_name[MAXIMUM_BUFFER_SIZE_DELEGATES_NAME+1];
+// static size_t last_winner_cnt = 0;
 
 #include "xcash_round.h"
 
@@ -44,13 +44,13 @@ static int select_block_producer_from_vrf(void) {
       continue;
     }
 
-    // If this delegate has already won too many consecutive times, skip it (keep chain from hanging)
-    if (last_winner_cnt >= MAX_CONSECUTIVE_WINS &&
-        strncmp(last_winner_name, name, sizeof last_winner_name) == 0) {
-      WARNING_PRINT("Skipping delegate %s due to consecutive wins (%zu >= %d)",
-                  name, last_winner_cnt, MAX_CONSECUTIVE_WINS);
-      continue;
-    }
+// If this delegate has already won too many consecutive times, skip it (keep chain from hanging)
+//    if (last_winner_cnt >= MAX_CONSECUTIVE_WINS &&
+//        strncmp(last_winner_name, name, sizeof last_winner_name) == 0) {
+//      WARNING_PRINT("Skipping delegate %s due to consecutive wins (%zu >= %d)",
+//                  name, last_winner_cnt, MAX_CONSECUTIVE_WINS);
+//      continue;
+//    }
 
     // Normal "lowest beta" selection
     if (selected_index == -1 || strcmp(beta_hex, lowest_beta) < 0) {
@@ -136,8 +136,6 @@ xcash_round_result_t process_round(void) {
     }
     if (strcmp(previous_block_hash, previous_round_block_hash) == 0) {
       WARNING_PRINT("Still showing Previous Block Hash, Block did not advance");
-      // attempt to get everyone on same count
-      last_winner_cnt = MAX_CONSECUTIVE_WINS;
     }
   } else {
     // No majority last round -> chain may be stalled on this node
@@ -147,8 +145,6 @@ xcash_round_result_t process_round(void) {
       return ROUND_ERROR;
     }
     INFO_PRINT("No majority last round; skipping hash tip-advance check");
-    // attempt to get everyone on same count
-    last_winner_cnt = MAX_CONSECUTIVE_WINS;
   }
 
   // Get hash for delegates collection
@@ -293,13 +289,13 @@ xcash_round_result_t process_round(void) {
     INFO_STAGE_PRINT("Block Producer not selected, skipping round");
     return ROUND_ERROR;
   } else {
-    if (strncmp(last_winner_name, current_block_verifiers_list.block_verifiers_name[producer_indx], sizeof last_winner_name) == 0) {
-      last_winner_cnt++;
-    } else {
-      last_winner_cnt = 1;
-    }
-    strncpy(last_winner_name, current_block_verifiers_list.block_verifiers_name[producer_indx], sizeof last_winner_name);
-    last_winner_name[sizeof last_winner_name - 1] = '\0';
+//    if (strncmp(last_winner_name, current_block_verifiers_list.block_verifiers_name[producer_indx], sizeof last_winner_name) == 0) {
+//      last_winner_cnt++;
+//    } else {
+//      last_winner_cnt = 1;
+//    }
+//    strncpy(last_winner_name, current_block_verifiers_list.block_verifiers_name[producer_indx], sizeof last_winner_name);
+//    last_winner_name[sizeof last_winner_name - 1] = '\0';
   }
 
   INFO_STAGE_PRINT("Part 7 - Wait for Block Creator Confirmation by Consensus Vote");
