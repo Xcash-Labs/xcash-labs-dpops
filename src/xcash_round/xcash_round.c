@@ -32,7 +32,7 @@ static int select_block_producer_from_vrf(void) {
   for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     const char *beta_hex = current_block_verifiers_list.block_verifiers_vrf_beta_hex[i];
     const char *addr     = current_block_verifiers_list.block_verifiers_public_address[i];
-    const char *name     = current_block_verifiers_list.block_verifiers_name[i];
+//    const char *name     = current_block_verifiers_list.block_verifiers_name[i];
 
     // Skip if no beta submitted
     if (strlen(beta_hex) != VRF_BETA_LENGTH) {
