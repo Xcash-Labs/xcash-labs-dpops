@@ -3,10 +3,9 @@
 producer_ref_t producer_refs[] = {0};
 static int total_delegates = 0;
 static char previous_round_block_hash[BLOCK_HASH_LENGTH + 1] = {0};
-static bool last_round_success = false;
 static size_t missed_load = 0;
-// static char last_winner_name[MAXIMUM_BUFFER_SIZE_DELEGATES_NAME+1];
-// static size_t last_winner_cnt = 0;
+static char last_winner_name[MAXIMUM_BUFFER_SIZE_DELEGATES_NAME+1];
+static bool blockchain_stuck = false;
 
 #include "xcash_round.h"
 
@@ -16,9 +15,6 @@ static size_t missed_load = 0;
  * This function scans through the list of block verifiers who submitted valid VRF data,
  * and deterministically selects the one with the lowest VRF beta value as the block producer.
  * The comparison is lexicographic and assumes all submitted beta strings are valid hex strings.
- *
- * It also enforces a fairness rule: if the last winner has already produced
- * MAX_CONSECUTIVE_WINS blocks in a row, they will be skipped for this selection.
  *
  * @return int The index in `current_block_verifiers_list` of the selected block producer,
  *             or -1 if no valid VRF beta values are found.
@@ -32,7 +28,7 @@ static int select_block_producer_from_vrf(void) {
   for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
     const char *beta_hex = current_block_verifiers_list.block_verifiers_vrf_beta_hex[i];
     const char *addr     = current_block_verifiers_list.block_verifiers_public_address[i];
-//    const char *name     = current_block_verifiers_list.block_verifiers_name[i];
+    const char *name     = current_block_verifiers_list.block_verifiers_name[i];
 
     // Skip if no beta submitted
     if (strlen(beta_hex) != VRF_BETA_LENGTH) {
@@ -45,12 +41,10 @@ static int select_block_producer_from_vrf(void) {
     }
 
 // If this delegate has already won too many consecutive times, skip it (keep chain from hanging)
-//    if (last_winner_cnt >= MAX_CONSECUTIVE_WINS &&
-//        strncmp(last_winner_name, name, sizeof last_winner_name) == 0) {
-//      WARNING_PRINT("Skipping delegate %s due to consecutive wins (%zu >= %d)",
-//                  name, last_winner_cnt, MAX_CONSECUTIVE_WINS);
-//      continue;
-//    }
+    if (strncmp(last_winner_name, name, sizeof last_winner_name) == 0 && blockchain_stuck) {
+      WARNING_PRINT("Skipping delegate %s due to no blockchain movement from last round", name);
+      continue;
+    }
 
     // Normal "lowest beta" selection
     if (selected_index == -1 || strcmp(beta_hex, lowest_beta) < 0) {
@@ -97,6 +91,7 @@ static int compare_hashes(const void* a, const void* b) {
  */
 xcash_round_result_t process_round(void) {
   memset(&producer_refs, 0, sizeof(producer_refs));
+  blockchain_stuck = false;
 
   INFO_STAGE_PRINT("Part 1 - Check Delegates");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 1);
@@ -127,24 +122,15 @@ xcash_round_result_t process_round(void) {
 
   INFO_STAGE_PRINT("Part 2 - Get Previous Block Hash and Delegates Collection Hash");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 2);
-  if (last_round_success) {
-    // Get the previous block hash and check to make sure it changed from last round
-    snprintf(previous_round_block_hash, sizeof previous_round_block_hash, "%s", previous_block_hash);
-    if (get_previous_block_hash(previous_block_hash) != XCASH_OK) {
-      ERROR_PRINT("Can't get previous block hash");
-      return ROUND_ERROR;
-    }
-    if (strcmp(previous_block_hash, previous_round_block_hash) == 0) {
-      WARNING_PRINT("Still showing Previous Block Hash, Block did not advance");
-    }
-  } else {
-    // No majority last round -> chain may be stalled on this node
-    memset(previous_block_hash, 0, sizeof previous_block_hash);
-    if (get_previous_block_hash(previous_block_hash) != XCASH_OK) {
-      ERROR_PRINT("Can't get previous block hash");
-      return ROUND_ERROR;
-    }
-    INFO_PRINT("No majority last round; skipping hash tip-advance check");
+  // Get the previous block hash and check to make sure it changed from last round
+  snprintf(previous_round_block_hash, sizeof previous_round_block_hash, "%s", previous_block_hash);
+  if (get_previous_block_hash(previous_block_hash) != XCASH_OK) {
+    ERROR_PRINT("Can't get previous block hash");
+    return ROUND_ERROR;
+  }
+  if (strcmp(previous_block_hash, previous_round_block_hash) == 0) {
+    WARNING_PRINT("Still showing Previous Block Hash, Block did not advance");
+    blockchain_stuck = true;
   }
 
   // Get hash for delegates collection
@@ -289,13 +275,10 @@ xcash_round_result_t process_round(void) {
     INFO_STAGE_PRINT("Block Producer not selected, skipping round");
     return ROUND_ERROR;
   } else {
-//    if (strncmp(last_winner_name, current_block_verifiers_list.block_verifiers_name[producer_indx], sizeof last_winner_name) == 0) {
-//      last_winner_cnt++;
-//    } else {
-//      last_winner_cnt = 1;
-//    }
-//    strncpy(last_winner_name, current_block_verifiers_list.block_verifiers_name[producer_indx], sizeof last_winner_name);
-//    last_winner_name[sizeof last_winner_name - 1] = '\0';
+    if (strncmp(last_winner_name, current_block_verifiers_list.block_verifiers_name[producer_indx], sizeof last_winner_name) == 0) {
+      strncpy(last_winner_name, current_block_verifiers_list.block_verifiers_name[producer_indx], sizeof last_winner_name);
+      last_winner_name[sizeof last_winner_name - 1] = '\0';
+    }
   }
 
   INFO_STAGE_PRINT("Part 7 - Wait for Block Creator Confirmation by Consensus Vote");
@@ -591,11 +574,9 @@ void start_block_production(void) {
     // Final step - Wait for block creation/DB Updates or Node clean-up
     snprintf(current_round_part, sizeof(current_round_part), "%d", 12);
     if (round_result == ROUND_OK) {
-      last_round_success = true;
       INFO_STAGE_PRINT("Part 12 - Wait for Block Creation");
     } else  {
       INFO_STAGE_PRINT("Part 12 - Wait for Node clean-up / sync");
-      last_round_success = false;
       // Error occured
       blockchain_ready = false;
       atomic_store(&wait_for_block_height_init, false);
@@ -702,7 +683,6 @@ void start_block_production(void) {
         ck_height = strtoull(ck_block_height, NULL, 10);
         if (ck_height <= cbheight) {
           ERROR_PRINT("Block did not advance (still at %llu)", (unsigned long long)cbheight);
-          last_round_success = false;
           goto end_of_round_skip_block;
         }
       }
