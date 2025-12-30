@@ -44,7 +44,7 @@ static int select_block_producer_from_vrf(void) {
       continue;
     }
 
-    // If this delegate has already won too many consecutive times, skip it
+    // If this delegate has already won too many consecutive times, skip it (keep chain from hanging)
     if (last_winner_cnt >= MAX_CONSECUTIVE_WINS &&
         strncmp(last_winner_name, name, sizeof last_winner_name) == 0) {
       WARNING_PRINT("Skipping delegate %s due to consecutive wins (%zu >= %d)",
@@ -136,6 +136,7 @@ xcash_round_result_t process_round(void) {
     }
     if (strcmp(previous_block_hash, previous_round_block_hash) == 0) {
       WARNING_PRINT("Still showing Previous Block Hash, Block did not advance");
+      return ROUND_ERROR;
     }
   } else {
     // No majority last round -> chain may be stalled on this node
