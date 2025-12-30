@@ -138,7 +138,6 @@ xcash_round_result_t process_round(void) {
       WARNING_PRINT("Still showing Previous Block Hash, Block did not advance");
       // attempt to get everyone on same count
       last_winner_cnt = MAX_CONSECUTIVE_WINS;
-      return ROUND_ERROR;
     }
   } else {
     // No majority last round -> chain may be stalled on this node
