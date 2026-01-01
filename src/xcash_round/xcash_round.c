@@ -4,7 +4,7 @@ producer_ref_t producer_refs[] = {0};
 static int total_delegates = 0;
 static char previous_round_block_hash[BLOCK_HASH_LENGTH + 1] = {0};
 static size_t missed_load = 0;
-static char last_winner_name[MAXIMUM_BUFFER_SIZE_DELEGATES_NAME+1];
+static char last_winner_name[MAXIMUM_BUFFER_SIZE_DELEGATES_NAME+1] = {0};
 static bool blockchain_stuck = false;
 
 #include "xcash_round.h"
@@ -40,7 +40,7 @@ static int select_block_producer_from_vrf(void) {
       continue;
     }
 
-// If this delegate has already won too many consecutive times, skip it (keep chain from hanging)
+// If delegate won and block chain did not advance last round, skip it (keep chain from hanging)
     if (strncmp(last_winner_name, name, sizeof last_winner_name) == 0 && blockchain_stuck) {
       WARNING_PRINT("Skipping delegate %s due to no blockchain movement from last round", name);
       continue;
@@ -271,14 +271,10 @@ xcash_round_result_t process_round(void) {
     producer_indx = select_block_producer_from_vrf();
   }
 
+
   if (producer_indx < 0) {
     INFO_STAGE_PRINT("Block Producer not selected, skipping round");
     return ROUND_ERROR;
-  } else {
-    if (strncmp(last_winner_name, current_block_verifiers_list.block_verifiers_name[producer_indx], sizeof last_winner_name) == 0) {
-      strncpy(last_winner_name, current_block_verifiers_list.block_verifiers_name[producer_indx], sizeof last_winner_name);
-      last_winner_name[sizeof last_winner_name - 1] = '\0';
-    }
   }
 
   INFO_STAGE_PRINT("Part 7 - Wait for Block Creator Confirmation by Consensus Vote");
@@ -422,6 +418,9 @@ xcash_round_result_t process_round(void) {
     ERROR_PRINT("Producer selected by this delegate does not match consensus");
     return ROUND_ERROR;
   }
+
+  strncpy(last_winner_name, current_block_verifiers_list.block_verifiers_name[producer_indx], sizeof last_winner_name);
+  last_winner_name[sizeof last_winner_name - 1] = '\0';
 
   // Concatenate all vote_hashes into a buffer
   uint8_t all_hashes_concat[valid_vote_count * SHA256_EL_HASH_SIZE];
@@ -578,6 +577,7 @@ void start_block_production(void) {
     } else  {
       INFO_STAGE_PRINT("Part 12 - Wait for Node clean-up / sync");
       // Error occured
+      last_winner_name[0] = '\0';
       blockchain_ready = false;
       atomic_store(&wait_for_block_height_init, false);
       atomic_store(&wait_for_vrf_init, false);
