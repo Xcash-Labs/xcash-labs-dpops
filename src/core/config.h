@@ -7,9 +7,9 @@
 #define XCASH_DPOPS_CURRENT_VERSION "xCash Labs DPoPs V. 2.0.0"
 
 // ===================== Blockchain Settings =====================
-#define XCASH_WALLET_PREFIX "XCA" // The prefix of a XCA address
+#define XCASH_WALLET_PREFIX "XLB" // The prefix of a XLB address
 #define XCASH_SIGN_DATA_PREFIX "SigV2"
-#define XCASH_PROOF_OF_STAKE_BLOCK_HEIGHT 2
+#define XCASH_PROOF_OF_STAKE_BLOCK_HEIGHT 1
 #define CRYPTONOTE_DISPLAY_DECIMAL_POINT 6
 #define XCASH_ATOMIC_UNITS 1000000ULL  // 1 XCASH = 1,000,000 atomic units
 #define MAX_SIBLINGS 15
@@ -52,7 +52,7 @@
 #define MAXIMUM_BUFFER_SIZE_DELEGATES_NAME 100
 
 #define CONNECT_TIMEOUT_SEC 2
-#define RECEIVE_TIMEOUT_SEC 4 // was 3
+#define RECEIVE_TIMEOUT_SEC 4
 #define SEND_TIMEOUT_MS 3000
 #define NET_MULTI_WORKERS 12
 

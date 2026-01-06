@@ -3,6 +3,8 @@
 # Set the script to exit if any command fails
 set -e
 
+container="${container:-}"
+
 # Color print variables
 COLOR_PRINT_RED="\033[1;31m"
 COLOR_PRINT_GREEN="\033[1;32m"
@@ -44,7 +46,6 @@ MONGOSH_VERSION="2.0.2"
 #NODEJS_LATEST_VERSION="node-v14.10.1-linux-x64"
 NODEJS_LATEST_VERSION="node-v18.19.1-linux-x64"
 
-
 # Restore versions
 # MONGODB_RESTORE_VERSION="mongodb-linux-x86_64-ubuntu1804-4.4.1"
 MONGODB_RESTORE_VERSION="mongodb-linux-x86_64-ubuntu2004-4.4.24"
@@ -59,7 +60,7 @@ MONGOC_DRIVER_RESTORE_URL="https://github.com/mongodb/mongo-c-driver/releases/do
 # Settings
 XCASH_URL="https://github.com/Xcash-Labs/xcash-labs-core.git"
 XCASH_CORE_BRANCH="master"
-XCASH_BLOCKCHAIN_BOOTSTRAP_URL="https://xcashusa.com/snapshot/block-2.7z"
+XCASH_BLOCKCHAIN_BOOTSTRAP_URL="https://xcashlabs.org/downloads/block-2.7z"
 XCASH_DIR=""
 XCASH_WALLET_DIR=""
 XCASH_SYSTEMPID_DIR=""
@@ -1072,7 +1073,7 @@ function create_xcash_wallet()
   echo -e "${COLOR_PRINT_GREEN}############################################################${END_COLOR_PRINT}"
 
   cd "${XCASH_DPOPS_INSTALLATION_DIR}"
-  sudo rm -f "${XCASH_DPOPS_INSTALLATION_DIR}"xcash-wallets/delegate-wallet* 2&> /dev/null
+  sudo rm -f "${XCASH_DPOPS_INSTALLATION_DIR}"xcash-wallets/delegate-wallet* &> /dev/null
 
   echo -ne "${COLOR_PRINT_YELLOW}Starting local daemon${END_COLOR_PRINT}"
   sudo systemctl stop xcash-daemon &>/dev/null
@@ -1101,7 +1102,7 @@ function import_xcash_wallet()
   echo -e "${COLOR_PRINT_GREEN}############################################################${END_COLOR_PRINT}"
 
   cd "${XCASH_DPOPS_INSTALLATION_DIR}"
-  sudo rm -f "${XCASH_DPOPS_INSTALLATION_DIR}"xcash-wallets/delegate-wallet* 2&> /dev/null
+  sudo rm -f "${XCASH_DPOPS_INSTALLATION_DIR}"xcash-wallets/delegate-wallet* &> /dev/null
 
   echo -ne "${COLOR_PRINT_YELLOW}Starting local daemon${END_COLOR_PRINT}"
   sudo systemctl stop xcash-daemon &>/dev/null
@@ -1292,8 +1293,8 @@ function set_installation_dir_owner()
 {
   # remove this later
   echo " "
-  #  sudo chown -R "$USER":"$USER" ${XCASH_DPOPS_INSTALLATION_DIR} 2&> /dev/null || true
-  #  sudo chown -R "$USER":"$USER" ${XCASH_BLOCKCHAIN_INSTALLATION_DIR} 2&> /dev/null || true
+  #  sudo chown -R "$USER":"$USER" ${XCASH_DPOPS_INSTALLATION_DIR} &> /dev/null || true
+  #  sudo chown -R "$USER":"$USER" ${XCASH_BLOCKCHAIN_INSTALLATION_DIR} &> /dev/null || true
 }
 
 function update_xcash()
@@ -1790,11 +1791,11 @@ function uninstall()
 
   # Uninstall the installation folder and the blockchain folder
   echo -ne "${COLOR_PRINT_YELLOW}Uninstalling xcash-dpops Installation Directory${END_COLOR_PRINT}"
-  sudo rm -rf "${XCASH_DPOPS_INSTALLATION_DIR}" 2&> /dev/null || true
+  sudo rm -rf "${XCASH_DPOPS_INSTALLATION_DIR}" &> /dev/null || true
   echo -ne "\r${COLOR_PRINT_GREEN}Uninstalling xcash-dpops Installation Directory${END_COLOR_PRINT}"
   echo
   echo -ne "${COLOR_PRINT_YELLOW}Removing the blockchain folder${END_COLOR_PRINT}"
-  sudo rm -rf "${XCASH_BLOCKCHAIN_INSTALLATION_DIR}" 2&> /dev/null || true
+  sudo rm -rf "${XCASH_BLOCKCHAIN_INSTALLATION_DIR}" &> /dev/null || true
   echo -ne "\r${COLOR_PRINT_GREEN}Removing the blockchain folder${END_COLOR_PRINT}"
   echo
   if [ "$container" == "lxc" ]; then
@@ -1999,8 +2000,8 @@ function uninstall_node()
   sudo systemctl daemon-reload
 
   # Uninstall the installation folder and blockchain folder
-  sudo rm -rf "${XCASH_DPOPS_INSTALLATION_DIR}" 2&> /dev/null || true
-  sudo rm -rf "${XCASH_BLOCKCHAIN_INSTALLATION_DIR}" 2&> /dev/null || true
+  sudo rm -rf "${XCASH_DPOPS_INSTALLATION_DIR}" &> /dev/null || true
+  sudo rm -rf "${XCASH_BLOCKCHAIN_INSTALLATION_DIR}" &> /dev/null || true
   if [ "$container" == "lxc" ]; then
     echo -e "${COLOR_PRINT_YELLOW}This is a container installation, please remove the container and also the host data files (bind mounts) to complete the uninstall${END_COLOR_PRINT}"
   fi
