@@ -2157,9 +2157,13 @@ function install_blockchain()
   cd $HOME
   cd && test -f block-1.7z && sudo rm -rf block-1.7z*
   echo -e "${COLOR_PRINT_GREEN}Starting the Download${END_COLOR_PRINT}"
+echo "$XCASH_BLOCKCHAIN_BOOTSTRAP_URL"
+wget --server-response -O /tmp/block-1.7z "$XCASH_BLOCKCHAIN_BOOTSTRAP_URL"
+echo "wget exit code: $?"
+ls -lh /tmp/block-1.7z
   wget -q --show-progress ${XCASH_BLOCKCHAIN_BOOTSTRAP_URL}
   echo -e "${COLOR_PRINT_GREEN}Starting Extraction${END_COLOR_PRINT}"
-  sudo rm -r ${XCASH_BLOCKCHAIN_INSTALLATION_DIR} &>/dev/null || true  
+  sudo rm -r ${XCASH_BLOCKCHAIN_INSTALLATION_DIR} # &>/dev/null || true  
   7z x block-1.7z -bso0 -bse0
   sudo rm block-1.7z 
   echo -e "${COLOR_PRINT_GREEN}Installing The BlockChain Completed${END_COLOR_PRINT}"
