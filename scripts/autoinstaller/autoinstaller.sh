@@ -435,8 +435,6 @@ function installation_settings()
   echo
   echo -e "${COLOR_PRINT_GREEN}SUGGESTION: if your are running the script through SSH, it's suggested the use of a terminal multiplexer like 'byobu'. You can install it with 'sudo apt install byobu' and then enter the session with 'byobu' command. If your SSH connection crashes you can reconnect to your byobu session using the same command. Please consider running this script inside the byobu session to prevent corrupted installations due to SSH disconnection.${END_COLOR_PRINT}"
   echo
-  echo -e "${COLOR_PRINT_YELLOW}The available options of the script are:${END_COLOR_PRINT}"
-  echo
   get_password
   get_installation_settings
   if [ "$INSTALLATION_TYPE_SETTINGS" -eq "1" ]; then 
@@ -444,7 +442,6 @@ function installation_settings()
     get_xcash_blockchain_xcash_dpops_installation_directory
     get_mongodb_installation_directory
     update_global_variables
-    get_shared_delegate_installation_settings
     get_wallet_settings
     get_password_settings
     get_block_verifier_key_settings
@@ -467,7 +464,6 @@ function installation_settings()
     echo -ne "\r"
     echo
     get_installation_directory
-    get_shared_delegate_installation_settings
     get_wallet_settings
     get_password_settings
     get_block_verifier_key_settings
