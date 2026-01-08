@@ -168,7 +168,7 @@ function get_installation_settings()
   echo -ne "${COLOR_PRINT_GREEN}X-Cash DPoPS Delegate Management\n${END_COLOR_PRINT}"
   echo -ne "${COLOR_PRINT_YELLOW}13 = Restart Programs\n14 = Stop Programs\n\n${END_COLOR_PRINT}"
   echo -ne "${COLOR_PRINT_GREEN}Miscellaneous\n${END_COLOR_PRINT}"
-  echo -ne "${COLOR_PRINT_YELLOW}18 = Firewall\n19 = Shared Delegates Firewall\n\n${END_COLOR_PRINT}"
+  echo -ne "${COLOR_PRINT_YELLOW}19 = Shared Delegates Firewall\n\n${END_COLOR_PRINT}"
   echo -ne "${COLOR_PRINT_GREEN}Backup\n${END_COLOR_PRINT}"
   echo -ne "${COLOR_PRINT_YELLOW}20 = Display wallet and xcash-dpops data, and backup shared delegates database\n\n${END_COLOR_PRINT}"
   echo -ne "${COLOR_PRINT_GREEN}Enter the number of the chosen option (default 1): ${END_COLOR_PRINT}"
@@ -1787,26 +1787,6 @@ function get_ssh_port()
   SSH_PORT_NUMBER=$([ ! "$data" == "" ] && echo "$data" || echo "$SSH_PORT_NUMBER")
 }
 
-function install_firewall_script()
-{
-  get_ssh_port
-  echo -ne "${COLOR_PRINT_YELLOW}Installing The Firewall${END_COLOR_PRINT}"
-  # Reinstall iptables (solves some issues with some VPS)
-  wait_for_package_manager
-  sudo apt install --reinstall iptables &>/dev/null
-  update_systemd_service_files
-  sudo bash -c "echo '${SYSTEMD_SERVICE_FILE_FIREWALL}' > /lib/systemd/system/firewall.service"
-  sed_services 's/\r$//g' /lib/systemd/system/firewall.service
-  sudo systemctl daemon-reload
-  echo "$FIREWALL" > ${HOME}/firewall_script.sh
-  sudo chmod +x ${HOME}/firewall_script.sh
-  sudo ${HOME}/firewall_script.sh
-  sudo systemctl enable firewall &>/dev/null
-  sudo systemctl start firewall &>/dev/null
-  echo -ne "\r${COLOR_PRINT_GREEN}Installing The Firewall${END_COLOR_PRINT}"
-  echo
-}
-
 function install_firewall_script_shared_delegates()
 {
   get_ssh_port
@@ -2048,8 +2028,6 @@ elif [ "$INSTALLATION_TYPE_SETTINGS" -eq "13" ]; then
   start_systemd_service_files
 elif [ "$INSTALLATION_TYPE_SETTINGS" -eq "14" ]; then
   stop_systemd_service_files
-elif [ "$INSTALLATION_TYPE_SETTINGS" -eq "18" ]; then
-  install_firewall_script
 elif [ "$INSTALLATION_TYPE_SETTINGS" -eq "19" ]; then
   install_firewall_script_shared_delegates
 elif [ "$INSTALLATION_TYPE_SETTINGS" -eq "20" ]; then
