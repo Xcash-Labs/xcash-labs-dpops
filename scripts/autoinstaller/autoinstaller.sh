@@ -632,17 +632,17 @@ function build_xcash()
   git checkout --quiet ${XCASH_CORE_BRANCH}
   git submodule update --init --force > /dev/null 2>&1
   if [ "$RAM_CPU_RATIO" -ge "$RAM_CPU_RATIO_ALL_CPU_THREADS" ]; then
-    make clean &>/dev/null || true
+    echo "y" | make clean &>/dev/null
     make release -j "${CPU_THREADS}" &>/dev/null
   else
-    make clean &>/dev/null || true
+    echo "y" | make clean &>/dev/null
     if [ "$RAM_CPU_RATIO" -eq 0 ]; then
         make release &>/dev/null
     else
         make release -j $((CPU_THREADS / 2)) &>/dev/null
     fi
   fi
-  echo -ne "\r${COLOR_PRINT_GREEN}Building X-CASH (This Might Take A While)${END_COLOR_PRINT}"
+  echo -ne "\r${COLOR_PRINT_GREEN}Building X-CASH Complete${END_COLOR_PRINT}"
   echo
 }
 
@@ -1144,7 +1144,7 @@ function update_xcash()
   cd "$XCASH_DIR"
   git reset --hard HEAD --quiet
   git pull --quiet
-  make clean &>/dev/null || true
+  echo "y" | make clean &>/dev/null
   JOBS=$((CPU_THREADS / 2))
   if [ "$JOBS" -lt 1 ]; then
     JOBS=1
@@ -1164,7 +1164,7 @@ function update_xcash_dpops()
   cd "$XCASH_DPOPS_DIR"
   git reset --hard HEAD --quiet
   git pull --quiet
-  make clean &>/dev/null || true
+  echo "y" | make clean &>/dev/null
     JOBS=$((CPU_THREADS / 2))
   if [ "$JOBS" -lt 1 ]; then
     JOBS=1
