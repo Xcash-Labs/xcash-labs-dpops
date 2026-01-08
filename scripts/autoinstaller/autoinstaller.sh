@@ -438,7 +438,7 @@ function installation_settings()
   get_password
   get_installation_settings
   if [ "$INSTALLATION_TYPE_SETTINGS" -eq "1" ]; then
-  // used default for these prompts so things will be standardized
+  # used default for these prompts so things will be standardized
   #  get_xcash_dpops_installation_directory
   #  get_xcash_blockchain_xcash_dpops_installation_directory
   #  get_mongodb_installation_directory
