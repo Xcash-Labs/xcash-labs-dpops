@@ -1,9 +1,0 @@
-[Unit]
-Description=xcash-dpops timer
-
-[Timer]
-OnBootSec=30sec
-
-[Install]
-WantedBy=timers.target
-
