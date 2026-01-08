@@ -28,7 +28,6 @@ BLOCK_VERIFIER_SECRET_KEY=""
 BLOCK_VERIFIER_PUBLIC_KEY=""
 BLOCK_VERIFIERS_SECRET_KEY_LENGTH=128
 BLOCK_VERIFIERS_PUBLIC_KEY_LENGTH=64
-DPOPS_MINIMUM_AMOUNT=0
 XCASH_DPOPS_BLOCK_HEIGHT=3
 
 # Latest versions
@@ -123,7 +122,7 @@ RAM_CPU_RATIO_ALL_CPU_THREADS=4
 
 # Regex
 regex_XCASH_DPOPS_INSTALLATION_DIR="(^\/(.*?)\/$)|(^$)" # anything that starts with / and ends with / and does not contain a space
-regex_MNEMONIC_SEED="^\b([a-z]+\s+){24}\b([a-z]+)$" # 25 words exactly
+regex_MNEMONIC_SEED='^([a-z]+[[:space:]]+){24}[a-z]+$'  # 25 words exactly
 
 # Disable script execution with sudo and warns the user if root install
 if [ $SUDO_USER ] ; then
@@ -166,14 +165,10 @@ function get_installation_settings()
   echo -ne "${COLOR_PRINT_YELLOW}6 = Install\n7 = Update\n8 = Uninstall\n\n${END_COLOR_PRINT}"
   echo -ne "${COLOR_PRINT_GREEN}X-Cash Blockchain Management\n${END_COLOR_PRINT}"
   echo -ne "${COLOR_PRINT_YELLOW}9 = Install / Update Blockchain\n\n${END_COLOR_PRINT}"
-  echo -ne "${COLOR_PRINT_GREEN}X-Cash DPoPS Delegate Configuration\n${END_COLOR_PRINT}"
-  echo -ne "${COLOR_PRINT_YELLOW}10 = Change Solo Delegate or Shared Delegate\n11 = Edit Shared Delegate Settings\n12 = Register / Update Delegate\n\n${END_COLOR_PRINT}"
   echo -ne "${COLOR_PRINT_GREEN}X-Cash DPoPS Delegate Management\n${END_COLOR_PRINT}"
   echo -ne "${COLOR_PRINT_YELLOW}13 = Restart Programs\n14 = Stop Programs\n\n${END_COLOR_PRINT}"
-  echo -ne "${COLOR_PRINT_GREEN}X-Cash DPoPS Testing\n${END_COLOR_PRINT}"
-  echo -ne "${COLOR_PRINT_YELLOW}15 = Mainnet Reset\n16 = Beta/Alpha Test Reset\n\n${END_COLOR_PRINT}"
   echo -ne "${COLOR_PRINT_GREEN}Miscellaneous\n${END_COLOR_PRINT}"
-  echo -ne "${COLOR_PRINT_YELLOW}17 = Configure Installation\n18 = Firewall\n19 = Shared Delegates Firewall\n\n${END_COLOR_PRINT}"
+  echo -ne "${COLOR_PRINT_YELLOW}18 = Firewall\n19 = Shared Delegates Firewall\n\n${END_COLOR_PRINT}"
   echo -ne "${COLOR_PRINT_GREEN}Backup\n${END_COLOR_PRINT}"
   echo -ne "${COLOR_PRINT_YELLOW}20 = Display wallet and xcash-dpops data, and backup shared delegates database\n\n${END_COLOR_PRINT}"
   echo -ne "${COLOR_PRINT_GREEN}Enter the number of the chosen option (default 1): ${END_COLOR_PRINT}"
@@ -256,40 +251,6 @@ function update_global_variables()
   MONGODB_DIR=${XCASH_DPOPS_INSTALLATION_DIR}${MONGODB_LATEST_VERSION}/
 }
 
-function get_shared_delegate_installation_settings() {
-  # Ask if this is a shared delegate (default to existing value if user hits Enter)
-  echo -ne "${COLOR_PRINT_YELLOW}Shared Delegate (YES/NO) [current: ${SHARED_DELEGATE:-NO}]: ${END_COLOR_PRINT}"
-  read -r data
-  SHARED_DELEGATE=$([ -z "$data" ] && echo "${SHARED_DELEGATE:-NO}" || echo "$data")
-  echo
-
-  # Only prompt for minimum amount if shared delegate is YES
-  if [[ "${SHARED_DELEGATE^^}" == "YES" ]]; then
-    local prompt_min="${DPOPS_MINIMUM_AMOUNT:-50}"  # default shown if already set
-
-    while :; do
-      echo -ne "${COLOR_PRINT_YELLOW}Shared Delegate Minimum Payment Amount (whole number between 50 and 10000000) [current: ${prompt_min}]: ${END_COLOR_PRINT}"
-      read -r input
-      echo
-
-      # Keep current if user presses Enter
-      if [[ -z "$input" ]]; then
-        DPOPS_MINIMUM_AMOUNT="$prompt_min"
-        break
-      fi
-
-      # Digits only and within range 50..10,000,000
-      if [[ "$input" =~ ^[0-9]+$ ]] && (( input >= 50 && input <= 10000000 )); then
-        DPOPS_MINIMUM_AMOUNT="$input"
-        break
-      fi
-
-      echo "Please enter an integer between 50 and 10000000 (no decimals)."
-    done
-  fi
-}
-
-
 function update_systemd_service_files()
 {
 # Files
@@ -326,8 +287,6 @@ SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SHARED_DELEGATE=$(cat <(curl -sSL $SYSTEMD_SERV
 SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SHARED_DELEGATE="${SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SHARED_DELEGATE//'${USER}'/$USER}"
 SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SHARED_DELEGATE="${SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SHARED_DELEGATE//'${XCASH_DPOPS_DIR}'/$XCASH_DPOPS_DIR}"
 SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SHARED_DELEGATE="${SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SHARED_DELEGATE//'${BLOCK_VERIFIER_SECRET_KEY}'/$BLOCK_VERIFIER_SECRET_KEY}"
-SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SHARED_DELEGATE="${SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SHARED_DELEGATE//'${BLOCK_VERIFIER_SECRET_KEY}'/$BLOCK_VERIFIER_SECRET_KEY}"
-SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SHARED_DELEGATE="${SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SHARED_DELEGATE//'${DPOPS_MINIMUM_AMOUNT}'/$DPOPS_MINIMUM_AMOUNT}"
 
 SYSTEMD_TIMER_FILE_XCASH_DPOPS=$(cat <(curl -sSL $SYSTEMD_TIMER_FILE_XCASH_DPOPS_URL))
 
@@ -449,7 +408,6 @@ function print_installation_settings()
   echo -e "${COLOR_PRINT_GREEN}Create New Wallet: ${WALLET_SETTINGS} ${END_COLOR_PRINT}"
   echo -e "${COLOR_PRINT_GREEN}Wallet Password: ${WALLET_PASSWORD} ${END_COLOR_PRINT}"
   echo -e "${COLOR_PRINT_GREEN}User: ${USER} ${END_COLOR_PRINT}"
-  echo -e "${COLOR_PRINT_GREEN}DPOPS Minimum Payment Amount: ${DPOPS_MINIMUM_AMOUNT} ${END_COLOR_PRINT}"
   echo -e "${COLOR_PRINT_GREEN}Autostart services when reboot: ${AUTOSTART_SETTINGS} ${END_COLOR_PRINT}"
   if [ ! "$container" == "lxc" ]; then
     echo -e "${COLOR_PRINT_GREEN}SSH Port (used to configure the firewall): ${SSH_PORT_NUMBER} ${END_COLOR_PRINT}"
@@ -576,9 +534,9 @@ function start_systemd_service_files()
 function stop_systemd_service_files()
 {
   echo -ne "${COLOR_PRINT_YELLOW}Stopping Systemd Service Files${END_COLOR_PRINT}"
-  sudo systemctl stop xcash-dpops&>/dev/null
+  sudo systemctl stop xcash-dpops &>/dev/null
   sleep 1s
-  sudo systemctl stop mongodb xcash-daemon xcash-rpc-wallet&>/dev/null
+  sudo systemctl stop mongodb xcash-daemon xcash-rpc-wallet &>/dev/null
   echo -ne "\r${COLOR_PRINT_GREEN}Stopping Systemd Service Files${END_COLOR_PRINT}"
   echo
 }
@@ -586,117 +544,8 @@ function stop_systemd_service_files()
 function  enable_service_files_at_startup()
 {
   echo -ne "${COLOR_PRINT_YELLOW}Enabling services to autostart on reboot${END_COLOR_PRINT}"
-  sudo systemctl enable mongodb.service xcash-daemon.service xcash-rpc-wallet.timer xcash-dpops.timer &> /dev/null
+  sudo systemctl enable mongodb.service &> /dev/null
   echo -ne "\r${COLOR_PRINT_GREEN}Enabling services to autostart on reboot${END_COLOR_PRINT}"
-}
-
-function check_if_solo_node()
-{
-  echo -ne "${COLOR_PRINT_YELLOW}Checking If Solo Node${END_COLOR_PRINT}"
-  data=$(sudo find / -path /sys -prune -o -path /proc -prune -o -path /dev -prune -o -path /var -prune -o -path "*/$MAIN_INSTALL_DIRECTORY/*" -type d -name "delegates-pool-website" -print | wc -l)
-  if [ "$data" -gt 0 ]; then
-    SHARED_DELEGATE="YES"
-  else
-    SHARED_DELEGATE="NO"
-  fi
-  echo -ne "\r${COLOR_PRINT_GREEN}Checking If Solo Node${END_COLOR_PRINT}"
-  echo
-}
-
-function check_if_upgrade_solo_delegate_and_shared_delegate()
-{
-  # get the block verifiers secret key from the systemd service file
-  BLOCK_VERIFIER_SECRET_KEY=$(cat /lib/systemd/system/xcash-dpops.service)
-  BLOCK_VERIFIER_SECRET_KEY=$(echo $BLOCK_VERIFIER_SECRET_KEY | awk -F '--block-verifiers-secret-key' '{print $2}')
-  BLOCK_VERIFIER_SECRET_KEY=${BLOCK_VERIFIER_SECRET_KEY:1:$BLOCK_VERIFIERS_SECRET_KEY_LENGTH}
-
-  if [ "${SHARED_DELEGATE^^}" == "YES" ]; then
-    echo -ne "The current delegate setting is shared delegate. If you would like to change the settings to a solo delegate type \"YES\" otherwise press enter:"
-    read -r data
-    echo -ne "\r"
-    echo
-    if [ "${data^^}" == "YES" ]; then
-      SHARED_DELEGATE="NO"
-      uninstall_shared_delegates_website
-      update_systemd_service_files
-      sudo bash -c "echo '${SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SOLO_DELEGATE}' > /lib/systemd/system/xcash-dpops.service"
-      sed_services 's/\r$//g' /lib/systemd/system/xcash-dpops.service
-      sudo systemctl daemon-reload
-      sudo sed '/node-v/d' -i "${HOME}"/.profile
-      sudo sed '/PATH=\/bin:/d' -i "${HOME}"/.profile
-      sudo sed '/^[[:space:]]*$/d' -i "${HOME}"/.profile
-      sudo sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba' -i "${HOME}"/.profile
-      source ~/.profile || true
-      get_installation_directory
-      get_dependencies_current_version
-    fi
-    else
-      echo -ne "The current delegate setting is solo delegate. If you would like to change the settings to a shared delegate type \"YES\" otherwise press enter:"
-      read -r data
-      echo -ne "\r"
-      echo
-      if [ "${data^^}" == "YES" ]; then
-        SHARED_DELEGATE="YES"
-
-      while :; do
-        echo -ne "${COLOR_PRINT_YELLOW}Shared Delegate Minimum Payment Amount, minimum is 50, maximum is 10M (whole numbers, not atomic units): ${END_COLOR_PRINT}"
-        read -r DPOPS_MINIMUM_AMOUNT
-        echo -ne "\r"
-        echo
-
-        # digits only + numeric range check
-        if [[ $DPOPS_MINIMUM_AMOUNT =~ ^[0-9]+$ ]] \
-          && (( DPOPS_MINIMUM_AMOUNT >= 50 && DPOPS_MINIMUM_AMOUNT <= 10000000 )); then
-          break
-        fi
-
-        echo "Please enter an integer between 50 and 10000000 (no decimals)."
-      done
- 
-
-      NODEJS_DIR=${XCASH_DPOPS_INSTALLATION_DIR}${NODEJS_LATEST_VERSION}/ 
-      echo -e "${COLOR_PRINT_GREEN}############################################################${END_COLOR_PRINT}"
-      echo -e "${COLOR_PRINT_GREEN}            Installing Shared Delegate Website${END_COLOR_PRINT}"
-      echo -e "${COLOR_PRINT_GREEN}############################################################${END_COLOR_PRINT}"
-      install_nodejs
-      configure_npm
-      update_npm
-      install_npm_global_packages
-#      download_shared_delegate_website
-      get_installation_directory
-#      install_shared_delegates_website_npm_packages
-#      build_shared_delegates_website
-      source ~/.profile || true
-      echo
-      echo
-      update_systemd_service_files
-      sudo bash -c "echo '${SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SHARED_DELEGATE}' > /lib/systemd/system/xcash-dpops.service"
-      sed_services 's/\r$//g' /lib/systemd/system/xcash-dpops.service
-      sudo systemctl daemon-reload
-      get_installation_directory
-      get_dependencies_current_version
-    fi
-  fi
-}
-
-function check_if_remove_shared_delegate_configure_install()
-{
-  if [ "${SHARED_DELEGATE^^}" == "NO" ]; then
-    echo -ne "Installation configured as Solo delegate. Removing all the preinstalled Shared Delegate website"
-    echo
-    uninstall_shared_delegates_website
-    update_systemd_service_files
-    sudo bash -c "echo '${SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SOLO_DELEGATE}' > /lib/systemd/system/xcash-dpops.service"
-    sed_services 's/\r$//g' /lib/systemd/system/xcash-dpops.service
-    sudo systemctl daemon-reload
-    sudo sed '/node-v/d' -i "${HOME}"/.profile
-    sudo sed '/PATH=\/bin:/d' -i "${HOME}"/.profile
-    sudo sed '/^[[:space:]]*$/d' -i "${HOME}"/.profile
-    sudo sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba' -i "${HOME}"/.profile
-    source ~/.profile || true
-    get_installation_directory
-    get_dependencies_current_version
-  fi
 }
 
 function check_ubuntu_version()
@@ -787,10 +636,10 @@ function build_xcash()
   git checkout --quiet ${XCASH_CORE_BRANCH}
   git submodule update --init --force > /dev/null 2>&1
   if [ "$RAM_CPU_RATIO" -ge "$RAM_CPU_RATIO_ALL_CPU_THREADS" ]; then
-    echo "y" | make clean &>/dev/null
+    make clean &>/dev/null || true
     make release -j "${CPU_THREADS}" &>/dev/null
   else
-    echo "y" | make clean &>/dev/null
+    make clean &>/dev/null || true
     if [ "$RAM_CPU_RATIO" -eq 0 ]; then
         make release &>/dev/null
     else
@@ -903,8 +752,8 @@ function install_mongodb()
   tar -xf mongodb-linux-x86_64-*.tgz &>/dev/null
   sudo rm mongodb-linux-x86_64-*.tgz &>/dev/null
   sudo chown -R "$USER":"$USER" ${MONGODB_DIR}
-  echo -ne "\nexport PATH=${MONGODB_DIR}bin:" >> "${HOME}"/.profile 
-  echo -ne '$PATH' >> "${HOME}"/.profile
+  line="export PATH=${MONGODB_DIR}bin:\$PATH"
+  grep -qxF "$line" "$HOME/.profile" || echo "$line" >> "$HOME/.profile"
   source ~/.profile || true
   echo -ne "\r${COLOR_PRINT_GREEN}Installing MongoDB${END_COLOR_PRINT}"
   echo
@@ -1135,8 +984,8 @@ function install_nodejs()
   tar -xf node*.tar.xz &>/dev/null
   sudo rm node*.tar.xz &>/dev/null
   sudo chown -R "$USER":"$USER" ${NODEJS_DIR}
-  echo -ne "\nexport PATH=${NODEJS_DIR}bin:" >> "${HOME}"/.profile 
-  echo -ne '$PATH' >> "${HOME}"/.profile
+  line="export PATH=${NODEJS_DIR}bin:\$PATH"
+  grep -qxF "$line" "$HOME/.profile" || echo "$line" >> "$HOME/.profile"
   source ~/.profile || true
   echo -ne "\r${COLOR_PRINT_GREEN}Installing Node.js${END_COLOR_PRINT}"
   echo
@@ -1211,14 +1060,14 @@ function install_shared_delegates_website()
   echo -e "${COLOR_PRINT_GREEN}############################################################${END_COLOR_PRINT}"
   echo -e "${COLOR_PRINT_GREEN}            Installing Shared Delegate Website${END_COLOR_PRINT}"
   echo -e "${COLOR_PRINT_GREEN}############################################################${END_COLOR_PRINT}"
-  install_nodejs
-  configure_npm
-  update_npm
-  install_npm_global_packages
+#  install_nodejs
+#  configure_npm
+#  update_npm
+#  install_npm_global_packages
 #  download_shared_delegate_website
 #  install_shared_delegates_website_npm_packages
 #  build_shared_delegates_website
-  source ~/.profile || true
+#  source ~/.profile || true
   echo
   echo
 }
@@ -1289,27 +1138,22 @@ function update_packages()
     echo
 }
 
-function set_installation_dir_owner()
-{
-  # remove this later
-  echo " "
-  #  sudo chown -R "$USER":"$USER" ${XCASH_DPOPS_INSTALLATION_DIR} &> /dev/null || true
-  #  sudo chown -R "$USER":"$USER" ${XCASH_BLOCKCHAIN_INSTALLATION_DIR} &> /dev/null || true
-}
-
 function update_xcash()
 {
   echo -ne "${COLOR_PRINT_YELLOW}Updating X-CASH (This Might Take A While)${END_COLOR_PRINT}"
   if [ ! -d "$XCASH_DIR/.git" ]; then
     cd "${XCASH_DPOPS_INSTALLATION_DIR}"
-    git clone "${XCASH_URL}" "$XCASH_DIR"
+    git clone --quiet "${XCASH_URL}" "$XCASH_DIR"
   fi
-  pwd
   cd "$XCASH_DIR"
   git reset --hard HEAD --quiet
   git pull --quiet
-  echo "y" | make clean &>/dev/null
-  make release -j $((CPU_THREADS / 2)) &>/dev/null
+  make clean &>/dev/null || true
+  JOBS=$((CPU_THREADS / 2))
+  if [ "$JOBS" -lt 1 ]; then
+    JOBS=1
+  fi
+  make release -j "$JOBS" &>/dev/null
   echo -ne "\r${COLOR_PRINT_GREEN}Updating X-CASH Complete                     ${END_COLOR_PRINT}"
   echo
 }
@@ -1324,8 +1168,12 @@ function update_xcash_dpops()
   cd "$XCASH_DPOPS_DIR"
   git reset --hard HEAD --quiet
   git pull --quiet
-  make clean &>/dev/null
-  make -j $((CPU_THREADS / 2)) &>/dev/null
+  make clean &>/dev/null || true
+    JOBS=$((CPU_THREADS / 2))
+  if [ "$JOBS" -lt 1 ]; then
+    JOBS=1
+  fi
+  make release -j "$JOBS" &>/dev/null
   echo -ne "\r${COLOR_PRINT_GREEN}Updating xcash-dpops Complete                 ${END_COLOR_PRINT}"
   echo
 }
@@ -1373,8 +1221,8 @@ function update_mongodb()
   sudo systemctl daemon-reload
   sudo sed '/mongodb-linux-x86_64-ubuntu1804-/d' -i "${HOME}"/.profile
   sudo sed '/^[[:space:]]*$/d' -i "${HOME}"/.profile
-  echo -ne "\nexport PATH=${MONGODB_DIR}bin:" >> "${HOME}"/.profile 
-  echo -ne '$PATH' >> "${HOME}"/.profile
+  line="export PATH=${MONGODB_DIR}bin:\$PATH"
+  grep -qxF "$line" "$HOME/.profile" || echo "$line" >> "$HOME/.profile"
   sudo sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba' -i "${HOME}"/.profile
   source ~/.profile || true
   echo -ne "\r${COLOR_PRINT_GREEN}Updating MongoDB${END_COLOR_PRINT}"
@@ -1415,8 +1263,8 @@ function update_nodejs()
   sudo sed '/node-v/d' -i "${HOME}"/.profile
   sudo sed '/PATH=\/bin:/d' -i "${HOME}"/.profile
   sudo sed '/^[[:space:]]*$/d' -i "${HOME}"/.profile
-  echo -ne "\nexport PATH=${NODEJS_DIR}bin:" >> "${HOME}"/.profile 
-  echo -ne '$PATH' >> "${HOME}"/.profile
+  line="export PATH=${NODEJS_DIR}bin:\$PATH"
+  grep -qxF "$line" "$HOME/.profile" || echo "$line" >> "$HOME/.profile"
   sudo sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba' -i "${HOME}"/.profile
   source ~/.profile || true
   echo -ne "\r${COLOR_PRINT_GREEN}Updating NodeJS${END_COLOR_PRINT}"
@@ -1565,77 +1413,6 @@ function install()
   relogin_user
 }
 
-function configure()
-{
-  echo
-  echo -e "${COLOR_PRINT_GREEN}############################################################${END_COLOR_PRINT}"
-  echo -e "${COLOR_PRINT_GREEN}                  Starting Configure Installation${END_COLOR_PRINT}"
-  echo -e "${COLOR_PRINT_GREEN}############################################################${END_COLOR_PRINT}"
-
-  # Stop service files
-  stop_systemd_service_files
-
-  # Remove shared website if solo 
-  check_if_remove_shared_delegate_configure_install
-
-  # Re-set the owner of the install directory (can fix some "edge" issues for some users)
-  set_installation_dir_owner
-
-  # Ask if use already present blockchain or use bootstrap file
-  echo -ne "${COLOR_PRINT_YELLOW}Download and use the blockchain bootstrap? Leave empty for YES, write N for NO: ${END_COLOR_PRINT}"
-  read -r data
-  echo -ne "\r"
-  echo
-  BOOTSTRAP_BLOCKCHAIN_OPTION=$([ "$data" == "" ] && echo "YES" || echo "NO")
-  if [ "$BOOTSTRAP_BLOCKCHAIN_OPTION" == "YES" ]; then
-    install_or_update_blockchain
-  fi
-
-  # Configure xcash-dpops
-  configure_xcash_dpops
-
-  # Create or import the wallet
-  if [ "${WALLET_SETTINGS^^}" == "YES" ]; then
-    create_xcash_wallet
-  else
-    import_xcash_wallet
-  fi
-
-  # Get the current xcash wallet data
-  get_current_xcash_wallet_data
-
-  # import the wallet if they created the wallet before. This should fix any 0 balance error
-  if [ "${WALLET_SETTINGS^^}" == "YES" ]; then
-    import_xcash_wallet
-  fi
-
-  # add the public address and block verifiers secret key to the XCASH_Daemon systemd service file
-  sed_services "s/xcash-labs-core\/build\/release\/bin\/xcashd/xcash-labs-core\/build\/release\/bin\/xcashd --xcash-dpops-delegates-public-address $PUBLIC_ADDRESS --xcash-dpops-delegates-secret-key $BLOCK_VERIFIER_SECRET_KEY/g" /lib/systemd/system/xcash-daemon.service
-
-  # Start the systemd service files
-  start_systemd_service_files
-
-  if [ "${AUTOSTART_SETTINGS^^}" == "YES" ]; then
-    enable_service_files_at_startup
-  fi
-
-  # Display X-CASH current wallet data  
-  echo
-  echo
-  echo -e "${COLOR_PRINT_GREEN}############################################################${END_COLOR_PRINT}"
-  echo -e "${COLOR_PRINT_GREEN}          Configuration Has Completed Successfully  ${END_COLOR_PRINT}"
-  echo -e "${COLOR_PRINT_GREEN}############################################################${END_COLOR_PRINT}"
-  echo
-  echo
-  echo -e "${CURRENT_XCASH_WALLET_INFORMATION}"
-  echo
-  echo -e "${COLOR_PRINT_YELLOW}Please make sure to save the above information in a secure place and press enter when done${END_COLOR_PRINT}"
-  read -r data
-  echo -ne "\r"
-  echo
-  relogin_user
-}
-
 function update()
 {
   echo -e "${COLOR_PRINT_GREEN}############################################################${END_COLOR_PRINT}"
@@ -1643,9 +1420,6 @@ function update()
   echo -e "${COLOR_PRINT_GREEN}############################################################${END_COLOR_PRINT}"
   echo
   echo
-
-  # Check if solo node
-  check_if_solo_node
 
   # Get the installation directory
   get_installation_directory
@@ -1661,9 +1435,6 @@ function update()
 
   # Update all system packages that are xcash-dpops dependencies
   update_packages
-
-  # Re-set the owner of the install directory (can fix some "edge" issues for some users)
-  set_installation_dir_owner
 
   # Update all repositories
   update_xcash
@@ -1750,9 +1521,6 @@ function uninstall()
 
   # Get the installation directory
   get_installation_directory
-
-  # Re-set the owner of the install directory (can fix some "edge" issues for some users)
-  set_installation_dir_owner
 
   # Restart the X-CASH Daemon and stop the X-CASH Wallet RPC
   echo -ne "${COLOR_PRINT_YELLOW}Shutting Down X-CASH Wallet Systemd Service File and Restarting XCASH Daemon Systemd Service File${END_COLOR_PRINT}"
@@ -1951,9 +1719,6 @@ function update_node()
   # Update all system packages that are xcash-dpops dependencies
   update_packages
 
-  # Re-set the owner of the install directory (can fix some "edge" issues for some users)
-  set_installation_dir_owner
-
   # Update all repositories
   update_xcash
 
@@ -1984,9 +1749,6 @@ function uninstall_node()
 
   sudo systemctl stop xcash-daemon &>/dev/null
 
-  # Re-set the owner of the install directory (can fix some "edge" issues for some users)
-  set_installation_dir_owner
-
   # Uninstall packages
   uninstall_packages
 
@@ -2013,67 +1775,6 @@ function uninstall_node()
   echo -e "${COLOR_PRINT_GREEN}############################################################${END_COLOR_PRINT}"
   echo -e "${COLOR_PRINT_GREEN}          Uninstall Has Completed Successfully  ${END_COLOR_PRINT}"
   echo -e "${COLOR_PRINT_GREEN}############################################################${END_COLOR_PRINT}"
-}
-
-function change_solo_or_shared_delegate()
-{
-  check_if_solo_node
-  check_if_upgrade_solo_delegate_and_shared_delegate
-  echo
-}
-
-function test_update()
-{
-  get_installation_directory
-  stop_systemd_service_files
-  echo -ne "${COLOR_PRINT_YELLOW}Resetting the Blockchain${END_COLOR_PRINT}"
-  sudo systemctl start xcash-daemon mongodb
-  sleep 30s
-  data=$(curl -s -X POST http://127.0.0.1:18281/json_rpc -d '{"jsonrpc":"2.0","id":"0","method":"get_block_count"}' -H 'Content-Type: application/json')
-  data="${data:66:6}"
-  data="${data%,*}"
-  data=$((data-XCASH_DPOPS_BLOCK_HEIGHT))
-  sudo systemctl stop xcash-daemon
-  sleep 30s
-  if [ $data -ne 0 ]; then
-    "${XCASH_DIR}"build/Linux/master/release/bin/xcash-blockchain-import --data-dir "${XCASH_BLOCKCHAIN_INSTALLATION_DIR}" --pop-blocks ${data} &>/dev/null
-  fi
-  echo -ne "\r${COLOR_PRINT_GREEN}Resetting the Blockchain${END_COLOR_PRINT}"
-  echo
-  source ~/.profile || true
-  echo -ne "${COLOR_PRINT_YELLOW}Resetting the Database${END_COLOR_PRINT}"
-  (echo "use XCASH_PROOF_OF_STAKE"; echo "db.dropDatabase()"; echo "exit";) | mongo &>/dev/null
-  echo -ne "\r${COLOR_PRINT_GREEN}Resetting the Database${END_COLOR_PRINT}"
-  echo
-  update
-}
-
-function test_update_reset_delegates()
-{
-  get_installation_directory
-  stop_systemd_service_files
-  echo -ne "${COLOR_PRINT_YELLOW}Resetting the Blockchain${END_COLOR_PRINT}"
-  sudo systemctl start xcash-daemon mongodb &>/dev/null
-  sleep 30s
-  data=$(curl -s -X POST http://127.0.0.1:18281/json_rpc -d '{"jsonrpc":"2.0","id":"0","method":"get_block_count"}' -H 'Content-Type: application/json')
-  data="${data:66:6}"
-  data=$((data-XCASH_DPOPS_BLOCK_HEIGHT))
-  sudo systemctl stop xcash-daemon &>/dev/null
-  sleep 30s
-  if [ $data -ne 0 ]; then
-    "${XCASH_DIR}"build/Linux/master/release/bin/xcash-blockchain-import --data-dir "${XCASH_BLOCKCHAIN_INSTALLATION_DIR}" --pop-blocks ${data} &>/dev/null
-  fi
-  echo -ne "\r${COLOR_PRINT_GREEN}Resetting the Blockchain${END_COLOR_PRINT}"
-  echo
-  # Source profile to fix some strange "edge" behaviors
-  source ~/.profile || true
-  echo -ne "${COLOR_PRINT_YELLOW}Resetting the Database${END_COLOR_PRINT}"
-  (echo "use XCASH_PROOF_OF_STAKE"; echo "db.dropDatabase()"; echo "exit";) | mongo &>/dev/null
-  (echo "use XCASH_PROOF_OF_STAKE_DELEGATES"; echo "db.dropDatabase()"; echo "exit";) | mongo &>/dev/null
-  echo -ne "\r${COLOR_PRINT_GREEN}Resetting the Database${END_COLOR_PRINT}"
-  echo
-  echo
-  update
 }
 
 function get_ssh_port()
@@ -2132,14 +1833,6 @@ function install_or_update_blockchain()
 
   stop_systemd_service_files
 
-  # wait for the blockchain file to be created
-  hour=$(date +"%H")
-  while [ $hour == 0 ]
-  do
-    sleep 60s
-    hour=$(date +"%H")
-  done
-
   cd $HOME
   cd && test -f block-1.7z && sudo rm -rf block-1.7z*
   echo -e "${COLOR_PRINT_GREEN}Starting the Download${END_COLOR_PRINT}"
@@ -2166,165 +1859,6 @@ function install_blockchain()
   echo
 }
 
-function edit_shared_delegate_settings() {
-  local unit="/lib/systemd/system/xcash-dpops.service"
-
-  # check if they are already a shared delegate
-  if grep -q "shared-delegates-website" "$unit"; then
-
-    # capture current value (if present)
-    local current_min
-    current_min="$(grep -oE -- '--minimum-amount[[:space:]]+[0-9]+' "$unit" | awk '{print $2}' | tail -n1)"
-    [[ -n "$current_min" ]] && echo "Current --minimum-amount: $current_min"
-
-    local DPOPS_MINIMUM_AMOUNT
-    while :; do
-      echo -ne "${COLOR_PRINT_YELLOW}Shared Delegate Minimum Payment Amount, minimum is 50, maximum is 10M (whole numbers): ${END_COLOR_PRINT}"
-      read -r DPOPS_MINIMUM_AMOUNT
-      echo
-
-      # trim leading/trailing whitespace
-      DPOPS_MINIMUM_AMOUNT="${DPOPS_MINIMUM_AMOUNT#"${DPOPS_MINIMUM_AMOUNT%%[![:space:]]*}"}"
-      DPOPS_MINIMUM_AMOUNT="${DPOPS_MINIMUM_AMOUNT%"${DPOPS_MINIMUM_AMOUNT##*[![:space:]]}"}"
-
-      # digits only, numeric range 50..10,000,000
-      if [[ $DPOPS_MINIMUM_AMOUNT =~ ^[0-9]+$ ]] \
-        && (( DPOPS_MINIMUM_AMOUNT >= 50 && DPOPS_MINIMUM_AMOUNT <= 10000000 )); then
-        break
-      fi
-      echo "Please enter an integer between 50 and 10000000 (no decimals)."
-    done
-
-    # make available to callers / later commands
-    export DPOPS_MINIMUM_AMOUNT
-
-
-    echo -ne "${COLOR_PRINT_YELLOW}Updating Shared Delegate Settings${END_COLOR_PRINT}"
-
-    # robust in-place edit: replace only the number following --minimum-amount
-    # keep a backup alongside as .bak
-    if command -v gsed >/dev/null 2>&1; then
-      # macOS/BSD users with gsed
-      gsed -E -i.bak "s/(--minimum-amount[[:space:]]+)[0-9]+/\1${DPOPS_MINIMUM_AMOUNT}/g" "$unit"
-    else
-      sed -E -i.bak "s/(--minimum-amount[[:space:]]+)[0-9]+/\1${DPOPS_MINIMUM_AMOUNT}/g" "$unit"
-    fi
-
-    # reload unit files and restart service so it takes effect
-    sudo systemctl daemon-reload
-    # use reload-or-restart if available; fallback to restart
-    if systemctl --help | grep -q reload-or-restart; then
-      sudo systemctl reload-or-restart xcash-dpops.service
-    else
-      sudo systemctl restart xcash-dpops.service
-    fi
-
-    echo -ne "\r${COLOR_PRINT_GREEN}Updating Shared Delegate Settings${END_COLOR_PRINT}"
-    echo
-    echo "New --minimum-amount: $DPOPS_MINIMUM_AMOUNT (backup saved as ${unit}.bak)"
-
-  else
-    echo -ne "\r${COLOR_PRINT_RED}Your delegate is not setup as a shared delegate${END_COLOR_PRINT}"
-    echo
-  fi
-}
-
-
-function register_update_delegate()
-{
-  XCASH_DELEGATE_NAME=""
-  echo
-  echo -ne "${COLOR_PRINT_YELLOW}Do you want to register a new delegate? Leave empty for YES, write N for NO: ${END_COLOR_PRINT}"
-  read -r data
-  echo -ne "\r"
-  echo
-  if [ "$data" == "" ]; then
-    echo -ne "${COLOR_PRINT_YELLOW}Enter your delegate name: ${END_COLOR_PRINT}"
-    read -r XCASH_DELEGATE_NAME
-    echo -ne "\r"
-    echo
-    echo -ne "${COLOR_PRINT_YELLOW}Enter your domain name or IP address: ${END_COLOR_PRINT}"
-    read -r XCASH_DELEGATE_DOMAIN
-    echo -ne "\r"
-    echo
-    # Stop the rpc wallet service
-    sudo systemctl stop xcash-rpc-wallet &>/dev/null
-    # Get required information
-    get_installation_directory
-    # get the block verifiers secret key from the systemd service file
-    BLOCK_VERIFIER_SECRET_KEY=$(cat /lib/systemd/system/xcash-dpops.service)
-    BLOCK_VERIFIER_SECRET_KEY=$(echo $BLOCK_VERIFIER_SECRET_KEY | awk -F '--block-verifiers-secret-key' '{print $2}')
-    BLOCK_VERIFIER_SECRET_KEY=${BLOCK_VERIFIER_SECRET_KEY:1:$BLOCK_VERIFIERS_SECRET_KEY_LENGTH}
-    BLOCK_VERIFIER_PUBLIC_KEY="${BLOCK_VERIFIER_SECRET_KEY: -${BLOCK_VERIFIERS_PUBLIC_KEY_LENGTH}}"
-    # Run the wallet passing the registration information  
-    (echo "delegate_register ${XCASH_DELEGATE_NAME} ${XCASH_DELEGATE_DOMAIN} ${BLOCK_VERIFIER_PUBLIC_KEY}"; echo "${WALLET_PASSWORD}"; echo "exit" ) | ${XCASH_DIR}build/Linux/master/release/bin/xcash-wallet-cli --wallet-file ${XCASH_WALLET_DIR}delegate-wallet --password ${WALLET_PASSWORD} --trusted-daemon --log-file ${XCASH_LOGS_DIR}xcash-wallet-rpc.log
-    # Start the rpc wallet service
-    sudo systemctl start xcash-rpc-wallet &>/dev/null
-  fi
-  echo
-  echo -ne "${COLOR_PRINT_YELLOW}Do you want to update the delegate information? Leave empty for YES, write N for NO: ${END_COLOR_PRINT}"
-  read -r data
-  echo -ne "\r"
-  echo
-  if [ "$data" == "" ]; then
-    if [ "$XCASH_DELEGATE_NAME" == "" ]; then
-      # Get required information
-      get_installation_directory
-      echo -ne "${COLOR_PRINT_YELLOW}Enter your delegate name: ${END_COLOR_PRINT}"
-      read -r XCASH_DELEGATE_NAME
-      echo -ne "\r"
-      echo
-    fi
-    echo -e "${COLOR_PRINT_GREEN}Please see https://docs.xcash.foundation/dpops/register-delegate${END_COLOR_PRINT}"
-    echo -e "${COLOR_PRINT_GREEN}For best compatibility use only alphanumeric characters and . , ! ? - _${END_COLOR_PRINT}"
-    echo -ne "${COLOR_PRINT_YELLOW}Enter new domain name or IP (leave empty to skip): ${END_COLOR_PRINT}"
-    read -r UPDATE_NEW_DOMAIN_IP
-    echo -ne "\r"
-    echo
-    echo -ne "${COLOR_PRINT_YELLOW}Enter About description (leave empty to skip): ${END_COLOR_PRINT}"
-    read -r UPDATE_ABOUT_DESCRIPTION
-    echo -ne "\r"
-    echo
-    echo -ne "${COLOR_PRINT_YELLOW}Enter Website - Landing page (leave empty to skip): ${END_COLOR_PRINT}"
-    read -r UPDATE_WEBSITE
-    echo -ne "\r"
-    echo
-    echo -ne "${COLOR_PRINT_YELLOW}Enter Shared delegate status, true or false (leave empty to skip): ${END_COLOR_PRINT}"
-    read -r UPDATE_SHARED_DELEGATE_STATUS
-    echo -ne "\r"
-    echo
-    echo -ne "${COLOR_PRINT_YELLOW}Enter Shared Delegate Team Info (leave empty to skip): ${END_COLOR_PRINT}"
-    read -r UPDATE_TEAM
-    echo -ne "\r"
-    echo
-    echo -ne "${COLOR_PRINT_YELLOW}Enter Server Specifications (leave empty to skip): ${END_COLOR_PRINT}"
-    read -r UPDATE_SERVER_SPECS
-    echo -ne "\r"
-    echo
-    # Stop the rpc wallet service
-    sudo systemctl stop xcash-rpc-wallet &>/dev/null
-    # Disable ask-password inside the wallet (will be re-enabled at the end of the configuration)
-    COMMAND_STRING="${COMMAND_STRING}set ask-password 0\n${WALLET_PASSWORD}\n"
-    (echo -ne ${COMMAND_STRING}; echo "exit" ) | ${XCASH_DIR}build/Linux/master/release/bin/xcash-wallet-cli --wallet-file ${XCASH_WALLET_DIR}delegate-wallet --password ${WALLET_PASSWORD} --trusted-daemon --log-file ${XCASH_LOGS_DIR}xcash-wallet-rpc.log
-    echo
-    # Create the update sequence
-    COMMAND_STRING=""
-    if [ ! "$UPDATE_NEW_DOMAIN_IP" == "" ]; then COMMAND_STRING="${COMMAND_STRING}delegate_update IP_address ${UPDATE_NEW_DOMAIN_IP}\n"; fi
-    if [ ! "$UPDATE_ABOUT_DESCRIPTION" == "" ]; then COMMAND_STRING="${COMMAND_STRING}delegate_update about ${UPDATE_ABOUT_DESCRIPTION}\n"; fi
-    if [ ! "$UPDATE_WEBSITE" == "" ]; then COMMAND_STRING="${COMMAND_STRING}delegate_update website ${UPDATE_WEBSITE}\n"; fi
-    if [ ! "$UPDATE_SHARED_DELEGATE_STATUS" == "" ]; then COMMAND_STRING="${COMMAND_STRING}delegate_update shared_delegate_status ${UPDATE_SHARED_DELEGATE_STATUS}\n"; fi
-      if [ ! "$UPDATE_TEAM" == "" ]; then COMMAND_STRING="${COMMAND_STRING}delegate_update team ${UPDATE_TEAM}\n"; fi
-    if [ ! "$UPDATE_SERVER_SPECS" == "" ]; then COMMAND_STRING="${COMMAND_STRING}delegate_update server_specs ${UPDATE_SERVER_SPECS}\n"; fi
-    COMMAND_STRING="${COMMAND_STRING}set ask-password 1\n${WALLET_PASSWORD}\n"
-    # Run the wallet passing the registration information  
-    (echo -ne ${COMMAND_STRING}; echo "exit" ) | ${XCASH_DIR}build/Linux/master/release/bin/xcash-wallet-cli --wallet-file ${XCASH_WALLET_DIR}delegate-wallet --password ${WALLET_PASSWORD} --trusted-daemon --log-file ${XCASH_LOGS_DIR}xcash-wallet-rpc.log
-    # Start the rpc wallet service
-    sudo systemctl start xcash-rpc-wallet &>/dev/null
-  fi
-  echo
-  echo -e "${COLOR_PRINT_GREEN}Operation completed!${END_COLOR_PRINT}"
-}
-
 function backup()
 {
   echo -e "${COLOR_PRINT_GREEN}############################################################${END_COLOR_PRINT}"
@@ -2333,14 +1867,8 @@ function backup()
   echo
   echo
 
-  # Check if solo node
-  check_if_solo_node
-
   # Get the installation directory
   get_installation_directory
-
-  # Re-set the owner of the install directory (can fix some "edge" issues for some users)
-  set_installation_dir_owner
 
   # Restart the X-CASH Daemon and stop the X-CASH Wallet RPC
   echo -ne "${COLOR_PRINT_YELLOW}Shutting Down X-CASH Wallet Systemd Service File and Restarting XCASH Daemon Systemd Service File${END_COLOR_PRINT}"
@@ -2427,8 +1955,8 @@ function restore_mongodb()
   sudo systemctl daemon-reload
   sudo sed '/mongodb-linux-x86_64-ubuntu1804-/d' -i "${HOME}"/.profile
   sudo sed '/^[[:space:]]*$/d' -i "${HOME}"/.profile
-  echo -ne "\nexport PATH=${MONGODB_DIR}bin:" >> "${HOME}"/.profile 
-  echo -ne '$PATH' >> "${HOME}"/.profile
+  line="export PATH=${MONGODB_DIR}bin:\$PATH"
+  grep -qxF "$line" "$HOME/.profile" || echo "$line" >> "$HOME/.profile"
   sudo sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba' -i "${HOME}"/.profile
   source ~/.profile || true
   echo -ne "\r${COLOR_PRINT_GREEN}Restoring MongoDB${END_COLOR_PRINT}"
@@ -2482,58 +2010,12 @@ function restore_nodejs()
   sudo sed '/node-v/d' -i "${HOME}"/.profile
   sudo sed '/PATH=\/bin:/d' -i "${HOME}"/.profile
   sudo sed '/^[[:space:]]*$/d' -i "${HOME}"/.profile
-  echo -ne "\nexport PATH=${NODEJS_DIR}bin:" >> "${HOME}"/.profile 
-  echo -ne '$PATH' >> "${HOME}"/.profile
+  line="export PATH=${NODEJS_DIR}bin:\$PATH"
+  grep -qxF "$line" "$HOME/.profile" || echo "$line" >> "$HOME/.profile"
   sudo sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba' -i "${HOME}"/.profile
   source ~/.profile || true
   echo -ne "\r${COLOR_PRINT_GREEN}Restoring NodeJS${END_COLOR_PRINT}"
   echo
-}
-
-function restore_tools()
-{
-  echo -e "${COLOR_PRINT_GREEN}############################################################${END_COLOR_PRINT}"
-  echo -e "${COLOR_PRINT_GREEN}                  Restoring Tools${END_COLOR_PRINT}"
-  echo -e "${COLOR_PRINT_GREEN}############################################################${END_COLOR_PRINT}"
-  echo
-  echo
-
-  # Check if solo node
-  check_if_solo_node
-
-  # Get the installation directory
-  get_installation_directory
-
-  # Stop the systemd service files
-  stop_systemd_service_files
-
-  # Re-set the owner of the install directory (can fix some "edge" issues for some users)
-  set_installation_dir_owner
-
-  # Restore all dependencies
-  restore_mongodb
-  restore_mongodb_tools
-  restore_mongoc_driver
-  if [ "${SHARED_DELEGATE^^}" == "YES" ]; then
-    restore_nodejs
-    install_npm_global_packages
-    configure_npm
-    update_npm
-  fi
-  
-  # Create xcash wallet log symlink to old location
-  touch "${XCASH_LOGS_DIR}xcash-wallet-rpc.log" && sudo rm -f "${XCASH_DIR}build/Linux/master/release/bin/xcash-wallet-rpc.log" && ln -s "${XCASH_LOGS_DIR}xcash-wallet-rpc.log" "${XCASH_DIR}build/Linux/master/release/bin/xcash-wallet-rpc.log"
-
-  # Start the systemd service files
-  start_systemd_service_files
-
-  cd ~
-
-  echo
-  echo
-  echo -e "${COLOR_PRINT_GREEN}############################################################${END_COLOR_PRINT}"
-  echo -e "${COLOR_PRINT_GREEN}          Restoring Tools Has Completed Successfully  ${END_COLOR_PRINT}"
-  echo -e "${COLOR_PRINT_GREEN}############################################################${END_COLOR_PRINT}"
 }
 
 # Check for a compatible OS
@@ -2553,8 +2035,6 @@ elif [ "$INSTALLATION_TYPE_SETTINGS" -eq "3" ]; then
   quick_update
 elif [ "$INSTALLATION_TYPE_SETTINGS" -eq "4" ]; then
   uninstall
-elif [ "$INSTALLATION_TYPE_SETTINGS" -eq "5" ]; then
-  restore_tools
 elif [ "$INSTALLATION_TYPE_SETTINGS" -eq "6" ]; then
   install_node
 elif [ "$INSTALLATION_TYPE_SETTINGS" -eq "7" ]; then
@@ -2563,27 +2043,15 @@ elif [ "$INSTALLATION_TYPE_SETTINGS" -eq "8" ]; then
   uninstall_node
 elif [ "$INSTALLATION_TYPE_SETTINGS" -eq "9" ]; then
   install_or_update_blockchain
-elif [ "$INSTALLATION_TYPE_SETTINGS" -eq "10" ]; then
-  change_solo_or_shared_delegate
-elif [ "$INSTALLATION_TYPE_SETTINGS" -eq "11" ]; then
-  edit_shared_delegate_settings
-elif [ "$INSTALLATION_TYPE_SETTINGS" -eq "12" ]; then
-  register_update_delegate
 elif [ "$INSTALLATION_TYPE_SETTINGS" -eq "13" ]; then
   stop_systemd_service_files
   start_systemd_service_files
 elif [ "$INSTALLATION_TYPE_SETTINGS" -eq "14" ]; then
   stop_systemd_service_files
-elif [ "$INSTALLATION_TYPE_SETTINGS" -eq "15" ]; then
-  test_update
-elif [ "$INSTALLATION_TYPE_SETTINGS" -eq "16" ]; then
-  test_update_reset_delegates
-elif [ "$INSTALLATION_TYPE_SETTINGS" -eq "17" ]; then
-  configure
 elif [ "$INSTALLATION_TYPE_SETTINGS" -eq "18" ]; then
   install_firewall_script
 elif [ "$INSTALLATION_TYPE_SETTINGS" -eq "19" ]; then
   install_firewall_script_shared_delegates
 elif [ "$INSTALLATION_TYPE_SETTINGS" -eq "20" ]; then
   backup
-fi 
+fi
