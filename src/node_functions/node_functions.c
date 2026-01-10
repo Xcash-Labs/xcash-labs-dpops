@@ -74,7 +74,7 @@ int get_seed_node_count() {
   return count;
 }
 
-static int get_delegate_minimum_amount(int64_t *out_min_amount)
+int get_delegate_minimum_amount(int64_t *out_min_amount)
 {
   char filter_json[256] = {0};
   *out_min_amount = 0;
