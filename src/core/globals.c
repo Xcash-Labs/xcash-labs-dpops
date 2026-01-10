@@ -45,8 +45,8 @@ NetworkNode network_nodes[] = {
       "63232aa1b020a772945bf50ce96db9a04242583118b5a43952f0aaf9ecf7cfbb",0},
     {"XCS1ZKxdiZpU2nhD93nDsvefkeewmxqqUiNzxczvCAw9TxkAyzUNth3Eu2xfgND8qBcTgUEkj8nCeFaGMq8vCePS58w5DaUR13", "seeds.xcashseeds.cc",
       "b13c7ad374b607d5134fa40f9a88235c22db371afce0af1a99733d22133b24d1",0},
-    {"XCA1aQciNagSNaMftRCShnMMkQRH4vDN9LiH7VurtS1pWwmPcWkeKEX8anGQkaUnceWBJKiEmYCZZEtrYYAd1GMLAPF11FS6Nu", "seeds.xcashseeds.me",
-      "e735f2dea3a1894936088c0423e565634deb7b0cf74412debc5dbc36766dfeaf",0},
+    {"XCS1cv4KHS9C83BLWR9hJ37ba8b51wDqb7fnPmuBP7afPyo957k5wgQKtAzGni7QSGbo9DKdyDQXBcW1j8zyCiZxARsBus5t5E", "seeds.xcashseeds.me",
+      "035b3f7ff832a64ecf7cfa96ac0e7f8b5dcc203e7fd76ceb592206a1547f2065",0},
     // Sentinel value (empty entry to mark the end)
     {NULL, NULL, NULL, 0}};
 const char* endpoints[] = {"updpops.xcashpulse.cc", "updpops.xcashpulse.uk", NULL};
