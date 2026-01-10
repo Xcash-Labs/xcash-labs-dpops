@@ -222,7 +222,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
   // Numbers
   bson_append_int64(&bson, "total_vote_count", -1, set_counts);
   bson_append_double(&bson, "delegate_fee", -1, set_delegate_fee);
-  bson_append_double(&bson, "minimum_payout", -1, set_delegate_minimum_payout);
+  bson_append_int32(&bson, "minimum_payout", -1, set_delegate_minimum_payout);
   int64_t ms = (int64_t)registration_time * 1000;
   bson_append_date_time(&bson, "registration_timestamp", -1, ms);
 
@@ -496,7 +496,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
   // 2) Validate each field and build the BSON update doc
   static const char* const allowed_fields[] = {
       "IP_address", "about", "website", "team",
-      "shared_delegate_status", "delegate_fee", "server_specs"};
+      "shared_delegate_status", "delegate_fee", "server_specs", "minimum_payout"};
   const size_t allowed_fields_count = sizeof(allowed_fields) / sizeof(allowed_fields[0]);
 
   // filter: { "public_address": "<addr>" }
@@ -538,7 +538,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
       bson_destroy(setdoc_bson);
       bson_destroy(filter_bson);
       cJSON_Delete(root);
-      SERVER_ERROR("0|Invalid update field (allowed: IP_address, about, website, team, shared_delegate_status, delegate_fee, server_specs)");
+      SERVER_ERROR("0|Invalid update field (allowed: IP_address, about, website, team, shared_delegate_status, delegate_fee, server_specs, minimum_payout)");
     }
 
     // ---- For ALL fields, require string on the wire ----
@@ -619,6 +619,21 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
         SERVER_ERROR("0|'server_specs' too long (max 255)");
       }
       BSON_APPEND_UTF8(setdoc_bson, key, val);
+
+    } else if (strncmp(key, "minimum_payout", VSMALL_BUFFER_SIZE) == 0) {
+      // Must be integer 1..10000 (string on the wire)
+      errno = 0;
+      char* endp = NULL;
+      long long v = strtoll(val, &endp, 10);
+
+      if (errno != 0 || endp == val || *endp != '\0' || v < 1 || v > 10000) {
+        bson_destroy(setdoc_bson);
+        bson_destroy(filter_bson);
+        cJSON_Delete(root);
+        SERVER_ERROR("0|Invalid minimum_payout. Must be an integer 1..10000");
+      }
+      BSON_APPEND_INT32(setdoc_bson, "minimum_payout", (int32_t)v);
+
     } else {
       // Fallback (shouldn't hit due to allowlist)
       BSON_APPEND_UTF8(setdoc_bson, key, val);
