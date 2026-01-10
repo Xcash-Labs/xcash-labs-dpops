@@ -7,7 +7,6 @@ typedef struct {
     char *block_verifiers_secret_key;
     bool delegates_website;
     bool shared_delegates_website;
-    uint64_t minimum_amount;
 } arg_config_t;
 
 // Define a struct to store network node data

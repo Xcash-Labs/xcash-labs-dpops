@@ -20,9 +20,6 @@ BRIGHT_WHITE_TEXT("Website Options: (deprecated)\n")
 "  --delegates-website                    Run the delegate's website.\n"
 "  --shared-delegates-website             Run shared delegate's website with specified minimum amount.\n"
 "\n"
-BRIGHT_WHITE_TEXT("Delegate Options:\n")
-"  --minimum-amount <minimum-amount>      The minimum amount of payouts to voters.\n"
-"\n"
 BRIGHT_WHITE_TEXT("Advanced Options:\n")
 "  --generate-key                         Generate public/private key for block verifiers.\n"
 "  --quorum-bootstrap                     Ensures quorum before checking sync status, only used to start things rolling when first starting chain.\n"
@@ -35,7 +32,6 @@ static struct argp_option options[] = {
   {"log-level", OPTION_LOG_LEVEL, "LOG_LEVEL", 0, "Displays log messages based on the level passed.", 0},
   {"delegates-website", OPTION_DELEGATES_WEBSITE, 0, 0, "Run the delegate's website.", 0},
   {"shared-delegates-website", OPTION_SHARED_DELEGATES_WEBSITE, 0, 0, "Run shared delegate's website with specified minimum amount.", 0},
-  {"minimum-amount", OPTION_MINIMUM_AMOUNT, "MINIMUM_PAYOUT", 0, "The minimum amount of payouts to voters.", 0},
   {"generate-key", OPTION_GENERATE_KEY, 0, 0, "Generate public/private key for block verifiers.", 0},
   {0}
 };
@@ -66,9 +62,6 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
     break;
   case OPTION_SHARED_DELEGATES_WEBSITE:
     arguments->shared_delegates_website = true;
-    break;
-  case OPTION_MINIMUM_AMOUNT:
-    arguments->minimum_amount = strtoull(arg, NULL, 10);
     break;
   case OPTION_GENERATE_KEY:
     create_key = true;
@@ -273,12 +266,6 @@ int main(int argc, char *argv[]) {
           INFO_PRINT("Scheduler thread started");
         }
       }
-    }
-  } else {
-    if (arg_config.minimum_amount == 0) {
-      WARNING_PRINT("Unable to read minimum payout parameter so using default");
-    } else {
-      minimum_payout = arg_config.minimum_amount;
     }
   }
 

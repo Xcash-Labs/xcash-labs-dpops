@@ -31,6 +31,14 @@ bool get_node_data(void) {
     return false;
   }
 
+  int64_t min_amount = 0;
+  int amount_ok = get_delegate_minimum_amount(&min_amount);
+  if (amount_ok == XCASH_ERROR || min_amount < 1 || min_amount > 10000) {
+      WARNING_PRINT("Unable to read minimum payout from db so using default");
+  } else {
+    minimum_payout = min_amount;
+  }
+  
   return true;
 }
 
@@ -64,6 +72,27 @@ int get_seed_node_count() {
     count++;
   }
   return count;
+}
+
+static int get_delegate_minimum_amount(int64_t *out_min_amount)
+{
+  char filter_json[256] = {0};
+  *out_min_amount = 0;
+  snprintf(filter_json, sizeof(filter_json),
+           "{ \"public_address\": \"%s\" }",
+           xcash_wallet_public_address);
+  if (read_document_int64_field_from_collection(
+        DATABASE_NAME,
+        DB_COLLECTION_DELEGATES,
+        filter_json,
+        "minimum_amount",
+        out_min_amount) != XCASH_OK)
+  {
+    *out_min_amount = 0;
+    return XCASH_ERROR;
+  }
+
+  return XCASH_OK;
 }
 
 /**
