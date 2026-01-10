@@ -202,6 +202,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
   // 7) Finally insert a new document
   double set_delegate_fee = 5.0;  // default value
   uint64_t set_counts = 0;
+  int32_t set_delegate_minimum_payout = 5000;  // default value
 
   bson_t bson;
   bson_init(&bson);
@@ -221,6 +222,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
   // Numbers
   bson_append_int64(&bson, "total_vote_count", -1, set_counts);
   bson_append_double(&bson, "delegate_fee", -1, set_delegate_fee);
+  bson_append_double(&bson, "minimum_payout", -1, set_delegate_minimum_payout);
   int64_t ms = (int64_t)registration_time * 1000;
   bson_append_date_time(&bson, "registration_timestamp", -1, ms);
 
