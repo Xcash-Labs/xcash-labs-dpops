@@ -643,7 +643,7 @@ function build_xcash()
         make release -j $((CPU_THREADS / 2)) &>/dev/null
     fi
   fi
-  echo -ne "\r${COLOR_PRINT_GREEN}Building X-CASH Complete${END_COLOR_PRINT}"
+  echo -ne "\r\033[K${COLOR_PRINT_GREEN}Building X-CASH Complete${END_COLOR_PRINT}"
   echo
 }
 
@@ -743,7 +743,9 @@ function install_mongodb()
 #      build_libssl11
 #  fi
 
-  echo -ne "${COLOR_PRINT_YELLOW}Installing MongoDB${END_COLOR_PRINT}"
+  echo -e "${COLOR_PRINT_YELLOW}Installing MongoDB${END_COLOR_PRINT}"
+  sudo -v
+  
   cd "${XCASH_DPOPS_INSTALLATION_DIR}"
   wget -q ${MONGODB_URL}
   tar -xf mongodb-linux-x86_64-*.tgz &>/dev/null
