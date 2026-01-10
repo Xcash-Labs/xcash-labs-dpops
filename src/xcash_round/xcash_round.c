@@ -36,9 +36,9 @@ static int select_block_producer_from_vrf(void) {
     }
 
     // Do not include seed nodes in block production
-    if (is_seed_address(addr)) {
-      continue;
-    }
+//    if (is_seed_address(addr)) {
+//      continue;
+//    }
 
 // If delegate won and block chain did not advance last round, skip it (keep chain from hanging)
     if (strncmp(last_winner_name, name, sizeof last_winner_name) == 0 && blockchain_stuck) {
