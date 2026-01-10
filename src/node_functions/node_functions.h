@@ -18,5 +18,6 @@ void get_vrf_public_key(void);
 const char* address_to_node_name(const char* public_address);
 const char* address_to_node_host(const char* public_address);
 bool is_job_node(void);
+int get_delegate_minimum_amount(int64_t *out_min_amount);
 
 #endif  // NODE_FUNCTIONS_H

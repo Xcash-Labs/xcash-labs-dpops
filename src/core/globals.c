@@ -41,8 +41,8 @@ block_verifiers_list_t current_block_verifiers_list;
 NetworkNode network_nodes[] = {
     {"XCS1bZpdMPEjQAksAaYR3n8RMJUEEQ71ndnTRve7F4Uq48CrEJRdNeVXCDJLiE9hRWEgT3W1u8svgQVp6xdeWGBE8gCFNSUzn1", "seeds.xcashseeds.us",
       "cc0f300acb3ee768afabad37763bc485b068fab6bee17faad35b8063c3d32b49",0},
-    {"XCA1b6Sg5QVBX4jrctQ9SVUcHFqpaGST6bqtFpyoQadTX8SaDs92xR8iec3VfaXKzhYijFiMfwoM4TuYRgy6NXzn5titJnWbra", "seeds.xcashseeds.uk",
-      "63232aa1b020a772945bf50ce96db9a04242583118b5a43952f0aaf9ecf7cfbb",0},
+    {"XCS1PyhwyDESVL6Ea7ogyqAN445vTvMAGMKEVMVLWHTwPkeSXc2xRfh5RTyE8zKd38cREh97oXNCtdWBQZCt27K15cF3Ck8f8C", "seeds.xcashseeds.uk",
+      "6b4edce4e80d5bd292428403a5831e11263469db0e7dc7de6cae8302ce337b81",0},
     {"XCS1ZKxdiZpU2nhD93nDsvefkeewmxqqUiNzxczvCAw9TxkAyzUNth3Eu2xfgND8qBcTgUEkj8nCeFaGMq8vCePS58w5DaUR13", "seeds.xcashseeds.cc",
       "b13c7ad374b607d5134fa40f9a88235c22db371afce0af1a99733d22133b24d1",0},
     {"XCS1cv4KHS9C83BLWR9hJ37ba8b51wDqb7fnPmuBP7afPyo957k5wgQKtAzGni7QSGbo9DKdyDQXBcW1j8zyCiZxARsBus5t5E", "seeds.xcashseeds.me",
