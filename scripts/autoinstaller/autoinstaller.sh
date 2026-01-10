@@ -745,7 +745,7 @@ function install_mongodb()
 
   echo -e "${COLOR_PRINT_YELLOW}Installing MongoDB${END_COLOR_PRINT}"
   sudo -v
-  
+
   cd "${XCASH_DPOPS_INSTALLATION_DIR}"
   wget -q ${MONGODB_URL}
   tar -xf mongodb-linux-x86_64-*.tgz &>/dev/null
