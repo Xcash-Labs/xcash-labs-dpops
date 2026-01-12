@@ -36,6 +36,12 @@ typedef struct {
     bool is_online;
 } producer_node_t;
 
+typedef struct
+{
+  size_t idx;                         // index in src_list
+  unsigned char beta[VRF_BETA_BYTES]; // decoded beta
+} committee_candidate_t;
+
 typedef enum {
     ROUND_ERROR, // some system fault occurred. mostly communication errors or other non-fatal error.
     ROUND_OK, //all the procedures finished successfully

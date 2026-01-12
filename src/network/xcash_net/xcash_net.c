@@ -90,38 +90,39 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
       hosts = delegates_hosts;             // Assign heap-allocated array to hosts
     } break;
 
-    case XNET_DELEGATES_ALL_ONLINE: {
-      const char **delegates_online_hosts = malloc((BLOCK_VERIFIERS_TOTAL_AMOUNT + 1) * sizeof(char *));
-      if (!delegates_online_hosts) {
-        ERROR_PRINT("Failed to allocate memory for delegates_online_hosts");
+    case XNET_COMMITTEE_ALL_ONLINE: {
+      const size_t max_entries = COMMITTEE_SIZE + SEED_COUNT;
+
+      const char **delegates_online_committee = malloc((max_entries + 1) * sizeof(char *));
+      if (!delegates_online_committee) {
+        ERROR_PRINT("Failed to allocate memory for delegates_online_committee");
         return false;
       }
 
       size_t host_index = 0;
-      for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
-        bool not_self = strcmp(delegates_all[i].public_address, xcash_wallet_public_address) != 0;
-        const char *ip = delegates_all[i].IP_address;
 
-        if (not_self) {
+      for (size_t i = 0; i < max_entries; i++) {
+        const char *addr = current_block_verifiers_list.block_verifiers_public_address[i];
+        const char *ip   = current_block_verifiers_list.block_verifiers_IP_address[i];
 
-          if (!ip) {
-            continue;
-          }
-
-          if (strlen(ip) == 0) {
-            continue;
-          }
-
-          if (strcmp(delegates_all[i].online_status, "true") != 0) {
-            continue;
-          }
-
-          delegates_online_hosts[host_index++] = delegates_all[i].IP_address;
+        if (addr[0] == '\0') {
+          break; // compact list ends
         }
+
+        // skip self
+        if (strcmp(addr, xcash_wallet_public_address) == 0) {
+          continue;
+        }
+
+        if (ip[0] == '\0') {
+          continue;
+        }
+
+        delegates_online_committee[host_index++] = ip;
       }
 
-      delegates_online_hosts[host_index] = NULL;
-      hosts = delegates_online_hosts;
+      delegates_online_committee[host_index] = NULL;
+      hosts = delegates_online_committee;
     } break;
 
     default: {
@@ -136,7 +137,7 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
   }
 
   responses = send_multi_request(hosts, XCASH_DPOPS_PORT, message);
-  free(hosts);
+  if (hosts_heap) free((void*)hosts);
   if (responses) {
     result = true;
   }

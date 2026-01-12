@@ -9,63 +9,191 @@ static bool blockchain_stuck = false;
 
 #include "xcash_round.h"
 
-/**
- * @brief Selects the block producer from the current round’s verifiers using VRF beta comparison.
+
+static void print_block_verifiers_list(const char *tag,
+                                       const block_verifiers_list_t *list,
+                                       size_t count)
+{
+  if (!tag) tag = "";
+  if (!list) {
+    INFO_PRINT("%s: (null list)", tag);
+    return;
+  }
+
+  for (size_t i = 0; i < count && i < BLOCK_VERIFIERS_AMOUNT; i++) {
+    const char *name = list->block_verifiers_name[i];
+    const char *addr = list->block_verifiers_public_address[i];
+    const char *beta = list->block_verifiers_vrf_beta_hex[i];
+
+    if (!addr || addr[0] == '\0') {
+      INFO_PRINT("%s[%zu]: (empty)", tag, i);
+      continue;
+    }
+
+    INFO_PRINT("%s[%zu]: name=%s addr=%s beta=%.*s",
+               tag, i,
+               name && name[0] ? name : "(no-name)",
+               addr,
+               12, (beta && beta[0]) ? beta : ""); // print first 12 chars of beta
+  }
+}
+
+// Helper function
+static void safe_strcpy(char *dst, size_t dst_sz, const char *src)
+{
+  if (!dst || dst_sz == 0) return;
+  if (!src) {
+    dst[0] = '\0';
+    return;
+  }
+  strncpy(dst, src, dst_sz - 1);
+  dst[dst_sz - 1] = '\0';
+}
+
+// Help function to pick committee
+static int committee_candidate_cmp(const void* a, const void* b) {
+  const committee_candidate_t* A = (const committee_candidate_t*)a;
+  const committee_candidate_t* B = (const committee_candidate_t*)b;
+  int r = memcmp(A->beta, B->beta, VRF_BETA_BYTES);
+  if (r != 0) return r;
+  // stable tie-breaker
+  return (A->idx < B->idx) ? -1 : (A->idx > B->idx) ? 1 : 0;
+}
+
+/*
+ * build_committee_list_from_online_list()
  *
- * This function scans through the list of block verifiers who submitted valid VRF data,
- * and deterministically selects the one with the lowest VRF beta value as the block producer.
- * The comparison is lexicographic and assumes all submitted beta strings are valid hex strings.
+ * Builds the round validator set from an already-packed list of online delegates.
  *
- * @return int The index in `current_block_verifiers_list` of the selected block producer,
- *             or -1 if no valid VRF beta values are found.
+ * Behavior:
+ *  - Selects up to COMMITTEE_SIZE non-seed delegates with the lowest VRF beta values.
+ *  - Appends any online seed nodes after the committee (seeds are validators only and never eligible to win).
+ *  - Writes the resulting compact list into current_block_verifiers_list (slots [0..out_count-1] filled,
+ *    remaining slots zeroed) and returns the total count via out_count.
+ *
+ * Returns:
+ *  - XCASH_OK on success (at least one non-seed committee member exists),
+ *  - XCASH_ERROR if no eligible non-seed members are available (e.g., only seeds online or no valid betas).
  */
-static int select_block_producer_from_vrf(void) {
-  int selected_index = -1;
-  char lowest_beta[VRF_BETA_LENGTH + 1] = {0};
+static int build_committee_list_from_online_list(const block_verifiers_list_t* src_list,
+                                                 size_t online_count,
+                                                 size_t* out_count) {
+  if (!src_list || !out_count) return XCASH_ERROR;
+  *out_count = 0;
+
+  if (online_count == 0) return XCASH_ERROR;
+  if (online_count > BLOCK_VERIFIERS_AMOUNT) online_count = BLOCK_VERIFIERS_AMOUNT;
+
+  committee_candidate_t candidates[BLOCK_VERIFIERS_AMOUNT];
+  size_t ccount = 0;
+
+  // Collect seeds separately so we can append them after the sort
+  size_t seed_idx[BLOCK_VERIFIERS_AMOUNT];
+  size_t seed_count = 0;
+
+  // 1) Collect valid candidates (non-seeds) + seeds
+  for (size_t i = 0; i < online_count; i++) {
+    const char* addr = src_list->block_verifiers_public_address[i];
+    const char* beta_hex = src_list->block_verifiers_vrf_beta_hex[i];
+
+    if (!addr || addr[0] == '\0') continue;
+
+    if (is_seed_address(addr)) {
+      // Require seed to have a full beta (even though it can't win)
+      if (!beta_hex || strlen(beta_hex) != VRF_BETA_LENGTH) {
+        continue;
+      }
+
+      if (seed_count < BLOCK_VERIFIERS_AMOUNT) {
+        seed_idx[seed_count++] = i;
+      }
+      continue;
+    }
+
+    // non-seeds must have a full beta
+    if (!beta_hex || strlen(beta_hex) != VRF_BETA_LENGTH) continue;
+
+    if (ccount >= BLOCK_VERIFIERS_AMOUNT) break;
+
+    memset(candidates[ccount].beta, 0, sizeof(candidates[ccount].beta));
+    if (hex_to_byte_array(beta_hex, candidates[ccount].beta, sizeof(candidates[ccount].beta)) != XCASH_OK) {
+      continue;
+    }
+
+    candidates[ccount].idx = i;
+    ccount++;
+  }
+
+  if (ccount == 0) {
+    return XCASH_ERROR;  // no winner-eligible members
+  }
+
+  // 2) Sort non-seeds by lowest beta
+  qsort(candidates, ccount, sizeof(candidates[0]), committee_candidate_cmp);
+
+  // 3) Build output list: committee first, seeds appended
+  block_verifiers_list_t out_list;
+  memset(&out_list, 0, sizeof(out_list));
+
+  const size_t k = (ccount < COMMITTEE_SIZE) ? ccount : COMMITTEE_SIZE;
+
+  size_t pos = 0;
+
+  // committee in front
+  for (size_t j = 0; j < k && pos < BLOCK_VERIFIERS_AMOUNT; j++, pos++) {
+    const size_t src_i = candidates[j].idx;
+
+    safe_strcpy(out_list.block_verifiers_name[pos], sizeof(out_list.block_verifiers_name[pos]),
+                src_list->block_verifiers_name[src_i]);
+    safe_strcpy(out_list.block_verifiers_public_address[pos], sizeof(out_list.block_verifiers_public_address[pos]),
+                src_list->block_verifiers_public_address[src_i]);
+    safe_strcpy(out_list.block_verifiers_public_key[pos], sizeof(out_list.block_verifiers_public_key[pos]),
+                src_list->block_verifiers_public_key[src_i]);
+    safe_strcpy(out_list.block_verifiers_IP_address[pos], sizeof(out_list.block_verifiers_IP_address[pos]),
+                src_list->block_verifiers_IP_address[src_i]);
+    safe_strcpy(out_list.block_verifiers_vrf_proof_hex[pos], sizeof(out_list.block_verifiers_vrf_proof_hex[pos]),
+                src_list->block_verifiers_vrf_proof_hex[src_i]);
+    safe_strcpy(out_list.block_verifiers_vrf_beta_hex[pos], sizeof(out_list.block_verifiers_vrf_beta_hex[pos]),
+                src_list->block_verifiers_vrf_beta_hex[src_i]);
+
+    out_list.block_verifiers_vote_total[pos] = 0;
+    out_list.block_verifiers_voted[pos] = 0;
+    memset(out_list.block_verifiers_vote_signature[pos], 0,
+           sizeof(out_list.block_verifiers_vote_signature[pos]));
+  }
+
+  // seeds appended (validators only)
+  for (size_t s = 0; s < seed_count && pos < BLOCK_VERIFIERS_AMOUNT; s++, pos++) {
+    const size_t src_i = seed_idx[s];
+
+    safe_strcpy(out_list.block_verifiers_name[pos], sizeof(out_list.block_verifiers_name[pos]),
+                src_list->block_verifiers_name[src_i]);
+    safe_strcpy(out_list.block_verifiers_public_address[pos], sizeof(out_list.block_verifiers_public_address[pos]),
+                src_list->block_verifiers_public_address[src_i]);
+    safe_strcpy(out_list.block_verifiers_public_key[pos], sizeof(out_list.block_verifiers_public_key[pos]),
+                src_list->block_verifiers_public_key[src_i]);
+    safe_strcpy(out_list.block_verifiers_IP_address[pos], sizeof(out_list.block_verifiers_IP_address[pos]),
+                src_list->block_verifiers_IP_address[src_i]);
+
+    // optional: keep VRF fields for transparency/auditing
+    safe_strcpy(out_list.block_verifiers_vrf_proof_hex[pos], sizeof(out_list.block_verifiers_vrf_proof_hex[pos]),
+                src_list->block_verifiers_vrf_proof_hex[src_i]);
+    safe_strcpy(out_list.block_verifiers_vrf_beta_hex[pos], sizeof(out_list.block_verifiers_vrf_beta_hex[pos]),
+                src_list->block_verifiers_vrf_beta_hex[src_i]);
+
+    out_list.block_verifiers_vote_total[pos] = 0;
+    out_list.block_verifiers_voted[pos] = 0;
+    memset(out_list.block_verifiers_vote_signature[pos], 0,
+           sizeof(out_list.block_verifiers_vote_signature[pos]));
+  }
+
+  *out_count = pos;
 
   pthread_mutex_lock(&current_block_verifiers_lock);
-
-  for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
-    const char *beta_hex = current_block_verifiers_list.block_verifiers_vrf_beta_hex[i];
-    const char *addr     = current_block_verifiers_list.block_verifiers_public_address[i];
-    const char *name     = current_block_verifiers_list.block_verifiers_name[i];
-
-    // Skip if no beta submitted
-    if (strlen(beta_hex) != VRF_BETA_LENGTH) {
-      continue;
-    }
-
-    // Do not include seed nodes in block production
-//    if (is_seed_address(addr)) {
-//      continue;
-//    }
-
-// If delegate won and block chain did not advance last round, skip it (keep chain from hanging)
-    if (strncmp(last_winner_name, name, sizeof last_winner_name) == 0 && blockchain_stuck) {
-      WARNING_PRINT("Skipping delegate %s due to no blockchain movement from last round", name);
-      continue;
-    }
-
-    // Normal "lowest beta" selection
-    if (selected_index == -1 || strcmp(beta_hex, lowest_beta) < 0) {
-      selected_index = (int)i;
-
-      // Track current lowest beta safely
-      strncpy(lowest_beta, beta_hex, sizeof lowest_beta);
-      lowest_beta[sizeof lowest_beta - 1] = '\0';
-    }
-  }
-
-  if (selected_index != -1) {
-    INFO_PRINT("Selected block producer: %s",
-               current_block_verifiers_list.block_verifiers_name[selected_index]);
-  } else {
-    ERROR_PRINT("No valid block producer could be selected.");
-  }
-
+  current_block_verifiers_list = out_list;
   pthread_mutex_unlock(&current_block_verifiers_lock);
 
-  return selected_index;
+  return XCASH_OK;
 }
 
 // Helper routine
@@ -189,7 +317,7 @@ xcash_round_result_t process_round(void) {
   }
 
   INFO_STAGE_PRINT("Waiting for Sync and VRF Data from all nodes...");
-  if (sync_block_verifiers_minutes_and_seconds(0, 15) == XCASH_ERROR) {
+  if (sync_block_verifiers_minutes_and_seconds(0, 25) == XCASH_ERROR) {
     INFO_PRINT("Failed to sync Delegates in the allotted  time, skipping round");
     cleanup_responses(responses);
     return ROUND_ERROR;
@@ -248,8 +376,6 @@ xcash_round_result_t process_round(void) {
 
   int delegates_num = (total_delegates < BLOCK_VERIFIERS_AMOUNT) ? total_delegates : BLOCK_VERIFIERS_AMOUNT;
   int quorum_needed = (delegates_num * MAJORITY_PERCENT + 99) / 100;  // 70% of nodes online
-  int agreement_needed = (2 * delegates_num + 2) / 3;
-
 
   if (online_count < quorum_needed) {
     INFO_PRINT_STATUS_FAIL("Quorum not reached. Total: %d  Online: %d  Need: %d (>= %d%%)", delegates_num, online_count, quorum_needed, MAJORITY_PERCENT);
@@ -258,19 +384,55 @@ xcash_round_result_t process_round(void) {
 
   INFO_PRINT_STATUS_OK("Quorum reached. Online: %d/%d  Need: %d", online_count, delegates_num, quorum_needed);
 
-
   INFO_STAGE_PRINT("Part 6 - Select Block Creator From VRF Data");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 6);
 
   // PoS bootstrapping block
+  int agreement_needed = 0;
+  size_t committee_count = 0;
   int producer_indx = -1;
   if (strtoull(current_block_height, NULL, 10) == XCASH_PROOF_OF_STAKE_BLOCK_HEIGHT) {
     INFO_PRINT("Seednode 0 will Create first DPOPS block.");
+    agreement_needed = (2 * delegates_num + 2) / 3;
     producer_indx = 0;
   } else {
-    producer_indx = select_block_producer_from_vrf();
-  }
+    size_t online_count_sz = (online_count > 0) ? (size_t)online_count : 0;
 
+    INFO_PRINT("Before committee: online_count=%zu", online_count_sz);
+    print_block_verifiers_list("BEFORE", &current_block_verifiers_list, online_count_sz);
+
+    int committee_ok = build_committee_list_from_online_list(&current_block_verifiers_list, online_count_sz, &committee_count);
+    if (committee_ok != XCASH_OK || committee_count == 0) {
+      INFO_PRINT_STATUS_FAIL("Could not form committee, no eligible non-seed producer found");
+      return ROUND_ERROR;
+    }
+
+    INFO_PRINT("After committee: committee_ok=%d committee_count=%zu", committee_ok, committee_count);
+    print_block_verifiers_list("AFTER", &current_block_verifiers_list, committee_count);
+
+    if (current_block_verifiers_list.block_verifiers_public_address[0][0] == '\0' ||
+     is_seed_address(current_block_verifiers_list.block_verifiers_public_address[0])) {
+      INFO_PRINT_STATUS_FAIL("No eligible non-seed producer found or entry is blank");
+      return ROUND_ERROR;
+    }
+
+    // lowest beta non-seed wins
+    agreement_needed = (int)((2 * committee_count + 2) / 3);
+
+    // If same delegate won last round AND blockchain didn't advance, skip it to avoid hang
+    if (blockchain_stuck &&
+        last_winner_name[0] != '\0' &&
+        strcmp(last_winner_name, current_block_verifiers_list.block_verifiers_name[0]) == 0) {
+      // Try the next best candidate
+      if (current_block_verifiers_list.block_verifiers_public_address[1][0] == '\0' ||
+          is_seed_address(current_block_verifiers_list.block_verifiers_public_address[1])) {
+        INFO_PRINT_STATUS_FAIL("No eligible non-seed producer found after skipping last winner");
+        return ROUND_ERROR;
+      }
+      producer_indx = 1;
+    } else {
+      producer_indx = 0;
+    }
 
   if (producer_indx < 0) {
     INFO_STAGE_PRINT("Block Producer not selected, skipping round");
@@ -296,7 +458,7 @@ xcash_round_result_t process_round(void) {
   responses = NULL;
   char* vote_message = NULL;
   if (block_verifiers_create_vote_majority_result(&vote_message, producer_indx)) {
-    if (xnet_send_data_multi(XNET_DELEGATES_ALL_ONLINE, vote_message, &responses)) {
+    if (xnet_send_data_multi(XNET_COMMITTEE_ALL_ONLINE, vote_message, &responses)) {
       free(vote_message);
       cleanup_responses(responses);
     } else {
@@ -314,7 +476,7 @@ xcash_round_result_t process_round(void) {
   }
 
   // Sync start
-  if (sync_block_verifiers_minutes_and_seconds(0, 30) == XCASH_ERROR) {
+  if (sync_block_verifiers_minutes_and_seconds(0, 35) == XCASH_ERROR) {
     INFO_PRINT("Failed to Confirm Block Creator in the allotted  time, skipping round");
     return ROUND_ERROR;
   }
@@ -441,7 +603,7 @@ xcash_round_result_t process_round(void) {
   INFO_PRINT("Final vote hash: %s", final_vote_hash_hex);
 
   if (max_votes < agreement_needed) {
-    INFO_PRINT_STATUS_FAIL("Consensus not reached: Votes: %d (need ≥ %d of N=%d)", max_votes, agreement_needed, delegates_num);
+    INFO_PRINT_STATUS_FAIL("Consensus not reached: Votes: %d (need ≥ %d of N=%d)", max_votes, agreement_needed, committee_count);
     return ROUND_ERROR;
   }
   INFO_PRINT_STATUS_OK("Consensus reached: Votes: %d (required %d)", max_votes, agreement_needed);
@@ -458,7 +620,7 @@ xcash_round_result_t process_round(void) {
     pthread_mutex_unlock(&producer_refs_lock);
   }
 
-  int block_creation_result = block_verifiers_create_block(final_vote_hash_hex, (uint8_t)valid_vote_count, (uint8_t)online_count);
+  int block_creation_result = block_verifiers_create_block(final_vote_hash_hex, (uint8_t)valid_vote_count, (uint8_t)committee_count);
 
   if (block_creation_result == ROUND_OK) {
     INFO_PRINT_STATUS_OK("Round Successfully Completed For Block %s", current_block_height);
