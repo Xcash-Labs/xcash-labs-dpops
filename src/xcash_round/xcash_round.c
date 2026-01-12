@@ -9,11 +9,9 @@ static bool blockchain_stuck = false;
 
 #include "xcash_round.h"
 
-
-static void print_block_verifiers_list(const char *tag,
-                                       const block_verifiers_list_t *list,
-                                       size_t count)
-{
+static void print_block_verifiers_list(const char* tag,
+                                       const block_verifiers_list_t* list,
+                                       size_t count) {
   if (!tag) tag = "";
   if (!list) {
     INFO_PRINT("%s: (null list)", tag);
@@ -21,9 +19,9 @@ static void print_block_verifiers_list(const char *tag,
   }
 
   for (size_t i = 0; i < count && i < BLOCK_VERIFIERS_AMOUNT; i++) {
-    const char *name = list->block_verifiers_name[i];
-    const char *addr = list->block_verifiers_public_address[i];
-    const char *beta = list->block_verifiers_vrf_beta_hex[i];
+    const char* name = list->block_verifiers_name[i];
+    const char* addr = list->block_verifiers_public_address[i];
+    const char* beta = list->block_verifiers_vrf_beta_hex[i];
 
     if (!addr || addr[0] == '\0') {
       INFO_PRINT("%s[%zu]: (empty)", tag, i);
@@ -34,13 +32,12 @@ static void print_block_verifiers_list(const char *tag,
                tag, i,
                name && name[0] ? name : "(no-name)",
                addr,
-               12, (beta && beta[0]) ? beta : ""); // print first 12 chars of beta
+               12, (beta && beta[0]) ? beta : "");  // print first 12 chars of beta
   }
 }
 
 // Helper function
-static void safe_strcpy(char *dst, size_t dst_sz, const char *src)
-{
+static void safe_strcpy(char* dst, size_t dst_sz, const char* src) {
   if (!dst || dst_sz == 0) return;
   if (!src) {
     dst[0] = '\0';
@@ -433,7 +430,8 @@ xcash_round_result_t process_round(void) {
     } else {
       producer_indx = 0;
     }
-
+  }
+  
   if (producer_indx < 0) {
     INFO_STAGE_PRINT("Block Producer not selected, skipping round");
     return ROUND_ERROR;
