@@ -1811,12 +1811,10 @@ function install_or_update_blockchain()
 
   stop_systemd_service_files
 
-jed
-
   cd $HOME
   cd && test -f block-1.7z && sudo rm -rf block-1.7z*
   echo -e "${COLOR_PRINT_GREEN}Starting the Download${END_COLOR_PRINT}"
-  wget -q --show-progress --no-check-certificate ${XCASH_BLOCKCHAIN_BOOTSTRAP_URL}
+  wget -q --show-progress ${XCASH_BLOCKCHAIN_BOOTSTRAP_URL}
   echo -e "${COLOR_PRINT_GREEN}Starting Extraction${END_COLOR_PRINT}"
   sudo rm -r ${XCASH_BLOCKCHAIN_INSTALLATION_DIR} &>/dev/null || true  
   7z x block-1.7z -bso0 -bse0
@@ -1830,7 +1828,7 @@ function install_blockchain()
   cd $HOME
   cd && test -f block-1.7z && sudo rm -rf block-1.7z*
   echo -e "${COLOR_PRINT_GREEN}Starting the Download${END_COLOR_PRINT}"
-  wget -q --show-progress --no-check-certificate ${XCASH_BLOCKCHAIN_BOOTSTRAP_URL}
+  wget -q --show-progress ${XCASH_BLOCKCHAIN_BOOTSTRAP_URL}
   echo -e "${COLOR_PRINT_GREEN}Starting Extraction${END_COLOR_PRINT}"
   sudo rm -r ${XCASH_BLOCKCHAIN_INSTALLATION_DIR} &>/dev/null || true  
   7z x block-1.7z -bso0 -bse0

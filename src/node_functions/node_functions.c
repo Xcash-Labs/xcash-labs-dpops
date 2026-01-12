@@ -25,9 +25,7 @@ bool get_node_data(void) {
   get_vrf_public_key();
   if (vrf_public_key[0] == '\0') {
     WARNING_PRINT("Failed to read vrf_public_key for delegate; has this delegate been registered?");
-  }
-
-  if (!validate_server_IP()) {
+  } else if (!validate_server_IP()) {
     return false;
   }
 
