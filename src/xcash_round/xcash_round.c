@@ -603,7 +603,7 @@ xcash_round_result_t process_round(void) {
   INFO_PRINT("Final vote hash: %s", final_vote_hash_hex);
 
   if (max_votes < agreement_needed) {
-    INFO_PRINT_STATUS_FAIL("Consensus not reached: Votes: %d (need ≥ %d of N=%d)", max_votes, agreement_needed, committee_count);
+    INFO_PRINT_STATUS_FAIL("Consensus not reached: Votes: %d (need ≥ %d of N=%d)", max_votes, agreement_needed, (int)committee_count);
     return ROUND_ERROR;
   }
   INFO_PRINT_STATUS_OK("Consensus reached: Votes: %d (required %d)", max_votes, agreement_needed);
