@@ -314,7 +314,7 @@ xcash_round_result_t process_round(void) {
   }
 
   INFO_STAGE_PRINT("Waiting for Sync and VRF Data from all nodes...");
-  if (sync_block_verifiers_minutes_and_seconds(0, 25) == XCASH_ERROR) {
+  if (sync_block_verifiers_minutes_and_seconds(0, 20) == XCASH_ERROR) {
     INFO_PRINT("Failed to sync Delegates in the allotted  time, skipping round");
     cleanup_responses(responses);
     return ROUND_ERROR;
@@ -431,7 +431,7 @@ xcash_round_result_t process_round(void) {
       producer_indx = 0;
     }
   }
-  
+
   if (producer_indx < 0) {
     INFO_STAGE_PRINT("Block Producer not selected, skipping round");
     return ROUND_ERROR;
@@ -474,7 +474,7 @@ xcash_round_result_t process_round(void) {
   }
 
   // Sync start
-  if (sync_block_verifiers_minutes_and_seconds(0, 35) == XCASH_ERROR) {
+  if (sync_block_verifiers_minutes_and_seconds(0, 30) == XCASH_ERROR) {
     INFO_PRINT("Failed to Confirm Block Creator in the allotted  time, skipping round");
     return ROUND_ERROR;
   }
@@ -746,7 +746,7 @@ void start_block_production(void) {
     }
 
     // 10 secs to perform cleanup or add stats and other info
-    if (sync_block_verifiers_minutes_and_seconds(0, 50) == XCASH_ERROR) {
+    if (sync_block_verifiers_minutes_and_seconds(0, 55) == XCASH_ERROR) {
       INFO_PRINT("Failed to create block in the allotted time, skipping round");
       goto end_of_round_skip_block;
     }
