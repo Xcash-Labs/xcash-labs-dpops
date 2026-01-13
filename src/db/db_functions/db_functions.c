@@ -1722,7 +1722,7 @@ done:
   if (client) mongoc_client_pool_push(database_client_thread_pool, client);
 
   if (rc == XCASH_OK && sum_atomic > 0 && sum_atomic <= safe_unlocked) {
-    INFO_PRINT("compute_payouts_due: Computed Payouts: Total=%.6f XCZ",
+    INFO_PRINT("compute_payouts_due: Computed Payouts: Total=%.6f XCK",
                (double)sum_atomic / (double)XCASH_ATOMIC_UNITS);
   }
 
