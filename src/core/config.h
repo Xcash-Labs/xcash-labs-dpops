@@ -14,8 +14,6 @@
 #define XCASH_ATOMIC_UNITS 1000000ULL  // 1 XCASH = 1,000,000 atomic units
 #define MAX_SIBLINGS 15
 
-// ===================== Blockchain Field Lengths =====================
-
 // ===================== Network Ports and IPs =====================
 #define XCASH_DAEMON_PORT 18281
 #define XCASH_WALLET_PORT 18285
@@ -86,6 +84,7 @@
 #define DB_COLLECTION_BLOCKS_FOUND "blocks_found"
 #define DB_COLLECTION_PAYOUT_BALANCES "payout_balances"
 #define DB_COLLECTION_PAYOUT_RECEIPTS "payout_receipts"
+#define DB_COLLECTION_APP_DELEGATES "approved_delegates"
 #define DB_COLLECTION_NAME_SIZE 256
 #define MAXIMUM_DATABASE_COLLECTION_DOCUMENTS 5000
 #define DATABASE_EMPTY_STRING "empty_database_collection"
@@ -106,7 +105,7 @@
 #define BLOCKS_PER_DAY 1440 // 1 min blocktimes
 #define BLOCKS_BEHIND_CURRENT (BLOCKS_PER_DAY * 1) // Days behind
 
-// ===================== XCASH DPOPS =====================
+// ===================== XCASH LABS DPOPS =====================
 #define BLOCK_VERIFIERS_TOTAL_AMOUNT 55
 #define BLOCK_VERIFIERS_AMOUNT 50
 #define BLOCK_VERIFIERS_SETTINGS 3

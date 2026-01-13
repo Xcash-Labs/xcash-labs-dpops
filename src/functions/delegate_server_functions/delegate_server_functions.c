@@ -124,7 +124,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(serv
 
   if (is_seed_node) {
     snprintf(data, sizeof(data), "{\"public_key\":\"%s\"}", delegate_public_key);
-    if (count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, data) == 0) {
+    if (count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_APP_DELEGATES, data) == 0) {
       SERVER_ERROR("0|Please get approval before registering a delegate");
     }
   }
@@ -772,7 +772,7 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
 
       char err_msg[128];
       snprintf(err_msg, sizeof(err_msg),
-               "0|Each vote must be at least %llu XCS", min_vote_display);
+               "0|Each vote must be at least %llu XCZ", min_vote_display);
 
       SERVER_ERROR(err_msg);
     }
@@ -966,13 +966,13 @@ void server_receive_data_socket_node_to_block_verifiers_check_vote_status(server
   if (strlen(public_address) != XCASH_WALLET_LENGTH ||
       strncmp(public_address, XCASH_WALLET_PREFIX, strlen(XCASH_WALLET_PREFIX)) != 0) {
     cJSON_Delete(root);
-    SERVER_ERROR("0|Invalid XCS public address");
+    SERVER_ERROR("0|Invalid XCZ public address");
   }
 
   // Basic sanity: prefix and length (adjust macros to your config)
   if (!str_is_base58(public_address)) {
     cJSON_Delete(root);
-    SERVER_ERROR("0|Invalid XCS public address, not base58");
+    SERVER_ERROR("0|Invalid XCZ public address, not base58");
   }
 
   // Query Mongo via helper
@@ -995,7 +995,7 @@ void server_receive_data_socket_node_to_block_verifiers_check_vote_status(server
   char out[256];
   const char* name = (delegate_name[0] ? delegate_name : "(error)");
   double total_xca = (double)total_atomic / (double)ATOMIC_UNITS_PER_XCA;
-  snprintf(out, sizeof(out), "1|Vote found: total:%.6f XCS, delegate:%s", total_xca, name);
+  snprintf(out, sizeof(out), "1|Vote found: total:%.6f XCZ, delegate:%s", total_xca, name);
 
   send_data(client, (unsigned char*)out, strlen(out));
   cJSON_Delete(root);
@@ -1305,7 +1305,7 @@ void server_receive_payout(const char* MESSAGE) {
     return;
   }
 
-  INFO_PRINT("server_receive_payout: Unlocked balance: %" PRIu64 " atomic (%.6f XCS)", unlocked,
+  INFO_PRINT("server_receive_payout: Unlocked balance: %" PRIu64 " atomic (%.6f XCZ)", unlocked,
     (double)unlocked / (double)XCASH_ATOMIC_UNITS);
   if(compute_payouts_due(parsed, pass_block_height, unlocked, entries_count) == XCASH_ERROR) {
     ERROR_PRINT("compute_payout_due failed");

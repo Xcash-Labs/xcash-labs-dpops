@@ -11,7 +11,7 @@ void handle_error(const char* function_name, const char* message, char* buf1, ch
 
 /*---------------------------------------------------------------------------------------------------------
 Name: sign_data
-Description: Signs data with your XCS address, for sending data securely
+Description: Signs data with your XCZ address, for sending data securely
 Parameters:
   message - The sign_data
 Return: 0 if an error has occured, 1 if successfull
@@ -540,7 +540,7 @@ int verify_the_ip(const char* message, const char* client_ip, bool seed_only) {
  *
  * Parameters:
  *   sign_str          - Canonical string that was signed (exact bytes).
- *   in_public_address - XCS public address of the claimed signer.
+ *   in_public_address - XCZ public address of the claimed signer.
  *   in_signature      - Signature text to verify.
  *
  * Return:
