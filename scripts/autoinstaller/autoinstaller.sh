@@ -664,11 +664,15 @@ function create_directories()
   if [ ! -d "$XCASH_DPOPS_INSTALLATION_DIR" ]; then
     mkdir -p "${XCASH_DPOPS_INSTALLATION_DIR}"
   fi
-  if [ ! -d "$MONGODB_INSTALLATION_DIR" ]; then
-    sudo mkdir -p "${MONGODB_INSTALLATION_DIR}"
-    sudo chmod 770 "${MONGODB_INSTALLATION_DIR}"
-    sudo chown "$USER" "${MONGODB_INSTALLATION_DIR}"
-  fi
+
+#  jed - add back
+#  if [ ! -d "$MONGODB_INSTALLATION_DIR" ]; then
+#    sudo mkdir -p "${MONGODB_INSTALLATION_DIR}"
+#    sudo chmod 770 "${MONGODB_INSTALLATION_DIR}"
+#    sudo chown "$USER" "${MONGODB_INSTALLATION_DIR}"
+#  fi
+
+
   if [ ! -d "$XCASH_WALLET_DIR" ]; then
     mkdir -p "${XCASH_WALLET_DIR}"
   fi
@@ -874,10 +878,12 @@ function install_xcash_dpops()
   echo -e "${COLOR_PRINT_GREEN}############################################################${END_COLOR_PRINT}"
   echo -e "${COLOR_PRINT_GREEN}                Installing xcash-dpops${END_COLOR_PRINT}"
   echo -e "${COLOR_PRINT_GREEN}############################################################${END_COLOR_PRINT}"
-  install_mongodb
-  install_mongodb_tools
-  install_mongodb_mongosh
-  install_mongoc_driver
+
+# jed - add back
+#  install_mongodb
+#  install_mongodb_tools
+#  install_mongodb_mongosh
+#  install_mongoc_driver
   download_xcash_dpops
   build_xcash_dpops
 
