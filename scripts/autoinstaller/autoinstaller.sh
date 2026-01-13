@@ -878,12 +878,10 @@ function install_xcash_dpops()
   echo -e "${COLOR_PRINT_GREEN}############################################################${END_COLOR_PRINT}"
   echo -e "${COLOR_PRINT_GREEN}                Installing xcash-dpops${END_COLOR_PRINT}"
   echo -e "${COLOR_PRINT_GREEN}############################################################${END_COLOR_PRINT}"
-
-# jed - add back
-#  install_mongodb
-#  install_mongodb_tools
-#  install_mongodb_mongosh
-#  install_mongoc_driver
+  install_mongodb
+  install_mongodb_tools
+  install_mongodb_mongosh
+  install_mongoc_driver
   download_xcash_dpops
   build_xcash_dpops
 
@@ -1392,7 +1390,8 @@ function install()
   touch "${XCASH_LOGS_DIR}xcash-wallet-rpc.log" && sudo rm -f "${XCASH_DIR}build/Linux/master/release/bin/xcash-wallet-rpc.log" && ln -s "${XCASH_LOGS_DIR}xcash-wallet-rpc.log" "${XCASH_DIR}build/Linux/master/release/bin/xcash-wallet-rpc.log"
 
   # Start the systemd service files
-  start_systemd_service_files
+  # jed - add back
+  # start_systemd_service_files
 
 
   if [ "${AUTOSTART_SETTINGS^^}" == "YES" ]; then
