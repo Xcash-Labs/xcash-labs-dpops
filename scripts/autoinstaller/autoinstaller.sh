@@ -16,7 +16,7 @@ MAIN_INSTALL_DIRECTORY="xcash-official"
 INSTALLATION_TYPE_SETTINGS=1
 INSTALLATION_TYPE=""
 XCASH_DPOPS_INSTALLATION_DIR="$HOME/${MAIN_INSTALL_DIRECTORY}/"
-XCASH_BLOCKCHAIN_INSTALLATION_DIR="$HOME/.X-CASH/"
+XCASH_BLOCKCHAIN_INSTALLATION_DIR="$HOME/.XCASH-LABS/"
 MONGODB_INSTALLATION_DIR="/data/db/"
 SHARED_DELEGATE="YES"
 WALLET_SETTINGS="YES"
@@ -215,7 +215,7 @@ function get_xcash_dpops_installation_directory()
 function get_xcash_blockchain_xcash_dpops_installation_directory()
 {
   while
-    echo -ne "${COLOR_PRINT_YELLOW}X-CASH Blockchain Installation Directory, must be in the form of /directory/ (leave empty for default: $HOME/.X-CASH/): ${END_COLOR_PRINT}"
+    echo -ne "${COLOR_PRINT_YELLOW}X-CASH Blockchain Installation Directory, must be in the form of /directory/ (leave empty for default: $HOME/.XCASH-LABS/): ${END_COLOR_PRINT}"
     read -r data
     echo -ne "\r"
     echo
@@ -1079,7 +1079,7 @@ function get_installation_directory()
 {
   echo -ne "${COLOR_PRINT_YELLOW}Getting Installation Directories${END_COLOR_PRINT}"
   XCASH_DPOPS_INSTALLATION_DIR=$(sudo find / -path /sys -prune -o -path /proc -prune -o -path /dev -prune -o -path /var -prune -o -type d -name "$MAIN_INSTALL_DIRECTORY" -print)/
-  XCASH_BLOCKCHAIN_INSTALLATION_DIR=$(sudo find / -path /sys -prune -o -path /proc -prune -o -path /dev -prune -o -path /var -prune -o -type d -name ".X-CASH" -print)/
+  XCASH_BLOCKCHAIN_INSTALLATION_DIR=$(sudo find / -path /sys -prune -o -path /proc -prune -o -path /dev -prune -o -path /var -prune -o -type d -name ".XCASH-LABS" -print)/
   WALLET_PASSWORD=$(cat /lib/systemd/system/xcash-rpc-wallet.service | awk '/password/ {print $5}')
   XCASH_DIR=${XCASH_DPOPS_INSTALLATION_DIR}xcash-labs-core/
   XCASH_WALLET_DIR=${XCASH_DPOPS_INSTALLATION_DIR}xcash-wallets/
