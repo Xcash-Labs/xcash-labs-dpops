@@ -7,7 +7,7 @@
 #define XCASH_DPOPS_CURRENT_VERSION "xCash Labs DPoPs V. 2.0.0"
 
 // ===================== Blockchain Settings =====================
-#define XCASH_WALLET_PREFIX "XCS" // The prefix of a XCS address
+#define XCASH_WALLET_PREFIX "XCK" // The prefix of a XCK address
 #define XCASH_SIGN_DATA_PREFIX "SigV2"
 #define XCASH_PROOF_OF_STAKE_BLOCK_HEIGHT 1
 #define CRYPTONOTE_DISPLAY_DECIMAL_POINT 6

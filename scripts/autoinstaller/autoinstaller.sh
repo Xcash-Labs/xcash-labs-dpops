@@ -664,13 +664,11 @@ function create_directories()
     mkdir -p "${XCASH_DPOPS_INSTALLATION_DIR}"
   fi
 
-#  jed - add back
-#  if [ ! -d "$MONGODB_INSTALLATION_DIR" ]; then
-#    sudo mkdir -p "${MONGODB_INSTALLATION_DIR}"
-#    sudo chmod 770 "${MONGODB_INSTALLATION_DIR}"
-#    sudo chown "$USER" "${MONGODB_INSTALLATION_DIR}"
-#  fi
-
+  if [ ! -d "$MONGODB_INSTALLATION_DIR" ]; then
+    sudo mkdir -p "${MONGODB_INSTALLATION_DIR}"
+    sudo chmod 770 "${MONGODB_INSTALLATION_DIR}"
+    sudo chown "$USER" "${MONGODB_INSTALLATION_DIR}"
+  fi
 
   if [ ! -d "$XCASH_WALLET_DIR" ]; then
     mkdir -p "${XCASH_WALLET_DIR}"
@@ -1389,8 +1387,7 @@ function install()
   touch "${XCASH_LOGS_DIR}xcash-wallet-rpc.log" && sudo rm -f "${XCASH_DIR}build/Linux/master/release/bin/xcash-wallet-rpc.log" && ln -s "${XCASH_LOGS_DIR}xcash-wallet-rpc.log" "${XCASH_DIR}build/Linux/master/release/bin/xcash-wallet-rpc.log"
 
   # Start the systemd service files
-  # jed - add back
-  # start_systemd_service_files
+  start_systemd_service_files
 
 
   if [ "${AUTOSTART_SETTINGS^^}" == "YES" ]; then
