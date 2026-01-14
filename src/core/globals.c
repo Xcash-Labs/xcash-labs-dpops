@@ -39,14 +39,14 @@ atomic_bool payment_inprocess          = ATOMIC_VAR_INIT(false);
 
 block_verifiers_list_t current_block_verifiers_list;
 NetworkNode network_nodes[] = {
-    {"XCS1bZpdMPEjQAksAaYR3n8RMJUEEQ71ndnTRve7F4Uq48CrEJRdNeVXCDJLiE9hRWEgT3W1u8svgQVp6xdeWGBE8gCFNSUzn1", "seeds.xcashseeds.us",
-      "cc0f300acb3ee768afabad37763bc485b068fab6bee17faad35b8063c3d32b49",0},
-    {"XCS1PyhwyDESVL6Ea7ogyqAN445vTvMAGMKEVMVLWHTwPkeSXc2xRfh5RTyE8zKd38cREh97oXNCtdWBQZCt27K15cF3Ck8f8C", "seeds.xcashseeds.uk",
-      "6b4edce4e80d5bd292428403a5831e11263469db0e7dc7de6cae8302ce337b81",0},
-    {"XCS1ZKxdiZpU2nhD93nDsvefkeewmxqqUiNzxczvCAw9TxkAyzUNth3Eu2xfgND8qBcTgUEkj8nCeFaGMq8vCePS58w5DaUR13", "seeds.xcashseeds.cc",
-      "b13c7ad374b607d5134fa40f9a88235c22db371afce0af1a99733d22133b24d1",0},
-    {"XCS1cv4KHS9C83BLWR9hJ37ba8b51wDqb7fnPmuBP7afPyo957k5wgQKtAzGni7QSGbo9DKdyDQXBcW1j8zyCiZxARsBus5t5E", "seeds.xcashseeds.me",
-      "035b3f7ff832a64ecf7cfa96ac0e7f8b5dcc203e7fd76ceb592206a1547f2065",0},
+    {"XCK1gUSXCuV4KANQz78YYFQuxeGzPwUtzToqnNGXwjFgjULzWQiYbdC9iJRPiLDqn1ijo9HpfXsDzSRjgKZAwK7x2fTAQZBLXF", "seeds.xcashseeds.us",
+      "5b4a41a7018baf13484a1ecee2c8d166d9dca7ea5e570df9303a58f7d544ee15",0},
+    {"XCK1XWPrVwB8zNxzViSfsxFEq4iCTE12wY8TRxnokob3jDijdzbq4gF1aJc45BDg62Rv6MWVzjxmrDVSFbTiJruQ5iNuA2p2K5", "seeds.xcashseeds.uk",
+      "059f518b7ebad0888df0be80acff6b9a158f576673b31cb1aba3da76d4a8efda",0},
+    {"XCK1WFfopbw4FRA4wUYvYxLVuu6WUK2WkVZJXMBuBYRaHhyo1JndU6CaWAjVsvQom4SCxf2FX7ZcrTTaejXPG8a59WGKH3nF7j", "seeds.xcashseeds.cc",
+      "b7ad2355eda2037a3376049a2261d1941b78f1be6e305df60ba5fbdd783828dd",0},
+    {"XCK1UBmZPkSDGApfrxPHxJMEusky2QPVfAFQ3DqxqXWCD4npsELyKZGQMebxUCJxcjN3pvckR7hddGm3p1HBV6wa3u6yAhiJx3", "seeds.xcashseeds.me",
+      "63e71eb7c7152b4f27435925a489849680daf067e13631de647249d186062416",0},
     // Sentinel value (empty entry to mark the end)
     {NULL, NULL, NULL, 0}};
 const char* endpoints[] = {"updpops.xcashpulse.cc", "updpops.xcashpulse.uk", NULL};
