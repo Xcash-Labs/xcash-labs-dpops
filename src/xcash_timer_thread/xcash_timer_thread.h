@@ -30,7 +30,6 @@ typedef struct {
 static const sched_slot_t SLOTS[] = {
   {7,  0, JOB_IMAGE_CK},
   {9,  0, JOB_PROOF},
-  {21, 0, JOB_PROOF},
 };
 static const size_t NSLOTS = sizeof(SLOTS)/sizeof(SLOTS[0]);
 

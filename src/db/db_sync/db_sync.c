@@ -113,9 +113,9 @@ bool create_delegate_online_ip_list(char* out_data, size_t out_data_size)
       return false;
     }
 
-    // Special case on first pos block when nothing marked online yet
+    // Special case on second pos block when nothing marked online yet
     uint64_t cur_height = strtoull(current_block_height, NULL, 10);
-    if (cur_height == XCASH_PROOF_OF_STAKE_BLOCK_HEIGHT) {
+    if (cur_height == XCASH_PROOF_OF_STAKE_BLOCK_HEIGHT + 1) {
       query = bson_new();
     } else {
       query = BCON_NEW("online_status", BCON_UTF8("true"));
