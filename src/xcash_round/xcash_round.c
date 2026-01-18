@@ -9,6 +9,7 @@ static bool blockchain_stuck = false;
 
 #include "xcash_round.h"
 
+/*
 static void print_block_verifiers_list(const char* tag,
                                        const block_verifiers_list_t* list,
                                        size_t count) {
@@ -35,6 +36,7 @@ static void print_block_verifiers_list(const char* tag,
                12, (beta && beta[0]) ? beta : "");  // print first 12 chars of beta
   }
 }
+*/
 
 // Helper function
 static void safe_strcpy(char* dst, size_t dst_sz, const char* src) {
@@ -395,8 +397,8 @@ xcash_round_result_t process_round(void) {
   } else {
     size_t online_count_sz = (online_count > 0) ? (size_t)online_count : 0;
 
-    INFO_PRINT("Before committee: online_count=%zu", online_count_sz);
-    print_block_verifiers_list("BEFORE", &current_block_verifiers_list, online_count_sz);
+    //INFO_PRINT("Before committee: online_count=%zu", online_count_sz);
+    //print_block_verifiers_list("BEFORE", &current_block_verifiers_list, online_count_sz);
 
     int committee_ok = build_committee_list_from_online_list(&current_block_verifiers_list, online_count_sz, &committee_count);
     if (committee_ok != XCASH_OK || committee_count == 0) {
@@ -404,8 +406,8 @@ xcash_round_result_t process_round(void) {
       return ROUND_ERROR;
     }
 
-    INFO_PRINT("After committee: committee_ok=%d committee_count=%zu", committee_ok, committee_count);
-    print_block_verifiers_list("AFTER", &current_block_verifiers_list, committee_count);
+    //INFO_PRINT("After committee: committee_ok=%d committee_count=%zu", committee_ok, committee_count);
+    //print_block_verifiers_list("AFTER", &current_block_verifiers_list, committee_count);
 
     if (current_block_verifiers_list.block_verifiers_public_address[0][0] == '\0' ||
      is_seed_address(current_block_verifiers_list.block_verifiers_public_address[0])) {
