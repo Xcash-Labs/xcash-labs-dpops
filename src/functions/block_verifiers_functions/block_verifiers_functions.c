@@ -26,8 +26,8 @@ size_t write_varint(uint8_t* out, size_t value) {
  *  vrf_proof	  80	    Hex-decoded 80-byte VRF proof (e.g. from libsodium)
  *  vrf_beta	  64	    Hex-decoded 64-byte beta (VRF hash output)
  *  vrf_pubkey  32	    Hex-decoded 32-byte VRF public key
- *  total_votes  1      Hex-decoded 1-byte vote total
- *  winning_vote 1      Hex-decoded 1-byte vote count for winner
+ *  total_votes  1      Hex-decoded 1-byte committee  vote total
+ *  winning_vote 1      Hex-decoded 1-byte committee vote count for winner
  *  vote_hash	  32      Hex-decode 32-byte hash of all votes
  *
  * @param block_blob_hex The input and output hex-encoded blocktemplate blob.

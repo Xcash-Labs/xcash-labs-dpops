@@ -585,7 +585,7 @@ xcash_round_result_t process_round(void) {
     pthread_mutex_unlock(&producer_refs_lock);
   }
 
-  int block_creation_result = block_verifiers_create_block(final_vote_hash_hex, (uint8_t)valid_vote_count, (uint8_t)committee_count);
+  int block_creation_result = block_verifiers_create_block(final_vote_hash_hex, (uint8_t)committee_count, (uint8_t)max_votes);
 
   if (block_creation_result == ROUND_OK) {
     INFO_PRINT_STATUS_OK("Round Successfully Completed For Block %s", current_block_height);
