@@ -1076,7 +1076,7 @@ bool check_software_version(void)
   }
 
   INFO_PRINT("versionstring1: %s", versionstring1);
-  INFO_PRINT("versionstring2: %s") versionstring2;
+  INFO_PRINT("versionstring2: %s"), versionstring2;
 
   return true;
 }
