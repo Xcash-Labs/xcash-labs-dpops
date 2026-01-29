@@ -18,7 +18,7 @@
 #include "block_verifiers_synchronize_server_functions.h"
 
 // ---- jobs ----
-typedef enum { JOB_PROOF, JOB_IMAGE_CK } job_kind_t;
+typedef enum { JOB_PROOF } job_kind_t;
 
 typedef struct {
   int hour;  // 0..23 local time
@@ -26,9 +26,8 @@ typedef struct {
   job_kind_t kind;
 } sched_slot_t;
 
-// 2:00 AM → IMAGE_CK; 3:00 AM → ACTIVITY_CK; 4:00 AM & 4:00 PM → PROOF
+// 4:00 AM → PROOF
 static const sched_slot_t SLOTS[] = {
-  {7,  0, JOB_IMAGE_CK},
   {9,  0, JOB_PROOF},
 };
 static const size_t NSLOTS = sizeof(SLOTS)/sizeof(SLOTS[0]);

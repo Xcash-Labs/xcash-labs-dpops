@@ -892,89 +892,6 @@ static void run_proof_check(sched_ctx_t* ctx) {
   return;
 }
 
-/*---------------------------------------------------------------------------------------------------------
- @brief Verify the running binary against DNSSEC-published allowlists and warn on newer versions.
-
- Workflow:
-   1) Fetch the allowlist (version,digest pairs) from all configured DNS endpoints (TXT),
-      requiring DNSSEC validation.
-   2) Enforce strict mirror consistency: all endpoints must publish the same set (by digest).
-      If any endpoint is empty or mismatched, the function logs an ERROR and returns false.
-   3) Use the baseline set as the effective allowlist (no re-merge needed).
-   4) Compute this process's SHA-256 digest (self_sha) and check membership in the allowlist.
-      - If present: log success; also scan the allowlist for a strictly newer version and warn.
-      - If absent: log a WARNING (non-fatal here), suggesting escalation in production.
-
- Return:
-   @return bool
-     - true  : basic checks completed; either the image is allowed OR (policy here) it's not,
-              but we only warn (non-fatal) and continue.
-     - false : could not build a trustworthy allowlist (empty/mismatch) OR self digest could
-              not be computed; startup should abort.
---------------------------------------------------------------------------------------------------------*/
-bool run_image_check(void) {
-  size_t i = 0;
-
-  updpops_entry_t base[8];
-  size_t base_n = 0;
-  if (endpoints[0]) {
-    base_n = dnssec_get_all_updpops(g_ctx, endpoints[0], base, 8);
-    if (base_n == 0) {
-      ERROR_PRINT("No entries from %s for baseline comparison", endpoints[0]);
-      return false;
-    } else {
-      for (i = 1; endpoints[i]; ++i) {
-        updpops_entry_t tmpc[8];
-        size_t mc = dnssec_get_all_updpops(g_ctx, endpoints[i], tmpc, 8);
-        if (mc == 0) {
-          ERROR_PRINT("No entries from %s during mirror comparison", endpoints[i]);
-          return false;
-        }
-        if (!same_set_by_digest(base, base_n, tmpc, mc)) {
-          ERROR_PRINT("Mirror mismatch: %s and %s publish different allowlists", endpoints[0], endpoints[i]);
-          return false;
-        }
-      }
-    }
-  }
-
-  // Because sets matched, we can just use the baseline directly.
-  updpops_entry_t allowed[8];
-  size_t allowed_n = base_n;
-  memcpy(allowed, base, base_n * sizeof(updpops_entry_t));
-
-  if (allowed_n == 0) {
-    ERROR_PRINT("No DNSSEC-validated updpops digests available; refusing to start");
-    return false;
-  }
-
-  // Compute our running binary digest
-  if (!get_self_sha256(self_sha)) {
-    ERROR_PRINT("Unable to compute self SHA-256");
-    return false;
-  }
-
-  const updpops_entry_t* match = NULL;
-  if (digest_allowed(self_sha, allowed, allowed_n, &match)) {
-    DEBUG_PRINT("Image verified via DNS: version=%s digest=%s", match->version, match->digest);
-    const char* newest = match->version;
-    for (i = 0; i < allowed_n; ++i) {
-      if (semver_cmp(allowed[i].version, newest) > 0) {
-        newest = allowed[i].version;
-      }
-    }
-    if (semver_cmp(newest, match->version) > 0) {
-      WARNING_PRINT("A newer allowed software version exists (%s). Consider upgrading.", newest);
-    }
-  } else {
-    //    WARNING_PRINT("Binary SHA-256 digest does not match allowed values; verify source before proceeding.");
-    //    return false;
-    WARNING_PRINT("Binary SHA-256 digest does not match allowed values; Notify developers if this is production.");
-  }
-
-  return true;
-}
-
 // ---- single scheduler thread ----
 void* timer_thread(void* arg) {
   lower_thread_priority_batch();
@@ -1003,11 +920,6 @@ void* timer_thread(void* arg) {
       if (is_job_node()) {
         INFO_PRINT("Scheduler: running PROOF CHECK at %02d:%02d", slot->hour, slot->min);
         run_proof_check(ctx);
-      }
-    } else if (slot->kind == JOB_IMAGE_CK) {
-      INFO_PRINT("Scheduler: running IMAGE CHECK at %02d:%02d", slot->hour, slot->min);
-      if (!run_image_check()) {
-        ERROR_PRINT("Image check failed");
       }
     }
   }
