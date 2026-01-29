@@ -51,6 +51,7 @@ NetworkNode network_nodes[] = {
     {NULL, NULL, NULL, 0}};
 const char* endpoints[] = {"updpops.xcashpulse.cc", "updpops.xcashpulse.uk", NULL};
 char self_sha[SHA256_DIGEST_SIZE + 1] = {0};
+const char* banendpoints[] = {"bandpops.xcashpulse.cc", "bandpops.xcashpulse.uk", NULL};
 char* server_limit_IP_address_list;
 char* server_limit_public_address_list;
 

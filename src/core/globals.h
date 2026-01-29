@@ -51,6 +51,7 @@ extern atomic_bool payment_inprocess;
 
 extern NetworkNode network_nodes[];
 extern const char* endpoints[];
+extern const char* banendpoints[];
 extern char self_sha[SHA256_DIGEST_SIZE + 1];
 extern char* server_limit_IP_address_list; // holds all of the IP addresses that are currently running on the server.
 extern char* server_limit_public_address_list; // holds all of the public addresses that are currently running on the server.

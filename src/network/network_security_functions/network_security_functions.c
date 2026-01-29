@@ -766,6 +766,38 @@ size_t dnssec_get_all_updpops(dnssec_ctx_t* dctx, const char* host,
   return n;
 }
 
+// Reads the first DNSSEC-validated TXT record from `host` into `out`.
+// Returns true on success.
+bool dnssec_get_txt_record(dnssec_ctx_t* dctx, const char* host, char* out, size_t out_len)
+{
+  if (!dctx || !dctx->ctx || !host || !out || out_len == 0) return false;
+  out[0] = '\0';
+
+  struct ub_result* res = NULL;
+  if (ub_resolve(dctx->ctx, host, RR_TXT, RR_IN, &res) != 0 || !res) return false;
+
+  bool ok = false;
+
+  if (res->secure && !res->bogus && res->havedata && res->data) {
+    // Take the first TXT string
+    if (res->data[0]) {
+      char* str = NULL;
+      if (txt_rdata_to_string((const unsigned char*)res->data[0],
+                              (size_t)res->len[0], &str))
+      {
+        // Copy into output buffer
+        strncpy(out, str, out_len - 1);
+        out[out_len - 1] = '\0';
+        ok = true;
+        free(str);
+      }
+    }
+  }
+
+  ub_resolve_free(res);
+  return ok;
+}
+
 bool digest_allowed(const char* self_hex, const updpops_entry_t* list, size_t n, const updpops_entry_t** matched) {
   for (size_t i = 0; i < n; ++i) {
     if (strcmp(self_hex, list[i].digest) == 0) {

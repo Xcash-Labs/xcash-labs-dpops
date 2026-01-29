@@ -242,6 +242,46 @@ bool print_starter_state(const arg_config_t *arg_config) {
     WARNING_PRINT("Binary SHA-256 digest does not match allowed values; Notify developers if this is production.");
   }
 
+  // check for banned delegates
+  char banstring1[MEDIUM_BUFFER_SIZE] = {0};
+  char banstring2[MEDIUM_BUFFER_SIZE] = {0};
+  char* banstrings[] = { banstring1, banstring2 };
+  for (size_t i = 0; i < 2 && banendpoints[i]; ++i) {
+    if (!dnssec_get_txt_record(g_ctx, banendpoints[i], banstrings[i], MEDIUM_BUFFER_SIZE)) {
+      ERROR_PRINT("Failed to read banned list TXT from %s", banendpoints[i]);
+      return false;
+    }
+  }
+
+  DEBUG_PRINT("banstring1=%s", banstring1);
+  DEBUG_PRINT("banstring2=%s", banstring2);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
   fprintf(stderr, "[%s] Daemon startup successful and is busy processing requests...\n\n", time_str);\
   return true;
 }
