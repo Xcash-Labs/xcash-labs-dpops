@@ -1022,7 +1022,7 @@ bool get_banned_delegates(void) {
   char banstring2[MEDIUM_BUFFER_SIZE] = {0};
   char* banstrings[] = {banstring1, banstring2};
 
-  for (i = 0; i < 2 && banendpoints[i]; ++i) {
+  for (size_t i = 0; i < 2 && banendpoints[i]; ++i) {
     if (!dnssec_get_txt_record(g_ctx, banendpoints[i], banstrings[i], MEDIUM_BUFFER_SIZE)) {
       WARNING_PRINT("Failed to read banned list TXT from %s", banendpoints[i]);
       return false;
