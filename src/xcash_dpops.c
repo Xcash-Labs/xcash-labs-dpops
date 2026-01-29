@@ -283,18 +283,18 @@ int main(int argc, char *argv[]) {
   } else {
     ERROR_PRINT("Failed in call get_node_data, shutting down...");
   }
-  INFO_PRINT("Shutting down sched");
+
   // Signal scheduler to stop and join it
   if (sched_started) {
     pthread_join(timer_tid, NULL);
     free(sched_ctx);
   }
-  INFO_PRINT("Shutting down ctx");
+
   if (g_ctx) {
     dnssec_destroy(g_ctx);
     g_ctx = NULL;
   }
-  INFO_PRINT("Shutting down db");
+
   shutdown_db();
   INFO_PRINT("Database shutdown successfully");
   stop_tcp_server();
