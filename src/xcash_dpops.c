@@ -278,6 +278,7 @@ int main(int argc, char *argv[]) {
     if (print_starter_state(&arg_config)) {
       start_block_production();
     }
+    atomic_store(&shutdown_requested, true);
     fprintf(stderr, "Daemon is shutting down...\n");
   } else {
     ERROR_PRINT("Failed in call get_node_data, shutting down...");
