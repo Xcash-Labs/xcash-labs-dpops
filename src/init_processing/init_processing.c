@@ -248,13 +248,12 @@ bool print_starter_state(const arg_config_t *arg_config) {
   char* banstrings[] = { banstring1, banstring2 };
   for (i = 0; i < 2 && banendpoints[i]; ++i) {
     if (!dnssec_get_txt_record(g_ctx, banendpoints[i], banstrings[i], MEDIUM_BUFFER_SIZE)) {
-      ERROR_PRINT("Failed to read banned list TXT from %s", banendpoints[i]);
-      return false;
+      WARNING_PRINT("Failed to read banned list TXT from %s", banendpoints[i]);
     }
   }
 
-  DEBUG_PRINT("banstring1=%s", banstring1);
-  DEBUG_PRINT("banstring2=%s", banstring2);
+  INFO_PRINT("banstring1=%s", banstring1);
+  INFO_PRINT("banstring2=%s", banstring2);
 
 
 
