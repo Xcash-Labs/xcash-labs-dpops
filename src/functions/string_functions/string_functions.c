@@ -819,7 +819,7 @@ static uint64_t semver_read_uint(const char** p)
   }
   return v;
 }
-6
+
 // Compare verion number
 int semver_cmp(const char* a, const char* b)
 {
