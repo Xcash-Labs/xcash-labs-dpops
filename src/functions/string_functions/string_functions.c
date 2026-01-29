@@ -807,3 +807,44 @@ int same_set_by_digest(const updpops_entry_t *A, size_t na, const updpops_entry_
   free(AA); free(BB);
   return ok;
 }
+
+
+// Helper to read semver
+static uint64_t semver_read_uint(const char** p)
+{
+  uint64_t v = 0;
+  while (**p && isdigit((unsigned char)**p)) {
+    v = (v * 10) + (uint64_t)(**p - '0');
+    (*p)++;
+  }
+  return v;
+}
+6
+// Compare verion number
+int semver_cmp(const char* a, const char* b)
+{
+  if (!a && !b) return 0;
+  if (!a) return -1;
+  if (!b) return 1;
+
+  const char* pa = a;
+  const char* pb = b;
+
+  for (int part = 0; part < 3; part++) {
+    // stop if suffix starts
+    if (*pa == '-' || *pa == '+') pa = ""; // treat remaining as 0
+    if (*pb == '-' || *pb == '+') pb = "";
+
+    uint64_t va = semver_read_uint(&pa);
+    uint64_t vb = semver_read_uint(&pb);
+
+    if (va < vb) return -1;
+    if (va > vb) return 1;
+
+    // Skip dot if present (otherwise missing parts treated as 0)
+    if (*pa == '.') pa++;
+    if (*pb == '.') pb++;
+  }
+
+  return 0;
+}

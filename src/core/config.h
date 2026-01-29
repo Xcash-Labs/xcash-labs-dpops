@@ -5,6 +5,8 @@
 
 // ===================== XCASH Version =====================
 #define XCASH_DPOPS_CURRENT_VERSION "xCash Labs DPoPs V. 2.0.0"
+#define XCASH_DPOPS_CURRENT_VERSION_NUM "2.0.0"
+#define XCASH_VERSION_LENGTH 15
 
 // ===================== Blockchain Settings =====================
 #define XCASH_WALLET_PREFIX "XCK" // The prefix of a XCK address

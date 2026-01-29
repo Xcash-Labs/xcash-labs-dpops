@@ -186,11 +186,19 @@ bool print_starter_state(const arg_config_t *arg_config) {
 
   // Compute our running binary digest
   if (!get_self_sha256(self_sha)) {
-    ERROR_PRINT("Unable to compute self SHA-256"); 
+    ERROR_PRINT("Unable to compute self SHA-256");
     return false;
   }
 
-  check_software_version();
+  char min_version[XCASH_VERSION_LENGTH + 1] = {0};
+  char allowed_sha[SHA256_DIGEST_SIZE + 1] = {0};
+  if (check_software_version(min_version, allowed_sha)) {
+    if (semver_cmp(XCASH_DPOPS_CURRENT_VERSION_NUM, min_version) < 0) {
+      ERROR_PRINT("This version is less than the minimum required version (local=%s, minimum=%s), unable to start",
+       XCASH_DPOPS_CURRENT_VERSION_NUM, min_version);
+      return false;
+    }
+  }
 
   get_banned_delegates();
 

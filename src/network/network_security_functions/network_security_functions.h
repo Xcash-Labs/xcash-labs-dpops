@@ -34,9 +34,8 @@ int wallet_verify_signature(const char *sign_str, const char *in_public_address,
 dnssec_ctx_t* dnssec_init(void);
 void dnssec_destroy(dnssec_ctx_t* h);
 dnssec_status_t dnssec_query(dnssec_ctx_t* h, const char* name, int rrtype, bool* out_havedata);
-size_t dnssec_get_all_updpops(dnssec_ctx_t* ctx, const char* host, updpops_entry_t* out, size_t cap);
 bool validate_server_IP(void);
 bool get_banned_delegates(void);
-bool check_software_version(void);
+bool check_software_version(char* min_version, char* allowed_sha);
 
 #endif

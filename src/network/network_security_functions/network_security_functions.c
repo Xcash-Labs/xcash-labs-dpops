@@ -725,57 +725,6 @@ dnssec_status_t dnssec_query(dnssec_ctx_t* h, const char* name, int rrtype, bool
   return status;
 }
 
-static bool txt_rdata_to_string(const unsigned char* rdata, size_t len, char** out_str) {
-  if (!rdata || !len || !out_str) return false;
-  char* s = (char*)malloc(len + 1);
-  if (!s) return false;
-  size_t i = 0, pos = 0;
-  while (i < len) {
-    unsigned int n = rdata[i++];
-    if (i + n > len) { free(s); return false; }
-    memcpy(s + pos, rdata + i, n);
-    pos += n; i += n;
-  }
-  s[pos] = '\0';
-  *out_str = s;
-  return true;
-}
-
-// Collect all validated updpops entries from a host
-size_t dnssec_get_all_updpops(dnssec_ctx_t* dctx, const char* host,
-                              updpops_entry_t* out, size_t cap) {
-  if (!dctx || !dctx->ctx || !host || !out || cap == 0) return 0;
-
-  struct ub_result* res = NULL;
-  if (ub_resolve(dctx->ctx, host, RR_TXT, RR_IN, &res) != 0 || !res) return 0;
-
-  size_t n = 0;
-  if (res->secure && !res->bogus && res->havedata && res->data) {
-    for (size_t i = 0; res->data[i] && n < cap; ++i) {
-      char* str = NULL;
-      if (txt_rdata_to_string((const unsigned char*)res->data[i],
-                              (size_t)res->len[i], &str)) {
-        updpops_entry_t e;
-        if (parse_updpops_entry(str, &e)) out[n++] = e;
-        free(str);
-      }
-    }
-  }
-
-  ub_resolve_free(res);
-  return n;
-}
-
-bool digest_allowed(const char* self_hex, const updpops_entry_t* list, size_t n, const updpops_entry_t** matched) {
-  for (size_t i = 0; i < n; ++i) {
-    if (strcmp(self_hex, list[i].digest) == 0) {
-      if (matched) *matched = &list[i];
-      return true;
-    }
-  }
-  return false;
-}
-
 // Helper to check for private or loopback
 static bool is_private_or_loopback_ipv4(const char* ip) {
   if (!ip || !*ip)
@@ -929,6 +878,22 @@ bool validate_server_IP(void) {
   return true;
 }
 
+static bool txt_rdata_to_string(const unsigned char* rdata, size_t len, char** out_str) {
+  if (!rdata || !len || !out_str) return false;
+  char* s = (char*)malloc(len + 1);
+  if (!s) return false;
+  size_t i = 0, pos = 0;
+  while (i < len) {
+    unsigned int n = rdata[i++];
+    if (i + n > len) { free(s); return false; }
+    memcpy(s + pos, rdata + i, n);
+    pos += n; i += n;
+  }
+  s[pos] = '\0';
+  *out_str = s;
+  return true;
+}
+
 // Reads the first DNSSEC-validated TXT record from `host` into `out`.
 // Returns true on success.
 static bool dnssec_get_txt_record(dnssec_ctx_t* dctx, const char* host, char* out, size_t out_len)
@@ -960,18 +925,6 @@ static bool dnssec_get_txt_record(dnssec_ctx_t* dctx, const char* host, char* ou
   ub_resolve_free(res);
   return ok;
 }
-
-
-
-
-
-
-
-
-
-
-
-
 
 // Parses: "B1.2.3.4,B5.6.7.8,D9.9.9.9,end"
 // - Stores only B<ip> into out->banned[]
@@ -1028,7 +981,7 @@ bool get_banned_delegates(void) {
       return false;
     }
   }
-
+  
   if (banstring1[0] == '\0' || banstring2[0] == '\0') {
     WARNING_PRINT("Banned list missing from one or more endpoints (ban1_len=%zu ban2_len=%zu)",
                   strlen(banstring1), strlen(banstring2));
@@ -1037,12 +990,10 @@ bool get_banned_delegates(void) {
     WARNING_PRINT("Banned list mismatch between endpoints");
     return false;
   }
-
   if (!parse_banned_ips_only(banstring1, &bans)) {
     WARNING_PRINT("Failed to parse banned IP list");
     return false;
   }
-
   INFO_PRINT("Banned IP count: %zu", bans.banned_n);
   for (size_t j = 0; j < bans.banned_n; j++) {
     INFO_PRINT("BANNED: %s", bans.banned[j]);
@@ -1051,11 +1002,46 @@ bool get_banned_delegates(void) {
   return true;
 }
 
-bool check_software_version(void)
-{
+// helper to extracts version + sha256 from: product:policy:version:sha256
+static bool parse_version_and_sha256(const char* s,
+                                     char* out_version, size_t out_version_len,
+                                     char* out_sha256, size_t out_sha256_len) {
+  if (!s || !out_version || out_version_len == 0 || !out_sha256 || out_sha256_len == 0)
+    return false;
+
+  out_version[0] = '\0';
+  out_sha256[0] = '\0';
+
+  char buf[MEDIUM_BUFFER_SIZE];
+  size_t len = strlen(s);
+  if (len == 0 || len >= sizeof(buf)) return false;
+  memcpy(buf, s, len + 1);
+  char* save = NULL;
+  char* f1 = strtok_r(buf, ":", &save);    // product
+  char* f2 = strtok_r(NULL, ":", &save);   // policy
+  char* ver = strtok_r(NULL, ":", &save);  // version
+  char* sha = strtok_r(NULL, ":", &save);  // sha256
+
+  // Require exactly 4 fields
+  if (!f1 || !f2 || !ver || !sha) return false;
+  if (strtok_r(NULL, ":", &save) != NULL) return false;
+
+  // Copy outputs
+  strncpy(out_version, ver, out_version_len - 1);
+  out_version[out_version_len - 1] = '\0';
+
+  strncpy(out_sha256, sha, out_sha256_len - 1);
+  out_sha256[out_sha256_len - 1] = '\0';
+
+  return true;
+}
+
+bool check_software_version(char* min_version, char* allowed_sha) {
+  min_version[0] = '\0';
+  allowed_sha[0] = '\0';
   char versionstring1[MEDIUM_BUFFER_SIZE] = {0};
   char versionstring2[MEDIUM_BUFFER_SIZE] = {0};
-  char* versionstrings[] = { versionstring1, versionstring2 };
+  char* versionstrings[] = {versionstring1, versionstring2};
 
   for (size_t i = 0; i < 2 && endpoints[i]; ++i) {
     if (!dnssec_get_txt_record(g_ctx, endpoints[i], versionstrings[i], MEDIUM_BUFFER_SIZE)) {
@@ -1069,14 +1055,20 @@ bool check_software_version(void)
                   strlen(versionstring1), strlen(versionstring2));
     return false;
   }
-
   if (strcmp(versionstring1, versionstring2) != 0) {
     WARNING_PRINT("Version string mismatch between endpoints");
     return false;
   }
 
-  INFO_PRINT("versionstring1: %s", versionstring1);
-  INFO_PRINT("versionstring2: %s", versionstring2);
+  if (!parse_version_and_sha256(versionstring1,
+                              min_version, XCASH_VERSION_LENGTH + 1,
+                              allowed_sha, SHA256_DIGEST_SIZE + 1)) {
+    WARNING_PRINT("Invalid version TXT format: %s", versionstring1);
+    return false;
+  }
+
+  INFO_PRINT("min_version=%s", min_version);
+  INFO_PRINT("allowed_sha=%s", allowed_sha);
 
   return true;
 }

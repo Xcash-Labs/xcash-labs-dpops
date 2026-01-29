@@ -41,5 +41,6 @@ bool parse_updpops_entry(const char* s, updpops_entry_t* out);
 int parse_semver(const char *s, int *maj, int *min, int *pat);
 int semver_cmp(const char *a, const char *b);
 int same_set_by_digest(const updpops_entry_t *A, size_t na, const updpops_entry_t *B, size_t nb);
+int semver_cmp(const char* a, const char* b);
 
 #endif
