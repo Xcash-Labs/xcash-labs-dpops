@@ -1003,8 +1003,8 @@ static bool parse_banned_ips_only(const char* banstr, banned_ip_list_t* out)
 
     if (action == 'B') {
       if (out->banned_n >= MAX_BANNED_IPS) return false; // capacity hit
-      strncpy(out->banned[out->banned_n], ip, MAX_IP_STR - 1);
-      out->banned[out->banned_n][MAX_IP_STR - 1] = '\0';
+      strncpy(out->banned[out->banned_n], ip, IP_LENGTH - 1);
+      out->banned[out->banned_n][IP_LENGTH - 1] = '\0';
       out->banned_n++;
     } else if (action == 'D') {
       WARNING_PRINT("Delete/unban token seen in banlist: %s", ip);
