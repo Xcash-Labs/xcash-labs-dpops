@@ -220,7 +220,7 @@ bool print_starter_state(const arg_config_t *arg_config) {
 
   // Compute our running binary digest
   if (!get_self_sha256(self_sha)) {
-    ERROR_PRINT("Unable to compute self SHA-256");
+    ERROR_PRINT("Unable to compute self SHA-256"); 
     return false;
   }
 
@@ -241,6 +241,8 @@ bool print_starter_state(const arg_config_t *arg_config) {
     //    return false;
     WARNING_PRINT("Binary SHA-256 digest does not match allowed values; Notify developers if this is production.");
   }
+
+  check_software_version();
 
   get_banned_delegates();
 

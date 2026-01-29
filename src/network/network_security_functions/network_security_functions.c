@@ -1050,3 +1050,33 @@ bool get_banned_delegates(void) {
 
   return true;
 }
+
+bool check_software_version(void)
+{
+  char versionstring1[MEDIUM_BUFFER_SIZE] = {0};
+  char versionstring2[MEDIUM_BUFFER_SIZE] = {0};
+  char* versionstrings[] = { versionstring1, versionstring2 };
+
+  for (size_t i = 0; i < 2 && endpoints[i]; ++i) {
+    if (!dnssec_get_txt_record(g_ctx, endpoints[i], versionstrings[i], MEDIUM_BUFFER_SIZE)) {
+      WARNING_PRINT("Failed to read version string TXT from %s", endpoints[i]);
+      return false;
+    }
+  }
+
+  if (versionstring1[0] == '\0' || versionstring2[0] == '\0') {
+    WARNING_PRINT("Version string missing from one or more endpoints (version1_len=%zu version2_len=%zu)",
+                  strlen(versionstring1), strlen(versionstring2));
+    return false;
+  }
+
+  if (strcmp(versionstring1, versionstring2) != 0) {
+    WARNING_PRINT("Version string mismatch between endpoints");
+    return false;
+  }
+
+  INFO_PRINT("versionstring1: %s", versionstring1);
+  INFO_PRINT("versionstring2: %s") versionstring2;
+
+  return true;
+}

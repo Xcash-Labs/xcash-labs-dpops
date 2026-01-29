@@ -38,5 +38,6 @@ bool digest_allowed(const char* self_hex, const updpops_entry_t* list, size_t n,
 size_t dnssec_get_all_updpops(dnssec_ctx_t* ctx, const char* host, updpops_entry_t* out, size_t cap);
 bool validate_server_IP(void);
 bool get_banned_delegates(void);
+bool check_software_version(void);
 
 #endif
