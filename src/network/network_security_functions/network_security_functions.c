@@ -766,38 +766,6 @@ size_t dnssec_get_all_updpops(dnssec_ctx_t* dctx, const char* host,
   return n;
 }
 
-// Reads the first DNSSEC-validated TXT record from `host` into `out`.
-// Returns true on success.
-bool dnssec_get_txt_record(dnssec_ctx_t* dctx, const char* host, char* out, size_t out_len)
-{
-  if (!dctx || !dctx->ctx || !host || !out || out_len == 0) return false;
-  out[0] = '\0';
-
-  struct ub_result* res = NULL;
-  if (ub_resolve(dctx->ctx, host, RR_TXT, RR_IN, &res) != 0 || !res) return false;
-
-  bool ok = false;
-
-  if (res->secure && !res->bogus && res->havedata && res->data) {
-    // Take the first TXT string
-    if (res->data[0]) {
-      char* str = NULL;
-      if (txt_rdata_to_string((const unsigned char*)res->data[0],
-                              (size_t)res->len[0], &str))
-      {
-        // Copy into output buffer
-        strncpy(out, str, out_len - 1);
-        out[out_len - 1] = '\0';
-        ok = true;
-        free(str);
-      }
-    }
-  }
-
-  ub_resolve_free(res);
-  return ok;
-}
-
 bool digest_allowed(const char* self_hex, const updpops_entry_t* list, size_t n, const updpops_entry_t** matched) {
   for (size_t i = 0; i < n; ++i) {
     if (strcmp(self_hex, list[i].digest) == 0) {
@@ -956,6 +924,128 @@ bool validate_server_IP(void) {
         server_ip, ip_address  // /etc/hosts example
     );
     return false;
+  }
+
+  return true;
+}
+
+// Reads the first DNSSEC-validated TXT record from `host` into `out`.
+// Returns true on success.
+static bool dnssec_get_txt_record(dnssec_ctx_t* dctx, const char* host, char* out, size_t out_len)
+{
+  if (!dctx || !dctx->ctx || !host || !out || out_len == 0) return false;
+  out[0] = '\0';
+
+  struct ub_result* res = NULL;
+  if (ub_resolve(dctx->ctx, host, RR_TXT, RR_IN, &res) != 0 || !res) return false;
+
+  bool ok = false;
+
+  if (res->secure && !res->bogus && res->havedata && res->data) {
+    // Take the first TXT string
+    if (res->data[0]) {
+      char* str = NULL;
+      if (txt_rdata_to_string((const unsigned char*)res->data[0],
+                              (size_t)res->len[0], &str))
+      {
+        // Copy into output buffer
+        strncpy(out, str, out_len - 1);
+        out[out_len - 1] = '\0';
+        ok = true;
+        free(str);
+      }
+    }
+  }
+
+  ub_resolve_free(res);
+  return ok;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Parses: "B1.2.3.4,B5.6.7.8,D9.9.9.9,end"
+// - Stores only B<ip> into out->banned[]
+// - If D<ip> is found, prints a message and continues
+static bool parse_banned_ips_only(const char* banstr, banned_ip_list_t* out)
+{
+  if (!banstr || !out) return false;
+
+  out->banned_n = 0;
+
+  // Make a writable copy for strtok
+  char buf[MEDIUM_BUFFER_SIZE];
+  size_t len = strlen(banstr);
+  if (len == 0 || len >= sizeof(buf)) return false;
+
+  memcpy(buf, banstr, len + 1);
+
+  char* save = NULL;
+  for (char* tok = strtok_r(buf, ",", &save);
+       tok != NULL;
+       tok = strtok_r(NULL, ",", &save))
+  {
+    if (strcmp(tok, "end") == 0) break;
+
+    char action = tok[0];
+    const char* ip = tok + 1;
+
+    if (*ip == '\0') continue; // ignore malformed token like "B"
+
+    if (action == 'B') {
+      if (out->banned_n >= MAX_BANNED_IPS) return false; // capacity hit
+      strncpy(out->banned[out->banned_n], ip, MAX_IP_STR - 1);
+      out->banned[out->banned_n][MAX_IP_STR - 1] = '\0';
+      out->banned_n++;
+    } else if (action == 'D') {
+      WARNING_PRINT("Delete/unban token seen in banlist: %s", ip);
+      // do nothing else for now
+    } else {
+      continue;
+    }
+  }
+
+  return true;
+}
+
+bool get_banned_delegates(void) {
+  char banstring1[MEDIUM_BUFFER_SIZE] = {0};
+  char banstring2[MEDIUM_BUFFER_SIZE] = {0};
+  char* banstrings[] = {banstring1, banstring2};
+
+  for (i = 0; i < 2 && banendpoints[i]; ++i) {
+    if (!dnssec_get_txt_record(g_ctx, banendpoints[i], banstrings[i], MEDIUM_BUFFER_SIZE)) {
+      WARNING_PRINT("Failed to read banned list TXT from %s", banendpoints[i]);
+      return false;
+    }
+  }
+
+  if (banstring1[0] == '\0' || banstring2[0] == '\0') {
+    WARNING_PRINT("Banned list missing from one or more endpoints (ban1_len=%zu ban2_len=%zu)",
+                  strlen(banstring1), strlen(banstring2));
+    return false;
+  } else if (strcmp(banstring1, banstring2) != 0) {
+    WARNING_PRINT("Banned list mismatch between endpoints");
+    return false;
+  }
+
+  if (!parse_banned_ips_only(banstring1, &bans)) {
+    WARNING_PRINT("Failed to parse banned IP list");
+    return false;
+  }
+
+  INFO_PRINT("Banned IP count: %zu", bans.banned_n);
+  for (size_t j = 0; j < bans.banned_n; j++) {
+    INFO_PRINT("BANNED: %s", bans.banned[j]);
   }
 
   return true;

@@ -116,6 +116,7 @@
 #define NETWORK_DATA_NODES_VALID_AMOUNT 2
 #define COMMITTEE_SIZE 10
 #define SEED_COUNT 4
+#define MAX_BANNED_IPS 20
 
 // Need to relook at this
 #define BLOCK_VERIFIERS_VALID_AMOUNT 5

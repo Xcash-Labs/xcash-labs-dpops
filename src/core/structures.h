@@ -105,4 +105,9 @@ typedef struct {
   struct ub_ctx* ctx;
 } dnssec_ctx_t;
 
+typedef struct {
+  char banned[MAX_BANNED_IPS][IP_LENGTH];
+  size_t banned_n;
+} banned_ip_list_t;
+
 #endif
