@@ -212,11 +212,12 @@ bool print_starter_state(const arg_config_t *arg_config) {
       INFO_PRINT("BANNED: %s", bans.banned[b]);
       if (stncmp(bans.banned[b], ip_address) == 0) {
         ERROR_PRINT("Your delegate IP is banned, unable to start");
-        return error;
+        return false;
       }
     }
   } else {
     ERROR_PRINT("Failed to retrieve IP for delegate, process aborting");
+    return false;
   }
 
   fprintf(stderr, "[%s] Daemon startup successful and is busy processing requests...\n\n", time_str);
