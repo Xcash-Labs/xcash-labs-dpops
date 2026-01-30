@@ -19,5 +19,6 @@ const char* address_to_node_name(const char* public_address);
 const char* address_to_node_host(const char* public_address);
 bool is_job_node(void);
 int get_delegate_minimum_amount(int64_t *out_min_amount);
+bool get_ip_address(char* ip_address);
 
 #endif  // NODE_FUNCTIONS_H

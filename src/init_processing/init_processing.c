@@ -199,13 +199,26 @@ bool print_starter_state(const arg_config_t *arg_config) {
       return false;
     }
     if (strcmp(self_sha, allowed_sha) != 0) {
-      WARNING_PRINT("Binary digest mismatch (local=%s, current=%s). Please consider updating.",
+      WARNING_PRINT("Hash mismatch for image (local=%s, current=%s). Please consider updating.",
                     self_sha, allowed_sha);
     }
   }
 
   get_banned_delegates();
 
-  fprintf(stderr, "[%s] Daemon startup successful and is busy processing requests...\n\n", time_str);\
+  char ip_address[IP_LENGTH+1];
+  if (get_ip_address(char* ip_address)) {
+    for (size_t b = 0; b < bans.banned_n; b++) {
+      INFO_PRINT("BANNED: %s", bans.banned[b]);
+      if (stncmp(bans.banned[b], ip_address) == 0) {
+        ERROR_PRINT("Your delegate IP is banned, unable to start");
+        return error;
+      }
+    }
+  } else {
+    ERROR_PRINT("Failed to retrieve IP for delegate, process aborting");
+  }
+
+  fprintf(stderr, "[%s] Daemon startup successful and is busy processing requests...\n\n", time_str);
   return true;
 }

@@ -164,3 +164,24 @@ bool is_job_node(void) {
   }
   return false;
 }
+
+bool get_ip_address(char* ip_address) {
+  if (!ip_address) return false;
+  ip_address[0] = '\0';
+  if (!xcash_wallet_public_address[0]) return false;
+
+  char filter_json[256] = {0};
+  snprintf(filter_json, sizeof(filter_json), "{ \"public_address\": \"%s\" }", xcash_wallet_public_address);
+  if (read_document_field_from_collection(
+          DATABASE_NAME,
+          DB_COLLECTION_DELEGATES,
+          filter_json,
+          "IP_address",
+          ip_address,
+          IP_LENGTH + 1) != XCASH_OK) {
+    ip_address[0] = '\0';
+    return false;
+  }
+
+  return true;
+}

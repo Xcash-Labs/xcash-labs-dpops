@@ -960,8 +960,7 @@ static bool parse_banned_ips_only(const char* banstr, banned_ip_list_t* out)
       out->banned[out->banned_n][IP_LENGTH - 1] = '\0';
       out->banned_n++;
     } else if (action == 'D') {
-      WARNING_PRINT("Delete/unban token seen in banlist: %s", ip);
-      // do nothing else for now
+      // do nothing else for now, need to remove delegate entry ??
     } else {
       continue;
     }
@@ -994,10 +993,10 @@ bool get_banned_delegates(void) {
     WARNING_PRINT("Failed to parse banned IP list");
     return false;
   }
-  INFO_PRINT("Banned IP count: %zu", bans.banned_n);
-  for (size_t j = 0; j < bans.banned_n; j++) {
-    INFO_PRINT("BANNED: %s", bans.banned[j]);
-  }
+//  INFO_PRINT("Banned IP count: %zu", bans.banned_n);
+//  for (size_t j = 0; j < bans.banned_n; j++) {
+//    INFO_PRINT("BANNED: %s", bans.banned[j]);
+//  }
 
   return true;
 }
@@ -1066,9 +1065,6 @@ bool check_software_version(char* min_version, char* allowed_sha) {
     WARNING_PRINT("Invalid version TXT format: %s", versionstring1);
     return false;
   }
-
-  INFO_PRINT("min_version=%s", min_version);
-  INFO_PRINT("allowed_sha=%s", allowed_sha);
 
   return true;
 }
