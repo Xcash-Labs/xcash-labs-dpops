@@ -24,6 +24,10 @@
 #define XCASH_WALLET_IP "127.0.0.1"
 #define XCASH_DPOPS_IP "127.0.0.1"
 #define MAXIMUM_CONNECTIONS_IP_ADDRESS_OR_PUBLIC_ADDRESS 128
+#define CONNECT_TIMEOUT_SEC 4
+#define RECEIVE_TIMEOUT_SEC 4
+#define SEND_TIMEOUT_MS 3000
+#define NET_MULTI_WORKERS 12
 
 // ===================== Network Block String =====================
 #define EXTRA_NONCE_TAG "02"
@@ -43,18 +47,10 @@
 #define MEDIUM_BUFFER_SIZE 4096
 #define LARGE_BUFFER_SIZE 8192
 #define XLARGE_BUFFER_SIZE 16384
-
 #define BUFFER_SIZE 300000
-
 #define BUFFER_SIZE_RESERVE_PROOF 2560
-
 #define MINIMUM_BUFFER_SIZE_DELEGATES_NAME 5
 #define MAXIMUM_BUFFER_SIZE_DELEGATES_NAME 100
-
-#define CONNECT_TIMEOUT_SEC 4
-#define RECEIVE_TIMEOUT_SEC 4
-#define SEND_TIMEOUT_MS 3000
-#define NET_MULTI_WORKERS 12
 
 // ===================== Hash and Key Lengths =====================
 #define DATA_HASH_LENGTH 128
