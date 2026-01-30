@@ -208,8 +208,9 @@ bool print_starter_state(const arg_config_t *arg_config) {
 
   char ip_address[IP_LENGTH+1];
   if (get_ip_address(ip_address)) {
+    INFO_PRINT("IP: %s", ip_address);
     for (size_t b = 0; b < bans.banned_n; b++) {
-      INFO_PRINT("BANNED: %s", bans.banned[b]);
+      INFO_PRINT("Banned IPs: %s", bans.banned[b]);
       if (strcmp(bans.banned[b], ip_address) == 0) {
         ERROR_PRINT("Your delegate IP is banned, unable to start");
         return false;
