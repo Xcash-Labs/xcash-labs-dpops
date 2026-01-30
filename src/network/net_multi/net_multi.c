@@ -91,14 +91,14 @@ static response_t* send_to_one_host(const char* host, int port,
           if (sel < 0 && errno == EINTR) continue;
 
           if (sel < 0) {
-            DEBUG_PRINT("connect select() failed: errno=%d (%s)", errno, strerror(errno));
+            INFO_PRINT("connect select() failed: errno=%d (%s)", errno, strerror(errno));
             close(sock);
             sock = -1;
             break;
           }
 
           if (sel == 0 || !FD_ISSET(sock, &wf)) {
-            DEBUG_PRINT("connect %s:%d timeout after %d sec", host, port, CONNECT_TIMEOUT_SEC);
+            INFO_PRINT("connect %s:%d timeout after %d sec", host, port, CONNECT_TIMEOUT_SEC);
             close(sock);
             sock = -1;
             break;
@@ -107,14 +107,14 @@ static response_t* send_to_one_host(const char* host, int port,
           int err = 0;
           socklen_t sl = sizeof(err);
           if (getsockopt(sock, SOL_SOCKET, SO_ERROR, &err, &sl) != 0) {
-            DEBUG_PRINT("getsockopt(SO_ERROR) failed: errno=%d (%s)", errno, strerror(errno));
+            INFO_PRINT("getsockopt(SO_ERROR) failed: errno=%d (%s)", errno, strerror(errno));
             close(sock);
             sock = -1;
             break;
           }
 
           if (err != 0) {
-            DEBUG_PRINT("connect failed: SO_ERROR=%d (%s)", err, strerror(err));
+            INFO_PRINT("connect failed: SO_ERROR=%d (%s)", err, strerror(err));
             close(sock);
             sock = -1;
             break;
