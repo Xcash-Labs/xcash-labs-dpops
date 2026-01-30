@@ -1,7 +1,5 @@
 #include "block_verifiers_functions.h"
 
-static size_t count = 0;
-
 size_t write_varint(uint8_t* out, size_t value) {
   size_t i = 0;
   while (value >= 0x80) {
@@ -184,12 +182,6 @@ int block_verifiers_create_block(const char* vote_hash_hex, uint8_t total_vote, 
     }
     
     INFO_PRINT_STATUS_OK("Block signature sent");
-  } else {
-    if (++count >= 15) {
-      INFO_PRINT("Get Banned Delegates...");
-      get_banned_delegates();
-      count = 0;
-    }
   }
 
   return ROUND_OK;

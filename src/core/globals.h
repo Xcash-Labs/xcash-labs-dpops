@@ -35,6 +35,7 @@ extern char vrf_public_key[VRF_PUBLIC_KEY_LENGTH + 1];
 extern char current_round_part[3]; // The current round part
 extern char delegates_hash[SHA256_HASH_SIZE + 1];
 extern char sync_token[SYNC_TOKEN_LEN + 1];
+extern char delegate_ip_address[IP_LENGTH+1];
 extern block_verifiers_list_t current_block_verifiers_list; // The list of block verifiers name, public address and IP address for the current round
 // Locks
 extern pthread_mutex_t delegates_all_lock;

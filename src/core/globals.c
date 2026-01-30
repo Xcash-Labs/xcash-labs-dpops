@@ -24,6 +24,7 @@ char secret_key[VRF_SECRET_KEY_LENGTH +1] = {0};
 char vrf_public_key[VRF_PUBLIC_KEY_LENGTH + 1] = {0};
 char current_round_part[3] = "1";
 char delegates_hash[SHA256_HASH_SIZE + 1] = {0};
+char delegate_ip_address[IP_LENGTH+1] = {0};
 
 pthread_mutex_t delegates_all_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t current_block_verifiers_lock = PTHREAD_MUTEX_INITIALIZER;
