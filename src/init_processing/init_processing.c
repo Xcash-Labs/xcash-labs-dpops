@@ -207,7 +207,7 @@ bool print_starter_state(const arg_config_t *arg_config) {
   get_banned_delegates();
 
   char ip_address[IP_LENGTH+1];
-  if (get_ip_address(char* ip_address)) {
+  if (get_ip_address(ip_address)) {
     for (size_t b = 0; b < bans.banned_n; b++) {
       INFO_PRINT("BANNED: %s", bans.banned[b]);
       if (stncmp(bans.banned[b], ip_address) == 0) {
