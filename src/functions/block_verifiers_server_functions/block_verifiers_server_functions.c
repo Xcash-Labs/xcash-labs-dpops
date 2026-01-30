@@ -61,7 +61,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
       // All checks passed — mark online
       strncpy(delegates_all[i].online_status, "true", sizeof(delegates_all[i].online_status));
       delegates_all[i].online_status[sizeof(delegates_all[i].online_status) - 1] = '\0';
-      INFO_PRINT("Marked delegate %s as online (ck)", public_address);
+      DEBUG_PRINT("Marked delegate %s as online (ck)", public_address);
 
       unsigned char alpha_input_bin[72] = {0};
       unsigned char pk_bin[crypto_vrf_PUBLICKEYBYTES] = {0};
