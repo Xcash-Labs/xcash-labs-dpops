@@ -198,6 +198,10 @@ bool print_starter_state(const arg_config_t *arg_config) {
        XCASH_DPOPS_CURRENT_VERSION_NUM, min_version);
       return false;
     }
+    if (strcmp(self_sha, allowed_sha) != 0) {
+      WARNING_PRINT("Binary digest mismatch (local=%s, current=%s). Please consider updating.",
+                    self_sha, allowed_sha);
+    }
   }
 
   get_banned_delegates();
