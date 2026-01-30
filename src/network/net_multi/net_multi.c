@@ -66,21 +66,64 @@ static response_t* send_to_one_host(const char* host, int port,
         }
         if (errno != EINPROGRESS) { close(sock); sock = -1; continue; }
 
-        for (;;) {
-            fd_set wf; FD_ZERO(&wf); FD_SET(sock, &wf);
-            struct timeval ctv = (struct timeval){ CONNECT_TIMEOUT_SEC, 0 };
-            int sel = select(sock + 1, NULL, &wf, NULL, &ctv);
-            if (sel < 0 && errno == EINTR) continue;
-            if (sel <= 0 || !FD_ISSET(sock, &wf)) { close(sock); sock = -1; break; }
+//        for (;;) {
+//            fd_set wf; FD_ZERO(&wf); FD_SET(sock, &wf);
+//            struct timeval ctv = (struct timeval){ CONNECT_TIMEOUT_SEC, 0 };
+//            int sel = select(sock + 1, NULL, &wf, NULL, &ctv);
+//            if (sel < 0 && errno == EINTR) continue;
+//            if (sel <= 0 || !FD_ISSET(sock, &wf)) { close(sock); sock = -1; break; }
+//            int err = 0; socklen_t sl = sizeof(err);
+//            if (getsockopt(sock, SOL_SOCKET, SO_ERROR, &err, &sl) != 0 || err != 0) {
+//                close(sock); sock = -1;
+//            } else {
+//                (void)fcntl(sock, F_SETFL, of); /* back to blocking */
+//            }
+//            break;
+//        }
 
-            int err = 0; socklen_t sl = sizeof(err);
-            if (getsockopt(sock, SOL_SOCKET, SO_ERROR, &err, &sl) != 0 || err != 0) {
-                close(sock); sock = -1;
-            } else {
-                (void)fcntl(sock, F_SETFL, of); /* back to blocking */
-            }
+        for (;;) {
+          fd_set wf;
+          FD_ZERO(&wf);
+          FD_SET(sock, &wf);
+          struct timeval ctv = (struct timeval){CONNECT_TIMEOUT_SEC, 0};
+          int sel = select(sock + 1, NULL, &wf, NULL, &ctv);
+
+          if (sel < 0 && errno == EINTR) continue;
+
+          if (sel < 0) {
+            DEBUG_PRINT("connect select() failed: errno=%d (%s)", errno, strerror(errno));
+            close(sock);
+            sock = -1;
             break;
+          }
+
+          if (sel == 0 || !FD_ISSET(sock, &wf)) {
+            DEBUG_PRINT("connect %s:%d timeout after %d sec", host, port, CONNECT_TIMEOUT_SEC);
+            close(sock);
+            sock = -1;
+            break;
+          }
+
+          int err = 0;
+          socklen_t sl = sizeof(err);
+          if (getsockopt(sock, SOL_SOCKET, SO_ERROR, &err, &sl) != 0) {
+            DEBUG_PRINT("getsockopt(SO_ERROR) failed: errno=%d (%s)", errno, strerror(errno));
+            close(sock);
+            sock = -1;
+            break;
+          }
+
+          if (err != 0) {
+            DEBUG_PRINT("connect failed: SO_ERROR=%d (%s)", err, strerror(err));
+            close(sock);
+            sock = -1;
+            break;
+          }
+
+          (void)fcntl(sock, F_SETFL, of); /* back to blocking */
+          break;
         }
+
         if (sock >= 0) break; /* success for this ai */
     }
 
