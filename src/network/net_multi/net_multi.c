@@ -203,8 +203,8 @@ static response_t* send_to_one_host(const char* host, int port,
       (void)setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one));
       (void)setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, &one, sizeof(one));
 
-      INFO_PRINT("connect attempt host=%s port=%d ip=%s try=%d/%d",
-                 host, port, ipstr[0] ? ipstr : "?", attempt + 1, CONNECT_RETRY_COUNT);
+      DEBUG_PRINT("connect attempt host=%s port=%d ip=%s try=%d/%d",
+        host, port, ipstr[0] ? ipstr : "?", attempt + 1, CONNECT_RETRY_COUNT);
 
       int ce = 0;
       int timeout_ms = CONNECT_TIMEOUT_SEC * 1000;
