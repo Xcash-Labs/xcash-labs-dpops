@@ -699,15 +699,17 @@ void start_block_production(void) {
     // Final step - Wait for block creation/DB Updates or Node clean-up
     snprintf(current_round_part, sizeof(current_round_part), "%d", 12);
 
-    if (producer_refs && producer_refs[0].public_address && xcash_wallet_public_address) {
+    if (producer_refs[0].public_address[0] != '\0' &&
+        xcash_wallet_public_address[0] != '\0') {
+
       if (strcmp(producer_refs[0].public_address, xcash_wallet_public_address) != 0) {
         if (++ban_count >= 15) {
           INFO_PRINT("Getting banned list...");
           get_banned_delegates();
 
-          if (!is_seed_node) {
+          if (!is_seed_node && delegate_ip_address[0] != '\0') {
             for (size_t b = 0; b < bans.banned_n; b++) {
-              if (delegate_ip_address && bans.banned[b] &&
+              if (bans.banned[b] && bans.banned[b][0] != '\0' &&
                   strcmp(bans.banned[b], delegate_ip_address) == 0) {
                 ERROR_PRINT("Your delegate IP is banned, shutting down");
                 atomic_store(&shutdown_requested, true);
