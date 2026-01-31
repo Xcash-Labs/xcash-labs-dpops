@@ -701,6 +701,7 @@ void start_block_production(void) {
 
     if (strcmp(producer_refs[0].public_address, xcash_wallet_public_address) != 0) {
       if (++ban_count >= 15) {
+        INFO_PRINT("Getting banned list...");
         get_banned_delegates();
         if (!is_seed_node) {
           for (size_t b = 0; b < bans.banned_n; b++) {
