@@ -76,14 +76,14 @@ static response_t* send_to_one_host(const char* host, int port,
           if (sel < 0 && errno == EINTR) continue;
 
           if (sel < 0) {
-            DEBUG_PRINT("connect select() failed: errno=%d (%s)", errno, strerror(errno));
+            ERROR_PRINT("connect select() failed: errno=%d (%s)", errno, strerror(errno));
             close(sock);
             sock = -1;
             break;
           }
 
           if (sel == 0 || !FD_ISSET(sock, &wf)) {
-            DEBUG_PRINT("connect %s:%d timeout after %d sec", host, port, CONNECT_TIMEOUT_SEC);
+            ERROR_PRINT("connect %s:%d timeout after %d sec", host, port, CONNECT_TIMEOUT_SEC);
             close(sock);
             sock = -1;
             break;
@@ -92,14 +92,14 @@ static response_t* send_to_one_host(const char* host, int port,
           int err = 0;
           socklen_t sl = sizeof(err);
           if (getsockopt(sock, SOL_SOCKET, SO_ERROR, &err, &sl) != 0) {
-            DEBUG_PRINT("getsockopt(SO_ERROR) failed: errno=%d (%s)", errno, strerror(errno));
+            ERROR_PRINT("getsockopt(SO_ERROR) failed: errno=%d (%s)", errno, strerror(errno));
             close(sock);
             sock = -1;
             break;
           }
 
           if (err != 0) {
-            DEBUG_PRINT("connect failed: SO_ERROR=%d (%s)", err, strerror(err));
+            ERROR_PRINT("connect failed: SO_ERROR=%d (%s)", err, strerror(err));
             close(sock);
             sock = -1;
             break;
@@ -114,7 +114,8 @@ static response_t* send_to_one_host(const char* host, int port,
 
     if (sock < 0) {
         r->status = STATUS_TIMEOUT;
-        WARNING_PRINT("Connect timeout/fail to %s", host);
+//        WARNING_PRINT("Connect timeout/fail to %s", host);
+                ERROR_PRINT("Connect timeout/fail to %s", host);
         freeaddrinfo(res);
         r->req_time_end = time(NULL);
         return r;
@@ -125,7 +126,8 @@ static response_t* send_to_one_host(const char* host, int port,
     sto.tv_sec  = SEND_TIMEOUT_MS / 1000;
     sto.tv_usec = (SEND_TIMEOUT_MS % 1000) * 1000;
     if (setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, &sto, sizeof(sto)) < 0) {
-        WARNING_PRINT("setsockopt(SO_SNDTIMEO) failed: %s", strerror(errno));
+//        WARNING_PRINT("setsockopt(SO_SNDTIMEO) failed: %s", strerror(errno));
+                ERROR_PRINT("setsockopt(SO_SNDTIMEO) failed: %s", strerror(errno));
     }
 
     if (send_all_with_timeout(sock, z, zlen, SEND_TIMEOUT_MS) != 0) {
@@ -136,7 +138,8 @@ static response_t* send_to_one_host(const char* host, int port,
     }
 
     r->req_time_end = time(NULL);
-    DEBUG_PRINT("Host:%s | %s | %lds",
+//    DEBUG_PRINT("Host:%s | %s | %lds",
+    ERROR_PRINT("Host:%s | %s | %lds",
                 host,
                 r->status == STATUS_OK ? "OK" :
                 r->status == STATUS_TIMEOUT ? "TIMEOUT" : "ERROR",
