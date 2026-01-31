@@ -136,8 +136,7 @@ static response_t* send_to_one_host(const char* host, int port,
     }
 
     r->req_time_end = time(NULL);
-//    DEBUG_PRINT("Host:%s | %s | %lds",
-    ERROR_PRINT("Host:%s | %s | %lds",
+    DEBUG_PRINT("Host:%s | %s | %lds",
                 host,
                 r->status == STATUS_OK ? "OK" :
                 r->status == STATUS_TIMEOUT ? "TIMEOUT" : "ERROR",
