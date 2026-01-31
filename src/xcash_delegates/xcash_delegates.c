@@ -87,11 +87,12 @@ int read_organize_delegates(delegates_t* delegates, size_t* delegates_count_resu
             strncpy(delegates[delegate_index].IP_address, bson_iter_utf8(&record_iter, NULL), IP_LENGTH);
             delegates[delegate_index].IP_address[sizeof(delegates[delegate_index].IP_address) - 1] = '\0';
             if (bans.banned_n > 0) {
-            for (size_t b = 0; b < bans.banned_n; b++) {
-              if (strcmp(bans.banned[b], delegates[delegate_index].IP_address) == 0) {
-                ERROR_PRINT("Skipping banned delegate IP: %s", delegates[delegate_index].IP_address);
-                skip_delegate = true;
-                break;
+              for (size_t b = 0; b < bans.banned_n; b++) {
+                if (strcmp(bans.banned[b], delegates[delegate_index].IP_address) == 0) {
+                  ERROR_PRINT("Skipping banned delegate IP: %s", delegates[delegate_index].IP_address);
+                  skip_delegate = true;
+                  break;
+                }
               }
             }
           } else if (strcmp(db_key, "delegate_name") == 0 && BSON_ITER_HOLDS_UTF8(&record_iter)) {
