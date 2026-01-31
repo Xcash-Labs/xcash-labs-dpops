@@ -699,6 +699,7 @@ void start_block_production(void) {
     // Final step - Wait for block creation/DB Updates or Node clean-up
     snprintf(current_round_part, sizeof(current_round_part), "%d", 12);
 
+    /*
     if (producer_refs[0].public_address[0] != '\0' &&
         xcash_wallet_public_address[0] != '\0') {
 
@@ -722,6 +723,7 @@ void start_block_production(void) {
         }
       }
     }
+    */
 
     if (round_result == ROUND_OK) {
       INFO_STAGE_PRINT("Part 12 - Wait for Block Creation");
