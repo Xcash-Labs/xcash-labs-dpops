@@ -737,7 +737,7 @@ void start_block_production(void) {
         }
       }
     }
-    */
+
 
     // 10 secs to perform cleanup or add stats and other info
     if (sync_block_verifiers_minutes_and_seconds(0, 50) == XCASH_ERROR) {
