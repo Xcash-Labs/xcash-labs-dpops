@@ -114,8 +114,7 @@ static response_t* send_to_one_host(const char* host, int port,
 
     if (sock < 0) {
         r->status = STATUS_TIMEOUT;
-//        WARNING_PRINT("Connect timeout/fail to %s", host);
-                ERROR_PRINT("Connect timeout/fail to %s", host);
+        WARNING_PRINT("Connect timeout/fail to %s", host);
         freeaddrinfo(res);
         r->req_time_end = time(NULL);
         return r;
@@ -126,8 +125,7 @@ static response_t* send_to_one_host(const char* host, int port,
     sto.tv_sec  = SEND_TIMEOUT_MS / 1000;
     sto.tv_usec = (SEND_TIMEOUT_MS % 1000) * 1000;
     if (setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, &sto, sizeof(sto)) < 0) {
-//        WARNING_PRINT("setsockopt(SO_SNDTIMEO) failed: %s", strerror(errno));
-                ERROR_PRINT("setsockopt(SO_SNDTIMEO) failed: %s", strerror(errno));
+        WARNING_PRINT("setsockopt(SO_SNDTIMEO) failed: %s", strerror(errno));
     }
 
     if (send_all_with_timeout(sock, z, zlen, SEND_TIMEOUT_MS) != 0) {
