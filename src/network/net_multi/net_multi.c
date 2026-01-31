@@ -217,7 +217,7 @@ static response_t* send_to_one_host(const char* host, int port,
       last_err = ce;
       snprintf(last_ip, sizeof(last_ip), "%s", ipstr);
 
-      ERROR_PRINT("connect failed host=%s port=%d ip=%s err=%d (%s)",
+      DEBUG_PRINT("connect failed host=%s port=%d ip=%s err=%d (%s)",
                   host, port, ipstr[0] ? ipstr : "?", ce, strerror(ce));
 
       close(sock);
