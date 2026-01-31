@@ -709,7 +709,7 @@ void start_block_production(void) {
 
           if (!is_seed_node && delegate_ip_address[0] != '\0') {
             for (size_t b = 0; b < bans.banned_n; b++) {
-              if (bans.banned[b] && bans.banned[b][0] != '\0' &&
+              if (bans.banned[b][0] != '\0' &&
                   strcmp(bans.banned[b], delegate_ip_address) == 0) {
                 ERROR_PRINT("Your delegate IP is banned, shutting down");
                 atomic_store(&shutdown_requested, true);
