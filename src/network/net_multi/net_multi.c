@@ -438,26 +438,51 @@ typedef struct {
     response_t**    responses;
     size_t          next_idx;
     pthread_mutex_t mu;
+    size_t launch_seq;
 } work_ctx_t;
 
-static void* worker_fn(void* arg) {
-    work_ctx_t* ctx = (work_ctx_t*)arg;
-    for (;;) {
-        size_t i;
-        pthread_mutex_lock(&ctx->mu);
-        i = ctx->next_idx++;
-        pthread_mutex_unlock(&ctx->mu);
-        if (i >= ctx->total) break;
+static void sleep_ms(int ms)
+{
+  struct timespec ts;
+  ts.tv_sec = ms / 1000;
+  ts.tv_nsec = (long)(ms % 1000) * 1000000L;
+  nanosleep(&ts, NULL);
+}
 
-        const char* host = ctx->hosts[i];
-        ctx->responses[i] = send_to_one_host(host, ctx->port, ctx->z, ctx->zlen);
-        if (!ctx->responses[i]) {
-            response_t* r = (response_t*)calloc(1, sizeof(*r));
-            if (r) { r->host = strdup(host); r->status = STATUS_ERROR; }
-            ctx->responses[i] = r;
-        }
+static void* worker_fn(void* arg) {
+  work_ctx_t* ctx = (work_ctx_t*)arg;
+
+  for (;;) {
+    size_t i, seq = 0;
+    pthread_mutex_lock(&ctx->mu);
+    i = ctx->next_idx++;
+    if (i < ctx->total) {
+        seq = ctx->launch_seq++;
     }
-    return NULL;
+    pthread_mutex_unlock(&ctx->mu);
+
+    if (i >= ctx->total) {
+        break;
+    }
+
+    // Stagger only for DPoPS traffic (optional but recommended)
+    if (ctx->port == XCASH_DPOPS_PORT) {
+      // deterministic spread: 12..32ms
+      int delay_ms = 12 + (int)(seq % 6) * 4;  // 12,16,20,24,28,32 repeat
+      sleep_ms(delay_ms);
+    }
+
+    const char* host = ctx->hosts[i];
+
+    ctx->responses[i] = send_to_one_host(host, ctx->port, ctx->z, ctx->zlen);
+    if (!ctx->responses[i]) {
+      response_t* r = (response_t*)calloc(1, sizeof(*r));
+      if (r) { r->host = strdup(host); r->status = STATUS_ERROR; }
+      ctx->responses[i] = r;
+    }
+  }
+
+  return NULL;
 }
 
 /* ---- public entry: parallel fan-out ---- */
@@ -476,6 +501,7 @@ response_t** send_multi_request(const char** hosts, int port, const char* messag
         size_t mlen = strlen(message) + 1;
         if (!compress_gzip_with_prefix((const unsigned char*)message, mlen, &z, &zlen)) {
             ERROR_PRINT("gzip failed");
+            responses[total_hosts] = NULL;
             return responses; /* caller can still cleanup */
         }
     }
@@ -488,6 +514,7 @@ response_t** send_multi_request(const char** hosts, int port, const char* messag
     ctx.zlen      = zlen;
     ctx.responses = responses;
     ctx.next_idx  = 0;
+    ctx.launch_seq = 0;
     pthread_mutex_init(&ctx.mu, NULL);
 
     size_t nworkers = NET_MULTI_WORKERS;
@@ -506,6 +533,9 @@ response_t** send_multi_request(const char** hosts, int port, const char* messag
     free(th);
     pthread_mutex_destroy(&ctx.mu);
     free(z);
+    z = NULL;
+
+    responses[total_hosts] = NULL;
     return responses;
 }
 
