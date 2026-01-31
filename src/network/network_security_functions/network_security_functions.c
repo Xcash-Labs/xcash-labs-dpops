@@ -1001,21 +1001,16 @@ bool get_banned_delegates(void)
   }
 
   // Parse into a temporary list first (no touching global bans yet)
-  banned_ip_list_t tmp;
-  memset(&tmp, 0, sizeof(tmp));
+  banned_ip_list_t tmp = {0};
 
   if (!parse_banned_ips_only(banstring1, &tmp)) {
     WARNING_PRINT("Failed to parse banned IP list");
-    // if parse_banned_ips_only can partially allocate, clean it up:
-    banned_ip_list_destroy(&tmp);
     return false;
   }
 
   // Swap temp list into global under lock
   pthread_mutex_lock(&bans_lock);
-  banned_ip_list_destroy(&bans);
   bans = tmp;
-  memset(&tmp, 0, sizeof(tmp));
   pthread_mutex_unlock(&bans_lock);
 
   return true;
