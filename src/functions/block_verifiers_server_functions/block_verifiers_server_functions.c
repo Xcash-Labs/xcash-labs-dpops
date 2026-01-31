@@ -1,6 +1,6 @@
 #include "block_verifiers_server_functions.h"
 
-void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(const char* MESSAGE)
+void OLD_server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(const char* MESSAGE)
 {
   char public_address[XCASH_WALLET_LENGTH + 1] = {0};
   char vrf_public_key_data[VRF_PUBLIC_KEY_LENGTH + 1] = {0};
@@ -61,7 +61,7 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
       // All checks passed — mark online
       strncpy(delegates_all[i].online_status, "true", sizeof(delegates_all[i].online_status));
       delegates_all[i].online_status[sizeof(delegates_all[i].online_status) - 1] = '\0';
-      DEBUG_PRINT("Marked delegate %s as online (ck)", public_address);
+      DEBUG_PRINT("Marked delegate %s as online (ck)", public_address); ------ when I change this to an info print things seem to work better 
 
       unsigned char alpha_input_bin[72] = {0};
       unsigned char pk_bin[crypto_vrf_PUBLICKEYBYTES] = {0};
@@ -114,6 +114,140 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
 
   return;
 }
+
+
+
+void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(const char* MESSAGE)
+{
+  char public_address[XCASH_WALLET_LENGTH + 1] = {0};
+  char vrf_public_key_data[VRF_PUBLIC_KEY_LENGTH + 1] = {0};
+  char vrf_proof_hex[VRF_PROOF_LENGTH + 1] = {0};
+  char vrf_beta_hex[VRF_BETA_LENGTH + 1] = {0};
+  char block_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
+  char parsed_delegates_hash[SHA256_HASH_SIZE + 1] = {0};
+
+  // parse
+  if (parse_json_data(MESSAGE, "public_address", public_address, sizeof(public_address)) == XCASH_ERROR ||
+      parse_json_data(MESSAGE, "vrf_public_key", vrf_public_key_data, sizeof(vrf_public_key_data)) == XCASH_ERROR ||
+      parse_json_data(MESSAGE, "vrf_proof", vrf_proof_hex, sizeof(vrf_proof_hex)) == XCASH_ERROR ||
+      parse_json_data(MESSAGE, "vrf_beta", vrf_beta_hex, sizeof(vrf_beta_hex)) == XCASH_ERROR ||
+      parse_json_data(MESSAGE, "block-height", block_height, sizeof(block_height)) == XCASH_ERROR ||
+      parse_json_data(MESSAGE, "delegates_hash", parsed_delegates_hash, sizeof(parsed_delegates_hash)) == XCASH_ERROR)
+  {
+    ERROR_PRINT("Could not parse the block_verifiers_to_block_verifiers_vrf_data");
+    return;
+  }
+
+  if (strlen(public_address) < 5 || public_address[0] != 'X') {
+    ERROR_PRINT("Invalid or missing delegate address: '%s'", public_address);
+    return;
+  }
+
+  // ---- Phase 1: find delegate + snapshot globals quickly under lock
+  size_t idx = (size_t)-1;
+
+  // snapshots (so we don't read moving targets later)
+  char local_block_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
+  char local_delegates_hash[SHA256_HASH_SIZE + 1] = {0};
+  char local_prev_block_hash[BLOCK_HASH_LENGTH + 1] = {0};
+
+  pthread_mutex_lock(&delegates_all_lock);
+
+  // snapshot shared globals while under a lock you *know* is held consistently
+  // (If these globals have their own lock, use that instead / additionally.)
+  strncpy(local_block_height, current_block_height, sizeof(local_block_height) - 1);
+  strncpy(local_delegates_hash, delegates_hash, sizeof(local_delegates_hash) - 1);
+  strncpy(local_prev_block_hash, previous_block_hash, sizeof(local_prev_block_hash) - 1);
+
+  for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
+    if (strncmp(delegates_all[i].public_address, public_address, XCASH_WALLET_LENGTH) == 0 &&
+        delegates_all[i].verifiers_vrf_proof_hex[0] == '\0' &&
+        delegates_all[i].verifiers_vrf_beta_hex[0] == '\0')
+    {
+      idx = i;
+      break;
+    }
+  }
+
+  pthread_mutex_unlock(&delegates_all_lock);
+
+  if (idx == (size_t)-1) {
+    if (startup_complete) {
+      WARNING_PRINT("Delegate %s not found or already has VRF fields set.", public_address);
+    }
+    return;
+  }
+
+  // quick checks using snapshots
+  if (strcmp(block_height, local_block_height) != 0) {
+    WARNING_PRINT("Block height mismatch for %s: remote=%s, local=%s",
+                  public_address, block_height, local_block_height);
+    return;
+  }
+
+  if (strcmp(parsed_delegates_hash, local_delegates_hash) != 0) {
+    // NOTE: delegate_db_hash_mismatch++ should be atomic or protected by a lock.
+    pthread_mutex_lock(&delegates_all_lock);
+    delegate_db_hash_mismatch++;
+    strncpy(delegates_all[idx].online_status, "partial", sizeof(delegates_all[idx].online_status) - 1);
+    pthread_mutex_unlock(&delegates_all_lock);
+
+    WARNING_PRINT("Delegates hash mismatch for %s: remote=%s, local=%s",
+                  public_address, parsed_delegates_hash, local_delegates_hash);
+    return;
+  }
+
+  // ---- Phase 2: verify VRF OUTSIDE the lock
+  unsigned char alpha_input_bin[72] = {0};
+  unsigned char pk_bin[crypto_vrf_PUBLICKEYBYTES] = {0};
+  unsigned char vrf_proof[crypto_vrf_PROOFBYTES] = {0};
+  unsigned char vrf_beta[crypto_vrf_OUTPUTBYTES] = {0};
+  unsigned char prev_hash_bin[32] = {0}; // if your block hash is always 32 bytes
+
+  if (!hex_to_byte_array(vrf_public_key_data, pk_bin, sizeof(pk_bin)) ||
+      !hex_to_byte_array(vrf_proof_hex, vrf_proof, sizeof(vrf_proof)) ||
+      !hex_to_byte_array(vrf_beta_hex, vrf_beta, sizeof(vrf_beta)) ||
+      !hex_to_byte_array(local_prev_block_hash, prev_hash_bin, sizeof(prev_hash_bin)))
+  {
+    ERROR_PRINT("Failed to decode one or more VRF fields from %s", public_address);
+    return;
+  }
+
+  memcpy(alpha_input_bin, prev_hash_bin, 32);
+
+  uint64_t height_num = strtoull(local_block_height, NULL, 10);
+  uint64_t height_le = htole64(height_num);
+  memcpy(alpha_input_bin + 32, &height_le, sizeof(height_le));
+  memcpy(alpha_input_bin + 40, pk_bin, 32);
+
+  unsigned char computed_beta[crypto_vrf_OUTPUTBYTES];
+  if (crypto_vrf_verify(computed_beta, pk_bin, vrf_proof, alpha_input_bin, sizeof(alpha_input_bin)) != 0) {
+    ERROR_PRINT("VRF proof failed verification from %s", public_address);
+    return;
+  }
+
+  if (memcmp(computed_beta, vrf_beta, sizeof(vrf_beta)) != 0) {
+    WARNING_PRINT("VRF beta mismatch from %s", public_address);
+    return;
+  }
+
+  // ---- Phase 3: commit under lock (and re-check it's still empty)
+  pthread_mutex_lock(&delegates_all_lock);
+
+  if (delegates_all[idx].verifiers_vrf_proof_hex[0] == '\0' &&
+      delegates_all[idx].verifiers_vrf_beta_hex[0] == '\0')
+  {
+    strncpy(delegates_all[idx].online_status, "true", sizeof(delegates_all[idx].online_status) - 1);
+    memcpy(delegates_all[idx].verifiers_vrf_proof_hex, vrf_proof_hex, VRF_PROOF_LENGTH + 1);
+    memcpy(delegates_all[idx].verifiers_vrf_beta_hex, vrf_beta_hex, VRF_BETA_LENGTH + 1);
+  }
+
+  pthread_mutex_unlock(&delegates_all_lock);
+}
+
+
+
+
 
 /*---------------------------------------------------------------------------------------------------------
 Name: server_receive_data_socket_node_to_node_vote_majority
