@@ -199,7 +199,7 @@ bool print_starter_state(const arg_config_t *arg_config) {
       return false;
     }
     if (strcmp(self_sha, allowed_sha) != 0) {
-      WARNING_PRINT("Hash mismatch for image (local=%s, current=%s). Please consider updating.",
+      WARNING_PRINT("Hash mismatch for image (local=%s, expected=%s). Please consider updating (disregard while in beta).",
                     self_sha, allowed_sha);
     }
   }

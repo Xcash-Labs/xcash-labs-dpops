@@ -960,7 +960,7 @@ static bool parse_banned_ips_only(const char* banstr, banned_ip_list_t* out)
       out->banned[out->banned_n][IP_LENGTH - 1] = '\0';
       out->banned_n++;
     } else if (action == 'D') {
-      // do nothing else for now, need to remove delegate entry ??
+       DEBUG_PRINT("Delete token seen (ignored for now): %s", ip);
     } else {
       continue;
     }
@@ -993,10 +993,6 @@ bool get_banned_delegates(void) {
     WARNING_PRINT("Failed to parse banned IP list");
     return false;
   }
-//  INFO_PRINT("Banned IP count: %zu", bans.banned_n);
-//  for (size_t j = 0; j < bans.banned_n; j++) {
-//    INFO_PRINT("BANNED: %s", bans.banned[j]);
-//  }
 
   return true;
 }

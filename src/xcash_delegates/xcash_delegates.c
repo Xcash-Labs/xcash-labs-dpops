@@ -89,7 +89,7 @@ int read_organize_delegates(delegates_t* delegates, size_t* delegates_count_resu
             if (!is_seed_node) {
               for (size_t b = 0; b < bans.banned_n; b++) {
                 if (strcmp(bans.banned[b], delegates[delegate_index].IP_address) == 0) {
-                  ERROR_PRINT("Skipping banned delegate IP");
+                  ERROR_PRINT("Skipping banned delegate IP: %s", delegates[delegate_index].IP_address);
                   skip_delegate = true;
                   break;
                 }

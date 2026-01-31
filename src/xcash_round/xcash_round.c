@@ -702,10 +702,8 @@ void start_block_production(void) {
     if (!is_seed_node) {
       if (strcmp(producer_refs[0].public_address, xcash_wallet_public_address) != 0) {
         if (++ban_count >= 15) {
-          INFO_PRINT("Get Banned Delegates...");
           get_banned_delegates();
           for (size_t b = 0; b < bans.banned_n; b++) {
-            INFO_PRINT("Banned IPs: %s", bans.banned[b]);
             if (strcmp(bans.banned[b], delegate_ip_address) == 0) {
               ERROR_PRINT("Your delegate IP is banned, shutting down");
               atomic_store(&shutdown_requested, true);
