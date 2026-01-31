@@ -6,7 +6,6 @@ static char previous_round_block_hash[BLOCK_HASH_LENGTH + 1] = {0};
 static size_t missed_load = 0;
 static char last_winner_name[MAXIMUM_BUFFER_SIZE_DELEGATES_NAME+1] = {0};
 static bool blockchain_stuck = false;
-static size_t ban_count = 0;
 
 // Helper function
 static void safe_strcpy(char* dst, size_t dst_sz, const char* src) {
@@ -710,34 +709,6 @@ void start_block_production(void) {
       atomic_store(&wait_for_vrf_message, false);
       atomic_store(&wait_for_consensus_vote, false);
     }
-
-    sync_block_verifiers_minutes_and_seconds(0, 48);
-    if (producer_refs[0].public_address[0] != '\0' &&
-        xcash_wallet_public_address[0] != '\0') {
-
-      if (strcmp(producer_refs[0].public_address, xcash_wallet_public_address) != 0) {
-        INFO_PRINT("Entering get banned");
-        if (++ban_count >= 15) {
-          INFO_PRINT("Getting banned list...");
-          get_banned_delegates();
-          INFO_PRINT("Exit get banned");
-          if (!is_seed_node && delegate_ip_address[0] != '\0') {
-            for (size_t b = 0; b < bans.banned_n; b++) {
-              if (bans.banned[b][0] != '\0' &&
-                  strcmp(bans.banned[b], delegate_ip_address) == 0) {
-                ERROR_PRINT("Your delegate IP is banned, shutting down");
-                atomic_store(&shutdown_requested, true);
-                break;
-              }
-            }
-            INFO_PRINT("Exit if/for");
-          }
-
-          ban_count = 0;
-        }
-      }
-    }
-
 
     // 10 secs to perform cleanup or add stats and other info
     if (sync_block_verifiers_minutes_and_seconds(0, 50) == XCASH_ERROR) {
