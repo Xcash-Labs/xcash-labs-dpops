@@ -150,14 +150,15 @@ void server_receive_data_socket_block_verifiers_to_block_verifiers_vrf_data(cons
   char local_block_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
   char local_delegates_hash[SHA256_HASH_SIZE + 1] = {0};
   char local_prev_block_hash[BLOCK_HASH_LENGTH + 1] = {0};
+  
 
   pthread_mutex_lock(&delegates_all_lock);
 
   // snapshot shared globals while under a lock you *know* is held consistently
   // (If these globals have their own lock, use that instead / additionally.)
-  strncpy(local_block_height, current_block_height, sizeof(local_block_height) - 1);
-  strncpy(local_delegates_hash, delegates_hash, sizeof(local_delegates_hash) - 1);
-  strncpy(local_prev_block_hash, previous_block_hash, sizeof(local_prev_block_hash) - 1);
+  snprintf(local_block_height,  sizeof(local_block_height),  "%s", current_block_height);
+  snprintf(local_delegates_hash, sizeof(local_delegates_hash), "%s", delegates_hash);
+  snprintf(local_prev_block_hash, sizeof(local_prev_block_hash), "%s", previous_block_hash);
 
   for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; i++) {
     if (strncmp(delegates_all[i].public_address, public_address, XCASH_WALLET_LENGTH) == 0 &&
