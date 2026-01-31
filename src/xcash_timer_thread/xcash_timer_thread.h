@@ -18,7 +18,7 @@
 #include "block_verifiers_synchronize_server_functions.h"
 
 // ---- jobs ----
-typedef enum { JOB_PROOF } job_kind_t;
+typedef enum { BAN_REFRESH, JOB_PROOF } job_kind_t;
 
 typedef struct {
   int hour;  // 0..23 local time
@@ -28,7 +28,13 @@ typedef struct {
 
 // 4:00 AM → PROOF
 static const sched_slot_t SLOTS[] = {
-  {9,  0, JOB_PROOF},
+  { 0, 45, BAN_REFRESH },
+  { 4, 45, BAN_REFRESH },
+  { 8, 45, BAN_REFRESH },
+  { 9,  0, JOB_PROOF  },
+  {12, 45, BAN_REFRESH },
+  {16, 45, BAN_REFRESH },
+  {20, 45, BAN_REFRESH },
 };
 static const size_t NSLOTS = sizeof(SLOTS)/sizeof(SLOTS[0]);
 

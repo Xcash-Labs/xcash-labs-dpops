@@ -892,6 +892,98 @@ static void run_proof_check(sched_ctx_t* ctx) {
   return;
 }
 
+static uint32_t fnv1a_32(const char* s)
+{
+  uint32_t h = 2166136261u;
+  for (; s && *s; ++s) {
+    h ^= (unsigned char)*s;
+    h *= 16777619u;
+  }
+  return h;
+}
+
+static void sleep_ms(int ms)
+{
+  struct timespec ts;
+  ts.tv_sec  = ms / 1000;
+  ts.tv_nsec = (long)(ms % 1000) * 1000000L;
+  nanosleep(&ts, NULL);
+}
+
+static void ban_refresh_stagger_sleep(void)
+{
+  const char* id =
+    (xcash_wallet_public_address[0] ? xcash_wallet_public_address :
+     (delegate_ip_address[0] ? delegate_ip_address : "default"));
+
+  const uint32_t window_sec = 120;
+  uint32_t delay_sec = fnv1a_32(id) % window_sec;
+
+  // sleep in 1s chunks so shutdown is responsive
+  while (delay_sec-- > 0) {
+    if (atomic_load_explicit(&shutdown_requested, memory_order_relaxed)) return;
+    sleep_ms(1000);
+  }
+}
+
+/*---------------------------------------------------------------------------------------------------------
+ @brief Refresh the DNSSEC-validated delegate ban list and shutdown if this node is banned.
+
+ Workflow:
+   1) Apply a deterministic stagger delay (jitter) so all nodes do not query DNS at the same time.
+      This prevents DNS stampedes and reduces the chance of timeouts.
+   2) Fetch the banned delegate IP list from all configured DNS endpoints (TXT), requiring DNSSEC
+      validation for each endpoint.
+   3) Enforce strict mirror consistency: endpoints must publish identical TXT payloads. If any
+      endpoint is empty, missing, or mismatched, the refresh is treated as failed.
+   4) Parse the TXT payload into the in-memory ban list, replacing the previous list safely
+      (implementation should parse into a temporary list and swap under bans_lock).
+   5) If this node has a delegate IP address configured, check membership against the refreshed
+      ban list:
+        - If banned: log an error and request shutdown.
+        - Otherwise: continue running.
+
+ Return:
+   @return bool
+     - true  : ban refresh completed successfully (ban list updated and checks applied).
+     - false : ban list could not be refreshed reliably (DNSSEC/TXT fetch failure, mismatch, or parse error);
+              caller should keep the prior list and continue scheduling future refresh attempts.
+--------------------------------------------------------------------------------------------------------*/
+bool run_ban_refresh(void)
+{
+  ban_refresh_stagger_sleep();
+
+  INFO_PRINT("Refreshing Ban List");
+  bool ok = get_banned_delegates();
+  if (!ok) {
+    WARNING_PRINT("Ban refresh failed (keeping existing list)");
+    return false;
+  }
+
+  // Optional: only enforce shutdown if you actually have an IP to check
+  if (delegate_ip_address[0] != '\0') {
+
+    bool banned = false;
+
+    pthread_mutex_lock(&bans_lock);
+    for (size_t b = 0; b < bans.banned_n; b++) {
+      const char* bip = bans.banned[b];
+      if (bip && bip[0] != '\0' && strcmp(bip, delegate_ip_address) == 0) {
+        banned = true;
+        break;
+      }
+    }
+    pthread_mutex_unlock(&bans_lock);
+
+    if (banned) {
+      ERROR_PRINT("Your delegate IP is banned, shutting down");
+      atomic_store(&shutdown_requested, true);
+    }
+  }
+
+  return true;
+}
+
 // ---- single scheduler thread ----
 void* timer_thread(void* arg) {
   lower_thread_priority_batch();
@@ -920,6 +1012,11 @@ void* timer_thread(void* arg) {
       if (is_job_node()) {
         INFO_PRINT("Scheduler: running PROOF CHECK at %02d:%02d", slot->hour, slot->min);
         run_proof_check(ctx);
+      }
+    } else if (slot->kind == BAN_REFRESH) {
+      INFO_PRINT("Scheduler: running BAN REFRESH at %02d:%02d", slot->hour, slot->min);
+      if (!run_ban_refresh()) {
+        ERROR_PRINT("Ban Refresh failed");
       }
     }
   }

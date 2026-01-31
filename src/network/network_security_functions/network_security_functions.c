@@ -969,30 +969,54 @@ static bool parse_banned_ips_only(const char* banstr, banned_ip_list_t* out)
   return true;
 }
 
-bool get_banned_delegates(void) {
+bool get_banned_delegates(void)
+{
   char banstring1[MEDIUM_BUFFER_SIZE] = {0};
   char banstring2[MEDIUM_BUFFER_SIZE] = {0};
-  char* banstrings[] = {banstring1, banstring2};
 
-  for (size_t i = 0; i < 2 && banendpoints[i]; ++i) {
-    if (!dnssec_get_txt_record(g_ctx, banendpoints[i], banstrings[i], MEDIUM_BUFFER_SIZE)) {
-      WARNING_PRINT("Failed to read banned list TXT from %s", banendpoints[i]);
-      return false;
-    }
+  if (!banendpoints[0] || !banendpoints[1]) {
+    WARNING_PRINT("Ban endpoints not configured");
+    return false;
   }
-  
+
+  if (!dnssec_get_txt_record(g_ctx, banendpoints[0], banstring1, sizeof(banstring1))) {
+    WARNING_PRINT("Failed to read banned list TXT from %s", banendpoints[0]);
+    return false;
+  }
+
+  if (!dnssec_get_txt_record(g_ctx, banendpoints[1], banstring2, sizeof(banstring2))) {
+    WARNING_PRINT("Failed to read banned list TXT from %s", banendpoints[1]);
+    return false;
+  }
+
   if (banstring1[0] == '\0' || banstring2[0] == '\0') {
     WARNING_PRINT("Banned list missing from one or more endpoints (ban1_len=%zu ban2_len=%zu)",
                   strlen(banstring1), strlen(banstring2));
     return false;
-  } else if (strcmp(banstring1, banstring2) != 0) {
+  }
+
+  if (strcmp(banstring1, banstring2) != 0) {
     WARNING_PRINT("Banned list mismatch between endpoints");
     return false;
   }
-  if (!parse_banned_ips_only(banstring1, &bans)) {
+
+  // Parse into a temporary list first (no touching global bans yet)
+  banned_ip_list_t tmp;
+  memset(&tmp, 0, sizeof(tmp));
+
+  if (!parse_banned_ips_only(banstring1, &tmp)) {
     WARNING_PRINT("Failed to parse banned IP list");
+    // if parse_banned_ips_only can partially allocate, clean it up:
+    banned_ip_list_destroy(&tmp);
     return false;
   }
+
+  // Swap temp list into global under lock
+  pthread_mutex_lock(&bans_lock);
+  banned_ip_list_destroy(&bans);
+  bans = tmp;
+  memset(&tmp, 0, sizeof(tmp));
+  pthread_mutex_unlock(&bans_lock);
 
   return true;
 }

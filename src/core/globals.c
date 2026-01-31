@@ -30,6 +30,7 @@ pthread_mutex_t delegates_all_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t current_block_verifiers_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t producer_refs_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t database_data_IP_address_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t bans_lock = PTHREAD_MUTEX_INITIALIZER;
 atomic_bool server_running             = ATOMIC_VAR_INIT(true);
 atomic_bool wait_for_vrf_init          = ATOMIC_VAR_INIT(true);
 atomic_bool wait_for_block_height_init = ATOMIC_VAR_INIT(true);

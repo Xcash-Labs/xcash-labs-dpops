@@ -42,6 +42,7 @@ extern pthread_mutex_t delegates_all_lock;
 extern pthread_mutex_t current_block_verifiers_lock;
 extern pthread_mutex_t producer_refs_lock;
 extern pthread_mutex_t database_data_IP_address_lock;
+extern pthread_mutex_t bans_lock;
 extern atomic_bool server_running; 
 extern atomic_bool wait_for_vrf_init;
 extern atomic_bool wait_for_consensus_vote;

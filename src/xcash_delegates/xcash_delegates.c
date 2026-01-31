@@ -85,15 +85,20 @@ int read_organize_delegates(delegates_t* delegates, size_t* delegates_count_resu
             }
           } else if (strcmp(db_key, "IP_address") == 0 && BSON_ITER_HOLDS_UTF8(&record_iter)) {
             strncpy(delegates[delegate_index].IP_address, bson_iter_utf8(&record_iter, NULL), IP_LENGTH);
-            delegates[delegate_index].IP_address[sizeof(delegates[delegate_index].IP_address) - 1] = '\0';
-            if (bans.banned_n > 0) {
-              for (size_t b = 0; b < bans.banned_n; b++) {
-                if (strcmp(bans.banned[b], delegates[delegate_index].IP_address) == 0) {
-                  ERROR_PRINT("Skipping banned delegate IP: %s", delegates[delegate_index].IP_address);
-                  skip_delegate = true;
-                  break;
-                }
+            delegates[delegate_index].IP_address[IP_LENGTH - 1] = '\0';
+            bool is_banned = false;
+            pthread_mutex_lock(&bans_lock);
+            for (size_t b = 0; b < bans.banned_n; b++) {
+              const char* bip = bans.banned[b];
+              if (bip && bip[0] != '\0' && strcmp(bip, delegates[delegate_index].IP_address) == 0) {
+                is_banned = true;
+                break;
               }
+            }
+            pthread_mutex_unlock(&bans_lock);
+            if (is_banned) {
+              ERROR_PRINT("Skipping banned delegate IP: %s", delegates[delegate_index].IP_address);
+              skip_delegate = true;
             }
           } else if (strcmp(db_key, "delegate_name") == 0 && BSON_ITER_HOLDS_UTF8(&record_iter)) {
             strncpy(delegates[delegate_index].delegate_name, bson_iter_utf8(&record_iter, NULL), MAXIMUM_BUFFER_SIZE_DELEGATES_NAME);
