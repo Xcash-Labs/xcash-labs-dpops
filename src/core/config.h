@@ -24,10 +24,12 @@
 #define XCASH_WALLET_IP "127.0.0.1"
 #define XCASH_DPOPS_IP "127.0.0.1"
 #define MAXIMUM_CONNECTIONS_IP_ADDRESS_OR_PUBLIC_ADDRESS 128
-#define CONNECT_TIMEOUT_SEC 10 // was 3 then 4
+#define CONNECT_TIMEOUT_SEC 4
 #define RECEIVE_TIMEOUT_SEC 5
 #define SEND_TIMEOUT_MS 4000
 #define NET_MULTI_WORKERS 12
+#define CONNECT_RETRY_COUNT 2   /* total attempts per addr: 2 = one retry */
+#define CONNECT_RETRY_JITTER_MS 120
 
 // ===================== Network Block String =====================
 #define EXTRA_NONCE_TAG "02"

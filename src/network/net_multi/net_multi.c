@@ -1,5 +1,13 @@
 #include "net_multi.h"
 
+static void sleep_ms(int ms)
+{
+  struct timespec ts;
+  ts.tv_sec = ms / 1000;
+  ts.tv_nsec = (long)(ms % 1000) * 1000000L;
+  nanosleep(&ts, NULL);
+}
+
 /* --- write whole buffer with per-attempt timeout (select + send) --- */
 static int send_all_with_timeout(int fd, const uint8_t* buf, size_t len, int ms_timeout) {
     size_t off = 0;
@@ -24,158 +32,11 @@ static int send_all_with_timeout(int fd, const uint8_t* buf, size_t len, int ms_
     return 0;
 }
 
-/* ---- single-host sender ---- */
-static response_t* OLD_send_to_one_host(const char* host, int port,
-                                    const uint8_t* z, size_t zlen) {
-    response_t* r = (response_t*)calloc(1, sizeof(*r));
-    if (!r) return NULL;
-
-    r->host = strdup(host);
-    r->status = STATUS_PENDING;
-    r->req_time_start = time(NULL);
-
-    char port_str[6]; snprintf(port_str, sizeof port_str, "%d", port);
-
-    struct addrinfo hints = {0}, *res = NULL, *ai = NULL;
-    hints.ai_family   = AF_UNSPEC;
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_flags    = AI_NUMERICSERV | AI_ADDRCONFIG;
-
-    if (getaddrinfo(host, port_str, &hints, &res) != 0 || !res) {
-        r->status = STATUS_ERROR;
-        ERROR_PRINT("DNS resolution failed for %s", host);
-        r->req_time_end = time(NULL);
-        return r;
-    }
-
-    int sock = -1;
-    for (ai = res; ai; ai = ai->ai_next) {
-        sock = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
-        if (sock < 0) continue;
-
-        /* non-blocking connect with deadline */
-        int of = fcntl(sock, F_GETFL, 0);
-        if (of == -1) of = 0;
-        (void)fcntl(sock, F_SETFL, of | O_NONBLOCK);
-
-        int rc = connect(sock, ai->ai_addr, ai->ai_addrlen);
-        if (rc == 0) {
-            /* connected immediately */
-            (void)fcntl(sock, F_SETFL, of);
-            break;
-        }
-        if (errno != EINPROGRESS) { close(sock); sock = -1; continue; }
-
-        for (;;) {
-          fd_set wf;
-          FD_ZERO(&wf);
-          FD_SET(sock, &wf);
-          struct timeval ctv = (struct timeval){CONNECT_TIMEOUT_SEC, 0};
-          int sel = select(sock + 1, NULL, &wf, NULL, &ctv);
-
-          if (sel < 0 && errno == EINTR) continue;
-
-          if (sel < 0) {
-            ERROR_PRINT("connect select() failed: errno=%d (%s)", errno, strerror(errno));
-            close(sock);
-            sock = -1;
-            break;
-          }
-
-          if (sel == 0 || !FD_ISSET(sock, &wf)) {
-            ERROR_PRINT("connect %s:%d timeout after %d sec", host, port, CONNECT_TIMEOUT_SEC);
-            close(sock);
-            sock = -1;
-            break;
-          }
-
-          int err = 0;
-          socklen_t sl = sizeof(err);
-          if (getsockopt(sock, SOL_SOCKET, SO_ERROR, &err, &sl) != 0) {
-            ERROR_PRINT("getsockopt(SO_ERROR) failed: errno=%d (%s)", errno, strerror(errno));
-            close(sock);
-            sock = -1;
-            break;
-          }
-
-          if (err != 0) {
-            ERROR_PRINT("connect failed: SO_ERROR=%d (%s)", err, strerror(err));
-            close(sock);
-            sock = -1;
-            break;
-          }
-
-          (void)fcntl(sock, F_SETFL, of); /* back to blocking */
-          break;
-        }
-
-        if (sock >= 0) break; /* success for this ai */
-    }
-
-    if (sock < 0) {
-        r->status = STATUS_TIMEOUT;
-        WARNING_PRINT("Connect timeout/fail to %s", host);
-        freeaddrinfo(res);
-        r->req_time_end = time(NULL);
-        return r;
-    }
-
-    /* align SO_SNDTIMEO with helper timeout */
-    struct timeval sto;
-    sto.tv_sec  = SEND_TIMEOUT_MS / 1000;
-    sto.tv_usec = (SEND_TIMEOUT_MS % 1000) * 1000;
-    if (setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, &sto, sizeof(sto)) < 0) {
-        WARNING_PRINT("setsockopt(SO_SNDTIMEO) failed: %s", strerror(errno));
-    }
-
-    if (send_all_with_timeout(sock, z, zlen, SEND_TIMEOUT_MS) != 0) {
-        r->status = STATUS_ERROR;
-        ERROR_PRINT("Send failed to %s: %s", host, strerror(errno));
-    } else {
-        r->status = STATUS_OK;
-    }
-
-    r->req_time_end = time(NULL);
-    DEBUG_PRINT("Host:%s | %s | %lds",
-                host,
-                r->status == STATUS_OK ? "OK" :
-                r->status == STATUS_TIMEOUT ? "TIMEOUT" : "ERROR",
-                (long)(r->req_time_end - r->req_time_start));
-
-    close(sock);
-    freeaddrinfo(res);
-    return r;
-}
-
-
-
-
-
-
-
-
-
-#ifndef CONNECT_RETRY_COUNT
-#define CONNECT_RETRY_COUNT 2   /* total attempts per addr: 2 = one retry */
-#endif
-
-#ifndef CONNECT_RETRY_JITTER_MS
-#define CONNECT_RETRY_JITTER_MS 120
-#endif
-
 static long monotonic_ms_now(void)
 {
   struct timespec ts;
   clock_gettime(CLOCK_MONOTONIC, &ts);
   return (long)(ts.tv_sec * 1000L + ts.tv_nsec / 1000000L);
-}
-
-static void sleep_ms(int ms)
-{
-  struct timespec ts;
-  ts.tv_sec = ms / 1000;
-  ts.tv_nsec = (long)(ms % 1000) * 1000000L;
-  nanosleep(&ts, NULL);
 }
 
 static void addr_to_ipstr(const struct addrinfo* ai, char* out, size_t out_sz)
@@ -415,19 +276,6 @@ connected:
   return r;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 /* ---- simple worker pool ---- */
 typedef struct {
     const char**    hosts;
@@ -440,14 +288,6 @@ typedef struct {
     pthread_mutex_t mu;
     size_t launch_seq;
 } work_ctx_t;
-
-static void sleep_ms(int ms)
-{
-  struct timespec ts;
-  ts.tv_sec = ms / 1000;
-  ts.tv_nsec = (long)(ms % 1000) * 1000000L;
-  nanosleep(&ts, NULL);
-}
 
 static void* worker_fn(void* arg) {
   work_ctx_t* ctx = (work_ctx_t*)arg;
