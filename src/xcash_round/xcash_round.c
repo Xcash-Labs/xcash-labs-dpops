@@ -698,33 +698,6 @@ void start_block_production(void) {
 
     // Final step - Wait for block creation/DB Updates or Node clean-up
     snprintf(current_round_part, sizeof(current_round_part), "%d", 12);
-
-    /*
-    if (producer_refs[0].public_address[0] != '\0' &&
-        xcash_wallet_public_address[0] != '\0') {
-
-      if (strcmp(producer_refs[0].public_address, xcash_wallet_public_address) != 0) {
-        if (++ban_count >= 15) {
-          INFO_PRINT("Getting banned list...");
-          get_banned_delegates();
-
-          if (!is_seed_node && delegate_ip_address[0] != '\0') {
-            for (size_t b = 0; b < bans.banned_n; b++) {
-              if (bans.banned[b][0] != '\0' &&
-                  strcmp(bans.banned[b], delegate_ip_address) == 0) {
-                ERROR_PRINT("Your delegate IP is banned, shutting down");
-                atomic_store(&shutdown_requested, true);
-                break;
-              }
-            }
-          }
-
-          ban_count = 0;
-        }
-      }
-    }
-    */
-
     if (round_result == ROUND_OK) {
       INFO_STAGE_PRINT("Part 12 - Wait for Block Creation");
     } else  {
@@ -738,8 +711,36 @@ void start_block_production(void) {
       atomic_store(&wait_for_consensus_vote, false);
     }
 
+    sync_block_verifiers_minutes_and_seconds(0, 48);
+    if (producer_refs[0].public_address[0] != '\0' &&
+        xcash_wallet_public_address[0] != '\0') {
+
+      if (strcmp(producer_refs[0].public_address, xcash_wallet_public_address) != 0) {
+        INFO_PRINT("Entering get banned");
+        if (++ban_count >= 15) {
+          INFO_PRINT("Getting banned list...");
+          get_banned_delegates();
+          INFO_PRINT("Exit get banned");
+          if (!is_seed_node && delegate_ip_address[0] != '\0') {
+            for (size_t b = 0; b < bans.banned_n; b++) {
+              if (bans.banned[b][0] != '\0' &&
+                  strcmp(bans.banned[b], delegate_ip_address) == 0) {
+                ERROR_PRINT("Your delegate IP is banned, shutting down");
+                atomic_store(&shutdown_requested, true);
+                break;
+              }
+            }
+            INFO_PRINT("Exit if/for");
+          }
+
+          ban_count = 0;
+        }
+      }
+    }
+    */
+
     // 10 secs to perform cleanup or add stats and other info
-    if (sync_block_verifiers_minutes_and_seconds(0, 55) == XCASH_ERROR) {
+    if (sync_block_verifiers_minutes_and_seconds(0, 50) == XCASH_ERROR) {
       INFO_PRINT("Failed to create block in the allotted time, skipping round");
       goto end_of_round_skip_block;
     }
