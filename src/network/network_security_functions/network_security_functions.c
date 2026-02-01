@@ -1011,25 +1011,7 @@ bool get_banned_delegates(void)
   // Swap temp list into global under lock
   pthread_mutex_lock(&bans_lock);
   bans = tmp;
-
-  INFO_PRINT("Updated banned delegate IP list:");
-  bool printed_any = false;
-
-  for (size_t i = 0; i < MAX_BANNED_IPS; i++) {
-    if (bans.banned[i][0] != '\0') {
-      INFO_PRINT("  banned[%zu] = %s", i, bans.banned[i]);
-      printed_any = true;
-    }
-  }
-
-  if (!printed_any) {
-    INFO_PRINT("  (none)");
-  }
-
-
   pthread_mutex_unlock(&bans_lock);
-
-
 
   return true;
 }
