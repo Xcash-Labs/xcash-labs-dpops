@@ -567,7 +567,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
 
   // 2) Validate each field and build the BSON update doc
   static const char* const allowed_fields[] = {
-      "IP_address", "about", "website", "team", "shared_delegate_status", "solo_addresses", "delegate_fee",
+      "IP_address", "about", "website", "team", "delegate_type", "solo_addresses", "delegate_fee",
         "server_specs", "minimum_payout"};
   const size_t allowed_fields_count = sizeof(allowed_fields) / sizeof(allowed_fields[0]);
 
@@ -610,7 +610,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
       bson_destroy(setdoc_bson);
       bson_destroy(filter_bson);
       cJSON_Delete(root);
-      SERVER_ERROR("0|Invalid update field (allowed: IP_address, about, website, team, shared_delegate_status, solo_addresses, delegate_fee, server_specs, minimum_payout)");
+      SERVER_ERROR("0|Invalid update field (allowed: IP_address, about, website, team, delegate_type, solo_addresses, delegate_fee, server_specs, minimum_payout)");
     }
 
     // ---- For db fields, require string on the wire ----
@@ -659,13 +659,13 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
       }
       BSON_APPEND_UTF8(setdoc_bson, key, val);
       ++db_fields_count;
-    } else if (strcmp(key, "shared_delegate_status") == 0) {
+    } else if (strcmp(key, "delegate_type") == 0) {
       // the names are used in a sort and seed type needs to come first
       if ( strcmp(val, "shared") != 0 && strcmp(val, "solo") != 0) {
         bson_destroy(setdoc_bson);
         bson_destroy(filter_bson);
         cJSON_Delete(root);
-        SERVER_ERROR("0|shared_delegate_status must be one of: shared or solo");
+        SERVER_ERROR("0|delegate_type must be one of: shared or solo");
       }
       set_shared = (strcmp(val, "shared") == 0);
       BSON_APPEND_UTF8(setdoc_bson, key, val);
