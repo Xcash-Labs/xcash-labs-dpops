@@ -2169,3 +2169,103 @@ int mark_found_blocks_processed_up_to(uint64_t height)
   mongoc_client_pool_push(database_client_thread_pool, client);
   return XCASH_OK;
 }
+
+/*---------------------------------------------------------------------------------------------------------
+ * @brief Refresh the allowed solo-address rows for a delegate.
+ *
+ * This function synchronizes the `allowed_solo_addresses` collection for a single delegate by:
+ *
+ *   1) Deleting all existing documents where:
+ *        - delegate_public_address == @p delegate_public_address
+ *
+ *   2) Inserting one document per address in @p solo_list (if any), with fields:
+ *        - delegate_public_address  (the owning delegate)
+ *        - allowed_solo_address     (one permitted solo address)
+ *
+ * MongoDB will auto-generate `_id` for each inserted document.
+ *
+ * A blank list (solo_list->n == 0) is treated as "clear all": existing rows are deleted and no new rows
+ * are inserted.
+ *
+ * @param db_name
+ *   MongoDB database name to use.
+ *
+ * @param delegate_public_address
+ *   The delegate public address used to scope deletion and associate inserted rows.
+ *
+ * @param solo_list
+ *   Parsed list of allowed solo addresses (0..MAX_SOLO_ADDRS).
+ *
+ * @return true on success; false on any client-pool, delete, or insert failure.
+---------------------------------------------------------------------------------------------------------*/
+bool refresh_allowed_solo_addresses(const char* db_name,
+                                    const char* delegate_public_address,
+                                    const solo_addr_list_t* solo_list) {
+  if (!db_name || !delegate_public_address || !solo_list) return false;
+
+  mongoc_client_t* client = mongoc_client_pool_pop(database_client_thread_pool);
+  if (!client) return false;
+
+  mongoc_collection_t* col =
+      mongoc_client_get_collection(client, db_name, DB_COLLECTION_SOLO_ADDRESSES);
+  if (!col) {
+    mongoc_client_pool_push(database_client_thread_pool, client);
+    return false;
+  }
+
+  bson_error_t error;
+  bool ok = true;
+
+  // 1) Delete all existing rows for this delegate_public_address
+  bson_t del_filter;
+  bson_init(&del_filter);
+  BSON_APPEND_UTF8(&del_filter, "delegate_public_address", delegate_public_address);
+
+  bson_t del_reply;
+  bson_init(&del_reply);
+
+  ok = mongoc_collection_delete_many(col, &del_filter, NULL, &del_reply, &error);
+
+  bson_destroy(&del_reply);
+  bson_destroy(&del_filter);
+
+  if (!ok) {
+    mongoc_collection_destroy(col);
+    mongoc_client_pool_push(database_client_thread_pool, client);
+    return false;
+  }
+
+  // If blank list, we're done (meaning: "clear all")
+  if (solo_list->n == 0) {
+    mongoc_collection_destroy(col);
+    mongoc_client_pool_push(database_client_thread_pool, client);
+    return true;
+  }
+
+  // 2) Insert one doc per solo address (Mongo will auto-generate _id)
+  for (size_t i = 0; i < solo_list->n; i++) {
+    bson_t doc;
+    bson_init(&doc);
+
+    BSON_APPEND_UTF8(&doc, "delegate_public_address", delegate_public_address);
+    BSON_APPEND_UTF8(&doc, "allowed_solo_address", solo_list->addr[i]);
+
+    bson_t ins_reply;
+    bson_init(&ins_reply);
+
+    ok = mongoc_collection_insert_one(col, &doc, NULL, &ins_reply, &error);
+
+    bson_destroy(&ins_reply);
+    bson_destroy(&doc);
+
+    if (!ok) {
+      mongoc_collection_destroy(col);
+      mongoc_client_pool_push(database_client_thread_pool, client);
+      return false;
+    }
+  }
+
+  mongoc_collection_destroy(col);
+  mongoc_client_pool_push(database_client_thread_pool, client);
+  return true;
+}

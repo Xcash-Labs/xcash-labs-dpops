@@ -85,6 +85,7 @@
 #define DB_COLLECTION_PAYOUT_BALANCES "payout_balances"
 #define DB_COLLECTION_PAYOUT_RECEIPTS "payout_receipts"
 #define DB_COLLECTION_APP_DELEGATES "approved_delegates"
+#define DB_COLLECTION_SOLO_ADDRESSES "allowed_solo_addresses"
 #define DB_COLLECTION_NAME_SIZE 256
 #define MAXIMUM_DATABASE_COLLECTION_DOCUMENTS 5000
 #define DATABASE_EMPTY_STRING "empty_database_collection"

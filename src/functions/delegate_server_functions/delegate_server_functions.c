@@ -434,6 +434,76 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
   return;
 }
 
+// helper
+static bool is_sane_address_char(char c) {
+  // allow base58-ish + common address chars (adjust if you know exact alphabet)
+  return (c >= '0' && c <= '9') ||
+         (c >= 'A' && c <= 'Z') ||
+         (c >= 'a' && c <= 'z');
+}
+
+// helper to parse and validate the solo addresses
+static bool parse_and_validate_solo_addresses_csv(const char* csv,
+                                                  size_t max_len,
+                                                  size_t max_addrs,
+                                                  solo_addr_list_t* out)  // NULL = validate only
+{
+  if (!csv) return false;
+
+  size_t len = strnlen(csv, max_len);
+  if (len >= max_len) return false;  // not NUL-terminated within bounds
+
+  if (out) out->n = 0;
+
+  // BLANK is OK
+  if (len == 0) return true;
+
+  // No whitespace anywhere (spaces, tabs, newlines, etc.)
+  for (size_t i = 0; i < len; i++) {
+    unsigned char c = (unsigned char)csv[i];
+    if (c == ' ' || c == '\t' || c == '\r' || c == '\n' || c == '\f' || c == '\v') {
+      return false;
+    }
+  }
+
+  // No leading/trailing commas
+  if (csv[0] == ',' || csv[len - 1] == ',') return false;
+
+  // Writable copy for strtok_r
+  char buf[VSMALL_BUFFER_SIZE];
+  if (len >= sizeof(buf)) return false;
+  memcpy(buf, csv, len);
+  buf[len] = '\0';
+
+  size_t count = 0;
+  char* saveptr = NULL;
+
+  for (char* tok = strtok_r(buf, ",", &saveptr);
+       tok != NULL;
+       tok = strtok_r(NULL, ",", &saveptr)) {
+    if (tok[0] == '\0') return false;  // handles ",," and "a,,b"
+    if (++count > max_addrs) return false;
+
+    if (strlen(tok) != XCASH_WALLET_LENGTH) return false;
+
+    for (size_t i = 0; i < XCASH_WALLET_LENGTH; i++) {
+      unsigned char c = (unsigned char)tok[i];
+      // redundant after whole-string whitespace scan, but harmless
+      if (c == ' ' || c == '\t' || c == '\r' || c == '\n' || c == '\f' || c == '\v') return false;
+      if (!is_sane_address_char((char)c)) return false;
+    }
+
+    if (out) {
+      if (out->n >= MAX_SOLO_ADDRS) return false;
+      memcpy(out->addr[out->n], tok, XCASH_WALLET_LENGTH);
+      out->addr[out->n][XCASH_WALLET_LENGTH] = '\0';
+      out->n++;
+    }
+  }
+
+  return (count >= 1);
+}
+
 /*---------------------------------------------------------------------------------------------------------
 Name: server_receive_data_socket_nodes_to_block_verifiers_update_delegates
 Description: Runs the code when the server receives the NODES_TO_BLOCK_VERIFIERS_UPDATE_DELEGATE message
@@ -443,6 +513,8 @@ Parameters:
 ---------------------------------------------------------------------------------------------------------*/
 void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server_client_t* client, const char* MESSAGE) {
   char delegate_public_address[XCASH_WALLET_LENGTH + 1];
+  bool solo_addresses_provided = false;
+  solo_addr_list_t solo_list = {0};
   uint64_t registration_time = 0;
   memset(delegate_public_address, 0, sizeof(delegate_public_address));
 
@@ -457,8 +529,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
 
   // Optional sanity: message_settings
   const cJSON* msg_settings = cJSON_GetObjectItemCaseSensitive(root, "message_settings");
-  if (!cJSON_IsString(msg_settings) ||
-      strncmp(msg_settings->valuestring, "NODES_TO_BLOCK_VERIFIERS_UPDATE_DELEGATE", 40) != 0) {
+  if (!cJSON_IsString(msg_settings) || strcmp(msg_settings->valuestring, "NODES_TO_BLOCK_VERIFIERS_UPDATE_DELEGATE") != 0) {
     cJSON_Delete(root);
     SERVER_ERROR("0|Invalid message settings");
   }
@@ -495,8 +566,8 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
 
   // 2) Validate each field and build the BSON update doc
   static const char* const allowed_fields[] = {
-      "IP_address", "about", "website", "team",
-      "shared_delegate_status", "delegate_fee", "server_specs", "minimum_payout"};
+      "IP_address", "about", "website", "team", "shared_delegate_status", "solo_addresses", "delegate_fee",
+        "server_specs", "minimum_payout"};
   const size_t allowed_fields_count = sizeof(allowed_fields) / sizeof(allowed_fields[0]);
 
   // filter: { "public_address": "<addr>" }
@@ -515,7 +586,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
     SERVER_ERROR("0|Internal error (alloc update)");
   }
 
-  size_t valid_kv_count = 0;
+  size_t db_fields_count = 0;
 
   for (cJSON* it = updates->child; it != NULL; it = it->next) {
     const char* key = it->string;
@@ -529,7 +600,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
     // allowlist check
     int ok_key = 0;
     for (size_t i = 0; i < allowed_fields_count; ++i) {
-      if (strncmp(key, allowed_fields[i], VSMALL_BUFFER_SIZE) == 0) {
+      if (strcmp(key, allowed_fields[i]) == 0) {
         ok_key = 1;
         break;
       }
@@ -538,10 +609,10 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
       bson_destroy(setdoc_bson);
       bson_destroy(filter_bson);
       cJSON_Delete(root);
-      SERVER_ERROR("0|Invalid update field (allowed: IP_address, about, website, team, shared_delegate_status, delegate_fee, server_specs, minimum_payout)");
+      SERVER_ERROR("0|Invalid update field (allowed: IP_address, about, website, team, shared_delegate_status, solo_addresses, delegate_fee, server_specs, minimum_payout)");
     }
 
-    // ---- For ALL fields, require string on the wire ----
+    // ---- For db fields, require string on the wire ----
     if (!cJSON_IsString(it) || it->valuestring == NULL) {
       bson_destroy(setdoc_bson);
       bson_destroy(filter_bson);
@@ -551,7 +622,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
     const char* val = it->valuestring;
 
     // Per-field constraints and storage
-    if (strncmp(key, "IP_address", VSMALL_BUFFER_SIZE) == 0) {
+    if (strcmp(key, "IP_address") == 0) {
       if (check_for_valid_ip_or_hostname(val) == 0) {
         bson_destroy(setdoc_bson);
         bson_destroy(filter_bson);
@@ -559,7 +630,8 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
         SERVER_ERROR("0|Invalid IP_address (must be IPv4 or domain, <=255 chars)");
       }
       BSON_APPEND_UTF8(setdoc_bson, key, val);
-    } else if (strncmp(key, "about", VSMALL_BUFFER_SIZE) == 0) {
+      ++db_fields_count;
+    } else if (strcmp(key, "about") == 0) {
       if (strnlen(val, 512) > 511) {
         bson_destroy(setdoc_bson);
         bson_destroy(filter_bson);
@@ -567,7 +639,8 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
         SERVER_ERROR("0|'about' too long (max 512)");
       }
       BSON_APPEND_UTF8(setdoc_bson, key, val);
-    } else if (strncmp(key, "website", VSMALL_BUFFER_SIZE) == 0) {
+      ++db_fields_count;
+    } else if (strcmp(key, "website") == 0) {
       if (strnlen(val, 256) > 255) {
         bson_destroy(setdoc_bson);
         bson_destroy(filter_bson);
@@ -575,7 +648,8 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
         SERVER_ERROR("0|'website' too long (max 255)");
       }
       BSON_APPEND_UTF8(setdoc_bson, key, val);
-    } else if (strncmp(key, "team", VSMALL_BUFFER_SIZE) == 0) {
+      ++db_fields_count;
+    } else if (strcmp(key, "team") == 0) {
       if (strnlen(val, 256) > 255) {
         bson_destroy(setdoc_bson);
         bson_destroy(filter_bson);
@@ -583,17 +657,26 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
         SERVER_ERROR("0|'team' too long (max 255)");
       }
       BSON_APPEND_UTF8(setdoc_bson, key, val);
-    } else if (strncmp(key, "shared_delegate_status", VSMALL_BUFFER_SIZE) == 0) {
+      ++db_fields_count;
+    } else if (strcmp(key, "shared_delegate_status") == 0) {
       // the names are used in a sort and seed type needs to come
-      if (strncmp(val, "shared", VSMALL_BUFFER_SIZE) != 0) {
+      if ( strcmp(val, "shared") != 0 && strcmp(val, "solo") != 0) {
         bson_destroy(setdoc_bson);
         bson_destroy(filter_bson);
         cJSON_Delete(root);
-        SERVER_ERROR("0|shared_delegate_status must be one of: solo, shared, or team");
+        SERVER_ERROR("0|shared_delegate_status must be one of: shared or solo");
       }
       BSON_APPEND_UTF8(setdoc_bson, key, val);
-
-    } else if (strncmp(key, "delegate_fee", VSMALL_BUFFER_SIZE) == 0) {
+      ++db_fields_count;
+    } else if (strcmp(key, "solo_addresses") == 0) {
+      solo_addresses_provided = true;
+      if (!parse_and_validate_solo_addresses_csv(val, VSMALL_BUFFER_SIZE, MAX_SOLO_ADDRS, &solo_list)) {
+        bson_destroy(setdoc_bson);
+        bson_destroy(filter_bson);
+        cJSON_Delete(root);
+        SERVER_ERROR("0|solo_addresses must be blank or a comma-delimited list of up to 10 public addresses");
+      }
+    } else if (strcmp(key, "delegate_fee") == 0) {
       // New format on the wire: integer basis points (0..10000). No decimals allowed.
       errno = 0;
       char* endp = NULL;
@@ -610,8 +693,8 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
 
       // Store as DOUBLE (percent)
       BSON_APPEND_DOUBLE(setdoc_bson, "delegate_fee", pct);
-
-    } else if (strncmp(key, "server_specs", VSMALL_BUFFER_SIZE) == 0) {
+      ++db_fields_count;
+    } else if (strcmp(key, "server_specs") == 0) {
       if (strnlen(val, 256) > 255) {
         bson_destroy(setdoc_bson);
         bson_destroy(filter_bson);
@@ -619,8 +702,8 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
         SERVER_ERROR("0|'server_specs' too long (max 255)");
       }
       BSON_APPEND_UTF8(setdoc_bson, key, val);
-
-    } else if (strncmp(key, "minimum_payout", VSMALL_BUFFER_SIZE) == 0) {
+      ++db_fields_count;
+    } else if (strcmp(key, "minimum_payout") == 0) {
       // Must be integer 1..10000 (string on the wire)
       errno = 0;
       char* endp = NULL;
@@ -633,35 +716,43 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
         SERVER_ERROR("0|Invalid minimum_payout. Must be an integer 1..10000");
       }
       BSON_APPEND_INT32(setdoc_bson, "minimum_payout", (int32_t)v);
-
+      ++db_fields_count;
     } else {
       // Fallback (shouldn't hit due to allowlist)
       BSON_APPEND_UTF8(setdoc_bson, key, val);
+      ++db_fields_count;
     }
-
-    ++valid_kv_count;
   }
 
-  BSON_APPEND_DATE_TIME(setdoc_bson, "registration_timestamp", (int64_t)registration_time * 1000);
+  bool do_delegate_update = (db_fields_count > 0);
 
-  if (valid_kv_count == 0) {
+  if (!do_delegate_update && !solo_addresses_provided) {
     bson_destroy(setdoc_bson);
     bson_destroy(filter_bson);
     cJSON_Delete(root);
     SERVER_ERROR("0|No valid updates provided");
   }
 
-  // 3) Execute DB update
-  if (update_document_from_collection_bson(DATABASE_NAME, DB_COLLECTION_DELEGATES, filter_bson, setdoc_bson) == 0) {
-    bson_destroy(setdoc_bson);
-    bson_destroy(filter_bson);
-    cJSON_Delete(root);
-    SERVER_ERROR("0|Database update failed");
-  }
+  if (do_delegate_update) {
+    BSON_APPEND_DATE_TIME(setdoc_bson, "registration_timestamp", (int64_t)registration_time * 1000);
 
+    if (update_document_from_collection_bson(DATABASE_NAME, DB_COLLECTION_DELEGATES, filter_bson, setdoc_bson) == 0) {
+      bson_destroy(setdoc_bson);
+      bson_destroy(filter_bson);
+      cJSON_Delete(root);
+      SERVER_ERROR("0|Database update failed");
+    }
+  }
+jed
   bson_destroy(setdoc_bson);
   bson_destroy(filter_bson);
   cJSON_Delete(root);
+
+  if (solo_addresses_provided) {
+    if (!refresh_allowed_solo_addresses(DATABASE_NAME, delegate_public_address, &solo_list)) {
+      SERVER_ERROR("0|Failed to update allowed_solo_addresses");
+    }
+  }
 
   // 4) Success
   send_data(client, (unsigned char*)"1|Updated the delegate", strlen("1|Updated the delegate"));
@@ -691,6 +782,7 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
   char dbvoted_for[XCASH_WALLET_LENGTH + 1] = {0};
   char dbreserve_proof[BUFFER_SIZE_RESERVE_PROOF + 1] = {0};
   char json_filter[256] = {0};
+  char type_filter[256] = {0};
   uint64_t vote_amount_atomic = 0;
   int64_t dbtotal_vote = 0;
 
@@ -815,10 +907,8 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
       }
     }
 
-    snprintf(json_filter, sizeof(json_filter),
-             "{\"delegate_name\":\"%.*s\"}",
-             (int)name_len, delegate_name_or_address);
-
+    snprintf(json_filter, sizeof(json_filter), "{\"delegate_name\":\"%.*s\"}",
+     (int)name_len, delegate_name_or_address);
     char addr_buf[XCASH_WALLET_LENGTH + 1] = {0};
     if (read_document_field_from_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, json_filter,
                                             "public_address", addr_buf, sizeof(addr_buf)) != XCASH_OK ||
@@ -843,6 +933,29 @@ void server_receive_data_socket_node_to_block_verifiers_add_reserve_proof(server
   if (num_delegates > 0) {
     cJSON_Delete(root);
     SERVER_ERROR("0|A delegate wallet is not allowed to vote");
+  }
+
+  snprintf(data, sizeof(data),
+           "{\"delegate_public_address\":\"%s\", \"allowed_solo_address\":\"%s\"}",
+           voted_for_public_address, voter_public_address);
+  int num_allowed = count_documents_in_collection(DATABASE_NAME, DB_COLLECTION_SOLO_ADDRESSES, data);
+  if (num_allowed < 0) {
+    cJSON_Delete(root);
+    SERVER_ERROR("0|Database error checking solo allow-list");
+  }
+
+  char type_buf[10] = {0};
+  snprintf(type_filter, sizeof(type_filter), "{\"public_address\":\"%s\"}", voted_for_public_address);
+
+  if (read_document_field_from_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, type_filter,
+                                          "delegate_type", type_buf, sizeof(type_buf)) != XCASH_OK) {
+    cJSON_Delete(root);
+    SERVER_ERROR("0|The delegate voted for is invalid");
+  }
+
+  if (strcmp(type_buf, "solo") == 0 && num_allowed == 0) {
+    cJSON_Delete(root);
+    SERVER_ERROR("0|You can not vote for a solo delegate");
   }
 
   if (check_reserve_proofs(vote_amount_atomic, voter_public_address, proof_str) != XCASH_OK) {
