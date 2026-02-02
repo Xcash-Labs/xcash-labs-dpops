@@ -514,6 +514,7 @@ Parameters:
 void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server_client_t* client, const char* MESSAGE) {
   char delegate_public_address[XCASH_WALLET_LENGTH + 1];
   bool solo_addresses_provided = false;
+  bool set_shared = false;
   solo_addr_list_t solo_list = {0};
   uint64_t registration_time = 0;
   memset(delegate_public_address, 0, sizeof(delegate_public_address));
@@ -659,13 +660,14 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
       BSON_APPEND_UTF8(setdoc_bson, key, val);
       ++db_fields_count;
     } else if (strcmp(key, "shared_delegate_status") == 0) {
-      // the names are used in a sort and seed type needs to come
+      // the names are used in a sort and seed type needs to come first
       if ( strcmp(val, "shared") != 0 && strcmp(val, "solo") != 0) {
         bson_destroy(setdoc_bson);
         bson_destroy(filter_bson);
         cJSON_Delete(root);
         SERVER_ERROR("0|shared_delegate_status must be one of: shared or solo");
       }
+      set_shared = (strcmp(val, "shared") == 0);
       BSON_APPEND_UTF8(setdoc_bson, key, val);
       ++db_fields_count;
     } else if (strcmp(key, "solo_addresses") == 0) {
@@ -751,6 +753,13 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
   if (solo_addresses_provided) {
     if (!refresh_allowed_solo_addresses(DATABASE_NAME, delegate_public_address, &solo_list)) {
       SERVER_ERROR("0|Failed to update allowed_solo_addresses");
+    }
+  }
+
+  if (set_shared) {
+    solo_addr_list_t empty = {0};
+    if (!refresh_allowed_solo_addresses(DATABASE_NAME, delegate_public_address, &empty)) {
+      SERVER_ERROR("0|Failed to clear allowed_solo_addresses");
     }
   }
 
