@@ -743,7 +743,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
       SERVER_ERROR("0|Database update failed");
     }
   }
-jed
+
   bson_destroy(setdoc_bson);
   bson_destroy(filter_bson);
   cJSON_Delete(root);
