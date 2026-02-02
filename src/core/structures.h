@@ -109,4 +109,9 @@ typedef struct {
   size_t banned_n;
 } banned_ip_list_t;
 
+typedef struct {
+  char addr[MAX_SOLO_ADDRS][XCASH_WALLET_LENGTH + 1];
+  size_t n;
+} solo_addr_list_t;
+
 #endif
