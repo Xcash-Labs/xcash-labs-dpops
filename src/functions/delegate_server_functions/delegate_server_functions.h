@@ -18,12 +18,6 @@
 #include "network_daemon_functions.h"
 #include "network_wallet_functions.h"
 
-#define MAX_SOLO_ADDRS 10
-typedef struct {
-  char addr[MAX_SOLO_ADDRS][XCASH_WALLET_LENGTH + 1];
-  size_t n;
-} solo_addr_list_t;
-
 int check_for_valid_delegate_name(const char* DELEGATE_NAME);
 int check_for_valid_ip_or_hostname(const char *host);
 void server_receive_data_socket_nodes_to_block_verifiers_register_delegates(server_client_t* client, const char* MESSAGE);
