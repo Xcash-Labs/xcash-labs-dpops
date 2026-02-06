@@ -384,12 +384,19 @@ function get_block_verifier_key_settings()
 
 function get_autostart_services_settings()
 {
-  echo -ne "${COLOR_PRINT_YELLOW}Do you want to autostart the services when you restart the server? (leave empty for default: NO): ${END_COLOR_PRINT}"
+  echo -ne "${COLOR_PRINT_YELLOW}Do you want to autostart the services when you restart the server? (Y/N, default: NO): ${END_COLOR_PRINT}"
   read -r data
   echo -ne "\r"
   echo
-  AUTOSTART_SETTINGS=$([ "$data" == "" ] && echo "$AUTOSTART_SETTINGS" || echo "YES")
 
+  # normalize (lowercase + trim spaces)
+  data="$(echo "$data" | tr '[:upper:]' '[:lower:]' | xargs)"
+
+  if [[ "$data" == "y" || "$data" == "yes" ]]; then
+    AUTOSTART_SETTINGS="YES"
+  else
+    AUTOSTART_SETTINGS="NO"
+  fi
 }
 
 function print_installation_settings()
