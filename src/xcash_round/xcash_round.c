@@ -627,6 +627,7 @@ void start_block_production(void) {
       if (delegate_ip_address[0] == '\0') {
         WARNING_PRINT("Delegates Collection is out of sync, attempting to update");
         sync_block_verifiers_minutes_and_seconds(0, 50);
+        snprintf(current_round_part, sizeof(current_round_part), "%d", 12);
         int selected_index = 1;
         if (create_sync_token() == XCASH_OK) {
           if (create_delegates_db_sync_request(selected_index)) {
@@ -1153,7 +1154,6 @@ void start_block_production(void) {
           } else {
             INFO_STAGE_PRINT("Delegates Collection is out of sync, attempting to update");
             // Need for trans to pass verification
-            snprintf(current_round_part, sizeof(current_round_part), "%d", 12);
             int selected_index;
             pthread_mutex_lock(&delegates_all_lock);
             selected_index = select_random_online_delegate();
