@@ -963,7 +963,7 @@ bool run_ban_refresh(void)
   // IP is blank so this must have been a newly registred node so retrive it now
   if (delegate_ip_address[0] != '\0') {
     if (!get_ip_address(delegate_ip_address)) {
-      WARNING_PRINT('Unable to retrive the delegates own IP');
+      WARNING_PRINT("Unable to retrive the delegates own IP");
     }
   }
 
