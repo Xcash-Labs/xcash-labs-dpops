@@ -960,11 +960,15 @@ bool run_ban_refresh(void)
     return false;
   }
 
-  // Optional: only enforce shutdown if you actually have an IP to check
+  // IP is blank so this must have been a newly registred node so retrive it now
   if (delegate_ip_address[0] != '\0') {
+    if !(get_ip_address(delegate_ip_address)) {
+      WARNING_PRINT('Unable to retrive the delegates own IP');
+    }
+  }
 
+  if (delegate_ip_address[0] != '\0') {
     bool banned = false;
-
     pthread_mutex_lock(&bans_lock);
     for (size_t b = 0; b < bans.banned_n; b++) {
       const char* bip = bans.banned[b];

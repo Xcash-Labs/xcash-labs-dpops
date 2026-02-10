@@ -16,6 +16,7 @@
 #include "network_security_functions.h"
 #include "block_verifiers_functions.h"
 #include "block_verifiers_synchronize_server_functions.h"
+#include "node_functions.h"
 
 // ---- jobs ----
 typedef enum { BAN_REFRESH, JOB_PROOF } job_kind_t;

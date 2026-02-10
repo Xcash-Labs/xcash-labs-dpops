@@ -220,10 +220,9 @@ bool print_starter_state(const arg_config_t *arg_config) {
     pthread_mutex_unlock(&bans_lock);
 
   }
-//   else {
-//    ERROR_PRINT("Failed to retrieve IP for delegate, process aborting");
-//    return false;
-//  }
+   else {
+    WARNING_PRINT("Warrning, did not find the local ip in the database (will happen on newly registered node)");
+  }
 
   fprintf(stderr, "[%s] Daemon startup successful and is busy processing requests...\n\n", time_str);
   return true;
