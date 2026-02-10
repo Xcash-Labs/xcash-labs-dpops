@@ -624,6 +624,26 @@ void start_block_production(void) {
     } else {
       ERROR_PRINT("Failed to read vrf_public_key, has this delegate been registered?");
       sleep(10);
+      // If the delegate_id address is blank then this is a new delgate and needs the db refreshed
+      if (delegate_ip_address[0] != '\0') {
+        sync_block_verifiers_minutes_and_seconds(0, 50);
+        INFO_PRINT("Delegates Collection is out of sync, attempting to update");
+        int selected_index;
+        pthread_mutex_lock(&delegates_all_lock);
+        selected_index = select_random_online_delegate();
+        pthread_mutex_unlock(&delegates_all_lock);
+        if (create_sync_token() == XCASH_OK) {
+          if (create_delegates_db_sync_request(selected_index)) {
+            INFO_PRINT("Waiting for DB sync");
+          } else {
+            ERROR_PRINT("Error occured while syncing delegates");
+          }
+        } else {
+          ERROR_PRINT("Error creating sync token");
+        }
+      } else {
+        sleep(10);
+      }
     }
   }
 
