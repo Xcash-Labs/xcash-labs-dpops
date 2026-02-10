@@ -1152,6 +1152,8 @@ void start_block_production(void) {
             DEBUG_PRINT("Skipping resync (not seed node #1)");
           } else {
             INFO_STAGE_PRINT("Delegates Collection is out of sync, attempting to update");
+            // Need for trans to pass verification
+            snprintf(current_round_part, sizeof(current_round_part), "%d", 12);
             int selected_index;
             pthread_mutex_lock(&delegates_all_lock);
             selected_index = select_random_online_delegate();
