@@ -640,6 +640,9 @@ void start_block_production(void) {
       }
       sleep(20);
     }
+    if (atomic_load(&shutdown_requested)) {
+      return;
+    }
   }
 
   char target_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
