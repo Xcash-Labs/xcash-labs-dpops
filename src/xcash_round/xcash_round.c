@@ -622,27 +622,8 @@ void start_block_production(void) {
     if (strlen(vrf_public_key) != 0) {
       break;
     } else {
-      WARNING_PRINT("Failed to read vrf_public_key, has this delegate been registered?");
-      // If the delegate_id address is blank then this is a new delgate and needs the db refreshed
-      if (delegate_ip_address[0] == '\0') {
-        WARNING_PRINT("Delegates Collection is out of sync, attempting to update");
-        sync_block_verifiers_minutes_and_seconds(0, 50);
-        snprintf(current_round_part, sizeof(current_round_part), "%d", 12);
-        int selected_index = 1;
-        if (create_sync_token() == XCASH_OK) {
-          if (create_delegates_db_sync_request(selected_index)) {
-            INFO_PRINT("Waiting for DB sync");
-          } else {
-            ERROR_PRINT("Error occured while syncing delegates");
-          }
-        } else {
-          ERROR_PRINT("Error creating sync token");
-        }
-      }
+      ERROR_PRINT("Failed to read vrf_public_key, has this delegate been registered?");
       sleep(20);
-    }
-    if (atomic_load(&shutdown_requested)) {
-      return;
     }
   }
 
@@ -1153,7 +1134,6 @@ void start_block_production(void) {
             DEBUG_PRINT("Skipping resync (not seed node #1)");
           } else {
             INFO_STAGE_PRINT("Delegates Collection is out of sync, attempting to update");
-            // Need for trans to pass verification
             int selected_index;
             pthread_mutex_lock(&delegates_all_lock);
             selected_index = select_random_online_delegate();
