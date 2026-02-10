@@ -622,12 +622,11 @@ void start_block_production(void) {
     if (strlen(vrf_public_key) != 0) {
       break;
     } else {
-      ERROR_PRINT("Failed to read vrf_public_key, has this delegate been registered?");
-      sleep(10);
+      WARNING_PRINT("Failed to read vrf_public_key, has this delegate been registered?");
       // If the delegate_id address is blank then this is a new delgate and needs the db refreshed
-      if (delegate_ip_address[0] != '\0') {
-        sync_block_verifiers_minutes_and_seconds(0, 50);
+      if (delegate_ip_address[0] == '\0') {
         INFO_PRINT("Delegates Collection is out of sync, attempting to update");
+        sync_block_verifiers_minutes_and_seconds(0, 50);
         int selected_index;
         pthread_mutex_lock(&delegates_all_lock);
         selected_index = select_random_online_delegate();
