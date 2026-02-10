@@ -627,10 +627,7 @@ void start_block_production(void) {
       if (delegate_ip_address[0] == '\0') {
         INFO_PRINT("Delegates Collection is out of sync, attempting to update");
         sync_block_verifiers_minutes_and_seconds(0, 50);
-        int selected_index;
-        pthread_mutex_lock(&delegates_all_lock);
-        selected_index = select_random_online_delegate();
-        pthread_mutex_unlock(&delegates_all_lock);
+        int selected_index = 1;
         if (create_sync_token() == XCASH_OK) {
           if (create_delegates_db_sync_request(selected_index)) {
             INFO_PRINT("Waiting for DB sync");
@@ -640,9 +637,8 @@ void start_block_production(void) {
         } else {
           ERROR_PRINT("Error creating sync token");
         }
-      } else {
-        sleep(10);
       }
+      sleep(20);
     }
   }
 
