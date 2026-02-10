@@ -625,7 +625,7 @@ void start_block_production(void) {
       WARNING_PRINT("Failed to read vrf_public_key, has this delegate been registered?");
       // If the delegate_id address is blank then this is a new delgate and needs the db refreshed
       if (delegate_ip_address[0] == '\0') {
-        INFO_PRINT("Delegates Collection is out of sync, attempting to update");
+        WARNING_PRINT("Delegates Collection is out of sync, attempting to update");
         sync_block_verifiers_minutes_and_seconds(0, 50);
         int selected_index = 1;
         if (create_sync_token() == XCASH_OK) {
