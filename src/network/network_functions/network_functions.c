@@ -129,16 +129,12 @@ int send_http_request(char *result, size_t return_buffer_size, const char *host,
 
     curl_easy_setopt(curl, CURLOPT_URL, full_url);
 
-    // --- Robust timeouts / stall protection ---
+    // --- Robust timeouts ---
     curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT_MS, connect_timeout_ms);
     curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS,        total_timeout_ms);
-    curl_easy_setopt(curl, CURLOPT_LOW_SPEED_LIMIT,   1L);                       // 1 byte/sec
-    // LOW_SPEED_TIME must be < total timeout; keep ~1/2 of it but cap to 90s
-    long low_speed_time = total_timeout_ms / 2000L; // ms->s /2
-    if (low_speed_time > 90L) low_speed_time = 90L;
-    if (low_speed_time < 10L) low_speed_time = 10L;
-    curl_easy_setopt(curl, CURLOPT_LOW_SPEED_TIME,    low_speed_time);
-    curl_easy_setopt(curl, CURLOPT_NOSIGNAL,          1L);                       // thread-safe timeouts
+    curl_easy_setopt(curl, CURLOPT_LOW_SPEED_LIMIT, 0L);
+    curl_easy_setopt(curl, CURLOPT_LOW_SPEED_TIME, 0L)
+    curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
 
     // HTTP version + TCP keepalive
     curl_easy_setopt(curl, CURLOPT_HTTP_VERSION, (long)CURL_HTTP_VERSION_1_1);
