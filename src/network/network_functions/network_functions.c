@@ -133,7 +133,7 @@ int send_http_request(char *result, size_t return_buffer_size, const char *host,
     curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT_MS, connect_timeout_ms);
     curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS,        total_timeout_ms);
     curl_easy_setopt(curl, CURLOPT_LOW_SPEED_LIMIT, 0L);
-    curl_easy_setopt(curl, CURLOPT_LOW_SPEED_TIME, 0L)
+    curl_easy_setopt(curl, CURLOPT_LOW_SPEED_TIME, 0L);
     curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
 
     // HTTP version + TCP keepalive
