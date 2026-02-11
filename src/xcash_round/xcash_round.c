@@ -625,6 +625,9 @@ void start_block_production(void) {
       ERROR_PRINT("Failed to read vrf_public_key, has this delegate been registered?");
       sleep(20);
     }
+    if (atomic_load(&shutdown_requested)) {
+      return;
+    }
   }
 
   char target_height[BLOCK_HEIGHT_LENGTH + 1] = {0};
