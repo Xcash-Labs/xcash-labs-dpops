@@ -153,7 +153,7 @@ int send_http_request(char *result, size_t return_buffer_size, const char *host,
     res = curl_easy_perform(curl);
     if (res != CURLE_OK)
     {
-        ERROR_PRINT("HTTP request failed: %s", curl_easy_strerror(res));
+        ERROR_PRINT("HTTP request failed: curl=%d (%s) url=%s", (int)res, curl_easy_strerror(res), full_url);
         free(response.data);
         curl_easy_cleanup(curl);
         if (header_list)
