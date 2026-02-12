@@ -401,14 +401,23 @@ int wallet_payout_send(const char* addr, int64_t amount_atomic, const char* reas
 
   // Send
   char response[XLARGE_BUFFER_SIZE] = {0};
-  if (send_http_request(response, sizeof(response),
-                        XCASH_WALLET_IP, "/json_rpc", XCASH_WALLET_PORT, "POST",
-                        HTTP_HEADERS, HTTP_HEADERS_LENGTH,
-                        request, SEND_PAYMENT_TIMEOUT_SETTINGS) != XCASH_OK) {
+  int send_rc = send_http_request(response, sizeof(response), XCASH_WALLET_IP, "/json_rpc", XCASH_WALLET_PORT, "POST",
+   HTTP_HEADERS, HTTP_HEADERS_LENGTH,request, SEND_PAYMENT_TIMEOUT_SETTINGS);
+  if (send_rc != XCASH_OK) {
     ERROR_PRINT("wallet_payout_send: HTTP error");
-    return XCASH_ERROR;
+    return send_rc;
   }
 
+
+
+
+
+
+
+
+
+
+  
   response[sizeof(response) - 1] = '\0';
   // Quiet JSON-RPC error detection
   if (jsonrpc_has_error_top(response)) {

@@ -1984,6 +1984,9 @@ int run_payout_sweep_simple(int64_t in_unlocked_balance) {
                                      first_hash, sizeof(first_hash),
                                      &fee, &ts, &amt_sent,
                                      split_siblings, MAX_SIBLINGS, &split_siblings_count);
+
+// if this is just a timeout record it may still process, what then
+
     if (send_ok == XCASH_ERROR) {
       ERROR_PRINT("run_payout_sweep_simple: payout failed for %s amount=%" PRId64, addr, pend);
       rc = XCASH_ERROR;
