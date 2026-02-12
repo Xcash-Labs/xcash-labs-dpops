@@ -3,7 +3,6 @@
 
 #include <stdbool.h>
 #include <time.h> 
-#include "config.h"
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/time.h>
