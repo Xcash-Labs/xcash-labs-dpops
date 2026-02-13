@@ -33,6 +33,7 @@ static const sched_slot_t SLOTS[] = {
   { 9,  0, JOB_PROOF  },   // 04:00 AM
   {11, 45, BAN_REFRESH },  // 06:45 AM
   {17, 45, BAN_REFRESH },  // 12:45 PM
+  {21,  0, JOB_PROOF  },   // 04:00 PM
 };
 static const size_t NSLOTS = sizeof(SLOTS)/sizeof(SLOTS[0]);
 
