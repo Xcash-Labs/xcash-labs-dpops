@@ -49,8 +49,6 @@ extern atomic_bool wait_for_consensus_vote;
 extern atomic_bool wait_for_vrf_message;
 extern atomic_bool wait_for_block_height_init;
 extern atomic_bool shutdown_requested;
-extern atomic_bool payment_inprocess;
-
 extern NetworkNode network_nodes[];
 extern const char* endpoints[];
 extern const char* banendpoints[];

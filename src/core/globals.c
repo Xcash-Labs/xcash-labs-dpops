@@ -37,7 +37,6 @@ atomic_bool wait_for_block_height_init = ATOMIC_VAR_INIT(true);
 atomic_bool wait_for_consensus_vote    = ATOMIC_VAR_INIT(true);
 atomic_bool wait_for_vrf_message       = ATOMIC_VAR_INIT(true);
 atomic_bool shutdown_requested         = ATOMIC_VAR_INIT(false);
-atomic_bool payment_inprocess          = ATOMIC_VAR_INIT(false);
 
 block_verifiers_list_t current_block_verifiers_list;
 NetworkNode network_nodes[] = {
