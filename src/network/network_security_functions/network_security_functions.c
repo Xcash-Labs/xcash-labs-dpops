@@ -183,7 +183,6 @@ int verify_data(const char* message, xcash_msg_t msg_type) {
   char raw_data[MEDIUM_BUFFER_SIZE] = {0};
   char request[MEDIUM_BUFFER_SIZE * 2] = {0};
   char response[MEDIUM_BUFFER_SIZE] = {0};
-//  char cur_round_part[3] = {0};
 
   // must wait at this point so it will pass type round_part check if trans is early, timing matters
   int wait_milliseconds = 0;
@@ -218,11 +217,6 @@ int verify_data(const char* message, xcash_msg_t msg_type) {
       ERROR_PRINT("Timed out waiting for vrf_init round part to start");
     }
   }
-
-//  strcpy(cur_round_part, current_round_part);
-//  if (msg_type == XMSG_SEED_TO_NODES_UPDATE_VOTE_COUNT || msg_type == XMSG_SEED_TO_NODES_PAYOUT) {
-//    snprintf(cur_round_part, sizeof cur_round_part, "70");
-//  }
 
   // Extract all required fields
   if (parse_json_data(message, "XCASH_DPOPS_signature", signature, sizeof(signature)) != 1 ||
