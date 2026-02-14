@@ -183,7 +183,7 @@ int verify_data(const char* message, xcash_msg_t msg_type) {
   char raw_data[MEDIUM_BUFFER_SIZE] = {0};
   char request[MEDIUM_BUFFER_SIZE * 2] = {0};
   char response[MEDIUM_BUFFER_SIZE] = {0};
-  char cur_round_part[3] = {0};
+//  char cur_round_part[3] = {0};
 
   // must wait at this point so it will pass type round_part check if trans is early, timing matters
   int wait_milliseconds = 0;
@@ -219,10 +219,10 @@ int verify_data(const char* message, xcash_msg_t msg_type) {
     }
   }
 
-  strcpy(cur_round_part, current_round_part);
-  if (msg_type == XMSG_SEED_TO_NODES_UPDATE_VOTE_COUNT || msg_type == XMSG_SEED_TO_NODES_PAYOUT) {
-    snprintf(cur_round_part, sizeof cur_round_part, "70");
-  }
+//  strcpy(cur_round_part, current_round_part);
+//  if (msg_type == XMSG_SEED_TO_NODES_UPDATE_VOTE_COUNT || msg_type == XMSG_SEED_TO_NODES_PAYOUT) {
+//    snprintf(cur_round_part, sizeof cur_round_part, "70");
+//  }
 
   // Extract all required fields
   if (parse_json_data(message, "XCASH_DPOPS_signature", signature, sizeof(signature)) != 1 ||
@@ -233,11 +233,11 @@ int verify_data(const char* message, xcash_msg_t msg_type) {
     return XCASH_ERROR;
   }
 
-  if (strcmp(cur_round_part, ck_round_part) != 0) {
+  if (strcmp(current_round_part, ck_round_part) != 0) {
     // Either starting up or errors occured so silence messages that will not be proceese
     if (startup_complete && blockchain_ready) {
       WARNING_PRINT("Public address %s failed Signature Verification, round part timing issue: current round %s - message round %s.",
-                    ck_public_address, cur_round_part, ck_round_part);
+                    ck_public_address, current_round_part, ck_round_part);
     }
     return XCASH_ERROR;
   }
