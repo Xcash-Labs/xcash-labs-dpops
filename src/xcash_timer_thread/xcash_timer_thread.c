@@ -1010,9 +1010,9 @@ void* timer_thread(void* arg) {
   sched_ctx_t* ctx = (sched_ctx_t*)arg;
 
 
-  INFO_PRINT("Scheduler: running PROOF CHECK test in 5 mins");
-  sleep(300);
-  run_proof_check(ctx);
+//  INFO_PRINT("Scheduler: running PROOF CHECK test in 5 mins");
+//  sleep(300);
+//  run_proof_check(ctx);
 
 
   for (;;) {
