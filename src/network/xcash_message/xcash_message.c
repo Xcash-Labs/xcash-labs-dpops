@@ -236,13 +236,7 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
   xcash_msg_t msg_type = get_message_type(trans_type);
 
   // Must come from seed
-  if (msg_type == XMSG_SEED_TO_NODES_UPDATE_VOTE_COUNT) {
-    if (verify_the_ip(data, client->client_ip, true) != XCASH_OK) {
-      ERROR_PRINT("IP seed check failed for msg_type=%s from %s", trans_type, client->client_ip);
-      return;
-    }
-  // These messages can come from non-delegate wallets so the IP can not be verified
-  } else if ((msg_type != XMSG_NODES_TO_BLOCK_VERIFIERS_REGISTER_DELEGATE) && 
+  if ((msg_type != XMSG_NODES_TO_BLOCK_VERIFIERS_REGISTER_DELEGATE) && 
     (msg_type != XMSG_NODE_TO_NETWORK_DATA_NODES_GET_CURRENT_BLOCK_VERIFIERS_LIST) &&
     (msg_type != XMSG_NODES_TO_BLOCK_VERIFIERS_VOTE) &&
     (msg_type != XMSG_NODES_TO_BLOCK_VERIFIERS_REVOTE) &&
@@ -344,13 +338,6 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
     case XMSG_XCASHD_TO_DPOPS_VERIFY:
       if (server_limit_IP_addresses(LIMIT_CHECK, client->client_ip) == 1) {
         server_receive_data_socket_nodes_to_block_verifiers_validate_block(client, data);
-        server_limit_IP_addresses(LIMIT_REMOVE, client->client_ip);
-      }
-      break;
-
-    case XMSG_SEED_TO_NODES_UPDATE_VOTE_COUNT:
-      if (server_limit_IP_addresses(LIMIT_CHECK, client->client_ip) == 1) {
-        server_receive_update_delegate_vote_count(data);
         server_limit_IP_addresses(LIMIT_REMOVE, client->client_ip);
       }
       break;

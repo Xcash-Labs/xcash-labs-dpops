@@ -12,6 +12,7 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
   // Host array placeholders
   const char **hosts = NULL;
   response_t **responses = NULL;
+  bool send_to_payout = false;
 
   switch (dest) {
     case XNET_SEEDS_ALL: {
@@ -41,6 +42,7 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
     } break;
 
     case XNET_DELEGATES_ALL_ONLINE_NOSEEDS : {
+      bool send_to_payout = true;
       const char **delegates_online_hosts_xseeds = malloc((BLOCK_VERIFIERS_TOTAL_AMOUNT + 1) * sizeof(char *));
       if (!delegates_online_hosts_xseeds) {
         ERROR_PRINT("Failed to allocate memory for delegates_online_hosts");
@@ -136,7 +138,12 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
     return false;
   }
 
-  responses = send_multi_request(hosts, XCASH_DPOPS_PORT, message);
+  if (send_to_payout) {
+    responses = send_multi_request(hosts, XCASH_PAYOUTS_PORT, message);
+  } else {
+    responses = send_multi_request(hosts, XCASH_DPOPS_PORT, message);
+  }
+
   if (hosts) free((void*)hosts);
   if (responses) {
     result = true;
