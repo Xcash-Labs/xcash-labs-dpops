@@ -174,7 +174,7 @@ function sed_services()
 function get_installation_settings()
 {
   echo -ne "${COLOR_PRINT_GREEN}X-Cash DPoPS Installation Settings\n${END_COLOR_PRINT}"
-  echo -ne "${COLOR_PRINT_YELLOW}1 = Install\n2 = Update\n3 = Quick Update (only xcash-dpops)\n4 = Uninstall\n5 = Restore Tools\n\n${END_COLOR_PRINT}"
+  echo -ne "${COLOR_PRINT_YELLOW}1 = Install\n2 = Update\n3 = Quick Update (only xcash-dpops)\n4 = Uninstall\n\n${END_COLOR_PRINT}"
   echo -ne "${COLOR_PRINT_GREEN}X-Cash Node (Daemon Only) Installation Settings\n${END_COLOR_PRINT}"
   echo -ne "${COLOR_PRINT_YELLOW}6 = Install\n7 = Update\n8 = Uninstall\n\n${END_COLOR_PRINT}"
   echo -ne "${COLOR_PRINT_GREEN}X-Cash Blockchain Management\n${END_COLOR_PRINT}"
@@ -185,10 +185,17 @@ function get_installation_settings()
   echo -ne "${COLOR_PRINT_YELLOW}19 = Shared Delegates Firewall\n\n${END_COLOR_PRINT}"
   echo -ne "${COLOR_PRINT_GREEN}Backup\n${END_COLOR_PRINT}"
   echo -ne "${COLOR_PRINT_YELLOW}20 = Display wallet and xcash-dpops data, and backup shared delegates database\n\n${END_COLOR_PRINT}"
-  echo -ne "${COLOR_PRINT_GREEN}Enter the number of the chosen option (default 1): ${END_COLOR_PRINT}"
+  echo -ne "${COLOR_PRINT_YELLOW}E = Exit\n\n${END_COLOR_PRINT}"
+  echo -ne "${COLOR_PRINT_GREEN}Enter the number of the chosen option (default E/Exit): ${END_COLOR_PRINT}"
   read -r data
-  INSTALLATION_TYPE_SETTINGS=$([ "$data" == "2" ] || [ "$data" == "3" ] || [ "$data" == "4" ] || [ "$data" == "5" ] || [ "$data" == "6" ] || [ "$data" == "7" ] || [ "$data" == "8" ] || [ "$data" == "9" ] || [ "$data" == "10" ] || [ "$data" == "11" ] || [ "$data" == "12" ] || [ "$data" == "13" ] || [ "$data" == "14" ] || [ "$data" == "15" ] || [ "$data" == "16" ] || [ "$data" == "17" ] || [ "$data" == "18" ] || [ "$data" == "19" ] || [ "$data" == "20" ] && echo "$data" || echo "1")
+
+  INSTALLATION_TYPE_SETTINGS=$([ "$data" == "2" ] || [ "$data" == "3" ] || [ "$data" == "4" ] || [ "$data" == "6" ] || [ "$data" == "7" ] || [ "$data" == "8" ] || [ "$data" == "9" ] || [ "$data" == "13" ] || [ "$data" == "14" ] || [ "$data" == "19" ] || [ "$data" == "20" ] && echo "$data" || echo "1")
   echo -ne "\r"
+  if [[ -z "$data" || "$data" =~ ^[eE]$ ]]; then
+    echo "Exiting..."
+    exit 0
+  fi
+
   # Check if xcash-dpops is already installed, if the user choose to install
   if [ "$INSTALLATION_TYPE_SETTINGS" -eq "1" ]; then
     echo -ne "${COLOR_PRINT_YELLOW}Checking if xcash-dpops is already installed${END_COLOR_PRINT}"
@@ -202,7 +209,7 @@ function get_installation_settings()
   fi
 
   # Check if xcash-dpops is not installed, and if the user choose an option where xcash-dpops needed to be installed
-  if [ "$INSTALLATION_TYPE_SETTINGS" -eq "2" ] || [ "$INSTALLATION_TYPE_SETTINGS" -eq "3" ] || [ "$INSTALLATION_TYPE_SETTINGS" -eq "4" ] || [ "$INSTALLATION_TYPE_SETTINGS" -eq "5" ] || [ "$INSTALLATION_TYPE_SETTINGS" -eq "10" ] || [ "$INSTALLATION_TYPE_SETTINGS" -eq "11" ] || [ "$INSTALLATION_TYPE_SETTINGS" -eq "12" ] || [ "$INSTALLATION_TYPE_SETTINGS" -eq "13" ] || [ "$INSTALLATION_TYPE_SETTINGS" -eq "14" ] || [ "$INSTALLATION_TYPE_SETTINGS" -eq "15" ] || [ "$INSTALLATION_TYPE_SETTINGS" -eq "16" ] || [ "$INSTALLATION_TYPE_SETTINGS" -eq "17" ] || [ "$INSTALLATION_TYPE_SETTINGS" -eq "20" ]; then
+  if [ "$INSTALLATION_TYPE_SETTINGS" -eq "2" ] || [ "$INSTALLATION_TYPE_SETTINGS" -eq "3" ] || [ "$INSTALLATION_TYPE_SETTINGS" -eq "4" ] || [ "$INSTALLATION_TYPE_SETTINGS" -eq "13" ] || [ "$INSTALLATION_TYPE_SETTINGS" -eq "14" ] || [ "$INSTALLATION_TYPE_SETTINGS" -eq "20" ]; then
     data=$(sudo find / -path /sys -prune -o -path /proc -prune -o -path /dev -prune -o -path /var -prune -o -type d -name "$MAIN_INSTALL_DIRECTORY" -print | wc -l)
     if [ "$data" -eq "0" ]; then
       echo -e "\n${COLOR_PRINT_RED}This is an invalid option since xcash-dpops is not installed${END_COLOR_PRINT}"
@@ -471,10 +478,6 @@ function installation_settings()
   get_password
   get_installation_settings
   if [ "$INSTALLATION_TYPE_SETTINGS" -eq "1" ]; then
-  # used default for these prompts so things will be standardized
-  #  get_xcash_dpops_installation_directory
-  #  get_xcash_blockchain_xcash_dpops_installation_directory
-  #  get_mongodb_installation_directory
     update_global_variables
     get_wallet_settings
     get_password_settings
@@ -487,27 +490,6 @@ function installation_settings()
       get_ssh_port
     fi
     INSTALLATION_TYPE="Installation"
-    print_installation_settings
-  fi
-  if [ "$INSTALLATION_TYPE_SETTINGS" -eq "16" ]; then 
-    echo
-    echo -e "${COLOR_PRINT_RED}WARNING: Old wallet, old block verifier key and old settings (service files)${END_COLOR_PRINT}"
-    echo -e "${COLOR_PRINT_RED}will be overwritten if already existent! Please make a backup if required!${END_COLOR_PRINT}"
-    echo -ne "${COLOR_PRINT_YELLOW}Press ENTER to continue or press Ctrl + C to cancel! ${END_COLOR_PRINT}"
-    read -r data
-    echo -ne "\r"
-    echo
-    get_installation_directory
-    get_wallet_settings
-    get_password_settings
-    get_block_verifier_key_settings
-    if [ "$container" == "lxc" ]; then
-      echo -e "${COLOR_PRINT_YELLOW}Autostart enabled as default for services (because this is a container installation)${END_COLOR_PRINT}"
-      AUTOSTART_SETTINGS="YES"
-    else
-      get_autostart_services_settings
-    fi
-    INSTALLATION_TYPE="Configuration"
     print_installation_settings
   fi
 }
@@ -2091,6 +2073,7 @@ setup_lxc_container_profile
 # Get the installation settings
 installation_settings
 
+# jedjed
 if [ "$INSTALLATION_TYPE_SETTINGS" -eq "1" ]; then
   install
 elif [ "$INSTALLATION_TYPE_SETTINGS" -eq "2" ]; then
