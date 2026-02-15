@@ -1,0 +1,17 @@
+[Unit]
+Description=X-Cash Payouts Program background process
+After=network-online.target time-sync.target mongodb.service
+StartLimitIntervalSec=60
+StartLimitBurst=4
+
+[Service]
+Type=simple
+LimitNOFILE=infinity
+User=${USER}
+WorkingDirectory=${XCASH_PAYOUTS_DIR}build
+ExecStart=${XCASH_PAYOUTS_DIR}build/xcash-payouts --wallet-address ${PUBLIC_ADDRESS}
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target
