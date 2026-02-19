@@ -27,7 +27,7 @@ bool initialize_database(void) {
            "&readPreference=primaryPreferred"
            "&readConcernLevel=majority"
            "&serverSelectionTimeoutMS=30000"
-           "&connectTimeoutMS=30000"
+           "&connectTimeoutMS=20000"
            "&socketTimeoutMS=50000"
            "&w=majority"
            "&journal=true"
