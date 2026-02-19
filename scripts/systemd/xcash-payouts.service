@@ -9,7 +9,7 @@ Type=simple
 LimitNOFILE=infinity
 User=${USER}
 WorkingDirectory=${XCASH_PAYOUTS_DIR}build
-ExecStart=${XCASH_PAYOUTS_DIR}build/xcash-payouts --wallet-address ${PUBLIC_ADDRESS}
+ExecStart=${XCASH_PAYOUTS_DIR}build/xcash-payouts
 Restart=on-failure
 RestartSec=5s
 

@@ -16,6 +16,7 @@ MAIN_INSTALL_DIRECTORY="xcash-labs"
 INSTALLATION_TYPE_SETTINGS=1
 INSTALLATION_TYPE=""
 XCASH_DPOPS_INSTALLATION_DIR="$HOME/${MAIN_INSTALL_DIRECTORY}/"
+XCASH_PAYOUTS_INSTALLATION_DIR="$HOME/${MAIN_INSTALL_DIRECTORY}/"
 XCASH_BLOCKCHAIN_INSTALLATION_DIR="$HOME/.XCASH-LABS/"
 MONGODB_INSTALLATION_DIR="/data/db/"
 SHARED_DELEGATE="YES"
@@ -174,7 +175,7 @@ function sed_services()
 function get_installation_settings()
 {
   echo -ne "${COLOR_PRINT_GREEN}X-Cash DPoPS Installation Settings\n${END_COLOR_PRINT}"
-  echo -ne "${COLOR_PRINT_YELLOW}1 = Install\n2 = Update\n3 = Quick Update (only xcash-dpops)\n4 = Uninstall\n\n${END_COLOR_PRINT}"
+  echo -ne "${COLOR_PRINT_YELLOW}1 = Install\n2 = Update\n3 = Quick Update (only xcash-dpops & xcash-payouts)\n4 = Uninstall\n\n${END_COLOR_PRINT}"
   echo -ne "${COLOR_PRINT_GREEN}X-Cash Node (Daemon Only) Installation Settings\n${END_COLOR_PRINT}"
   echo -ne "${COLOR_PRINT_YELLOW}6 = Install\n7 = Update\n8 = Uninstall\n\n${END_COLOR_PRINT}"
   echo -ne "${COLOR_PRINT_GREEN}X-Cash Blockchain Management\n${END_COLOR_PRINT}"
@@ -1239,32 +1240,52 @@ function update_xcash_dpops()
   echo
 }
 
-function update_shared_delegates_website()
+function update_xcash_payouts()
 {
-  echo -ne "${COLOR_PRINT_YELLOW}Updating Shared Delegates Website${END_COLOR_PRINT}"
-  if [ ! -d "$SHARED_DELEGATES_WEBSITE_DIR" ]; then
-    cd "${XCASH_DPOPS_INSTALLATION_DIR}"
-    git clone --quiet "${SHARED_DELEGATES_WEBSITE_URL}"
+  echo -ne "${COLOR_PRINT_YELLOW}Updating xcash-payouts (This Might Take A While)${END_COLOR_PRINT}"
+  if [ ! -d "$XCASH_PAYOUTS_DIR/.git" ]; then
+    cd "${XCASH_PAYOUTS_INSTALLATION_DIR}"
+    git clone "${XCASH_PAYOUTS_URL}" "$XCASH_PAYOUTS_DIR"
   fi
-  cd "${SHARED_DELEGATES_WEBSITE_DIR}"
-  data=$([ $(git rev-parse HEAD) = $(git ls-remote $(git rev-parse --abbrev-ref @{u} | sed 's/\// /g') | cut -f1) ] && echo "1" || echo "0")
-  if [ "$data" == "0" ]; then
-    git reset --hard HEAD --quiet
-    git pull --quiet
-    npm update --legacy-peer-deps &>/dev/null
-    source ~/.profile || true
-    npm run build &>/dev/null
-    cd dist
-    for f in *.js; do uglifyjs "$f" --compress --mangle --output "{$f}min"; rm "$f"; mv "{$f}min" "$f"; done
-    if [ -d "$XCASH_DPOPS_SHARED_DELEGATE_FOLDER_DIR" ]; then
-      sudo rm -r "${XCASH_DPOPS_SHARED_DELEGATE_FOLDER_DIR}"
-    fi 
-    cd ../
-    cp -a dist "${XCASH_DPOPS_SHARED_DELEGATE_FOLDER_DIR}"
+  cd "$XCASH_PAYOUTS_DIR"
+  git reset --hard HEAD --quiet
+  git pull --quiet
+  echo "y" | make clean &>/dev/null
+    JOBS=$((CPU_THREADS / 2))
+  if [ "$JOBS" -lt 1 ]; then
+    JOBS=1
   fi
-  echo -ne "\r${COLOR_PRINT_GREEN}Updating Shared Delegates Website${END_COLOR_PRINT}"
+  make release -j "$JOBS" &>/dev/null
+  echo -ne "\r${COLOR_PRINT_GREEN}Updating xcash-payouts Complete                 ${END_COLOR_PRINT}"
   echo
 }
+
+#function update_shared_delegates_website()
+#{
+#  echo -ne "${COLOR_PRINT_YELLOW}Updating Shared Delegates Website${END_COLOR_PRINT}"
+#  if [ ! -d "$SHARED_DELEGATES_WEBSITE_DIR" ]; then
+#    cd "${XCASH_DPOPS_INSTALLATION_DIR}"
+#    git clone --quiet "${SHARED_DELEGATES_WEBSITE_URL}"
+#  fi
+#  cd "${SHARED_DELEGATES_WEBSITE_DIR}"
+#  data=$([ $(git rev-parse HEAD) = $(git ls-remote $(git rev-parse --abbrev-ref @{u} | sed 's/\// /g') | cut -f1) ] && echo "1" || echo "0")
+#  if [ "$data" == "0" ]; then
+#    git reset --hard HEAD --quiet
+#    git pull --quiet
+#    npm update --legacy-peer-deps &>/dev/null
+#    source ~/.profile || true
+#    npm run build &>/dev/null
+#    cd dist
+#    for f in *.js; do uglifyjs "$f" --compress --mangle --output "{$f}min"; rm "$f"; mv "{$f}min" "$f"; done
+#    if [ -d "$XCASH_DPOPS_SHARED_DELEGATE_FOLDER_DIR" ]; then
+#      sudo rm -r "${XCASH_DPOPS_SHARED_DELEGATE_FOLDER_DIR}"
+#    fi 
+#    cd ../
+#    cp -a dist "${XCASH_DPOPS_SHARED_DELEGATE_FOLDER_DIR}"
+#  fi
+#  echo -ne "\r${COLOR_PRINT_GREEN}Updating Shared Delegates Website${END_COLOR_PRINT}"
+#  echo
+#}
 
 function update_mongodb()
 {
@@ -1506,9 +1527,12 @@ function update()
   # Update all repositories
   update_xcash
   update_xcash_dpops
-  if [ "${SHARED_DELEGATE^^}" == "YES" ]; then
-    update_shared_delegates_website
-  fi
+  update_xcash_payouts
+
+  # jed
+#  if [ "${SHARED_DELEGATE^^}" == "YES" ]; then
+#    update_shared_delegates_website
+#  fi
 
   # Update all dependencies
   if [ ! "$MONGODB_CURRENT_VERSION" == "$MONGODB_LATEST_VERSION" ]; then
@@ -1552,7 +1576,7 @@ function update()
 function quick_update()
 {
   echo -e "${COLOR_PRINT_GREEN}############################################################${END_COLOR_PRINT}"
-  echo -e "${COLOR_PRINT_GREEN}                  Updating xcash-dpops${END_COLOR_PRINT}"
+  echo -e "${COLOR_PRINT_GREEN}                  Updating xcash-dpops & xcash-payouts${END_COLOR_PRINT}"
   echo -e "${COLOR_PRINT_GREEN}############################################################${END_COLOR_PRINT}"
   echo
   echo
@@ -1563,6 +1587,15 @@ function quick_update()
   update_xcash_dpops
 
   sudo systemctl restart xcash-dpops
+
+  cd ~
+
+  XCASH_PAYOUTS_INSTALLATION_DIR=$(sudo find / -path /sys -prune -o -path /proc -prune -o -path /dev -prune -o -path /var -prune -o -type d -name "$MAIN_INSTALL_DIRECTORY" -print)/
+  XCASH_PAYOUTS_DIR=${XCASH_PAYOUTS_INSTALLATION_DIR}xcash-labs-payout/
+
+  update_xcash_payouts
+
+  sudo systemctl restart xcash-payouts
 
   cd ~
 

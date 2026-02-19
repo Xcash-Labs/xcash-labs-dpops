@@ -83,7 +83,7 @@ int get_delegate_minimum_amount(int64_t *out_min_amount)
         DATABASE_NAME,
         DB_COLLECTION_DELEGATES,
         filter_json,
-        "minimum_amount",
+        "minimum_payout",
         out_min_amount) != XCASH_OK)
   {
     *out_min_amount = 0;
