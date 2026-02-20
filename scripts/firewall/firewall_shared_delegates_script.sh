@@ -1,7 +1,7 @@
 #!/bin/sh
 # iptables script for server
 # if you changed any default ports change them in the firewall as well
- 
+
 # ACCEPT all packets at the top so each packet runs through the firewall rules, then DROP all INPUT and FORWARD if they dont use any of the firewall settings
 iptables -P INPUT ACCEPT
 iptables -P FORWARD ACCEPT
@@ -15,7 +15,7 @@ iptables -t raw -F
 iptables -t raw -X
 iptables -F
 iptables -X
- 
+
 # ip table prerouting data (this is where you want to block ddos attacks)
 # Drop all invalid packets
 iptables -t mangle -A PREROUTING -m conntrack --ctstate INVALID -j DROP
@@ -35,13 +35,13 @@ iptables -t mangle -A PREROUTING -p tcp --tcp-flags ALL NONE -j DROP
 iptables -t mangle -A PREROUTING -p tcp --tcp-flags ALL FIN,PSH,URG -j DROP
 iptables -t mangle -A PREROUTING -p tcp --tcp-flags ALL SYN,FIN,PSH,URG -j DROP
 iptables -t mangle -A PREROUTING -p tcp --tcp-flags ALL SYN,RST,ACK,FIN,URG -j DROP
- 
+
 # filter data for INPUT, FORWARD, and OUTPUT
 # Accept any packets coming or going on localhost
 iptables -I INPUT -i lo -j ACCEPT
 # keep already established connections running
 iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
- 
+
 # block ip spoofing. these are the ranges of local IP address.
 iptables -A INPUT -s 10.12.242.0/24 -j ACCEPT
 iptables -A INPUT -s 10.0.0.0/8 -j DROP
@@ -57,10 +57,10 @@ iptables -A INPUT -s 0.0.0.0/8 -j DROP
 iptables -A INPUT -d 0.0.0.0/8 -j DROP
 iptables -A INPUT -d 239.255.255.0/24 -j DROP
 iptables -A INPUT -d 255.255.255.255 -j DROP
- 
+
 # block all traffic from ip address (iptables -A INPUT -s ipaddress -j DROP)
 #unblock them using iptables -D INPUT -s ipaddress -j DROP
- 
+
 # Block different attacks
 # block one computer from opening too many connections (100 simultaneous connections) if this gives trouble with post remove this or increase the limit
 iptables -t filter -I INPUT -p tcp --syn --dport 80 -m connlimit --connlimit-above 100 --connlimit-mask 32 -j DROP
@@ -73,22 +73,22 @@ iptables -A INPUT -m recent --name portscan --remove
 iptables -A FORWARD -m recent --name portscan --remove
 iptables -A INPUT   -p tcp -m tcp -m multiport --destination-ports 21,25,110,135,139,143,445,1433,3306,3389 -m recent --name portscan --set -j DROP 
 iptables -A FORWARD -p tcp -m tcp -m multiport --destination-ports 21,25,110,135,139,143,445,1433,3306,3389 -m recent --name portscan --set -j DROP
- 
+
 # Accept specific packets
 # Accept ICMP
 iptables -A INPUT -p icmp -j ACCEPT
-  
+
 # Accept XCASH
 iptables -A INPUT -p tcp --dport 18280 -j ACCEPT
 iptables -A INPUT -p tcp --dport 18281 -j ACCEPT
 iptables -A INPUT -p tcp --dport 18283 -j ACCEPT
 iptables -A INPUT -p tcp --dport 18287 -j ACCEPT
- 
+
 # Allow ssh (allow 100 login attempts in 1 hour from the same ip, if more than ban them for 1 hour)
 iptables -A INPUT -p tcp -m tcp --dport ${SSH_PORT_NUMBER} -m state --state NEW -m recent --set --name DEFAULT --rsource
 iptables -A INPUT -p tcp -m tcp --dport ${SSH_PORT_NUMBER} -m state --state NEW -m recent --update --seconds 3600 --hitcount 100 --name DEFAULT --rsource -j DROP
 iptables -A INPUT -p tcp -m tcp --dport ${SSH_PORT_NUMBER} -j ACCEPT
- 
+
 # DROP all INPUT and FORWARD packets if they have reached this point
 iptables -A INPUT -j DROP
 iptables -A FORWARD -j DROP
