@@ -1591,7 +1591,7 @@ function quick_update()
   cd ~
 
   XCASH_PAYOUTS_INSTALLATION_DIR=$(sudo find / -path /sys -prune -o -path /proc -prune -o -path /dev -prune -o -path /var -prune -o -type d -name "$MAIN_INSTALL_DIRECTORY" -print)/
-  XCASH_PAYOUTS_DIR=${XCASH_PAYOUTS_INSTALLATION_DIR}xcash-labs-payout/
+  XCASH_PAYOUTS_DIR=${XCASH_PAYOUTS_INSTALLATION_DIR}xcash-labs-payouts/
 
   update_xcash_payouts
 
