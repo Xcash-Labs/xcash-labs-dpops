@@ -1225,7 +1225,7 @@ function update_xcash_dpops()
   echo -ne "${COLOR_PRINT_YELLOW}Updating xcash-dpops (This Might Take A While)${END_COLOR_PRINT}"
   if [ ! -d "$XCASH_DPOPS_DIR/.git" ]; then
     cd "${XCASH_DPOPS_INSTALLATION_DIR}"
-    git clone "${XCASH_DPOPS_URL}" "$XCASH_DPOPS_DIR"
+    git clone --quiet "${XCASH_DPOPS_URL}" "$XCASH_DPOPS_DIR"
   fi
   cd "$XCASH_DPOPS_DIR"
   git reset --hard HEAD --quiet
