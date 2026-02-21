@@ -421,8 +421,6 @@ static void run_proof_check(sched_ctx_t* ctx) {
         delegates_all[i].IP_address[0] == '\0') continue;
     if (is_seed_address(delegates_all[i].public_address))
       continue;
-    INFO_PRINT("Delegate timer entry [%ld] public_address: %s, IP_address: %s, online_status %s", i,
-           delegates_all[i].public_address, delegates_all[i].IP_address, delegates_all[i].online_status);
     if (strcmp(delegates_all[i].online_status, "true") == 0) {
       strcpy(delegates_timer_all[online_count].public_address, delegates_all[i].public_address);
       strcpy(delegates_timer_all[online_count].IP_address, delegates_all[i].IP_address);
@@ -788,24 +786,10 @@ static void run_proof_check(sched_ctx_t* ctx) {
     char out_hash_hex[TRANSACTION_HASH_LENGTH + 1];
     bin_to_hex(out_hash, SHA256_HASH_SIZE, out_hash_hex);
 
-    // remove jed
-    const char* ONLY = "XCK1N4vEodeTesytfTXJVFf15akv144W36SjMouuzy8DeZfYbABeZF4YwdrPeywVogbXb1krUoYgZ5Ldh5fxLq1m68eFmXnawz";
-
-
-
     for (size_t di = 0; di < online_count; ++di) {
       if (atomic_load_explicit(&shutdown_requested, memory_order_relaxed)) {
         break;
       }
-
-
-
-      // remove
-      if (strcmp(delegates_timer_all[di].public_address, ONLY) != 0) {
-        continue;
-      }
-
-
 
       const char* delegate_addr = delegates_timer_all[di].public_address;
       const char* ip            = delegates_timer_all[di].IP_address;
