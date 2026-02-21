@@ -539,7 +539,7 @@ function start_systemd_service_files()
   sudo systemctl start xcash-dpops &>/dev/null
   sudo systemctl start xcash-daemon &>/dev/null
   sudo systemctl start xcash-rpc-wallet &>/dev/null
-    if systemctl list-unit-files --type=service --no-legend | awk '{print $1}' | grep -qx "xcash-payouts.service"; then
+  if systemctl list-unit-files --type=service --no-legend | awk '{print $1}' | grep -qx "xcash-payouts.service"; then
     sudo systemctl start xcash-payouts &>/dev/null
   fi
   echo -ne "\r${COLOR_PRINT_GREEN}Starting Systemd Service Files${END_COLOR_PRINT}"
@@ -729,7 +729,7 @@ function create_systemd_service_files()
     sudo bash -c "echo '${SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SHARED_DELEGATE}' > /lib/systemd/system/xcash-dpops.service"
 #  fi
 
-  #jed
+  #jed -- not needed on seed nodes
   sudo bash -c "echo '${SYSTEMD_SERVICE_FILE_XCASH_PAYOUTS_URL}' > /lib/systemd/system/xcash-dpops.service"
 
   sudo bash -c "echo '${SYSTEMD_SERVICE_FILE_XCASH_WALLET}' > /lib/systemd/system/xcash-rpc-wallet.service"
