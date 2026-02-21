@@ -421,6 +421,8 @@ static void run_proof_check(sched_ctx_t* ctx) {
         delegates_all[i].IP_address[0] == '\0') continue;
     if (is_seed_address(delegates_all[i].public_address))
       continue;
+    INFO_PRINT("Delegate timer entry [%d] public_address: %s, IP_address: %s, online_status %s", i,
+           delegates_all[i].public_address, delegates_all[i].IP_address, delegates_all[i].online_status);
     if (strcmp(delegates_all[i].online_status, "true") == 0) {
       strcpy(delegates_timer_all[online_count].public_address, delegates_all[i].public_address);
       strcpy(delegates_timer_all[online_count].IP_address, delegates_all[i].IP_address);
