@@ -995,12 +995,6 @@ void* timer_thread(void* arg) {
   lower_thread_priority_batch();
   sched_ctx_t* ctx = (sched_ctx_t*)arg;
 
-
-  INFO_PRINT("Scheduler: running PROOF CHECK test in 2 mins");
-  sleep(120);
-  run_proof_check(ctx);
-
-
   for (;;) {
     if (atomic_load_explicit(&shutdown_requested, memory_order_relaxed)) {
       break;
