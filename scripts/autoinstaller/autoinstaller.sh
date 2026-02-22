@@ -618,7 +618,6 @@ function download_xcash()
   echo
 }
 
-jed
 function build_xcash()
 {
   echo -ne "${COLOR_PRINT_YELLOW}Building X-CASH (This Might Take A While)${END_COLOR_PRINT}"
