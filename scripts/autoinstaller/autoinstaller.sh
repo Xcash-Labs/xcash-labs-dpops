@@ -118,7 +118,7 @@ CPU_THREADS=$(nproc)
 DEFAULT_NETWORK_DEVICE=$(ip route | grep default | sed -e "s/^.*dev.//" -e "s/.proto.*//")
 RAM=$(awk '/MemTotal/ { printf "%1.f \n", $2/1024/1024 }' /proc/meminfo)
 RAM_CPU_RATIO=$((RAM / CPU_THREADS))
-RAM_CPU_RATIO_ALL_CPU_THREADS=CPU_THREADS
+RAM_CPU_RATIO_ALL_CPU_THREADS=$CPU_THREADS
 
 # Regex
 regex_XCASH_DPOPS_INSTALLATION_DIR="(^\/(.*?)\/$)|(^$)" # anything that starts with / and ends with / and does not contain a space
