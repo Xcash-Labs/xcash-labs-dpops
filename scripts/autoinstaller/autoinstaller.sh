@@ -106,7 +106,6 @@ FIREWALL_XCASH_NODE_URL="https://raw.githubusercontent.com/Xcash-Labs/xcash-labs
 SYSTEMD_SERVICE_FILE_FIREWALL_URL="https://raw.githubusercontent.com/Xcash-Labs/xcash-labs-dpops/master/scripts/systemd/firewall.service"
 SYSTEMD_SERVICE_FILE_MONGODB_URL="https://raw.githubusercontent.com/Xcash-Labs/xcash-labs-dpops/master/scripts/systemd/MongoDB.service"
 SYSTEMD_SERVICE_FILE_XCASH_DAEMON_URL="https://raw.githubusercontent.com/Xcash-Labs/xcash-labs-dpops/master/scripts/systemd/xcash-daemon.service"
-SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SOLO_DELEGATE_URL="https://raw.githubusercontent.com/Xcash-Labs/xcash-labs-dpops/master/scripts/systemd/xcash-dpops.service"
 SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SHARED_DELEGATE_URL="https://raw.githubusercontent.com/Xcash-Labs/xcash-labs-dpops/master/scripts/systemd/xcash-dpops-shared-delegate.service"
 SYSTEMD_SERVICE_FILE_XCASH_PAYOUTS_URL="https://raw.githubusercontent.com/Xcash-Labs/xcash-labs-dpops/master/scripts/systemd/xcash-payouts.service"
 SYSTEMD_SERVICE_FILE_XCASH_WALLET_URL="https://raw.githubusercontent.com/Xcash-Labs/xcash-labs-dpops/master/scripts/systemd/xcash-rpc-wallet.service"
@@ -288,8 +287,8 @@ SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SHARED_DELEGATE="${SYSTEMD_SERVICE_FILE_XCASH_D
 SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SHARED_DELEGATE="${SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SHARED_DELEGATE//'${BLOCK_VERIFIER_SECRET_KEY}'/$BLOCK_VERIFIER_SECRET_KEY}"
 
 SYSTEMD_SERVICE_XCASH_FILE_PAYOUTS=$(cat <(curl -sSL $SYSTEMD_SERVICE_FILE_XCASH_PAYOUTS_URL))
-SYSTEMD_SERVICE_XCASH_FILE_PAYOUTS="${SYSTEMD_SERVICE_FILE_XCASH_DPOPS_PAYOUTS//'${USER}'/$USER}"
-SYSTEMD_SERVICE_XCASH_FILE_PAYOUTS="${SYSTEMD_SERVICE_FILE_XCASH_DPOPS_PAYOUTS//'${XCASH_PAYOUTS_DIR}'/$XCASH_PAYOUTS_DIR}"
+SYSTEMD_SERVICE_XCASH_FILE_PAYOUTS="${SYSTEMD_SERVICE_FILE_XCASH_PAYOUTS//'${USER}'/$USER}"
+SYSTEMD_SERVICE_XCASH_FILE_PAYOUTS="${SYSTEMD_SERVICE_FILE_XCASH_PAYOUTS//'${XCASH_PAYOUTS_DIR}'/$XCASH_PAYOUTS_DIR}"
 
 SYSTEMD_SERVICE_FILE_XCASH_WALLET=$(cat <(curl -sSL $SYSTEMD_SERVICE_FILE_XCASH_WALLET_URL))
 SYSTEMD_SERVICE_FILE_XCASH_WALLET="${SYSTEMD_SERVICE_FILE_XCASH_WALLET//'${USER}'/$USER}"
@@ -679,6 +678,7 @@ function create_files()
   touch "${XCASH_SYSTEMPID_DIR}"mongod.pid "${XCASH_SYSTEMPID_DIR}"xcash-daemon.pid
 }
 
+jed
 function create_systemd_service_files()
 {
   echo -ne "${COLOR_PRINT_YELLOW}Creating Systemd Service Files${END_COLOR_PRINT}"
@@ -686,9 +686,11 @@ function create_systemd_service_files()
   sudo bash -c "echo '${SYSTEMD_SERVICE_FILE_MONGODB}' > /lib/systemd/system/mongodb.service"
   sudo bash -c "echo '${SYSTEMD_SERVICE_FILE_XCASH_DAEMON}' > /lib/systemd/system/xcash-daemon.service"
   sudo bash -c "echo '${SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SHARED_DELEGATE}' > /lib/systemd/system/xcash-dpops.service"
-  sudo bash -c "echo '${SYSTEMD_SERVICE_FILE_XCASH_PAYOUTS}' > /lib/systemd/system/xcash-dpops.service"                # not needed on seed
+  sudo bash -c "echo '${SYSTEMD_SERVICE_FILE_XCASH_PAYOUTS}' > /lib/systemd/system/xcash-payouts.service"                # not needed on seed
   sudo bash -c "echo '${SYSTEMD_SERVICE_FILE_XCASH_WALLET}' > /lib/systemd/system/xcash-rpc-wallet.service"
   
+SYSTEMD_SERVICE_XCASH_FILE_PAYOUTS
+
   sed_services 's/\r$//g' /lib/systemd/system/firewall.service
   sed_services 's/\r$//g' /lib/systemd/system/mongodb.service
   sed_services 's/\r$//g' /lib/systemd/system/xcash-daemon.service
