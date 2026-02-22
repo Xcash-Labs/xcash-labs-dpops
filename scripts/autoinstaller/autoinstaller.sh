@@ -118,7 +118,7 @@ CPU_THREADS=$(nproc)
 DEFAULT_NETWORK_DEVICE=$(ip route | grep default | sed -e "s/^.*dev.//" -e "s/.proto.*//")
 RAM=$(awk '/MemTotal/ { printf "%1.f \n", $2/1024/1024 }' /proc/meminfo)
 RAM_CPU_RATIO=$((RAM / CPU_THREADS))
-RAM_CPU_RATIO_ALL_CPU_THREADS=4
+RAM_CPU_RATIO_ALL_CPU_THREADS=CPU_THREADS
 
 # Regex
 regex_XCASH_DPOPS_INSTALLATION_DIR="(^\/(.*?)\/$)|(^$)" # anything that starts with / and ends with / and does not contain a space
@@ -622,17 +622,17 @@ function build_xcash()
 {
   echo -ne "${COLOR_PRINT_YELLOW}Building X-CASH (This Might Take A While)${END_COLOR_PRINT}"
   cd "${XCASH_DIR}"
-  git checkout ${XCASH_CORE_BRANCH}
-  git submodule update --init --force --recursive
+  git checkout --quiet ${XCASH_CORE_BRANCH}
+  git submodule update --init --force > /dev/null 2>&1
   if [ "$RAM_CPU_RATIO" -ge "$RAM_CPU_RATIO_ALL_CPU_THREADS" ]; then
-    echo "y" | make clean
-    make release -j "${CPU_THREADS}"
+    echo "y" | make clean &>/dev/null
+    make release -j "${CPU_THREADS}" &>/dev/null
   else
-    echo "y" | make clean 
-    if [ "$RAM_CPU_RATIO" -eq 0 ]; then
-        make release 
+    echo "y" | make clean &>/dev/null
+    if [ "$RAM_CPU_RATIO" -le 0 ]; then
+        make release &>/dev/null
     else
-        make release -j $((CPU_THREADS / 2))
+        make release -j $((CPU_THREADS / 2)) &>/dev/null
     fi
   fi
   echo -ne "\r\033[K${COLOR_PRINT_GREEN}Building X-CASH Complete${END_COLOR_PRINT}"
@@ -815,7 +815,7 @@ function build_xcash_payouts()
     make release -j "${CPU_THREADS}" &>/dev/null
   else
     make clean &>/dev/null
-    if [ "$RAM_CPU_RATIO" -eq 0 ]; then
+    if [ "$RAM_CPU_RATIO" -le 0 ]; then
         make release &>/dev/null
     else
         make release -j $((CPU_THREADS / 2)) &>/dev/null
