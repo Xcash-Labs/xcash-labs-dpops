@@ -67,12 +67,9 @@ XCASH_LOGS_DIR=""
 XCASH_DPOPS_URL="https://github.com/Xcash-Labs/xcash-labs-dpops.git"
 XCASH_DPOPS_BRANCH="master"
 XCASH_DPOPS_DIR=""
-
-# jed
 XCASH_PAYOUTS_URL="https://github.com/Xcash-Labs/xcash-labs-payouts.git"
 XCASH_PAYOUTS_BRANCH="master"
 XCASH_PAYOUTS_DIR=""
-
 XCASH_DPOPS_SHARED_DELEGATE_FOLDER_DIR=""
 SHARED_DELEGATES_WEBSITE_URL="https://github.com/Xcash-Labs/delegates-pool-website.git"
 SHARED_DELEGATES_WEBSITE_DIR=""
@@ -103,10 +100,6 @@ SYSTEMD_SERVICE_FILE_XCASH_DAEMON=""
 #SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SOLO_DELEGATE=""
 SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SHARED_DELEGATE=""
 SYSTEMD_SERVICE_FILE_XCASH_WALLET=""
-SYSTEMD_TIMER_FILE_XCASH_DPOPS=""
-
-# jed
-#SYSTEMD_TIMER_FILE_XCASH_WALLET=""
 
 # File URLs
 FIREWALL_URL="https://raw.githubusercontent.com/Xcash-Labs/xcash-labs-dpops/master/scripts/firewall/firewall_script.sh"
@@ -117,17 +110,8 @@ SYSTEMD_SERVICE_FILE_MONGODB_URL="https://raw.githubusercontent.com/Xcash-Labs/x
 SYSTEMD_SERVICE_FILE_XCASH_DAEMON_URL="https://raw.githubusercontent.com/Xcash-Labs/xcash-labs-dpops/master/scripts/systemd/xcash-daemon.service"
 SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SOLO_DELEGATE_URL="https://raw.githubusercontent.com/Xcash-Labs/xcash-labs-dpops/master/scripts/systemd/xcash-dpops.service"
 SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SHARED_DELEGATE_URL="https://raw.githubusercontent.com/Xcash-Labs/xcash-labs-dpops/master/scripts/systemd/xcash-dpops-shared-delegate.service"
-
-# jed
 SYSTEMD_SERVICE_FILE_XCASH_PAYOUTS_URL="https://raw.githubusercontent.com/Xcash-Labs/xcash-labs-dpops/master/scripts/systemd/xcash-payouts.service"
-
 SYSTEMD_SERVICE_FILE_XCASH_WALLET_URL="https://raw.githubusercontent.com/Xcash-Labs/xcash-labs-dpops/master/scripts/systemd/xcash-rpc-wallet.service"
-
-# jed
-#SYSTEMD_TIMER_FILE_XCASH_DPOPS_URL="https://raw.githubusercontent.com/Xcash-Labs/xcash-labs-dpops/master/scripts/systemd/xcash-dpops.timer"
-
-# jed
-#SYSTEMD_TIMER_FILE_XCASH_WALLET_URL="https://raw.githubusercontent.com/Xcash-Labs/xcash-labs-dpops/master/scripts/systemd/xcash-rpc-wallet.timer"
 
 # System settings
 CPU_THREADS=$(nproc)
@@ -196,7 +180,6 @@ function get_installation_settings()
     echo "Exiting..."
     exit 0
   fi
-
   # Check if xcash-dpops is already installed, if the user choose to install
   if [ "$INSTALLATION_TYPE_SETTINGS" -eq "1" ]; then
     echo -ne "${COLOR_PRINT_YELLOW}Checking if xcash-dpops is already installed${END_COLOR_PRINT}"
@@ -267,10 +250,7 @@ function update_global_variables()
   XCASH_SYSTEMPID_DIR=${XCASH_DPOPS_INSTALLATION_DIR}systemdpid/
   XCASH_LOGS_DIR=${XCASH_DPOPS_INSTALLATION_DIR}logs/
   XCASH_DPOPS_DIR=${XCASH_DPOPS_INSTALLATION_DIR}xcash-labs-dpops/
-  
-  # jed
   XCASH_PAYOUTS_DIR=${XCASH_DPOPS_INSTALLATION_DIR}xcash-labs-payouts/
-
   XCASH_DPOPS_SHARED_DELEGATE_FOLDER_DIR=${XCASH_DPOPS_DIR}delegates-pool-website/
   SHARED_DELEGATES_WEBSITE_DIR=${XCASH_DPOPS_INSTALLATION_DIR}delegates-pool-website/
   NODEJS_DIR=${XCASH_DPOPS_INSTALLATION_DIR}${NODEJS_LATEST_VERSION}/
@@ -304,23 +284,13 @@ SYSTEMD_SERVICE_FILE_XCASH_DAEMON="${SYSTEMD_SERVICE_FILE_XCASH_DAEMON//'${XCASH
 SYSTEMD_SERVICE_FILE_XCASH_DAEMON="${SYSTEMD_SERVICE_FILE_XCASH_DAEMON//'${XCASH_LOGS_DIR}'/$XCASH_LOGS_DIR}"
 SYSTEMD_SERVICE_FILE_XCASH_DAEMON="${SYSTEMD_SERVICE_FILE_XCASH_DAEMON//'${XCASH_SYSTEMPID_DIR}'/$XCASH_SYSTEMPID_DIR}"
 
-#SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SOLO_DELEGATE=$(cat <(curl -sSL $SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SOLO_DELEGATE_URL))
-#SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SOLO_DELEGATE="${SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SOLO_DELEGATE//'${USER}'/$USER}"
-#SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SOLO_DELEGATE="${SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SOLO_DELEGATE//'${XCASH_DPOPS_DIR}'/$XCASH_DPOPS_DIR}"
-#SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SOLO_DELEGATE="${SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SOLO_DELEGATE//'${BLOCK_VERIFIER_SECRET_KEY}'/$BLOCK_VERIFIER_SECRET_KEY}"
-
 SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SHARED_DELEGATE=$(cat <(curl -sSL $SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SHARED_DELEGATE_URL))
 SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SHARED_DELEGATE="${SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SHARED_DELEGATE//'${USER}'/$USER}"
 SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SHARED_DELEGATE="${SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SHARED_DELEGATE//'${XCASH_DPOPS_DIR}'/$XCASH_DPOPS_DIR}"
 SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SHARED_DELEGATE="${SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SHARED_DELEGATE//'${BLOCK_VERIFIER_SECRET_KEY}'/$BLOCK_VERIFIER_SECRET_KEY}"
-
-# jedx
 SYSTEMD_SERVICE_FILE_XCASH_DPOPS_PAYOUTS=$(cat <(curl -sSL $SYSTEMD_SERVICE_FILE_XCASH_PAYOUTS_URL))
 SYSTEMD_SERVICE_FILE_XCASH_DPOPS_PAYOUTS="${SYSTEMD_SERVICE_FILE_XCASH_DPOPS_PAYOUTS//'${USER}'/$USER}"
 SYSTEMD_SERVICE_FILE_XCASH_DPOPS_PAYOUTS="${SYSTEMD_SERVICE_FILE_XCASH_DPOPS_PAYOUTS//'${XCASH_PAYOUTS_DIR}'/$XCASH_PAYOUTS_DIR}"
-
-
-SYSTEMD_TIMER_FILE_XCASH_DPOPS=$(cat <(curl -sSL $SYSTEMD_TIMER_FILE_XCASH_DPOPS_URL))
 
 SYSTEMD_SERVICE_FILE_XCASH_WALLET=$(cat <(curl -sSL $SYSTEMD_SERVICE_FILE_XCASH_WALLET_URL))
 SYSTEMD_SERVICE_FILE_XCASH_WALLET="${SYSTEMD_SERVICE_FILE_XCASH_WALLET//'${USER}'/$USER}"
@@ -329,8 +299,6 @@ SYSTEMD_SERVICE_FILE_XCASH_WALLET="${SYSTEMD_SERVICE_FILE_XCASH_WALLET//'${XCASH
 SYSTEMD_SERVICE_FILE_XCASH_WALLET="${SYSTEMD_SERVICE_FILE_XCASH_WALLET//'${WALLET_PASSWORD}'/$WALLET_PASSWORD}"
 SYSTEMD_SERVICE_FILE_XCASH_WALLET="${SYSTEMD_SERVICE_FILE_XCASH_WALLET//'${XCASH_LOGS_DIR}'/$XCASH_LOGS_DIR}"
 
-# jed
-#SYSTEMD_TIMER_FILE_XCASH_WALLET=$(cat <(curl -sSL $SYSTEMD_TIMER_FILE_XCASH_WALLET_URL))
 
 }
 
@@ -650,21 +618,22 @@ function download_xcash()
   echo
 }
 
+jed
 function build_xcash()
 {
   echo -ne "${COLOR_PRINT_YELLOW}Building X-CASH (This Might Take A While)${END_COLOR_PRINT}"
   cd "${XCASH_DIR}"
-  git checkout --quiet ${XCASH_CORE_BRANCH}
-  git submodule update --init --force > /dev/null 2>&1
+  git checkout ${XCASH_CORE_BRANCH}
+  git submodule update --init --force --recursive
   if [ "$RAM_CPU_RATIO" -ge "$RAM_CPU_RATIO_ALL_CPU_THREADS" ]; then
-    echo "y" | make clean &>/dev/null
-    make release -j "${CPU_THREADS}" &>/dev/null
+    echo "y" | make clean
+    make release -j "${CPU_THREADS}"
   else
-    echo "y" | make clean &>/dev/null
+    echo "y" | make clean 
     if [ "$RAM_CPU_RATIO" -eq 0 ]; then
-        make release &>/dev/null
+        make release 
     else
-        make release -j $((CPU_THREADS / 2)) &>/dev/null
+        make release -j $((CPU_THREADS / 2))
     fi
   fi
   echo -ne "\r\033[K${COLOR_PRINT_GREEN}Building X-CASH Complete${END_COLOR_PRINT}"
@@ -719,35 +688,15 @@ function create_systemd_service_files()
   sudo bash -c "echo '${SYSTEMD_SERVICE_FILE_FIREWALL}' > /lib/systemd/system/firewall.service"
   sudo bash -c "echo '${SYSTEMD_SERVICE_FILE_MONGODB}' > /lib/systemd/system/mongodb.service"
   sudo bash -c "echo '${SYSTEMD_SERVICE_FILE_XCASH_DAEMON}' > /lib/systemd/system/xcash-daemon.service"
-
-# jed
-#  sudo bash -c "echo '${SYSTEMD_TIMER_FILE_XCASH_DPOPS}' > /lib/systemd/system/xcash-dpops.timer"
-
-#  if [ ! "${SHARED_DELEGATE^^}" == "YES" ]; then
-#    sudo bash -c "echo '${SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SOLO_DELEGATE}' > /lib/systemd/system/xcash-dpops.service"
-#  else
-    sudo bash -c "echo '${SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SHARED_DELEGATE}' > /lib/systemd/system/xcash-dpops.service"
-#  fi
-
-  #jed -- not needed on seed nodes
-  sudo bash -c "echo '${SYSTEMD_SERVICE_FILE_XCASH_PAYOUTS_URL}' > /lib/systemd/system/xcash-dpops.service"
-
+  sudo bash -c "echo '${SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SHARED_DELEGATE}' > /lib/systemd/system/xcash-dpops.service"
+  sudo bash -c "echo '${SYSTEMD_SERVICE_FILE_XCASH_PAYOUTS_URL}' > /lib/systemd/system/xcash-dpops.service"       # not needed on seed
   sudo bash -c "echo '${SYSTEMD_SERVICE_FILE_XCASH_WALLET}' > /lib/systemd/system/xcash-rpc-wallet.service"
   
-  #jed
-  #sudo bash -c "echo '${SYSTEMD_TIMER_FILE_XCASH_WALLET}' > /lib/systemd/system/xcash-rpc-wallet.timer"
-
   sed_services 's/\r$//g' /lib/systemd/system/firewall.service
   sed_services 's/\r$//g' /lib/systemd/system/mongodb.service
   sed_services 's/\r$//g' /lib/systemd/system/xcash-daemon.service
-
-# jed
-#  sed_services 's/\r$//g' /lib/systemd/system/xcash-dpops.timer
-
   sed_services 's/\r$//g' /lib/systemd/system/xcash-dpops.service
   sed_services 's/\r$//g' /lib/systemd/system/xcash-rpc-wallet.service
-# jed
-#  sed_services 's/\r$//g' /lib/systemd/system/xcash-rpc-wallet.timer
 
   sudo systemctl daemon-reload
   echo -ne "\r${COLOR_PRINT_GREEN}Creating Systemd Service Files${END_COLOR_PRINT}"
@@ -848,9 +797,6 @@ function build_xcash_dpops()
   echo
 }
 
-
-
-# jed
 function download_xcash_payouts()
 {
   echo -ne "${COLOR_PRINT_YELLOW}Downloading xcash-payouts${END_COLOR_PRINT}"
@@ -1021,8 +967,6 @@ function import_xcash_wallet()
   echo
 }
 
-
-# jed
 function install_xcash_payouts()
 {
   echo
@@ -1366,9 +1310,7 @@ function uninstall_systemd_service_files()
 {
   echo -ne "${COLOR_PRINT_YELLOW}Uninstall Systemd Service Files${END_COLOR_PRINT}"
   if [ "$container" == "lxc" ]; then
-    sudo truncate --size 0 /lib/systemd/system/firewall.service /lib/systemd/system/mongodb.service /lib/systemd/system/xcash-daemon.service /lib/systemd/system/xcash-dpops.service /lib/systemd/system/xcash-rpc-wallet.service 
-# jed
-#    sudo rm -f /lib/systemd/system/xcash-dpops.timer /lib/systemd/system/xcash-rpc-wallet.timer ${HOME}/firewall_script.sh
+    sudo truncate --size 0 /lib/systemd/system/firewall.service /lib/systemd/system/mongodb.service /lib/systemd/system/xcash-daemon.service /lib/systemd/system/xcash-dpops.service /lib/systemd/system/xcash-rpc-wallet.service
   else
     sudo rm -f /lib/systemd/system/firewall.service /lib/systemd/system/mongodb.service /lib/systemd/system/xcash-daemon.service /lib/systemd/system/xcash-dpops.service /lib/systemd/system/xcash-rpc-wallet.service ${HOME}/firewall_script.sh
   fi
@@ -1454,13 +1396,8 @@ function install()
     import_xcash_wallet
   fi
 
-  # jed
   # Install xcash-payouts
   install_xcash_payouts
-
-  # jed
-  # add the public address and block verifiers secret key to the XCASH_Daemon systemd service file
-  # sed_services "s/xcash-labs-core\/build\/release\/bin\/xcashd/xcash-labs-core\/build\/release\/bin\/xcashd --xcash-dpops-delegates-public-address $PUBLIC_ADDRESS --xcash-dpops-delegates-secret-key $BLOCK_VERIFIER_SECRET_KEY/g" /lib/systemd/system/xcash-daemon.service
 
   # Create a swap file if they don't already have one and have low ram, if not inside container
   if [ ! "$container" == "lxc" ]; then
@@ -1527,11 +1464,6 @@ function update()
   update_xcash
   update_xcash_dpops
   update_xcash_payouts
-
-  # jed
-#  if [ "${SHARED_DELEGATE^^}" == "YES" ]; then
-#    update_shared_delegates_website
-#  fi
 
   # Update all dependencies
   if [ ! "$MONGODB_CURRENT_VERSION" == "$MONGODB_LATEST_VERSION" ]; then
@@ -2105,7 +2037,6 @@ setup_lxc_container_profile
 # Get the installation settings
 installation_settings
 
-# jedjed
 if [ "$INSTALLATION_TYPE_SETTINGS" -eq "1" ]; then
   install
 elif [ "$INSTALLATION_TYPE_SETTINGS" -eq "2" ]; then
