@@ -685,7 +685,7 @@ function create_systemd_service_files()
   sudo bash -c "echo '${SYSTEMD_SERVICE_FILE_MONGODB}' > /lib/systemd/system/mongodb.service"
   sudo bash -c "echo '${SYSTEMD_SERVICE_FILE_XCASH_DAEMON}' > /lib/systemd/system/xcash-daemon.service"
   sudo bash -c "echo '${SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SHARED_DELEGATE}' > /lib/systemd/system/xcash-dpops.service"
-  sudo bash -c "echo '${SYSTEMD_SERVICE_FILE_XCASH_PAYOUTS}' > /lib/systemd/system/xcash-payouts.service"                # not needed on seed
+  sudo bash -c "echo '${SYSTEMD_SERVICE_FILE_XCASH_PAYOUTS}' > /lib/systemd/system/xcash-payouts.service"                # not needed on seed nodes
   sudo bash -c "echo '${SYSTEMD_SERVICE_FILE_XCASH_WALLET}' > /lib/systemd/system/xcash-rpc-wallet.service"
   
 SYSTEMD_SERVICE_XCASH_FILE_PAYOUTS
