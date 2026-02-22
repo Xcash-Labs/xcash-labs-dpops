@@ -83,10 +83,8 @@ MONGODB_MONGOSH_URL="https://downloads.mongodb.com/compass/mongosh-${MONGOSH_VER
 MONGODB_DIR=""
 MONGODB_CURRENT_VERSION=""
 MONGOC_DRIVER_URL="https://github.com/mongodb/mongo-c-driver/releases/download/${MONGOC_DRIVER_LATEST_VERSION:15}/${MONGOC_DRIVER_LATEST_VERSION}.tar.gz"
-##MONGOC_DRIVER_URL="https://github.com/mongodb/mongo-c-driver/releases/download/${MONGOC_DRIVER_LATEST_VERSION:15}/${MONGOC_DRIVER_LATEST_VERSION}.tar.gz"
 MONGOC_DRIVER_DIR=""
 MONGOC_DRIVER_CURRENT_VERSION=""
-# XCASH_DPOPS_PACKAGES="build-essential cmake pkg-config libboost-all-dev libssl-dev libzmq3-dev libunbound-dev libsodium-dev libminiupnpc-dev libunwind8-dev liblzma-dev libreadline6-dev libldns-dev libexpat1-dev libgtest-dev doxygen graphviz libpcsclite-dev git screen p7zip-full moreutils wget iptables jq curl iproute2 libjansson-dev libcurl4-openssl-dev libcjson-dev"
 XCASH_DPOPS_PACKAGES="build-essential cmake pkg-config libssl-dev libzmq3-dev libunbound-dev libsodium-dev libunwind8-dev liblzma-dev libreadline6-dev libexpat1-dev qttools5-dev-tools libhidapi-dev libusb-1.0-0-dev libprotobuf-dev protobuf-compiler libudev-dev libboost-chrono-dev libboost-date-time-dev libboost-filesystem-dev libboost-locale-dev libboost-program-options-dev libboost-regex-dev libboost-serialization-dev libboost-system-dev libboost-thread-dev python3 ccache doxygen graphviz git curl autoconf libtool gperf p7zip-full libzmq5 libgtest-dev curl libcurl4-openssl-dev libcjson-dev"
 CURRENT_XCASH_WALLET_INFORMATION=""
 PUBLIC_ADDRESS=""
@@ -97,7 +95,6 @@ FIREWALL_SHARED_DELEGATES=""
 SYSTEMD_SERVICE_FILE_FIREWALL=""
 SYSTEMD_SERVICE_FILE_MONGODB=""
 SYSTEMD_SERVICE_FILE_XCASH_DAEMON=""
-#SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SOLO_DELEGATE=""
 SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SHARED_DELEGATE=""
 SYSTEMD_SERVICE_FILE_XCASH_WALLET=""
 
@@ -288,6 +285,7 @@ SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SHARED_DELEGATE=$(cat <(curl -sSL $SYSTEMD_SERV
 SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SHARED_DELEGATE="${SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SHARED_DELEGATE//'${USER}'/$USER}"
 SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SHARED_DELEGATE="${SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SHARED_DELEGATE//'${XCASH_DPOPS_DIR}'/$XCASH_DPOPS_DIR}"
 SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SHARED_DELEGATE="${SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SHARED_DELEGATE//'${BLOCK_VERIFIER_SECRET_KEY}'/$BLOCK_VERIFIER_SECRET_KEY}"
+
 SYSTEMD_SERVICE_FILE_XCASH_DPOPS_PAYOUTS=$(cat <(curl -sSL $SYSTEMD_SERVICE_FILE_XCASH_PAYOUTS_URL))
 SYSTEMD_SERVICE_FILE_XCASH_DPOPS_PAYOUTS="${SYSTEMD_SERVICE_FILE_XCASH_DPOPS_PAYOUTS//'${USER}'/$USER}"
 SYSTEMD_SERVICE_FILE_XCASH_DPOPS_PAYOUTS="${SYSTEMD_SERVICE_FILE_XCASH_DPOPS_PAYOUTS//'${XCASH_PAYOUTS_DIR}'/$XCASH_PAYOUTS_DIR}"
@@ -298,7 +296,6 @@ SYSTEMD_SERVICE_FILE_XCASH_WALLET="${SYSTEMD_SERVICE_FILE_XCASH_WALLET//'${XCASH
 SYSTEMD_SERVICE_FILE_XCASH_WALLET="${SYSTEMD_SERVICE_FILE_XCASH_WALLET//'${XCASH_WALLET_DIR}'/$XCASH_WALLET_DIR}"
 SYSTEMD_SERVICE_FILE_XCASH_WALLET="${SYSTEMD_SERVICE_FILE_XCASH_WALLET//'${WALLET_PASSWORD}'/$WALLET_PASSWORD}"
 SYSTEMD_SERVICE_FILE_XCASH_WALLET="${SYSTEMD_SERVICE_FILE_XCASH_WALLET//'${XCASH_LOGS_DIR}'/$XCASH_LOGS_DIR}"
-
 
 }
 
@@ -688,13 +685,14 @@ function create_systemd_service_files()
   sudo bash -c "echo '${SYSTEMD_SERVICE_FILE_MONGODB}' > /lib/systemd/system/mongodb.service"
   sudo bash -c "echo '${SYSTEMD_SERVICE_FILE_XCASH_DAEMON}' > /lib/systemd/system/xcash-daemon.service"
   sudo bash -c "echo '${SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SHARED_DELEGATE}' > /lib/systemd/system/xcash-dpops.service"
-  sudo bash -c "echo '${SYSTEMD_SERVICE_FILE_XCASH_PAYOUTS_URL}' > /lib/systemd/system/xcash-dpops.service"       # not needed on seed
+  sudo bash -c "echo '${SYSTEMD_SERVICE_FILE_XCASH_PAYOUTS_URL}' > /lib/systemd/system/xcash-dpops.service"                # not needed on seed
   sudo bash -c "echo '${SYSTEMD_SERVICE_FILE_XCASH_WALLET}' > /lib/systemd/system/xcash-rpc-wallet.service"
   
   sed_services 's/\r$//g' /lib/systemd/system/firewall.service
   sed_services 's/\r$//g' /lib/systemd/system/mongodb.service
   sed_services 's/\r$//g' /lib/systemd/system/xcash-daemon.service
   sed_services 's/\r$//g' /lib/systemd/system/xcash-dpops.service
+  sed_services 's/\r$//g' /lib/systemd/system/xcash-payouts.service
   sed_services 's/\r$//g' /lib/systemd/system/xcash-rpc-wallet.service
 
   sudo systemctl daemon-reload
@@ -844,11 +842,7 @@ function install_firewall()
   # Reinstall iptables (solves some issues with some VPS)
   wait_for_package_manager
   sudo apt install --reinstall iptables &>/dev/null
-#  if [ "${SHARED_DELEGATE^^}" == "YES" ]; then
-    echo "$FIREWALL_SHARED_DELEGATES" > ${HOME}/firewall_script.sh
-#  else
-#    echo "$FIREWALL" > ${HOME}/firewall_script.sh
-#  fi
+  echo "$FIREWALL_SHARED_DELEGATES" > ${HOME}/firewall_script.sh
   sudo sed -i 's/\r$//g' ${HOME}/firewall_script.sh
   sudo chmod +x ${HOME}/firewall_script.sh
   sudo ${HOME}/firewall_script.sh
@@ -885,25 +879,6 @@ function install_xcash_dpops()
   echo
   echo
 }
-
-#function configure_xcash_dpops()
-#{
-#  echo
-#  echo
-#  echo -e "${COLOR_PRINT_GREEN}############################################################${END_COLOR_PRINT}"
-#  echo -e "${COLOR_PRINT_GREEN}                Configuring xcash-dpops Installation${END_COLOR_PRINT}"
-#  echo -e "${COLOR_PRINT_GREEN}############################################################${END_COLOR_PRINT}"
-
-  # Create the block verifier key if they choose to create a block verifier key
-#  if [ "${BLOCK_VERIFIER_KEY_SETTINGS^^}" == "C" ]; then
-#    create_block_verifier_key
-#  fi
-#  update_systemd_service_files
-#  create_systemd_service_files
-#  echo
-#  echo
-#}
-
 
 function create_xcash_wallet()
 {
@@ -979,102 +954,6 @@ function install_xcash_payouts()
   echo
   echo
 }
-
-#function install_nodejs()
-#{
-#  echo -ne "${COLOR_PRINT_YELLOW}Installing Node.js${END_COLOR_PRINT}"
-#  cd "${XCASH_DPOPS_INSTALLATION_DIR}"
-#  wget -q ${NODEJS_URL}
-#  tar -xf node*.tar.xz &>/dev/null
-#  sudo rm node*.tar.xz &>/dev/null
-#  sudo chown -R "$USER":"$USER" ${NODEJS_DIR}
-#  line="export PATH=${NODEJS_DIR}bin:\$PATH"
-#  grep -qxF "$line" "$HOME/.profile" || echo "$line" >> "$HOME/.profile"
-#  source ~/.profile || true
-#  echo -ne "\r${COLOR_PRINT_GREEN}Installing Node.js${END_COLOR_PRINT}"
-#  echo
-#}
-
-#function configure_npm()
-#{
-#  if [ "$EUID" -eq 0 ]; then
-#    echo -ne "${COLOR_PRINT_YELLOW}Configuring NPM For Root User${END_COLOR_PRINT}"
-#    source ~/.profile || true
-#    npm config set user 0 &>/dev/null
-#    npm config set unsafe-perm true &>/dev/null
-#    echo -ne "\r${COLOR_PRINT_GREEN}Configuring NPM For Root User${END_COLOR_PRINT}"
-#    echo
-#  fi
-#}
-
-#function update_npm()
-#{
-#  echo -ne "${COLOR_PRINT_YELLOW}Updating NPM${END_COLOR_PRINT}"
-#  source ~/.profile || true
-#  # npm install -g npm &>/dev/null
-#  echo -ne "\r${COLOR_PRINT_GREEN}Updating NPM${END_COLOR_PRINT}"
-#  echo
-#}
-
-#function install_npm_global_packages()
-#{
-#  echo -ne "${COLOR_PRINT_YELLOW}Installing Global NPM Packages${END_COLOR_PRINT}"
-#  npm install -g @angular/cli@latest uglify-js &>/dev/null
-#  echo -ne "\r${COLOR_PRINT_GREEN}Installing Global NPM Packages${END_COLOR_PRINT}"
-#  echo
-#}
-
-#function download_shared_delegate_website()
-#{
-#  echo -ne "${COLOR_PRINT_YELLOW}Downloading Shared Delegates Website${END_COLOR_PRINT}"
-#  cd "${XCASH_DPOPS_INSTALLATION_DIR}"
-#  git clone --quiet ${SHARED_DELEGATES_WEBSITE_URL}
-#  echo -ne "\r${COLOR_PRINT_GREEN}Downloading Shared Delegates Website${END_COLOR_PRINT}"
-#  echo
-#}
-
-#function install_shared_delegates_website_npm_packages()
-#{
-#  echo -ne "${COLOR_PRINT_YELLOW}Updating node_modules${END_COLOR_PRINT}"
-#  cd "${SHARED_DELEGATES_WEBSITE_DIR}"
-#  npm update --legacy-peer-deps &>/dev/null
-#  echo -ne "\r${COLOR_PRINT_GREEN}Updating node_modules${END_COLOR_PRINT}"
-#  echo
-#}
-
-#function build_shared_delegates_website()
-#{
-#  echo -ne "${COLOR_PRINT_YELLOW}Building shared delegates website${END_COLOR_PRINT}"
-#  cd "${SHARED_DELEGATES_WEBSITE_DIR}"
-#  source ~/.profile || true
-#  npm run build &>/dev/null
-#  cd dist
-#  for f in *.js; do uglifyjs "$f" --compress --mangle --output "{$f}min"; rm "$f"; mv "{$f}min" "$f"; done
-#  if [ -d "$XCASH_DPOPS_SHARED_DELEGATE_FOLDER_DIR" ]; then
-#    sudo rm -r "${XCASH_DPOPS_SHARED_DELEGATE_FOLDER_DIR}"
-#  fi 
-#  cd ../
-#  cp -a dist "${XCASH_DPOPS_SHARED_DELEGATE_FOLDER_DIR}" 
-#  echo -ne "\r${COLOR_PRINT_GREEN}Building shared delegates website${END_COLOR_PRINT}"
-#  echo
-#}
-
-#function install_shared_delegates_website()
-#{
-#  echo -e "${COLOR_PRINT_GREEN}############################################################${END_COLOR_PRINT}"
-#  echo -e "${COLOR_PRINT_GREEN}            Installing Shared Delegate Website${END_COLOR_PRINT}"
-#  echo -e "${COLOR_PRINT_GREEN}############################################################${END_COLOR_PRINT}"
-#  install_nodejs
-#  configure_npm
-#  update_npm
-#  install_npm_global_packages
-#  download_shared_delegate_website
-#  install_shared_delegates_website_npm_packages
-#  build_shared_delegates_website
-#  source ~/.profile || true
-#  echo
-#  echo
-#}
 
 function get_installation_directory()
 {
@@ -1202,33 +1081,6 @@ function update_xcash_payouts()
   echo
 }
 
-#function update_shared_delegates_website()
-#{
-#  echo -ne "${COLOR_PRINT_YELLOW}Updating Shared Delegates Website${END_COLOR_PRINT}"
-#  if [ ! -d "$SHARED_DELEGATES_WEBSITE_DIR" ]; then
-#    cd "${XCASH_DPOPS_INSTALLATION_DIR}"
-#    git clone --quiet "${SHARED_DELEGATES_WEBSITE_URL}"
-#  fi
-#  cd "${SHARED_DELEGATES_WEBSITE_DIR}"
-#  data=$([ $(git rev-parse HEAD) = $(git ls-remote $(git rev-parse --abbrev-ref @{u} | sed 's/\// /g') | cut -f1) ] && echo "1" || echo "0")
-#  if [ "$data" == "0" ]; then
-#    git reset --hard HEAD --quiet
-#    git pull --quiet
-#    npm update --legacy-peer-deps &>/dev/null
-#    source ~/.profile || true
-#    npm run build &>/dev/null
-#    cd dist
-#    for f in *.js; do uglifyjs "$f" --compress --mangle --output "{$f}min"; rm "$f"; mv "{$f}min" "$f"; done
-#    if [ -d "$XCASH_DPOPS_SHARED_DELEGATE_FOLDER_DIR" ]; then
-#      sudo rm -r "${XCASH_DPOPS_SHARED_DELEGATE_FOLDER_DIR}"
-#    fi 
-#    cd ../
-#    cp -a dist "${XCASH_DPOPS_SHARED_DELEGATE_FOLDER_DIR}"
-#  fi
-#  echo -ne "\r${COLOR_PRINT_GREEN}Updating Shared Delegates Website${END_COLOR_PRINT}"
-#  echo
-#}
-
 function update_mongodb()
 {
   echo -ne "${COLOR_PRINT_YELLOW}Updating MongoDB${END_COLOR_PRINT}"
@@ -1331,9 +1183,7 @@ function uninstall_shared_delegates_website()
   if [ -d "${XCASH_DPOPS_SHARED_DELEGATE_FOLDER_DIR}" ]; then
     sudo rm -r "${XCASH_DPOPS_SHARED_DELEGATE_FOLDER_DIR}"
   fi
-#  if [ -d "${SHARED_DELEGATES_WEBSITE_DIR}" ]; then
-#    sudo rm -r "${SHARED_DELEGATES_WEBSITE_DIR}"
-#  fi
+
   if [ -d "${NODEJS_DIR}" ]; then
     sudo rm -r "${NODEJS_DIR}"
   fi
@@ -1374,11 +1224,6 @@ function install()
 
   # Install xcash-dpops
   install_xcash_dpops
-
-  # Install shared delegates website
-#  if [ "${SHARED_DELEGATE^^}" == "YES" ]; then
-#    install_shared_delegates_website
-#  fi
 
   # Create or import the wallet
   if [ "${WALLET_SETTINGS^^}" == "YES" ]; then
@@ -1477,16 +1322,6 @@ function update()
   else
     echo -e "${COLOR_PRINT_GREEN}Mongo C Driver Is Already Up To Date${END_COLOR_PRINT}"
   fi
-#  if [ "${SHARED_DELEGATE^^}" == "YES" ]; then
-#    if [ ! "$NODEJS_CURRENT_VERSION" == "$NODEJS_LATEST_VERSION" ]; then
-#      update_nodejs
-#      install_npm_global_packages
-#    else
-#      echo -e "${COLOR_PRINT_GREEN}NodeJS Is Already Up To Date${END_COLOR_PRINT}"
-#    fi
-#    configure_npm
-#    update_npm
-#  fi
   
   # Create xcash wallet log symlink to old location
   touch "${XCASH_LOGS_DIR}xcash-wallet-rpc.log" && sudo rm -f "${XCASH_DIR}build/Linux/master/release/bin/xcash-wallet-rpc.log" && ln -s "${XCASH_LOGS_DIR}xcash-wallet-rpc.log" "${XCASH_DIR}build/Linux/master/release/bin/xcash-wallet-rpc.log"
