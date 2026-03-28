@@ -1,6 +1,6 @@
 [Unit]
 Description=X-Cash DPOPS Program background process
-After=network-online.target time-sync.target mongodb.service
+After=network-online.target time-sync.target mongodb.service xcash-rpc-wallet.service
 StartLimitIntervalSec=60
 StartLimitBurst=4
 

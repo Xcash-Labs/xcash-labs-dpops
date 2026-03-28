@@ -501,9 +501,9 @@ function start_systemd_service_files()
   echo -ne "${COLOR_PRINT_YELLOW}Starting Systemd Service Files${END_COLOR_PRINT}"
   sudo systemctl start mongodb &>/dev/null
   sleep 3s
-  sudo systemctl start xcash-dpops &>/dev/null
   sudo systemctl start xcash-daemon &>/dev/null
   sudo systemctl start xcash-rpc-wallet &>/dev/null
+  sudo systemctl start xcash-dpops &>/dev/null
   if systemctl list-unit-files --type=service --no-legend | awk '{print $1}' | grep -qx "xcash-payouts.service"; then
     sudo systemctl start xcash-payouts &>/dev/null
   fi
