@@ -10,7 +10,6 @@ iptables -P OUTPUT ACCEPT
 iptables -t nat -F
 iptables -t mangle -F
 iptables -t mangle -X
-iptables -t mangle -F
 iptables -t raw -F
 iptables -t raw -X
 iptables -F
@@ -38,7 +37,7 @@ iptables -t mangle -A PREROUTING -p tcp --tcp-flags ALL SYN,RST,ACK,FIN,URG -j D
 
 # filter data for INPUT, FORWARD, and OUTPUT
 # Accept any packets coming or going on localhost
-iptables -I INPUT -i lo -j ACCEPT
+iptables -A INPUT -i lo -j ACCEPT
 # keep already established connections running
 iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
 
@@ -62,9 +61,10 @@ iptables -A INPUT -d 255.255.255.255 -j DROP
 #unblock them using iptables -D INPUT -s ipaddress -j DROP
 
 # Block different attacks
-# block one computer from opening too many connections (100 simultaneous connections) if this gives trouble with post remove this or increase the limit
-iptables -t filter -I INPUT -p tcp --syn --dport 80 -m connlimit --connlimit-above 100 --connlimit-mask 32 -j DROP
-iptables -t filter -I INPUT -p tcp --syn --dport 18283 -m connlimit --connlimit-above 100 --connlimit-mask 32 -j DROP
+# block one computer from opening too many connections
+# do not apply this to loopback traffic
+# iptables -A INPUT ! -i lo -p tcp --syn --dport 80 -m connlimit --connlimit-above 100 --connlimit-mask 32 -j DROP
+iptables -A INPUT ! -i lo -p tcp --syn --dport 18283 -m connlimit --connlimit-above 1024 --connlimit-mask 32 -j DROP
 # block port scans
 # this will lock the IP out for 1 day
 iptables -A INPUT -m recent --name portscan --rcheck --seconds 86400 -j DROP
