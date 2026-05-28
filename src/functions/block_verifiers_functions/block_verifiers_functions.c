@@ -149,7 +149,7 @@ int block_verifiers_create_block(const char* vote_hash_hex, uint8_t total_vote, 
     return ROUND_ERROR;
   }
 
-  char block_blob[BUFFER_SIZE] = {0};
+  char block_blob[BLOCK_TEMPLATE_RESPONSE_SIZE] = {0};
   size_t reserved_offset = 0;
   // Only the block producer completes the following steps, producer_refs is an array in case we decide to add
   // backup producers in the future
@@ -158,7 +158,7 @@ int block_verifiers_create_block(const char* vote_hash_hex, uint8_t total_vote, 
     // Create block template
     INFO_STAGE_PRINT("Part 9 - Create block template");
     snprintf(current_round_part, sizeof(current_round_part), "%d", 9);
-    if (get_block_template(block_blob, BUFFER_SIZE, &reserved_offset) == 0) {
+    if (get_block_template(block_blob, sizeof(block_blob), &reserved_offset) == 0) {
       return ROUND_ERROR;
     }
 

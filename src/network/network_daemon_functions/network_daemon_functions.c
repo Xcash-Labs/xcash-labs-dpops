@@ -171,23 +171,28 @@ int get_block_template(char* result, size_t result_size, size_t* reserved_offset
 
   // Variables
   char message[SMALL_BUFFER_SIZE] = {0};
-  char* response = (char*)calloc(SMALL_BUFFER_SIZE, sizeof(char));
   char reserved_offset_str[16] = {0};
 
-  if (!response || !reserved_offset_out) {
-    ERROR_PRINT("Memory allocation failed or invalid output pointer");
-    if (response) free(response);
+  if (!reserved_offset_out || !result || result_size == 0) {
+    ERROR_PRINT("Invalid output pointer or result size");
+    return XCASH_ERROR;
+  }
+
+  char* response = (char*)calloc(result_size, sizeof(char));
+
+  if (!response) {
+    ERROR_PRINT("Memory allocation failed");
     return XCASH_ERROR;
   }
 
   // Clear response buffer before each use
-  memset(response, 0, SMALL_BUFFER_SIZE);
+  memset(response, 0, result_size);
 
   // Compose JSON request
   snprintf(message, sizeof(message), "%s%s%s", JSON_REQUEST_PREFIX, xcash_wallet_public_address, JSON_REQUEST_SUFFIX);
 
   // Send HTTP request
-  if (send_http_request(response, SMALL_BUFFER_SIZE, XCASH_DAEMON_IP, RPC_ENDPOINT, XCASH_DAEMON_PORT, RPC_METHOD,
+  if (send_http_request(response, result_size, XCASH_DAEMON_IP, RPC_ENDPOINT, XCASH_DAEMON_PORT, RPC_METHOD,
                         HTTP_HEADERS, HTTP_HEADERS_LENGTH, message, HTTP_TIMEOUT_SETTINGS) > 0 &&
       parse_json_data(response, "result.blocktemplate_blob", result, result_size) == XCASH_OK &&
       parse_json_data(response, "result.reserved_offset", reserved_offset_str, sizeof(reserved_offset_str)) == XCASH_OK) {
@@ -204,7 +209,7 @@ int get_block_template(char* result, size_t result_size, size_t* reserved_offset
 }
 
 /*---------------------------------------------------------------------------------------------------------
-Name: get_block_by_height
+Name: submit_block_template
 Description: Gets the current block info by height
 Parameters:
   DATA - Hex-encoded block blob string to be submitted.
@@ -213,7 +218,13 @@ Return:
 ---------------------------------------------------------------------------------------------------------*/
 bool submit_block_template(const char* DATA)
 {
-  if (!DATA || strlen(DATA) == 0) {
+  if (!DATA) {
+    ERROR_PRINT("Invalid block data for submission.");
+    return XCASH_ERROR;
+  }
+
+  size_t data_len = strlen(DATA);
+  if (data_len == 0) {
     ERROR_PRINT("Invalid block data for submission.");
     return XCASH_ERROR;
   }
@@ -222,32 +233,35 @@ bool submit_block_template(const char* DATA)
   const size_t HTTP_HEADERS_LENGTH = sizeof(HTTP_HEADERS) / sizeof(HTTP_HEADERS[0]);
   const char* RPC_ENDPOINT = "/json_rpc";
 
-  char request_json[SMALL_BUFFER_SIZE] = {0};
+  size_t request_size = data_len + 256;
+  char* request_json = (char*)calloc(request_size, sizeof(char));
   char response[SMALL_BUFFER_SIZE] = {0};
   char result[256] = {0};
 
-  // Format JSON-RPC message to submit block
-  snprintf(request_json, sizeof(request_json),
+  if (!request_json) {
+    ERROR_PRINT("Memory allocation failed");
+    return XCASH_ERROR;
+  }
+
+  snprintf(request_json, request_size,
            "{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"submit_block\",\"params\":[\"%s\"]}",
            DATA);
 
-  // Send HTTP request
-  if (send_http_request(response, SMALL_BUFFER_SIZE, XCASH_DAEMON_IP, RPC_ENDPOINT, XCASH_DAEMON_PORT,
+  if (send_http_request(response, sizeof(response), XCASH_DAEMON_IP, RPC_ENDPOINT, XCASH_DAEMON_PORT,
                         "POST", HTTP_HEADERS, HTTP_HEADERS_LENGTH,
                         request_json, BLOCK_TIMEOUT_SECONDS) > 0)
   {
-    // Check if there's an error in the response
-    if (parse_json_data(response, "result.status", result, sizeof(result)) == 1) {
-      if (strcmp(result, "OK") == 0) {
-        return XCASH_OK;
-      }
+    if (parse_json_data(response, "result.status", result, sizeof(result)) == 1 &&
+        strcmp(result, "OK") == 0) {
+      free(request_json);
+      return XCASH_OK;
     }
   }
 
   ERROR_PRINT("Could not submit the block template. Response: %s", response);
+  free(request_json);
   return XCASH_ERROR;
 }
-
 
 /*---------------------------------------------------------------------------------------------------------
 Name: get_block_info_by_height

@@ -54,6 +54,7 @@
 #define BUFFER_SIZE_RESERVE_PROOF 2560
 #define MINIMUM_BUFFER_SIZE_DELEGATES_NAME 5
 #define MAXIMUM_BUFFER_SIZE_DELEGATES_NAME 100
+#define BLOCK_TEMPLATE_RESPONSE_SIZE 1048576  // 1 MB
 
 // ===================== Hash and Key Lengths =====================
 #define DATA_HASH_LENGTH 128
