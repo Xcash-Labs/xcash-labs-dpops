@@ -6,6 +6,7 @@ COLOR_PRINT_GREEN="\033[1;32m"
 COLOR_PRINT_YELLOW="\033[1;33m"
 END_COLOR_PRINT="\033[0m"
 
+PUBLIC_ADDRESS=""
 MAIN_INSTALL_DIRECTORY="xcash-labs"
 INSTALL_DIR="$HOME/${MAIN_INSTALL_DIRECTORY}/"
 BLOCKCHAIN_DIR="$HOME/.XCASH-LABS/"
@@ -162,7 +163,7 @@ function create_or_import_wallet()
 
   echo -ne "${COLOR_PRINT_YELLOW}Stopping local daemon${END_COLOR_PRINT}"
   sudo systemctl stop xcash-daemon >/dev/null 2>&1 || true
-  sleep 5
+  sleep 10
   echo -ne "\r${COLOR_PRINT_GREEN}Stopping local daemon${END_COLOR_PRINT}"
   echo
 }
@@ -255,6 +256,59 @@ function start_services()
   sudo systemctl restart xcash-rpc-wallet
 }
 
+function get_current_xcash_wallet_data()
+{
+  echo
+  echo -ne "${COLOR_PRINT_YELLOW}Getting current X-CASH wallet data${END_COLOR_PRINT}"
+
+  sudo systemctl start xcash-daemon >/dev/null 2>&1
+  sleep 20
+
+  "${XCASH_DIR}build/Linux/master/release/bin/xcash-wallet-rpc" \
+    --wallet-file "${WALLET_DIR}${WALLET_NAME}" \
+    --password "${WALLET_PASSWORD}" \
+    --rpc-bind-ip 127.0.0.1 \
+    --rpc-bind-port 18288 \
+    --daemon-address 127.0.0.1:18281 \
+    --disable-rpc-login \
+    --trusted-daemon \
+    --log-file "${LOGS_DIR}xcash-wallet-rpc-temp.log" \
+    >/dev/null 2>&1 &
+
+  TEMP_WALLET_RPC_PID=$!
+
+  for i in {1..30}; do
+    data=$(curl -s -X POST http://127.0.0.1:18288/json_rpc \
+      -H 'Content-Type: application/json' \
+      -d '{"jsonrpc":"2.0","id":"0","method":"get_address"}')
+
+    if echo "$data" | grep -q '"address"'; then
+      break
+    fi
+
+    sleep 2
+  done
+
+  PUBLIC_ADDRESS=$(curl -s -X POST http://127.0.0.1:18288/json_rpc \
+    -H 'Content-Type: application/json' \
+    -d '{"jsonrpc":"2.0","id":"0","method":"get_address"}' \
+    | grep \"address\" | head -1 | sed s"|    \"address\": ||g" | sed s"|\"||g" | sed s"|,||g")
+
+  WALLET_SEED=$(curl -s -X POST http://127.0.0.1:18288/json_rpc \
+    -H 'Content-Type: application/json' \
+    -d '{"jsonrpc":"2.0","id":"0","method":"query_key","params":{"key_type":"mnemonic"}}' \
+    | grep \"key\" | sed s"|    \"key\": ||g" | sed s"|\"||g")
+
+  curl -s -X POST http://127.0.0.1:18288/json_rpc \
+    -H 'Content-Type: application/json' \
+    -d '{"jsonrpc":"2.0","id":"0","method":"stop_wallet"}' >/dev/null 2>&1 || true
+
+  kill "$TEMP_WALLET_RPC_PID" >/dev/null 2>&1 || true
+
+  echo -ne "\r${COLOR_PRINT_GREEN}Getting current X-CASH wallet data${END_COLOR_PRINT}"
+  echo
+}
+
 function print_summary()
 {
   echo
@@ -263,6 +317,8 @@ function print_summary()
   echo -e "${COLOR_PRINT_GREEN}############################################################${END_COLOR_PRINT}"
   echo
   echo -e "${COLOR_PRINT_YELLOW}Wallet file:${END_COLOR_PRINT} ${WALLET_DIR}${WALLET_NAME}"
+  echo -e "${COLOR_PRINT_YELLOW}Public address:${END_COLOR_PRINT} ${PUBLIC_ADDRESS}"
+  echo -e "${COLOR_PRINT_YELLOW}Wallet seed:${END_COLOR_PRINT} ${WALLET_SEED}"
   echo -e "${COLOR_PRINT_YELLOW}Wallet RPC:${END_COLOR_PRINT} 127.0.0.1:18285"
   echo -e "${COLOR_PRINT_YELLOW}Daemon RPC:${END_COLOR_PRINT} 127.0.0.1:18281"
   echo -e "${COLOR_PRINT_YELLOW}Wallet password:${END_COLOR_PRINT} ${WALLET_PASSWORD}"
@@ -279,5 +335,6 @@ install_blockchain
 get_wallet_settings
 create_systemd_services
 create_or_import_wallet
+get_current_xcash_wallet_data
 start_services
 print_summary
