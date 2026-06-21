@@ -115,11 +115,19 @@ function get_wallet_settings()
 
 function create_or_import_wallet()
 {
-  sudo systemctl stop xcash-daemon >/dev/null 2>&1 || true
-  sudo systemctl start xcash-daemon
-  sleep 15
+  echo -e "${COLOR_PRINT_GREEN}############################################################${END_COLOR_PRINT}"
+  echo -e "${COLOR_PRINT_GREEN}      Creating/Importing X-CASH Wallet                  ${END_COLOR_PRINT}"
+  echo -e "${COLOR_PRINT_GREEN}############################################################${END_COLOR_PRINT}"
 
-  rm -f "${WALLET_DIR}${WALLET_NAME}"*
+  cd "${INSTALL_DIR}"
+
+  echo -ne "${COLOR_PRINT_YELLOW}Starting local daemon${END_COLOR_PRINT}"
+  sudo systemctl start xcash-daemon >/dev/null 2>&1
+  sleep 20
+  echo -ne "\r${COLOR_PRINT_GREEN}Starting local daemon${END_COLOR_PRINT}"
+  echo
+
+  sudo rm -f "${WALLET_DIR}${WALLET_NAME}"* >/dev/null 2>&1 || true
 
   if [ -z "$WALLET_SEED" ]; then
     echo -e "${COLOR_PRINT_YELLOW}Creating new wallet${END_COLOR_PRINT}"
@@ -129,22 +137,36 @@ function create_or_import_wallet()
       --password "$WALLET_PASSWORD" \
       --mnemonic-language English \
       --restore-height 0 \
-      --trusted-daemon
+      --trusted-daemon \
+      | stdbuf -oL tr '\r' '\n' \
+      | stdbuf -o 0 grep -C 1 "Height" \
+      | stdbuf -o 0 awk '{print "Processing: ",$1,$2,$3,$4}' ORS="\r"
   else
     echo -e "${COLOR_PRINT_YELLOW}Importing existing wallet${END_COLOR_PRINT}"
 
-    (echo -ne "\n"; echo "$WALLET_PASSWORD"; echo "exit") | "${XCASH_DIR}build/Linux/master/release/bin/xcash-wallet-cli" \
-      --restore-deterministic-wallet \
-      --electrum-seed "$WALLET_SEED" \
-      --generate-new-wallet "${WALLET_DIR}${WALLET_NAME}" \
-      --password "$WALLET_PASSWORD" \
-      --mnemonic-language English \
-      --restore-height 0 \
-      --trusted-daemon
+    (echo -ne "\n"; echo "${WALLET_PASSWORD}"; echo "exit") | "${XCASH_DIR}build/Linux/master/release/bin/xcash-wallet-cli" \
+    --restore-deterministic-wallet \
+    --electrum-seed "$WALLET_SEED" \
+    --generate-new-wallet "${WALLET_DIR}${WALLET_NAME}" \
+    --password "$WALLET_PASSWORD" \
+    --mnemonic-language English \
+    --restore-height 0 \
+    --trusted-daemon \
+    | stdbuf -oL tr '\r' '\n' \
+    | stdbuf -o 0 grep -C 1 "Height" \
+    | stdbuf -o 0 awk '{print "Processing: ",$1,$2,$3,$4}' ORS="\r"
   fi
 
-  sudo systemctl stop xcash-daemon
+  echo -ne "                                                                              \r"
+  echo -e "${COLOR_PRINT_GREEN}Wallet Refresh Completed${END_COLOR_PRINT}"
+
+  echo -ne "${COLOR_PRINT_YELLOW}Stopping local daemon${END_COLOR_PRINT}"
+  sudo systemctl stop xcash-daemon >/dev/null 2>&1 || true
+  sleep 5
+  echo -ne "\r${COLOR_PRINT_GREEN}Stopping local daemon${END_COLOR_PRINT}"
+  echo
 }
+
 
 function create_systemd_services()
 {
@@ -228,6 +250,8 @@ function start_services()
 
   sudo systemctl restart xcash-daemon
   sleep 10
+  sudo systemctl is-active --quiet xcash-daemon
+
   sudo systemctl restart xcash-rpc-wallet
 }
 
@@ -252,10 +276,8 @@ install_packages
 download_xcash
 build_xcash
 install_blockchain
-create_systemd_services
-sudo systemctl start xcash-daemon || true
 get_wallet_settings
-create_or_import_wallet
 create_systemd_services
+create_or_import_wallet
 start_services
 print_summary
