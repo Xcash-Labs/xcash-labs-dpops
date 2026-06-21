@@ -13,11 +13,12 @@ XCASH_DIR="${INSTALL_DIR}xcash-labs-core/"
 WALLET_DIR="${INSTALL_DIR}xcash-wallets/"
 LOGS_DIR="${INSTALL_DIR}logs/"
 PID_DIR="${INSTALL_DIR}systemdpid/"
+XCASH_BLOCKCHAIN_BOOTSTRAP_URL="https://xcashlabs.org/downloads/block-1.7z"
 
 XCASH_URL="https://github.com/Xcash-Labs/xcash-labs-core.git"
 XCASH_BRANCH="master"
 
-WALLET_NAME="exchange-wallet"
+WALLET_NAME="xcashklassic-wallet"
 WALLET_PASSWORD=""
 WALLET_SEED=""
 
@@ -75,6 +76,20 @@ function build_xcash()
   make release -j "$JOBS"
 
   echo -e "${COLOR_PRINT_GREEN}Build complete${END_COLOR_PRINT}"
+}
+
+function install_blockchain()
+{
+  cd $HOME
+  cd && test -f block-1.7z && sudo rm -rf block-1.7z*
+  echo -e "${COLOR_PRINT_GREEN}Starting the Download${END_COLOR_PRINT}"
+  wget -q --show-progress ${XCASH_BLOCKCHAIN_BOOTSTRAP_URL}
+  echo -e "${COLOR_PRINT_GREEN}Starting Extraction${END_COLOR_PRINT}"
+  sudo rm -r ${BLOCKCHAIN_DIR} &>/dev/null || true  
+  7z x block-1.7z -bso0 -bse0
+  sudo rm block-1.7z 
+  echo -e "${COLOR_PRINT_GREEN}Installing The BlockChain Completed${END_COLOR_PRINT}"
+  echo
 }
 
 function get_wallet_settings()
@@ -236,6 +251,7 @@ create_directories
 install_packages
 download_xcash
 build_xcash
+install_blockchain
 create_systemd_services
 sudo systemctl start xcash-daemon || true
 get_wallet_settings
