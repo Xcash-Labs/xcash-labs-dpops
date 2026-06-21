@@ -6,7 +6,6 @@ COLOR_PRINT_GREEN="\033[1;32m"
 COLOR_PRINT_YELLOW="\033[1;33m"
 END_COLOR_PRINT="\033[0m"
 
-PUBLIC_ADDRESS=""
 MAIN_INSTALL_DIRECTORY="xcash-labs"
 INSTALL_DIR="$HOME/${MAIN_INSTALL_DIRECTORY}/"
 BLOCKCHAIN_DIR="$HOME/.XCASH-LABS/"
@@ -22,6 +21,7 @@ XCASH_BRANCH="master"
 WALLET_NAME="xcashklassic-wallet"
 WALLET_PASSWORD=""
 WALLET_SEED=""
+PUBLIC_ADDRESS=""
 
 CPU_THREADS=$(nproc)
 PACKAGES="build-essential cmake pkg-config libssl-dev libzmq3-dev libunbound-dev libsodium-dev libunwind8-dev liblzma-dev libreadline6-dev libexpat1-dev libboost-chrono-dev libboost-date-time-dev libboost-filesystem-dev libboost-locale-dev libboost-program-options-dev libboost-regex-dev libboost-serialization-dev libboost-system-dev libboost-thread-dev git curl autoconf libtool gperf p7zip-full libzmq5 libcurl4-openssl-dev ccache"
@@ -261,8 +261,11 @@ function get_current_xcash_wallet_data()
   echo
   echo -ne "${COLOR_PRINT_YELLOW}Getting current X-CASH wallet data${END_COLOR_PRINT}"
 
-  sudo systemctl start xcash-daemon >/dev/null 2>&1
+  sudo systemctl start xcash-daemon >/dev/null 2>&1 || true
   sleep 20
+
+  sudo fuser -k 18288/tcp >/dev/null 2>&1 || true
+  sleep 2
 
   "${XCASH_DIR}build/Linux/master/release/bin/xcash-wallet-rpc" \
     --wallet-file "${WALLET_DIR}${WALLET_NAME}" \
@@ -277,33 +280,69 @@ function get_current_xcash_wallet_data()
 
   TEMP_WALLET_RPC_PID=$!
 
-  for i in {1..30}; do
+  cleanup_temp_wallet_rpc() {
+    curl -s -X POST http://127.0.0.1:18288/json_rpc \
+      -H 'Content-Type: application/json' \
+      -d '{"jsonrpc":"2.0","id":"0","method":"stop_wallet"}' >/dev/null 2>&1 || true
+
+    kill "$TEMP_WALLET_RPC_PID" >/dev/null 2>&1 || true
+  }
+
+  trap cleanup_temp_wallet_rpc RETURN
+
+  sleep 5
+
+  if ! kill -0 "$TEMP_WALLET_RPC_PID" >/dev/null 2>&1; then
+    echo
+    echo -e "${COLOR_PRINT_RED}Temp wallet RPC exited early.${END_COLOR_PRINT}"
+    tail -50 "${LOGS_DIR}xcash-wallet-rpc-temp.log" || true
+    return 1
+  fi
+
+  RPC_READY=0
+  data=""
+
+  for i in {1..60}; do
     data=$(curl -s -X POST http://127.0.0.1:18288/json_rpc \
       -H 'Content-Type: application/json' \
-      -d '{"jsonrpc":"2.0","id":"0","method":"get_address"}')
+      -d '{"jsonrpc":"2.0","id":"0","method":"get_address"}' || true)
 
     if echo "$data" | grep -q '"address"'; then
+      RPC_READY=1
       break
     fi
 
     sleep 2
   done
 
-  PUBLIC_ADDRESS=$(curl -s -X POST http://127.0.0.1:18288/json_rpc \
-    -H 'Content-Type: application/json' \
-    -d '{"jsonrpc":"2.0","id":"0","method":"get_address"}' \
-    | grep \"address\" | head -1 | sed s"|    \"address\": ||g" | sed s"|\"||g" | sed s"|,||g")
+  if [ "$RPC_READY" -ne 1 ]; then
+    echo
+    echo -e "${COLOR_PRINT_RED}Wallet RPC did not answer get_address.${END_COLOR_PRINT}"
+    echo -e "${COLOR_PRINT_YELLOW}Last RPC response:${END_COLOR_PRINT} $data"
+    echo -e "${COLOR_PRINT_YELLOW}Temp wallet RPC log:${END_COLOR_PRINT} ${LOGS_DIR}xcash-wallet-rpc-temp.log"
+    return 1
+  fi
+
+  PUBLIC_ADDRESS=$(echo "$data" \
+    | grep '"address"' \
+    | head -1 \
+    | sed s"|    \"address\": ||g" \
+    | sed s"|\"||g" \
+    | sed s"|,||g" || true)
 
   WALLET_SEED=$(curl -s -X POST http://127.0.0.1:18288/json_rpc \
     -H 'Content-Type: application/json' \
     -d '{"jsonrpc":"2.0","id":"0","method":"query_key","params":{"key_type":"mnemonic"}}' \
-    | grep \"key\" | sed s"|    \"key\": ||g" | sed s"|\"||g")
+    | grep '"key"' \
+    | sed s"|    \"key\": ||g" \
+    | sed s"|\"||g" || true)
 
-  curl -s -X POST http://127.0.0.1:18288/json_rpc \
-    -H 'Content-Type: application/json' \
-    -d '{"jsonrpc":"2.0","id":"0","method":"stop_wallet"}' >/dev/null 2>&1 || true
-
-  kill "$TEMP_WALLET_RPC_PID" >/dev/null 2>&1 || true
+  if [ -z "$WALLET_SEED" ]; then
+    echo
+    echo -e "${COLOR_PRINT_RED}Could not read wallet mnemonic seed.${END_COLOR_PRINT}"
+    echo -e "${COLOR_PRINT_YELLOW}Check temp wallet RPC log:${END_COLOR_PRINT} ${LOGS_DIR}xcash-wallet-rpc-temp.log"
+    return 1
+  fi
 
   echo -ne "\r${COLOR_PRINT_GREEN}Getting current X-CASH wallet data${END_COLOR_PRINT}"
   echo
