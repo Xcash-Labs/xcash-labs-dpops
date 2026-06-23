@@ -3,13 +3,17 @@
 # Set the script to exit if any command fails
 set -e
 
-container="${container:-}"
-
 # Color print variables
 COLOR_PRINT_RED="\033[1;31m"
 COLOR_PRINT_GREEN="\033[1;32m"
 COLOR_PRINT_YELLOW="\033[1;33m"
 END_COLOR_PRINT="\033[0m"
+
+container="${container:-}"
+if systemd-detect-virt -q --container 2>/dev/null; then
+  container="lxc"
+  echo -ne "${COLOR_PRINT_GREEN}You are installing on an LXC container\n${END_COLOR_PRINT}"
+fi
 
 # Configuration settings
 MAIN_INSTALL_DIRECTORY="xcash-labs"
@@ -85,7 +89,7 @@ MONGODB_CURRENT_VERSION=""
 MONGOC_DRIVER_URL="https://github.com/mongodb/mongo-c-driver/releases/download/${MONGOC_DRIVER_LATEST_VERSION:15}/${MONGOC_DRIVER_LATEST_VERSION}.tar.gz"
 MONGOC_DRIVER_DIR=""
 MONGOC_DRIVER_CURRENT_VERSION=""
-XCASH_DPOPS_PACKAGES="build-essential cmake pkg-config libssl-dev libzmq3-dev libunbound-dev libsodium-dev libunwind8-dev liblzma-dev libreadline6-dev libexpat1-dev qttools5-dev-tools libhidapi-dev libusb-1.0-0-dev libprotobuf-dev protobuf-compiler libudev-dev libboost-chrono-dev libboost-date-time-dev libboost-filesystem-dev libboost-locale-dev libboost-program-options-dev libboost-regex-dev libboost-serialization-dev libboost-system-dev libboost-thread-dev python3 ccache doxygen graphviz git curl autoconf libtool gperf p7zip-full libzmq5 libgtest-dev curl libcurl4-openssl-dev libcjson-dev"
+XCASH_DPOPS_PACKAGES="build-essential cmake pkg-config libssl-dev libzmq3-dev libunbound-dev libsodium-dev libunwind8-dev liblzma-dev libreadline6-dev libexpat1-dev qttools5-dev-tools libhidapi-dev libusb-1.0-0-dev libprotobuf-dev protobuf-compiler libudev-dev libboost-chrono-dev libboost-date-time-dev libboost-filesystem-dev libboost-locale-dev libboost-program-options-dev libboost-regex-dev libboost-serialization-dev libboost-system-dev libboost-thread-dev python3 ccache doxygen graphviz git curl autoconf libtool gperf p7zip-full libzmq5 libgtest-dev curl libcurl4-openssl-dev libcjson-dev screen moreutils"
 CURRENT_XCASH_WALLET_INFORMATION=""
 PUBLIC_ADDRESS=""
 
@@ -143,13 +147,17 @@ fi
 
 # Functions
 
-# Sed used when modifying service files (if used inside containers use sponge utility - moreutils package)
+# Sed used when modifying service files
 function sed_services()
 {
-  if [ "$container" == "lxc" ]; then
-    cat $2 | command sed "$1" | sponge $2
-  else
-    sudo sed -i "$1" $2
+  sudo sed -i "$1" "$2"
+}
+
+function require_systemd()
+{
+  if ! command -v systemctl >/dev/null 2>&1 || [ ! -d /run/systemd/system ]; then
+    echo -e "${COLOR_PRINT_RED}Systemd is not running. This installer requires systemd services.${END_COLOR_PRINT}"
+    exit 1
   fi
 }
 
@@ -257,15 +265,17 @@ function update_global_variables()
 function update_systemd_service_files()
 {
 # Files
-FIREWALL=$(cat <(curl -sSL $FIREWALL_URL))
-FIREWALL="${FIREWALL//'${SSH_PORT_NUMBER}'/$SSH_PORT_NUMBER}"
+if [ ! "$container" == "lxc" ]; then
+  FIREWALL=$(cat <(curl -sSL $FIREWALL_URL))
+  FIREWALL="${FIREWALL//'${SSH_PORT_NUMBER}'/$SSH_PORT_NUMBER}"
 
-FIREWALL_SHARED_DELEGATES=$(cat <(curl -sSL $FIREWALL_SHARED_DELEGATES_URL))
-FIREWALL_SHARED_DELEGATES="${FIREWALL_SHARED_DELEGATES//'${SSH_PORT_NUMBER}'/$SSH_PORT_NUMBER}"
-FIREWALL_SHARED_DELEGATES="${FIREWALL_SHARED_DELEGATES//'${DEFAULT_NETWORK_DEVICE}'/$DEFAULT_NETWORK_DEVICE}"
+  FIREWALL_SHARED_DELEGATES=$(cat <(curl -sSL $FIREWALL_SHARED_DELEGATES_URL))
+  FIREWALL_SHARED_DELEGATES="${FIREWALL_SHARED_DELEGATES//'${SSH_PORT_NUMBER}'/$SSH_PORT_NUMBER}"
+  FIREWALL_SHARED_DELEGATES="${FIREWALL_SHARED_DELEGATES//'${DEFAULT_NETWORK_DEVICE}'/$DEFAULT_NETWORK_DEVICE}"
 
-SYSTEMD_SERVICE_FILE_FIREWALL=$(cat <(curl -sSL $SYSTEMD_SERVICE_FILE_FIREWALL_URL))
-SYSTEMD_SERVICE_FILE_FIREWALL="${SYSTEMD_SERVICE_FILE_FIREWALL//'${HOME}'/$HOME}"
+  SYSTEMD_SERVICE_FILE_FIREWALL=$(cat <(curl -sSL $SYSTEMD_SERVICE_FILE_FIREWALL_URL))
+  SYSTEMD_SERVICE_FILE_FIREWALL="${SYSTEMD_SERVICE_FILE_FIREWALL//'${HOME}'/$HOME}"
+fi
 
 SYSTEMD_SERVICE_FILE_MONGODB=$(cat <(curl -sSL $SYSTEMD_SERVICE_FILE_MONGODB_URL))
 SYSTEMD_SERVICE_FILE_MONGODB="${SYSTEMD_SERVICE_FILE_MONGODB//'${USER}'/$USER}"
@@ -681,14 +691,18 @@ function create_files()
 function create_systemd_service_files()
 {
   echo -ne "${COLOR_PRINT_YELLOW}Creating Systemd Service Files${END_COLOR_PRINT}"
-  sudo bash -c "echo '${SYSTEMD_SERVICE_FILE_FIREWALL}' > /lib/systemd/system/firewall.service"
+
+  if [ ! "$container" == "lxc" ]; then
+    sudo bash -c "echo '${SYSTEMD_SERVICE_FILE_FIREWALL}' > /lib/systemd/system/firewall.service"
+    sed_services 's/\r$//g' /lib/systemd/system/firewall.service
+  fi
+
   sudo bash -c "echo '${SYSTEMD_SERVICE_FILE_MONGODB}' > /lib/systemd/system/mongodb.service"
   sudo bash -c "echo '${SYSTEMD_SERVICE_FILE_XCASH_DAEMON}' > /lib/systemd/system/xcash-daemon.service"
   sudo bash -c "echo '${SYSTEMD_SERVICE_FILE_XCASH_DPOPS_SHARED_DELEGATE}' > /lib/systemd/system/xcash-dpops.service"
-  sudo bash -c "echo '${SYSTEMD_SERVICE_FILE_XCASH_PAYOUTS}' > /lib/systemd/system/xcash-payouts.service"                # not needed on seed nodes
+  sudo bash -c "echo '${SYSTEMD_SERVICE_FILE_XCASH_PAYOUTS}' > /lib/systemd/system/xcash-payouts.service"
   sudo bash -c "echo '${SYSTEMD_SERVICE_FILE_XCASH_WALLET}' > /lib/systemd/system/xcash-rpc-wallet.service"
 
-  sed_services 's/\r$//g' /lib/systemd/system/firewall.service
   sed_services 's/\r$//g' /lib/systemd/system/mongodb.service
   sed_services 's/\r$//g' /lib/systemd/system/xcash-daemon.service
   sed_services 's/\r$//g' /lib/systemd/system/xcash-dpops.service
@@ -838,18 +852,20 @@ function create_block_verifier_key()
 
 function install_firewall()
 {
-  echo -ne "${COLOR_PRINT_YELLOW}Installing The Firewall${END_COLOR_PRINT}"
-  # Reinstall iptables (solves some issues with some VPS)
-  wait_for_package_manager
-  sudo apt install --reinstall iptables &>/dev/null
-  echo "$FIREWALL_SHARED_DELEGATES" > ${HOME}/firewall_script.sh
-  sudo sed -i 's/\r$//g' ${HOME}/firewall_script.sh
-  sudo chmod +x ${HOME}/firewall_script.sh
-  sudo ${HOME}/firewall_script.sh
-  sudo systemctl enable firewall &>/dev/null
-  sudo systemctl start firewall &>/dev/null
-  echo -ne "\r${COLOR_PRINT_GREEN}Installing The Firewall${END_COLOR_PRINT}"
-  echo
+  if [ ! "$container" == "lxc" ]; then
+    echo -ne "${COLOR_PRINT_YELLOW}Installing The Firewall${END_COLOR_PRINT}"
+    # Reinstall iptables (solves some issues with some VPS)
+    wait_for_package_manager
+    sudo apt install --reinstall iptables &>/dev/null
+    echo "$FIREWALL_SHARED_DELEGATES" > ${HOME}/firewall_script.sh
+    sudo sed -i 's/\r$//g' ${HOME}/firewall_script.sh
+    sudo chmod +x ${HOME}/firewall_script.sh
+    sudo ${HOME}/firewall_script.sh
+    sudo systemctl enable firewall &>/dev/null
+    sudo systemctl start firewall &>/dev/null
+    echo -ne "\r${COLOR_PRINT_GREEN}Installing The Firewall${END_COLOR_PRINT}"
+    echo
+  fi
 }
 
 function install_xcash_dpops()
@@ -1160,11 +1176,7 @@ function uninstall_packages()
 function uninstall_systemd_service_files()
 {
   echo -ne "${COLOR_PRINT_YELLOW}Uninstall Systemd Service Files${END_COLOR_PRINT}"
-  if [ "$container" == "lxc" ]; then
-    sudo truncate --size 0 /lib/systemd/system/firewall.service /lib/systemd/system/mongodb.service /lib/systemd/system/xcash-daemon.service /lib/systemd/system/xcash-dpops.service /lib/systemd/system/xcash-rpc-wallet.service
-  else
-    sudo rm -f /lib/systemd/system/firewall.service /lib/systemd/system/mongodb.service /lib/systemd/system/xcash-daemon.service /lib/systemd/system/xcash-dpops.service /lib/systemd/system/xcash-rpc-wallet.service ${HOME}/firewall_script.sh
-  fi
+  sudo rm -f /lib/systemd/system/firewall.service /lib/systemd/system/mongodb.service /lib/systemd/system/xcash-daemon.service /lib/systemd/system/xcash-dpops.service /lib/systemd/system/xcash-payouts.service /lib/systemd/system/xcash-rpc-wallet.service ${HOME}/firewall_script.sh
   sudo systemctl daemon-reload
   echo -ne "\r${COLOR_PRINT_GREEN}Uninstall Systemd Service Files${END_COLOR_PRINT}"
   echo
@@ -1473,7 +1485,9 @@ function install_node()
   echo -e "${COLOR_PRINT_GREEN}                  Starting Installation${END_COLOR_PRINT}"
   echo -e "${COLOR_PRINT_GREEN}############################################################${END_COLOR_PRINT}"
 
-  get_ssh_port
+  if [ ! "$container" == "lxc" ]; then
+    get_ssh_port
+  fi
 
   # Update global variables
   XCASH_DIR=${XCASH_DPOPS_INSTALLATION_DIR}xcash-labs-core/
@@ -1512,11 +1526,13 @@ function install_node()
 
   # install the systemd service files
   echo -ne "${COLOR_PRINT_YELLOW}Creating Systemd Service Files${END_COLOR_PRINT}"
+  if [ ! "$container" == "lxc" ]; then
+    FIREWALL=$(cat <(curl -sSL $FIREWALL_XCASH_NODE_URL))
+    FIREWALL="${FIREWALL//'${SSH_PORT_NUMBER}'/$SSH_PORT_NUMBER}"
 
-  FIREWALL=$(cat <(curl -sSL $FIREWALL_XCASH_NODE_URL))
-  FIREWALL="${FIREWALL//'${SSH_PORT_NUMBER}'/$SSH_PORT_NUMBER}"
-  SYSTEMD_SERVICE_FILE_FIREWALL=$(cat <(curl -sSL $SYSTEMD_SERVICE_FILE_FIREWALL_URL))
-  SYSTEMD_SERVICE_FILE_FIREWALL="${SYSTEMD_SERVICE_FILE_FIREWALL//'${HOME}'/$HOME}"
+    SYSTEMD_SERVICE_FILE_FIREWALL=$(cat <(curl -sSL $SYSTEMD_SERVICE_FILE_FIREWALL_URL))
+    SYSTEMD_SERVICE_FILE_FIREWALL="${SYSTEMD_SERVICE_FILE_FIREWALL//'${HOME}'/$HOME}"
+  fi
   SYSTEMD_SERVICE_FILE_XCASH_DAEMON=$(cat <(curl -sSL $SYSTEMD_SERVICE_FILE_XCASH_DAEMON_URL))
   SYSTEMD_SERVICE_FILE_XCASH_DAEMON="${SYSTEMD_SERVICE_FILE_XCASH_DAEMON//'${USER}'/$USER}"
   SYSTEMD_SERVICE_FILE_XCASH_DAEMON="${SYSTEMD_SERVICE_FILE_XCASH_DAEMON//'${XCASH_DPOPS_INSTALLATION_DIR}'/$XCASH_DPOPS_INSTALLATION_DIR}"
@@ -1525,29 +1541,31 @@ function install_node()
   SYSTEMD_SERVICE_FILE_XCASH_DAEMON="${SYSTEMD_SERVICE_FILE_XCASH_DAEMON//'${XCASH_LOGS_DIR}'/$XCASH_LOGS_DIR}"
   SYSTEMD_SERVICE_FILE_XCASH_DAEMON="${SYSTEMD_SERVICE_FILE_XCASH_DAEMON//'${XCASH_SYSTEMPID_DIR}'/$XCASH_SYSTEMPID_DIR}"
 
-  sudo bash -c "echo '${SYSTEMD_SERVICE_FILE_FIREWALL}' > /lib/systemd/system/firewall.service"
+  if [ ! "$container" == "lxc" ]; then
+    sudo bash -c "echo '${SYSTEMD_SERVICE_FILE_FIREWALL}' > /lib/systemd/system/firewall.service"
+    sed_services 's/\r$//g' /lib/systemd/system/firewall.service
+  fi
   sudo bash -c "echo '${SYSTEMD_SERVICE_FILE_XCASH_DAEMON}' > /lib/systemd/system/xcash-daemon.service"
 
-  sed_services 's/\r$//g' /lib/systemd/system/firewall.service
   sed_services 's/\r$//g' /lib/systemd/system/xcash-daemon.service
 
   sudo systemctl daemon-reload
   echo -ne "\r${COLOR_PRINT_GREEN}Creating Systemd Service Files${END_COLOR_PRINT}"
   echo
 
-  # Install the firewall
-  echo -ne "${COLOR_PRINT_YELLOW}Installing The Firewall${END_COLOR_PRINT}"
-  # Reinstall iptables (solves some issues with some VPS)
-  wait_for_package_manager
-  sudo apt install --reinstall iptables &>/dev/null
-  echo "$FIREWALL" > ${HOME}/firewall_script.sh
-  sudo sed -i 's/\r$//g' ${HOME}/firewall_script.sh
-  sudo chmod +x ${HOME}/firewall_script.sh
-  sudo ${HOME}/firewall_script.sh
-  sudo systemctl enable firewall &>/dev/null
-  sudo systemctl start firewall &>/dev/null
-  echo -ne "\r${COLOR_PRINT_GREEN}Installing The Firewall${END_COLOR_PRINT}"
-  echo
+  if [ ! "$container" == "lxc" ]; then
+    echo -ne "${COLOR_PRINT_YELLOW}Installing The Firewall${END_COLOR_PRINT}"
+    wait_for_package_manager
+    sudo apt install --reinstall iptables &>/dev/null
+    echo "$FIREWALL" > ${HOME}/firewall_script.sh
+    sudo sed -i 's/\r$//g' ${HOME}/firewall_script.sh
+    sudo chmod +x ${HOME}/firewall_script.sh
+    sudo ${HOME}/firewall_script.sh
+    sudo systemctl enable firewall &>/dev/null
+    sudo systemctl start firewall &>/dev/null
+    echo -ne "\r${COLOR_PRINT_GREEN}Installing The Firewall${END_COLOR_PRINT}"
+    echo
+  fi
   
   # Start the systemd service files and enable them at startup
   sudo systemctl enable xcash-daemon &>/dev/null
@@ -1618,12 +1636,7 @@ function uninstall_node()
   uninstall_packages
 
   # Uninstall Systemd Service Files (and remove firewall script from home)
-  if [ "$container" == "lxc" ]; then
-    sudo truncate --size 0 /lib/systemd/system/firewall.service /lib/systemd/system/mongodb.service /lib/systemd/system/xcash-daemon.service
-    sudo rm -f ${HOME}/firewall_script.sh
-  else
-    sudo rm -f /lib/systemd/system/firewall.service /lib/systemd/system/mongodb.service /lib/systemd/system/xcash-daemon.service ${HOME}/firewall_script.sh
-  fi
+  sudo rm -f /lib/systemd/system/firewall.service /lib/systemd/system/mongodb.service /lib/systemd/system/xcash-daemon.service ${HOME}/firewall_script.sh
   sudo systemctl daemon-reload
 
   # Uninstall the installation folder and blockchain folder
@@ -1653,6 +1666,11 @@ function get_ssh_port()
 
 function install_firewall_script_shared_delegates()
 {
+  if [ "$container" == "lxc" ]; then
+    echo -e "${COLOR_PRINT_YELLOW}Skipping firewall install inside LXC. Configure firewall/port forwarding on the host.${END_COLOR_PRINT}"
+    return 0
+  fi
+
   get_ssh_port
   echo -ne "${COLOR_PRINT_YELLOW}Installing The Firewall${END_COLOR_PRINT}"
   # Reinstall iptables (solves some issues with some VPS)
@@ -1868,6 +1886,9 @@ check_ubuntu_version
 # Setup profile if running from an LXC container
 setup_lxc_container_profile
 
+# check for systemd
+require_systemd
+
 # Get the installation settings
 installation_settings
 
@@ -1893,7 +1914,11 @@ elif [ "$INSTALLATION_TYPE_SETTINGS" -eq "13" ]; then
 elif [ "$INSTALLATION_TYPE_SETTINGS" -eq "14" ]; then
   stop_systemd_service_files
 elif [ "$INSTALLATION_TYPE_SETTINGS" -eq "19" ]; then
-  install_firewall_script_shared_delegates
+  if [ "$container" == "lxc" ]; then
+    echo -e "${COLOR_PRINT_YELLOW}Skipping firewall install inside LXC. Configure firewall/port forwarding on the host.${END_COLOR_PRINT}"
+  else
+    install_firewall_script_shared_delegates
+  fi
 elif [ "$INSTALLATION_TYPE_SETTINGS" -eq "20" ]; then
   backup
 fi
