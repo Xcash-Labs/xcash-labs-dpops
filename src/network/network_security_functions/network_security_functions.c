@@ -954,7 +954,7 @@ static bool parse_banned_addresses(const char* banstr, banned_ip_list_t* out)
         snprintf(data, sizeof(data), "{\"IP_address\":\"%s\"}",address);
         if (delete_document_from_collection(
                 DATABASE_NAME,
-                DELEGATES_COLLECTION,
+                DB_COLLECTION_DELEGATES,
                 data) != XCASH_OK)
         {
             WARNING_PRINT("Failed to delete delegate with address %s", address);

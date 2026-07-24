@@ -894,24 +894,6 @@ static void run_proof_check(sched_ctx_t* ctx) {
   return;
 }
 
-static uint32_t fnv1a_32(const char* s)
-{
-  uint32_t h = 2166136261u;
-  for (; s && *s; ++s) {
-    h ^= (unsigned char)*s;
-    h *= 16777619u;
-  }
-  return h;
-}
-
-static void sleep_ms(int ms)
-{
-  struct timespec ts;
-  ts.tv_sec  = ms / 1000;
-  ts.tv_nsec = (long)(ms % 1000) * 1000000L;
-  nanosleep(&ts, NULL);
-}
-
 /*---------------------------------------------------------------------------------------------------------
  @brief Refresh the DNSSEC-validated delegate ban list and shutdown if this node is banned.
 
