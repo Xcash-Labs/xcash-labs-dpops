@@ -913,10 +913,12 @@ static bool dnssec_get_txt_record(dnssec_ctx_t* dctx, const char* host, char* ou
   return ok;
 }
 
-// Parses: "B1.2.3.4,B5.6.7.8,D9.9.9.9,end"
-// - Stores only B<ip> into out->banned[]
-// - If D<ip> is found, prints a message and continues
-static bool parse_banned_ips_only(const char* banstr, banned_ip_list_t* out)
+// Parses:
+//   "B1.2.3.4,Bxcash-labs.xcash-ju.fr,D9.9.9.9,DXCashDomainname,end"
+//
+// B<address> -> add address (IP or hostname) to the in-memory ban list.
+// D<address> -> delete delegate whose IP_address field matches <address>.
+static bool parse_banned_addresses(const char* banstr, banned_ip_list_t* out)
 {
   if (!banstr || !out) return false;
 
@@ -937,18 +939,27 @@ static bool parse_banned_ips_only(const char* banstr, banned_ip_list_t* out)
     if (strcmp(tok, "end") == 0) break;
 
     char action = tok[0];
-    const char* ip = tok + 1;
+    const char* address = tok + 1;
 
-    if (*ip == '\0') continue; // ignore malformed token like "B"
+    if (*address == '\0') continue; // ignore malformed token like "B"
 
     if (action == 'B') {
       if (out->banned_n >= MAX_BANNED_IPS) return false; // capacity hit
-      strncpy(out->banned[out->banned_n], ip, IP_LENGTH - 1);
+      strncpy(out->banned[out->banned_n], address, IP_LENGTH - 1);
       out->banned[out->banned_n][IP_LENGTH - 1] = '\0';
       out->banned_n++;
     } else if (action == 'D') {
-       DEBUG_PRINT("Delete token seen (ignored for now): %s", ip);
-    } else {
+       INFO_PRINT("Deleting delegate with address %s from DNS policy", address);
+        char data[MEDIUM_BUFFER_SIZE];
+        snprintf(data, sizeof(data), "{\"IP_address\":\"%s\"}",address);
+        if (delete_document_from_collection(
+                DATABASE_NAME,
+                DELEGATES_COLLECTION,
+                data) != XCASH_OK)
+        {
+            WARNING_PRINT("Failed to delete delegate with address %s", address);
+        }
+      } else {
       continue;
     }
   }
@@ -987,10 +998,10 @@ bool get_banned_delegates(void)
     return false;
   }
 
-  // Parse into a temporary list first (no touching global bans yet)
+  // Parse into a temporary list first (not touching global bans yet)
   banned_ip_list_t tmp = {0};
 
-  if (!parse_banned_ips_only(banstring1, &tmp)) {
+  if (!parse_banned_addresses(banstring1, &tmp)) {
     WARNING_PRINT("Failed to parse banned IP list");
     return false;
   }

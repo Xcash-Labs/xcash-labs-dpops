@@ -912,22 +912,6 @@ static void sleep_ms(int ms)
   nanosleep(&ts, NULL);
 }
 
-static void ban_refresh_stagger_sleep(void)
-{
-  const char* id =
-    (xcash_wallet_public_address[0] ? xcash_wallet_public_address :
-     (delegate_ip_address[0] ? delegate_ip_address : "default"));
-
-  const uint32_t window_sec = 120;
-  uint32_t delay_sec = fnv1a_32(id) % window_sec;
-
-  // sleep in 1s chunks so shutdown is responsive
-  while (delay_sec-- > 0) {
-    if (atomic_load_explicit(&shutdown_requested, memory_order_relaxed)) return;
-    sleep_ms(1000);
-  }
-}
-
 /*---------------------------------------------------------------------------------------------------------
  @brief Refresh the DNSSEC-validated delegate ban list and shutdown if this node is banned.
 
@@ -953,8 +937,6 @@ static void ban_refresh_stagger_sleep(void)
 --------------------------------------------------------------------------------------------------------*/
 bool run_ban_refresh(void)
 {
-  ban_refresh_stagger_sleep();
-
   INFO_PRINT("Refreshing Ban List");
   bool ok = get_banned_delegates();
   if (!ok) {
