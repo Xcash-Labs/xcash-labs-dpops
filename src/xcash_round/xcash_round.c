@@ -1131,6 +1131,9 @@ void start_block_production(void) {
     } else {
 
       // If >20% of delegates report a DB hash mismatch, trigger a resync.
+
+INFO_PRINT("delegate_db_hash_mismatch = %d\n", delegate_db_hash_mismatch);
+
       if (delegate_db_hash_mismatch > 0) {
         if ((delegate_db_hash_mismatch * 100) > (total_delegates * 20)) {
           if (is_seed_node && strncmp(xcash_wallet_public_address, network_nodes[0].seed_public_address, XCASH_WALLET_LENGTH) != 0) {
