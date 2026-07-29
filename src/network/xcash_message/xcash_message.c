@@ -345,7 +345,7 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
 
     case XMSG_SEED_TO_NODES_MAINTENANCE:
       if (server_limit_IP_addresses(LIMIT_CHECK, client->client_ip) == 1) {
-        server_receive_data_socket_seed_to_block_verifiers_maientance(data);
+        server_receive_data_socket_seed_to_block_verifiers_maintenance(data);
         server_limit_IP_addresses(LIMIT_REMOVE, client->client_ip);
       }
       break;
