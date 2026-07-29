@@ -204,23 +204,7 @@ bool print_starter_state(const arg_config_t *arg_config) {
     }
   }
 
-  get_banned_delegates();
-
-  if (get_ip_address(delegate_ip_address)) {
-
-    pthread_mutex_lock(&bans_lock);
-    for (size_t b = 0; b < bans.banned_n; b++) {
-      INFO_PRINT("Banned IPs: %s", bans.banned[b]);
-      if (strcmp(bans.banned[b], delegate_ip_address) == 0) {
-        pthread_mutex_unlock(&bans_lock);
-        ERROR_PRINT("Your delegate IP is banned, unable to start");
-        return false;
-      }
-    }
-    pthread_mutex_unlock(&bans_lock);
-
-  }
-   else {
+  if (!get_ip_address(delegate_ip_address)) {
     WARNING_PRINT("Warrning, did not find the local ip in the database (will happen on newly registered node)");
   }
 

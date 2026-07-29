@@ -29,11 +29,10 @@ typedef struct {
 
 static const sched_slot_t SLOTS[] = {
   { 9,  0, JOB_PROOF  },   // 04:00 AM
-  {11, 45, BAN_REFRESH },  // 06:45 AM
   {21,  0, JOB_PROOF  },   // 04:00 PM
 };
 static const size_t NSLOTS = sizeof(SLOTS)/sizeof(SLOTS[0]);
-
+ 
 typedef struct {
   char   *buf;
   size_t  len;

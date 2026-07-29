@@ -478,3 +478,89 @@ bool verify_vrf_vote_signature_bound(const char* block_height,
 
   return false;
 }
+
+/*---------------------------------------------------------------------------------------------------------
+ * @brief Processes a maintenance transaction received from a seed node.
+ *
+ * This handler validates a seed-to-block-verifier maintenance message and
+ * executes the requested maintenance action. Each message contains a delegate
+ * VRF public key and an action flag indicating the operation to perform.
+ *
+ * The function:
+ *   - Validates the incoming JSON message.
+ *   - Verifies the VRF public key format.
+ *   - Validates the maintenance action.
+ *   - Executes the requested maintenance operation.
+ *
+ * Supported actions:
+ *   BAN - Mark the delegate as banned (implementation specific).
+ *   UNB - Unbands a delegate
+ *   DEL - Remove the delegate from the delegates collection.
+ *
+ * @param MESSAGE JSON-encoded maintenance transaction received from a seed node.
+ ---------------------------------------------------------------------------------------------------------*/
+void server_receive_data_socket_seed_to_block_verifiers_maintenance(const char* MESSAGE)
+{
+  char vrf_public_key[VRF_PUBLIC_KEY_LENGTH + 1] = {0};
+  char action_flag[4] = {0};
+
+  if (MESSAGE == NULL || MESSAGE[0] == '\0') {
+    ERROR_PRINT("Seed-to-node maintenance message is NULL or empty");
+    return;
+  }
+
+  DEBUG_PRINT("Received %s: %s", __func__, MESSAGE);
+
+  if (parse_json_data(MESSAGE, "vrf_public_key", vrf_public_key, sizeof(vrf_public_key)) == XCASH_ERROR)
+  {
+    ERROR_PRINT("Could not parse vrf_public_key from seed-to-node maintenance transaction");
+    return;
+  }
+
+  if (parse_json_data(MESSAGE, "action_flag", action_flag, sizeof(action_flag)) == XCASH_ERROR)
+  {
+    ERROR_PRINT("Could not parse action_flag from seed-to-node maintenance transaction");
+    return;
+  }
+
+  if (strlen(vrf_public_key) != VRF_PUBLIC_KEY_LENGTH) {
+    ERROR_PRINT("Invalid VRF public key length: expected %d, received %zu", VRF_PUBLIC_KEY_LENGTH, strlen(vrf_public_key));
+    return;
+  }
+
+  for (size_t i = 0; i < VRF_PUBLIC_KEY_LENGTH; i++) {
+    if (!isxdigit((unsigned char)vrf_public_key[i])) {
+      ERROR_PRINT("Invalid VRF public key: non-hexadecimal character at position %zu", i);
+      return;
+    }
+  }
+
+  if ( strcmp(action_flag, "BAN") != 0 && strcmp(action_flag, "UNB") != 0 && strcmp(action_flag, "DEL") != 0 )
+  {
+    ERROR_PRINT("Invalid maintenance action_flag: '%s'", action_flag);
+    return;
+  }
+
+  INFO_PRINT("Received maintenance transaction: vrf_public_key=%s, action_flag=%s", vrf_public_key, action_flag);
+
+  /*
+   * Process the maintenance action here.
+   */
+  if (strcmp(action_flag, "BAN") == 0) {
+
+    INFO_PRINT(
+      "Maintenance transaction requests BAN for VRF public key: %s",
+      vrf_public_key
+    );
+
+
+  }
+  else if (strcmp(action_flag, "DEL") == 0) {
+    char data[MEDIUM_BUFFER_SIZE];
+    snprintf(data, sizeof(data), "{\"public_key\":\"%s\"}", vrf_public_key);
+    if (delete_document_from_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES,data) != XCASH_OK)
+    {
+      WARNING_PRINT("Failed to delete delegate with public_key %s", vrf_public_key);
+    }
+  }
+}

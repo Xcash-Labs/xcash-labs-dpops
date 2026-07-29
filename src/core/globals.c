@@ -30,7 +30,6 @@ pthread_mutex_t delegates_all_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t current_block_verifiers_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t producer_refs_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t database_data_IP_address_lock = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t bans_lock = PTHREAD_MUTEX_INITIALIZER;
 atomic_bool server_running             = ATOMIC_VAR_INIT(true);
 atomic_bool wait_for_vrf_init          = ATOMIC_VAR_INIT(true);
 atomic_bool wait_for_block_height_init = ATOMIC_VAR_INIT(true);
@@ -53,7 +52,6 @@ NetworkNode network_nodes[] = {
 const char* endpoints[] = {"updpops.xcashpulse.cc", "updpops.xcashpulse.uk", NULL};
 char self_sha[SHA256_DIGEST_SIZE + 1] = {0};
 const char* banendpoints[] = {"bandpops.xcashpulse.cc", "bandpops.xcashpulse.uk", NULL};
-banned_ip_list_t bans = {0};
 char* server_limit_IP_address_list;
 char* server_limit_public_address_list;
 
