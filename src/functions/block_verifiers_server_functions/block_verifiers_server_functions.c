@@ -501,7 +501,7 @@ bool verify_vrf_vote_signature_bound(const char* block_height,
  ---------------------------------------------------------------------------------------------------------*/
 void server_receive_data_socket_seed_to_block_verifiers_maintenance(const char* MESSAGE)
 {
-  char vrf_public_key[VRF_PUBLIC_KEY_LENGTH + 1] = {0};
+  char public_key[VRF_PUBLIC_KEY_LENGTH + 1] = {0};
   char action_flag[4] = {0};
 
   if (MESSAGE == NULL || MESSAGE[0] == '\0') {
@@ -511,9 +511,9 @@ void server_receive_data_socket_seed_to_block_verifiers_maintenance(const char* 
 
   DEBUG_PRINT("Received %s: %s", __func__, MESSAGE);
 
-  if (parse_json_data(MESSAGE, "vrf_public_key", vrf_public_key, sizeof(vrf_public_key)) == XCASH_ERROR)
+  if (parse_json_data(MESSAGE, "public_key", public_key, sizeof(public_key)) == XCASH_ERROR)
   {
-    ERROR_PRINT("Could not parse vrf_public_key from seed-to-node maintenance transaction");
+    ERROR_PRINT("Could not parse public_key from seed-to-node maintenance transaction");
     return;
   }
 
@@ -523,13 +523,13 @@ void server_receive_data_socket_seed_to_block_verifiers_maintenance(const char* 
     return;
   }
 
-  if (strlen(vrf_public_key) != VRF_PUBLIC_KEY_LENGTH) {
-    ERROR_PRINT("Invalid VRF public key length: expected %d, received %zu", VRF_PUBLIC_KEY_LENGTH, strlen(vrf_public_key));
+  if (strlen(public_key) != VRF_PUBLIC_KEY_LENGTH) {
+    ERROR_PRINT("Invalid VRF public key length: expected %d, received %zu", VRF_PUBLIC_KEY_LENGTH, strlen(public_key));
     return;
   }
 
   for (size_t i = 0; i < VRF_PUBLIC_KEY_LENGTH; i++) {
-    if (!isxdigit((unsigned char)vrf_public_key[i])) {
+    if (!isxdigit((unsigned char)public_key[i])) {
       ERROR_PRINT("Invalid VRF public key: non-hexadecimal character at position %zu", i);
       return;
     }
@@ -541,7 +541,7 @@ void server_receive_data_socket_seed_to_block_verifiers_maintenance(const char* 
     return;
   }
 
-  INFO_PRINT("Received maintenance transaction: vrf_public_key=%s, action_flag=%s", vrf_public_key, action_flag);
+  INFO_PRINT("Received maintenance transaction: public_key=%s, action_flag=%s", public_key, action_flag);
 
   /*
    * Process the maintenance action here.
@@ -550,17 +550,17 @@ void server_receive_data_socket_seed_to_block_verifiers_maintenance(const char* 
 
     INFO_PRINT(
       "Maintenance transaction requests BAN for VRF public key: %s",
-      vrf_public_key
+      public_key
     );
 
 
   }
   else if (strcmp(action_flag, "DEL") == 0) {
     char data[MEDIUM_BUFFER_SIZE];
-    snprintf(data, sizeof(data), "{\"public_key\":\"%s\"}", vrf_public_key);
+    snprintf(data, sizeof(data), "{\"public_key\":\"%s\"}", public_key);
     if (delete_document_from_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES,data) != XCASH_OK)
     {
-      WARNING_PRINT("Failed to delete delegate with public_key %s", vrf_public_key);
+      WARNING_PRINT("Failed to delete delegate with public_key %s", public_key);
     }
   }
 }
