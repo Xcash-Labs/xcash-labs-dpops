@@ -546,21 +546,36 @@ void server_receive_data_socket_seed_to_block_verifiers_maintenance(const char* 
   /*
    * Process the maintenance action here.
    */
-  if (strcmp(action_flag, "BAN") == 0) {
+  if ( (strcmp(action_flag, "BAN") == 0) || (strcmp(action_flag, "UNB") == 0) ) {
+    bson_t filter;
+    bson_t update;
+    bson_init(&filter);
+    bson_init(&update);
 
-    INFO_PRINT(
-      "Maintenance transaction requests BAN for VRF public key: %s",
-      public_key
-    );
+    BSON_APPEND_UTF8(&filter, "public_key", public_key);
+    if (strcmp(action_flag, "BAN") == 0) {
+      BSON_APPEND_BOOL(&update, "banned", true);
+      INFO_PRINT("Maintenance transaction requests BAN for VRF public key: %s",public_key);
+    } else {
+      BSON_APPEND_BOOL(&update, "banned", false);
+      INFO_PRINT("Maintenance transaction requests UNBAN for VRF public key: %s",public_key);
+    }
 
+    if (update_document_from_collection_bson(DATABASE_NAME, DB_COLLECTION_DELEGATES, &filter, &update) != XCASH_OK)
+    {
+      ERROR_PRINT("Failed to update ban status for public key: %s", public_key);
+    }
 
-  }
-  else if (strcmp(action_flag, "DEL") == 0) {
-    char data[MEDIUM_BUFFER_SIZE];
+    bson_destroy(&filter);
+    bson_destroy(&update);
+  } else if (strcmp(action_flag, "DEL") == 0) {
+    char data[MEDIUM_BUFFER_SIZE] = {0};
     snprintf(data, sizeof(data), "{\"public_key\":\"%s\"}", public_key);
     if (delete_document_from_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES,data) != XCASH_OK)
     {
       WARNING_PRINT("Failed to delete delegate with public_key %s", public_key);
     }
   }
+
+  return;
 }
