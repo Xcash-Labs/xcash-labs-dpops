@@ -6,6 +6,8 @@
 #include <sched.h>
 #include <sys/resource.h>
 #include <errno.h>
+#include <stdio.h>
+#include <string.h>
 #include "config.h"
 #include "globals.h"
 #include "macro_functions.h"

@@ -894,6 +894,165 @@ static void run_proof_check(sched_ctx_t* ctx) {
   return;
 }
 
+#ifdef SEED_NODE_ON
+/*
+ * Reads the maintenance file after atomically renaming it.
+ * Returns:
+ *   XCASH_OK    - File successfully opened and ready to read
+ *   XCASH_ERROR - No file or an error occurred
+ */
+static int open_maintenance_file(FILE** file)
+{
+  if (file == NULL) {
+    return XCASH_ERROR;
+  }
+
+  *file = NULL;
+
+  // Rename the file first so nothing else processes it.
+
+  if (rename(MAINTENANCE_FILE, MAINTENANCE_PROCESSING_FILE) != 0)
+  {
+    if (errno != ENOENT)
+    {
+      WARNING_PRINT("Failed to rename maintenance file '%s' -> '%s': %s", MAINTENANCE_FILE, MAINTENANCE_PROCESSING_FILE,
+        strerror(errno));
+    }
+    return XCASH_ERROR;
+  }
+
+  *file = fopen(MAINTENANCE_PROCESSING_FILE, "r");
+  if (*file == NULL)
+  {
+    WARNING_PRINT("Failed to open maintenance file '%s': %s", MAINTENANCE_PROCESSING_FILE, strerror(errno));
+    return XCASH_ERROR;
+  }
+
+  return XCASH_OK;
+}
+
+/*
+ * Process the maintenance file.
+ * Returns:
+ *   XCASH_OK    - File successfully opened and ready to read
+ *   XCASH_ERROR - No file or an error occurred
+ */
+static int process_maintenance_file(void)
+{
+  FILE* file = NULL;
+
+  if (open_maintenance_file(&file) != XCASH_OK)
+  {
+    return XCASH_OK;
+  }
+
+  char line[1024] = {0};
+  while (fgets(line, sizeof(line), file) != NULL)
+  {
+    char public_key[VRF_PUBLIC_KEY_LENGTH + 1] = {0};
+    char action_flag[4] = {0};
+    line[strcspn(line, "\r\n")] = '\0';
+    if (line[0] == '\0' || line[0] == '#')
+    {
+      continue;
+    }
+
+    INFO_PRINT("Processing maintenance record: %s", line);
+
+    if (parse_json_data(
+            line,
+            "public_key",
+            public_key,
+            sizeof(public_key)) == XCASH_ERROR)
+    {
+      ERROR_PRINT(
+          "Could not parse public_key from maintenance record: %s",
+          line);
+      continue;
+    }
+
+    if (parse_json_data(line, "action_flag", action_flag, sizeof(action_flag)) == XCASH_ERROR)
+    {
+      ERROR_PRINT("Could not parse action_flag from maintenance record: %s", line);
+      continue;
+    }
+
+    const char* params[] = {"public_key", public_key, "action_flag", action_flag, NULL};
+    char* message = create_message_param_list(XMSG_SEED_TO_NODES_MAINTENANCE, params);
+    if (message == NULL)
+    {
+      WARNING_PRINT("create_message_param_list returned NULL for maintenance record");
+      continue;
+    }
+
+    INFO_PRINT("Created maintenance message: %s", message);
+    response_t** responses = NULL;
+
+    if (!xnet_send_data_multi(
+            XNET_DELEGATES_ALL_ONLINE_NOSEEDS,
+            message,
+            &responses))
+    {
+      ERROR_PRINT("Failed to send maintenance message.");
+    }
+
+    free(message);
+    message = NULL;
+
+    cleanup_responses(responses);
+    responses = NULL;
+
+    // Update the shared MongoDB replica set.
+    if ( (strcmp(action_flag, "BAN") == 0) || (strcmp(action_flag, "UNB") == 0) ) {
+      bson_t filter;
+      bson_t update;
+      bson_init(&filter);
+      bson_init(&update);
+
+      BSON_APPEND_UTF8(&filter, "public_key", public_key);
+      if (strcmp(action_flag, "BAN") == 0) {
+        BSON_APPEND_BOOL(&update, "banned", true);
+        INFO_PRINT("Maintenance transaction requests BAN for VRF public key: %s",public_key);
+      } else {
+        BSON_APPEND_BOOL(&update, "banned", false);
+        INFO_PRINT("Maintenance transaction requests UNBAN for VRF public key: %s",public_key);
+      }
+
+      if (update_document_from_collection_bson(DATABASE_NAME, DB_COLLECTION_DELEGATES, &filter, &update) != XCASH_OK)
+      {
+        ERROR_PRINT("Failed to update ban status for public key: %s", public_key);
+      }
+
+      bson_destroy(&filter);
+      bson_destroy(&update);
+    } else if (strcmp(action_flag, "DEL") == 0) {
+      char data[MEDIUM_BUFFER_SIZE] = {0};
+      snprintf(data, sizeof(data), "{\"_id\":\"%s\"}", public_key);
+      if (delete_document_from_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, data) != XCASH_OK)
+      {
+        WARNING_PRINT("Failed to delete delegate from delegates collection with public_key %s", public_key);
+      }
+      if (delete_document_from_collection(DATABASE_NAME, DB_COLLECTION_STATISTICS, data) != XCASH_OK)
+      {
+        WARNING_PRINT("Failed to delete delegate from statistics collection with public_key %s", public_key);
+      }
+    }
+
+  }
+
+  if (ferror(file))
+  {
+    ERROR_PRINT("Error while reading maintenance file '%s'", MAINTENANCE_PROCESSING_FILE);
+
+    fclose(file);
+    return XCASH_ERROR;
+  }
+
+  fclose(file);
+  return XCASH_OK;
+}
+#endif
+
 // ---- single scheduler thread ----
 void* timer_thread(void* arg) {
   lower_thread_priority_batch();
@@ -903,6 +1062,39 @@ void* timer_thread(void* arg) {
     ERROR_PRINT("Scheduler: received NULL context");
     return NULL;
   }
+
+#ifdef SEED_NODE_ON
+
+  if (is_job_node) {
+    INFO_PRINT("Scheduler: waiting 5 minutes for startup synchronization");
+    sleep(5 * 60);
+    INFO_PRINT("Scheduler: startup delay complete");
+    // Wait for correct time to load from delegates_all, create you own copy
+    // Capture height before next block is found but online status is set
+    sync_minutes_and_seconds(0, 47);
+    size_t online_count = 0;
+    pthread_mutex_lock(&current_block_verifiers_lock);
+    memset(delegates_timer_all, 0, sizeof delegates_timer_all);
+    for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT; ++i) {
+      if (delegates_all[i].public_address[0] == '\0' ||
+          delegates_all[i].IP_address[0] == '\0') continue;
+      if (is_seed_address(delegates_all[i].public_address))
+        continue;
+      if (strcmp(delegates_all[i].online_status, "true") == 0) {
+        strcpy(delegates_timer_all[online_count].public_address, delegates_all[i].public_address);
+        strcpy(delegates_timer_all[online_count].IP_address, delegates_all[i].IP_address);
+        online_count++;
+      }
+    }
+    pthread_mutex_unlock(&current_block_verifiers_lock);
+
+    if (process_maintenance_file() != XCASH_OK)
+    {
+      WARNING_PRINT("Failed to process maintenance file");
+    }
+  }
+
+#endif
 
   for (;;) {
     if (atomic_load_explicit(&shutdown_requested, memory_order_relaxed)) {

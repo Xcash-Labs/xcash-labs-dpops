@@ -120,6 +120,8 @@
 #define SEED_COUNT 4
 #define MAX_BANNED_IPS 20
 #define MAX_SOLO_ADDRS 10
+#define MAINTENANCE_FILE            "/home/xcash/xcash-labs/maintenance/maintenance.json"
+#define MAINTENANCE_PROCESSING_FILE "/home/xcash/xcash-labs/maintenance/maintenance-processed.json"
 
 // Need to relook at this
 #define BLOCK_VERIFIERS_VALID_AMOUNT 5

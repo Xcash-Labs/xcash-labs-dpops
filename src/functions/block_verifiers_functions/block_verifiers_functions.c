@@ -153,7 +153,7 @@ int block_verifiers_create_block(const char* vote_hash_hex, uint8_t total_vote, 
   size_t reserved_offset = 0;
   // Only the block producer completes the following steps, producer_refs is an array in case we decide to add
   // backup producers in the future
-  INFO_PRINT("Parts 9 thru 11 are only perfomed by the block producer");
+  INFO_PRINT("Parts 9 thru 11 are only performed by the block producer");
   if (strcmp(producer_refs[0].public_address, xcash_wallet_public_address) == 0) {
     // Create block template
     INFO_STAGE_PRINT("Part 9 - Create block template");

@@ -570,8 +570,8 @@ void server_receive_data_socket_seed_to_block_verifiers_maintenance(const char* 
     bson_destroy(&update);
   } else if (strcmp(action_flag, "DEL") == 0) {
     char data[MEDIUM_BUFFER_SIZE] = {0};
-    snprintf(data, sizeof(data), "{\"public_key\":\"%s\"}", public_key);
-    if (delete_document_from_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES,data) != XCASH_OK)
+    snprintf(data, sizeof(data), "{\"_id\":\"%s\"}", public_key);
+    if (delete_document_from_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, data) != XCASH_OK)
     {
       WARNING_PRINT("Failed to delete delegate with public_key %s", public_key);
     }
