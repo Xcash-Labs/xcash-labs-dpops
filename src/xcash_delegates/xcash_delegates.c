@@ -141,7 +141,7 @@ int read_organize_delegates(delegates_t* delegates, size_t* delegates_count_resu
           strcmp(delegates[delegate_index].delegate_type, "solo") == 0 &&
           delegates[delegate_index].total_vote_count < 500000)
       {
-          WARNING_PRINT(
+          INFO_PRINT(
               "Skipping solo delegate %s: requires at least 500000 votes (current: %" PRIu64 ")",
               delegates[delegate_index].public_address,
               delegates[delegate_index].total_vote_count);
@@ -154,7 +154,7 @@ int read_organize_delegates(delegates_t* delegates, size_t* delegates_count_resu
           delegates[delegate_index].delegate_fee > 25 &&
           delegates[delegate_index].total_vote_count < 500000)
       {
-          WARNING_PRINT(
+          INFO_PRINT(
               "Skipping shared delegate %s: charging more than 25%% requires at least 500000 votes (current: %" PRIu64 ")",
               delegates[delegate_index].public_address,
               delegates[delegate_index].total_vote_count);
