@@ -243,7 +243,7 @@ void handle_srv_message(const char* data, size_t length, server_client_t* client
       (msg_type != XMSG_NODES_TO_BLOCK_VERIFIERS_REVOTE) &&
       (msg_type != XMSG_NODES_TO_BLOCK_VERIFIERS_CHECK_VOTE_STATUS)) {
     // Maintenance tran must come from seed
-    bool ckSeed = (message_type == XMSG_SEED_TO_NODES_MAINTENANCE);
+    bool ckSeed = (msg_type == XMSG_SEED_TO_NODES_MAINTENANCE);
     if (verify_the_ip(data, client->client_ip, ckSeed) != XCASH_OK) {
       ERROR_PRINT("IP check failed for msg_type=%s from %s", trans_type, client->client_ip);
       return;
