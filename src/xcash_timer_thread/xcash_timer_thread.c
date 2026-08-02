@@ -1065,7 +1065,7 @@ void* timer_thread(void* arg) {
 
 #ifdef SEED_NODE_ON
 
-  if (is_job_node) {
+  if (is_job_node()) {
     INFO_PRINT("Scheduler: waiting 5 minutes for startup synchronization");
     sleep(5 * 60);
     INFO_PRINT("Scheduler: startup delay complete");
