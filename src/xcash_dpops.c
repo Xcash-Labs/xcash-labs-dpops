@@ -245,6 +245,11 @@ int main(int argc, char *argv[]) {
     FATAL_ERROR_EXIT("Failed server initialization");
   }
 
+
+  if (!get_node_data()) {
+    ERROR_PRINT("Failed in call get_node_data, shutting down...");
+  }
+
 // start the daily scheduler on seeds (ONE thread)
   pthread_t timer_tid = 0;
   bool sched_started = false;
@@ -269,20 +274,18 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  if (get_node_data()) {
-    if (!is_seed_node) {
-      if (get_delegate_fee(&delegate_fee_percent) == XCASH_ERROR) {
-        WARNING_PRINT("Unable to read fee from database so using default");
-      }
+  if (!is_seed_node) {
+    if (get_delegate_fee(&delegate_fee_percent) == XCASH_ERROR) {
+      WARNING_PRINT("Unable to read fee from database so using default");
     }
-    if (print_starter_state(&arg_config)) {
-      start_block_production();
-    }
-    atomic_store(&shutdown_requested, true);
-    fprintf(stderr, "Daemon is shutting down...\n");
-  } else {
-    ERROR_PRINT("Failed in call get_node_data, shutting down...");
   }
+
+  if (print_starter_state(&arg_config)) {
+    start_block_production();
+  }
+  
+  atomic_store(&shutdown_requested, true);
+  fprintf(stderr, "Daemon is shutting down...\n");
 
   // Signal scheduler to stop and join it
   if (sched_started) {
