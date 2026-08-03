@@ -501,6 +501,8 @@ bool verify_vrf_vote_signature_bound(const char* block_height,
  ---------------------------------------------------------------------------------------------------------*/
 void server_receive_data_socket_seed_to_block_verifiers_maintenance(const char* MESSAGE)
 {
+  INFO_PRINT("Maintenance transaction received");
+
   char public_key[VRF_PUBLIC_KEY_LENGTH + 1] = {0};
   char action_flag[4] = {0};
 
@@ -571,6 +573,7 @@ void server_receive_data_socket_seed_to_block_verifiers_maintenance(const char* 
   } else if (strcmp(action_flag, "DEL") == 0) {
     char data[MEDIUM_BUFFER_SIZE] = {0};
     snprintf(data, sizeof(data), "{\"_id\":\"%s\"}", public_key);
+    INFO_PRINT("Maintenance transaction requests DEL for _id: %s",public_key);
     if (delete_document_from_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, data) != XCASH_OK)
     {
       WARNING_PRINT("Failed to delete delegate with public_key %s", public_key);
