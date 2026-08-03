@@ -1028,6 +1028,7 @@ static int process_maintenance_file(void)
     } else if (strcmp(action_flag, "DEL") == 0) {
       char data[MEDIUM_BUFFER_SIZE] = {0};
       snprintf(data, sizeof(data), "{\"_id\":\"%s\"}", public_key);
+      INFO_PRINT("Maintenance: deleting _id: %s",public_key);
       if (delete_document_from_collection(DATABASE_NAME, DB_COLLECTION_DELEGATES, data) != XCASH_OK)
       {
         WARNING_PRINT("Failed to delete delegate from delegates collection with public_key %s", public_key);
