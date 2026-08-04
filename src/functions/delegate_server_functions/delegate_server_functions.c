@@ -645,18 +645,18 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
         SERVER_ERROR("0|solo_addresses must be blank or a comma-delimited list of up to 10 public addresses");
       }
     } else if (strcmp(key, "delegate_fee") == 0) {
-      // New format on the wire: integer basis points (0..10000). No decimals allowed.
+      // New format on the wire: integer basis points (0..5000). No decimals allowed.
       errno = 0;
       char* endp = NULL;
       long v = strtol(val, &endp, 10);
-      if (errno != 0 || endp == val || *endp != '\0' || v < 0 || v > 10000) {
+      if (errno != 0 || endp == val || *endp != '\0' || v < 0 || v > 5000) {
         bson_destroy(setdoc_bson);
         bson_destroy(filter_bson);
         cJSON_Delete(root);
-        SERVER_ERROR("0|Invalid delegate_fee. Expect integer basis points 0..10000");
+        SERVER_ERROR("0|Invalid delegate_fee. Expect integer basis points 0..5000 (max 50.00%)");
       }
 
-      int32_t bp_i32 = (int32_t)v;          // safe after 0..10000 check
+      int32_t bp_i32 = (int32_t)v;          // safe after 0..5000 check
       double pct = (double)bp_i32 / 100.0;  // e.g., 550 -> 5.50
 
       // Store as DOUBLE (percent)
