@@ -66,6 +66,30 @@ bool xnet_send_data_multi(xcash_dest_t dest, const char *message, response_t ***
       hosts = delegates_online_hosts_xseeds;
     } break;
 
+    case XNET_DELEGATES_ALL_ONLINE_NOSEEDS_DPOPS : {
+      const char **delegates_online_hosts_xseeds = malloc((BLOCK_VERIFIERS_TOTAL_AMOUNT + 1) * sizeof(char *));
+      if (!delegates_online_hosts_xseeds) {
+        ERROR_PRINT("Failed to allocate memory for delegates_online_hosts");
+        return false;
+      }
+
+      size_t host_index = 0;
+      for (size_t i = 0; i < BLOCK_VERIFIERS_TOTAL_AMOUNT && delegates_timer_all[i].public_address[0] != '\0';++i) {
+        bool not_seed = (!is_seed_address(delegates_timer_all[i].public_address));
+
+        const char *ip = delegates_timer_all[i].IP_address;
+        bool has_ip = (ip && ip[0] != '\0');
+        if (!has_ip) continue;
+
+        if (not_seed) {
+          delegates_online_hosts_xseeds[host_index++] = delegates_timer_all[i].IP_address;
+        }
+      }
+
+      delegates_online_hosts_xseeds[host_index] = NULL;
+      hosts = delegates_online_hosts_xseeds;
+    } break;
+
     case XNET_DELEGATES_ALL: {
       const char **delegates_hosts = malloc((BLOCK_VERIFIERS_TOTAL_AMOUNT + 1) * sizeof(char *));
       if (!delegates_hosts) {

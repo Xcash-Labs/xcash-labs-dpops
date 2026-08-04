@@ -989,7 +989,7 @@ static int process_maintenance_file(void)
     response_t** responses = NULL;
 
     if (!xnet_send_data_multi(
-            XNET_DELEGATES_ALL_ONLINE_NOSEEDS,
+            XNET_DELEGATES_ALL_ONLINE_NOSEEDS_DPOPS,
             message,
             &responses))
     {
