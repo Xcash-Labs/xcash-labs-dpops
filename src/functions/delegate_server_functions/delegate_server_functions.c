@@ -633,6 +633,13 @@ void server_receive_data_socket_nodes_to_block_verifiers_update_delegates(server
         cJSON_Delete(root);
         SERVER_ERROR("0|delegate_type must be one of: shared or solo");
       }
+      // Temporary: disable solo delegates until the network is above 50 node threshold
+      if ( strcmp(val, "solo") == 0) {
+        bson_destroy(setdoc_bson);
+        bson_destroy(filter_bson);
+        cJSON_Delete(root);
+        SERVER_ERROR("0|Solo nodes are temporarily disabled");
+      }
       set_shared = (strcmp(val, "shared") == 0);
       BSON_APPEND_UTF8(setdoc_bson, key, val);
       ++db_fields_count;
