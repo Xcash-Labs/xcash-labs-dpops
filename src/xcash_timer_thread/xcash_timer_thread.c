@@ -977,7 +977,7 @@ static int process_maintenance_file(void)
       continue;
     }
 
-    const char* params[] = {"public_key", public_key, "action_flag", action_flag, NULL};
+    const char* params[] = {"public_address", xcash_wallet_public_address, "public_key", public_key, "action_flag", action_flag, NULL};
     char* message = create_message_param_list(XMSG_SEED_TO_NODES_MAINTENANCE, params);
     if (message == NULL)
     {
