@@ -31,8 +31,6 @@ int compare_delegates(const void* a, const void* b) {
     return -1;
   else if (count2 > count)
     return 1;
-  else
-    return 0;
 
   // 4. Sort by the public address
   return strcmp(delegate1->public_address, delegate2->public_address);
@@ -133,31 +131,6 @@ int read_organize_delegates(delegates_t* delegates, size_t* delegates_count_resu
             }
           }
         }
-      }
-
-      // The following checks are temporary until we have enough delegates.
-
-      if (!skip_delegate && strcmp(delegates[delegate_index].delegate_type, "solo") == 0 && delegates[delegate_index].total_vote_count < 500000) {
-        if(strcmp(delegates[delegate_index].public_address, xcash_wallet_public_address) == 0) {
-          skip_delegate = true;
-          atomic_store(&shutdown_requested, true);
-        } else {
-          INFO_PRINT("Skipping solo delegate %s: requires at least 500000 votes (current: %" PRIu64 ")", delegates[delegate_index].public_address,
-           delegates[delegate_index].total_vote_count);
-          skip_delegate = true;
-        }
-      }
-
-      if (!skip_delegate && strcmp(delegates[delegate_index].delegate_type, "shared") == 0 && delegates[delegate_index].delegate_fee > 25.0f &&
-       delegates[delegate_index].total_vote_count < 500000) {
-          if(strcmp(delegates[delegate_index].public_address, xcash_wallet_public_address) == 0) {
-            skip_delegate = true;
-            atomic_store(&shutdown_requested, true);
-          } else {
-            INFO_PRINT("Skipping shared delegate %s: charging more than 25%% requires at least 500000 votes (current: %" PRIu64 ")",
-             delegates[delegate_index].public_address, delegates[delegate_index].total_vote_count);
-            skip_delegate = true;
-          }
       }
 
       if (!skip_delegate &&

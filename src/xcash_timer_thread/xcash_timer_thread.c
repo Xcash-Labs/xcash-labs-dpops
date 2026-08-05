@@ -1012,10 +1012,11 @@ static int process_maintenance_file(void)
       BSON_APPEND_UTF8(&filter, "public_key", public_key);
       if (strcmp(action_flag, "BAN") == 0) {
         BSON_APPEND_BOOL(&update, "banned", true);
-        INFO_PRINT("Maintenance transaction requests BAN for VRF public key: %s",public_key);
+        BSON_APPEND_UTF8(&update, "online_status", "false");
+        INFO_PRINT("Maintenance transaction requests BAN for VRF public key: %s", public_key);
       } else {
         BSON_APPEND_BOOL(&update, "banned", false);
-        INFO_PRINT("Maintenance transaction requests UNBAN for VRF public key: %s",public_key);
+        INFO_PRINT("Maintenance transaction requests UNBAN for VRF public key: %s", public_key);
       }
 
       if (update_document_from_collection_bson(DATABASE_NAME, DB_COLLECTION_DELEGATES, &filter, &update) != XCASH_OK)
