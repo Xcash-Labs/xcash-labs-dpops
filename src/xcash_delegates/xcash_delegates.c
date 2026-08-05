@@ -137,6 +137,8 @@ int read_organize_delegates(delegates_t* delegates, size_t* delegates_count_resu
         strlen(delegates[delegate_index].public_address) > 0 &&
         strlen(delegates[delegate_index].IP_address) > 0) {
         delegate_index++;
+      } else {
+        memset(&delegates[delegate_index], 0, sizeof(delegates[delegate_index])); 
       }
       
     }
