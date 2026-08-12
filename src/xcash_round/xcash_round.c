@@ -459,6 +459,8 @@ xcash_round_result_t process_round(void) {
 
   if (!is_committee_member) {
     INFO_PRINT("Non-committee delegate skipping consensus processing for remainder of this round");
+    strncpy(last_winner_name, current_block_verifiers_list.block_verifiers_name[producer_indx], sizeof last_winner_name);
+    last_winner_name[sizeof last_winner_name - 1] = '\0';
     return ROUND_OK;
   }
 
