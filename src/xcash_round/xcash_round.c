@@ -458,6 +458,15 @@ xcash_round_result_t process_round(void) {
   }
 
   if (!is_committee_member) {
+    pthread_mutex_lock(&producer_refs_lock);
+    strcpy(producer_refs[0].public_address, current_block_verifiers_list.block_verifiers_public_address[producer_indx]);
+    strcpy(producer_refs[0].IP_address, current_block_verifiers_list.block_verifiers_IP_address[producer_indx]);
+    strcpy(producer_refs[0].vrf_public_key,current_block_verifiers_list.block_verifiers_public_key[producer_indx]);
+    strcpy(producer_refs[0].vrf_proof_hex,current_block_verifiers_list.block_verifiers_vrf_proof_hex[producer_indx]);
+    strcpy(producer_refs[0].vrf_beta_hex,current_block_verifiers_list.block_verifiers_vrf_beta_hex[producer_indx]);
+    strcpy(producer_refs[0].vote_hash_hex, NON_COMMITTEE_VOTE_HASH);
+    pthread_mutex_unlock(&producer_refs_lock);
+
     INFO_PRINT("Non-committee delegate skipping consensus processing for remainder of this round");
     strncpy(last_winner_name, current_block_verifiers_list.block_verifiers_name[producer_indx], sizeof last_winner_name);
     last_winner_name[sizeof last_winner_name - 1] = '\0';

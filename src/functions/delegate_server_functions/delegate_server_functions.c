@@ -338,7 +338,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
 
   pthread_mutex_lock(&producer_refs_lock);
   bool election_state_ready = is_hex_len(producer_refs[0].vrf_public_key, VRF_PUBLIC_KEY_LENGTH) &&
-                              is_hex_len(producer_refs[0].vote_hash_hex, VOTE_HASH_LEN);
+    (is_hex_len(producer_refs[0].vote_hash_hex, VOTE_HASH_LEN) || strcmp(producer_refs[0].vote_hash_hex, NON_COMMITTEE_VOTE_HASH) == 0);
 
   DEBUG_PRINT("DPOPS dbg: height=%" PRIu64 " cheight=%llu live=%d state_ready=%d prev_in=%.*s prev_local=%.*s round_part %s",
               (uint64_t)height,
@@ -356,24 +356,30 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
       // The block producer will submit the block in round part 11 others in part 12
       if (strcmp(current_round_part, "12") == 0 ||
           (strcmp(current_round_part, "11") == 0 && (strcmp(producer_refs[0].public_address, xcash_wallet_public_address) == 0))) {
-        if (strncmp(prev_hash_str, previous_block_hash, 64) != 0) {
+        if (strncmp(prev_hash_str, previous_block_hash, BLOCK_HASH_LENGTH) != 0) {
+          INFO_PRINT("Prev Hash mismatch: expected %s, got %s", previous_block_hash, prev_hash_str);
           pthread_mutex_unlock(&producer_refs_lock);
           cJSON_Delete(root);
-          INFO_PRINT("Prev Hash mismatch: expected %s, got %s", previous_block_hash, prev_hash_str);
           send_data(client, (unsigned char*)"0|PARENT_HASH_MISMATCH", strlen("0|PARENT_HASH_MISMATCH"));
           return;
         }
 
         // Parent matches our tip: enforce elected producer
         if (strncmp(producer_refs[0].vrf_public_key, vrf_pubkey_str, VRF_PUBLIC_KEY_LENGTH) != 0) {
-          pthread_mutex_unlock(&producer_refs_lock);
           INFO_PRINT("Public key mismatch: expected %s, got %s", producer_refs[0].vrf_public_key, vrf_pubkey_str);
+          pthread_mutex_unlock(&producer_refs_lock);
           cJSON_Delete(root);
           send_data(client, (unsigned char*)"0|VRF_PUBKEY_MISMATCH", strlen("0|VRF_PUBKEY_MISMATCH"));
           return;
         }
-        if (strncmp(producer_refs[0].vote_hash_hex, vote_hash_str, VOTE_HASH_LEN) != 0) {
-          WARNING_PRINT("Vote hash mismatch but delegate winner is correct so allowed, likely cause is a network issue");
+        if (strcmp(producer_refs[0].vote_hash_hex, NON_COMMITTEE_VOTE_HASH) != 0) {
+          if (strncmp(producer_refs[0].vote_hash_hex, vote_hash_str, VOTE_HASH_LEN) != 0) {
+            INFO_PRINT("Vote hash mismatch: expected %s, got %s", producer_refs[0].vote_hash_hex, vote_hash_str);
+            pthread_mutex_unlock(&producer_refs_lock);
+            cJSON_Delete(root);
+            send_data(client, (unsigned char*)"0|VOTE_HASH_MISMATCH", strlen("0|VOTE_HASH_MISMATCH"));
+            return;
+          }
         }
 
       } else {
