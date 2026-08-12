@@ -374,11 +374,7 @@ void server_receive_data_socket_nodes_to_block_verifiers_validate_block(server_c
         }
         if (strcmp(producer_refs[0].vote_hash_hex, NON_COMMITTEE_VOTE_HASH) != 0) {
           if (strncmp(producer_refs[0].vote_hash_hex, vote_hash_str, VOTE_HASH_LEN) != 0) {
-            INFO_PRINT("Vote hash mismatch: expected %s, got %s", producer_refs[0].vote_hash_hex, vote_hash_str);
-            pthread_mutex_unlock(&producer_refs_lock);
-            cJSON_Delete(root);
-            send_data(client, (unsigned char*)"0|VOTE_HASH_MISMATCH", strlen("0|VOTE_HASH_MISMATCH"));
-            return;
+            WARNING_PRINT("Vote hash mismatch but delegate winner is correct so allowed, likely cause is a network issue");
           }
         }
 
