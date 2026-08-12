@@ -72,7 +72,7 @@ static int build_committee_list_from_online_list(const block_verifiers_list_t* s
         continue;
       }
 
-      if (seed_count < BLOCK_VERIFIERS_AMOUNT) {
+      if (seed_count < SEED_COUNT) {
         seed_idx[seed_count++] = i;
       }
       continue;
@@ -361,7 +361,8 @@ xcash_round_result_t process_round(void) {
   int producer_indx = -1;
   if (strtoull(current_block_height, NULL, 10) == XCASH_PROOF_OF_STAKE_BLOCK_HEIGHT) {
     INFO_PRINT("Seednode 0 will Create first DPOPS block.");
-    agreement_needed = (2 * delegates_num + 2) / 3;
+    committee_count = ((size_t)online_count < (COMMITTEE_SIZE + SEED_COUNT)) ? (size_t)online_count : (COMMITTEE_SIZE + SEED_COUNT);
+    agreement_needed = (2 * committee_count  + 2) / 3;
     producer_indx = 0;
   } else {
     size_t online_count_sz = (online_count > 0) ? (size_t)online_count : 0;
@@ -405,37 +406,49 @@ xcash_round_result_t process_round(void) {
   INFO_STAGE_PRINT("Part 7 - Wait for Block Creator Confirmation by Consensus Vote");
   snprintf(current_round_part, sizeof(current_round_part), "%d", 7);
 
+  bool is_committee_member = false;
+  int my_committee_index = -1;
+
   pthread_mutex_lock(&current_block_verifiers_lock);
-  current_block_verifiers_list.block_verifiers_vote_total[producer_indx] += 1;
-  for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
+
+  for (size_t i = 0; i < committee_count; i++) {
     if (strcmp(xcash_wallet_public_address, current_block_verifiers_list.block_verifiers_public_address[i]) == 0) {
-      current_block_verifiers_list.block_verifiers_voted[i] = 1;
-      memcpy(current_block_verifiers_list.block_verifiers_selected_public_address[i],
-             current_block_verifiers_list.block_verifiers_public_address[producer_indx], XCASH_WALLET_LENGTH + 1);
+      is_committee_member = true;
+      my_committee_index = (int)i;
       break;
     }
   }
+
+  if (is_committee_member) {
+    current_block_verifiers_list.block_verifiers_vote_total[producer_indx] += 1;
+    current_block_verifiers_list.block_verifiers_voted[my_committee_index] = 1;
+    memcpy(current_block_verifiers_list.block_verifiers_selected_public_address[my_committee_index],
+      current_block_verifiers_list.block_verifiers_public_address[producer_indx], XCASH_WALLET_LENGTH + 1);
+  }
+
   pthread_mutex_unlock(&current_block_verifiers_lock);
   atomic_store(&wait_for_consensus_vote, false);
 
-  responses = NULL;
-  char* vote_message = NULL;
-  if (block_verifiers_create_vote_majority_result(&vote_message, producer_indx)) {
-    if (xnet_send_data_multi(XNET_COMMITTEE_ALL_ONLINE, vote_message, &responses)) {
-      free(vote_message);
-      cleanup_responses(responses);
+  if (is_committee_member) {
+    responses = NULL;
+    char* vote_message = NULL;
+    if (block_verifiers_create_vote_majority_result(&vote_message, producer_indx)) {
+      if (xnet_send_data_multi(XNET_COMMITTEE_ALL_ONLINE, vote_message, &responses)) {
+        free(vote_message);
+        cleanup_responses(responses);
+      } else {
+        ERROR_PRINT("Failed to send VRF vote result message.");
+        free(vote_message);
+        cleanup_responses(responses);
+        return ROUND_ERROR;
+      }
     } else {
-      ERROR_PRINT("Failed to send VRF vote result message.");
-      free(vote_message);
-      cleanup_responses(responses);
+      ERROR_PRINT("Failed to generate Vote Majority Result message");
+      if (vote_message != NULL) {
+        free(vote_message);
+      }
       return ROUND_ERROR;
     }
-  } else {
-    ERROR_PRINT("Failed to generate Vote Majority Result message");
-    if (vote_message != NULL) {
-      free(vote_message);
-    }
-    return ROUND_ERROR;
   }
 
   // Sync start
@@ -444,11 +457,16 @@ xcash_round_result_t process_round(void) {
     return ROUND_ERROR;
   }
 
+  if (!is_committee_member) {
+    INFO_PRINT("Non-committee delegate skipping consensus processing for remainder of this round");
+    return ROUND_OK;
+  }
+
   int max_index = -1;
   int max_votes = -1;
 
   pthread_mutex_lock(&current_block_verifiers_lock);
-  for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
+  for (size_t i = 0; i < committee_count; i++) {
     int votes = current_block_verifiers_list.block_verifiers_vote_total[i];
     if (votes > max_votes) {
       max_votes = votes;
@@ -457,19 +475,19 @@ xcash_round_result_t process_round(void) {
   }
   pthread_mutex_unlock(&current_block_verifiers_lock);
 
-  if (max_index != -1) {
-    INFO_PRINT("Confirmed Block Winner: %s with %d votes", current_block_verifiers_list.block_verifiers_name[max_index], max_votes);
-  } else {
+  if (max_index < 0 || max_votes <= 0) {
     ERROR_PRINT("No votes recorded");
     return ROUND_ERROR;
   }
 
-  uint8_t vote_hashes[BLOCK_VERIFIERS_AMOUNT][SHA256_EL_HASH_SIZE];
+  INFO_PRINT("Confirmed Block Winner: %s with %d votes", current_block_verifiers_list.block_verifiers_name[max_index], max_votes);
+
+  uint8_t vote_hashes[COMMITTEE_SIZE + SEED_COUNT][SHA256_EL_HASH_SIZE];
   uint8_t final_vote_hash[SHA256_EL_HASH_SIZE] = {0};
   size_t valid_vote_count = 0;
 
   pthread_mutex_lock(&current_block_verifiers_lock);
-  for (size_t i = 0; i < BLOCK_VERIFIERS_AMOUNT; i++) {
+  for (size_t i = 0; i < committee_count; i++) {
     if ((current_block_verifiers_list.block_verifiers_voted[i] > 0) &&
         (strncmp(current_block_verifiers_list.block_verifiers_selected_public_address[i],
                  current_block_verifiers_list.block_verifiers_public_address[max_index], XCASH_WALLET_LENGTH) == 0) &&
