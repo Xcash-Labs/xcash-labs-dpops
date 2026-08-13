@@ -470,6 +470,8 @@ xcash_round_result_t process_round(void) {
     INFO_PRINT("Non-committee delegate skipping consensus processing for remainder of this round");
     strncpy(last_winner_name, current_block_verifiers_list.block_verifiers_name[producer_indx], sizeof last_winner_name);
     last_winner_name[sizeof last_winner_name - 1] = '\0';
+    INFO_PRINT("Confirmed Block Winner: %s (Non-Committee so pending confirmation)", 
+      current_block_verifiers_list.block_verifiers_name[producer_indx]);
     return ROUND_OK;
   }
 
