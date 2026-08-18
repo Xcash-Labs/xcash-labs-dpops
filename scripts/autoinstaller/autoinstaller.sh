@@ -493,7 +493,7 @@ function get_current_xcash_wallet_data()
   VIEW_KEY=$(curl -s -X POST http://127.0.0.1:18288/json_rpc -d '{"jsonrpc":"2.0","id":"0","method":"query_key","params":{"key_type":"view_key"}}' -H 'Content-Type: application/json' | grep \"key\" | sed s"|    \"key\": ||g" | sed s"|\"||g")
   WALLET_SEED=$(curl -s -X POST http://127.0.0.1:18288/json_rpc -d '{"jsonrpc":"2.0","id":"0","method":"query_key","params":{"key_type":"mnemonic"}}' -H 'Content-Type: application/json' | grep \"key\" | sed s"|    \"key\": ||g" | sed s"|\"||g")
   CURRENT_XCASH_WALLET_INFORMATION="${COLOR_PRINT_GREEN}############################################################\n                 X-CASH Wallet Data  \n############################################################${END_COLOR_PRINT}\n\n${COLOR_PRINT_YELLOW}Public Address: $PUBLIC_ADDRESS\nMnemonic Seed: $WALLET_SEED\nSpend Key: $SPEND_KEY\nView Key: $VIEW_KEY\nWallet Password: $WALLET_PASSWORD\nBlock Verifiers Public Key: $BLOCK_VERIFIER_PUBLIC_KEY\nBlock Verifiers Secret Key: $BLOCK_VERIFIER_SECRET_KEY${END_COLOR_PRINT}"
-  PUBLIC_ADDRESS=${PUBLIC_ADDRESS%?}
+#  PUBLIC_ADDRESS=${PUBLIC_ADDRESS%?} 
 
   curl -s -X POST http://127.0.0.1:18288/json_rpc -d '{"jsonrpc":"2.0","id":"0","method":"stop_wallet"}' -H 'Content-Type: application/json' &>/dev/null
   sleep 10s
@@ -976,7 +976,11 @@ function get_installation_directory()
   echo -ne "${COLOR_PRINT_YELLOW}Getting Installation Directories${END_COLOR_PRINT}"
   XCASH_DPOPS_INSTALLATION_DIR=$(sudo find / -path /sys -prune -o -path /proc -prune -o -path /dev -prune -o -path /var -prune -o -type d -name "$MAIN_INSTALL_DIRECTORY" -print)/
   XCASH_BLOCKCHAIN_INSTALLATION_DIR=$(sudo find / -path /sys -prune -o -path /proc -prune -o -path /dev -prune -o -path /var -prune -o -type d -name ".XCASH-LABS" -print)/
-  WALLET_PASSWORD=$(cat /lib/systemd/system/xcash-rpc-wallet.service | awk '/password/ {print $5}')
+  if [ ! -f /lib/systemd/system/xcash-rpc-wallet.service ]; then
+    echo -e "${COLOR_PRINT_RED}Can not find xcash-rpc-wallet.service.${END_COLOR_PRINT}"
+    exit 1
+  fi
+  WALLET_PASSWORD=$(awk '/password/ {print $5}' /lib/systemd/system/xcash-rpc-wallet.service)
   XCASH_DIR=${XCASH_DPOPS_INSTALLATION_DIR}xcash-labs-core/
   XCASH_WALLET_DIR=${XCASH_DPOPS_INSTALLATION_DIR}xcash-wallets/
   XCASH_SYSTEMPID_DIR=${XCASH_DPOPS_INSTALLATION_DIR}systemdpid/
@@ -993,29 +997,35 @@ function get_installation_directory()
 
   # check to make sure it found the installed programs
   if [ "$XCASH_DPOPS_INSTALLATION_DIR" == "/" ]; then
-    echo -e "${COLOR_PRINT_RED}Can not find the installation directory, Please run the auto installer in installation mode${END_COLOR_PRINT}"
+    echo -e "${COLOR_PRINT_RED}Can not find the installation directory. Please run the auto installer in installation mode.${END_COLOR_PRINT}"
+    exit 1
   fi
+
   if [ "$XCASH_DIR" == "xcash-labs-core/" ]; then
-    echo -e "${COLOR_PRINT_RED}Can not find X-CASH${END_COLOR_PRINT}"
-    install_xcash
+    echo -e "${COLOR_PRINT_RED}Can not find XCash.${END_COLOR_PRINT}"
+    exit 1
   fi
-  if [ "$XCASH_DPOPS_DIR" == "xcash-dpops/" ]; then
-    echo -e "${COLOR_PRINT_RED}Can not find xcash-dpops${END_COLOR_PRINT}"
-    download_xcash_dpops
-    build_xcash_dpops
+
+  if [ "$XCASH_DPOPS_DIR" == "xcash-labs-dpops/" ]; then
+    echo -e "${COLOR_PRINT_RED}Can not find xcash-dpops.${END_COLOR_PRINT}"
+    exit 1
   fi
+
   if [ "$MONGODB_INSTALLATION_DIR" == "/" ]; then
-    echo -e "${COLOR_PRINT_RED}Can not find the MongoDB installation directory, Please run the auto installer in installation mode${END_COLOR_PRINT}"
-    install_mongodb
+    echo -e "${COLOR_PRINT_RED}Can not find the MongoDB installation directory.${END_COLOR_PRINT}"
+    exit 1
   fi
+
   if [ "$MONGODB_DIR" == "/" ]; then
-    echo -e "${COLOR_PRINT_RED}Can not find MongoDB${END_COLOR_PRINT}"
-    install_mongodb
+    echo -e "${COLOR_PRINT_RED}Can not find MongoDB.${END_COLOR_PRINT}"
+    exit 1
   fi
+
   if [ "$MONGOC_DRIVER_DIR" == "/" ]; then
-    echo -e "${COLOR_PRINT_RED}Can not find Mongo C Driver${END_COLOR_PRINT}"
-    install_mongoc_driver
+    echo -e "${COLOR_PRINT_RED}Can not find Mongo C Driver.${END_COLOR_PRINT}"
+    exit 1
   fi
+
 }
 
 function get_dependencies_current_version()
@@ -1721,70 +1731,82 @@ function install_blockchain()
   echo
 }
 
-function backup()
-{
-  echo -e "${COLOR_PRINT_GREEN}############################################################${END_COLOR_PRINT}"
-  echo -e "${COLOR_PRINT_GREEN}                Backup xcash-dpops${END_COLOR_PRINT}"
-  echo -e "${COLOR_PRINT_GREEN}############################################################${END_COLOR_PRINT}"
-  echo
-  echo
-
-  # Get the installation directory
+function backup() 
+{ 
+  echo -e "${COLOR_PRINT_GREEN}############################################################${END_COLOR_PRINT}" 
+  echo -e "${COLOR_PRINT_GREEN}                Backup xcash-dpops${END_COLOR_PRINT}" 
+  echo -e "${COLOR_PRINT_GREEN}############################################################${END_COLOR_PRINT}" 
+  echo 
+  echo 
+ 
+  # Get the installation directory 
   get_installation_directory
 
-  # Restart the X-CASH Daemon and stop the X-CASH Wallet RPC
-  echo -ne "${COLOR_PRINT_YELLOW}Shutting Down X-CASH Wallet Systemd Service File and Restarting XCASH Daemon Systemd Service File${END_COLOR_PRINT}"
-  sudo systemctl stop xcash-daemon &>/dev/null
-  sleep 10s
+  # Stop the wallet RPC so the temporary wallet RPC can access the wallet
   sudo systemctl stop xcash-rpc-wallet &>/dev/null
-  sleep 10s
-  echo -ne "\r${COLOR_PRINT_GREEN}Shutting Down X-CASH Wallet Systemd Service File and Restarting XCASH Daemon Systemd Service File${END_COLOR_PRINT}"
-  echo
-  
-  # get the block verifiers secret key from the systemd service file
-  BLOCK_VERIFIER_SECRET_KEY=$(cat /lib/systemd/system/xcash-dpops.service)
-  BLOCK_VERIFIER_SECRET_KEY=$(echo $BLOCK_VERIFIER_SECRET_KEY | awk -F '--block-verifiers-secret-key' '{print $2}')
-  BLOCK_VERIFIER_SECRET_KEY=${BLOCK_VERIFIER_SECRET_KEY:1:$BLOCK_VERIFIERS_SECRET_KEY_LENGTH}
-  BLOCK_VERIFIER_PUBLIC_KEY="${BLOCK_VERIFIER_SECRET_KEY: -${BLOCK_VERIFIERS_PUBLIC_KEY_LENGTH}}"
+  sleep 3s 
+ 
+  # Get the block verifiers secret key from the systemd service file 
+  BLOCK_VERIFIER_SECRET_KEY=$(cat /lib/systemd/system/xcash-dpops.service) 
+  BLOCK_VERIFIER_SECRET_KEY=$(echo $BLOCK_VERIFIER_SECRET_KEY | awk -F '--block-verifiers-secret-key' '{print $2}') 
+  BLOCK_VERIFIER_SECRET_KEY=${BLOCK_VERIFIER_SECRET_KEY:1:$BLOCK_VERIFIERS_SECRET_KEY_LENGTH} 
+  BLOCK_VERIFIER_PUBLIC_KEY="${BLOCK_VERIFIER_SECRET_KEY: -${BLOCK_VERIFIERS_PUBLIC_KEY_LENGTH}}" 
+ 
+  # Get the current XCash wallet data 
+  get_current_xcash_wallet_data 
+ 
+  # Stop the systemd service files 
+  stop_systemd_service_files 
+ 
+  # Backup the XCash DPoPS database
+  cd ~ 
+  sudo systemctl start mongodb 
 
-  # Get the current xcash wallet data
-  get_current_xcash_wallet_data
+  # Remove any previous temporary dump or backup archive
+  sudo rm -rf dump
+  rm -f xcash_dpops_database_backup.7z
 
-  # Stop the systemd service files
-  stop_systemd_service_files
-
-  # Backup the decentralized database
-  if [ "${SHARED_DELEGATE^^}" == "YES" ]; then
-    cd ~
-    sudo systemctl start mongodb
-    mongodump --db XCASH_PROOF_OF_STAKE_DELEGATES &>/dev/null || true
-    7z a shared_delegates_database_backup.7z dump &>/dev/null || true
-    sudo rm -r dump &>/dev/null || true
-    fi
-
-  echo
-  echo
-  echo -e "${COLOR_PRINT_GREEN}############################################################${END_COLOR_PRINT}"
-  echo -e "${COLOR_PRINT_GREEN}          Backup Has Completed Successfully  ${END_COLOR_PRINT}"
-  echo -e "${COLOR_PRINT_GREEN}############################################################${END_COLOR_PRINT}"
-
-  # Display the decentralized database backup data
-  if [ "${SHARED_DELEGATE^^}" == "YES" ]; then
+  if ! mongodump --db XCASH_PROOF_OF_STAKE; then
     echo
-    echo
-    echo -e "${COLOR_PRINT_YELLOW}After running the autoinstaller on a different machine run this command to import your shared delegates database (place the shared_delegates_database_backup.7z in the $HOME directory)${END_COLOR_PRINT}" 
-    echo -e "${COLOR_PRINT_GREEN}cd ~ && 7z x shared_delegates_database_backup.7z && mongorestore --db XCASH_PROOF_OF_STAKE_DELEGATES dump/XCASH_PROOF_OF_STAKE_DELEGATES && sudo rm -r dump${END_COLOR_PRINT}"
+    echo -e "${COLOR_PRINT_RED}Failed to backup the XCASH_PROOF_OF_STAKE database${END_COLOR_PRINT}"
+    sudo rm -rf dump
+    start_systemd_service_files
+    return 1
   fi
-  
-  # Display X-CASH current wallet data
-  echo
-  echo
-  echo -e "${CURRENT_XCASH_WALLET_INFORMATION}"
-  echo
-  echo -e "${COLOR_PRINT_YELLOW}Please make sure to save the above information in a secure place and press enter when done${END_COLOR_PRINT}"
-  read -r data
-  echo -ne "\r"
-  echo
+
+  if ! 7z a xcash_dpops_database_backup.7z dump; then
+    echo
+    echo -e "${COLOR_PRINT_RED}Failed to create xcash_dpops_database_backup.7z${END_COLOR_PRINT}"
+    sudo rm -rf dump
+    start_systemd_service_files
+    return 1
+  fi
+
+  sudo rm -rf dump
+
+  start_systemd_service_files
+
+  echo 
+  echo 
+  echo -e "${COLOR_PRINT_GREEN}############################################################${END_COLOR_PRINT}" 
+  echo -e "${COLOR_PRINT_GREEN}          Backup Has Completed Successfully                 ${END_COLOR_PRINT}" 
+  echo -e "${COLOR_PRINT_GREEN}############################################################${END_COLOR_PRINT}" 
+ 
+  # Display the database restore instructions
+  echo 
+  echo 
+  echo -e "${COLOR_PRINT_YELLOW}After running the autoinstaller on a different machine, place xcash_dpops_database_backup.7z in the \$HOME directory and run:${END_COLOR_PRINT}" 
+  echo -e "${COLOR_PRINT_GREEN}cd ~ && 7z x xcash_dpops_database_backup.7z && mongorestore --db XCASH_PROOF_OF_STAKE dump/XCASH_PROOF_OF_STAKE && sudo rm -rf dump${END_COLOR_PRINT}"   
+ 
+  # Display current XCash wallet data 
+  echo 
+  echo 
+  echo -e "${CURRENT_XCASH_WALLET_INFORMATION}" 
+  echo 
+  echo -e "${COLOR_PRINT_YELLOW}Please make sure to save the above information in a secure place and press enter when done${END_COLOR_PRINT}" 
+  read -r data 
+  echo -ne "\r" 
+  echo 
 }
 
 function create_swap_file()
