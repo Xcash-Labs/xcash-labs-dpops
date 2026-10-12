@@ -697,7 +697,7 @@ dnssec_status_t dnssec_query(dnssec_ctx_t* h, const char* name, int rrtype, bool
 
   dnssec_status_t status;
   if (res->bogus) {
-    DEBUG_PRINT("DNSSEC BOGUS for %s (rr=%d): %s", name, rrtype,
+    ERROR_PRINT("DNSSEC BOGUS for %s (rr=%d): %s", name, rrtype,
                 res->why_bogus ? res->why_bogus : "(no reason)");
     status = DNSSEC_BOGUS;
   } else if (res->secure) {
