@@ -179,7 +179,7 @@ bool print_starter_state(const arg_config_t *arg_config) {
     }
   }
 
-  ERROR_PRINT("Seed Count: %d", count_seed);
+  ERROR_PRINT("Seed Count: %d", count_seeds);
 
   if (!(count_seeds == network_data_nodes_amount)) {
     ERROR_PRINT("Could not validate DNSSEC records for seed nodes, unable to start");
