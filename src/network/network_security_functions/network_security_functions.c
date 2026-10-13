@@ -782,7 +782,7 @@ dnssec_status_t dnssec_query(dnssec_ctx_t* h, const char* name, int rrtype, bool
 
     status = DNSSEC_BOGUS;
   } else if (res->secure) {
-    ERROR_PRINT("DNSSEC SECURE: %s (rr=%d), havedata=%d, rcode=%d",
+    DEBUG_PRINT("DNSSEC SECURE: %s (rr=%d), havedata=%d, rcode=%d",
                 name, rrtype, res->havedata, res->rcode);
 
     status = DNSSEC_SECURE;

@@ -129,6 +129,13 @@ bool print_starter_state(const arg_config_t *arg_config) {
   (void) arg_config;
   size_t i = 0;
   int count_seeds = 0;
+
+  // Compute our running binary digest
+  if (!get_self_sha256(self_sha)) {
+    ERROR_PRINT("Unable to compute self SHA-256");
+    return false;
+  }
+
   static const char xcash_tech_header[] =
       "\n"
       " /$$   /$$                           /$$        / $$              / $$                    \n"
@@ -181,12 +188,6 @@ bool print_starter_state(const arg_config_t *arg_config) {
 
   if (!(count_seeds == network_data_nodes_amount)) {
     ERROR_PRINT("Could not validate DNSSEC records for seed nodes, unable to start");
-    return false;
-  }
-
-  // Compute our running binary digest
-  if (!get_self_sha256(self_sha)) {
-    ERROR_PRINT("Unable to compute self SHA-256");
     return false;
   }
 
