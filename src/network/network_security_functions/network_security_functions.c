@@ -598,15 +598,16 @@ dnssec_status_t dnssec_query(dnssec_ctx_t* h, const char* name, int rrtype, bool
 bool           dnssec_rr_secure(const char* name, int rrtype);
 
 *---------------------------------------------------------------------------------------------------------*/
-static const char* const* get_builtin_ds(void) {
-  static const char* const ds[] = {
-      /* DNSSEC root KSK-2017 */
-      ". IN DS 20326 8 2 E06D44B80B8F1D39A95C0B0D7C65D08458E880409BBC683457104237C7F8EC8D\n",
+static const char * const* get_builtin_ds(void) {
+  static const char * const ds[] = {
+    /* DNSSEC root KSK-2017 */
+    ". IN DS 20326 8 2 E06D44B80B8F1D39A95C0B0D7C65D08458E880409BBC683457104237C7F8EC8D\n",
 
-      /* DNSSEC root KSK-2024 */
-      ". IN DS 38696 8 2 683D2D0ACB8C9B712A1948B27F741219298D0A450D612C483AF444A4C0FB2B16\n",
+    /* DNSSEC root KSK-2024 */
+    ". IN DS 38696 8 2 683D2D0ACB8C9B712A1948B27F741219298D0A450D612C483AF444A4C0FB2B16\n",
 
-      NULL};
+    NULL
+  };
 
   return ds;
 }
@@ -700,30 +701,6 @@ dnssec_ctx_t* dnssec_init(void) {
     return NULL;
   }
 
-/* Enable DNSSEC validation */
-int rc = ub_ctx_set_option(h->ctx, "module-config:",
-                           "validator iterator");
-
-if (rc != 0) {
-  ERROR_PRINT("DNSSEC: Failed to configure validator: %s",
-              ub_strerror(rc));
-  ub_ctx_delete(h->ctx);
-  free(h);
-  return NULL;
-}
-
-/* Ensure DNSSEC signatures are requested upstream */
-rc = ub_ctx_set_option(h->ctx, "disable-edns-do:", "no");
-
-if (rc != 0) {
-  ERROR_PRINT("DNSSEC: Failed to enable EDNS DO: %s",
-              ub_strerror(rc));
-  ub_ctx_delete(h->ctx);
-  free(h);
-  return NULL;
-}
-
-
   /* DNSSEC validation settings */
   (void)ub_ctx_set_option(h->ctx, "val-permissive-mode:", "no");
   (void)ub_ctx_set_option(h->ctx, "qname-minimisation:", "yes");
@@ -735,17 +712,17 @@ if (rc != 0) {
   (void)ub_ctx_set_option(h->ctx, "timeout:", "3000");
 
   /* Use Cloudflare DNS instead of Ubuntu's 127.0.0.53 resolver */
-  rc = ub_ctx_set_fwd(h->ctx, "1.1.1.1");
-  if (rc != 0) {
-    ERROR_PRINT("DNSSEC: Failed to configure DNS forwarder: %s",
-                ub_strerror(rc));
-    ub_ctx_delete(h->ctx);
-    free(h);
-    return NULL;
-  }
+  //int rc = ub_ctx_set_fwd(h->ctx, "1.1.1.1");
+  //if (rc != 0) {
+  //  ERROR_PRINT("DNSSEC: Failed to configure DNS forwarder: %s",
+  //              ub_strerror(rc));
+  //  ub_ctx_delete(h->ctx);
+  //  free(h);
+  //  return NULL;
+  //}
 
   /* Allow DNS_PUBLIC to override the default forwarder */
-  dnssec_maybe_set_public_forwarder(h->ctx);
+  //dnssec_maybe_set_public_forwarder(h->ctx);
 
   /* Load trust anchors */
   if (dnssec_add_trust_anchor(h->ctx) != 0) {
