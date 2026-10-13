@@ -598,11 +598,16 @@ dnssec_status_t dnssec_query(dnssec_ctx_t* h, const char* name, int rrtype, bool
 bool           dnssec_rr_secure(const char* name, int rrtype);
 
 *---------------------------------------------------------------------------------------------------------*/
-static const char * const* get_builtin_ds(void) {
-  static const char * const ds[] = {
-    ". IN DS 20326 8 2 E06D44B80B8F1D39A95C0B0D7C65D08458E880409BBC683457104237C7F8EC8D\n",
-    NULL
-  };
+static const char* const* get_builtin_ds(void) {
+  static const char* const ds[] = {
+      /* DNSSEC root KSK-2017 */
+      ". IN DS 20326 8 2 E06D44B80B8F1D39A95C0B0D7C65D08458E880409BBC683457104237C7F8EC8D\n",
+
+      /* DNSSEC root KSK-2024 */
+      ". IN DS 38696 8 2 683D2D0ACB8C9B712A1948B27F741219298D0A450D612C483AF444A4C0FB2B16\n",
+
+      NULL};
+
   return ds;
 }
 
