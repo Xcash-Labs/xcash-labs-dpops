@@ -598,10 +598,8 @@ dnssec_status_t dnssec_query(dnssec_ctx_t* h, const char* name, int rrtype, bool
 bool           dnssec_rr_secure(const char* name, int rrtype);
 
 *---------------------------------------------------------------------------------------------------------*/
-/* ICANN KSK DS anchors (2010:19036 and 2017:20326), same as Monero ships.    */
 static const char * const* get_builtin_ds(void) {
   static const char * const ds[] = {
-    ". IN DS 19036 8 2 49AAC11D7B6F6446702E54A1607371607A1A41855200FD2CE1CDDE32F24E8FB5\n",
     ". IN DS 20326 8 2 E06D44B80B8F1D39A95C0B0D7C65D08458E880409BBC683457104237C7F8EC8D\n",
     NULL
   };
@@ -609,44 +607,95 @@ static const char * const* get_builtin_ds(void) {
 }
 
 static int dnssec_add_trust_anchor(struct ub_ctx* ctx) {
-  int added = 0;
+  if (!ctx)
+    return -1;
 
-  /* 1) Built-in DS anchors */
-  const char * const *ds = get_builtin_ds();
-  for (; *ds; ++ds) {
-    if (ub_ctx_add_ta(ctx, *ds) == 0) ++added;
-  }
-
-  /* 2) Optional env/file anchors */
   const char* env = getenv("DNS_TRUST_ANCHOR");
-  const char* candidates[] = {
-    (env && *env) ? env : NULL,
-    "/var/lib/unbound/root.key",
-    "/etc/unbound/root.key",
-    "/usr/local/etc/unbound/root.key",
-    NULL
-  };
-  int i;
-  for (i = 0; candidates[i]; ++i) {
-    if (candidates[i] && ub_ctx_add_ta_file(ctx, candidates[i]) == 0) ++added;
+
+  /* 1) Explicit trust-anchor override */
+  if (env && *env) {
+    int rc = ub_ctx_add_ta_file(ctx, env);
+
+    if (rc == 0)
+      return 0;
+
+    ERROR_PRINT("DNSSEC trust anchor failed: %s (%s)",
+                env, ub_strerror(rc));
   }
 
-  return (added > 0) ? 0 : -1;
+  /* 2) System trust-anchor files */
+  const char* candidates[] = {
+      "/var/lib/unbound/root.key",
+      "/etc/unbound/root.key",
+      "/usr/local/etc/unbound/root.key",
+      NULL};
+
+  for (int i = 0; candidates[i] != NULL; ++i) {
+    int rc = ub_ctx_add_ta_file(ctx, candidates[i]);
+
+    if (rc == 0)
+      return 0;
+
+    DEBUG_PRINT("DNSSEC trust anchor unavailable: %s (%s)",
+                candidates[i], ub_strerror(rc));
+  }
+
+  /* 3) Fall back to built-in root DS anchors */
+  const char* const* ds = get_builtin_ds();
+
+  for (; *ds; ++ds) {
+    int rc = ub_ctx_add_ta(ctx, *ds);
+
+    if (rc == 0)
+      return 0;
+
+    ERROR_PRINT("DNSSEC built-in trust anchor failed: %s",
+                ub_strerror(rc));
+  }
+
+  ERROR_PRINT("DNSSEC: Unable to load any trust anchor");
+  return -1;
 }
 
 /* Support DNS_PUBLIC=tcp://9.9.9.9 (or udp://1.1.1.1, or plain IP). */
+/* Support DNS_PUBLIC=tcp://9.9.9.9 (or udp://1.1.1.1, or plain IP). */
 static void dnssec_maybe_set_public_forwarder(struct ub_ctx* ctx) {
+  if (!ctx)
+    return;
+
   const char* dns_pub = getenv("DNS_PUBLIC");
-  if (!dns_pub || !*dns_pub) return;
+  if (!dns_pub || !*dns_pub)
+    return;
 
-  const char* s = dns_pub;
-  const char* addr = s;
+  const char* addr = dns_pub;
   int use_tcp = 0;
-  if      (strncmp(s, "tcp://", 6) == 0) { use_tcp = 1; addr = s + 6; }
-  else if (strncmp(s, "udp://", 6) == 0) { use_tcp = 0; addr = s + 6; }
 
-  (void)ub_ctx_set_fwd(ctx, addr);
-  if (use_tcp) (void)ub_ctx_set_option(ctx, "do-tcp:", "yes");
+  if (strncmp(dns_pub, "tcp://", 6) == 0) {
+    use_tcp = 1;
+    addr = dns_pub + 6;
+  } else if (strncmp(dns_pub, "udp://", 6) == 0) {
+    addr = dns_pub + 6;
+  }
+
+  if (!*addr) {
+    ERROR_PRINT("DNSSEC: DNS_PUBLIC contains an empty address");
+    return;
+  }
+
+  int rc = ub_ctx_set_fwd(ctx, addr);
+  if (rc != 0) {
+    ERROR_PRINT("DNSSEC forwarder failed (%s): %s",
+                addr, ub_strerror(rc));
+    return;
+  }
+
+  if (use_tcp) {
+    rc = ub_ctx_set_option(ctx, "tcp-upstream:", "yes");
+    if (rc != 0) {
+      ERROR_PRINT("DNSSEC TCP upstream configuration failed: %s",
+                  ub_strerror(rc));
+    }
+  }
 }
 
 dnssec_ctx_t* dnssec_init(void) {
@@ -654,25 +703,37 @@ dnssec_ctx_t* dnssec_init(void) {
   if (!h) return NULL;
 
   h->ctx = ub_ctx_create();
-  if (!h->ctx) { free(h); return NULL; }
+  if (!h->ctx) {
+    free(h);
+    return NULL;
+  }
 
-  /* Sensible defaults */
+  /* DNSSEC validation settings */
   (void)ub_ctx_set_option(h->ctx, "val-permissive-mode:", "no");
-  (void)ub_ctx_set_option(h->ctx, "qname-minimisation:",  "yes");
+  (void)ub_ctx_set_option(h->ctx, "qname-minimisation:", "yes");
   (void)ub_ctx_set_option(h->ctx, "infra-cache-numhosts:", "2000");
-  (void)ub_ctx_set_option(h->ctx, "infra-keep-probing:",   "yes");
-  (void)ub_ctx_set_option(h->ctx, "harden-below-nxdomain:","yes");
-  (void)ub_ctx_set_option(h->ctx, "do-ip4:",               "yes");
-  (void)ub_ctx_set_option(h->ctx, "do-ip6:",               "no");
-  (void)ub_ctx_set_option(h->ctx, "timeout:",              "3000");
+  (void)ub_ctx_set_option(h->ctx, "infra-keep-probing:", "yes");
+  (void)ub_ctx_set_option(h->ctx, "harden-below-nxdomain:", "yes");
+  (void)ub_ctx_set_option(h->ctx, "do-ip4:", "yes");
+  (void)ub_ctx_set_option(h->ctx, "do-ip6:", "no");
+  (void)ub_ctx_set_option(h->ctx, "timeout:", "3000");
 
-  /* Use system resolvers unless DNS_PUBLIC overrides */
-  (void)ub_ctx_resolvconf(h->ctx, NULL);
+  /* Use Cloudflare DNS instead of Ubuntu's 127.0.0.53 resolver */
+  int rc = ub_ctx_set_fwd(h->ctx, "1.1.1.1");
+  if (rc != 0) {
+    ERROR_PRINT("DNSSEC: Failed to configure DNS forwarder: %s",
+                ub_strerror(rc));
+    ub_ctx_delete(h->ctx);
+    free(h);
+    return NULL;
+  }
+
+  /* Allow DNS_PUBLIC to override the default forwarder */
   dnssec_maybe_set_public_forwarder(h->ctx);
 
-  /* Add anchors (built-in DS first, then optional files) */
+  /* Load trust anchors */
   if (dnssec_add_trust_anchor(h->ctx) != 0) {
-    (void)ub_ctx_delete(h->ctx);
+    ub_ctx_delete(h->ctx);
     free(h);
     return NULL;
   }
@@ -687,17 +748,34 @@ void dnssec_destroy(dnssec_ctx_t* h) {
 }
 
 dnssec_status_t dnssec_query(dnssec_ctx_t* h, const char* name, int rrtype, bool* out_havedata) {
-  if (out_havedata) *out_havedata = false;
-  if (!h || !h->ctx || !name || !*name) return DNSSEC_ERR;
+  if (out_havedata)
+    *out_havedata = false;
+
+  if (!h || !h->ctx || !name || !*name)
+    return DNSSEC_ERR;
 
   struct ub_result* res = NULL;
-  if (ub_resolve(h->ctx, name, rrtype, 1, &res) != 0 || !res) {
+  int rc = ub_resolve(h->ctx, name, rrtype, 1, &res);
+
+  if (rc != 0) {
+    ERROR_PRINT("DNSSEC query failed for %s (rr=%d): %s",
+                name, rrtype, ub_strerror(rc));
+    if (res)
+      ub_resolve_free(res);
+    return DNSSEC_ERR;
+  }
+
+  if (!res) {
+    ERROR_PRINT("DNSSEC query returned no result for %s (rr=%d)",
+                name, rrtype);
     return DNSSEC_ERR;
   }
 
   dnssec_status_t status;
+
   if (res->bogus) {
-    ERROR_PRINT("DNSSEC BOGUS for %s (rr=%d): %s", name, rrtype,
+    DEBUG_PRINT("DNSSEC BOGUS for %s (rr=%d): %s",
+                name, rrtype,
                 res->why_bogus ? res->why_bogus : "(no reason)");
     status = DNSSEC_BOGUS;
   } else if (res->secure) {
@@ -706,9 +784,10 @@ dnssec_status_t dnssec_query(dnssec_ctx_t* h, const char* name, int rrtype, bool
     status = DNSSEC_UNSIGNED;
   }
 
-  if (out_havedata) *out_havedata = (res->havedata != 0);
+  if (out_havedata)
+    *out_havedata = (res->havedata != 0);
 
-  (void)ub_resolve_free(res);
+  ub_resolve_free(res);
   return status;
 }
 
