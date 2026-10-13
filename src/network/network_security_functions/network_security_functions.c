@@ -598,16 +598,15 @@ dnssec_status_t dnssec_query(dnssec_ctx_t* h, const char* name, int rrtype, bool
 bool           dnssec_rr_secure(const char* name, int rrtype);
 
 *---------------------------------------------------------------------------------------------------------*/
-static const char * const* get_builtin_ds(void) {
-  static const char * const ds[] = {
-    /* DNSSEC root KSK-2017 */
-    ". IN DS 20326 8 2 E06D44B80B8F1D39A95C0B0D7C65D08458E880409BBC683457104237C7F8EC8D\n",
+static const char* const* get_builtin_ds(void) {
+  static const char* const ds[] = {
+      /* DNSSEC root KSK-2017 */
+      ". IN DS 20326 8 2 E06D44B80B8F1D39A95C0B0D7C65D08458E880409BBC683457104237C7F8EC8D\n",
 
-    /* DNSSEC root KSK-2024 */
-    ". IN DS 38696 8 2 683D2D0ACB8C9B712A1948B27F741219298D0A450D612C483AF444A4C0FB2B16\n",
+      /* DNSSEC root KSK-2024 */
+      ". IN DS 38696 8 2 683D2D0ACB8C9B712A1948B27F741219298D0A450D612C483AF444A4C0FB2B16\n",
 
-    NULL
-  };
+      NULL};
 
   return ds;
 }
@@ -618,36 +617,42 @@ static int dnssec_add_trust_anchor(struct ub_ctx* ctx) {
 
   const char* env = getenv("DNS_TRUST_ANCHOR");
 
-  /* Explicit override */
+  /* Explicit trust-anchor override */
   if (env && *env) {
     int rc = ub_ctx_add_ta_file(ctx, env);
 
-    if (rc == 0)
-      return 0;
+    if (rc != 0) {
+      ERROR_PRINT("DNSSEC trust anchor failed: %s (%s)",
+                  env, ub_strerror(rc));
+      return -1;
+    }
 
-    ERROR_PRINT("DNSSEC trust anchor failed: %s (%s)",
-                env, ub_strerror(rc));
-
-    return -1;
+    return 0;
   }
 
-  /* Built-in DNSSEC root trust anchor */
+  /* Load all built-in root trust anchors */
   const char* const* ds = get_builtin_ds();
+  int count = 0;
 
   for (; *ds; ++ds) {
     int rc = ub_ctx_add_ta(ctx, *ds);
 
-    if (rc == 0) {
-      DEBUG_PRINT("DNSSEC: Built-in root trust anchor loaded");
-      return 0;
+    if (rc != 0) {
+      ERROR_PRINT("DNSSEC built-in trust anchor failed: %s",
+                  ub_strerror(rc));
+      return -1;
     }
 
-    ERROR_PRINT("DNSSEC built-in trust anchor failed: %s",
-                ub_strerror(rc));
+    count++;
   }
 
-  ERROR_PRINT("DNSSEC: Unable to load root trust anchor");
-  return -1;
+  if (count == 0) {
+    ERROR_PRINT("DNSSEC: No trust anchors configured");
+    return -1;
+  }
+
+  DEBUG_PRINT("DNSSEC: Loaded %d root trust anchors", count);
+  return 0;
 }
 
 /* Support DNS_PUBLIC=tcp://9.9.9.9 (or udp://1.1.1.1, or plain IP). */
@@ -712,17 +717,17 @@ dnssec_ctx_t* dnssec_init(void) {
   (void)ub_ctx_set_option(h->ctx, "timeout:", "3000");
 
   /* Use Cloudflare DNS instead of Ubuntu's 127.0.0.53 resolver */
-  //int rc = ub_ctx_set_fwd(h->ctx, "1.1.1.1");
-  //if (rc != 0) {
-  //  ERROR_PRINT("DNSSEC: Failed to configure DNS forwarder: %s",
-  //              ub_strerror(rc));
-  //  ub_ctx_delete(h->ctx);
-  //  free(h);
-  //  return NULL;
-  //}
+  int rc = ub_ctx_set_fwd(h->ctx, "1.1.1.1");
+  if (rc != 0) {
+    ERROR_PRINT("DNSSEC: Failed to configure DNS forwarder: %s",
+                ub_strerror(rc));
+    ub_ctx_delete(h->ctx);
+    free(h);
+    return NULL;
+  }
 
   /* Allow DNS_PUBLIC to override the default forwarder */
-  //dnssec_maybe_set_public_forwarder(h->ctx);
+  dnssec_maybe_set_public_forwarder(h->ctx);
 
   /* Load trust anchors */
   if (dnssec_add_trust_anchor(h->ctx) != 0) {
@@ -776,14 +781,12 @@ dnssec_status_t dnssec_query(dnssec_ctx_t* h, const char* name, int rrtype, bool
                 res->why_bogus ? res->why_bogus : "(no reason)");
 
     status = DNSSEC_BOGUS;
-  }
-  else if (res->secure) {
+  } else if (res->secure) {
     ERROR_PRINT("DNSSEC SECURE: %s (rr=%d), havedata=%d, rcode=%d",
                 name, rrtype, res->havedata, res->rcode);
 
     status = DNSSEC_SECURE;
-  }
-  else {
+  } else {
     ERROR_PRINT("DNSSEC UNSIGNED: %s (rr=%d), havedata=%d, rcode=%d",
                 name, rrtype, res->havedata, res->rcode);
 
