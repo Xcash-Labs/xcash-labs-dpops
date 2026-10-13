@@ -738,8 +738,10 @@ dnssec_status_t dnssec_query(dnssec_ctx_t* h, const char* name, int rrtype, bool
   if (out_havedata)
     *out_havedata = false;
 
-  if (!h || !h->ctx || !name || !*name)
+  if (!h || !h->ctx || !name || !*name) {
+    ERROR_PRINT("DNSSEC query: Invalid parameters");
     return DNSSEC_ERR;
+  }
 
   struct ub_result* res = NULL;
   int rc = ub_resolve(h->ctx, name, rrtype, 1, &res);
@@ -747,8 +749,10 @@ dnssec_status_t dnssec_query(dnssec_ctx_t* h, const char* name, int rrtype, bool
   if (rc != 0) {
     ERROR_PRINT("DNSSEC query failed for %s (rr=%d): %s",
                 name, rrtype, ub_strerror(rc));
+
     if (res)
       ub_resolve_free(res);
+
     return DNSSEC_ERR;
   }
 
@@ -761,13 +765,22 @@ dnssec_status_t dnssec_query(dnssec_ctx_t* h, const char* name, int rrtype, bool
   dnssec_status_t status;
 
   if (res->bogus) {
-    DEBUG_PRINT("DNSSEC BOGUS for %s (rr=%d): %s",
+    ERROR_PRINT("DNSSEC BOGUS: %s (rr=%d): %s",
                 name, rrtype,
                 res->why_bogus ? res->why_bogus : "(no reason)");
+
     status = DNSSEC_BOGUS;
-  } else if (res->secure) {
+  }
+  else if (res->secure) {
+    ERROR_PRINT("DNSSEC SECURE: %s (rr=%d), havedata=%d, rcode=%d",
+                name, rrtype, res->havedata, res->rcode);
+
     status = DNSSEC_SECURE;
-  } else {
+  }
+  else {
+    ERROR_PRINT("DNSSEC UNSIGNED: %s (rr=%d), havedata=%d, rcode=%d",
+                name, rrtype, res->havedata, res->rcode);
+
     status = DNSSEC_UNSIGNED;
   }
 
