@@ -700,6 +700,30 @@ dnssec_ctx_t* dnssec_init(void) {
     return NULL;
   }
 
+/* Enable DNSSEC validation */
+int rc = ub_ctx_set_option(h->ctx, "module-config:",
+                           "validator iterator");
+
+if (rc != 0) {
+  ERROR_PRINT("DNSSEC: Failed to configure validator: %s",
+              ub_strerror(rc));
+  ub_ctx_delete(h->ctx);
+  free(h);
+  return NULL;
+}
+
+/* Ensure DNSSEC signatures are requested upstream */
+rc = ub_ctx_set_option(h->ctx, "disable-edns-do:", "no");
+
+if (rc != 0) {
+  ERROR_PRINT("DNSSEC: Failed to enable EDNS DO: %s",
+              ub_strerror(rc));
+  ub_ctx_delete(h->ctx);
+  free(h);
+  return NULL;
+}
+
+
   /* DNSSEC validation settings */
   (void)ub_ctx_set_option(h->ctx, "val-permissive-mode:", "no");
   (void)ub_ctx_set_option(h->ctx, "qname-minimisation:", "yes");
