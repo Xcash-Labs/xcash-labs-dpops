@@ -735,7 +735,7 @@ if (rc != 0) {
   (void)ub_ctx_set_option(h->ctx, "timeout:", "3000");
 
   /* Use Cloudflare DNS instead of Ubuntu's 127.0.0.53 resolver */
-  int rc = ub_ctx_set_fwd(h->ctx, "1.1.1.1");
+  rc = ub_ctx_set_fwd(h->ctx, "1.1.1.1");
   if (rc != 0) {
     ERROR_PRINT("DNSSEC: Failed to configure DNS forwarder: %s",
                 ub_strerror(rc));
