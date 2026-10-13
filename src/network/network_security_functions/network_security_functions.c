@@ -612,7 +612,7 @@ static int dnssec_add_trust_anchor(struct ub_ctx* ctx) {
 
   const char* env = getenv("DNS_TRUST_ANCHOR");
 
-  /* 1) Explicit trust-anchor override */
+  /* Explicit override */
   if (env && *env) {
     int rc = ub_ctx_add_ta_file(ctx, env);
 
@@ -621,39 +621,26 @@ static int dnssec_add_trust_anchor(struct ub_ctx* ctx) {
 
     ERROR_PRINT("DNSSEC trust anchor failed: %s (%s)",
                 env, ub_strerror(rc));
+
+    return -1;
   }
 
-  /* 2) System trust-anchor files */
-  const char* candidates[] = {
-      "/var/lib/unbound/root.key",
-      "/etc/unbound/root.key",
-      "/usr/local/etc/unbound/root.key",
-      NULL};
-
-  for (int i = 0; candidates[i] != NULL; ++i) {
-    int rc = ub_ctx_add_ta_file(ctx, candidates[i]);
-
-    if (rc == 0)
-      return 0;
-
-    DEBUG_PRINT("DNSSEC trust anchor unavailable: %s (%s)",
-                candidates[i], ub_strerror(rc));
-  }
-
-  /* 3) Fall back to built-in root DS anchors */
+  /* Built-in DNSSEC root trust anchor */
   const char* const* ds = get_builtin_ds();
 
   for (; *ds; ++ds) {
     int rc = ub_ctx_add_ta(ctx, *ds);
 
-    if (rc == 0)
+    if (rc == 0) {
+      DEBUG_PRINT("DNSSEC: Built-in root trust anchor loaded");
       return 0;
+    }
 
     ERROR_PRINT("DNSSEC built-in trust anchor failed: %s",
                 ub_strerror(rc));
   }
 
-  ERROR_PRINT("DNSSEC: Unable to load any trust anchor");
+  ERROR_PRINT("DNSSEC: Unable to load root trust anchor");
   return -1;
 }
 
