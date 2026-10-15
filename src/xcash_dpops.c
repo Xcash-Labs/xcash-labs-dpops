@@ -11,6 +11,7 @@ BRIGHT_WHITE_TEXT("General Options:\n")
 "\n"
 "  -h, --help                              List all valid parameters.\n"
 "  -k, --block-verifiers-secret-key <KEY>  Set the block verifier's secret key\n"
+"      --block-verifiers-secret-key-file <PATH>  Read the block verifier's secret key from a file (avoids exposing it via ps/proc)\n"
 "\n"
 BRIGHT_WHITE_TEXT("Debug Options:\n")
 "  --log-level                             The log-level displays log messages based on the level passed:\n"
@@ -29,6 +30,7 @@ BRIGHT_WHITE_TEXT("Advanced Options:\n")
 static struct argp_option options[] = {
   {"help", 'h', 0, 0, "List all valid parameters.", 0},
   {"block-verifiers-secret-key", 'k', "SECRET_KEY", 0, "Set the block verifier's secret key", 0},
+  {"block-verifiers-secret-key-file", OPTION_SECRET_KEY_FILE, "PATH", 0, "Read the block verifier's secret key from a file", 0},
   {"log-level", OPTION_LOG_LEVEL, "LOG_LEVEL", 0, "Displays log messages based on the level passed.", 0},
   {"delegates-website", OPTION_DELEGATES_WEBSITE, 0, 0, "Run the delegate's website.", 0},
   {"shared-delegates-website", OPTION_SHARED_DELEGATES_WEBSITE, 0, 0, "Run shared delegate's website with specified minimum amount.", 0},
@@ -50,6 +52,9 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
     break;
   case 'k':
     arguments->block_verifiers_secret_key = arg;
+    break;
+  case OPTION_SECRET_KEY_FILE:
+    arguments->block_verifiers_secret_key_file = arg;
     break;
   case OPTION_LOG_LEVEL:
     if (atoi(arg) >= 0 && atoi(arg) <= 4)
@@ -220,8 +225,27 @@ int main(int argc, char *argv[]) {
     FATAL_ERROR_EXIT("Please enable ntp for your server");
   }
 
+  if (arg_config.block_verifiers_secret_key && arg_config.block_verifiers_secret_key_file) {
+    FATAL_ERROR_EXIT("Use either --block-verifiers-secret-key or --block-verifiers-secret-key-file, not both!");
+  }
+
+  if (arg_config.block_verifiers_secret_key_file) {
+    FILE *key_file = fopen(arg_config.block_verifiers_secret_key_file, "r");
+    if (!key_file) {
+      FATAL_ERROR_EXIT("Failed to open --block-verifiers-secret-key-file: %s", arg_config.block_verifiers_secret_key_file);
+    }
+    static char secret_key_from_file[VRF_SECRET_KEY_LENGTH + 2];
+    if (!fgets(secret_key_from_file, sizeof(secret_key_from_file), key_file)) {
+      fclose(key_file);
+      FATAL_ERROR_EXIT("Failed to read --block-verifiers-secret-key-file: %s", arg_config.block_verifiers_secret_key_file);
+    }
+    fclose(key_file);
+    secret_key_from_file[strcspn(secret_key_from_file, "\r\n")] = '\0';
+    arg_config.block_verifiers_secret_key = secret_key_from_file;
+  }
+
   if (!arg_config.block_verifiers_secret_key || strlen(arg_config.block_verifiers_secret_key) != VRF_SECRET_KEY_LENGTH) {
-    FATAL_ERROR_EXIT("The --block-verifiers-secret-key is mandatory and should be %d characters long!", VRF_SECRET_KEY_LENGTH);
+    FATAL_ERROR_EXIT("The --block-verifiers-secret-key (or --block-verifiers-secret-key-file) is mandatory and should contain a %d character key!", VRF_SECRET_KEY_LENGTH);
   }
 
   strncpy(secret_key, arg_config.block_verifiers_secret_key, sizeof(secret_key) - 1);

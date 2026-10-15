@@ -5,6 +5,7 @@
 
 typedef struct {
     char *block_verifiers_secret_key;
+    char *block_verifiers_secret_key_file;
     bool delegates_website;
     bool shared_delegates_website;
 } arg_config_t;
